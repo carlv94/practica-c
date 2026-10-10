@@ -15,6 +15,7 @@
 import { cargarAnalizador } from './analizador.js';
 import { corregir } from './corrector.js';
 import { crearEditor, pintar } from './editor.js';
+import { partesDeEnunciado } from './enunciado.js';
 
 const CARPETA = 'consignas/';
 const INDICE = CARPETA + 'indice.json';
@@ -208,7 +209,11 @@ function mostrarConsigna() {
   }
 
   $('titulo-consigna').textContent = `${actual + 1}. ${consigna.titulo}`;
-  $('enunciado').textContent = consigna.enunciado;
+  $('enunciado').replaceChildren(
+    ...partesDeEnunciado(consigna.enunciado, capturas).map((parte) =>
+      parte.nombre ? elemento('code', null, parte.nombre) : parte.texto
+    )
+  );
   pintar($('contexto'), contexto);
   editor.poner('');
   $('respuesta').readOnly = false;

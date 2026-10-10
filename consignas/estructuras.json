@@ -25,21 +25,21 @@
     {
       "id": "estructuras-2",
       "titulo": "Declarar una variable",
-      "enunciado": "Declare una variable usando la estructura anterior.",
+      "enunciado": "Declare una variable usando la estructura {S}.",
       "requiere": [{ "variable": { "tipo": "$S" } }],
       "referencia": "struct Puesto unPuesto;"
     },
     {
       "id": "estructuras-3",
       "titulo": "Definir un alias",
-      "enunciado": "Defina un alias para la estructura anterior.",
+      "enunciado": "Defina un alias para la estructura {S}.",
       "requiere": [{ "alias": { "de": "$S", "capturar": "A" } }],
       "referencia": "typedef struct Puesto TPuesto;"
     },
     {
       "id": "estructuras-4",
       "titulo": "Declarar una variable con el alias",
-      "enunciado": "Declare una variable usando el alias anterior.",
+      "enunciado": "Declare una variable usando el alias {A}.",
       "requiere": [{ "variable": { "tipo": "$S", "conAlias": true } }],
       "referencia": "TPuesto otroPuesto;"
     }

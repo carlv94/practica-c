@@ -17,6 +17,7 @@
     <script type="module">
       import { cargarAnalizador } from '../js/analizador.js';
       import { corregir } from '../js/corrector.js';
+      import { marcasDe, partesDeEnunciado } from '../js/enunciado.js';
       import { SERIE, CASOS } from './casos.js';
 
       const salida = document.getElementById('salida');
@@ -78,15 +79,39 @@
         const referencias = todas.flatMap((s) => s.consignas.map((consigna, i) => ({ s, consigna, i })));
         referencias.forEach(({ s, consigna, i }) => {
           try {
-            const r = corregir(analizador, consigna, {
-              ...llegarHasta(i + 1, [], s),
-              respuesta: consigna.referencia,
-            });
+            const previo = llegarHasta(i + 1, [], s);
+            const r = corregir(analizador, consigna, { ...previo, respuesta: consigna.referencia });
             anotar(r.correcto, `referencia de ${consigna.id}`, codigos(r, 'error').join(', '));
+
+            // Un {X} del enunciado tiene que haberlo capturado una consigna anterior.
+            const sueltas = marcasDe(consigna.enunciado).filter((marca) => !previo.capturas[marca]);
+            if (marcasDe(consigna.enunciado).length) {
+              anotar(
+                !sueltas.length,
+                `enunciado de ${consigna.id}: nombres capturados`,
+                `usa ${sueltas.map((m) => `{${m}}`).join(', ')}, que ninguna consigna anterior captura`
+              );
+            }
           } catch (e) {
             anotar(false, `referencia de ${consigna.id}`, e.message);
           }
         });
+
+        // El enunciado muestra el nombre solo, venga de una etiqueta o de un alias.
+        const armado = (enunciado, capturas) =>
+          partesDeEnunciado(enunciado, capturas)
+            .map((p) => p.nombre ?? p.texto)
+            .join('');
+        const ENUNCIADOS = [
+          ['la estructura {S}.', { S: 'struct Alumno' }, 'la estructura Alumno.'],
+          ['la estructura {S}.', { S: 'Alumno' }, 'la estructura Alumno.'],
+          ['{S} y su alias {A}', { S: 'struct Local', A: 'TLocal' }, 'Local y su alias TLocal'],
+          ['sin capturar: {X}', { S: 'struct Local' }, 'sin capturar: {X}'],
+        ];
+        for (const [enunciado, capturas, esperado] of ENUNCIADOS) {
+          const salio = armado(enunciado, capturas);
+          anotar(salio === esperado, `enunciado: "${enunciado}"`, `esperaba "${esperado}"\nsalió   "${salio}"`);
+        }
 
         for (const caso of CASOS) {
           const titulo = `paso ${caso.paso}: ${caso.nombre}`;

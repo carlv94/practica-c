@@ -27,6 +27,7 @@ hosting de archivos estáticos: no hay nada que corra del lado del servidor.
 | `js/analizador.js` | Carga el analizador de C (tree-sitter en WebAssembly). |
 | `js/modelo.js` | Del árbol del analizador a "qué estructuras, alias y variables hay". |
 | `js/corrector.js` | Aplica las reglas de una consigna y arma los mensajes. |
+| `js/enunciado.js` | Pone en el enunciado los nombres que eligió el alumno (`{S}`). |
 | `js/editor.js` | El editor de la respuesta: colores, números de línea y sangría. |
 | `js/app.js` | La pantalla y el avance del alumno. |
 | `pruebas/casos.js` | Respuestas de ejemplo con el resultado que tienen que dar. |
@@ -66,7 +67,7 @@ que ya no vale.
 {
   "id": "estructuras-2",
   "titulo": "Declarar una variable",
-  "enunciado": "Declare una variable usando la estructura anterior.",
+  "enunciado": "Declare una variable usando la estructura {S}.",
   "requiere": [{ "variable": { "tipo": "$S" } }],
   "referencia": "struct Puesto unPuesto;"
 }
@@ -86,6 +87,14 @@ Las reglas de `requiere`:
 **`capturar` guarda el nombre que eligió el alumno** para que lo usen las
 consignas que siguen con `$S`: así "la estructura anterior" es la suya, se
 llame como se llame.
+
+**El enunciado también puede usar una captura, con `{S}`**, y cada alumno lee
+el nombre que eligió él: "la estructura `Alumno`", "la estructura
+`Estudiante`". Se muestra solo el nombre, sin la palabra `struct`: decirle
+`struct Alumno` sería darle escrita la parte de la respuesta que más se
+olvida. Ojo que son dos escrituras distintas: `$S` en las reglas, `{S}` en el
+enunciado. Las pruebas avisan si un enunciado nombra algo que ninguna consigna
+anterior capturó.
 
 La `referencia` tiene que pasar su propia consigna, encadenada con las
 referencias anteriores: las pruebas lo verifican.
