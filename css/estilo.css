@@ -1,4 +1,6 @@
 :root {
+  /* para que las barras de desplazamiento acompanen al tema oscuro */
+  color-scheme: light dark;
   --fondo: #f6f7f9;
   --panel: #ffffff;
   --texto: #1f2328;
@@ -13,6 +15,13 @@
   --aviso: #8a5a00;
   --aviso-fondo: #fff4d6;
   --codigo: #eef1f4;
+  /* los colores del codigo */
+  --c-clave: #8250df;
+  --c-tipo: #0550ae;
+  --c-cadena: #0a6e31;
+  --c-numero: #953800;
+  --c-comentario: #6e7781;
+  --c-pre: #8a5a00;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -31,6 +40,12 @@
     --aviso: #f0c35b;
     --aviso-fondo: #352a10;
     --codigo: #262c34;
+    --c-clave: #d2a8ff;
+    --c-tipo: #79c0ff;
+    --c-cadena: #7ee787;
+    --c-numero: #ffa657;
+    --c-comentario: #8b949e;
+    --c-pre: #e3b341;
   }
 }
 
@@ -134,23 +149,130 @@ pre {
   background: var(--codigo);
   border-radius: 6px;
   overflow-x: auto;
-  color: var(--suave);
-}
-
-textarea {
-  display: block;
-  width: 100%;
-  padding: 12px;
-  border: 1px solid var(--borde);
-  border-radius: 6px;
-  background: var(--fondo);
-  color: var(--texto);
-  line-height: 1.5;
-  resize: vertical;
   tab-size: 2;
 }
 
-textarea:focus-visible,
+/* Lo ya resuelto se ve, pero no compite con lo que se esta escribiendo. */
+#contexto {
+  opacity: 0.8;
+}
+
+.clave {
+  color: var(--c-clave);
+}
+
+.tipo {
+  color: var(--c-tipo);
+}
+
+.cad {
+  color: var(--c-cadena);
+}
+
+.num {
+  color: var(--c-numero);
+}
+
+.com {
+  color: var(--c-comentario);
+  font-style: italic;
+}
+
+.pre {
+  color: var(--c-pre);
+}
+
+/* El editor: una caja de texto transparente sobre el mismo codigo pintado
+   (ver js/editor.js). La caja y el dibujo tienen que tener la misma letra, el
+   mismo margen y el mismo alto de linea, o el cursor no cae donde se lee. */
+.editor {
+  display: flex;
+  border: 1px solid var(--borde);
+  border-radius: 6px;
+  background: var(--fondo);
+  overflow: hidden;
+  font: 15px/22px Consolas, "Cascadia Mono", Menlo, monospace;
+}
+
+.editor:focus-within {
+  outline: 2px solid var(--acento);
+  outline-offset: 1px;
+}
+
+.editor .numeros {
+  flex: none;
+  min-width: 44px;
+  padding: 12px 0;
+  border-right: 1px solid var(--borde);
+  color: var(--suave);
+  text-align: right;
+  user-select: none;
+}
+
+.editor .numeros div {
+  padding: 0 10px 0 8px;
+}
+
+.editor .numeros .error {
+  background: var(--error-fondo);
+  color: var(--error);
+  font-weight: 700;
+}
+
+.editor .numeros .aviso {
+  background: var(--aviso-fondo);
+  color: var(--aviso);
+  font-weight: 700;
+}
+
+.editor .area {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.editor .pintado,
+.editor textarea {
+  margin: 0;
+  padding: 12px;
+  border: 0;
+  border-radius: 0;
+  font: inherit;
+  white-space: pre;
+  tab-size: 2;
+}
+
+.editor .pintado {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: none;
+  color: var(--texto);
+  pointer-events: none;
+}
+
+.editor textarea {
+  position: relative;
+  display: block;
+  width: 100%;
+  background: transparent;
+  color: transparent;
+  caret-color: var(--texto);
+  overflow-x: auto;
+  overflow-y: hidden;
+  resize: none;
+  outline: none;
+}
+
+.editor textarea::selection {
+  color: transparent;
+  background: color-mix(in srgb, var(--acento) 35%, transparent);
+}
+
+.editor textarea[readonly] {
+  cursor: default;
+}
+
 button:focus-visible {
   outline: 2px solid var(--acento);
   outline-offset: 1px;

@@ -26,6 +26,7 @@ hosting de archivos estáticos: no hay nada que corra del lado del servidor.
 | `js/analizador.js` | Carga el analizador de C (tree-sitter en WebAssembly). |
 | `js/modelo.js` | Del árbol del analizador a "qué estructuras, alias y variables hay". |
 | `js/corrector.js` | Aplica las reglas de una consigna y arma los mensajes. |
+| `js/editor.js` | El editor de la respuesta: colores, números de línea y sangría. |
 | `js/app.js` | La pantalla y el avance del alumno. |
 | `pruebas/casos.js` | Respuestas de ejemplo con el resultado que tienen que dar. |
 | `vendor/tree-sitter/` | El analizador, copiado de terceros. No se edita: ver su `LEEME.md`. |
@@ -80,6 +81,4 @@ Cuando un alumno escriba algo que el corrector entienda mal, se suma el caso a
 ## Pendiente
 
 - Una sola serie, fija en `js/app.js`: falta la lista de series.
-- La respuesta se escribe en una caja de texto común, sin colores ni números
-  de línea.
 - Exportar e importar el avance, para cambiar de computadora.

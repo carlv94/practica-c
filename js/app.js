@@ -8,12 +8,14 @@
 
 import { cargarAnalizador } from './analizador.js';
 import { corregir } from './corrector.js';
+import { crearEditor, pintar } from './editor.js';
 
 const SERIE = 'consignas/estructuras.json';
 const MAX_INTENTOS = 500;
 
 const $ = (id) => document.getElementById(id);
 
+const editor = crearEditor($('respuesta'));
 let analizador = null;
 let serie = null;
 let hechas = []; // [{ codigo, conAyuda }], una por consigna resuelta
@@ -134,14 +136,14 @@ function mostrar() {
     $('resumen-final').textContent =
       `Resolvió las ${hechas.length} consignas` +
       (conAyuda ? `, ${conAyuda} de ellas mirando la solución.` : ' sin mirar ninguna solución.');
-    $('codigo-final').textContent = contexto;
+    pintar($('codigo-final'), contexto);
     return;
   }
 
   $('titulo-consigna').textContent = `${actual + 1}. ${consigna.titulo}`;
   $('enunciado').textContent = consigna.enunciado;
-  $('contexto').textContent = contexto;
-  $('respuesta').value = '';
+  pintar($('contexto'), contexto);
+  editor.poner('');
   $('respuesta').readOnly = false;
   $('comprobar').hidden = false;
   $('siguiente').hidden = true;
@@ -155,6 +157,7 @@ function comprobar() {
   const respuesta = $('respuesta').value;
   const r = corregir(analizador, consigna, { contexto, respuesta, capturas });
   registrarIntento(consigna, r);
+  editor.marcar(r.diagnosticos);
 
   const cajas = r.diagnosticos.map((d) => mensaje(d.nivel, d.mensaje, d.linea));
   if (r.correcto) {
@@ -189,7 +192,7 @@ function verSolucion() {
     ? 'Esta es una solución posible. Puede escribirla o copiarla, y comprobar.'
     : 'Esta es una solución posible, escrita con otros nombres: hay que adaptarla a los que usó usted.';
   const ejemplo = document.createElement('pre');
-  ejemplo.textContent = consigna.referencia;
+  pintar(ejemplo, consigna.referencia);
   $('resultado').replaceChildren(mensaje('aviso', nota), ejemplo);
   $('respuesta').focus();
 }
@@ -200,15 +203,11 @@ function reiniciar() {
   mostrar();
 }
 
-// Tab escribe dos espacios en vez de saltar al boton.
+// Las teclas de escribir codigo (Tab, la sangria) las maneja el editor.
 function teclaEnRespuesta(evento) {
-  const caja = evento.target;
   if (evento.key === 'Enter' && (evento.ctrlKey || evento.metaKey)) {
     evento.preventDefault();
     comprobar();
-  } else if (evento.key === 'Tab' && !evento.shiftKey && !caja.readOnly) {
-    evento.preventDefault();
-    caja.setRangeText('  ', caja.selectionStart, caja.selectionEnd, 'end');
   }
 }
 
