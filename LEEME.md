@@ -28,6 +28,7 @@ hosting de archivos estáticos: no hay nada que corra del lado del servidor.
 | `js/corrector.js` | Aplica las reglas de una consigna y arma los mensajes. |
 | `js/app.js` | La pantalla y el avance del alumno. |
 | `pruebas/casos.js` | Respuestas de ejemplo con el resultado que tienen que dar. |
+| `vendor/tree-sitter/` | El analizador, copiado de terceros. No se edita: ver su `LEEME.md`. |
 
 `modelo.js` y `corrector.js` no saben nada de la pantalla: si un día la
 interfaz se rehace con otra herramienta, esos dos quedan como están.
@@ -78,9 +79,6 @@ Cuando un alumno escriba algo que el corrector entienda mal, se suma el caso a
 
 ## Pendiente
 
-- El analizador se baja de un CDN (jsDelivr) cada vez que se abre la página.
-  Conviene copiar los tres archivos al proyecto: las direcciones están al
-  principio de `js/analizador.js`.
 - Una sola serie, fija en `js/app.js`: falta la lista de series.
 - La respuesta se escribe en una caja de texto común, sin colores ni números
   de línea.
