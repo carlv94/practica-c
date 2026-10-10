@@ -1,0 +1,46 @@
+{
+  "id": "estructuras",
+  "titulo": "Estructuras: declarar, usar y dar un alias",
+  "consignas": [
+    {
+      "id": "estructuras-1",
+      "titulo": "Declarar la estructura",
+      "enunciado": "En la Gran Feria de Emprendedores del Parque de la Familia, se registran las ventas obtenidas por los puestos comerciales habilitados para la temporada. De cada puesto comercial se registra la siguiente información:\n• Nombre de fantasía del puesto (nombreFantasia)\n• Apellido y nombre del titular (titular)\n• Monto total recaudado (montoRecaudado)\n• Cantidad de ventas realizadas (cantidadVentas)\n\nDeclare la estructura necesaria para poder registrarlos.",
+      "requiere": [
+        {
+          "struct": {
+            "capturar": "S",
+            "campos": [
+              { "nombre": "nombreFantasia", "tipo": "cadena" },
+              { "nombre": "titular", "tipo": "cadena" },
+              { "nombre": "montoRecaudado", "tipo": "real" },
+              { "nombre": "cantidadVentas", "tipo": "entero" }
+            ]
+          }
+        }
+      ],
+      "referencia": "struct Puesto {\n  char nombreFantasia[20];\n  char titular[20];\n  float montoRecaudado;\n  int cantidadVentas;\n};"
+    },
+    {
+      "id": "estructuras-2",
+      "titulo": "Declarar una variable",
+      "enunciado": "Declare una variable usando la estructura anterior.",
+      "requiere": [{ "variable": { "tipo": "$S" } }],
+      "referencia": "struct Puesto unPuesto;"
+    },
+    {
+      "id": "estructuras-3",
+      "titulo": "Definir un alias",
+      "enunciado": "Defina un alias para la estructura anterior.",
+      "requiere": [{ "alias": { "de": "$S", "capturar": "A" } }],
+      "referencia": "typedef struct Puesto TPuesto;"
+    },
+    {
+      "id": "estructuras-4",
+      "titulo": "Declarar una variable con el alias",
+      "enunciado": "Declare una variable usando el alias anterior.",
+      "requiere": [{ "variable": { "tipo": "$S", "conAlias": true } }],
+      "referencia": "TPuesto otroPuesto;"
+    }
+  ]
+}

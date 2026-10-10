@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>Pruebas del corrector</title>
+    <style>
+      body { font: 14px/1.5 Consolas, monospace; margin: 24px; }
+      .ok { color: #1a7f37; }
+      .falla { color: #cf222e; font-weight: bold; }
+      pre { margin: 0 0 0 24px; color: #57606a; }
+    </style>
+  </head>
+  <body>
+    <h1>Pruebas del corrector</h1>
+    <div id="salida">Cargando el analizador...</div>
+
+    <script type="module">
+      import { cargarAnalizador } from '../js/analizador.js';
+      import { corregir } from '../js/corrector.js';
+      import { SERIE, CASOS } from './casos.js';
+
+      const salida = document.getElementById('salida');
+      const lineas = [];
+      let fallas = 0;
+
+      function anotar(bien, texto, detalle) {
+        if (!bien) fallas++;
+        lineas.push({ bien, texto, detalle });
+      }
+
+      const codigos = (resultado, nivel) =>
+        [...new Set(resultado.diagnosticos.filter((d) => d.nivel === nivel).map((d) => d.codigo))].sort();
+
+      try {
+        const analizador = await cargarAnalizador();
+        const serie = await (await fetch(SERIE)).json();
+        // Para probar a mano desde la consola.
+        Object.assign(window, { analizador, serie, corregir });
+
+        // Recorre las consignas anteriores al paso, con las respuestas dadas o
+        // las de referencia, y devuelve el contexto y las capturas que dejan.
+        function llegarHasta(paso, previas = []) {
+          let contexto = '';
+          let capturas = {};
+          for (let i = 0; i < paso - 1; i++) {
+            const consigna = serie.consignas[i];
+            const respuesta = previas[i] || consigna.referencia;
+            const r = corregir(analizador, consigna, { contexto, respuesta, capturas });
+            if (!r.correcto) {
+              throw new Error(`la respuesta previa ${i + 1} no pasa: ${codigos(r, 'error')}`);
+            }
+            capturas = r.capturas;
+            contexto += (contexto ? '\n\n' : '') + respuesta;
+          }
+          return { contexto, capturas };
+        }
+
+        // Toda referencia tiene que pasar su propia consigna.
+        serie.consignas.forEach((consigna, i) => {
+          try {
+            const r = corregir(analizador, consigna, {
+              ...llegarHasta(i + 1),
+              respuesta: consigna.referencia,
+            });
+            anotar(r.correcto, `referencia de ${consigna.id}`, codigos(r, 'error').join(', '));
+          } catch (e) {
+            anotar(false, `referencia de ${consigna.id}`, e.message);
+          }
+        });
+
+        for (const caso of CASOS) {
+          const titulo = `paso ${caso.paso}: ${caso.nombre}`;
+          try {
+            const r = corregir(analizador, serie.consignas[caso.paso - 1], {
+              ...llegarHasta(caso.paso, caso.previas),
+              respuesta: caso.respuesta,
+            });
+            const errores = codigos(r, 'error');
+            const esperados = caso.espera === 'ok' ? [] : [...caso.espera].sort();
+            const avisos = codigos(r, 'aviso');
+            const bien =
+              errores.join() === esperados.join() &&
+              (caso.avisos || []).every((a) => avisos.includes(a));
+            anotar(
+              bien,
+              titulo,
+              bien
+                ? ''
+                : `esperaba [${esperados}] ${caso.avisos || ''}\nsalió   [${errores}] avisos [${avisos}]\n` +
+                    r.diagnosticos.map((d) => `  línea ${d.linea}: ${d.mensaje}`).join('\n')
+            );
+          } catch (e) {
+            anotar(false, titulo, e.stack || e.message);
+          }
+        }
+      } catch (e) {
+        anotar(false, 'no se pudo arrancar', e.stack || e.message);
+      }
+
+      salida.textContent = '';
+      for (const l of lineas) {
+        const p = document.createElement('div');
+        p.className = l.bien ? 'ok' : 'falla';
+        p.textContent = (l.bien ? 'OK     ' : 'FALLA  ') + l.texto;
+        salida.appendChild(p);
+        if (l.detalle && !l.bien) {
+          const pre = document.createElement('pre');
+          pre.textContent = l.detalle;
+          salida.appendChild(pre);
+        }
+      }
+      const resumen = document.createElement('h2');
+      resumen.className = fallas ? 'falla' : 'ok';
+      resumen.textContent = fallas ? `${fallas} de ${lineas.length} fallaron` : `Las ${lineas.length} pasaron`;
+      salida.appendChild(resumen);
+      window.resultadoPruebas = { total: lineas.length, fallas, lineas };
+    </script>
+  </body>
+</html>
