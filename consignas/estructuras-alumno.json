@@ -1,0 +1,40 @@
+{
+  "id": "estructuras-alumno",
+  "titulo": "Estructuras: el legajo de un alumno",
+  "descripcion": "Otro caso para repasar: una estructura con un campo de cada tipo, su alias y una variable.",
+  "consignas": [
+    {
+      "id": "estructuras-alumno-1",
+      "titulo": "Declarar la estructura",
+      "enunciado": "La secretaría de una facultad registra a sus alumnos. De cada alumno se guarda la siguiente información:\n• Número de legajo (legajo)\n• Apellido y nombre (apellidoNombre)\n• Promedio general (promedio)\n• Turno en el que cursa: M, T o N (turno)\n\nDeclare la estructura necesaria para poder registrarlos.",
+      "requiere": [
+        {
+          "struct": {
+            "capturar": "S",
+            "campos": [
+              { "nombre": "legajo", "tipo": "entero" },
+              { "nombre": "apellidoNombre", "tipo": "cadena" },
+              { "nombre": "promedio", "tipo": "real" },
+              { "nombre": "turno", "tipo": "caracter" }
+            ]
+          }
+        }
+      ],
+      "referencia": "struct Alumno {\n  int legajo;\n  char apellidoNombre[50];\n  float promedio;\n  char turno;\n};"
+    },
+    {
+      "id": "estructuras-alumno-2",
+      "titulo": "Definir un alias",
+      "enunciado": "Defina un alias para la estructura anterior.",
+      "requiere": [{ "alias": { "de": "$S", "capturar": "A" } }],
+      "referencia": "typedef struct Alumno TAlumno;"
+    },
+    {
+      "id": "estructuras-alumno-3",
+      "titulo": "Declarar una variable con el alias",
+      "enunciado": "Declare una variable usando el alias anterior.",
+      "requiere": [{ "variable": { "tipo": "$S", "conAlias": true } }],
+      "referencia": "TAlumno unAlumno;"
+    }
+  ]
+}

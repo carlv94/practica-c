@@ -115,6 +115,68 @@ label {
   border-color: var(--acento);
 }
 
+[hidden] {
+  display: none !important;
+}
+
+#volver {
+  font-size: 0.9rem;
+  color: var(--acento);
+  text-decoration: none;
+}
+
+#volver:hover,
+#volver:focus-visible {
+  text-decoration: underline;
+}
+
+/* La lista de series: una tarjeta entera es el enlace. */
+.tarjeta {
+  display: block;
+  background: var(--panel);
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 12px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.tarjeta:hover,
+.tarjeta:focus-visible {
+  border-color: var(--acento);
+  outline: none;
+  box-shadow: 0 0 0 1px var(--acento);
+}
+
+.tarjeta h2 {
+  margin-bottom: 4px;
+}
+
+.tarjeta p {
+  margin: 0 0 10px;
+  color: var(--suave);
+}
+
+.estado {
+  display: inline-block;
+  border: 1px solid var(--borde);
+  border-radius: 999px;
+  padding: 1px 10px;
+  font-size: 0.8rem;
+  color: var(--suave);
+}
+
+.estado.en-curso {
+  color: var(--acento);
+  border-color: var(--acento);
+}
+
+.estado.completa {
+  color: var(--bien);
+  border-color: var(--bien);
+}
+
 section {
   background: var(--panel);
   border: 1px solid var(--borde);
@@ -292,7 +354,9 @@ code {
   margin-top: 12px;
 }
 
-button {
+button,
+a.boton {
+  text-decoration: none;
   font: inherit;
   padding: 7px 16px;
   border: 1px solid var(--borde);
@@ -302,7 +366,8 @@ button {
   cursor: pointer;
 }
 
-button.principal {
+button.principal,
+a.boton.principal {
   background: var(--acento);
   border-color: var(--acento);
   color: var(--sobre-acento);

@@ -22,6 +22,7 @@ hosting de archivos estáticos: no hay nada que corra del lado del servidor.
 
 | Archivo | Para qué |
 |---|---|
+| `consignas/indice.json` | Qué series se muestran y en qué orden. |
 | `consignas/*.json` | Las series: enunciado, reglas y una solución de referencia. |
 | `js/analizador.js` | Carga el analizador de C (tree-sitter en WebAssembly). |
 | `js/modelo.js` | Del árbol del analizador a "qué estructuras, alias y variables hay". |
@@ -33,6 +34,31 @@ hosting de archivos estáticos: no hay nada que corra del lado del servidor.
 
 `modelo.js` y `corrector.js` no saben nada de la pantalla: si un día la
 interfaz se rehace con otra herramienta, esos dos quedan como están.
+
+## Agregar una serie
+
+Una serie es un archivo en `consignas/`:
+
+```json
+{
+  "id": "estructuras",
+  "titulo": "Estructuras: declarar, usar y dar un alias",
+  "descripcion": "Lo que se lee debajo del título en la lista.",
+  "consignas": [ ... ]
+}
+```
+
+y se muestra recién cuando está anotada en `consignas/indice.json`, que
+además fija el orden de la lista. Sacarla de ahí la esconde sin borrarla.
+
+**El `id` de una serie no se cambia** una vez que los alumnos la usaron: el
+avance de cada uno está guardado con ese nombre, y con otro arrancan de cero.
+Vale lo mismo para el `id` de cada consigna, que es con lo que se anotan los
+intentos. El título y la descripción sí se pueden cambiar cuando haga falta.
+
+Cambiar las reglas de una consigna no rompe el avance: al abrir, las
+respuestas guardadas se corrigen de nuevo, y el alumno retoma desde la primera
+que ya no vale.
 
 ## Escribir una consigna
 
@@ -80,5 +106,4 @@ Cuando un alumno escriba algo que el corrector entienda mal, se suma el caso a
 
 ## Pendiente
 
-- Una sola serie, fija en `js/app.js`: falta la lista de series.
 - Exportar e importar el avance, para cambiar de computadora.

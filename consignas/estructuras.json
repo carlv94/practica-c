@@ -1,6 +1,7 @@
 {
   "id": "estructuras",
   "titulo": "Estructuras: declarar, usar y dar un alias",
+  "descripcion": "Los puestos de una feria: declarar la estructura, una variable, un alias y una variable con el alias.",
   "consignas": [
     {
       "id": "estructuras-1",

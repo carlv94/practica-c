@@ -8,40 +8,50 @@
   </head>
   <body>
     <header>
+      <a id="volver" href="#/" hidden>← Todas las series</a>
       <h1 id="titulo-serie">Práctica de C</h1>
-      <ol id="pasos"></ol>
+      <ol id="pasos" hidden></ol>
     </header>
 
     <main>
-      <section id="consigna">
-        <h2 id="titulo-consigna"></h2>
-        <p id="enunciado"></p>
-      </section>
+      <div id="lista">
+        <p class="mensaje aviso">Cargando...</p>
+      </div>
 
-      <section id="bloque-contexto" hidden>
-        <h3>Lo que ya escribió</h3>
-        <pre id="contexto"></pre>
-      </section>
+      <div id="vista-serie" hidden>
+        <section id="consigna">
+          <h2 id="titulo-consigna"></h2>
+          <p id="enunciado"></p>
+        </section>
 
-      <section id="bloque-respuesta">
-        <label for="respuesta">Su respuesta</label>
-        <textarea id="respuesta" rows="9" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
-        <div class="botones">
-          <button id="comprobar" class="principal" disabled>Comprobar</button>
-          <button id="siguiente" class="principal" hidden>Siguiente</button>
-          <button id="ver-solucion">Ver una solución</button>
-          <span class="atajo">Ctrl + Enter comprueba · Esc y Tab sale del editor</span>
-        </div>
-      </section>
+        <section id="bloque-contexto" hidden>
+          <h3>Lo que ya escribió</h3>
+          <pre id="contexto"></pre>
+        </section>
 
-      <section id="resultado" aria-live="polite"></section>
+        <section id="bloque-respuesta">
+          <label for="respuesta">Su respuesta</label>
+          <textarea id="respuesta" rows="9" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
+          <div class="botones">
+            <button id="comprobar" class="principal" disabled>Comprobar</button>
+            <button id="siguiente" class="principal" hidden>Siguiente</button>
+            <button id="ver-solucion">Ver una solución</button>
+            <span class="atajo">Ctrl + Enter comprueba · Esc y Tab sale del editor</span>
+          </div>
+        </section>
 
-      <section id="final" hidden>
-        <h2>Serie completa</h2>
-        <p id="resumen-final"></p>
-        <pre id="codigo-final"></pre>
-        <button id="reiniciar">Empezar de nuevo</button>
-      </section>
+        <section id="resultado" aria-live="polite"></section>
+
+        <section id="final" hidden>
+          <h2>Serie completa</h2>
+          <p id="resumen-final"></p>
+          <pre id="codigo-final"></pre>
+          <div class="botones">
+            <a class="boton principal" href="#/">Volver a las series</a>
+            <button id="reiniciar">Empezar de nuevo</button>
+          </div>
+        </section>
+      </div>
     </main>
 
     <script type="module" src="js/app.js"></script>

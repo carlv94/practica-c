@@ -39,11 +39,11 @@
 
         // Recorre las consignas anteriores al paso, con las respuestas dadas o
         // las de referencia, y devuelve el contexto y las capturas que dejan.
-        function llegarHasta(paso, previas = []) {
+        function llegarHasta(paso, previas = [], deSerie = serie) {
           let contexto = '';
           let capturas = {};
           for (let i = 0; i < paso - 1; i++) {
-            const consigna = serie.consignas[i];
+            const consigna = deSerie.consignas[i];
             const respuesta = previas[i] || consigna.referencia;
             const r = corregir(analizador, consigna, { contexto, respuesta, capturas });
             if (!r.correcto) {
@@ -55,11 +55,31 @@
           return { contexto, capturas };
         }
 
-        // Toda referencia tiene que pasar su propia consigna.
-        serie.consignas.forEach((consigna, i) => {
+        // Todas las series del indice: que se lean, que no repitan nombres y
+        // que cada referencia pase su propia consigna.
+        const indice = await (await fetch('../consignas/indice.json')).json();
+        const todas = [];
+        const vistos = new Set();
+        const unico = (id, que) => {
+          anotar(id && !vistos.has(id), `${que} con id propio: ${id}`, 'falta el id o está repetido');
+          vistos.add(id);
+        };
+        for (const archivo of indice.series) {
+          try {
+            const leida = await (await fetch('../consignas/' + archivo)).json();
+            unico(leida.id, 'serie');
+            leida.consignas.forEach((c) => unico(c.id, 'consigna'));
+            todas.push(leida);
+          } catch (e) {
+            anotar(false, `se lee ${archivo}`, e.message);
+          }
+        }
+
+        const referencias = todas.flatMap((s) => s.consignas.map((consigna, i) => ({ s, consigna, i })));
+        referencias.forEach(({ s, consigna, i }) => {
           try {
             const r = corregir(analizador, consigna, {
-              ...llegarHasta(i + 1),
+              ...llegarHasta(i + 1, [], s),
               respuesta: consigna.referencia,
             });
             anotar(r.correcto, `referencia de ${consigna.id}`, codigos(r, 'error').join(', '));

@@ -1,30 +1,39 @@
-// La pantalla: una serie de consignas que se resuelven en orden, cada una
-// sobre lo que el alumno escribio en las anteriores.
+// La pantalla: la lista de series y, adentro de una, sus consignas, que se
+// resuelven en orden y cada una sobre lo que el alumno escribio en las
+// anteriores.
 //
-// El avance queda en este navegador (localStorage). Solo se guardan las
-// respuestas: el contexto y las capturas se rearman corrigiendolas de nuevo al
-// abrir, asi que si una consigna cambia sus reglas, el avance se corta donde
-// la respuesta vieja deja de valer en vez de seguir con datos que no cierran.
+// Que series hay lo dice consignas/indice.json. En que pantalla se esta lo
+// dice la direccion (#/serie/estructuras), para que anden el boton de volver
+// del navegador y un enlace directo a una serie.
+//
+// El avance queda en este navegador (localStorage), aparte para cada serie.
+// Solo se guardan las respuestas: el contexto y las capturas se rearman
+// corrigiendolas de nuevo al abrir, asi que si una consigna cambia sus reglas,
+// el avance se corta donde la respuesta vieja deja de valer en vez de seguir
+// con datos que no cierran.
 
 import { cargarAnalizador } from './analizador.js';
 import { corregir } from './corrector.js';
 import { crearEditor, pintar } from './editor.js';
 
-const SERIE = 'consignas/estructuras.json';
+const CARPETA = 'consignas/';
+const INDICE = CARPETA + 'indice.json';
+const TITULO = 'Práctica de C';
 const MAX_INTENTOS = 500;
 
 const $ = (id) => document.getElementById(id);
 
 const editor = crearEditor($('respuesta'));
 let analizador = null;
-let serie = null;
+let series = [];
+let serie = null; // la que esta abierta, o null en la lista
 let hechas = []; // [{ codigo, conAyuda }], una por consigna resuelta
 let contexto = '';
 let capturas = {};
 let pendiente = null; // la respuesta correcta que espera el "Siguiente"
 let pidioSolucion = false;
 
-const claveAvance = () => 'practica-c:avance:' + serie.id;
+const claveAvance = (s) => 'practica-c:avance:' + s.id;
 const CLAVE_INTENTOS = 'practica-c:intentos';
 
 // El navegador puede negar el almacenamiento (modo privado): se sigue sin guardar.
@@ -87,37 +96,95 @@ function mensaje(clase, texto, linea) {
   return caja;
 }
 
-// Rearma el contexto y las capturas desde las respuestas guardadas.
-function reconstruir(guardadas) {
-  hechas = [];
-  contexto = '';
-  capturas = {};
-  for (const [i, hecha] of guardadas.entries()) {
-    const consigna = serie.consignas[i];
-    if (!consigna) break;
-    const r = corregir(analizador, consigna, { contexto, respuesta: hecha.codigo, capturas });
+function elemento(etiqueta, clase, texto) {
+  const e = document.createElement(etiqueta);
+  if (clase) e.className = clase;
+  if (texto != null) e.textContent = texto;
+  return e;
+}
+
+// Las respuestas guardadas de una serie que siguen valiendo, con el contexto
+// y las capturas que dejan.
+function recorrer(s) {
+  const avance = { hechas: [], contexto: '', capturas: {} };
+  for (const [i, hecha] of leer(claveAvance(s), []).entries()) {
+    const consigna = s.consignas[i];
+    if (!consigna || typeof hecha?.codigo !== 'string') break;
+    const r = corregir(analizador, consigna, {
+      contexto: avance.contexto,
+      respuesta: hecha.codigo,
+      capturas: avance.capturas,
+    });
     if (!r.correcto) break;
-    aceptar(hecha, r);
+    avance.hechas.push(hecha);
+    avance.capturas = r.capturas;
+    avance.contexto += (avance.contexto ? '\n\n' : '') + hecha.codigo;
+  }
+  return avance;
+}
+
+// ---- la lista de series -------------------------------------------------------
+
+function mostrarLista() {
+  serie = null;
+  document.title = TITULO;
+  $('titulo-serie').textContent = TITULO;
+  $('volver').hidden = true;
+  $('pasos').hidden = true;
+  $('vista-serie').hidden = true;
+  $('lista').hidden = false;
+
+  $('lista').replaceChildren(
+    ...series.map((s) => {
+      const total = s.consignas.length;
+      const resueltas = recorrer(s).hechas.length;
+
+      const tarjeta = elemento('a', 'tarjeta');
+      tarjeta.href = '#/serie/' + encodeURIComponent(s.id);
+      tarjeta.appendChild(elemento('h2', null, s.titulo));
+      if (s.descripcion) tarjeta.appendChild(elemento('p', null, s.descripcion));
+
+      let estado = 'sin-empezar';
+      let texto = total === 1 ? '1 consigna' : `${total} consignas`;
+      if (resueltas >= total) {
+        estado = 'completa';
+        texto = 'Completa';
+      } else if (resueltas > 0) {
+        estado = 'en-curso';
+        texto = `En curso: ${resueltas} de ${total}`;
+      }
+      tarjeta.appendChild(elemento('span', 'estado ' + estado, texto));
+      return tarjeta;
+    })
+  );
+  if (!series.length) {
+    $('lista').replaceChildren(mensaje('aviso', 'Todavía no hay ninguna serie cargada.'));
   }
 }
 
-function aceptar(hecha, resultado) {
-  hechas.push(hecha);
-  capturas = resultado.capturas;
-  contexto += (contexto ? '\n\n' : '') + hecha.codigo;
+// ---- una serie ----------------------------------------------------------------
+
+function abrirSerie(s) {
+  serie = s;
+  ({ hechas, contexto, capturas } = recorrer(s));
+  $('lista').hidden = true;
+  $('vista-serie').hidden = false;
+  $('volver').hidden = false;
+  $('pasos').hidden = false;
+  mostrarConsigna();
 }
 
-function mostrar() {
+function mostrarConsigna() {
   const actual = hechas.length;
   const consigna = serie.consignas[actual];
   pendiente = null;
   pidioSolucion = false;
 
+  document.title = `${serie.titulo} · ${TITULO}`;
   $('titulo-serie').textContent = serie.titulo;
   $('pasos').replaceChildren(
     ...serie.consignas.map((c, i) => {
-      const paso = document.createElement('li');
-      paso.textContent = `${i + 1}. ${c.titulo}`;
+      const paso = elemento('li', null, `${i + 1}. ${c.titulo}`);
       if (i < actual) paso.className = 'hecho';
       if (i === actual) paso.className = 'actual';
       return paso;
@@ -152,7 +219,7 @@ function mostrar() {
 }
 
 function comprobar() {
-  const consigna = serie.consignas[hechas.length];
+  const consigna = serie?.consignas[hechas.length];
   if (!consigna || pendiente) return;
   const respuesta = $('respuesta').value;
   const r = corregir(analizador, consigna, { contexto, respuesta, capturas });
@@ -175,13 +242,16 @@ function comprobar() {
 
 function siguiente() {
   if (!pendiente) return;
-  aceptar(pendiente.hecha, pendiente.resultado);
-  guardar(claveAvance(), hechas);
-  mostrar();
+  const { hecha, resultado } = pendiente;
+  hechas.push(hecha);
+  capturas = resultado.capturas;
+  contexto += (contexto ? '\n\n' : '') + hecha.codigo;
+  guardar(claveAvance(serie), hechas);
+  mostrarConsigna();
 }
 
 function verSolucion() {
-  const consigna = serie.consignas[hechas.length];
+  const consigna = serie?.consignas[hechas.length];
   if (!consigna) return;
   // La referencia nombra las cosas a su manera ("struct Puesto"): solo sirve
   // tal cual si el alumno viene siguiendo las referencias. Si no, se le
@@ -198,9 +268,8 @@ function verSolucion() {
 }
 
 function reiniciar() {
-  guardar(claveAvance(), []);
-  reconstruir([]);
-  mostrar();
+  guardar(claveAvance(serie), []);
+  abrirSerie(serie);
 }
 
 // Las teclas de escribir codigo (Tab, la sangria) las maneja el editor.
@@ -211,31 +280,60 @@ function teclaEnRespuesta(evento) {
   }
 }
 
+// ---- arranque -----------------------------------------------------------------
+
+// Muestra lo que diga la direccion: una serie o, si no nombra ninguna que
+// exista, la lista.
+function navegar() {
+  const pedida = /^#\/serie\/(.+)$/.exec(location.hash);
+  const s = pedida && series.find((x) => x.id === decodeURIComponent(pedida[1]));
+  if (s) abrirSerie(s);
+  else mostrarLista();
+  window.scrollTo(0, 0);
+}
+
+async function leerJson(direccion) {
+  const r = await fetch(direccion);
+  if (!r.ok) throw new Error('No se pudo leer ' + direccion);
+  return r.json();
+}
+
+// Una serie que no se puede leer no deja sin practica a las demas.
+async function cargarSeries() {
+  const indice = await leerJson(INDICE);
+  const leidas = await Promise.allSettled(indice.series.map((archivo) => leerJson(CARPETA + archivo)));
+  const buenas = [];
+  leidas.forEach((leida, i) => {
+    if (leida.status === 'rejected') {
+      console.error(`No se pudo cargar la serie ${indice.series[i]}:`, leida.reason);
+    } else if (buenas.some((s) => s.id === leida.value.id)) {
+      console.error(`La serie ${indice.series[i]} repite el id "${leida.value.id}" y no se muestra.`);
+    } else {
+      buenas.push(leida.value);
+    }
+  });
+  return buenas;
+}
+
 async function iniciar() {
   try {
-    [analizador, serie] = await Promise.all([
-      cargarAnalizador(),
-      fetch(SERIE).then((r) => {
-        if (!r.ok) throw new Error('No se pudo leer ' + SERIE);
-        return r.json();
-      }),
-    ]);
+    [analizador, series] = await Promise.all([cargarAnalizador(), cargarSeries()]);
   } catch (e) {
-    $('resultado').replaceChildren(
+    $('lista').replaceChildren(
       mensaje('error', 'No se pudo cargar la práctica. Revise la conexión y vuelva a abrir la página.')
     );
     console.error(e);
     return;
   }
 
-  reconstruir(leer(claveAvance(), []));
   $('comprobar').disabled = false;
   $('comprobar').addEventListener('click', comprobar);
   $('siguiente').addEventListener('click', siguiente);
   $('ver-solucion').addEventListener('click', verSolucion);
   $('reiniciar').addEventListener('click', reiniciar);
   $('respuesta').addEventListener('keydown', teclaEnRespuesta);
-  mostrar();
+  window.addEventListener('hashchange', navegar);
+  navegar();
 }
 
 iniciar();
