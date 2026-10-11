@@ -1,6 +1,7 @@
 {
   "id": "estructuras-alumno",
   "titulo": "Estructuras: el legajo de un alumno",
+  "continua": true,
   "descripcion": "Otro caso para repasar: una estructura con un campo de cada tipo, su alias y una variable.",
   "consignas": [
     {

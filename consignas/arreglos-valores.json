@@ -14,6 +14,7 @@
     {
       "id": "arreglos-valores-2",
       "titulo": "Un arreglo con decimales",
+      "continua": true,
       "enunciado": "Además de {V} hace falta otro arreglo, con valores que tienen decimales.\n\nEn la misma sentencia, defina e inicialice el siguiente arreglo:",
       "requiere": [{ "variable": { "tipo": "real", "valores": [12.5, 8, 99.9, 0.75] } }],
       "referencia": "float precios[] = {12.5, 8, 99.9, 0.75};"
@@ -98,6 +99,7 @@
     {
       "id": "arreglos-valores-9",
       "titulo": "Ceros que no se escriben",
+      "continua": true,
       "enunciado": "En la misma sentencia, defina e inicialice la siguiente tabla:",
       "requiere": [
         {

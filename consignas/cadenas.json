@@ -1,6 +1,7 @@
 {
   "id": "cadenas",
   "titulo": "Cadenas: las funciones de la biblioteca",
+  "continua": true,
   "descripcion": "Copiar una cadena en otra y agregar una al final de otra, con las funciones de string.h.",
   "dentroDeMain": true,
   "consignas": [

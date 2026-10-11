@@ -234,11 +234,29 @@ const CASOS_DE_VALORES = [
   // Todos en dos: {2} no llena de dos. Lo que la lista no nombra queda en cero.
   valores(6, 'cuatro dos con los corchetes vacios', 'int dos[] = {2, 2, 2, 2};', 'ok'),
   valores(6, 'cuatro dos con la cantidad repetida', 'int dos[4] = {2, 2, 2, 2};', 'ok', ['DIMENSION_REPETIDA']),
-  valores(6, 'cuatro dos con la constante repetida', 'int dos[CANTIDAD] = {2, 2, 2, 2};', 'ok', [
+  valores(6, 'cuatro dos con la constante repetida', '#define N 4\nint dos[N] = {2, 2, 2, 2};', 'ok', [
     'DIMENSION_REPETIDA',
   ]),
   valores(6, 'un solo dos: no repite', 'int dos[4] = {2};', ['VALORES_SIN_NOMBRAR']),
-  valores(6, 'un solo dos con la constante', 'int dos[CANTIDAD] = {2};', ['VALORES_SIN_NOMBRAR']),
+  valores(6, 'un solo dos con la constante', '#define N 4\nint dos[N] = {2};', ['VALORES_SIN_NOMBRAR']),
+  // La consigna anterior no se arrastra: usar el mismo nombre es lo natural.
+  {
+    serie: 'arreglos-valores',
+    paso: 6,
+    nombre: 'el mismo nombre que en la consigna anterior no choca',
+    previas: [null, null, null, null, '#define TAM 4\nint lista[TAM] = {0};'],
+    respuesta: 'int lista[] = {2, 2, 2, 2};',
+    espera: 'ok',
+    mejoras: [],
+  },
+  {
+    serie: 'arreglos-valores',
+    paso: 6,
+    nombre: 'una constante de la consigna anterior no esta: no se puede usar',
+    previas: [null, null, null, null, '#define TAM 4\nint lista[TAM] = {0};'],
+    respuesta: 'int dos[TAM] = {2, 2, 2, 2};',
+    espera: ['CONSTANTE_SIN_DEFINIR'],
+  },
   valores(6, 'dos dos: tampoco', 'int dos[4] = {2, 2};', ['VALORES_SIN_NOMBRAR']),
   valores(6, 'un solo dos con los corchetes vacios', 'int dos[] = {2};', ['VALORES_DE_MENOS']),
   valores(6, 'cero donde van doses', 'int dos[4] = {0};', ['VALOR_DISTINTO']),
@@ -246,8 +264,11 @@ const CASOS_DE_VALORES = [
 
   // Ceros al final: {5, 1} con cuatro lugares es el mismo arreglo que {5, 1, 0, 0}.
   valores(7, 'todos los valores escritos', 'int c[] = {5, 1, 0, 0};', 'ok'),
-  valores(7, 'ceros al final sin escribir, con una constante', 'int c[CANTIDAD] = {5, 1};', 'ok'),
-  valores(7, 'ceros al final sin escribir, con el numero', 'int c[4] = {5, 1};', 'ok', ['CONSTANTE_SIN_REUTILIZAR']),
+  valores(7, 'ceros al final sin escribir, con una constante', '#define N 4\nint c[N] = {5, 1};', 'ok'),
+  valores(7, 'ceros al final sin escribir, con el numero', 'int c[4] = {5, 1};', 'ok', ['NUMERO_MAGICO']),
+  valores(7, 'con el numero habiendo una constante en la respuesta', '#define N 4\nint c[4] = {5, 1};', 'ok', [
+    'CONSTANTE_SIN_REUTILIZAR',
+  ]),
   valores(7, 'ceros al final escritos con la cantidad repetida', 'int c[4] = {5, 1, 0, 0};', 'ok', [
     'DIMENSION_REPETIDA',
   ]),
@@ -257,24 +278,17 @@ const CASOS_DE_VALORES = [
   // Una tabla en cero: 3 filas por 4 columnas. Con {0} los numeros de los
   // corchetes son lo unico que dice la forma: hay que darles nombre.
   valores(8, 'cero con constantes es excelente', '#define FILAS 3\n#define COLUMNAS 4\nint t[FILAS][COLUMNAS] = {0};', 'ok'),
-  valores(8, 'cero con los numeros sueltos', 'int t[3][4] = {0};', 'ok', [
-    'CONSTANTE_SIN_REUTILIZAR',
-    'NUMERO_MAGICO',
-  ]),
-  valores(8, 'una fila en cero y el resto sin escribir', 'int t[3][4] = {{0}};', 'ok', [
-    'CONSTANTE_SIN_REUTILIZAR',
-    'NUMERO_MAGICO',
-  ]),
+  valores(8, 'cero con los numeros sueltos', 'int t[3][4] = {0};', 'ok', ['NUMERO_MAGICO']),
+  valores(8, 'una fila en cero y el resto sin escribir', 'int t[3][4] = {{0}};', 'ok', ['NUMERO_MAGICO']),
   valores(8, 'una fila por fila, con un cero cada una', 'int t[][4] = {{0}, {0}, {0}};', 'ok', [
     'CERO_ALCANZA',
-    'CONSTANTE_SIN_REUTILIZAR',
+    'NUMERO_MAGICO',
   ]),
   valores(8, 'todos los ceros escritos en filas', 'int t[3][4] = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}};', 'ok', [
     'CERO_ALCANZA',
   ]),
   valores(8, 'una fila de ceros seguidos', 'int t[3][4] = {0, 0, 0, 0};', 'ok', [
     'CERO_ALCANZA',
-    'CONSTANTE_SIN_REUTILIZAR',
     'NUMERO_MAGICO',
   ]),
   valores(8, 'un cero con las filas vacias: es una sola fila', 'int t[][4] = {0};', ['ARREGLO_CHICO']),
@@ -298,9 +312,39 @@ const CASOS_DE_VALORES = [
   valores(9, 'una fila que se queda corta', 'int u[FILAS][COLUMNAS] = {{5}, {1}};', ['FILA_OTRA_CANTIDAD']),
   valores(9, 'seguidos que se quedan cortos', 'int u[FILAS][COLUMNAS] = {5, 8};', ['VALORES_SIN_NOMBRAR']),
   valores(9, 'una fila que falta y no es de ceros', 'int u[FILAS][COLUMNAS] = {{5, 8}};', ['FILAS_DE_MENOS']),
+
+  // La 9 continua la 8: ve su codigo, y por eso no se puede repetir un nombre.
+  valores(9, 'la variable de la consigna anterior otra vez', 'int tablaCeros[FILAS][COLUMNAS] = {{5, 8}, {1}};', [
+    'VARIABLE_REDEFINIDA',
+  ]),
+  valores(9, 'la constante con otro valor', '#define FILAS 5\nint u[FILAS][COLUMNAS] = {{5, 8}, {1}};', [
+    'CONSTANTE_REDEFINIDA',
+  ]),
+  valores(9, 'la constante con el mismo valor: mejorable', '#define FILAS 3\nint u[FILAS][COLUMNAS] = {{5, 8}, {1}};', 'ok', [
+    'CONSTANTE_REPETIDA',
+  ]),
+  valores(9, 'la constante con el mismo valor y parentesis', '#define FILAS (3)\nint u[FILAS][COLUMNAS] = {{5, 8}, {1}};', 'ok', [
+    'CONSTANTE_REPETIDA',
+  ]),
+];
+
+// Repetir un nombre: en la misma respuesta, o en el codigo que la consigna
+// recibe (la serie de estructuras continua toda).
+const CASOS_DE_NOMBRES = [
+  { paso: 2, nombre: 'dos variables con el mismo nombre', respuesta: 'struct Puesto a;\nstruct Puesto a;', espera: ['VARIABLE_REDEFINIDA'] },
+  { paso: 4, nombre: 'el nombre de la variable de mas arriba', respuesta: 'TPuesto unPuesto;', espera: ['VARIABLE_REDEFINIDA'] },
+  { paso: 4, nombre: 'otro nombre', respuesta: 'TPuesto otro;', espera: 'ok' },
+  {
+    serie: 'arreglos',
+    paso: 1,
+    nombre: 'dos constantes con otro valor en la misma respuesta',
+    respuesta: '#define MAX 20\n#define MAX 30\nint notas[MAX];',
+    espera: ['CONSTANTE_REDEFINIDA'],
+  },
 ];
 
 export const CASOS = [
+  ...CASOS_DE_NOMBRES,
   ...CASOS_DE_VALORES,
   ...CASOS_DE_ARREGLOS,
   ...CASOS_DE_CADENAS,

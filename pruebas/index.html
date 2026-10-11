@@ -16,7 +16,7 @@
 
     <script type="module">
       import { cargarAnalizador } from '../js/analizador.js';
-      import { inicio, corregirPaso, despuesDe } from '../js/serie.js';
+      import { inicio, corregirPaso, despuesDe, capturasPrevias } from '../js/serie.js';
       import { marcasDe, partesDeEnunciado } from '../js/enunciado.js';
       import { CASOS } from './casos.js';
 
@@ -83,7 +83,10 @@
             );
 
             // Un {X} del enunciado tiene que haberlo capturado una consigna anterior.
-            const sueltas = marcasDe(consigna.enunciado).filter((marca) => !previo.capturas[marca]);
+            // Solo cuentan las capturas que la consigna recibe: si no continua,
+            // un {S} no tiene de donde salir.
+            const recibidas = capturasPrevias(s, i, previo);
+            const sueltas = marcasDe(consigna.enunciado).filter((marca) => !recibidas[marca]);
             if (marcasDe(consigna.enunciado).length) {
               anotar(
                 !sueltas.length,

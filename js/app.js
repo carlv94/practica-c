@@ -13,7 +13,14 @@
 // con datos que no cierran.
 
 import { cargarAnalizador } from './analizador.js';
-import { inicio, codigoPrevio, corregirPaso, despuesDe, pidePracticas } from './serie.js';
+import {
+  inicio,
+  codigoPrevio,
+  capturasPrevias,
+  corregirPaso,
+  despuesDe,
+  pidePracticas,
+} from './serie.js';
 import { crearEditor, pintar } from './editor.js';
 import { partesDeEnunciado, figuraDe } from './enunciado.js';
 
@@ -111,7 +118,15 @@ function recorrer(s) {
   let hasta = inicio();
   for (const [i, hecha] of leer(claveAvance(s), []).entries()) {
     if (!s.consignas[i] || typeof hecha?.codigo !== 'string') break;
-    const r = corregirPaso(analizador, s, i, hasta, hecha.codigo);
+    // Una serie mal armada (por ejemplo, una consigna que usa lo anterior y
+    // no dice "continua") no tiene que dejar sin pantalla a las demas.
+    let r;
+    try {
+      r = corregirPaso(analizador, s, i, hasta, hecha.codigo);
+    } catch (e) {
+      console.error(`La serie "${s.id}" esta mal armada:`, e);
+      break;
+    }
     if (!r.correcto) break;
     hasta = despuesDe(s, i, hasta, hecha.codigo, r);
     // Si quedo excelente se calcula de nuevo, igual que si sigue valiendo.
@@ -213,13 +228,18 @@ function mostrarConsigna() {
       (pidePracticas(serie)
         ? ` ${hechas.filter((h) => h.excelente).length} de ${hechas.length} quedaron excelentes (★).`
         : '');
-    pintar($('codigo-final'), avance.contexto);
+    // Las respuestas de cada consigna, una atras de otra: con programas
+    // independientes no hay un "codigo acumulado" que mostrar.
+    pintar(
+      $('codigo-final'),
+      serie.consignas.map((c, i) => `// ${i + 1}. ${c.titulo}\n${hechas[i].codigo}`).join('\n\n')
+    );
     return;
   }
 
   $('titulo-consigna').textContent = `${actual + 1}. ${consigna.titulo}`;
   $('enunciado').replaceChildren(
-    ...partesDeEnunciado(consigna.enunciado, avance.capturas).map((parte) =>
+    ...partesDeEnunciado(consigna.enunciado, capturasPrevias(serie, actual, avance)).map((parte) =>
       parte.nombre ? elemento('code', null, parte.nombre) : parte.texto
     )
   );
@@ -283,7 +303,19 @@ function comprobar() {
   if (!consigna || $('respuesta').readOnly) return;
   pendiente = null;
   const respuesta = $('respuesta').value;
-  const r = corregirPaso(analizador, serie, hechas.length, avance, respuesta);
+  let r;
+  try {
+    r = corregirPaso(analizador, serie, hechas.length, avance, respuesta);
+  } catch (e) {
+    // Es un error de como esta armada la consigna, no de la respuesta: no hay
+    // nada que el alumno pueda corregir, pero tiene que enterarse de que no es
+    // culpa suya.
+    console.error(`La consigna "${consigna.id}" esta mal armada:`, e);
+    mostrarResultado([
+      mensaje('error', 'Esta consigna tiene un problema y no se puede corregir. No es un error de su respuesta: avise al docente.'),
+    ]);
+    return;
+  }
   registrarIntento(consigna, r);
   editor.marcar(r.diagnosticos);
 

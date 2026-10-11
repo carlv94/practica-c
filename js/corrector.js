@@ -172,6 +172,7 @@ export function corregir(
 
     const modelo = construirModelo(arbol, desde);
     revisarNombres(modelo, error);
+    revisarRedefiniciones(modelo, error, practicas.includes('constantes') ? mejora : null);
     revisarAsignaciones(modelo, error);
     revisarDimensiones(modelo, error, practicas.includes('constantes') ? mejora : null);
     for (const regla of consigna.requiere) aplicarRegla(regla, modelo);
@@ -1133,6 +1134,50 @@ function valorDeDimension(texto, modelo) {
   const constante = modelo.constantes.find((c) => c.nombre === escrito);
   const numero = /^\(?\s*(\d+)\s*\)?$/.exec(constante ? constante.valor : escrito);
   return numero ? Number(numero[1]) : null;
+}
+
+// Un nombre que ya existe mas arriba (en el codigo que la consigna recibe o en
+// la misma respuesta) no se puede volver a declarar: no compilaria. Si la
+// consigna no continua el codigo anterior, no hay nada con que chocar.
+//
+// Variables: error. Constantes: con otro valor es un error (el programa diria
+// dos cosas); con el mismo valor compila, asi que no es un error sino una
+// mejora, y solo donde se pide la practica de las constantes.
+function revisarRedefiniciones(modelo, error, mejora) {
+  for (const v of modelo.variables.filter((x) => x.nuevo)) {
+    const antes = modelo.variables.find(
+      (w) => w !== v && w.nombre === v.nombre && w.local === v.local && w.indice < v.indice
+    );
+    if (!antes) continue;
+    error(
+      'VARIABLE_REDEFINIDA',
+      antes.nuevo
+        ? `La variable \`${v.nombre}\` ya está declarada más arriba en esta misma respuesta: hay que elegir otro nombre.`
+        : `Ya hay una variable llamada \`${v.nombre}\` en el código de arriba: hay que elegir otro nombre.`,
+      v.fila
+    );
+  }
+
+  const sinAdornos = (valor) => valor.replace(/[\s()]/g, '');
+  const defines = modelo.constantes.filter((c) => c.clase === 'define');
+  for (const c of defines.filter((x) => x.nuevo)) {
+    const antes = defines.find((w) => w !== c && w.nombre === c.nombre && w.indice < c.indice);
+    if (!antes) continue;
+    const donde = antes.nuevo ? 'más arriba en esta misma respuesta' : 'en el código de arriba';
+    if (sinAdornos(antes.valor) !== sinAdornos(c.valor)) {
+      error(
+        'CONSTANTE_REDEFINIDA',
+        `\`${c.nombre}\` ya está definida ${donde}, con otro valor (\`${antes.valor}\`): una constante no puede valer dos cosas.`,
+        c.fila
+      );
+    } else if (mejora) {
+      mejora(
+        'CONSTANTE_REPETIDA',
+        `\`${c.nombre}\` ya está definida ${donde}: no hace falta volver a definirla.`,
+        c.fila
+      );
+    }
+  }
 }
 
 // Si un numero de los corchetes ya se ve en la lista de valores que lo

@@ -62,6 +62,48 @@ Cambiar las reglas de una consigna no rompe el avance: al abrir, las
 respuestas guardadas se corrigen de nuevo, y el alumno retoma desde la primera
 que ya no vale.
 
+## Qué código ve cada consigna
+
+**Por defecto, cada consigna es un programa nuevo**: no ve el código de las
+anteriores, ni los nombres que capturaron, y puede repetir sus nombres. La que
+depende de lo anterior lo dice:
+
+```json
+{ "id": "estructuras-2", "continua": true, ... }
+```
+
+Una serie que se resuelve toda de corrido lo dice una sola vez, arriba, y la
+excepción se marca consigna por consigna con `"continua": false`:
+
+```json
+{ "id": "estructuras", "continua": true, "consignas": [ ... ] }
+```
+
+`continua` es de **quien recibe**: "esta consigna sigue el código de la
+anterior". Una consigna que no continúa corta la cadena: la siguiente, si
+continúa, arranca desde ella. (Lo que no se puede expresar es una respuesta
+descartable que la siguiente no deba ver, con las anteriores todavía visibles;
+no hizo falta.)
+
+Es por defecto así a propósito. Si se olvida marcar una consigna que continúa,
+su solución de referencia no pasa y **las pruebas lo avisan**. Si fuera al
+revés, el que se olvidara de cortar le daría al alumno un error por un nombre
+repetido —lo más natural del mundo— y nada lo detectaría.
+
+Lo que depende de esto:
+
+- **Repetir un nombre** es un error solo contra el código que la consigna
+  recibe (y contra lo que ya escribió en la misma respuesta). Una variable
+  repetida es `VARIABLE_REDEFINIDA`; una constante con otro valor,
+  `CONSTANTE_REDEFINIDA`. Una constante repetida **con el mismo valor**
+  compila, así que no es un error sino una mejora (`CONSTANTE_REPETIDA`, solo
+  con la práctica `constantes`).
+- **Los nombres capturados** (`$S`, `{S}`) se heredan solo si continúa.
+- **El dibujo y el código de arriba** ("El código hasta acá") muestran solo lo
+  que la consigna recibe. Si no continúa y no trae `dado`, no hay recuadro.
+- **La pantalla final** lista las respuestas de cada consigna, no un código
+  acumulado.
+
 ## Escribir una consigna
 
 ```json
@@ -205,8 +247,8 @@ de la respuesta, como las variables sobre las que se trabaja.
 "dado": "char cadena1[30] = \"Hola mundo\";\nchar cadena2[30];"
 ```
 
-El `dado` de una consigna queda para las siguientes, así que no hay que
-repetirlo.
+El `dado` de una consigna queda para las siguientes **que continúan**, así que
+no hay que repetirlo.
 
 **`capturar` guarda el nombre que eligió el alumno** para que lo usen las
 consignas que siguen con `$S`: así "la estructura anterior" es la suya, se
