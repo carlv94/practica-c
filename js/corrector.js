@@ -651,12 +651,23 @@ export function corregir(
           (chica ? 'no entra.' : 'sobra lugar.'),
         v.fila
       );
-    } else if (!enFilas && practicas.includes('claridad')) {
-      mejora(
-        'TABLA_SIN_FILAS',
-        'Con todos los valores seguidos funciona, pero no se ve dónde termina cada fila. Lo ideal es que cada fila vaya entre sus propias llaves.',
-        v.fila
-      );
+    } else {
+      if (!enFilas && practicas.includes('claridad')) {
+        mejora(
+          'TABLA_SIN_FILAS',
+          'Con todos los valores seguidos funciona, pero no se ve dónde termina cada fila. Lo ideal es que cada fila vaya entre sus propias llaves.',
+          v.fila
+        );
+      }
+      // Igual que en el arreglo: la cantidad de filas ya la dicen los valores.
+      // La de columnas no, porque C la exige.
+      if (deFilas && practicas.includes('constantes')) {
+        mejora(
+          'FILAS_REPETIDAS',
+          'La cantidad de filas ya la dicen los valores: si deja vacíos los primeros corchetes, el compilador la cuenta solo, y no hay que acordarse de cambiarla el día de mañana si se agrega o se quita una fila.',
+          v.fila
+        );
+      }
     }
   }
 
@@ -698,8 +709,35 @@ export function corregir(
       return;
     }
 
+    if (escritos.length === 0) {
+      error('LISTA_VACIA', 'La lista está vacía: tiene que traer al menos un valor.', v.fila);
+      return;
+    }
+
     const cuantos = (c) => (c === 1 ? '1 valor' : `${c} valores`);
-    if (escritos.length !== valores.length) {
+    const elementos = (c) => (c === 1 ? '1 elemento' : `${c} elementos`);
+    const coincide = (e, valor) => e.clase === 'numero' && e.valor === valor;
+
+    // Lo que el arreglo termina teniendo es la lista completada con ceros hasta
+    // la cantidad de los corchetes: C pone en cero lo que la lista no nombra.
+    // Con los corchetes vacios la cantidad es la de la lista, y si no se puede
+    // calcular (N + 1) tampoco se puede opinar sobre ella.
+    const dimension = v.arreglo[0].trim();
+    const lugar = dimension ? valorDeDimension(dimension, modelo) : escritos.length;
+    const total = lugar ?? escritos.length;
+
+    if (escritos.length > total) {
+      error(
+        'ARREGLO_CHICO',
+        `\`${n}\` tiene lugar para ${elementos(total)} y la lista trae ${cuantos(escritos.length)}: no entran.`,
+        v.fila
+      );
+      return;
+    }
+    // Sin nada que completar, lo escrito es el arreglo entero.
+    const completa = escritos.length === total;
+
+    const errorDeCantidad = () => {
       // Con coma decimal, 12,5 se lee como dos valores. El ejemplo sale del
       // primer decimal del dibujo, escrito como no hay que escribirlo.
       const decimal = valores.find((x) => !Number.isInteger(x));
@@ -712,12 +750,35 @@ export function corregir(
             : ''),
         v.fila
       );
+    };
+
+    if (completa) {
+      if (escritos.length !== valores.length) return errorDeCantidad();
+    } else if (total < valores.length) {
+      error(
+        'ARREGLO_CHICO',
+        `\`${n}\` tiene lugar para ${elementos(total)} y hay que guardar ${valores.length}: no alcanza.`,
+        v.fila
+      );
       return;
     }
 
-    const coincide = (e, valor) => e.clase === 'numero' && e.valor === valor;
-    const distinto = escritos.findIndex((e, i) => !coincide(e, valores[i]));
+    // El contenido, elemento por elemento. Un elemento que la lista no nombra
+    // vale cero.
+    const distinto = valores.findIndex((valor, i) =>
+      i < escritos.length ? !coincide(escritos[i], valor) : valor !== 0
+    );
     if (distinto >= 0) {
+      if (distinto >= escritos.length) {
+        error(
+          'VALORES_SIN_NOMBRAR',
+          escritos.length === 1
+            ? `Así solo el primer elemento vale \`${escritos[0].texto.trim()}\`: los que la lista no nombra quedan en cero, no repiten el último valor.`
+            : `Así solo los primeros ${escritos.length} elementos tienen los valores de la lista: los que no nombra quedan en cero.`,
+          v.fila
+        );
+        return;
+      }
       const e = escritos[distinto];
       const numeros = escritos.map((x) => (x.clase === 'numero' ? x.valor : NaN));
       const ordenar = (lista) => [...lista].sort((a, b) => a - b).join();
@@ -727,7 +788,11 @@ export function corregir(
           `\`${e.texto}\` con comillas no es un número: los números van sin comillas.`,
           v.fila
         );
-      } else if (!numeros.some(Number.isNaN) && ordenar(numeros) === ordenar(valores)) {
+      } else if (
+        escritos.length === valores.length &&
+        !numeros.some(Number.isNaN) &&
+        ordenar(numeros) === ordenar(valores)
+      ) {
         error('VALORES_EN_OTRO_ORDEN', 'Los valores son los del dibujo, pero están en otro orden.', v.fila);
       } else {
         error(
@@ -739,25 +804,30 @@ export function corregir(
       return;
     }
 
-    // Los corchetes: vacios, o con la cantidad justa.
-    const dimension = v.arreglo[0].trim();
-    if (!dimension) return;
-    const lugar = valorDeDimension(dimension, modelo);
-    if (lugar == null) return;
-    const elementos = (c) => (c === 1 ? '1 elemento' : `${c} elementos`);
-    if (lugar < valores.length) {
-      error(
-        'ARREGLO_CHICO',
-        `\`${n}\` tiene lugar para ${elementos(lugar)} y la lista trae ${valores.length} valores: no entran.`,
-        v.fila
-      );
-    } else if (lugar > valores.length) {
+    // Lo del dibujo ya esta; lo que falta ver es lo que sobra.
+    if (escritos.length > valores.length) return errorDeCantidad();
+    if (total > valores.length) {
       error(
         'ARREGLO_GRANDE',
-        `\`${n}\` tiene lugar para ${elementos(lugar)} y el arreglo del dibujo tiene ${valores.length}: sobra lugar.`,
+        `\`${n}\` tiene lugar para ${elementos(total)} y el arreglo del dibujo tiene ${valores.length}: sobra lugar.`,
         v.fila
       );
-    } else if (practicas.includes('constantes')) {
+      return;
+    }
+
+    // Respuesta correcta. Para llenar de ceros alcanza un solo cero: es lo que
+    // se le propone en lugar de dejar los corchetes vacios, porque seria
+    // aconsejarle dos formas que no se pueden aplicar juntas.
+    const todosCeros = valores.every((x) => x === 0);
+    if (todosCeros && practicas.includes('claridad') && escritos.length > 1) {
+      mejora(
+        'CERO_ALCANZA',
+        'Está bien, pero para llenar de ceros alcanza con escribir uno solo, `{0}`' +
+          (dimension ? '' : ', indicando la cantidad entre los corchetes') +
+          ': los elementos que la lista no nombra quedan en cero.',
+        v.fila
+      );
+    } else if (completa && dimension && lugar != null && practicas.includes('constantes')) {
       // No es un numero magico: es la cantidad de valores que estan ahi
       // mismo. Lo que sobra es repetirla.
       mejora(
@@ -1028,9 +1098,14 @@ function revisarDimensiones(modelo, error, mejora) {
     for (const dimension of declarado.arreglo) {
       const escrito = dimension.trim();
       if (/^\d+$/.test(escrito)) {
-        // Con la lista de valores al lado el numero no es magico: es la
-        // cantidad de valores. Eso lo mira la regla, que sabe cuantos son.
-        if (declarado.inicial?.clase === 'lista') continue;
+        // Un numero es magico cuando lleva informacion que no esta escrita en
+        // otro lugar de la misma sentencia. Con la lista de valores al lado,
+        // si se deduce de ella (es la cantidad de valores) no lo es: lo que
+        // sobra es repetirlo, y eso lo mira la regla. Si la lista nombra
+        // menos elementos que los corchetes ({0} con [4]), el numero es lo
+        // unico que dice cuantos son.
+        const lista = declarado.inicial?.clase === 'lista' ? declarado.inicial : null;
+        if (lista && (declarado.arreglo.length > 1 || lista.elementos.length >= Number(escrito))) continue;
         if (!mejora || !unaVez('numero' + declarado.fila)) continue;
         // Si ya hay una constante con ese valor, lo que falta no es saber que
         // es un #define sino usar el que esta. Que valga lo mismo no asegura

@@ -131,6 +131,30 @@ corrige.
 El nombre es libre. El tipo sigue la categoría pedida: con `entero` vale
 `int`, `long` o `short`, y `float` es error.
 
+**Lo que no está en la lista queda en cero**, y el corrector lo tiene en
+cuenta: compara lo que el arreglo *termina teniendo*, no solo lo escrito.
+
+| Valores pedidos | Respuesta | Resultado |
+|---|---|---|
+| `0, 0, 0, 0` | `int l[4] = {0};` | Correcta. Mejora: el `4` es un número suelto (`NUMERO_MAGICO`). |
+| `0, 0, 0, 0` | `#define TAM 4` y `int l[TAM] = {0};` | Excelente. |
+| `0, 0, 0, 0` | `int l[4] = {0, 0, 0, 0};` | Correcta. Mejora: alcanza con `{0}` (`CERO_ALCANZA`, práctica `claridad`). |
+| `2, 2, 2, 2` | `int l[4] = {2};` | Error: lo que la lista no nombra queda en cero, no repite el valor (`VALORES_SIN_NOMBRAR`). |
+| `5, 1, 0, 0` | `int l[4] = {5, 1};` | Correcta: es el mismo arreglo. |
+
+Un número es mágico cuando **lleva información que no está escrita en otro
+lugar de la misma sentencia**. En `int v[6] = {3, 6, 0, 7, 1, 5};` el 6 se
+deduce de los valores (no es mágico, es repetido: ya tiene su mejora de dejar
+los corchetes vacíos). En `int l[4] = {0};` no se deduce de nada, y por eso sí.
+
+Para llenar de ceros se le propone `{0}` y no dejar los corchetes vacíos,
+porque son dos consejos que no se pueden aplicar juntos.
+
+**El dibujo se puede apagar** en una consigna con `"dibujo": false`, cuando el
+enunciado ya describe el arreglo con palabras ("una lista de 4 elementos
+enteros") y se quiere que el alumno lo deduzca. Los `valores` se siguen
+usando para corregir.
+
 **Una tabla** se pide con los valores en filas, y se dibuja con los índices de
 las columnas arriba y los de las filas a la izquierda:
 
@@ -140,17 +164,20 @@ las columnas arriba y los de las filas a la izquierda:
 
 | Respuesta | Resultado |
 |---|---|
-| `int t[3][4] = {{5, 8, 1, 4}, {0, 2, 9, 6}, {3, 7, 4, 8}};` | Correcta. |
-| `int t[][4] = {…};` | Correcta: la cantidad de filas se puede dejar vacía. |
+| `int t[][4] = {{5, 8, 1, 4}, {0, 2, 9, 6}, {3, 7, 4, 8}};` | Excelente. |
+| `int t[3][4] = {…};` | Correcta. Con la práctica `constantes`, mejora: la cantidad de filas ya la dicen los valores (`FILAS_REPETIDAS`), igual que en el arreglo. |
 | `int t[3][] = {…};` | Error: la de columnas no. |
 | `int t[3][4] = {5, 8, 1, 4, 0, 2, …};` | Correcta. Con la práctica `claridad`, mejora: no se ve dónde termina cada fila (`TABLA_SIN_FILAS`). |
 | `int t[4][3] = {…}` con las filas bien | Error: las dimensiones están al revés. |
 | Los valores cargados por columnas | Error, con su mensaje (`TABLA_AL_REVES`). En una tabla cuadrada se nota solo por los valores. |
 | Una fila de más o de menos, o con otra cantidad de valores | Error, diciendo cuál. |
 
-A diferencia del arreglo, en una tabla **escribir las dos cantidades no se
-marca como mejorable**: la de columnas es obligatoria, y dejar vacía solo la de
-filas no es más claro.
+La cantidad de **columnas** no se marca nunca: C la exige, y se ve en cada fila
+de la lista. La de filas sí, como en el arreglo, porque el compilador la
+cuenta solo.
+
+Las tablas todavía no completan con ceros: `int t[3][4] = {0};` se corrige
+como una lista con un solo valor.
 
 ### Consignas de sentencias
 

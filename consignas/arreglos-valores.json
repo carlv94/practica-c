@@ -34,7 +34,7 @@
           }
         }
       ],
-      "referencia": "int tabla[3][4] = {\n  {5, 8, 1, 4},\n  {0, 2, 9, 6},\n  {3, 7, 4, 8}\n};"
+      "referencia": "int tabla[][4] = {\n  {5, 8, 1, 4},\n  {0, 2, 9, 6},\n  {3, 7, 4, 8}\n};"
     },
     {
       "id": "arreglos-valores-4",
@@ -51,7 +51,30 @@
           }
         }
       ],
-      "referencia": "int cuadrada[2][2] = {\n  {4, 7},\n  {2, 9}\n};"
+      "referencia": "int cuadrada[][2] = {\n  {4, 7},\n  {2, 9}\n};"
+    },
+    {
+      "id": "arreglos-valores-5",
+      "titulo": "Todos en cero",
+      "enunciado": "En la misma sentencia declare e inicialice en cero todos los valores de una lista de 4 elementos enteros.",
+      "dibujo": false,
+      "requiere": [{ "variable": { "tipo": "entero", "valores": [0, 0, 0, 0] } }],
+      "referencia": "#define CANTIDAD 4\n\nint ceros[CANTIDAD] = {0};"
+    },
+    {
+      "id": "arreglos-valores-6",
+      "titulo": "Todos en dos",
+      "enunciado": "En la misma sentencia declare e inicialice en dos todos los valores de una lista de 4 elementos enteros.",
+      "dibujo": false,
+      "requiere": [{ "variable": { "tipo": "entero", "valores": [2, 2, 2, 2] } }],
+      "referencia": "int dos[] = {2, 2, 2, 2};"
+    },
+    {
+      "id": "arreglos-valores-7",
+      "titulo": "Ceros al final",
+      "enunciado": "En la misma sentencia, defina e inicialice el siguiente arreglo:",
+      "requiere": [{ "variable": { "tipo": "entero", "valores": [5, 1, 0, 0] } }],
+      "referencia": "int cola[] = {5, 1, 0, 0};"
     }
   ]
 }

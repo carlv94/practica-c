@@ -19,7 +19,11 @@ const MARCA = /\{(\w+)\}/g;
 // El dibujo de una consigna, o null si no lleva:
 //   { clase: 'arreglo', valores: [3, 6, 0, 7, 1, 5] }
 //   { clase: 'tabla', filas: [[5, 8, 1, 4], [0, 2, 9, 6]] }
+//
+// Una consigna puede no llevar dibujo ("dibujo": false) cuando el enunciado
+// describe el arreglo con palabras y se quiere que el alumno lo deduzca.
 export function figuraDe(consigna) {
+  if (consigna.dibujo === false) return null;
   const valores = consigna.requiere.find((r) => r.variable?.valores)?.variable.valores;
   if (!valores) return null;
   return Array.isArray(valores[0]) ? { clase: 'tabla', filas: valores } : { clase: 'arreglo', valores };

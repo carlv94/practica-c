@@ -163,11 +163,19 @@ const CASOS_DE_VALORES = [
   valores(2, 'coma decimal', 'float p[] = {12,5, 8, 99,9, 0,75};', ['VALORES_DE_MAS']),
 
   // La tabla del dibujo: 3 filas por 4 columnas.
-  valores(3, 'tabla con sus dos dimensiones', 'int t[3][4] = {{5, 8, 1, 4}, {0, 2, 9, 6}, {3, 7, 4, 8}};', 'ok'),
-  valores(3, 'tabla en varios renglones', 'int t[3][4] = {\n  {5, 8, 1, 4},\n  {0, 2, 9, 6},\n  {3, 7, 4, 8},\n};', 'ok'),
-  valores(3, 'tabla sin la cantidad de filas', 'int t[][4] = {{5, 8, 1, 4}, {0, 2, 9, 6}, {3, 7, 4, 8}};', 'ok'),
-  valores(3, 'tabla con constantes', '#define F 3\n#define C 4\nint t[F][C] = {{5, 8, 1, 4}, {0, 2, 9, 6}, {3, 7, 4, 8}};', 'ok'),
-  valores(3, 'todo seguido: correcto y mejorable', 'int t[3][4] = {5, 8, 1, 4, 0, 2, 9, 6, 3, 7, 4, 8};', 'ok', [
+  valores(3, 'tabla sin la cantidad de filas es excelente', 'int t[][4] = {{5, 8, 1, 4}, {0, 2, 9, 6}, {3, 7, 4, 8}};', 'ok'),
+  valores(3, 'tabla en varios renglones sin la cantidad de filas', 'int t[][4] = {\n  {5, 8, 1, 4},\n  {0, 2, 9, 6},\n  {3, 7, 4, 8},\n};', 'ok'),
+  valores(3, 'tabla con sus dos dimensiones: las filas estan repetidas', 'int t[3][4] = {{5, 8, 1, 4}, {0, 2, 9, 6}, {3, 7, 4, 8}};', 'ok', [
+    'FILAS_REPETIDAS',
+  ]),
+  valores(3, 'tabla con constantes: tambien repetidas', '#define F 3\n#define C 4\nint t[F][C] = {{5, 8, 1, 4}, {0, 2, 9, 6}, {3, 7, 4, 8}};', 'ok', [
+    'FILAS_REPETIDAS',
+  ]),
+  valores(3, 'todo seguido: dos mejoras a la vez', 'int t[3][4] = {5, 8, 1, 4, 0, 2, 9, 6, 3, 7, 4, 8};', 'ok', [
+    'FILAS_REPETIDAS',
+    'TABLA_SIN_FILAS',
+  ]),
+  valores(3, 'todo seguido sin la cantidad de filas', 'int t[][4] = {5, 8, 1, 4, 0, 2, 9, 6, 3, 7, 4, 8};', 'ok', [
     'TABLA_SIN_FILAS',
   ]),
   valores(3, 'sin la cantidad de columnas', 'int t[3][] = {{5, 8, 1, 4}, {0, 2, 9, 6}, {3, 7, 4, 8}};', ['TABLA_SIN_COLUMNAS']),
@@ -193,9 +201,58 @@ const CASOS_DE_VALORES = [
   valores(3, 'filas entre parentesis', 'int t[3][4] = {(5, 8, 1, 4), (0, 2, 9, 6), (3, 7, 4, 8)};', ['FILAS_ENTRE_PARENTESIS']),
 
   // La cuadrada: 4 7 / 2 9. Ahi "al reves" no se nota en la forma, solo en los valores.
-  valores(4, 'cuadrada', 'int c[2][2] = {{4, 7}, {2, 9}};', 'ok'),
+  valores(4, 'cuadrada', 'int c[][2] = {{4, 7}, {2, 9}};', 'ok'),
+  valores(4, 'cuadrada con las filas repetidas', 'int c[2][2] = {{4, 7}, {2, 9}};', 'ok', ['FILAS_REPETIDAS']),
   valores(4, 'cuadrada cargada por columnas', 'int c[2][2] = {{4, 2}, {7, 9}};', ['TABLA_AL_REVES']),
   valores(4, 'cuadrada con un valor distinto', 'int c[2][2] = {{4, 7}, {2, 8}};', ['VALOR_DISTINTO']),
+
+  // Todos en cero: {0} alcanza, y el 4 pasa a ser un numero que solo esta en
+  // los corchetes. El dibujo no se muestra (dibujo: false).
+  valores(5, 'cero con una constante es excelente', '#define TAM 4\nint lista[TAM] = {0};', 'ok'),
+  valores(5, 'cero con el numero suelto', 'int lista[4] = {0};', 'ok', ['NUMERO_MAGICO']),
+  valores(5, 'cero con el numero suelto habiendo una constante', '#define TAM 4\nint lista[4] = {0};', 'ok', [
+    'CONSTANTE_SIN_REUTILIZAR',
+  ]),
+  valores(5, 'cuatro ceros: alcanza uno', 'int lista[4] = {0, 0, 0, 0};', 'ok', ['CERO_ALCANZA']),
+  valores(5, 'cuatro ceros con una constante: alcanza uno', '#define TAM 4\nint lista[TAM] = {0, 0, 0, 0};', 'ok', [
+    'CERO_ALCANZA',
+  ]),
+  // La lista no cubre los cuatro lugares: el 4 ya no se deduce de ella.
+  valores(5, 'dos ceros: alcanza uno, y el 4 es un numero suelto', 'int lista[4] = {0, 0};', 'ok', [
+    'CERO_ALCANZA',
+    'NUMERO_MAGICO',
+  ]),
+  valores(5, 'cuatro ceros con los corchetes vacios', 'int lista[] = {0, 0, 0, 0};', 'ok', ['CERO_ALCANZA']),
+  valores(5, 'un cero con los corchetes vacios', 'int lista[] = {0};', ['VALORES_DE_MENOS']),
+  valores(5, 'un cero para dos lugares', 'int lista[2] = {0};', ['ARREGLO_CHICO']),
+  valores(5, 'un cero para cinco lugares', 'int lista[5] = {0};', ['ARREGLO_GRANDE']),
+  valores(5, 'cinco ceros para cuatro lugares', 'int lista[4] = {0, 0, 0, 0, 0};', ['ARREGLO_CHICO']),
+  valores(5, 'lista vacia', 'int lista[4] = {};', ['LISTA_VACIA']),
+  valores(5, 'un uno en vez del cero', 'int lista[4] = {1};', ['VALOR_DISTINTO']),
+
+  // Todos en dos: {2} no llena de dos. Lo que la lista no nombra queda en cero.
+  valores(6, 'cuatro dos con los corchetes vacios', 'int dos[] = {2, 2, 2, 2};', 'ok'),
+  valores(6, 'cuatro dos con la cantidad repetida', 'int dos[4] = {2, 2, 2, 2};', 'ok', ['DIMENSION_REPETIDA']),
+  valores(6, 'cuatro dos con la constante repetida', 'int dos[CANTIDAD] = {2, 2, 2, 2};', 'ok', [
+    'DIMENSION_REPETIDA',
+  ]),
+  valores(6, 'un solo dos: no repite', 'int dos[4] = {2};', ['VALORES_SIN_NOMBRAR']),
+  valores(6, 'un solo dos con la constante', 'int dos[CANTIDAD] = {2};', ['VALORES_SIN_NOMBRAR']),
+  valores(6, 'dos dos: tampoco', 'int dos[4] = {2, 2};', ['VALORES_SIN_NOMBRAR']),
+  valores(6, 'un solo dos con los corchetes vacios', 'int dos[] = {2};', ['VALORES_DE_MENOS']),
+  valores(6, 'cero donde van doses', 'int dos[4] = {0};', ['VALOR_DISTINTO']),
+  valores(6, 'cinco doses para cuatro lugares', 'int dos[4] = {2, 2, 2, 2, 2};', ['ARREGLO_CHICO']),
+
+  // Ceros al final: {5, 1} con cuatro lugares es el mismo arreglo que {5, 1, 0, 0}.
+  valores(7, 'todos los valores escritos', 'int c[] = {5, 1, 0, 0};', 'ok'),
+  valores(7, 'ceros al final sin escribir, con una constante', 'int c[CANTIDAD] = {5, 1};', 'ok'),
+  valores(7, 'ceros al final sin escribir, con el numero', 'int c[4] = {5, 1};', 'ok', ['CONSTANTE_SIN_REUTILIZAR']),
+  valores(7, 'ceros al final escritos con la cantidad repetida', 'int c[4] = {5, 1, 0, 0};', 'ok', [
+    'DIMENSION_REPETIDA',
+  ]),
+  valores(7, 'ceros al final sin escribir, con los corchetes vacios', 'int c[] = {5, 1};', ['VALORES_DE_MENOS']),
+  valores(7, 'falta el uno', 'int c[4] = {5};', ['VALORES_SIN_NOMBRAR']),
+
 ];
 
 export const CASOS = [
