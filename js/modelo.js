@@ -8,6 +8,20 @@
 //   alias:    { nombre, tipo, arreglo, punteros, nuevo, fila }
 //   variable: { nombre, tipo, arreglo, punteros, local, inicializada, nuevo, fila }
 //
+// y de las sentencias, lo que hace falta para las consignas de "escriba el
+// codigo que...": las llamadas a funciones con sus argumentos, las
+// asignaciones y si hay algun ciclo.
+//   llamada:    { funcion, argumentos, nuevo, fila }
+//   asignacion: { izquierda, derecha, nuevo, fila }
+//   ciclo:      { nuevo, fila }
+// Un argumento (o un lado de una asignacion) es:
+//   { clase: 'nombre', nombre }       cadena1
+//   { clase: 'cadena', contenido }    "cadena1"
+//   { clase: 'direccion', nombre }    &cadena1
+//   { clase: 'indice', nombre }       cadena1[0]
+//   { clase: 'otro' }                 cualquier otra expresion
+// todos con "texto", que es como esta escrito.
+//
 // "tipo" es el tipo tal como esta escrito:
 //   { clase: 'primitivo', nombre: 'unsigned int' }
 //   { clase: 'struct', etiqueta: 'Puesto', defId }   defId si trae el cuerpo ahi mismo
@@ -77,7 +91,30 @@ function desenvolver(nodo) {
 }
 
 export function construirModelo(arbol, desde) {
-  const modelo = { structs: [], aliases: [], variables: [] };
+  const modelo = { structs: [], aliases: [], variables: [], llamadas: [], asignaciones: [], ciclos: [] };
+
+  // Un argumento, o un lado de una asignacion.
+  function leerValor(n) {
+    const texto = n.text;
+    switch (n.type) {
+      case 'identifier':
+        return { clase: 'nombre', nombre: texto, texto };
+      case 'string_literal':
+        return { clase: 'cadena', contenido: texto.slice(1, -1), texto };
+      case 'pointer_expression': {
+        const de = n.childForFieldName('argument');
+        return texto.startsWith('&') && de && de.type === 'identifier'
+          ? { clase: 'direccion', nombre: de.text, texto }
+          : { clase: 'otro', texto };
+      }
+      case 'subscript_expression': {
+        const de = n.childForFieldName('argument');
+        return { clase: 'indice', nombre: de ? de.text : null, texto };
+      }
+      default:
+        return { clase: 'otro', texto };
+    }
+  }
   const structDeNodo = new Map();
 
   function registrarStruct(n) {
@@ -147,6 +184,37 @@ export function construirModelo(arbol, desde) {
       }
       case 'function_definition':
         local = true;
+        break;
+      case 'call_expression': {
+        const funcion = n.childForFieldName('function');
+        const argumentos = n.childForFieldName('arguments');
+        modelo.llamadas.push({
+          funcion: funcion ? funcion.text : '',
+          argumentos: argumentos
+            ? argumentos.namedChildren.filter((a) => a.type !== 'comment').map(leerValor)
+            : [],
+          nuevo: n.startIndex >= desde,
+          fila: n.startPosition.row,
+        });
+        break;
+      }
+      case 'assignment_expression': {
+        const izquierda = n.childForFieldName('left');
+        const derecha = n.childForFieldName('right');
+        if (izquierda && derecha) {
+          modelo.asignaciones.push({
+            izquierda: leerValor(izquierda),
+            derecha: leerValor(derecha),
+            nuevo: n.startIndex >= desde,
+            fila: n.startPosition.row,
+          });
+        }
+        break;
+      }
+      case 'for_statement':
+      case 'while_statement':
+      case 'do_statement':
+        modelo.ciclos.push({ nuevo: n.startIndex >= desde, fila: n.startPosition.row });
         break;
     }
     for (const hijo of n.namedChildren) visitar(hijo, local);

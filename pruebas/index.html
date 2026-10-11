@@ -16,9 +16,9 @@
 
     <script type="module">
       import { cargarAnalizador } from '../js/analizador.js';
-      import { corregir } from '../js/corrector.js';
+      import { inicio, corregirPaso, despuesDe } from '../js/serie.js';
       import { marcasDe, partesDeEnunciado } from '../js/enunciado.js';
-      import { SERIE, CASOS } from './casos.js';
+      import { CASOS } from './casos.js';
 
       const salida = document.getElementById('salida');
       const lineas = [];
@@ -34,26 +34,20 @@
 
       try {
         const analizador = await cargarAnalizador();
-        const serie = await (await fetch(SERIE)).json();
-        // Para probar a mano desde la consola.
-        Object.assign(window, { analizador, serie, corregir });
 
         // Recorre las consignas anteriores al paso, con las respuestas dadas o
-        // las de referencia, y devuelve el contexto y las capturas que dejan.
-        function llegarHasta(paso, previas = [], deSerie = serie) {
-          let contexto = '';
-          let capturas = {};
+        // las de referencia, y devuelve el avance que dejan.
+        function llegarHasta(serie, paso, previas = []) {
+          let avance = inicio();
           for (let i = 0; i < paso - 1; i++) {
-            const consigna = deSerie.consignas[i];
-            const respuesta = previas[i] || consigna.referencia;
-            const r = corregir(analizador, consigna, { contexto, respuesta, capturas });
+            const respuesta = previas[i] || serie.consignas[i].referencia;
+            const r = corregirPaso(analizador, serie, i, avance, respuesta);
             if (!r.correcto) {
               throw new Error(`la respuesta previa ${i + 1} no pasa: ${codigos(r, 'error')}`);
             }
-            capturas = r.capturas;
-            contexto += (contexto ? '\n\n' : '') + respuesta;
+            avance = despuesDe(serie, i, avance, respuesta, r);
           }
-          return { contexto, capturas };
+          return avance;
         }
 
         // Todas las series del indice: que se lean, que no repitan nombres y
@@ -79,8 +73,8 @@
         const referencias = todas.flatMap((s) => s.consignas.map((consigna, i) => ({ s, consigna, i })));
         referencias.forEach(({ s, consigna, i }) => {
           try {
-            const previo = llegarHasta(i + 1, [], s);
-            const r = corregir(analizador, consigna, { ...previo, respuesta: consigna.referencia });
+            const previo = llegarHasta(s, i + 1);
+            const r = corregirPaso(analizador, s, i, previo, consigna.referencia);
             anotar(r.correcto, `referencia de ${consigna.id}`, codigos(r, 'error').join(', '));
 
             // Un {X} del enunciado tiene que haberlo capturado una consigna anterior.
@@ -114,12 +108,13 @@
         }
 
         for (const caso of CASOS) {
-          const titulo = `paso ${caso.paso}: ${caso.nombre}`;
+          const deSerie = caso.serie || 'estructuras';
+          const titulo = `${deSerie}, paso ${caso.paso}: ${caso.nombre}`;
           try {
-            const r = corregir(analizador, serie.consignas[caso.paso - 1], {
-              ...llegarHasta(caso.paso, caso.previas),
-              respuesta: caso.respuesta,
-            });
+            const serie = todas.find((s) => s.id === deSerie);
+            if (!serie) throw new Error(`no hay ninguna serie "${deSerie}" en el índice`);
+            const previo = llegarHasta(serie, caso.paso, caso.previas);
+            const r = corregirPaso(analizador, serie, caso.paso - 1, previo, caso.respuesta);
             const errores = codigos(r, 'error');
             const esperados = caso.espera === 'ok' ? [] : [...caso.espera].sort();
             const avisos = codigos(r, 'aviso');

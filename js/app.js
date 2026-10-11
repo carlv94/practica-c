@@ -13,7 +13,7 @@
 // con datos que no cierran.
 
 import { cargarAnalizador } from './analizador.js';
-import { corregir } from './corrector.js';
+import { inicio, codigoPrevio, corregirPaso, despuesDe } from './serie.js';
 import { crearEditor, pintar } from './editor.js';
 import { partesDeEnunciado } from './enunciado.js';
 
@@ -29,8 +29,7 @@ let analizador = null;
 let series = [];
 let serie = null; // la que esta abierta, o null en la lista
 let hechas = []; // [{ codigo, conAyuda }], una por consigna resuelta
-let contexto = '';
-let capturas = {};
+let avance = inicio(); // el codigo y las capturas que dejan las resueltas
 let pendiente = null; // la respuesta correcta que espera el "Siguiente"
 let pidioSolucion = false;
 
@@ -107,21 +106,16 @@ function elemento(etiqueta, clase, texto) {
 // Las respuestas guardadas de una serie que siguen valiendo, con el contexto
 // y las capturas que dejan.
 function recorrer(s) {
-  const avance = { hechas: [], contexto: '', capturas: {} };
+  const validas = [];
+  let hasta = inicio();
   for (const [i, hecha] of leer(claveAvance(s), []).entries()) {
-    const consigna = s.consignas[i];
-    if (!consigna || typeof hecha?.codigo !== 'string') break;
-    const r = corregir(analizador, consigna, {
-      contexto: avance.contexto,
-      respuesta: hecha.codigo,
-      capturas: avance.capturas,
-    });
+    if (!s.consignas[i] || typeof hecha?.codigo !== 'string') break;
+    const r = corregirPaso(analizador, s, i, hasta, hecha.codigo);
     if (!r.correcto) break;
-    avance.hechas.push(hecha);
-    avance.capturas = r.capturas;
-    avance.contexto += (avance.contexto ? '\n\n' : '') + hecha.codigo;
+    hasta = despuesDe(s, i, hasta, hecha.codigo, r);
+    validas.push(hecha);
   }
-  return avance;
+  return { hechas: validas, avance: hasta };
 }
 
 // ---- la lista de series -------------------------------------------------------
@@ -167,7 +161,7 @@ function mostrarLista() {
 
 function abrirSerie(s) {
   serie = s;
-  ({ hechas, contexto, capturas } = recorrer(s));
+  ({ hechas, avance } = recorrer(s));
   $('lista').hidden = true;
   $('vista-serie').hidden = false;
   $('volver').hidden = false;
@@ -193,8 +187,10 @@ function mostrarConsigna() {
   );
 
   const termino = !consigna;
+  // Lo ya resuelto mas lo que esta consigna trae escrito.
+  const previo = termino ? '' : codigoPrevio(serie, actual, avance);
   $('consigna').hidden = termino;
-  $('bloque-contexto').hidden = termino || !contexto;
+  $('bloque-contexto').hidden = !previo;
   $('bloque-respuesta').hidden = termino;
   $('final').hidden = !termino;
   $('resultado').replaceChildren();
@@ -204,17 +200,17 @@ function mostrarConsigna() {
     $('resumen-final').textContent =
       `Resolvió las ${hechas.length} consignas` +
       (conAyuda ? `, ${conAyuda} de ellas mirando la solución.` : ' sin mirar ninguna solución.');
-    pintar($('codigo-final'), contexto);
+    pintar($('codigo-final'), avance.contexto);
     return;
   }
 
   $('titulo-consigna').textContent = `${actual + 1}. ${consigna.titulo}`;
   $('enunciado').replaceChildren(
-    ...partesDeEnunciado(consigna.enunciado, capturas).map((parte) =>
+    ...partesDeEnunciado(consigna.enunciado, avance.capturas).map((parte) =>
       parte.nombre ? elemento('code', null, parte.nombre) : parte.texto
     )
   );
-  pintar($('contexto'), contexto);
+  pintar($('contexto'), previo);
   editor.poner('');
   $('respuesta').readOnly = false;
   $('comprobar').hidden = false;
@@ -227,7 +223,7 @@ function comprobar() {
   const consigna = serie?.consignas[hechas.length];
   if (!consigna || pendiente) return;
   const respuesta = $('respuesta').value;
-  const r = corregir(analizador, consigna, { contexto, respuesta, capturas });
+  const r = corregirPaso(analizador, serie, hechas.length, avance, respuesta);
   registrarIntento(consigna, r);
   editor.marcar(r.diagnosticos);
 
@@ -248,9 +244,8 @@ function comprobar() {
 function siguiente() {
   if (!pendiente) return;
   const { hecha, resultado } = pendiente;
+  avance = despuesDe(serie, hechas.length, avance, hecha.codigo, resultado);
   hechas.push(hecha);
-  capturas = resultado.capturas;
-  contexto += (contexto ? '\n\n' : '') + hecha.codigo;
   guardar(claveAvance(serie), hechas);
   mostrarConsigna();
 }
@@ -262,7 +257,7 @@ function verSolucion() {
   // tal cual si el alumno viene siguiendo las referencias. Si no, se le
   // muestra como ejemplo y la adapta a sus nombres.
   pidioSolucion = true;
-  const r = corregir(analizador, consigna, { contexto, respuesta: consigna.referencia, capturas });
+  const r = corregirPaso(analizador, serie, hechas.length, avance, consigna.referencia);
   const nota = r.correcto
     ? 'Esta es una solución posible. Puede escribirla o copiarla, y comprobar.'
     : 'Esta es una solución posible, escrita con otros nombres: hay que adaptarla a los que usó usted.';

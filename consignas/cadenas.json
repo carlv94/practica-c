@@ -1,0 +1,41 @@
+{
+  "id": "cadenas",
+  "titulo": "Cadenas: las funciones de la biblioteca",
+  "descripcion": "Copiar una cadena en otra y agregar una al final de otra, con las funciones de string.h.",
+  "dentroDeMain": true,
+  "consignas": [
+    {
+      "id": "cadenas-1",
+      "titulo": "Copiar una cadena",
+      "dado": "char cadena1[30] = \"Hola mundo\";\nchar cadena2[30];",
+      "enunciado": "Se tiene la cadena de caracteres cadena1 y se desea copiar su contenido en cadena2.\n\nEscriba el código para asignar el valor de cadena1 a cadena2, usando la función de biblioteca correspondiente.",
+      "requiere": [
+        {
+          "llamada": {
+            "funcion": "strcpy",
+            "argumentos": ["cadena2", "cadena1"],
+            "orden": "primero va el destino y después el origen"
+          }
+        }
+      ],
+      "referencia": "strcpy(cadena2, cadena1);"
+    },
+    {
+      "id": "cadenas-2",
+      "titulo": "Agregar al final",
+      "dado": "char saludo[60] = \"Dice: \";",
+      "enunciado": "Se desea agregar el contenido de cadena1 al final de saludo, para que quede \"Dice: Hola mundo\".\n\nEscriba el código usando la función de biblioteca correspondiente.",
+      "requiere": [
+        {
+          "llamada": {
+            "funcion": "strcat",
+            "alternativas": ["strncat"],
+            "argumentos": ["saludo", "cadena1"],
+            "orden": "primero va la cadena a la que se le agrega y después lo que se agrega"
+          }
+        }
+      ],
+      "referencia": "strcat(saludo, cadena1);"
+    }
+  ]
+}

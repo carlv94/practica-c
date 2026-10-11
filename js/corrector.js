@@ -1,7 +1,10 @@
 // Corrige una respuesta contra las reglas de su consigna.
 //
-//   corregir(analizador, consigna, { contexto, respuesta, capturas })
+//   corregir(analizador, consigna, { contexto, respuesta, capturas, dentroDeMain })
 //     -> { correcto, diagnosticos, capturas }
+//
+// Desde la pantalla y las pruebas se llama por js/serie.js, que sabe armar el
+// contexto de cada paso.
 //
 // "contexto" es el codigo que el alumno ya resolvio en las consignas anteriores
 // de la serie: se analiza junto con la respuesta, para que "la estructura
@@ -18,6 +21,7 @@
 //   { "struct":   { "campos": [{ "nombre", "tipo" }], "capturar": "S" } }
 //   { "variable": { "tipo": "$S", "conAlias": true } }
 //   { "alias":    { "de": "$S", "capturar": "A" } }
+//   { "llamada":  { "funcion": "strcpy", "argumentos": ["cadena2", "cadena1"] } }
 
 import {
   construirModelo,
@@ -67,9 +71,25 @@ function mismoTipo(a, b) {
   return false;
 }
 
-export function corregir(analizador, consigna, { contexto = '', respuesta = '', capturas = {} }) {
-  const previo = contexto.trim() ? contexto.replace(/\s+$/, '') + '\n\n' : '';
-  const fuente = previo + respuesta;
+// Las funciones de la biblioteca que un alumno puede llegar a escribir: sirve
+// para distinguir "se equivoco de funcion" de "la escribio mal".
+const DE_LA_BIBLIOTECA = [
+  'strcpy', 'strncpy', 'strcat', 'strncat', 'strcmp', 'strncmp', 'strlen', 'strchr', 'strstr',
+  'printf', 'scanf', 'puts', 'gets', 'fgets', 'sprintf', 'memcpy',
+];
+
+export function corregir(
+  analizador,
+  consigna,
+  { contexto = '', respuesta = '', capturas = {}, dentroDeMain = false }
+) {
+  // Una sentencia suelta ("strcpy(a, b);") solo vale dentro de una funcion:
+  // en las series de sentencias el codigo se analiza envuelto en una, que el
+  // alumno no ve ni escribe.
+  const previo =
+    (dentroDeMain ? 'void practica(void) {\n' : '') +
+    (contexto.trim() ? contexto.replace(/\s+$/, '') + '\n\n' : '');
+  const fuente = previo + respuesta + (dentroDeMain ? '\n}' : '');
   const desde = previo.length;
   const filaBase = previo.split('\n').length - 1;
 
@@ -97,6 +117,14 @@ export function corregir(analizador, consigna, { contexto = '', respuesta = '', 
     error('VACIO', 'Todavía no hay nada escrito.');
     return terminar();
   }
+  if (dentroDeMain && /\bmain\s*\(/.test(respuesta)) {
+    error(
+      'MAIN_DE_MAS',
+      'No hace falta escribir `main`: alcanza con las sentencias que pide la consigna.',
+      filaBase + respuesta.slice(0, respuesta.search(/\bmain\s*\(/)).split('\n').length - 1
+    );
+    return terminar();
+  }
 
   const arbol = analizador.parse(fuente);
   try {
@@ -114,6 +142,7 @@ export function corregir(analizador, consigna, { contexto = '', respuesta = '', 
 
     const modelo = construirModelo(arbol, desde);
     revisarNombres(modelo, error);
+    revisarAsignaciones(modelo, error);
     for (const regla of consigna.requiere) aplicarRegla(regla, modelo);
     return terminar();
   } finally {
@@ -135,6 +164,7 @@ export function corregir(analizador, consigna, { contexto = '', respuesta = '', 
     if (regla.struct) return reglaStruct(regla.struct, modelo);
     if (regla.variable) return reglaVariable(regla.variable, modelo);
     if (regla.alias) return reglaAlias(regla.alias, modelo);
+    if (regla.llamada) return reglaLlamada(regla.llamada, modelo);
     throw new Error(`La consigna "${consigna.id}" tiene una regla que no conozco.`);
   }
 
@@ -332,6 +362,119 @@ export function corregir(analizador, consigna, { contexto = '', respuesta = '', 
     }
   }
 
+  // ---- llamada a una funcion -------------------------------------------------
+
+  function reglaLlamada(regla, modelo) {
+    const aceptadas = [regla.funcion, ...(regla.alternativas || [])];
+    const esperados = (regla.argumentos || []).map(valorDe);
+    const llamadas = modelo.llamadas.filter((l) => l.nuevo);
+    const llamada = llamadas.find((l) => aceptadas.includes(l.funcion));
+
+    if (!llamada) {
+      // Si ya se le dijo que un arreglo no se asigna con "=", con eso alcanza.
+      if (diagnosticos.some((d) => d.codigo === 'ASIGNACION_DE_ARREGLO')) return;
+
+      const ciclo = modelo.ciclos.find((c) => c.nuevo);
+      const otra = llamadas[0];
+      const parecida =
+        otra &&
+        !DE_LA_BIBLIOTECA.includes(otra.funcion) &&
+        aceptadas.find(
+          (a) => a.toLowerCase() === otra.funcion.toLowerCase() || distancia(a, otra.funcion) <= 2
+        );
+      if (ciclo) {
+        error(
+          'A_MANO',
+          'Hacerlo a mano, recorriendo carácter por carácter, puede funcionar, pero la consigna pide usar la función de la biblioteca.',
+          ciclo.fila
+        );
+      } else if (parecida) {
+        error(
+          'FUNCION_MAL_ESCRITA',
+          `No existe ninguna función llamada \`${otra.funcion}\`. ¿Quiso escribir \`${parecida}\`?`,
+          otra.fila
+        );
+      } else if (otra) {
+        error('FUNCION_EQUIVOCADA', `\`${otra.funcion}\` no es la función que pide esta consigna.`, otra.fila);
+      } else {
+        error(
+          'LLAMADA_FALTA',
+          'No encontré la llamada a una función. Una función se usa con su nombre y, entre paréntesis, sus argumentos: `funcion(a, b);`'
+        );
+      }
+      return;
+    }
+
+    // La funcion pedida lleva justo esos argumentos; una alternativa puede
+    // llevar alguno mas al final (strncpy y su cantidad).
+    const reales = llamada.argumentos;
+    const justos = llamada.funcion === regla.funcion;
+    if (justos ? reales.length !== esperados.length : reales.length < esperados.length) {
+      error(
+        'ARGUMENTOS_CANTIDAD',
+        `\`${llamada.funcion}\` lleva ${esperados.length} argumentos, separados por coma, y acá hay ${reales.length}.`,
+        llamada.fila
+      );
+      return;
+    }
+
+    const libre = (i) => esperados[i] === '*';
+    const acierta = (i) => libre(i) || (reales[i].clase === 'nombre' && reales[i].nombre === esperados[i]);
+    if (esperados.every((_, i) => acierta(i))) return;
+
+    // Los mismos nombres, en otro lugar.
+    const escritos = esperados.map((_, i) => (reales[i].clase === 'nombre' ? reales[i].nombre : null));
+    if (!escritos.includes(null) && [...escritos].sort().join() === [...esperados].sort().join()) {
+      error(
+        'ARGUMENTOS_EN_OTRO_ORDEN',
+        'Los argumentos están en otro orden.' +
+          (regla.orden ? ` En \`${llamada.funcion}\` ${regla.orden}.` : ''),
+        llamada.fila
+      );
+      return;
+    }
+
+    esperados.forEach((esperado, i) => {
+      if (acierta(i)) return;
+      const real = reales[i];
+      if (real.clase === 'cadena' && real.contenido === esperado) {
+        error(
+          'ARGUMENTO_ENTRE_COMILLAS',
+          `\`${real.texto}\` con comillas es un texto, no la variable \`${esperado}\`: el nombre de una variable va sin comillas.`,
+          llamada.fila
+        );
+      } else if (real.clase === 'direccion' && real.nombre === esperado) {
+        error(
+          'ARGUMENTO_CON_AMPERSAND',
+          `A \`${esperado}\` le sobra el \`&\`: una cadena se pasa con su nombre solo.`,
+          llamada.fila
+        );
+      } else if (real.clase === 'indice' && real.nombre === esperado) {
+        error(
+          'ARGUMENTO_CON_CORCHETES',
+          `\`${real.texto}\` es un solo carácter de la cadena. Para pasar la cadena entera va el nombre solo, sin corchetes.`,
+          llamada.fila
+        );
+      } else if (real.clase === 'nombre' && !modelo.variables.some((v) => v.nombre === real.nombre)) {
+        const parecida = modelo.variables.find((v) => v.nombre.toLowerCase() === real.nombre.toLowerCase());
+        error(
+          'VARIABLE_DESCONOCIDA',
+          `No hay ninguna variable llamada \`${real.nombre}\`.` +
+            (parecida
+              ? ` La que está declarada es \`${parecida.nombre}\`: en C las mayúsculas y las minúsculas son letras distintas.`
+              : ''),
+          llamada.fila
+        );
+      } else {
+        error(
+          'ARGUMENTO_EQUIVOCADO',
+          `El argumento ${i + 1} de \`${llamada.funcion}\` (\`${real.texto}\`) no es el que corresponde.`,
+          llamada.fila
+        );
+      }
+    });
+  }
+
   // ---- alias ----------------------------------------------------------------
 
   function reglaAlias(regla, modelo) {
@@ -448,6 +591,24 @@ function revisarNombres(modelo, error) {
   }
 }
 
+// Un arreglo no se asigna entero con "=": vale para cualquier consigna, porque
+// en C nunca es valido. Con una cadena, es el error de quien todavia no sabe
+// que para copiarla hay una funcion.
+function revisarAsignaciones(modelo, error) {
+  for (const a of modelo.asignaciones) {
+    if (!a.nuevo || a.izquierda.clase !== 'nombre') continue;
+    const variable = modelo.variables.findLast((v) => v.nombre === a.izquierda.nombre);
+    if (!variable || !variable.arreglo.length || variable.punteros) continue;
+    const esCadena = variable.tipo.clase === 'primitivo' && variable.tipo.nombre === 'char';
+    error(
+      'ASIGNACION_DE_ARREGLO',
+      `\`${variable.nombre}\` es un arreglo: no se puede asignar completo con \`=\`.` +
+        (esCadena ? ' Para copiar una cadena en otra se usa una función de la biblioteca de cadenas.' : ''),
+      a.fila
+    );
+  }
+}
+
 // Los errores de sintaxis de siempre, buscados en el texto de la respuesta. El
 // analizador avisa que algo esta roto pero no siempre donde ni por que: una
 // llave sin cerrar la informa en el primer renglon. Solo se llama cuando ya se
@@ -528,6 +689,11 @@ function erroresConocidos(respuesta) {
       new RegExp(`\\b${TIPO}\\s*\\[`),
       'CORCHETES_ANTES_DEL_NOMBRE',
       'En C los corchetes van después del nombre, no del tipo: `char nombre[20];`',
+    ],
+    [
+      new RegExp(`\\w\\s*\\(\\s*(?!${TIPO}\\b)\\w+\\s+\\w`),
+      'FALTA_COMA',
+      'Los argumentos de una función se separan con coma: `funcion(a, b);`',
     ],
     [
       /\btypedef\s+\w+\s+struct\b/,

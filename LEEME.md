@@ -25,8 +25,9 @@ hosting de archivos estáticos: no hay nada que corra del lado del servidor.
 | `consignas/indice.json` | Qué series se muestran y en qué orden. |
 | `consignas/*.json` | Las series: enunciado, reglas y una solución de referencia. |
 | `js/analizador.js` | Carga el analizador de C (tree-sitter en WebAssembly). |
-| `js/modelo.js` | Del árbol del analizador a "qué estructuras, alias y variables hay". |
+| `js/modelo.js` | Del árbol del analizador a "qué estructuras, alias, variables y llamadas hay". |
 | `js/corrector.js` | Aplica las reglas de una consigna y arma los mensajes. |
+| `js/serie.js` | Qué código tiene delante cada consigna de una serie, y cómo queda al resolverla. |
 | `js/enunciado.js` | Pone en el enunciado los nombres que eligió el alumno (`{S}`). |
 | `js/editor.js` | El editor de la respuesta: colores, números de línea y sangría. |
 | `js/app.js` | La pantalla y el avance del alumno. |
@@ -83,6 +84,35 @@ Las reglas de `requiere`:
 - `{ "variable": { "tipo": "$S" } }` — una variable de ese tipo, global o
   local. Con `"conAlias": true` tiene que estar declarada con un alias.
 - `{ "alias": { "de": "$S", "capturar": "A" } }` — un `typedef` de ese tipo.
+- `{ "llamada": { "funcion": "strcpy", "argumentos": ["cadena2", "cadena1"] } }`
+  — una llamada a esa función con esas variables, en ese orden. Opcionales:
+  - `"alternativas": ["strncpy"]`: otras funciones que también valen. Tienen
+    que empezar con los mismos argumentos y pueden llevar alguno más al final.
+    Sin esto, solo vale la función pedida.
+  - `"orden": "primero va el destino y después el origen"`: lo que se le
+    explica al que los puso al revés.
+  - Un argumento `"*"` acepta cualquier cosa en ese lugar.
+
+  Si en vez de la llamada hay un ciclo, se le dice que la consigna pide la
+  función de la biblioteca: **la copia "a mano" no se acepta**, porque sin
+  ejecutar el código no hay forma de saber si copia bien.
+
+### Consignas de sentencias
+
+Para pedir código que va dentro de una función ("escriba el código que copia
+`cadena1` en `cadena2`"), la **serie** lleva `"dentroDeMain": true`: todo su
+código se analiza como si estuviera dentro de `main`, sin que el alumno lo
+escriba. Si lo escribe igual, se le avisa que no hace falta.
+
+Y cada consigna puede traer un `"dado"`: código que aparece ya escrito arriba
+de la respuesta, como las variables sobre las que se trabaja.
+
+```json
+"dado": "char cadena1[30] = \"Hola mundo\";\nchar cadena2[30];"
+```
+
+El `dado` de una consigna queda para las siguientes, así que no hay que
+repetirlo.
 
 **`capturar` guarda el nombre que eligió el alumno** para que lo usen las
 consignas que siguen con `$S`: así "la estructura anterior" es la suya, se

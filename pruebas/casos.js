@@ -1,5 +1,6 @@
-// Casos de prueba del corrector, sobre la serie consignas/estructuras.json.
+// Casos de prueba del corrector.
 //
+//   serie:     el id de la serie (si falta, "estructuras")
 //   paso:      a que consigna de la serie responde (1 = la primera)
 //   respuesta: lo que escribe el alumno
 //   espera:    'ok', o la lista de codigos de error que tienen que salir
@@ -17,9 +18,55 @@ const TYPEDEF_SIN_ETIQUETA = `typedef struct {
 
 const campos = (cuerpo) => `struct Puesto {\n${cuerpo}\n};`;
 
-export const SERIE = '../consignas/estructuras.json';
+// Las sentencias de la serie de cadenas.
+const cadenas = (paso, nombre, respuesta, espera) => ({ serie: 'cadenas', paso, nombre, respuesta, espera });
+
+const CASOS_DE_CADENAS = [
+  cadenas(1, 'strcpy', 'strcpy(cadena2, cadena1);', 'ok'),
+  cadenas(1, 'strcpy con espacios y comentario', '// copio\nstrcpy( cadena2 ,\n        cadena1 ) ;', 'ok'),
+  cadenas(1, 'strcpy con el include', '#include <string.h>\nstrcpy(cadena2, cadena1);', 'ok'),
+  cadenas(1, 'asignacion directa', 'cadena2 = cadena1;', ['ASIGNACION_DE_ARREGLO']),
+  cadenas(1, 'asignacion de un texto', 'cadena2 = "Hola mundo";', ['ASIGNACION_DE_ARREGLO']),
+  cadenas(1, 'argumentos al reves', 'strcpy(cadena1, cadena2);', ['ARGUMENTOS_EN_OTRO_ORDEN']),
+  cadenas(1, 'argumentos entre comillas', 'strcpy("cadena2", "cadena1");', ['ARGUMENTO_ENTRE_COMILLAS']),
+  cadenas(1, 'argumentos con &', 'strcpy(&cadena2, &cadena1);', ['ARGUMENTO_CON_AMPERSAND']),
+  cadenas(1, 'argumentos con corchetes', 'strcpy(cadena2[30], cadena1[30]);', ['ARGUMENTO_CON_CORCHETES']),
+  cadenas(1, 'variable que no existe', 'strcpy(cadena2, cadena3);', ['VARIABLE_DESCONOCIDA']),
+  cadenas(1, 'variable con mayuscula', 'strcpy(Cadena2, cadena1);', ['VARIABLE_DESCONOCIDA']),
+  cadenas(1, 'otra variable que si existe', 'strcpy(cadena2, cadena2);', ['ARGUMENTO_EQUIVOCADO']),
+  cadenas(1, 'un solo argumento', 'strcpy(cadena2);', ['ARGUMENTOS_CANTIDAD']),
+  cadenas(1, 'funcion mal escrita', 'strcopy(cadena2, cadena1);', ['FUNCION_MAL_ESCRITA']),
+  cadenas(1, 'funcion con mayuscula', 'Strcpy(cadena2, cadena1);', ['FUNCION_MAL_ESCRITA']),
+  cadenas(1, 'otra funcion de la biblioteca', 'strcat(cadena2, cadena1);', ['FUNCION_EQUIVOCADA']),
+  cadenas(1, 'strncpy no esta entre las aceptadas', 'strncpy(cadena2, cadena1, 30);', ['FUNCION_EQUIVOCADA']),
+  cadenas(
+    1,
+    'copia a mano con for',
+    'int i;\nfor (i = 0; cadena1[i] != \'\\0\'; i++) {\n  cadena2[i] = cadena1[i];\n}\ncadena2[i] = \'\\0\';',
+    ['A_MANO']
+  ),
+  cadenas(
+    1,
+    'copia a mano con while',
+    'int i = 0;\nwhile (cadena1[i] != \'\\0\') {\n  cadena2[i] = cadena1[i];\n  i++;\n}\ncadena2[i] = \'\\0\';',
+    ['A_MANO']
+  ),
+  cadenas(1, 'nada que sea una llamada', 'int x;', ['LLAMADA_FALTA']),
+  cadenas(1, 'sin ;', 'strcpy(cadena2, cadena1)', ['FALTA_PUNTO_Y_COMA']),
+  cadenas(1, 'sin la coma', 'strcpy(cadena2 cadena1);', ['FALTA_COMA']),
+  cadenas(1, 'parentesis sin cerrar', 'strcpy(cadena2, cadena1;', ['FALTA_PARENTESIS']),
+  cadenas(1, 'con main', 'int main() {\n  strcpy(cadena2, cadena1);\n  return 0;\n}', ['MAIN_DE_MAS']),
+
+  cadenas(2, 'strcat', 'strcat(saludo, cadena1);', 'ok'),
+  cadenas(2, 'la alternativa, con su argumento de mas', 'strncat(saludo, cadena1, 20);', 'ok'),
+  cadenas(2, 'la alternativa sin argumentos suficientes', 'strncat(saludo);', ['ARGUMENTOS_CANTIDAD']),
+  cadenas(2, 'strcat al reves', 'strcat(cadena1, saludo);', ['ARGUMENTOS_EN_OTRO_ORDEN']),
+  cadenas(2, 'strcat con un argumento de mas', 'strcat(saludo, cadena1, 20);', ['ARGUMENTOS_CANTIDAD']),
+  cadenas(2, 'la funcion del paso anterior', 'strcpy(saludo, cadena1);', ['FUNCION_EQUIVOCADA']),
+];
 
 export const CASOS = [
+  ...CASOS_DE_CADENAS,
   // ---- 1: declarar la estructura ----
   {
     nombre: 'otro nombre, otras dimensiones, otro orden, double y unsigned',
