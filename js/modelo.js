@@ -153,7 +153,9 @@ export function construirModelo(arbol, desde) {
           : { clase: 'otro', texto };
       }
       case 'subscript_expression': {
-        const de = n.childForFieldName('argument');
+        // En t[0][1] el nombre esta dos niveles adentro.
+        let de = n.childForFieldName('argument');
+        while (de && de.type === 'subscript_expression') de = de.childForFieldName('argument');
         return { clase: 'indice', nombre: de ? de.text : null, texto };
       }
       default:

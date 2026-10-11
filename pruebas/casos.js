@@ -161,6 +161,41 @@ const CASOS_DE_VALORES = [
   valores(2, 'double, con el cero y la f', 'double p[] = {12.50, 8.0, 99.9f, .75};', 'ok'),
   valores(2, 'enteros donde van decimales', 'int p[] = {12.5, 8, 99.9, 0.75};', ['VARIABLE_TIPO']),
   valores(2, 'coma decimal', 'float p[] = {12,5, 8, 99,9, 0,75};', ['VALORES_DE_MAS']),
+
+  // La tabla del dibujo: 3 filas por 4 columnas.
+  valores(3, 'tabla con sus dos dimensiones', 'int t[3][4] = {{5, 8, 1, 4}, {0, 2, 9, 6}, {3, 7, 4, 8}};', 'ok'),
+  valores(3, 'tabla en varios renglones', 'int t[3][4] = {\n  {5, 8, 1, 4},\n  {0, 2, 9, 6},\n  {3, 7, 4, 8},\n};', 'ok'),
+  valores(3, 'tabla sin la cantidad de filas', 'int t[][4] = {{5, 8, 1, 4}, {0, 2, 9, 6}, {3, 7, 4, 8}};', 'ok'),
+  valores(3, 'tabla con constantes', '#define F 3\n#define C 4\nint t[F][C] = {{5, 8, 1, 4}, {0, 2, 9, 6}, {3, 7, 4, 8}};', 'ok'),
+  valores(3, 'todo seguido: correcto y mejorable', 'int t[3][4] = {5, 8, 1, 4, 0, 2, 9, 6, 3, 7, 4, 8};', 'ok', [
+    'TABLA_SIN_FILAS',
+  ]),
+  valores(3, 'sin la cantidad de columnas', 'int t[3][] = {{5, 8, 1, 4}, {0, 2, 9, 6}, {3, 7, 4, 8}};', ['TABLA_SIN_COLUMNAS']),
+  valores(3, 'sin ninguna cantidad', 'int t[][] = {{5, 8, 1, 4}, {0, 2, 9, 6}, {3, 7, 4, 8}};', ['TABLA_SIN_COLUMNAS']),
+  valores(3, 'dimensiones al reves', 'int t[4][3] = {{5, 8, 1, 4}, {0, 2, 9, 6}, {3, 7, 4, 8}};', ['DIMENSIONES_AL_REVES']),
+  valores(3, 'cargada por columnas', 'int t[4][3] = {{5, 0, 3}, {8, 2, 7}, {1, 9, 4}, {4, 6, 8}};', ['TABLA_AL_REVES']),
+  valores(3, 'una fila de menos', 'int t[3][4] = {{5, 8, 1, 4}, {0, 2, 9, 6}};', ['FILAS_DE_MENOS']),
+  valores(3, 'una fila de mas', 'int t[4][4] = {{5, 8, 1, 4}, {0, 2, 9, 6}, {3, 7, 4, 8}, {1, 1, 1, 1}};', ['FILAS_DE_MAS']),
+  valores(3, 'una fila con un valor de menos', 'int t[3][4] = {{5, 8, 1, 4}, {0, 2, 9}, {3, 7, 4, 8}};', ['FILA_OTRA_CANTIDAD']),
+  valores(3, 'un valor distinto', 'int t[3][4] = {{5, 8, 1, 4}, {0, 2, 5, 6}, {3, 7, 4, 8}};', ['VALOR_DISTINTO']),
+  valores(3, 'todo seguido con un valor distinto', 'int t[3][4] = {5, 8, 1, 4, 0, 2, 5, 6, 3, 7, 4, 8};', ['VALOR_DISTINTO']),
+  valores(3, 'todo seguido con valores de menos', 'int t[3][4] = {5, 8, 1, 4, 0, 2, 9, 6};', ['VALORES_DE_MENOS']),
+  valores(3, 'unas filas con llaves y otras no', 'int t[3][4] = {{5, 8, 1, 4}, 0, 2, 9, 6, {3, 7, 4, 8}};', ['TABLA_LLAVES_MEZCLADAS']),
+  valores(3, 'llaves de mas', 'int t[3][4] = {{{5, 8, 1, 4}}, {{0, 2, 9, 6}}, {{3, 7, 4, 8}}};', ['VALORES_ANIDADOS']),
+  valores(3, 'lugar de mas', 'int t[5][4] = {{5, 8, 1, 4}, {0, 2, 9, 6}, {3, 7, 4, 8}};', ['ARREGLO_GRANDE']),
+  valores(3, 'columnas de menos', 'int t[3][2] = {{5, 8, 1, 4}, {0, 2, 9, 6}, {3, 7, 4, 8}};', ['ARREGLO_CHICO']),
+  valores(3, 'una sola dimension', 'int t[12] = {5, 8, 1, 4, 0, 2, 9, 6, 3, 7, 4, 8};', ['TABLA_UNA_DIMENSION']),
+  valores(3, 'tres dimensiones', 'int t[1][3][4] = {{{5, 8, 1, 4}, {0, 2, 9, 6}, {3, 7, 4, 8}}};', ['TABLA_DIMENSIONES']),
+  valores(3, 'tabla sin valores', 'int t[3][4];', ['VALORES_FALTAN']),
+  valores(3, 'tabla con valores de a uno', 'int t[3][4];\nt[0][0] = 5;\nt[0][1] = 8;', ['VALORES_APARTE']),
+  valores(3, 'tabla con decimales donde van enteros', 'float t[3][4] = {{5, 8, 1, 4}, {0, 2, 9, 6}, {3, 7, 4, 8}};', ['VARIABLE_TIPO']),
+  valores(3, 'filas entre corchetes', 'int t[3][4] = {[5, 8, 1, 4], [0, 2, 9, 6], [3, 7, 4, 8]};', ['CORCHETES_EN_LA_LISTA']),
+  valores(3, 'filas entre parentesis', 'int t[3][4] = {(5, 8, 1, 4), (0, 2, 9, 6), (3, 7, 4, 8)};', ['FILAS_ENTRE_PARENTESIS']),
+
+  // La cuadrada: 4 7 / 2 9. Ahi "al reves" no se nota en la forma, solo en los valores.
+  valores(4, 'cuadrada', 'int c[2][2] = {{4, 7}, {2, 9}};', 'ok'),
+  valores(4, 'cuadrada cargada por columnas', 'int c[2][2] = {{4, 2}, {7, 9}};', ['TABLA_AL_REVES']),
+  valores(4, 'cuadrada con un valor distinto', 'int c[2][2] = {{4, 7}, {2, 8}};', ['VALOR_DISTINTO']),
 ];
 
 export const CASOS = [

@@ -18,9 +18,11 @@ const MARCA = /\{(\w+)\}/g;
 
 // El dibujo de una consigna, o null si no lleva:
 //   { clase: 'arreglo', valores: [3, 6, 0, 7, 1, 5] }
+//   { clase: 'tabla', filas: [[5, 8, 1, 4], [0, 2, 9, 6]] }
 export function figuraDe(consigna) {
-  const regla = consigna.requiere.find((r) => r.variable?.valores);
-  return regla ? { clase: 'arreglo', valores: regla.variable.valores } : null;
+  const valores = consigna.requiere.find((r) => r.variable?.valores)?.variable.valores;
+  if (!valores) return null;
+  return Array.isArray(valores[0]) ? { clase: 'tabla', filas: valores } : { clase: 'arreglo', valores };
 }
 
 // Las capturas que nombra un enunciado: "... {S} ... {A}" -> ['S', 'A']

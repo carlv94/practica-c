@@ -81,6 +81,8 @@ function nombrarPedido(pedido) {
 
 const ORDINALES = ['primer', 'segundo', 'tercer', 'cuarto', 'quinto', 'sexto', 'séptimo', 'octavo', 'noveno', 'décimo'];
 const ordinal = (indice) => ORDINALES[indice] || `${indice + 1}.º`;
+const ORDINALES_FEMENINOS = ['primera', 'segunda', 'tercera', 'cuarta', 'quinta', 'sexta', 'séptima', 'octava', 'novena', 'décima'];
+const ordinalFemenino = (indice) => ORDINALES_FEMENINOS[indice] || `${indice + 1}.ª`;
 
 function mismoTipo(a, b) {
   if (a.clase !== b.clase) return false;
@@ -383,10 +385,13 @@ export function corregir(
       candidatas = conNombre;
     }
 
+    // Valores en filas ([[5, 8], [0, 2]]) piden una tabla: dos dimensiones.
+    const esTabla = Array.isArray(regla.valores?.[0]);
+    const dimensiones = !quiereArreglo ? 0 : esTabla ? 2 : 1;
+    const forma = esTabla ? 'una tabla' : 'un arreglo';
+
     const delTipo = candidatas.filter(esDelTipo);
-    const exacta = delTipo.find(
-      (v) => !v.punteros && (quiereArreglo ? v.arreglo.length === 1 : !v.arreglo.length)
-    );
+    const exacta = delTipo.find((v) => !v.punteros && v.arreglo.length === dimensiones);
 
     if (exacta) {
       if (regla.conAlias && exacta.tipo.clase !== 'nombre') {
@@ -398,7 +403,8 @@ export function corregir(
         );
       }
       if (regla.valores) {
-        verificarValores(exacta, regla.valores, modelo);
+        if (esTabla) verificarTabla(exacta, regla.valores, modelo);
+        else verificarValores(exacta, regla.valores, modelo);
         if (regla.capturar) nuevas[regla.capturar] = exacta.nombre;
         return;
       }
@@ -446,14 +452,14 @@ export function corregir(
                 ? `Tiene que ser ${categoria.pide}.`
                 : v.arreglo.length
                   ? `Sus elementos tienen que ser ${categoria.pideVarios}.`
-                  : `Tiene que ser un arreglo de ${categoria.pideVarios}.`),
+                  : `Tiene que ser ${forma} de ${categoria.pideVarios}.`),
           v.fila
         );
       }
     } else if (v.punteros) {
       error(
         'VARIABLE_PUNTERO',
-        `A \`${v.nombre}\` le sobra el \`*\`: la consigna pide ${quiereArreglo ? 'un arreglo' : 'una variable'} común.`,
+        `A \`${v.nombre}\` le sobra el \`*\`: la consigna pide ${quiereArreglo ? forma : 'una variable'} común.`,
         v.fila
       );
     } else if (!quiereArreglo) {
@@ -465,14 +471,190 @@ export function corregir(
     } else if (!v.arreglo.length) {
       error(
         'VARIABLE_NO_ES_ARREGLO',
-        `\`${v.nombre}\` es una sola variable. La consigna pide un arreglo` +
+        `\`${v.nombre}\` es una sola variable. La consigna pide ${forma}` +
           (regla.valores ? '.' : ': falta indicar cuántos elementos tiene.'),
+        v.fila
+      );
+    } else if (esTabla && v.arreglo.length === 1) {
+      error(
+        'TABLA_UNA_DIMENSION',
+        `\`${v.nombre}\` tiene una sola dimensión: es un arreglo. La consigna pide una tabla, con filas y columnas.`,
+        v.fila
+      );
+    } else if (esTabla) {
+      error(
+        'TABLA_DIMENSIONES',
+        `\`${v.nombre}\` tiene ${v.arreglo.length} dimensiones. Una tabla tiene dos: las filas y las columnas.`,
         v.fila
       );
     } else {
       error(
         'ARREGLO_DIMENSIONES',
         `\`${v.nombre}\` tiene ${v.arreglo.length} dimensiones: eso es una tabla. La consigna pide un arreglo de una sola.`,
+        v.fila
+      );
+    }
+  }
+
+  // Una tabla definida con sus valores: los del dibujo, fila por fila.
+  function verificarTabla(v, filas, modelo) {
+    const n = v.nombre;
+    const inicial = v.inicial;
+    const F = filas.length;
+    const C = filas[0].length;
+
+    if (!inicial) {
+      const aparte = modelo.asignaciones.some(
+        (a) => a.nuevo && a.izquierda.clase === 'indice' && a.izquierda.nombre === n
+      );
+      error(
+        aparte ? 'VALORES_APARTE' : 'VALORES_FALTAN',
+        aparte
+          ? `La consigna pide darle los valores a \`${n}\` en la misma sentencia en que se la define, no de a uno después.`
+          : `\`${n}\` está definida, pero sin sus valores: la consigna pide dárselos en esa misma sentencia.`,
+        v.fila
+      );
+      return;
+    }
+    if (inicial.clase !== 'lista') {
+      error('VALORES_SIN_LISTA', 'Los valores de una tabla van todos juntos, en una lista.', v.fila);
+      return;
+    }
+
+    const escritos = inicial.elementos;
+    const enFilas = escritos.filter((e) => e.clase === 'lista').length;
+    if (enFilas && enFilas < escritos.length) {
+      error(
+        'TABLA_LLAVES_MEZCLADAS',
+        'Algunas filas están entre llaves y otras no: cada fila va entre sus propias llaves.',
+        v.fila
+      );
+      return;
+    }
+
+    const coincide = (e, valor) => e.clase === 'numero' && e.valor === valor;
+    const entreComillas = (e) => e.clase === 'caracter' || e.clase === 'cadena';
+    const cuantos = (c) => (c === 1 ? '1 valor' : `${c} valores`);
+
+    if (!enFilas) {
+      // (5, 8, 1, 4) es C valido, pero es otra cosa: vale solo el ultimo numero.
+      if (escritos.some((e) => e.clase === 'otro' && e.texto.trim().startsWith('('))) {
+        error('FILAS_ENTRE_PARENTESIS', 'Las filas de una tabla no se encierran entre paréntesis.', v.fila);
+        return;
+      }
+      // Todo seguido, sin llaves por fila: C lo reparte igual, de a C valores.
+      const total = F * C;
+      if (escritos.length !== total) {
+        error(
+          escritos.length < total ? 'VALORES_DE_MENOS' : 'VALORES_DE_MAS',
+          `La lista tiene ${cuantos(escritos.length)} y la tabla del dibujo tiene ${total}.`,
+          v.fila
+        );
+        return;
+      }
+      const distinto = escritos.findIndex((e, i) => !coincide(e, filas[Math.floor(i / C)][i % C]));
+      if (distinto >= 0) {
+        const e = escritos[distinto];
+        if (entreComillas(e)) {
+          error('VALOR_ENTRE_COMILLAS', `\`${e.texto}\` con comillas no es un número: los números van sin comillas.`, v.fila);
+        } else {
+          error(
+            'VALOR_DISTINTO',
+            `El ${ordinal(distinto)} valor de la lista (\`${e.texto.trim()}\`) no coincide con el del dibujo.`,
+            v.fila
+          );
+        }
+        return;
+      }
+    } else {
+      if (escritos.some((fila) => fila.elementos.some((e) => e.clase === 'lista'))) {
+        error(
+          'VALORES_ANIDADOS',
+          `\`${n}\` tiene dos dimensiones: una lista con las filas, y adentro de cada fila los valores sueltos. Sobran llaves.`,
+          v.fila
+        );
+        return;
+      }
+      // Una fila por columna del dibujo: la cargo al reves.
+      const alReves =
+        escritos.length === C &&
+        escritos.every((fila) => fila.elementos.length === F) &&
+        escritos.every((fila, j) => fila.elementos.every((e, i) => coincide(e, filas[i][j])));
+      if (alReves && (F !== C || !escritos.every((fila, i) => fila.elementos.every((e, j) => coincide(e, filas[i][j]))))) {
+        error(
+          'TABLA_AL_REVES',
+          'Los valores están cargados por columnas. En la lista, cada grupo entre llaves es una fila del dibujo, de izquierda a derecha.',
+          v.fila
+        );
+        return;
+      }
+      if (escritos.length !== F) {
+        error(
+          escritos.length < F ? 'FILAS_DE_MENOS' : 'FILAS_DE_MAS',
+          `La lista tiene ${escritos.length === 1 ? '1 fila' : `${escritos.length} filas`} y la tabla del dibujo tiene ${F}.`,
+          v.fila
+        );
+        return;
+      }
+      const filaMal = escritos.findIndex((fila) => fila.elementos.length !== C);
+      if (filaMal >= 0) {
+        error(
+          'FILA_OTRA_CANTIDAD',
+          `La ${ordinalFemenino(filaMal)} fila tiene ${cuantos(escritos[filaMal].elementos.length)} y en el dibujo tiene ${C}.`,
+          v.fila
+        );
+        return;
+      }
+      for (let i = 0; i < F; i++) {
+        const j = escritos[i].elementos.findIndex((e, k) => !coincide(e, filas[i][k]));
+        if (j < 0) continue;
+        const e = escritos[i].elementos[j];
+        if (entreComillas(e)) {
+          error('VALOR_ENTRE_COMILLAS', `\`${e.texto}\` con comillas no es un número: los números van sin comillas.`, v.fila);
+        } else {
+          error(
+            'VALOR_DISTINTO',
+            `El ${ordinal(j)} valor de la ${ordinalFemenino(i)} fila (\`${e.texto.trim()}\`) no coincide con el del dibujo.`,
+            v.fila
+          );
+        }
+        return;
+      }
+    }
+
+    // Los corchetes: primero las filas, que se pueden dejar vacias, y despues
+    // las columnas, que no.
+    const [deFilas, deColumnas] = v.arreglo.map((d) => d.trim());
+    if (!deColumnas) {
+      error(
+        'TABLA_SIN_COLUMNAS',
+        'En una tabla solo se puede dejar vacía la cantidad de filas: la de columnas hay que escribirla.',
+        v.fila
+      );
+      return;
+    }
+    const lugarFilas = deFilas ? valorDeDimension(deFilas, modelo) : F;
+    const lugarColumnas = valorDeDimension(deColumnas, modelo);
+    if (lugarFilas == null || lugarColumnas == null) return;
+
+    if (F !== C && lugarFilas === C && lugarColumnas === F) {
+      error(
+        'DIMENSIONES_AL_REVES',
+        `Las dimensiones de \`${n}\` están al revés: entre los primeros corchetes va la cantidad de filas y entre los segundos la de columnas.`,
+        v.fila
+      );
+    } else if (lugarFilas !== F || lugarColumnas !== C) {
+      const chica = lugarFilas < F || lugarColumnas < C;
+      error(
+        chica ? 'ARREGLO_CHICO' : 'ARREGLO_GRANDE',
+        `\`${n}\` está definida de ${lugarFilas} por ${lugarColumnas} y la tabla del dibujo es de ${F} filas por ${C} columnas: ` +
+          (chica ? 'no entra.' : 'sobra lugar.'),
+        v.fila
+      );
+    } else if (!enFilas && practicas.includes('claridad')) {
+      mejora(
+        'TABLA_SIN_FILAS',
+        'Con todos los valores seguidos funciona, pero no se ve dónde termina cada fila. Lo ideal es que cada fila vaya entre sus propias llaves.',
         v.fila
       );
     }
@@ -1020,7 +1202,8 @@ function erroresConocidos(respuesta) {
       'En C los corchetes van después del nombre, no del tipo: `tipo nombre[cantidad];`',
     ],
     [
-      /=\s*\[/,
+      // Toda la lista entre corchetes, o las filas de una tabla.
+      /=\s*\[|=\s*\{\s*\[\s*[\d.'-]+\s*,/,
       'CORCHETES_EN_LA_LISTA',
       'La lista de valores de un arreglo no va entre corchetes: los corchetes son para la cantidad de elementos y para elegir uno.',
     ],

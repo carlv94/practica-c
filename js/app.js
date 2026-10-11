@@ -240,6 +240,11 @@ function dibujar(figura) {
   caja.replaceChildren();
   if (!figura) return;
 
+  if (figura.clase === 'tabla') {
+    dibujarTabla(caja, figura.filas);
+    return;
+  }
+
   // Para quien no ve el dibujo, lo mismo dicho en una frase.
   caja.setAttribute(
     'aria-label',
@@ -252,6 +257,25 @@ function dibujar(figura) {
     fila.appendChild(casillero);
   });
   caja.appendChild(fila);
+}
+
+// La tabla: los indices de las columnas arriba y los de las filas a la izquierda.
+function dibujarTabla(caja, filas) {
+  const columnas = filas[0].length;
+  caja.setAttribute(
+    'aria-label',
+    `Tabla de ${filas.length} filas y ${columnas} columnas. ` +
+      filas.map((fila, i) => `Fila ${i}: ${fila.join(', ')}`).join('. ')
+  );
+  const tabla = elemento('div', 'tabla');
+  tabla.style.gridTemplateColumns = `auto repeat(${columnas}, auto)`;
+  tabla.appendChild(elemento('span', 'indice'));
+  for (let j = 0; j < columnas; j++) tabla.appendChild(elemento('span', 'indice', j));
+  filas.forEach((fila, i) => {
+    tabla.appendChild(elemento('span', 'indice de-fila', i));
+    for (const valor of fila) tabla.appendChild(elemento('span', 'valor', valor));
+  });
+  caja.appendChild(tabla);
 }
 
 function comprobar() {

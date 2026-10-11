@@ -1,8 +1,8 @@
 {
   "id": "arreglos-valores",
-  "titulo": "Arreglos: definir con sus valores",
-  "descripcion": "Definir un arreglo y darle sus valores en la misma sentencia.",
-  "buenasPracticas": ["constantes"],
+  "titulo": "Arreglos y tablas: definir con sus valores",
+  "descripcion": "Definir un arreglo o una tabla y darle sus valores en la misma sentencia.",
+  "buenasPracticas": ["constantes", "claridad"],
   "consignas": [
     {
       "id": "arreglos-valores-1",
@@ -17,6 +17,41 @@
       "enunciado": "Además de {V} hace falta otro arreglo, con valores que tienen decimales.\n\nEn la misma sentencia, defina e inicialice el siguiente arreglo:",
       "requiere": [{ "variable": { "tipo": "real", "valores": [12.5, 8, 99.9, 0.75] } }],
       "referencia": "float precios[] = {12.5, 8, 99.9, 0.75};"
+    },
+    {
+      "id": "arreglos-valores-3",
+      "titulo": "Una tabla",
+      "enunciado": "En la misma sentencia, defina e inicialice la siguiente tabla:",
+      "requiere": [
+        {
+          "variable": {
+            "tipo": "entero",
+            "valores": [
+              [5, 8, 1, 4],
+              [0, 2, 9, 6],
+              [3, 7, 4, 8]
+            ]
+          }
+        }
+      ],
+      "referencia": "int tabla[3][4] = {\n  {5, 8, 1, 4},\n  {0, 2, 9, 6},\n  {3, 7, 4, 8}\n};"
+    },
+    {
+      "id": "arreglos-valores-4",
+      "titulo": "Una tabla cuadrada",
+      "enunciado": "En la misma sentencia, defina e inicialice la siguiente tabla:",
+      "requiere": [
+        {
+          "variable": {
+            "tipo": "entero",
+            "valores": [
+              [4, 7],
+              [2, 9]
+            ]
+          }
+        }
+      ],
+      "referencia": "int cuadrada[2][2] = {\n  {4, 7},\n  {2, 9}\n};"
     }
   ]
 }

@@ -220,13 +220,29 @@ section[hidden] {
   align-items: center;
 }
 
-.casillero .indice {
+/* La tabla: una grilla con los indices de columna arriba y los de fila a la
+   izquierda. */
+.tabla {
+  display: inline-grid;
+  align-items: center;
+  justify-items: center;
+}
+
+.tabla .de-fila {
+  padding-right: 8px;
+}
+
+.tabla .valor {
+  margin-top: -1px;
+}
+
+#figura .indice {
   font-size: 0.75rem;
   color: var(--suave);
   line-height: 1.6;
 }
 
-.casillero .valor {
+#figura .valor {
   display: grid;
   place-items: center;
   min-width: 46px;

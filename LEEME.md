@@ -131,7 +131,26 @@ corrige.
 El nombre es libre. El tipo sigue la categoría pedida: con `entero` vale
 `int`, `long` o `short`, y `float` es error.
 
-Las tablas (dos dimensiones) todavía no están.
+**Una tabla** se pide con los valores en filas, y se dibuja con los índices de
+las columnas arriba y los de las filas a la izquierda:
+
+```json
+"valores": [[5, 8, 1, 4], [0, 2, 9, 6], [3, 7, 4, 8]]
+```
+
+| Respuesta | Resultado |
+|---|---|
+| `int t[3][4] = {{5, 8, 1, 4}, {0, 2, 9, 6}, {3, 7, 4, 8}};` | Correcta. |
+| `int t[][4] = {…};` | Correcta: la cantidad de filas se puede dejar vacía. |
+| `int t[3][] = {…};` | Error: la de columnas no. |
+| `int t[3][4] = {5, 8, 1, 4, 0, 2, …};` | Correcta. Con la práctica `claridad`, mejora: no se ve dónde termina cada fila (`TABLA_SIN_FILAS`). |
+| `int t[4][3] = {…}` con las filas bien | Error: las dimensiones están al revés. |
+| Los valores cargados por columnas | Error, con su mensaje (`TABLA_AL_REVES`). En una tabla cuadrada se nota solo por los valores. |
+| Una fila de más o de menos, o con otra cantidad de valores | Error, diciendo cuál. |
+
+A diferencia del arreglo, en una tabla **escribir las dos cantidades no se
+marca como mejorable**: la de columnas es obligatoria, y dejar vacía solo la de
+filas no es más claro.
 
 ### Consignas de sentencias
 
@@ -193,6 +212,10 @@ La práctica `constantes` mira las dimensiones de los arreglos:
 | `int lista[20];` habiendo antes un `#define` que vale 20 | Correcto. Mejora: ya hay una constante con ese valor (`CONSTANTE_SIN_REUTILIZAR`). Se la nombra y se deja a juicio del alumno si es la misma cantidad. |
 | `const int MAX = 20;` o una variable como dimensión | Correcto. Mejora: lo ideal es `#define` (`DIMENSION_CON_VARIABLE`). |
 | `#define max 20` | Correcto. Mejora: las constantes van en mayúscula (`CONSTANTE_EN_MINUSCULA`). |
+
+La práctica `claridad` es para lo que funciona pero se lee mal. Hoy tiene un
+solo caso: la tabla definida con todos los valores seguidos, sin llaves por
+fila.
 
 La solución de `referencia` de una serie con prácticas tiene que ser
 excelente: las pruebas lo verifican.
