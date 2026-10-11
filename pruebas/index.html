@@ -75,7 +75,12 @@
           try {
             const previo = llegarHasta(s, i + 1);
             const r = corregirPaso(analizador, s, i, previo, consigna.referencia);
-            anotar(r.correcto, `referencia de ${consigna.id}`, codigos(r, 'error').join(', '));
+            // La referencia es la respuesta modelo: correcta y sin nada que mejorar.
+            anotar(
+              r.correcto && !r.mejorable,
+              `referencia de ${consigna.id}`,
+              [...codigos(r, 'error'), ...codigos(r, 'mejora')].join(', ')
+            );
 
             // Un {X} del enunciado tiene que haberlo capturado una consigna anterior.
             const sueltas = marcasDe(consigna.enunciado).filter((marca) => !previo.capturas[marca]);
@@ -118,15 +123,18 @@
             const errores = codigos(r, 'error');
             const esperados = caso.espera === 'ok' ? [] : [...caso.espera].sort();
             const avisos = codigos(r, 'aviso');
+            const mejoras = codigos(r, 'mejora');
             const bien =
               errores.join() === esperados.join() &&
-              (caso.avisos || []).every((a) => avisos.includes(a));
+              (caso.avisos || []).every((a) => avisos.includes(a)) &&
+              (!caso.mejoras || mejoras.join() === [...caso.mejoras].sort().join());
             anotar(
               bien,
               titulo,
               bien
                 ? ''
-                : `esperaba [${esperados}] ${caso.avisos || ''}\nsalió   [${errores}] avisos [${avisos}]\n` +
+                : `esperaba [${esperados}] ${caso.avisos || ''} mejoras [${caso.mejoras ?? 'cualquiera'}]\n` +
+                    `salió   [${errores}] avisos [${avisos}] mejoras [${mejoras}]\n` +
                     r.diagnosticos.map((d) => `  línea ${d.linea}: ${d.mensaje}`).join('\n')
             );
           } catch (e) {

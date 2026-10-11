@@ -1,7 +1,12 @@
 // Corrige una respuesta contra las reglas de su consigna.
 //
-//   corregir(analizador, consigna, { contexto, respuesta, capturas, dentroDeMain })
-//     -> { correcto, diagnosticos, capturas }
+//   corregir(analizador, consigna, { contexto, respuesta, capturas, dentroDeMain, practicas })
+//     -> { correcto, mejorable, diagnosticos, capturas }
+//
+// Un diagnostico es un error (la respuesta no vale), un aviso (vale, pero hay
+// algo raro) o una mejora (vale, pero hay una forma mejor: solo en las series
+// que piden esa buena practica). "mejorable" es correcta con alguna mejora; si
+// la serie pide practicas y no queda ninguna, la respuesta es excelente.
 //
 // Desde la pantalla y las pruebas se llama por js/serie.js, que sabe armar el
 // contexto de cada paso.
@@ -20,6 +25,7 @@
 // Reglas que entiende "requiere" (ver LEEME.md):
 //   { "struct":   { "campos": [{ "nombre", "tipo" }], "capturar": "S" } }
 //   { "variable": { "tipo": "$S", "conAlias": true } }
+//   { "variable": { "nombre": "notas", "tipo": "entero", "arreglo": 20 } }
 //   { "alias":    { "de": "$S", "capturar": "A" } }
 //   { "llamada":  { "funcion": "strcpy", "argumentos": ["cadena2", "cadena1"] } }
 
@@ -81,7 +87,7 @@ const DE_LA_BIBLIOTECA = [
 export function corregir(
   analizador,
   consigna,
-  { contexto = '', respuesta = '', capturas = {}, dentroDeMain = false }
+  { contexto = '', respuesta = '', capturas = {}, dentroDeMain = false, practicas = [] }
 ) {
   // Una sentencia suelta ("strcpy(a, b);") solo vale dentro de una funcion:
   // en las series de sentencias el codigo se analiza envuelto en una, que el
@@ -107,10 +113,20 @@ export function corregir(
   }
   const error = (codigo, mensaje, fila) => diag('error', codigo, mensaje, fila);
   const aviso = (codigo, mensaje, fila) => diag('aviso', codigo, mensaje, fila);
+  // Una mejora no invalida: la respuesta esta bien, pero hay una forma mejor.
+  const mejora = (codigo, mensaje, fila) => diag('mejora', codigo, mensaje, fila);
 
   function terminar() {
     const correcto = !diagnosticos.some((d) => d.nivel === 'error');
-    return { correcto, diagnosticos, capturas: correcto ? nuevas : capturas };
+    // Las mejoras son para una respuesta que ya esta bien: con un error, lo
+    // unico que importa es el error.
+    const informados = correcto ? diagnosticos : diagnosticos.filter((d) => d.nivel !== 'mejora');
+    return {
+      correcto,
+      mejorable: correcto && diagnosticos.some((d) => d.nivel === 'mejora'),
+      diagnosticos: informados,
+      capturas: correcto ? nuevas : capturas,
+    };
   }
 
   if (!respuesta.trim()) {
@@ -143,6 +159,7 @@ export function corregir(
     const modelo = construirModelo(arbol, desde);
     revisarNombres(modelo, error);
     revisarAsignaciones(modelo, error);
+    revisarDimensiones(modelo, error, practicas.includes('constantes') ? mejora : null);
     for (const regla of consigna.requiere) aplicarRegla(regla, modelo);
     return terminar();
   } finally {
@@ -309,9 +326,18 @@ export function corregir(
   // ---- variable -------------------------------------------------------------
 
   function reglaVariable(regla, modelo) {
+    // El tipo pedido es uno concreto ("$S", "int") o una categoria ("entero").
     const pedido = valorDe(regla.tipo);
-    const objetivo = resolver(tipoDesdeTexto(pedido), modelo);
-    const candidatas = modelo.variables.filter((v) => v.nuevo);
+    const categoria = CATEGORIAS[pedido];
+    const objetivo = categoria ? null : resolver(tipoDesdeTexto(pedido), modelo);
+    const esDelTipo = (v) => {
+      const real = resolver(v.tipo, modelo);
+      return categoria
+        ? real.clase === 'primitivo' && categoria.es(real.nombre)
+        : mismoTipo(real, objetivo);
+    };
+    const quiereArreglo = regla.arreglo != null && regla.arreglo !== false;
+    let candidatas = modelo.variables.filter((v) => v.nuevo);
 
     if (!candidatas.length) {
       const esAlias = modelo.aliases.some((a) => a.nuevo);
@@ -325,8 +351,29 @@ export function corregir(
       return;
     }
 
-    const delTipo = candidatas.filter((v) => mismoTipo(resolver(v.tipo, modelo), objetivo));
-    const exacta = delTipo.find((v) => !v.punteros && !v.arreglo.length);
+    if (regla.nombre) {
+      const conNombre = candidatas.filter((v) => v.nombre === regla.nombre);
+      if (!conNombre.length) {
+        // Con la palabra del enunciado: sale de lo que pide la consigna, no
+        // de lo que escribio el alumno.
+        const [que, declarado] = quiereArreglo
+          ? ['el arreglo', 'El que está declarado']
+          : ['la variable', 'La que está declarada'];
+        error(
+          'VARIABLE_NOMBRE',
+          `La consigna pide que ${que} se llame \`${regla.nombre}\`.` +
+            (candidatas.length === 1 ? ` ${declarado} se llama \`${candidatas[0].nombre}\`.` : ''),
+          candidatas[0].fila
+        );
+        return;
+      }
+      candidatas = conNombre;
+    }
+
+    const delTipo = candidatas.filter(esDelTipo);
+    const exacta = delTipo.find(
+      (v) => !v.punteros && (quiereArreglo ? v.arreglo.length === 1 : !v.arreglo.length)
+    );
 
     if (exacta) {
       if (regla.conAlias && exacta.tipo.clase !== 'nombre') {
@@ -337,26 +384,56 @@ export function corregir(
           exacta.fila
         );
       }
+      // Con un numero, el arreglo tiene que tener justo esa cantidad, este
+      // escrita como numero o con una constante que valga eso.
+      const tiene = typeof regla.arreglo === 'number' ? valorDeDimension(exacta.arreglo[0], modelo) : null;
+      // Los dos son error, pero no son el mismo: de menos no entra lo que hay
+      // que guardar; de mas entra, y no es lo que pide el problema.
+      const elementos = (n) => (n === 1 ? '1 elemento' : `${n} elementos`);
+      if (tiene != null && tiene < regla.arreglo) {
+        error(
+          'ARREGLO_CHICO',
+          `\`${exacta.nombre}\` tiene lugar para ${elementos(tiene)} y hay que guardar ${regla.arreglo}: no alcanza.`,
+          exacta.fila
+        );
+      } else if (tiene != null && tiene > regla.arreglo) {
+        error(
+          'ARREGLO_GRANDE',
+          `\`${exacta.nombre}\` tiene lugar para ${elementos(tiene)} y la consigna pide ${regla.arreglo}: sobra lugar.`,
+          exacta.fila
+        );
+      }
       return;
     }
 
     const v = delTipo[0] || candidatas[0];
-    if (delTipo.length && v.punteros) {
-      error(
-        'VARIABLE_PUNTERO',
-        `\`${v.nombre}\` es un puntero a la estructura, no una variable de la estructura: sobra el \`*\`.`,
-        v.fila
-      );
-    } else if (delTipo.length) {
+    if (!delTipo.length) {
+      if (resolver(v.tipo, modelo).clase !== 'desconocido') {
+        error(
+          'VARIABLE_TIPO',
+          `\`${v.nombre}\` es de tipo \`${describir(v)}\`. Tiene que ser ` +
+            (categoria ? `${categoria.pide}.` : `de tipo \`${pedido}\`.`),
+          v.fila
+        );
+      }
+    } else if (v.punteros) {
+      error('VARIABLE_PUNTERO', `\`${v.nombre}\` es un puntero: sobra el \`*\`.`, v.fila);
+    } else if (!quiereArreglo) {
       error(
         'VARIABLE_ARREGLO',
-        `\`${v.nombre}\` es un arreglo de estructuras. La consigna pide una sola variable: sobran los corchetes.`,
+        `\`${v.nombre}\` es un arreglo. La consigna pide una sola variable: sobran los corchetes.`,
         v.fila
       );
-    } else if (resolver(v.tipo, modelo).clase !== 'desconocido') {
+    } else if (!v.arreglo.length) {
       error(
-        'VARIABLE_TIPO',
-        `\`${v.nombre}\` es de tipo \`${describir(v)}\`. Tiene que ser de tipo \`${pedido}\`.`,
+        'VARIABLE_NO_ES_ARREGLO',
+        `\`${v.nombre}\` es una sola variable. En un arreglo, la cantidad de elementos va entre corchetes después del nombre: \`tipo nombre[cantidad];\``,
+        v.fila
+      );
+    } else {
+      error(
+        'ARREGLO_DIMENSIONES',
+        `\`${v.nombre}\` tiene ${v.arreglo.length} dimensiones: eso es una tabla. La consigna pide un arreglo de una sola.`,
         v.fila
       );
     }
@@ -588,6 +665,88 @@ function revisarNombres(modelo, error) {
       error('ALIAS_REDEFINIDO', `Ya hay un alias llamado \`${a.nombre}\`: hay que elegir otro nombre.`, a.fila);
     }
     aliasVistos.add(a.nombre);
+  }
+}
+
+// Cuanto vale una dimension: 20 si dice "20", o si dice "MAX" y hay un
+// "#define MAX 20". null si no se puede saber sin calcular (MAX + 1).
+function valorDeDimension(texto, modelo) {
+  const escrito = texto.trim();
+  const constante = modelo.constantes.find((c) => c.nombre === escrito);
+  const numero = /^\(?\s*(\d+)\s*\)?$/.exec(constante ? constante.valor : escrito);
+  return numero ? Number(numero[1]) : null;
+}
+
+// Las dimensiones de los arreglos nuevos.
+//
+// Para cualquier consigna: un nombre como dimension tiene que estar definido,
+// y antes. "int lista[MAX];" sin un #define en la respuesta ni en el codigo
+// hasta aca es un error, como lo seria al compilar.
+//
+// Y si la serie pide la practica "constantes" (llega "mejora"): un numero
+// suelto vale, pero lo ideal es una constante con nombre. La respuesta queda
+// correcta y no excelente.
+function revisarDimensiones(modelo, error, mejora) {
+  const arreglos = [
+    ...modelo.variables.filter((v) => v.nuevo),
+    ...modelo.aliases.filter((a) => a.nuevo),
+    ...modelo.structs.filter((s) => s.nuevo).flatMap((s) => s.campos),
+  ].filter((d) => d.arreglo.length);
+  const dichos = new Set();
+  const unaVez = (clave) => !dichos.has(clave) && dichos.add(clave);
+
+  for (const declarado of arreglos) {
+    for (const dimension of declarado.arreglo) {
+      const escrito = dimension.trim();
+      if (/^\d+$/.test(escrito)) {
+        if (mejora && unaVez('numero' + declarado.fila)) {
+          mejora(
+            'NUMERO_MAGICO',
+            `\`${escrito}\` es un número suelto: no dice qué representa, y si el día de mañana el tamaño cambia hay que buscarlo por todo el programa. Lo ideal es darle un nombre con \`#define\` y usar ese nombre.`,
+            declarado.fila
+          );
+        }
+        continue;
+      }
+      if (!/^[A-Za-z_]\w*$/.test(escrito)) continue;
+
+      const constante = modelo.constantes.find((c) => c.nombre === escrito);
+      const variable = modelo.variables.find((v) => v.nombre === escrito);
+      if (constante) {
+        if (constante.indice > declarado.indice && unaVez('despues' + escrito)) {
+          error(
+            'CONSTANTE_DEFINIDA_DESPUES',
+            `\`${escrito}\` está definida más abajo: tiene que estar antes de la línea que la usa.`,
+            declarado.fila
+          );
+        }
+      } else if (variable) {
+        if (mejora && unaVez('variable' + escrito)) {
+          mejora(
+            'DIMENSION_CON_VARIABLE',
+            `\`${escrito}\` es una variable${variable.esConst ? ', aunque sea `const`' : ''}, no una constante. Para la dimensión de un arreglo lo ideal es una constante definida con \`#define\`.`,
+            declarado.fila
+          );
+        }
+      } else if (unaVez('falta' + escrito)) {
+        error(
+          'CONSTANTE_SIN_DEFINIR',
+          `\`${escrito}\` no está definida. Una constante se define antes de usarla, con \`#define\`.`,
+          declarado.fila
+        );
+      }
+    }
+  }
+
+  if (!mejora) return;
+  for (const c of modelo.constantes) {
+    if (c.nuevo && c.clase === 'define' && c.nombre !== c.nombre.toUpperCase()) {
+      mejora(
+        'CONSTANTE_EN_MINUSCULA',
+        `Por convención, las constantes se escriben en mayúscula, para distinguirlas de las variables: \`${c.nombre.toUpperCase()}\`.`,
+        c.fila
+      );
+    }
   }
 }
 

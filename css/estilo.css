@@ -14,6 +14,8 @@
   --error-fondo: #fdecea;
   --aviso: #8a5a00;
   --aviso-fondo: #fff4d6;
+  --mejora: #0b5fd6;
+  --mejora-fondo: #e7f0fd;
   --codigo: #eef1f4;
   /* los colores del codigo */
   --c-clave: #8250df;
@@ -39,6 +41,8 @@
     --error-fondo: #3a1c1a;
     --aviso: #f0c35b;
     --aviso-fondo: #352a10;
+    --mejora: #6ea8ff;
+    --mejora-fondo: #172a45;
     --codigo: #262c34;
     --c-clave: #d2a8ff;
     --c-tipo: #79c0ff;
@@ -281,6 +285,12 @@ pre {
   font-weight: 700;
 }
 
+.editor .numeros .mejora {
+  background: var(--mejora-fondo);
+  color: var(--mejora);
+  font-weight: 700;
+}
+
 .editor .numeros .aviso {
   background: var(--aviso-fondo);
   color: var(--aviso);
@@ -408,6 +418,12 @@ button[hidden] {
 .mensaje.error {
   border-color: var(--error);
   background: var(--error-fondo);
+}
+
+/* Una mejora no es un error ni un aviso: la respuesta vale. */
+.mensaje.mejora {
+  border-color: var(--mejora);
+  background: var(--mejora-fondo);
 }
 
 .mensaje.aviso {

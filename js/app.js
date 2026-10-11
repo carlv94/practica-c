@@ -13,7 +13,7 @@
 // con datos que no cierran.
 
 import { cargarAnalizador } from './analizador.js';
-import { inicio, codigoPrevio, corregirPaso, despuesDe } from './serie.js';
+import { inicio, codigoPrevio, corregirPaso, despuesDe, pidePracticas } from './serie.js';
 import { crearEditor, pintar } from './editor.js';
 import { partesDeEnunciado } from './enunciado.js';
 
@@ -61,6 +61,7 @@ function registrarIntento(consigna, resultado) {
     consigna: consigna.id,
     fecha: new Date().toISOString(),
     correcto: resultado.correcto,
+    mejorable: resultado.mejorable,
     conAyuda: pidioSolucion,
     codigos: resultado.diagnosticos.map((d) => d.codigo),
   });
@@ -113,7 +114,8 @@ function recorrer(s) {
     const r = corregirPaso(analizador, s, i, hasta, hecha.codigo);
     if (!r.correcto) break;
     hasta = despuesDe(s, i, hasta, hecha.codigo, r);
-    validas.push(hecha);
+    // Si quedo excelente se calcula de nuevo, igual que si sigue valiendo.
+    validas.push({ ...hecha, excelente: !r.mejorable });
   }
   return { hechas: validas, avance: hasta };
 }
@@ -132,7 +134,9 @@ function mostrarLista() {
   $('lista').replaceChildren(
     ...series.map((s) => {
       const total = s.consignas.length;
-      const resueltas = recorrer(s).hechas.length;
+      const validas = recorrer(s).hechas;
+      const resueltas = validas.length;
+      const excelentes = validas.filter((h) => h.excelente).length;
 
       const tarjeta = elemento('a', 'tarjeta');
       tarjeta.href = '#/serie/' + encodeURIComponent(s.id);
@@ -144,6 +148,10 @@ function mostrarLista() {
       if (resueltas >= total) {
         estado = 'completa';
         texto = 'Completa';
+        // Donde se piden buenas practicas, completa no es lo mismo que excelente.
+        if (pidePracticas(s)) {
+          texto += excelentes === total ? ', todo excelente' : ` · ${excelentes} de ${total} excelentes`;
+        }
       } else if (resueltas > 0) {
         estado = 'en-curso';
         texto = `En curso: ${resueltas} de ${total}`;
@@ -179,7 +187,9 @@ function mostrarConsigna() {
   $('titulo-serie').textContent = serie.titulo;
   $('pasos').replaceChildren(
     ...serie.consignas.map((c, i) => {
-      const paso = elemento('li', null, `${i + 1}. ${c.titulo}`);
+      const estrella = i < actual && pidePracticas(serie) && hechas[i].excelente ? ' ★' : '';
+      const paso = elemento('li', null, `${i + 1}. ${c.titulo}${estrella}`);
+      if (estrella) paso.title = 'Excelente';
       if (i < actual) paso.className = 'hecho';
       if (i === actual) paso.className = 'actual';
       return paso;
@@ -199,7 +209,10 @@ function mostrarConsigna() {
     const conAyuda = hechas.filter((h) => h.conAyuda).length;
     $('resumen-final').textContent =
       `Resolvió las ${hechas.length} consignas` +
-      (conAyuda ? `, ${conAyuda} de ellas mirando la solución.` : ' sin mirar ninguna solución.');
+      (conAyuda ? `, ${conAyuda} de ellas mirando la solución.` : ' sin mirar ninguna solución.') +
+      (pidePracticas(serie)
+        ? ` ${hechas.filter((h) => h.excelente).length} de ${hechas.length} quedaron excelentes (★).`
+        : '');
     pintar($('codigo-final'), avance.contexto);
     return;
   }
@@ -221,24 +234,49 @@ function mostrarConsigna() {
 
 function comprobar() {
   const consigna = serie?.consignas[hechas.length];
-  if (!consigna || pendiente) return;
+  if (!consigna || $('respuesta').readOnly) return;
+  pendiente = null;
   const respuesta = $('respuesta').value;
   const r = corregirPaso(analizador, serie, hechas.length, avance, respuesta);
   registrarIntento(consigna, r);
   editor.marcar(r.diagnosticos);
 
   const cajas = r.diagnosticos.map((d) => mensaje(d.nivel, d.mensaje, d.linea));
+  $('siguiente').hidden = !r.correcto;
   if (r.correcto) {
-    cajas.unshift(mensaje('bien', 'Correcto.'));
-    pendiente = { hecha: { codigo: respuesta.trim(), conAyuda: pidioSolucion }, resultado: r };
-    $('respuesta').readOnly = true;
-    $('comprobar').hidden = true;
-    $('ver-solucion').hidden = true;
-    $('siguiente').hidden = false;
-    $('siguiente').textContent = hechas.length + 1 < serie.consignas.length ? 'Siguiente' : 'Terminar';
-    $('siguiente').focus();
+    pendiente = {
+      hecha: { codigo: respuesta.trim(), conAyuda: pidioSolucion, excelente: !r.mejorable },
+      resultado: r,
+    };
+    const ultima = hechas.length + 1 >= serie.consignas.length;
+    // Con algo para mejorar, el boton que se destaca sigue siendo "Comprobar".
+    $('siguiente').classList.toggle('principal', !r.mejorable);
+    if (r.mejorable) {
+      // Vale, pero hay una forma mejor: puede arreglarla y comprobar de
+      // nuevo, o seguir con lo que tiene. Por eso el editor no se bloquea.
+      cajas.unshift(
+        mensaje('bien', 'Correcto, y se puede mejorar. Puede cambiarlo y comprobar de nuevo, o seguir así.')
+      );
+      $('siguiente').textContent = ultima ? 'Terminar así' : 'Seguir así';
+    } else {
+      cajas.unshift(mensaje('bien', pidePracticas(serie) ? 'Excelente.' : 'Correcto.'));
+      $('respuesta').readOnly = true;
+      $('comprobar').hidden = true;
+      $('ver-solucion').hidden = true;
+      $('siguiente').textContent = ultima ? 'Terminar' : 'Siguiente';
+      $('siguiente').focus();
+    }
   }
   $('resultado').replaceChildren(...cajas);
+}
+
+// Lo comprobado vale para el texto que se comprobo: si despues lo cambia, hay
+// que comprobar de nuevo antes de seguir.
+function alEscribir() {
+  if (!pendiente) return;
+  pendiente = null;
+  $('siguiente').hidden = true;
+  $('resultado').replaceChildren();
 }
 
 function siguiente() {
@@ -332,6 +370,7 @@ async function iniciar() {
   $('ver-solucion').addEventListener('click', verSolucion);
   $('reiniciar').addEventListener('click', reiniciar);
   $('respuesta').addEventListener('keydown', teclaEnRespuesta);
+  $('respuesta').addEventListener('input', alEscribir);
   window.addEventListener('hashchange', navegar);
   navegar();
 }

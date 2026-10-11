@@ -25,8 +25,12 @@ export function corregirPaso(analizador, serie, indice, avance, respuesta) {
     respuesta,
     capturas: avance.capturas,
     dentroDeMain: Boolean(serie.dentroDeMain),
+    practicas: serie.buenasPracticas || [],
   });
 }
+
+// Si la serie pide buenas practicas, una respuesta puede ser excelente.
+export const pidePracticas = (serie) => Boolean(serie.buenasPracticas?.length);
 
 // El avance despues de aceptar una respuesta correcta.
 export function despuesDe(serie, indice, avance, respuesta, resultado) {

@@ -5,6 +5,8 @@
 //   respuesta: lo que escribe el alumno
 //   espera:    'ok', o la lista de codigos de error que tienen que salir
 //   avisos:    codigos de aviso que tienen que salir (no hacen fallar la respuesta)
+//   mejoras:   si esta, los codigos de mejora que tienen que salir, justo esos
+//              ([] = la respuesta es excelente)
 //   previas:   respuestas a las consignas anteriores, si no son las de referencia
 //
 // Sumar un caso cada vez que un alumno escriba algo que el corrector entienda mal.
@@ -65,7 +67,45 @@ const CASOS_DE_CADENAS = [
   cadenas(2, 'la funcion del paso anterior', 'strcpy(saludo, cadena1);', ['FUNCION_EQUIVOCADA']),
 ];
 
+// Los arreglos, en una serie que pide la buena practica de las constantes:
+// "mejoras" es lo que deja la respuesta correcta pero no excelente.
+const arreglos = (paso, nombre, respuesta, espera, mejoras = []) => ({
+  serie: 'arreglos',
+  paso,
+  nombre,
+  respuesta,
+  espera,
+  mejoras,
+});
+
+const CASOS_DE_ARREGLOS = [
+  arreglos(1, 'con #define es excelente', '#define MAX_ALUMNOS 20\nint notas[MAX_ALUMNOS];', 'ok'),
+  arreglos(1, 'con el valor entre parentesis', '#define MAX (20)\nint notas[MAX];', 'ok'),
+  arreglos(1, 'numero suelto: correcto pero mejorable', 'int notas[20];', 'ok', ['NUMERO_MAGICO']),
+  arreglos(1, 'constante en minuscula', '#define max 20\nint notas[max];', 'ok', ['CONSTANTE_EN_MINUSCULA']),
+  arreglos(1, 'const en vez de #define', 'const int MAX = 20;\nint notas[MAX];', 'ok', ['DIMENSION_CON_VARIABLE']),
+  arreglos(1, 'una variable comun como dimension', 'int n = 20;\nint notas[n];', 'ok', ['DIMENSION_CON_VARIABLE']),
+  arreglos(1, 'constante sin definir', 'int notas[MAX_ALUMNOS];', ['CONSTANTE_SIN_DEFINIR']),
+  arreglos(1, 'constante definida despues', 'int notas[MAX];\n#define MAX 20', ['CONSTANTE_DEFINIDA_DESPUES']),
+  arreglos(1, 'la constante vale de mas', '#define MAX 30\nint notas[MAX];', ['ARREGLO_GRANDE']),
+  arreglos(1, 'la constante vale de menos', '#define MAX 10\nint notas[MAX];', ['ARREGLO_CHICO']),
+  arreglos(1, 'un solo elemento', 'int notas[1];', ['ARREGLO_CHICO']),
+  // Con un error, la mejora no se dice: primero que quede bien.
+  arreglos(1, 'de mas con numero suelto', 'int notas[30];', ['ARREGLO_GRANDE']),
+  arreglos(1, 'otro tipo con numero suelto', 'float notas[20];', ['VARIABLE_TIPO']),
+  arreglos(1, 'sin corchetes', 'int notas;', ['VARIABLE_NO_ES_ARREGLO']),
+  arreglos(1, 'dos dimensiones', '#define F 4\n#define C 5\nint notas[F][C];', ['ARREGLO_DIMENSIONES']),
+  arreglos(1, 'otro tipo', '#define MAX 20\nfloat notas[MAX];', ['VARIABLE_TIPO']),
+  arreglos(1, 'otro nombre', '#define MAX 20\nint nota[MAX];', ['VARIABLE_NOMBRE']),
+  arreglos(1, 'el #define sin el arreglo', '#define MAX 20', ['VARIABLE_FALTA']),
+  arreglos(2, 'usa la constante del paso anterior', 'float promedios[MAX_ALUMNOS];', 'ok'),
+  arreglos(2, 'double tambien es real', 'double promedios[MAX_ALUMNOS];', 'ok'),
+  arreglos(2, 'numero suelto en el segundo paso', 'float promedios[20];', 'ok', ['NUMERO_MAGICO']),
+  arreglos(2, 'constante mal escrita', 'float promedios[MAX_ALUMNO];', ['CONSTANTE_SIN_DEFINIR']),
+];
+
 export const CASOS = [
+  ...CASOS_DE_ARREGLOS,
   ...CASOS_DE_CADENAS,
   // ---- 1: declarar la estructura ----
   {
@@ -89,8 +129,22 @@ export const CASOS = [
   {
     nombre: 'dimension con una constante',
     paso: 1,
-    respuesta: campos('char nombreFantasia[MAX];\nchar titular[MAX];\nfloat montoRecaudado;\nlong cantidadVentas;'),
+    respuesta: '#define MAX 40\n' + campos('char nombreFantasia[MAX];\nchar titular[MAX];\nfloat montoRecaudado;\nlong cantidadVentas;'),
     espera: 'ok',
+    mejoras: [],
+  },
+  {
+    nombre: 'dimension con una constante que nadie definio',
+    paso: 1,
+    respuesta: campos('char nombreFantasia[MAX];\nchar titular[MAX];\nfloat montoRecaudado;\nlong cantidadVentas;'),
+    espera: ['CONSTANTE_SIN_DEFINIR'],
+  },
+  {
+    nombre: 'un numero suelto no se marca si la serie no pide la practica',
+    paso: 1,
+    respuesta: campos('char nombreFantasia[20];\nchar titular[20];\nfloat montoRecaudado;\nint cantidadVentas;'),
+    espera: 'ok',
+    mejoras: [],
   },
   {
     nombre: 'un campo de mas avisa pero vale',

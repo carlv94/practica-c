@@ -6,7 +6,12 @@
 //   struct:   { id, etiqueta, campos, nuevo, fila }
 //   campo:    { nombre, tipo, arreglo, punteros, fila }
 //   alias:    { nombre, tipo, arreglo, punteros, nuevo, fila }
-//   variable: { nombre, tipo, arreglo, punteros, local, inicializada, nuevo, fila }
+//   variable: { nombre, tipo, arreglo, punteros, local, esConst, inicializada, nuevo, fila }
+//   constante: { nombre, valor, clase: 'define' | 'enum', nuevo, fila }
+//
+// "arreglo" son las dimensiones como estan escritas (['20'], ['MAX']), y lo
+// declarado lleva tambien "indice", su lugar en el codigo, para saber que
+// esta antes de que.
 //
 // y de las sentencias, lo que hace falta para las consignas de "escriba el
 // codigo que...": las llamadas a funciones con sus argumentos, las
@@ -91,7 +96,15 @@ function desenvolver(nodo) {
 }
 
 export function construirModelo(arbol, desde) {
-  const modelo = { structs: [], aliases: [], variables: [], llamadas: [], asignaciones: [], ciclos: [] };
+  const modelo = {
+    structs: [],
+    aliases: [],
+    variables: [],
+    constantes: [],
+    llamadas: [],
+    asignaciones: [],
+    ciclos: [],
+  };
 
   // Un argumento, o un lado de una asignacion.
   function leerValor(n) {
@@ -135,7 +148,14 @@ export function construirModelo(arbol, desde) {
       const tipo = leerTipo(hijo.childForFieldName('type'));
       for (const declarador of hijosDeCampo(hijo, 'declarator')) {
         const d = desenvolver(declarador);
-        if (d.nombre) def.campos.push({ ...d, tipo, fila: declarador.startPosition.row });
+        if (d.nombre) {
+          def.campos.push({
+            ...d,
+            tipo,
+            fila: declarador.startPosition.row,
+            indice: declarador.startIndex,
+          });
+        }
       }
     }
     return def;
@@ -168,6 +188,7 @@ export function construirModelo(arbol, desde) {
       case 'type_definition': {
         const tipo = leerTipo(n.childForFieldName('type'));
         const destino = n.type === 'declaration' ? modelo.variables : modelo.aliases;
+        const esConst = n.children.some((h) => h.type === 'type_qualifier' && h.text === 'const');
         for (const declarador of hijosDeCampo(n, 'declarator')) {
           const d = desenvolver(declarador);
           // Un prototipo de funcion no es una variable.
@@ -176,8 +197,26 @@ export function construirModelo(arbol, desde) {
             ...d,
             tipo,
             local,
+            esConst,
             nuevo: n.startIndex >= desde,
             fila: declarador.startPosition.row,
+            indice: declarador.startIndex,
+          });
+        }
+        break;
+      }
+      case 'preproc_def':
+      case 'enumerator': {
+        const nombre = n.childForFieldName('name');
+        const valor = n.childForFieldName('value');
+        if (nombre) {
+          modelo.constantes.push({
+            nombre: nombre.text,
+            valor: valor ? valor.text.trim() : '',
+            clase: n.type === 'preproc_def' ? 'define' : 'enum',
+            nuevo: n.startIndex >= desde,
+            fila: n.startPosition.row,
+            indice: n.startIndex,
           });
         }
         break;
@@ -259,11 +298,14 @@ export function resolver(tipo, modelo, vistos = new Set()) {
 }
 
 // "struct Puesto" o "PuestoT", como lo guarda una captura, a un tipo escrito.
+// Tambien un tipo basico: "int", "unsigned int".
+const BASICOS = ['char', 'int', 'float', 'double', 'long', 'short', 'unsigned', 'signed', 'void'];
+
 export function tipoDesdeTexto(texto) {
   const partes = texto.trim().split(/\s+/);
-  return partes[0] === 'struct'
-    ? { clase: 'struct', etiqueta: partes[1], defId: null }
-    : { clase: 'nombre', nombre: partes[0] };
+  if (partes[0] === 'struct') return { clase: 'struct', etiqueta: partes[1], defId: null };
+  if (partes.every((p) => BASICOS.includes(p))) return { clase: 'primitivo', nombre: partes.join(' ') };
+  return { clase: 'nombre', nombre: partes[0] };
 }
 
 export function textoDeTipo(tipo) {

@@ -82,7 +82,13 @@ Las reglas de `requiere`:
   dimensión), `entero`, `real` o `caracter`. Un campo de más avisa pero no
   invalida.
 - `{ "variable": { "tipo": "$S" } }` — una variable de ese tipo, global o
-  local. Con `"conAlias": true` tiene que estar declarada con un alias.
+  local. El tipo es una captura (`$S`), un tipo de C (`int`) o una categoría
+  (`entero`, `real`, `caracter`). Opcionales:
+  - `"conAlias": true`: tiene que estar declarada con un alias.
+  - `"nombre": "notas"`: tiene que llamarse así.
+  - `"arreglo": 20`: tiene que ser un arreglo de 20 elementos, escritos como
+    número o con una constante que valga 20. Con `"arreglo": true` vale
+    cualquier tamaño. Sin esto, un arreglo no se acepta.
 - `{ "alias": { "de": "$S", "capturar": "A" } }` — un `typedef` de ese tipo.
 - `{ "llamada": { "funcion": "strcpy", "argumentos": ["cadena2", "cadena1"] } }`
   — una llamada a esa función con esas variables, en ese orden. Opcionales:
@@ -128,6 +134,42 @@ anterior capturó.
 
 La `referencia` tiene que pasar su propia consigna, encadenada con las
 referencias anteriores: las pruebas lo verifican.
+
+## Buenas prácticas
+
+Una respuesta puede estar bien sin ser la ideal. Una serie que lleva
+
+```json
+"buenasPracticas": ["constantes"]
+```
+
+distingue **correcto** de **excelente**: lo que no sigue la práctica no
+invalida la respuesta, pero se le explica al alumno como una mejora, y puede
+corregirlo y comprobar de nuevo o seguir así. La lista de series y el final de
+la serie muestran cuántas quedaron excelentes.
+
+Las mejoras se dicen solo cuando la respuesta ya está bien: con un error, se
+muestra el error y nada más.
+
+**Va por serie y no para todo** porque no se le puede reclamar a un alumno
+algo que todavía no vio: se activa a partir de la unidad donde se enseña.
+
+La práctica `constantes` mira las dimensiones de los arreglos:
+
+| | Resultado |
+|---|---|
+| `#define MAX 20` y `int lista[MAX];` | Excelente. |
+| `int lista[20];` | Correcto. Mejora: un número suelto (`NUMERO_MAGICO`). |
+| `const int MAX = 20;` o una variable como dimensión | Correcto. Mejora: lo ideal es `#define` (`DIMENSION_CON_VARIABLE`). |
+| `#define max 20` | Correcto. Mejora: las constantes van en mayúscula (`CONSTANTE_EN_MINUSCULA`). |
+
+La solución de `referencia` de una serie con prácticas tiene que ser
+excelente: las pruebas lo verifican.
+
+Aparte de las prácticas, y **en todas las series**: una dimensión con un
+nombre que nadie definió (`int lista[MAX];` sin `#define`) es un error. El
+`#define` tiene que estar en la misma respuesta o en el código hasta acá, y
+antes de la línea que lo usa.
 
 ## Al corregir
 
