@@ -176,8 +176,20 @@ La cantidad de **columnas** no se marca nunca: C la exige, y se ve en cada fila
 de la lista. La de filas sí, como en el arreglo, porque el compilador la
 cuenta solo.
 
-Las tablas todavía no completan con ceros: `int t[3][4] = {0};` se corrige
-como una lista con un solo valor.
+**Las tablas también completan con ceros**, con las mismas reglas que el
+arreglo:
+
+| Valores pedidos | Respuesta | Resultado |
+|---|---|---|
+| tabla de ceros | `#define FILAS 3`, `#define COLUMNAS 4` y `int t[FILAS][COLUMNAS] = {0};` | Excelente. |
+| tabla de ceros | `int t[3][4] = {0};` | Correcta. Mejora: el `3` y el `4` son números sueltos (cada uno con su mensaje). |
+| tabla de ceros | `int t[][4] = {0};` | Error: con las filas vacías es una sola fila. |
+| tabla de ceros | `{{0, 0, 0, 0}, {0, 0, 0, 0}, …}` | Correcta. Mejora: alcanza con `{0}` (`CERO_ALCANZA`). |
+| `5 8 0 0 / 1 0 0 0 / 0 0 0 0` | `int t[3][4] = {{5, 8}, {1}};` | Correcta: lo que no se nombra queda en cero. |
+| `5 8 0 0 / 1 0 0 0 / 0 0 0 0` | `{{5}, {1}}` | Error: a la primera fila le falta un valor que no es cero. |
+
+Una fila o unas filas que no se escriben valen si en el dibujo son de ceros;
+si no, es un error que dice que lo que no se nombra queda en cero.
 
 ### Consignas de sentencias
 

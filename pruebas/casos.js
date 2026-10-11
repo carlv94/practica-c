@@ -187,7 +187,8 @@ const CASOS_DE_VALORES = [
   valores(3, 'una fila con un valor de menos', 'int t[3][4] = {{5, 8, 1, 4}, {0, 2, 9}, {3, 7, 4, 8}};', ['FILA_OTRA_CANTIDAD']),
   valores(3, 'un valor distinto', 'int t[3][4] = {{5, 8, 1, 4}, {0, 2, 5, 6}, {3, 7, 4, 8}};', ['VALOR_DISTINTO']),
   valores(3, 'todo seguido con un valor distinto', 'int t[3][4] = {5, 8, 1, 4, 0, 2, 5, 6, 3, 7, 4, 8};', ['VALOR_DISTINTO']),
-  valores(3, 'todo seguido con valores de menos', 'int t[3][4] = {5, 8, 1, 4, 0, 2, 9, 6};', ['VALORES_DE_MENOS']),
+  valores(3, 'todo seguido con valores de menos', 'int t[3][4] = {5, 8, 1, 4, 0, 2, 9, 6};', ['VALORES_SIN_NOMBRAR']),
+  valores(3, 'todo seguido con valores de menos y las filas vacias', 'int t[][4] = {5, 8, 1, 4, 0, 2, 9, 6};', ['VALORES_DE_MENOS']),
   valores(3, 'unas filas con llaves y otras no', 'int t[3][4] = {{5, 8, 1, 4}, 0, 2, 9, 6, {3, 7, 4, 8}};', ['TABLA_LLAVES_MEZCLADAS']),
   valores(3, 'llaves de mas', 'int t[3][4] = {{{5, 8, 1, 4}}, {{0, 2, 9, 6}}, {{3, 7, 4, 8}}};', ['VALORES_ANIDADOS']),
   valores(3, 'lugar de mas', 'int t[5][4] = {{5, 8, 1, 4}, {0, 2, 9, 6}, {3, 7, 4, 8}};', ['ARREGLO_GRANDE']),
@@ -253,6 +254,50 @@ const CASOS_DE_VALORES = [
   valores(7, 'ceros al final sin escribir, con los corchetes vacios', 'int c[] = {5, 1};', ['VALORES_DE_MENOS']),
   valores(7, 'falta el uno', 'int c[4] = {5};', ['VALORES_SIN_NOMBRAR']),
 
+  // Una tabla en cero: 3 filas por 4 columnas. Con {0} los numeros de los
+  // corchetes son lo unico que dice la forma: hay que darles nombre.
+  valores(8, 'cero con constantes es excelente', '#define FILAS 3\n#define COLUMNAS 4\nint t[FILAS][COLUMNAS] = {0};', 'ok'),
+  valores(8, 'cero con los numeros sueltos', 'int t[3][4] = {0};', 'ok', [
+    'CONSTANTE_SIN_REUTILIZAR',
+    'NUMERO_MAGICO',
+  ]),
+  valores(8, 'una fila en cero y el resto sin escribir', 'int t[3][4] = {{0}};', 'ok', [
+    'CONSTANTE_SIN_REUTILIZAR',
+    'NUMERO_MAGICO',
+  ]),
+  valores(8, 'una fila por fila, con un cero cada una', 'int t[][4] = {{0}, {0}, {0}};', 'ok', [
+    'CERO_ALCANZA',
+    'CONSTANTE_SIN_REUTILIZAR',
+  ]),
+  valores(8, 'todos los ceros escritos en filas', 'int t[3][4] = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}};', 'ok', [
+    'CERO_ALCANZA',
+  ]),
+  valores(8, 'una fila de ceros seguidos', 'int t[3][4] = {0, 0, 0, 0};', 'ok', [
+    'CERO_ALCANZA',
+    'CONSTANTE_SIN_REUTILIZAR',
+    'NUMERO_MAGICO',
+  ]),
+  valores(8, 'un cero con las filas vacias: es una sola fila', 'int t[][4] = {0};', ['ARREGLO_CHICO']),
+  valores(8, 'un uno en vez del cero', 'int t[3][4] = {1};', ['VALOR_DISTINTO']),
+  valores(8, 'lugar de menos', 'int t[2][4] = {0};', ['ARREGLO_CHICO']),
+  valores(8, 'dimensiones al reves', 'int t[4][3] = {0};', ['DIMENSIONES_AL_REVES']),
+  valores(8, 'lista vacia', 'int t[3][4] = {};', ['LISTA_VACIA']),
+  valores(8, 'una fila con un valor de mas', 'int t[3][4] = {{0, 0, 0, 0, 0}};', ['FILA_OTRA_CANTIDAD']),
+  valores(8, 'una fila de mas', 'int t[3][4] = {{0}, {0}, {0}, {0}};', ['FILAS_DE_MAS']),
+
+  // Ceros que no se escriben en una tabla con valores: 5 8 0 0 / 1 0 0 0 / 0 0 0 0.
+  valores(9, 'solo lo que no es cero, con constantes', 'int u[FILAS][COLUMNAS] = {{5, 8}, {1}};', 'ok'),
+  valores(9, 'los ceros de las filas escritos', 'int u[FILAS][COLUMNAS] = {{5, 8, 0, 0}, {1}};', 'ok'),
+  valores(9, 'todas las filas escritas: las filas estan repetidas', 'int u[FILAS][COLUMNAS] = {{5, 8, 0, 0}, {1, 0, 0, 0}, {0, 0, 0, 0}};', 'ok', [
+    'FILAS_REPETIDAS',
+  ]),
+  valores(9, 'con los numeros habiendo constantes', 'int u[3][4] = {{5, 8}, {1}};', 'ok', ['CONSTANTE_SIN_REUTILIZAR']),
+  valores(9, 'seguidos hasta el ultimo distinto de cero', 'int u[FILAS][COLUMNAS] = {5, 8, 0, 0, 1};', 'ok', [
+    'TABLA_SIN_FILAS',
+  ]),
+  valores(9, 'una fila que se queda corta', 'int u[FILAS][COLUMNAS] = {{5}, {1}};', ['FILA_OTRA_CANTIDAD']),
+  valores(9, 'seguidos que se quedan cortos', 'int u[FILAS][COLUMNAS] = {5, 8};', ['VALORES_SIN_NOMBRAR']),
+  valores(9, 'una fila que falta y no es de ceros', 'int u[FILAS][COLUMNAS] = {{5, 8}};', ['FILAS_DE_MENOS']),
 ];
 
 export const CASOS = [

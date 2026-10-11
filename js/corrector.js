@@ -522,6 +522,10 @@ export function corregir(
     }
 
     const escritos = inicial.elementos;
+    if (escritos.length === 0) {
+      error('LISTA_VACIA', 'La lista está vacía: tiene que traer al menos un valor.', v.fila);
+      return;
+    }
     const enFilas = escritos.filter((e) => e.clase === 'lista').length;
     if (enFilas && enFilas < escritos.length) {
       error(
@@ -535,6 +539,13 @@ export function corregir(
     const coincide = (e, valor) => e.clase === 'numero' && e.valor === valor;
     const entreComillas = (e) => e.clase === 'caracter' || e.clase === 'cadena';
     const cuantos = (c) => (c === 1 ? '1 valor' : `${c} valores`);
+    // Lo que la lista no nombra queda en cero: no escribirlo es correcto si el
+    // dibujo tiene ahi un cero. Para saberlo, lo que sigue de una posicion.
+    const hayDistintoDeCero = (desdeFila, desdeColumna) =>
+      filas.some((fila, i) =>
+        fila.some((x, j) => (i > desdeFila || (i === desdeFila && j >= desdeColumna)) && x !== 0)
+      );
+    const [deFilas, deColumnas] = v.arreglo.map((d) => d.trim());
 
     if (!enFilas) {
       // (5, 8, 1, 4) es C valido, pero es otra cosa: vale solo el ultimo numero.
@@ -544,10 +555,24 @@ export function corregir(
       }
       // Todo seguido, sin llaves por fila: C lo reparte igual, de a C valores.
       const total = F * C;
-      if (escritos.length !== total) {
+      if (escritos.length > total) {
         error(
-          escritos.length < total ? 'VALORES_DE_MENOS' : 'VALORES_DE_MAS',
+          'VALORES_DE_MAS',
           `La lista tiene ${cuantos(escritos.length)} y la tabla del dibujo tiene ${total}.`,
+          v.fila
+        );
+        return;
+      }
+      if (escritos.length < total && hayDistintoDeCero(Math.floor(escritos.length / C), escritos.length % C)) {
+        // Con la cantidad de filas escrita, lo que falta se completa con ceros;
+        // con los corchetes vacios, simplemente hay menos filas.
+        error(
+          deFilas ? 'VALORES_SIN_NOMBRAR' : 'VALORES_DE_MENOS',
+          deFilas
+            ? escritos.length === 1
+              ? `Así solo el primer elemento vale \`${escritos[0].texto.trim()}\`: los que la lista no nombra quedan en cero, no repiten el último valor.`
+              : `Así solo los primeros ${escritos.length} elementos tienen los valores de la lista: los que no nombra quedan en cero.`
+            : `La lista tiene ${cuantos(escritos.length)} y la tabla del dibujo tiene ${total}.`,
           v.fila
         );
         return;
@@ -588,24 +613,35 @@ export function corregir(
         );
         return;
       }
-      if (escritos.length !== F) {
+      // Filas que la lista no escribe: quedan en cero, y vale si en el dibujo
+      // tambien lo son.
+      const conFilas = escritos.length === 1 ? '1 fila' : `${escritos.length} filas`;
+      if (escritos.length > F || (escritos.length < F && hayDistintoDeCero(escritos.length, 0))) {
         error(
           escritos.length < F ? 'FILAS_DE_MENOS' : 'FILAS_DE_MAS',
-          `La lista tiene ${escritos.length === 1 ? '1 fila' : `${escritos.length} filas`} y la tabla del dibujo tiene ${F}.`,
+          `La lista tiene ${conFilas} y la tabla del dibujo tiene ${F}.` +
+            (escritos.length < F && deFilas ? ' Las filas que la lista no nombra quedan en cero.' : ''),
           v.fila
         );
         return;
       }
-      const filaMal = escritos.findIndex((fila) => fila.elementos.length !== C);
+      // Lo mismo dentro de una fila: de mas no entra; de menos, el resto queda
+      // en cero.
+      const filaMal = escritos.findIndex(
+        (fila, i) =>
+          fila.elementos.length > C || (fila.elementos.length < C && hayDistintoDeCero(i, fila.elementos.length) && filas[i].slice(fila.elementos.length).some((x) => x !== 0))
+      );
       if (filaMal >= 0) {
+        const cantidad = escritos[filaMal].elementos.length;
         error(
           'FILA_OTRA_CANTIDAD',
-          `La ${ordinalFemenino(filaMal)} fila tiene ${cuantos(escritos[filaMal].elementos.length)} y en el dibujo tiene ${C}.`,
+          `La ${ordinalFemenino(filaMal)} fila tiene ${cuantos(cantidad)} y en el dibujo tiene ${C}.` +
+            (cantidad < C ? ' Los valores que la fila no nombra quedan en cero.' : ''),
           v.fila
         );
         return;
       }
-      for (let i = 0; i < F; i++) {
+      for (let i = 0; i < escritos.length; i++) {
         const j = escritos[i].elementos.findIndex((e, k) => !coincide(e, filas[i][k]));
         if (j < 0) continue;
         const e = escritos[i].elementos[j];
@@ -624,7 +660,6 @@ export function corregir(
 
     // Los corchetes: primero las filas, que se pueden dejar vacias, y despues
     // las columnas, que no.
-    const [deFilas, deColumnas] = v.arreglo.map((d) => d.trim());
     if (!deColumnas) {
       error(
         'TABLA_SIN_COLUMNAS',
@@ -633,8 +668,11 @@ export function corregir(
       );
       return;
     }
-    const lugarFilas = deFilas ? valorDeDimension(deFilas, modelo) : F;
     const lugarColumnas = valorDeDimension(deColumnas, modelo);
+    // Con las filas vacias, el compilador cuenta las que se escribieron: si
+    // faltan filas en cero, no son las del dibujo.
+    const filasEscritas = enFilas ? escritos.length : Math.ceil(escritos.length / (lugarColumnas ?? C));
+    const lugarFilas = deFilas ? valorDeDimension(deFilas, modelo) : filasEscritas;
     if (lugarFilas == null || lugarColumnas == null) return;
 
     if (F !== C && lugarFilas === C && lugarColumnas === F) {
@@ -652,21 +690,42 @@ export function corregir(
         v.fila
       );
     } else {
-      if (!enFilas && practicas.includes('claridad')) {
+      // Para llenar de ceros alcanza un solo cero. Es lo unico que se le dice:
+      // lo demas (la cantidad de filas, las llaves por fila) no se puede
+      // aplicar junto con eso.
+      const todosCeros = filas.every((fila) => fila.every((x) => x === 0));
+      const cuantosEscritos = enFilas
+        ? escritos.reduce((suma, fila) => suma + fila.elementos.length, 0)
+        : escritos.length;
+      if (todosCeros && practicas.includes('claridad') && cuantosEscritos > 1) {
         mejora(
-          'TABLA_SIN_FILAS',
-          'Con todos los valores seguidos funciona, pero no se ve dónde termina cada fila. Lo ideal es que cada fila vaya entre sus propias llaves.',
+          'CERO_ALCANZA',
+          'Está bien, pero para llenar de ceros alcanza con escribir uno solo, `{0}`' +
+            (deFilas ? '' : ', indicando la cantidad de filas entre los corchetes') +
+            ': los elementos que la lista no nombra quedan en cero.',
           v.fila
         );
-      }
-      // Igual que en el arreglo: la cantidad de filas ya la dicen los valores.
-      // La de columnas no, porque C la exige.
-      if (deFilas && practicas.includes('constantes')) {
-        mejora(
-          'FILAS_REPETIDAS',
-          'La cantidad de filas ya la dicen los valores: si deja vacíos los primeros corchetes, el compilador la cuenta solo, y no hay que acordarse de cambiarla el día de mañana si se agrega o se quita una fila.',
-          v.fila
-        );
+      } else {
+        // Seguidos, y con mas de una fila de valores: no se ve donde termina
+        // cada una. Con los de una sola fila no hay limite que mirar.
+        if (!enFilas && escritos.length > C && practicas.includes('claridad')) {
+          mejora(
+            'TABLA_SIN_FILAS',
+            'Con todos los valores seguidos funciona, pero no se ve dónde termina cada fila. Lo ideal es que cada fila vaya entre sus propias llaves.',
+            v.fila
+          );
+        }
+        // Igual que en el arreglo: la cantidad de filas ya la dicen los
+        // valores, si estan todas escritas. La de columnas no, porque C la
+        // exige.
+        const filasCompletas = enFilas ? escritos.length === F : escritos.length === F * C;
+        if (deFilas && filasCompletas && practicas.includes('constantes')) {
+          mejora(
+            'FILAS_REPETIDAS',
+            'La cantidad de filas ya la dicen los valores: si deja vacíos los primeros corchetes, el compilador la cuenta solo, y no hay que acordarse de cambiarla el día de mañana si se agrega o se quita una fila.',
+            v.fila
+          );
+        }
       }
     }
   }
@@ -1076,6 +1135,29 @@ function valorDeDimension(texto, modelo) {
   return numero ? Number(numero[1]) : null;
 }
 
+// Si un numero de los corchetes ya se ve en la lista de valores que lo
+// acompana (la dimension "d" de "declarado"):
+//   arreglo: la lista tiene al menos tantos elementos.
+//   tabla con las filas entre llaves: la cantidad de filas, o alguna fila con
+//     tantos valores como columnas.
+//   tabla con los valores seguidos: la lista llena la tabla, o por lo menos una
+//     fila (las llaves por fila ya tienen su propia mejora).
+function seDeduceDeLaLista(lista, declarado, d, numero, modelo) {
+  const cuantos = lista.elementos.length;
+  if (declarado.arreglo.length === 1) return cuantos >= numero;
+  if (declarado.arreglo.length > 2) return true; // no se opina sobre mas dimensiones
+
+  if (lista.elementos.some((e) => e.clase === 'lista')) {
+    return d === 0
+      ? cuantos >= numero
+      : lista.elementos.some((fila) => fila.clase === 'lista' && fila.elementos.length >= numero);
+  }
+  const columnas = valorDeDimension(declarado.arreglo[1], modelo);
+  if (columnas == null) return true;
+  const filas = declarado.arreglo[0].trim() ? valorDeDimension(declarado.arreglo[0], modelo) : null;
+  return cuantos >= (filas != null ? filas * columnas : columnas);
+}
+
 // Las dimensiones de los arreglos nuevos.
 //
 // Para cualquier consigna: un nombre como dimension tiene que estar definido,
@@ -1095,7 +1177,7 @@ function revisarDimensiones(modelo, error, mejora) {
   const unaVez = (clave) => !dichos.has(clave) && dichos.add(clave);
 
   for (const declarado of arreglos) {
-    for (const dimension of declarado.arreglo) {
+    for (const [d, dimension] of declarado.arreglo.entries()) {
       const escrito = dimension.trim();
       if (/^\d+$/.test(escrito)) {
         // Un numero es magico cuando lleva informacion que no esta escrita en
@@ -1105,8 +1187,9 @@ function revisarDimensiones(modelo, error, mejora) {
         // menos elementos que los corchetes ({0} con [4]), el numero es lo
         // unico que dice cuantos son.
         const lista = declarado.inicial?.clase === 'lista' ? declarado.inicial : null;
-        if (lista && (declarado.arreglo.length > 1 || lista.elementos.length >= Number(escrito))) continue;
-        if (!mejora || !unaVez('numero' + declarado.fila)) continue;
+        if (lista && seDeduceDeLaLista(lista, declarado, d, Number(escrito), modelo)) continue;
+        // Una vez por numero distinto y por linea: {0} con [3][4] los tiene a los dos.
+        if (!mejora || !unaVez('numero' + declarado.fila + ':' + escrito)) continue;
         // Si ya hay una constante con ese valor, lo que falta no es saber que
         // es un #define sino usar el que esta. Que valga lo mismo no asegura
         // que sea la misma cantidad: eso lo decide el alumno.
