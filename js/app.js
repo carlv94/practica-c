@@ -310,10 +310,20 @@ function comprobar() {
       $('comprobar').hidden = true;
       $('ver-solucion').hidden = true;
       $('siguiente').textContent = ultima ? 'Terminar' : 'Siguiente';
-      $('siguiente').focus();
+      $('siguiente').focus({ preventScroll: true });
     }
   }
-  $('resultado').replaceChildren(...cajas);
+  mostrarResultado(cajas);
+}
+
+// Los mensajes quedan debajo del editor, y con el codigo previo arriba suelen
+// caer fuera de la pantalla: sin esto, comprobar parece no hacer nada. Se
+// desplaza lo justo para que entren, sin llevarse el editor si no hace falta.
+function mostrarResultado(cajas) {
+  const resultado = $('resultado');
+  resultado.replaceChildren(...cajas);
+  const sinAnimar = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  resultado.scrollIntoView({ behavior: sinAnimar ? 'auto' : 'smooth', block: 'nearest' });
 }
 
 // Lo comprobado vale para el texto que se comprobo: si despues lo cambia, hay
@@ -347,8 +357,8 @@ function verSolucion() {
     : 'Esta es una solución posible, escrita con otros nombres: hay que adaptarla a los que usó usted.';
   const ejemplo = document.createElement('pre');
   pintar(ejemplo, consigna.referencia);
-  $('resultado').replaceChildren(mensaje('aviso', nota), ejemplo);
-  $('respuesta').focus();
+  $('respuesta').focus({ preventScroll: true });
+  mostrarResultado([mensaje('aviso', nota), ejemplo]);
 }
 
 function reiniciar() {
