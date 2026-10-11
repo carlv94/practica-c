@@ -1,0 +1,22 @@
+{
+  "id": "arreglos-valores",
+  "titulo": "Arreglos: definir con sus valores",
+  "descripcion": "Definir un arreglo y darle sus valores en la misma sentencia.",
+  "buenasPracticas": ["constantes"],
+  "consignas": [
+    {
+      "id": "arreglos-valores-1",
+      "titulo": "Un arreglo de enteros",
+      "enunciado": "En la misma sentencia, defina e inicialice el siguiente arreglo:",
+      "requiere": [{ "variable": { "tipo": "entero", "valores": [3, 6, 0, 7, 1, 5], "capturar": "V" } }],
+      "referencia": "int numeros[] = {3, 6, 0, 7, 1, 5};"
+    },
+    {
+      "id": "arreglos-valores-2",
+      "titulo": "Un arreglo con decimales",
+      "enunciado": "Además de {V} hace falta otro arreglo, con valores que tienen decimales.\n\nEn la misma sentencia, defina e inicialice el siguiente arreglo:",
+      "requiere": [{ "variable": { "tipo": "real", "valores": [12.5, 8, 99.9, 0.75] } }],
+      "referencia": "float precios[] = {12.5, 8, 99.9, 0.75};"
+    }
+  ]
+}

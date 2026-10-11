@@ -6,7 +6,7 @@
 //   struct:   { id, etiqueta, campos, nuevo, fila }
 //   campo:    { nombre, tipo, arreglo, punteros, fila }
 //   alias:    { nombre, tipo, arreglo, punteros, nuevo, fila }
-//   variable: { nombre, tipo, arreglo, punteros, local, esConst, inicializada, nuevo, fila }
+//   variable: { nombre, tipo, arreglo, punteros, local, esConst, inicializada, inicial, nuevo, fila }
 //   constante: { nombre, valor, clase: 'define' | 'enum', nuevo, fila }
 //
 // "arreglo" son las dimensiones como estan escritas (['20'], ['MAX']), y lo
@@ -55,14 +55,46 @@ function hijosDeCampo(nodo, campo) {
   return hijos;
 }
 
+// Con que se inicializa una variable:
+//   { clase: 'lista', elementos: [...] }    { 3, 6, 0 }, y adentro puede haber otras
+//   { clase: 'numero', valor }              3, -1.5, 2.5f
+//   { clase: 'caracter' | 'cadena' | 'otro' }
+// todos con "texto", que es como esta escrito.
+function leerInicial(n) {
+  if (!n) return null;
+  const texto = n.text;
+  if (n.type === 'initializer_list') {
+    return {
+      clase: 'lista',
+      elementos: n.namedChildren.filter((h) => h.type !== 'comment').map(leerInicial),
+      texto,
+    };
+  }
+  const limpio = texto.replace(/\s+/g, '');
+  if (/^[-+]?(\d+\.?\d*|\.\d+)[fFlLuU]*$/.test(limpio)) {
+    return { clase: 'numero', valor: parseFloat(limpio), texto };
+  }
+  if (n.type === 'char_literal') return { clase: 'caracter', texto };
+  if (n.type === 'string_literal') return { clase: 'cadena', texto };
+  return { clase: 'otro', texto };
+}
+
 // De "*nombre[20] = ..." saca el nombre y lo que lo rodea.
 function desenvolver(nodo) {
-  const d = { nombre: null, arreglo: [], punteros: 0, esFuncion: false, inicializada: false };
+  const d = {
+    nombre: null,
+    arreglo: [],
+    punteros: 0,
+    esFuncion: false,
+    inicializada: false,
+    inicial: null,
+  };
   let n = nodo;
   while (n) {
     switch (n.type) {
       case 'init_declarator':
         d.inicializada = true;
+        d.inicial = leerInicial(n.childForFieldName('value'));
         n = n.childForFieldName('declarator');
         break;
       case 'array_declarator': {

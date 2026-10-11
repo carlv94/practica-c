@@ -89,6 +89,10 @@ Las reglas de `requiere`:
   - `"arreglo": 20`: tiene que ser un arreglo de 20 elementos, escritos como
     número o con una constante que valga 20. Con `"arreglo": true` vale
     cualquier tamaño. Sin esto, un arreglo no se acepta.
+  - `"valores": [3, 6, 0, 7, 1, 5]`: tiene que ser un arreglo definido con
+    esos valores, en ese orden, en la misma sentencia. Ver más abajo.
+  - `"capturar": "V"`: guarda el nombre de la variable para las consignas que
+    siguen.
 - `{ "alias": { "de": "$S", "capturar": "A" } }` — un `typedef` de ese tipo.
 - `{ "llamada": { "funcion": "strcpy", "argumentos": ["cadena2", "cadena1"] } }`
   — una llamada a esa función con esas variables, en ese orden. Opcionales:
@@ -102,6 +106,32 @@ Las reglas de `requiere`:
   Si en vez de la llamada hay un ciclo, se le dice que la consigna pide la
   función de la biblioteca: **la copia "a mano" no se acepta**, porque sin
   ejecutar el código no hay forma de saber si copia bien.
+
+### Arreglos con sus valores, y su dibujo
+
+```json
+"enunciado": "En la misma sentencia, defina e inicialice el siguiente arreglo:",
+"requiere": [{ "variable": { "tipo": "entero", "valores": [3, 6, 0, 7, 1, 5] } }]
+```
+
+Debajo del enunciado se dibuja el arreglo como una fila de casilleros, con el
+índice arriba de cada uno. **El dibujo no se escribe aparte: sale de los
+`valores` de la regla**, así lo que el alumno ve es siempre lo que se le
+corrige.
+
+| Respuesta | Resultado |
+|---|---|
+| `int v[] = {3, 6, 0, 7, 1, 5};` | Correcta (excelente, si la serie pide prácticas). |
+| `int v[6] = {…};` | Correcta. Con la práctica `constantes`, mejora: la cantidad ya la dicen los valores (`DIMENSION_REPETIDA`). No se trata como número mágico. |
+| `int v[10] = {…};` | Error: sobra lugar. Compila, pero no es el arreglo del dibujo. |
+| `int v[4] = {…};` | Error: no entran. |
+| `int v[6];` y después `v[0] = 3;` | Error: la consigna pide hacerlo en la misma sentencia. |
+| Un valor distinto, de más, de menos o en otro orden | Error, diciendo cuál. |
+
+El nombre es libre. El tipo sigue la categoría pedida: con `entero` vale
+`int`, `long` o `short`, y `float` es error.
+
+Las tablas (dos dimensiones) todavía no están.
 
 ### Consignas de sentencias
 

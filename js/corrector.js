@@ -26,6 +26,7 @@
 //   { "struct":   { "campos": [{ "nombre", "tipo" }], "capturar": "S" } }
 //   { "variable": { "tipo": "$S", "conAlias": true } }
 //   { "variable": { "nombre": "notas", "tipo": "entero", "arreglo": 20 } }
+//   { "variable": { "tipo": "entero", "valores": [3, 6, 0], "capturar": "V" } }
 //   { "alias":    { "de": "$S", "capturar": "A" } }
 //   { "llamada":  { "funcion": "strcpy", "argumentos": ["cadena2", "cadena1"] } }
 
@@ -77,6 +78,9 @@ function nombrarPedido(pedido) {
   const partes = pedido.trim().split(/\s+/);
   return partes[0] === 'struct' ? `de la estructura \`${partes[1]}\`` : `del tipo \`${pedido}\``;
 }
+
+const ORDINALES = ['primer', 'segundo', 'tercer', 'cuarto', 'quinto', 'sexto', 'séptimo', 'octavo', 'noveno', 'décimo'];
+const ordinal = (indice) => ORDINALES[indice] || `${indice + 1}.º`;
 
 function mismoTipo(a, b) {
   if (a.clase !== b.clase) return false;
@@ -344,7 +348,8 @@ export function corregir(
         ? real.clase === 'primitivo' && categoria.es(real.nombre)
         : mismoTipo(real, objetivo);
     };
-    const quiereArreglo = regla.arreglo != null && regla.arreglo !== false;
+    // Con "valores" se pide un arreglo definido con esos valores.
+    const quiereArreglo = Boolean(regla.valores) || (regla.arreglo != null && regla.arreglo !== false);
     let candidatas = modelo.variables.filter((v) => v.nuevo);
 
     if (!candidatas.length) {
@@ -392,8 +397,23 @@ export function corregir(
           exacta.fila
         );
       }
+      if (regla.valores) {
+        verificarValores(exacta, regla.valores, modelo);
+        if (regla.capturar) nuevas[regla.capturar] = exacta.nombre;
+        return;
+      }
+      if (regla.capturar) nuevas[regla.capturar] = exacta.nombre;
+
       // Con un numero, el arreglo tiene que tener justo esa cantidad, este
       // escrita como numero o con una constante que valga eso.
+      if (typeof regla.arreglo === 'number' && !exacta.arreglo[0].trim()) {
+        error(
+          'ARREGLO_SIN_DIMENSION',
+          `A \`${exacta.nombre}\` le falta la cantidad de elementos entre los corchetes.`,
+          exacta.fila
+        );
+        return;
+      }
       const tiene = typeof regla.arreglo === 'number' ? valorDeDimension(exacta.arreglo[0], modelo) : null;
       // Los dos son error, pero no son el mismo: de menos no entra lo que hay
       // que guardar; de mas entra, y no es lo que pide el problema.
@@ -445,13 +465,122 @@ export function corregir(
     } else if (!v.arreglo.length) {
       error(
         'VARIABLE_NO_ES_ARREGLO',
-        `\`${v.nombre}\` es una sola variable. La consigna pide un arreglo: falta indicar cuántos elementos tiene.`,
+        `\`${v.nombre}\` es una sola variable. La consigna pide un arreglo` +
+          (regla.valores ? '.' : ': falta indicar cuántos elementos tiene.'),
         v.fila
       );
     } else {
       error(
         'ARREGLO_DIMENSIONES',
         `\`${v.nombre}\` tiene ${v.arreglo.length} dimensiones: eso es una tabla. La consigna pide un arreglo de una sola.`,
+        v.fila
+      );
+    }
+  }
+
+  // Un arreglo definido con sus valores, en la misma sentencia: los del dibujo
+  // del enunciado, en ese orden y ni uno mas.
+  function verificarValores(v, valores, modelo) {
+    const n = v.nombre;
+    const inicial = v.inicial;
+
+    if (!inicial) {
+      const aparte = modelo.asignaciones.some(
+        (a) => a.nuevo && a.izquierda.clase === 'indice' && a.izquierda.nombre === n
+      );
+      error(
+        aparte ? 'VALORES_APARTE' : 'VALORES_FALTAN',
+        aparte
+          ? `La consigna pide darle los valores a \`${n}\` en la misma sentencia en que se lo define, no de a uno después.`
+          : `\`${n}\` está definido, pero sin sus valores: la consigna pide dárselos en esa misma sentencia.`,
+        v.fila
+      );
+      return;
+    }
+    if (inicial.clase !== 'lista') {
+      error(
+        'VALORES_SIN_LISTA',
+        `Los valores de un arreglo van todos juntos, en una lista` +
+          (inicial.texto.trim().startsWith('(') ? ', y esa lista no se encierra entre paréntesis.' : '.'),
+        v.fila
+      );
+      return;
+    }
+    const escritos = inicial.elementos;
+    if (escritos.some((e) => e.clase === 'lista')) {
+      error(
+        'VALORES_ANIDADOS',
+        `\`${n}\` tiene una sola dimensión: adentro de la lista van los valores sueltos, sin otras llaves.`,
+        v.fila
+      );
+      return;
+    }
+
+    const cuantos = (c) => (c === 1 ? '1 valor' : `${c} valores`);
+    if (escritos.length !== valores.length) {
+      // Con coma decimal, 12,5 se lee como dos valores. El ejemplo sale del
+      // primer decimal del dibujo, escrito como no hay que escribirlo.
+      const decimal = valores.find((x) => !Number.isInteger(x));
+      const [entera, fraccion] = decimal == null ? [] : String(decimal).split('.');
+      error(
+        escritos.length < valores.length ? 'VALORES_DE_MENOS' : 'VALORES_DE_MAS',
+        `La lista tiene ${cuantos(escritos.length)} y el arreglo del dibujo tiene ${valores.length}.` +
+          (escritos.length > valores.length && decimal != null
+            ? ` Ojo con los decimales: en C se escriben con punto. Acá la coma separa un valor del siguiente, así que \`${entera},${fraccion}\` son dos valores: el ${entera} y el ${Number(fraccion)}.`
+            : ''),
+        v.fila
+      );
+      return;
+    }
+
+    const coincide = (e, valor) => e.clase === 'numero' && e.valor === valor;
+    const distinto = escritos.findIndex((e, i) => !coincide(e, valores[i]));
+    if (distinto >= 0) {
+      const e = escritos[distinto];
+      const numeros = escritos.map((x) => (x.clase === 'numero' ? x.valor : NaN));
+      const ordenar = (lista) => [...lista].sort((a, b) => a - b).join();
+      if (e.clase === 'caracter' || e.clase === 'cadena') {
+        error(
+          'VALOR_ENTRE_COMILLAS',
+          `\`${e.texto}\` con comillas no es un número: los números van sin comillas.`,
+          v.fila
+        );
+      } else if (!numeros.some(Number.isNaN) && ordenar(numeros) === ordenar(valores)) {
+        error('VALORES_EN_OTRO_ORDEN', 'Los valores son los del dibujo, pero están en otro orden.', v.fila);
+      } else {
+        error(
+          'VALOR_DISTINTO',
+          `El ${ordinal(distinto)} valor de la lista (\`${e.texto.trim()}\`) no coincide con el del dibujo.`,
+          v.fila
+        );
+      }
+      return;
+    }
+
+    // Los corchetes: vacios, o con la cantidad justa.
+    const dimension = v.arreglo[0].trim();
+    if (!dimension) return;
+    const lugar = valorDeDimension(dimension, modelo);
+    if (lugar == null) return;
+    const elementos = (c) => (c === 1 ? '1 elemento' : `${c} elementos`);
+    if (lugar < valores.length) {
+      error(
+        'ARREGLO_CHICO',
+        `\`${n}\` tiene lugar para ${elementos(lugar)} y la lista trae ${valores.length} valores: no entran.`,
+        v.fila
+      );
+    } else if (lugar > valores.length) {
+      error(
+        'ARREGLO_GRANDE',
+        `\`${n}\` tiene lugar para ${elementos(lugar)} y el arreglo del dibujo tiene ${valores.length}: sobra lugar.`,
+        v.fila
+      );
+    } else if (practicas.includes('constantes')) {
+      // No es un numero magico: es la cantidad de valores que estan ahi
+      // mismo. Lo que sobra es repetirla.
+      mejora(
+        'DIMENSION_REPETIDA',
+        'La cantidad ya la dicen los valores: si deja los corchetes vacíos, el compilador la cuenta solo, y no hay que acordarse de cambiarla el día de mañana si se agrega o se quita un elemento.',
         v.fila
       );
     }
@@ -717,6 +846,9 @@ function revisarDimensiones(modelo, error, mejora) {
     for (const dimension of declarado.arreglo) {
       const escrito = dimension.trim();
       if (/^\d+$/.test(escrito)) {
+        // Con la lista de valores al lado el numero no es magico: es la
+        // cantidad de valores. Eso lo mira la regla, que sabe cuantos son.
+        if (declarado.inicial?.clase === 'lista') continue;
         if (!mejora || !unaVez('numero' + declarado.fila)) continue;
         // Si ya hay una constante con ese valor, lo que falta no es saber que
         // es un #define sino usar el que esta. Que valga lo mismo no asegura
@@ -887,6 +1019,17 @@ function erroresConocidos(respuesta) {
       'CORCHETES_ANTES_DEL_NOMBRE',
       'En C los corchetes van después del nombre, no del tipo: `tipo nombre[cantidad];`',
     ],
+    [
+      /=\s*\[/,
+      'CORCHETES_EN_LA_LISTA',
+      'La lista de valores de un arreglo no va entre corchetes: los corchetes son para la cantidad de elementos y para elegir uno.',
+    ],
+    [
+      /=\s*\{[^{}]*[\w.']\s*;\s*[\w.'-]/,
+      'PUNTO_Y_COMA_EN_LA_LISTA',
+      'Los valores de la lista se separan con coma, no con `;`.',
+    ],
+    [/=\s*\{[^{}]*\d\s+[\d-]/, 'FALTA_COMA_EN_LA_LISTA', 'Los valores de la lista se separan con coma.'],
     [
       new RegExp(`\\w\\s*\\(\\s*(?!${TIPO}\\b)\\w+\\s+\\w`),
       'FALTA_COMA',

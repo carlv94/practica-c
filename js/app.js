@@ -15,7 +15,7 @@
 import { cargarAnalizador } from './analizador.js';
 import { inicio, codigoPrevio, corregirPaso, despuesDe, pidePracticas } from './serie.js';
 import { crearEditor, pintar } from './editor.js';
-import { partesDeEnunciado } from './enunciado.js';
+import { partesDeEnunciado, figuraDe } from './enunciado.js';
 
 const CARPETA = 'consignas/';
 const INDICE = CARPETA + 'indice.json';
@@ -223,6 +223,7 @@ function mostrarConsigna() {
       parte.nombre ? elemento('code', null, parte.nombre) : parte.texto
     )
   );
+  dibujar(figuraDe(consigna));
   pintar($('contexto'), previo);
   editor.poner('');
   $('respuesta').readOnly = false;
@@ -230,6 +231,27 @@ function mostrarConsigna() {
   $('siguiente').hidden = true;
   $('ver-solucion').hidden = false;
   $('respuesta').focus();
+}
+
+// El arreglo del enunciado, como una fila de casilleros con su indice arriba.
+function dibujar(figura) {
+  const caja = $('figura');
+  caja.hidden = !figura;
+  caja.replaceChildren();
+  if (!figura) return;
+
+  // Para quien no ve el dibujo, lo mismo dicho en una frase.
+  caja.setAttribute(
+    'aria-label',
+    `Arreglo de ${figura.valores.length} elementos: ${figura.valores.join(', ')}`
+  );
+  const fila = elemento('div', 'arreglo');
+  figura.valores.forEach((valor, i) => {
+    const casillero = elemento('div', 'casillero');
+    casillero.append(elemento('span', 'indice', i), elemento('span', 'valor', valor));
+    fila.appendChild(casillero);
+  });
+  caja.appendChild(fila);
 }
 
 function comprobar() {

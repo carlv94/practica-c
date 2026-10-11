@@ -114,7 +114,57 @@ const CASOS_DE_ARREGLOS = [
   arreglos(2, 'constante mal escrita', 'float promedios[MAX_ALUMNO];', ['CONSTANTE_SIN_DEFINIR']),
 ];
 
+// Arreglos definidos con sus valores: los del dibujo, 3 6 0 7 1 5.
+const valores = (paso, nombre, respuesta, espera, mejoras = []) => ({
+  serie: 'arreglos-valores',
+  paso,
+  nombre,
+  respuesta,
+  espera,
+  mejoras,
+});
+
+const CASOS_DE_VALORES = [
+  valores(1, 'corchetes vacios es excelente', 'int v[] = {3, 6, 0, 7, 1, 5};', 'ok'),
+  valores(1, 'en varios renglones y con coma al final', 'int v[] = {\n  3, 6, 0,\n  7, 1, 5,\n};', 'ok'),
+  valores(1, 'otro tipo entero', 'long v[] = {3, 6, 0, 7, 1, 5};', 'ok'),
+  valores(1, 'dentro de main', 'int main() {\n  int v[] = {3, 6, 0, 7, 1, 5};\n  return 0;\n}', 'ok'),
+  valores(1, 'con la cantidad justa: correcto y mejorable', 'int v[6] = {3, 6, 0, 7, 1, 5};', 'ok', [
+    'DIMENSION_REPETIDA',
+  ]),
+  valores(1, 'con una constante que vale la cantidad justa', '#define N 6\nint v[N] = {3, 6, 0, 7, 1, 5};', 'ok', [
+    'DIMENSION_REPETIDA',
+  ]),
+  valores(1, 'lugar de mas', 'int v[10] = {3, 6, 0, 7, 1, 5};', ['ARREGLO_GRANDE']),
+  valores(1, 'lugar de menos', 'int v[4] = {3, 6, 0, 7, 1, 5};', ['ARREGLO_CHICO']),
+  valores(1, 'un valor de menos', 'int v[] = {3, 6, 0, 7, 1};', ['VALORES_DE_MENOS']),
+  valores(1, 'un valor de mas', 'int v[] = {3, 6, 0, 7, 1, 5, 9};', ['VALORES_DE_MAS']),
+  valores(1, 'un valor distinto', 'int v[] = {3, 6, 0, 2, 1, 5};', ['VALOR_DISTINTO']),
+  valores(1, 'los mismos en otro orden', 'int v[] = {5, 1, 7, 0, 6, 3};', ['VALORES_EN_OTRO_ORDEN']),
+  valores(1, 'valores entre comillas', "int v[] = {'3', '6', '0', '7', '1', '5'};", ['VALOR_ENTRE_COMILLAS']),
+  valores(1, 'sin valores', 'int v[6];', ['VALORES_FALTAN']),
+  valores(1, 'valores de a uno, despues', 'int v[6];\nv[0] = 3;\nv[1] = 6;', ['VALORES_APARTE']),
+  valores(1, 'un solo valor, sin lista', 'int v[6] = 3;', ['VALORES_SIN_LISTA']),
+  valores(1, 'entre parentesis', 'int v[] = (3, 6, 0, 7, 1, 5);', ['VALORES_SIN_LISTA']),
+  valores(1, 'llaves de mas', 'int v[] = {{3, 6, 0}, {7, 1, 5}};', ['VALORES_ANIDADOS']),
+  valores(1, 'entre corchetes', 'int v[] = [3, 6, 0, 7, 1, 5];', ['CORCHETES_EN_LA_LISTA']),
+  valores(1, 'separados con ;', 'int v[] = {3; 6; 0; 7; 1; 5};', ['PUNTO_Y_COMA_EN_LA_LISTA']),
+  valores(1, 'sin comas', 'int v[] = {3 6 0 7 1 5};', ['FALTA_COMA_EN_LA_LISTA']),
+  valores(1, 'corchetes pegados al tipo', 'int[] v = {3, 6, 0, 7, 1, 5};', ['CORCHETES_ANTES_DEL_NOMBRE']),
+  valores(1, 'con decimales donde van enteros', 'float v[] = {3, 6, 0, 7, 1, 5};', ['VARIABLE_TIPO']),
+  valores(1, 'sin corchetes', 'int v = {3, 6, 0, 7, 1, 5};', ['VARIABLE_NO_ES_ARREGLO']),
+  valores(1, 'dos dimensiones', 'int v[2][3] = {{3, 6, 0}, {7, 1, 5}};', ['ARREGLO_DIMENSIONES']),
+  valores(1, 'sin ;', 'int v[] = {3, 6, 0, 7, 1, 5}', ['FALTA_PUNTO_Y_COMA']),
+  valores(1, 'llave sin cerrar', 'int v[] = {3, 6, 0, 7, 1, 5;', ['FALTA_LLAVE']),
+
+  valores(2, 'decimales', 'float p[] = {12.5, 8, 99.9, 0.75};', 'ok'),
+  valores(2, 'double, con el cero y la f', 'double p[] = {12.50, 8.0, 99.9f, .75};', 'ok'),
+  valores(2, 'enteros donde van decimales', 'int p[] = {12.5, 8, 99.9, 0.75};', ['VARIABLE_TIPO']),
+  valores(2, 'coma decimal', 'float p[] = {12,5, 8, 99,9, 0,75};', ['VALORES_DE_MAS']),
+];
+
 export const CASOS = [
+  ...CASOS_DE_VALORES,
   ...CASOS_DE_ARREGLOS,
   ...CASOS_DE_CADENAS,
   // ---- 1: declarar la estructura ----
