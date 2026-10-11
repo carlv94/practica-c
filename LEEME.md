@@ -160,6 +160,7 @@ La práctica `constantes` mira las dimensiones de los arreglos:
 |---|---|
 | `#define MAX 20` y `int lista[MAX];` | Excelente. |
 | `int lista[20];` | Correcto. Mejora: un número suelto (`NUMERO_MAGICO`). |
+| `int lista[20];` habiendo antes un `#define` que vale 20 | Correcto. Mejora: ya hay una constante con ese valor (`CONSTANTE_SIN_REUTILIZAR`). Se la nombra y se deja a juicio del alumno si es la misma cantidad. |
 | `const int MAX = 20;` o una variable como dimensión | Correcto. Mejora: lo ideal es `#define` (`DIMENSION_CON_VARIABLE`). |
 | `#define max 20` | Correcto. Mejora: las constantes van en mayúscula (`CONSTANTE_EN_MINUSCULA`). |
 

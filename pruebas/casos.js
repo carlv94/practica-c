@@ -100,7 +100,17 @@ const CASOS_DE_ARREGLOS = [
   arreglos(1, 'el #define sin el arreglo', '#define MAX 20', ['VARIABLE_FALTA']),
   arreglos(2, 'usa la constante del paso anterior', 'float promedios[MAX_ALUMNOS];', 'ok'),
   arreglos(2, 'double tambien es real', 'double promedios[MAX_ALUMNOS];', 'ok'),
-  arreglos(2, 'numero suelto en el segundo paso', 'float promedios[20];', 'ok', ['NUMERO_MAGICO']),
+  // Ya definio la constante en el paso anterior: lo que falta es usarla.
+  arreglos(2, 'numero suelto habiendo una constante que vale eso', 'float promedios[20];', 'ok', [
+    'CONSTANTE_SIN_REUTILIZAR',
+  ]),
+  arreglos(1, 'numero suelto con la constante en la misma respuesta', '#define MAX 20\nint notas[20];', 'ok', [
+    'CONSTANTE_SIN_REUTILIZAR',
+  ]),
+  arreglos(1, 'la constante que hay vale otra cosa', '#define OTRA 50\nint notas[20];', 'ok', ['NUMERO_MAGICO']),
+  arreglos(1, 'la constante esta despues: no la podia usar', 'int notas[20];\n#define MAX 20', 'ok', [
+    'NUMERO_MAGICO',
+  ]),
   arreglos(2, 'constante mal escrita', 'float promedios[MAX_ALUMNO];', ['CONSTANTE_SIN_DEFINIR']),
 ];
 

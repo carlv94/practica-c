@@ -717,7 +717,27 @@ function revisarDimensiones(modelo, error, mejora) {
     for (const dimension of declarado.arreglo) {
       const escrito = dimension.trim();
       if (/^\d+$/.test(escrito)) {
-        if (mejora && unaVez('numero' + declarado.fila)) {
+        if (!mejora || !unaVez('numero' + declarado.fila)) continue;
+        // Si ya hay una constante con ese valor, lo que falta no es saber que
+        // es un #define sino usar el que esta. Que valga lo mismo no asegura
+        // que sea la misma cantidad: eso lo decide el alumno.
+        const yaDefinidas = modelo.constantes.filter(
+          (c) =>
+            c.clase === 'define' &&
+            c.indice < declarado.indice &&
+            valorDeDimension(c.nombre, modelo) === Number(escrito)
+        );
+        if (yaDefinidas.length) {
+          const nombres = yaDefinidas.map((c) => `\`${c.nombre}\``).join(' y ');
+          mejora(
+            'CONSTANTE_SIN_REUTILIZAR',
+            (yaDefinidas.length === 1
+              ? `Ya hay una constante que vale \`${escrito}\`: ${nombres}. Si representa esta misma cantidad, conviene usarla en lugar del número.`
+              : `Ya hay constantes que valen \`${escrito}\`: ${nombres}. Si alguna representa esta misma cantidad, conviene usarla en lugar del número.`) +
+              ' Si es otra cosa que vale lo mismo, conviene darle su propio nombre.',
+            declarado.fila
+          );
+        } else {
           mejora(
             'NUMERO_MAGICO',
             `\`${escrito}\` es un número suelto: no dice qué representa, y si el día de mañana el tamaño cambia hay que buscarlo por todo el programa. Lo ideal es darle un nombre con \`#define\` y usar ese nombre.`,
