@@ -35,7 +35,7 @@ import {
   resolver,
   tipoDesdeTexto,
   textoDeTipo,
-  describir,
+  enPalabras,
 } from './modelo.js';
 
 // Las palabras de un tipo entero van en cualquier orden: "unsigned int", "int unsigned".
@@ -45,9 +45,9 @@ const esReal = (t) => ['float', 'double', 'double long'].includes(t.split(' ').s
 
 // Lo que puede pedir una consigna como tipo de un campo, ademas de "cadena".
 const CATEGORIAS = {
-  entero: { es: esEntero, pide: 'un número entero (`int`)' },
-  real: { es: esReal, pide: 'un número con decimales (`float` o `double`)' },
-  caracter: { es: (t) => t === 'char', pide: 'un solo carácter (`char`)' },
+  entero: { es: esEntero, pide: 'un número entero', pideVarios: 'números enteros' },
+  real: { es: esReal, pide: 'un número con decimales', pideVarios: 'números con decimales' },
+  caracter: { es: (t) => t === 'char', pide: 'un solo carácter', pideVarios: 'caracteres' },
 };
 
 const PALABRAS_DE_C = [
@@ -68,6 +68,14 @@ function distancia(a, b) {
     }
   }
   return fila[b.length];
+}
+
+// El tipo que pide una regla, para un mensaje: "de la estructura `Puesto`".
+// De una estructura se dice el nombre y no "struct Puesto", que es justo lo
+// que el alumno tiene que saber escribir.
+function nombrarPedido(pedido) {
+  const partes = pedido.trim().split(/\s+/);
+  return partes[0] === 'struct' ? `de la estructura \`${partes[1]}\`` : `del tipo \`${pedido}\``;
 }
 
 function mismoTipo(a, b) {
@@ -192,7 +200,7 @@ export function corregir(
     if (!candidatos.length) {
       error(
         'STRUCT_FALTA',
-        'No encontré la declaración de una estructura. Tiene esta forma: `struct Nombre { ... };`'
+        'No encontré la declaración de una estructura.'
       );
       return;
     }
@@ -244,7 +252,7 @@ export function corregir(
       error(
         'STRUCT_SIN_NOMBRE',
         'La estructura no tiene nombre, así que después no se la va a poder usar. ' +
-          'El nombre va entre `struct` y la llave: `struct Nombre { ... };`',
+          'El nombre va entre `struct` y la llave.',
         def.fila
       );
       return;
@@ -259,25 +267,25 @@ export function corregir(
     if (real.clase === 'desconocido') return; // ya lo dijo revisarNombres
     const base = real.clase === 'primitivo' ? real.nombre : null;
     const n = campo.nombre;
-    const declarado = `Está declarado como \`${describir(campo)}\`.`;
+    const declarado = `Está declarado como ${enPalabras(campo)}.`;
 
     if (esperado.tipo === 'cadena') {
       if (base !== 'char') {
         error(
           'CAMPO_TIPO',
-          `\`${n}\` guarda un texto: tiene que ser un arreglo de \`char\`, por ejemplo \`char ${n}[30];\`. ${declarado}`,
+          `\`${n}\` guarda un texto: tiene que ser una cadena de caracteres. ${declarado}`,
           campo.fila
         );
       } else if (campo.punteros) {
         error(
           'CAMPO_CADENA_PUNTERO',
-          `\`${n}\` es un puntero: no reserva lugar para guardar el texto. Tiene que ser un arreglo, por ejemplo \`char ${n}[30];\``,
+          `\`${n}\` está declarado con \`*\`: así no reserva lugar para guardar el texto. Tiene que ser un arreglo de caracteres, con su dimensión.`,
           campo.fila
         );
       } else if (campo.arreglo.length === 0) {
         error(
           'CAMPO_CADENA_SIN_DIMENSION',
-          `\`${n}\` así guarda un solo carácter. Para un texto hace falta un arreglo, con la dimensión entre corchetes: \`char ${n}[30];\``,
+          `\`${n}\` así guarda un solo carácter. Para un texto hace falta un arreglo de caracteres, con su dimensión.`,
           campo.fila
         );
       } else if (campo.arreglo.length > 1) {
@@ -289,7 +297,7 @@ export function corregir(
       } else if (campo.arreglo[0].trim() === '') {
         error(
           'CAMPO_CADENA_SIN_DIMENSION',
-          `A \`${n}\` le falta la dimensión entre los corchetes: \`char ${n}[30];\``,
+          `A \`${n}\` le falta la dimensión entre los corchetes.`,
           campo.fila
         );
       } else if (/^\d+$/.test(campo.arreglo[0].trim()) && Number(campo.arreglo[0]) < 2) {
@@ -315,7 +323,7 @@ export function corregir(
     } else if (campo.punteros) {
       error(
         'CAMPO_ES_PUNTERO',
-        `\`${n}\` tiene que ser ${categoria.pide}, no un puntero: sobra el \`*\`.`,
+        `\`${n}\` tiene que ser ${categoria.pide}: sobra el \`*\`.`,
         campo.fila
       );
     } else if (!base || !categoria.es(base)) {
@@ -411,13 +419,23 @@ export function corregir(
       if (resolver(v.tipo, modelo).clase !== 'desconocido') {
         error(
           'VARIABLE_TIPO',
-          `\`${v.nombre}\` es de tipo \`${describir(v)}\`. Tiene que ser ` +
-            (categoria ? `${categoria.pide}.` : `de tipo \`${pedido}\`.`),
+          `\`${v.nombre}\` es ${enPalabras(v)}. ` +
+            (!categoria
+              ? `Tiene que ser ${nombrarPedido(pedido)}.`
+              : !quiereArreglo
+                ? `Tiene que ser ${categoria.pide}.`
+                : v.arreglo.length
+                  ? `Sus elementos tienen que ser ${categoria.pideVarios}.`
+                  : `Tiene que ser un arreglo de ${categoria.pideVarios}.`),
           v.fila
         );
       }
     } else if (v.punteros) {
-      error('VARIABLE_PUNTERO', `\`${v.nombre}\` es un puntero: sobra el \`*\`.`, v.fila);
+      error(
+        'VARIABLE_PUNTERO',
+        `A \`${v.nombre}\` le sobra el \`*\`: la consigna pide ${quiereArreglo ? 'un arreglo' : 'una variable'} común.`,
+        v.fila
+      );
     } else if (!quiereArreglo) {
       error(
         'VARIABLE_ARREGLO',
@@ -427,7 +445,7 @@ export function corregir(
     } else if (!v.arreglo.length) {
       error(
         'VARIABLE_NO_ES_ARREGLO',
-        `\`${v.nombre}\` es una sola variable. En un arreglo, la cantidad de elementos va entre corchetes después del nombre: \`tipo nombre[cantidad];\``,
+        `\`${v.nombre}\` es una sola variable. La consigna pide un arreglo: falta indicar cuántos elementos tiene.`,
         v.fila
       );
     } else {
@@ -566,7 +584,7 @@ export function corregir(
         (esVariable
           ? 'Eso declara una variable, no un alias. '
           : 'No encontré la definición de un alias. ') +
-          'Un alias se define con `typedef`: `typedef tipoQueYaExiste nombreNuevo;`'
+          'Un alias es un nombre nuevo para un tipo que ya existe.'
       );
       return;
     }
@@ -582,7 +600,7 @@ export function corregir(
     if (delTipo.length && a.punteros) {
       error(
         'ALIAS_PUNTERO',
-        `\`${a.nombre}\` queda como alias de un puntero a la estructura, no de la estructura: sobra el \`*\`.`,
+        `A \`${a.nombre}\` le sobra el \`*\`: así no queda como alias de la estructura.`,
         a.fila
       );
     } else if (delTipo.length) {
@@ -594,7 +612,7 @@ export function corregir(
     } else if (resolver(a.tipo, modelo).clase !== 'desconocido') {
       error(
         'ALIAS_TIPO',
-        `\`${a.nombre}\` es un alias de \`${describir(a)}\`. Tiene que serlo de \`${pedido}\`.`,
+        `\`${a.nombre}\` es un alias de ${enPalabras(a)}. Tiene que ser un alias ${nombrarPedido(pedido)}.`,
         a.fila
       );
     }
@@ -636,13 +654,13 @@ function revisarNombres(modelo, error) {
     if (TIPOS_BASICOS.includes(enMinuscula)) {
       mensaje += ` Las palabras de C van todas en minúscula: \`${enMinuscula}\`.`;
     } else if (modelo.structs.some((s) => s.etiqueta === nombre)) {
-      mensaje += ` Para usar la estructura hay que escribir también la palabra \`struct\`: \`struct ${nombre}\`.`;
+      mensaje = `\`${nombre}\` es el nombre de una estructura, pero así solo no es un tipo: falta indicar que se trata de una estructura.`;
     } else if (alias) {
       mensaje += ` El alias está definido como \`${alias.nombre}\`: en C las mayúsculas y las minúsculas son letras distintas.`;
     } else if (enMinuscula === 'string') {
-      mensaje += ' En C un texto se guarda en un arreglo de `char`.';
+      mensaje += ' En C no hay un tipo para los textos: se guardan en un arreglo de caracteres.';
     } else if (enMinuscula === 'boolean' || enMinuscula === 'integer' || enMinuscula === 'real') {
-      mensaje += ' Los tipos básicos de C son `int`, `float`, `double` y `char`.';
+      mensaje += ' Ese nombre es de otro lenguaje: en C los tipos básicos se llaman distinto.';
     } else if (parecido) {
       mensaje += ` ¿Quiso escribir \`${parecido}\`?`;
     }
@@ -731,7 +749,7 @@ function revisarDimensiones(modelo, error, mejora) {
       } else if (unaVez('falta' + escrito)) {
         error(
           'CONSTANTE_SIN_DEFINIR',
-          `\`${escrito}\` no está definida. Una constante se define antes de usarla, con \`#define\`.`,
+          `\`${escrito}\` no está definida: una constante hay que definirla antes de usarla.`,
           declarado.fila
         );
       }
@@ -842,12 +860,12 @@ function erroresConocidos(respuesta) {
     [
       new RegExp(`,\\s*${TIPO}\\b`),
       'COMA_POR_PUNTO_Y_COMA',
-      'Cada declaración termina con `;`. La coma solo separa varios nombres del mismo tipo: `int a, b;`',
+      'Cada declaración termina con `;`. La coma solo separa varios nombres del mismo tipo: `tipo a, b;`',
     ],
     [
       new RegExp(`\\b${TIPO}\\s*\\[`),
       'CORCHETES_ANTES_DEL_NOMBRE',
-      'En C los corchetes van después del nombre, no del tipo: `char nombre[20];`',
+      'En C los corchetes van después del nombre, no del tipo: `tipo nombre[cantidad];`',
     ],
     [
       new RegExp(`\\w\\s*\\(\\s*(?!${TIPO}\\b)\\w+\\s+\\w`),

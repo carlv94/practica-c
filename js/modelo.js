@@ -321,12 +321,18 @@ export function textoDeTipo(tipo) {
   }
 }
 
-// El tipo completo de un campo o una variable, para mostrarlo: "char[20]", "struct Puesto *".
-export function describir(declarado) {
-  let texto = textoDeTipo(declarado.tipo);
-  if (declarado.punteros) texto += ' ' + '*'.repeat(declarado.punteros);
-  for (const dimension of declarado.arreglo) texto += '[' + dimension + ']';
-  return texto;
+// Lo que es un campo o una variable, dicho en palabras para un mensaje:
+// "un `float`", "un arreglo de `float`", "una tabla de `char`".
+//
+// En palabras y no como "float[20]", que no es algo que se escriba en C (y es
+// justo lo que se marca como error cuando alguien pone los corchetes despues
+// del tipo). Lo declarado con "*" se describe por lo que se tipeo, sin nombrar
+// el concepto: en la materia se ve al final.
+export function enPalabras(declarado) {
+  let base = '`' + textoDeTipo(declarado.tipo) + '`';
+  if (declarado.punteros) base += ' con `' + '*'.repeat(declarado.punteros) + '`';
+  if (declarado.arreglo.length === 0) return 'un ' + base;
+  return (declarado.arreglo.length === 1 ? 'un arreglo de ' : 'una tabla de ') + base;
 }
 
 // Lo que el analizador no pudo entender en la parte nueva del codigo.

@@ -177,6 +177,16 @@ antes de la línea que lo usa.
   de siempre (llave sin cerrar, `Struct` con mayúscula, comas por punto y
   coma), que tienen su explicación; si no es ninguno, lo que diga el
   analizador.
+- **Un mensaje dice qué está mal y nombra el concepto, no el código que hay
+  que escribir**: "tiene que ser un número entero", no "tiene que ser `int`"
+  (que además dejaría afuera a `long`, que también vale). La respuesta escrita
+  está en "Ver una solución", donde la pide el alumno y queda anotado que la
+  miró. Dos excepciones: cuando ya mostró que conoce la palabra (`Int`,
+  `struc`: es un error de tipeo, y se le dice cómo se escribe), y las mejoras
+  de buenas prácticas, que enseñan algo sobre una respuesta que ya está bien.
+- Lo que el alumno declaró se describe en palabras ("un arreglo de `float`"),
+  nunca como `float[20]`, que no es algo que se escriba en C. Y sin la palabra
+  "puntero", que en la materia se ve al final: se dice "le sobra el `*`".
 - Cada mensaje lleva un **código fijo** (`CAMPO_FALTA`, `FALTA_PUNTO_Y_COMA`).
   El texto se puede reescribir; el código es lo que sirve para contar errores.
 - Cada intento queda anotado en el navegador (`practica-c:intentos`) con sus
