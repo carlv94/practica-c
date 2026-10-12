@@ -22,7 +22,7 @@
     },
     {
       "id": "cadenas-tabla-con-tipo",
-      "titulo": "Una tabla con el tipo",
+      "titulo": "Varios textos con el tipo",
       "continua": true,
       "enunciado": "Un curso tiene hasta 30 estudiantes. Declare la variable donde se guarden sus nombres, con el tamaño justo y usando el tipo {T}.",
       "requiere": [{ "usaAlias": { "alias": "$T", "arreglo": { "tamano": 30 } } }],

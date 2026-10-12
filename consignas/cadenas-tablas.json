@@ -1,13 +1,13 @@
 {
   "id": "cadenas-tablas",
-  "titulo": "Cadenas 5: tablas de cadenas",
-  "descripcion": "Una lista de textos guardada en una tabla: declararla, inicializarla, llenar una fila y recorrerla.",
+  "titulo": "Cadenas 5: arreglos de cadenas",
+  "descripcion": "Varios textos guardados juntos en un arreglo de cadenas: declararlo, inicializarlo, llenar una posición y recorrerlo.",
   "dentroDeMain": true,
   "buenasPracticas": ["claridad", "constantes"],
   "consignas": [
     {
       "id": "cadenas-tabla-nombres",
-      "titulo": "Declarar una tabla de cadenas",
+      "titulo": "Declarar un arreglo de cadenas",
       "enunciado": "Un curso tiene hasta 30 estudiantes y cada nombre tiene hasta 25 letras. Declare la variable donde se guarden los nombres de los estudiantes del curso, con el tamaño justo.",
       "requiere": [
         {
@@ -21,8 +21,8 @@
     },
     {
       "id": "cadenas-tabla-dias",
-      "titulo": "Una tabla con sus textos",
-      "enunciado": "Declare e inicialice, en la misma sentencia, una tabla con los nombres de los días de la semana, de lunes a domingo. Escríbalos sin acentos.",
+      "titulo": "Un arreglo de cadenas con sus textos",
+      "enunciado": "Declare e inicialice, en la misma sentencia, un arreglo de cadenas con los nombres de los días de la semana, de lunes a domingo. Escríbalos sin acentos.",
       "requiere": [
         {
           "variable": {
@@ -36,9 +36,9 @@
     },
     {
       "id": "cadenas-fila",
-      "titulo": "Guardar un texto en una fila",
+      "titulo": "Guardar un texto en una posición",
       "dado": "#define MAX_ESTUDIANTES 30\n#define LARGO_NOMBRE 25\nchar nombres[MAX_ESTUDIANTES][LARGO_NOMBRE + 1];",
-      "enunciado": "Guarde el texto `\"Ana\"` en la primera posición de la tabla `nombres`.",
+      "enunciado": "Guarde el texto `\"Ana\"` en la primera posición del arreglo `nombres`.",
       "requiere": [
         {
           "llamada": {
@@ -53,21 +53,21 @@
     },
     {
       "id": "cadenas-vaciar-tabla",
-      "titulo": "Vaciar todas las filas",
+      "titulo": "Vaciar todas las cadenas",
       "dado": "#define MAX_ESTUDIANTES 30\n#define LARGO_NOMBRE 25\nchar nombres[MAX_ESTUDIANTES][LARGO_NOMBRE + 1];\nint i;",
-      "enunciado": "Con un ciclo, deje vacías todas las cadenas de la tabla `nombres`. Use el índice `i`.",
+      "enunciado": "Con un ciclo, deje vacías todas las cadenas del arreglo `nombres`. Use el índice `i`.",
       "requiere": [{ "ciclo": { "indice": "i", "filasDe": "nombres" } }],
       "referencia": "for (i = 0; i < MAX_ESTUDIANTES; i++) {\n  nombres[i][0] = '\\0';\n}"
     },
     {
       "id": "cadenas-q-tabla",
-      "titulo": "Qué es una fila de la tabla",
+      "titulo": "Qué hay en cada posición",
       "enunciado": "Después de ejecutar el código de abajo, ¿qué contendría `nombres[0][0]`?",
       "codigo": "char nombres[3][10];\nstrcpy(nombres[0], \"Ana\");",
       "opciones": [
         {
           "valor": "\"Ana\"",
-          "texto": "el texto completo de la fila",
+          "texto": "el texto completo que está en esa posición",
           "codigo": "OPCION_FILA_ES_EL_TEXTO",
           "explicacion": "`nombres[0]` es la cadena completa, `Ana`. Con el segundo índice se elige un carácter de esa cadena."
         },
@@ -76,7 +76,7 @@
           "valor": "'\\0'",
           "texto": "el carácter de fin",
           "codigo": "OPCION_FIN_EN_LA_PRIMERA",
-          "explicacion": "El `'\\0'` está después de la última letra, en la posición 3 de esa fila, no en la primera."
+          "explicacion": "El `'\\0'` está después de la última letra, en la posición 3 de ese texto, no en la primera."
         }
       ]
     }

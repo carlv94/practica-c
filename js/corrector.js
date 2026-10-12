@@ -353,7 +353,7 @@ export function corregir(
       } else if (campo.arreglo.length > 1) {
         error(
           'CAMPO_CADENA_DIMENSIONES',
-          `\`${n}\` tiene ${campo.arreglo.length} dimensiones: eso es una tabla de caracteres. Para un texto alcanza con una.`,
+          `\`${n}\` tiene ${campo.arreglo.length} dimensiones: así guardaría varios textos. Para un solo texto alcanza con una.`,
           campo.fila
         );
       } else if (campo.arreglo[0].trim() === '') {
@@ -1168,13 +1168,13 @@ export function corregir(
         if (real.clase === 'nombre' && real.nombre === base) {
           error(
             'ARGUMENTO_TABLA_ENTERA',
-            `\`${base}\` es la tabla completa: para guardar un texto hay que elegir una de sus filas.`,
+            `\`${base}\` contiene todos los textos: para guardar uno hay que elegir cuál, con ${cantidad === 1 ? 'un índice' : `${cantidad} índices`}.`,
             llamada.fila
           );
         } else if (real.clase === 'indice' && real.nombre === base && real.indices.length > cantidad) {
           error(
             'ARGUMENTO_CON_CORCHETES',
-            `\`${real.texto}\` es un solo carácter de la cadena. Para pasar la cadena completa va la fila sola, sin el último índice.`,
+            `\`${real.texto}\` es un solo carácter de la cadena. Para pasar la cadena completa hay que quitar el último índice.`,
             llamada.fila
           );
         } else if (real.clase === 'indice' && real.nombre === base && diagnosticos.some((d) => d.codigo === 'INDICE_FUERA_DE_RANGO')) {
@@ -1702,7 +1702,7 @@ export function corregir(
       return;
     }
     if (inicial.clase !== 'lista') {
-      error('VALORES_SIN_LISTA', 'Los textos de una tabla van todos juntos, en una lista entre llaves.', v.fila);
+      error('VALORES_SIN_LISTA', 'Los textos van todos juntos, en una lista entre llaves.', v.fila);
       return;
     }
     const escritos = inicial.elementos;
@@ -1757,7 +1757,7 @@ export function corregir(
     if (!deColumnas) {
       error(
         'TABLA_SIN_COLUMNAS',
-        'En una tabla solo se puede dejar vacía la cantidad de filas: la de columnas hay que escribirla.',
+        'Solo se puede dejar vacía la cantidad de textos: el tamaño de cada texto hay que escribirlo.',
         v.fila
       );
       return;
@@ -1802,7 +1802,7 @@ export function corregir(
     if (diagnosticos.length === antes && deFilas && practicas.includes('constantes')) {
       mejora(
         'FILAS_REPETIDAS',
-        'La cantidad de filas ya la dicen los textos: si deja vacíos los primeros corchetes, el compilador la cuenta solo, y no hay que acordarse de cambiarla el día de mañana si se agrega o se quita un texto.',
+        'La cantidad de textos ya la dice la lista: si deja vacíos los primeros corchetes, el compilador la cuenta solo, y no hay que acordarse de cambiarla el día de mañana si se agrega o se quita un texto.',
         v.fila
       );
     }
@@ -2191,13 +2191,13 @@ export function corregir(
         if (ultimaFila >= filas) {
           error(
             'CICLO_SE_PASA',
-            `El ciclo llega hasta la fila ${ultimaFila} y \`${tabla}\` tiene ${filas} filas, numeradas de 0 a ${filas - 1}.`,
+            `El ciclo llega hasta la posición ${ultimaFila} y \`${tabla}\` tiene ${filas} textos, numerados de 0 a ${filas - 1}.`,
             ciclo.fila
           );
         } else if (ultimaFila < filas - 1) {
           error(
             'CICLO_NO_LLEGA',
-            `El ciclo llega hasta la fila ${ultimaFila}, pero \`${tabla}\` tiene ${filas} filas: quedan filas sin recorrer.`,
+            `El ciclo llega hasta la posición ${ultimaFila}, pero \`${tabla}\` tiene ${filas} textos: quedan textos sin recorrer.`,
             ciclo.fila
           );
         }
@@ -2235,7 +2235,7 @@ export function corregir(
       if (!vacia && !diagnosticos.some((d) => d.codigo === 'ASIGNACION_DE_ARREGLO')) {
         error(
           'CICLO_NO_VACIA',
-          `Lo que hace el ciclo no deja vacía cada cadena de \`${tabla}\`: en cada vuelta hay que vaciar la fila que corresponde al índice.`,
+          `Lo que hace el ciclo no deja vacía cada cadena de \`${tabla}\`: en cada vuelta hay que vaciar la cadena que corresponde al índice.`,
           ciclo.fila
         );
       }
@@ -2788,7 +2788,7 @@ function revisarAsignaciones(modelo, error, aconsejarFuncion = true) {
       // Una fila de una tabla: con t[0] queda una cadena (o un arreglo).
       error(
         'ASIGNACION_DE_ARREGLO',
-        `\`${izquierda.texto}\` es ${esCadena ? 'una cadena (una fila de la tabla)' : 'una fila de la tabla'}: no se puede asignar completa con \`=\`.` +
+        `\`${izquierda.texto}\` es ${esCadena ? 'una cadena' : 'una fila de la tabla'}: no se puede asignar completa con \`=\`.` +
           (esCadena && aconsejarFuncion
             ? ' Para copiar un texto en una cadena se usa una función de la biblioteca de cadenas.'
             : ''),
@@ -2816,7 +2816,10 @@ function revisarIndices(modelo, error) {
       const clave = valor.texto + ':' + k;
       if (dichos.has(clave)) continue;
       dichos.add(clave);
-      const que = variable.arreglo.length === 1 ? 'posiciones' : k === 0 ? 'filas' : 'columnas';
+      // Con dos corchetes de char, el primero cuenta los textos: posiciones.
+      const esChar = variable.tipo.clase === 'primitivo' && variable.tipo.nombre === 'char';
+      const que =
+        variable.arreglo.length === 1 || (esChar && variable.arreglo.length === 2) ? 'posiciones' : k === 0 ? 'filas' : 'columnas';
       error(
         'INDICE_FUERA_DE_RANGO',
         `\`${variable.nombre}\` tiene ${lugar} ${que}, numeradas de 0 a ${lugar - 1}: la ${Number(indice)} no existe.`,

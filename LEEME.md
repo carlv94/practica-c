@@ -240,7 +240,7 @@ si no, es un error que dice que lo que no se nombra queda en cero.
 ### Cadenas de caracteres
 
 Las series `cadenas-*` (el fin de la cadena, la cadena vacía, la biblioteca,
-recorrer, tablas de cadenas y typedef) usan estas reglas.
+recorrer, arreglos de cadenas y typedef) usan estas reglas.
 
 **Una cadena de hasta N letras necesita N + 1 espacios**, y la consigna pide el
 tamaño justo. Con un "al menos" un número cualquiera (20) pasaría sin que el
@@ -260,9 +260,23 @@ alumno haya pensado en el `\0`, y eso es justo lo que se quiere comprobar:
 `"alMenos"` en lugar de `"tamano"` acepta ese tamaño o más, para una consigna
 en la que la dimensión no sea el tema.
 
-Con una tabla, `"tamano": [30, 26]`: la cantidad de textos y el tamaño de cada
-uno (la última dimensión es la que lleva el fin). `capturarDimension` guarda lo
-que valía la dimensión, para nombrarla en un enunciado o una opción (`{N}`).
+Con varios textos, `"tamano": [30, 26]`: la cantidad de textos y el tamaño de
+cada uno (la última dimensión es la que lleva el fin). `capturarDimension`
+guarda lo que valía la dimensión, para nombrarla en un enunciado o una opción
+(`{N}`).
+
+**Cómo se llama cada cosa** (en los enunciados y en los mensajes): el último
+corchete son siempre las letras de una cadena, y el nombre sale de lo que
+guarda cada elemento.
+
+| Declaración | Se dice |
+|---|---|
+| `char c[26]` | una cadena |
+| `char nombres[30][26]` | un **arreglo de cadenas** (30 textos) |
+
+"Tabla de caracteres" queda para lo que de verdad guarda caracteres sueltos
+(`char tablero[3][3]`). "Lista" no se usa para esto: en estas series es lo que
+va entre llaves (`{"lunes", ...}`).
 
 Otras formas de pedir una variable de caracteres:
 
@@ -270,10 +284,10 @@ Otras formas de pedir una variable de caracteres:
   excelente; `[4]` es el error silencioso de C (`CADENA_SIN_FIN`); más lugar
   que el necesario es correcto con mejora. Con `"como": "lista"` se piden los
   caracteres uno por uno entre llaves (`{'H', 'o', 'l', 'a', '\0'}`).
-- `"textos": ["lunes", ...]`: una tabla de textos, uno por fila. Se controla
-  cada texto, que la cantidad de filas sea la justa y que el ancho deje lugar
-  para el fin del más largo; los mensajes nombran ese texto tal como el alumno
-  lo escribió. `"sinDistinguirMayusculas": true` acepta `"lunes"`, `"Lunes"` o
+- `"textos": ["lunes", ...]`: un arreglo de cadenas con sus textos. Se controla
+  cada texto, que la cantidad sea la justa y que el tamaño deje espacio para el
+  fin del más largo; los mensajes nombran ese texto tal como el alumno lo
+  escribió. `"sinDistinguirMayusculas": true` acepta `"lunes"`, `"Lunes"` o
   `"LUNES"`: es para cuando la consigna no dicta cómo se escribe el texto. Sin
   esa opción, otra mayúscula es un error (`TEXTO_DISTINTO`), que es lo que
   enseñan las consignas donde el texto está escrito en el enunciado.
@@ -301,7 +315,7 @@ Reglas de código:
   excelente, que quiere decir "lo verifiqué y no hay nada que mejorar". Sí es
   un error una condición que **no mira la cadena** (`i != '\0'`, `i != 5`):
   no hay forma de que vea el final.
-  `"filasDe": "tabla"` pide recorrer las filas de una tabla, y que dentro se
+  `"filasDe": "nombres"` pide recorrer un arreglo de cadenas, y que dentro se
   vacíe cada una.
 - `{ "incluye": "string.h" }`: agregar una biblioteca con `#include`. Con
   comillas (`"string.h"`) vale con mejora; sin el `.h`, otra biblioteca, o con
@@ -314,8 +328,8 @@ Reglas de código:
 
 La regla `llamada` suma, para estas series:
 
-- Un argumento puede ser un texto (`"\"Juan\""`) o una posición de una tabla
-  (`"nombres[0]"`).
+- Un argumento puede ser un texto (`"\"Juan\""`) o una posición de un arreglo
+  de cadenas (`"nombres[0]"`).
 - `"resultadoEn": "largo"`: lo que devuelve tiene que guardarse en esa variable.
 - `"comparar": true` (`strcmp`): tiene que estar en la condición de un `if` y
   mirar el cero. `strcmp(a, b)` sola o con `!= 0` se cumple al revés
@@ -329,11 +343,11 @@ La regla `llamada` suma, para estas series:
 
 Un texto entre comillas dobles con el fin escrito de más (`"Hola\0"`) es el mismo
 texto: vale, con la mejora `FIN_EN_EL_TEXTO` (el compilador ya lo agrega). Vale
-igual en `strcpy`, `strcmp` y en una tabla de textos. Entre comillas simples
+igual en `strcpy`, `strcmp` y en un arreglo de cadenas. Entre comillas simples
 (`'Hola'`) es un error con su mensaje (`CADENA_CON_COMILLAS_SIMPLES`).
 
 Para cualquier consigna, y sin pedirlo: una posición que no existe
-(`nombres[30]` en una tabla de 30 filas, `INDICE_FUERA_DE_RANGO`) y un texto
+(`nombres[30]` en un arreglo de 30 textos, `INDICE_FUERA_DE_RANGO`) y un texto
 asignado a un carácter (`ELEMENTO_ENTRE_COMILLAS_DOBLES`) son errores. Y una
 dimensión puede ser una cuenta sencilla (`MAX + 1`, `10 + 1`).
 
