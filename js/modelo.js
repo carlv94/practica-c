@@ -19,7 +19,8 @@
 //   llamada:    { funcion, argumentos, destino, uso, enIf, posicion, fin, nuevo, fila }
 //   asignacion: { izquierda, derecha, posicion, nuevo, fila }
 //   ciclo:      { tipo, condicion, texto, posicion, fin, nuevo, fila }
-//   si:         { posicion, fin, nuevo, fila }                        un if
+//   si:         { condicion, posicion, fin, nuevo, fila }             un if
+//   include:    { ruta, sistema, nuevo, fila }       #include <string.h>: sistema es < >
 //   comparacion: { operador, izquierda, derecha, enIf, nuevo, fila }  a == b, a != b
 //   sizeof:     { argumento, nuevo, fila }
 // Un argumento (o un lado de una asignacion) es:
@@ -178,6 +179,7 @@ export function construirModelo(arbol, desde) {
     asignaciones: [],
     ciclos: [],
     ifs: [],
+    includes: [],
     comparaciones: [],
     sizeofs: [],
   };
@@ -411,8 +413,21 @@ export function construirModelo(arbol, desde) {
           fila: n.startPosition.row,
         });
         break;
+      case 'preproc_include': {
+        const camino = n.childForFieldName('path');
+        if (camino) {
+          modelo.includes.push({
+            ruta: camino.text.slice(1, -1),
+            sistema: camino.text.startsWith('<'),
+            nuevo: n.startIndex >= desde,
+            fila: n.startPosition.row,
+          });
+        }
+        break;
+      }
       case 'if_statement':
         modelo.ifs.push({
+          condicion: (n.childForFieldName('condition')?.text || '').replace(/^\(\s*([\s\S]*?)\s*\)$/, '$1'),
           posicion: n.startIndex,
           fin: n.endIndex,
           nuevo: n.startIndex >= desde,

@@ -25,7 +25,7 @@ const campos = (cuerpo) => `struct Puesto {\n${cuerpo}\n};`;
 // Las sentencias de la serie de cadenas.
 const cadenas = (paso, nombre, respuesta, espera) => ({
   serie: 'cadenas-biblioteca',
-  paso: paso + 3,
+  paso: paso + 2,
   nombre,
   respuesta,
   espera,

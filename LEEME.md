@@ -103,6 +103,10 @@ Lo que depende de esto:
   que la consigna recibe. Si no continúa y no trae `dado`, no hay recuadro.
 - **La pantalla final** lista las respuestas de cada consigna, no un código
   acumulado.
+- **`"persiste": true`** en una consigna (el `#include` de una biblioteca):
+  su respuesta pasa a verse en "El código hasta acá" de **todas** las que
+  siguen, continúen o no. No se mezcla con el código acumulado de las que
+  continúan, así que no repite declaraciones.
 
 ## Escribir una consigna
 
@@ -271,7 +275,7 @@ Otras formas de pedir una variable de caracteres:
   para el fin del más largo.
 - `"caracter": "A"`: una variable de un solo carácter con ese valor (`'A'`, no
   `"A"`).
-- `"vacia": true`, junto con `alMenos`: tiene que empezar vacía (`""`, `{0}`
+- `"vacia": true`, junto con `tamano`: tiene que empezar vacía (`""`, `{0}`
   o `{'\0'}`).
 
 Reglas de código:
@@ -291,8 +295,12 @@ Reglas de código:
   reconoce **no es un error**: sale un aviso (`CICLO_NO_VERIFICADO`).
   `"filasDe": "tabla"` pide recorrer las filas de una tabla, y que dentro se
   vacíe cada una.
-- `{ "alias": { "arreglo": { "alMenos": 26, "letras": 25 }, "capturar": "T" } }`
-  y `{ "usaAlias": { "alias": "$T", "arreglo": { "alMenos": 30 } } }`: un
+- `{ "incluye": "string.h" }`: agregar una biblioteca con `#include`. Con
+  comillas (`"string.h"`) vale con mejora; sin el `.h`, otra biblioteca, o con
+  `#define` en lugar de `#include`, es error con su mensaje. Se usa con
+  `"persiste": true`.
+- `{ "alias": { "arreglo": { "tamano": 26, "letras": 25 }, "capturar": "T" } }`
+  y `{ "usaAlias": { "alias": "$T", "arreglo": { "tamano": 30 } } }`: un
   `typedef` de un arreglo de caracteres, y una variable declarada con él. Una
   variable de ese tipo se ve como el arreglo que es.
 

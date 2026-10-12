@@ -45,7 +45,7 @@
         },
         {
           "valor": "5",
-          "texto": "la cantidad de letras más el carácter de fin",
+          "texto": "la cantidad de letras más el `'\\0'`",
           "codigo": "OPCION_CUENTA_EL_FIN",
           "explicacion": "`strlen` cuenta las letras hasta el primer `'\\0'`, pero no cuenta el `'\\0'`."
         },
@@ -67,7 +67,7 @@
         },
         {
           "valor": "5",
-          "texto": "la cantidad de letras más el carácter de fin",
+          "texto": "la cantidad de letras más el `'\\0'`",
           "codigo": "OPCION_SIZEOF_CUENTA_FIN",
           "explicacion": "`sizeof` no cuenta las letras guardadas, ni siquiera con el `'\\0'`: dice el tamaño de la cadena en memoria, esté llena o no."
         },
@@ -117,6 +117,33 @@
         { "variable": { "tipo": "caracter", "arreglo": true, "texto": "Hola", "como": "lista" } }
       ],
       "referencia": "char saludo[] = {'H', 'o', 'l', 'a', '\\0'};"
+    },
+    {
+      "id": "cadenas-letra",
+      "titulo": "Una letra",
+      "enunciado": "Declare una variable que guarde un solo carácter, y déle como valor la letra `A`, en la misma sentencia.",
+      "requiere": [{ "variable": { "tipo": "caracter", "caracter": "A" } }],
+      "referencia": "char letra = 'A';"
+    },
+    {
+      "id": "cadenas-q-letra-y-texto",
+      "titulo": "Una letra y un texto de una letra",
+      "enunciado": "Después de ejecutar el código de abajo, ¿qué valor tendría `sizeof(texto)`?",
+      "codigo": "char letra = 'A';\nchar texto[] = \"A\";",
+      "opciones": [
+        {
+          "valor": "1",
+          "texto": "lo mismo que `letra`",
+          "codigo": "OPCION_TEXTO_COMO_LETRA",
+          "explicacion": "Un texto entre comillas dobles siempre lleva el `'\\0'`, aunque tenga una sola letra: ocupa un espacio más que sus letras."
+        },
+        { "valor": "2", "texto": "la letra y el `'\\0'`", "correcta": true },
+        {
+          "texto": "No se puede saber",
+          "codigo": "OPCION_NO_SE_SABE_TAMANO",
+          "explicacion": "Sí se sabe: el compilador reserva justo el espacio de las letras más el del `'\\0'`."
+        }
+      ]
     }
   ]
 }

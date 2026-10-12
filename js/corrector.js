@@ -247,6 +247,7 @@ export function corregir(
     if (regla.vaciar) return reglaVaciar(regla.vaciar, modelo);
     if (regla.ciclo) return reglaCiclo(regla.ciclo, modelo);
     if (regla.usaAlias) return reglaUsaAlias(regla.usaAlias, modelo);
+    if (regla.incluye) return reglaIncluye(regla.incluye, modelo);
     throw new Error(`La consigna "${consigna.id}" tiene una regla que no conozco.`);
   }
 
@@ -1259,26 +1260,54 @@ export function corregir(
 
       // Comparar dos cadenas: en la condicion de un if, y mirando el cero.
       if (regla.comparar) {
-        if (!l.enIf) {
+        if (!l.enIf && l.destino) {
+          // int r = strcmp(a, b);  y despues  if (r == 0)
+          const x = l.destino.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const condiciones = modelo.ifs.filter((i) => i.nuevo).map((i) => i.condicion.replace(/\s+/g, ''));
+          const esta = (patron) => condiciones.some((c) => new RegExp(patron).test(c));
+          if (esta('^' + x + '==0$|^0==' + x + '$')) {
+            // lo de siempre
+          } else if (esta('^!' + x + '$')) {
+            if (practicas.includes('claridad')) {
+              mejora(
+                'STRCMP_SIN_COMPARAR',
+                'Está bien, pero `strcmp` devuelve `0` cuando las cadenas son iguales, y compararlo con `0` deja a la vista qué se está preguntando.',
+                l.fila
+              );
+            }
+          } else if (esta('^' + x + '$|^' + x + '!=0$|^0!=' + x + '$')) {
+            error(
+              'STRCMP_AL_REVES',
+              '`strcmp` devuelve `0` cuando las cadenas son iguales: así la condición se cumple cuando son distintas.',
+              l.fila
+            );
+          } else {
+            error(
+              'RESULTADO_SIN_COMPARAR',
+              `El valor que devuelve \`strcmp\` se guarda en \`${l.destino}\`, pero ninguna condición de un \`if\` lo compara con \`0\`.`,
+              l.fila
+            );
+          }
+        } else if (!l.enIf) {
           error('COMPARACION_FUERA_DEL_IF', 'La comparación tiene que estar en la condición de un `if`.', l.fila);
         } else if (l.uso === 'negada') {
           if (practicas.includes('claridad')) {
             mejora(
               'STRCMP_SIN_COMPARAR',
-              'Está bien, pero `strcmp` devuelve cero cuando las cadenas son iguales, y compararlo con `0` deja a la vista qué se está preguntando.',
+              'Está bien, pero `strcmp` devuelve `0` cuando las cadenas son iguales, y compararlo con `0` deja a la vista qué se está preguntando.',
               l.fila
             );
           }
         } else if (l.uso === 'sola' || l.uso === 'distinto-cero') {
           error(
             'STRCMP_AL_REVES',
-            '`strcmp` devuelve cero cuando las cadenas son iguales: así la condición se cumple cuando son distintas.',
+            '`strcmp` devuelve `0` cuando las cadenas son iguales: así la condición se cumple cuando son distintas.',
             l.fila
           );
         } else if (l.uso !== 'igual-cero') {
           error(
             'STRCMP_USO',
-            'Para saber si dos cadenas son iguales hay que mirar si `strcmp` devuelve cero.',
+            'Para saber si dos cadenas son iguales hay que mirar si `strcmp` devuelve `0`.',
             l.fila
           );
         }
@@ -2161,6 +2190,46 @@ export function corregir(
     throw new Error(`La consigna "${consigna.id}" tiene una regla de ciclo que no conozco.`);
   }
 
+  // ---- incluir una biblioteca -------------------------------------------------
+
+  // "#include <string.h>": el archivo de cabecera de la biblioteca. Los mensajes
+  // dicen que hace falta, no como se escribe.
+  function reglaIncluye(esperado, modelo) {
+    const propios = modelo.includes.filter((i) => i.nuevo);
+    const bien = propios.find((i) => i.ruta === esperado);
+    if (bien) {
+      if (!bien.sistema && practicas.includes('claridad')) {
+        mejora(
+          'INCLUDE_ENTRE_COMILLAS',
+          'Está bien, pero el nombre de una biblioteca del sistema va entre `<` y `>`, y no entre comillas: las comillas son para archivos propios.',
+          bien.fila
+        );
+      }
+      return;
+    }
+    const otro = propios[0];
+    if (otro) {
+      error(
+        otro.ruta.replace(/\.h$/, '') === esperado.replace(/\.h$/, '')
+          ? 'INCLUDE_SIN_EXTENSION'
+          : 'INCLUDE_OTRA_BIBLIOTECA',
+        otro.ruta.replace(/\.h$/, '') === esperado.replace(/\.h$/, '')
+          ? `\`${otro.ruta}\` no es un archivo de cabecera de C: los de C terminan en \`.h\`.`
+          : `\`${otro.ruta}\` es otra biblioteca: no es la de las cadenas.`,
+        otro.fila
+      );
+      return;
+    }
+    if (modelo.constantes.some((c) => c.nuevo && c.clase === 'define')) {
+      error('INCLUDE_ES_DEFINE', 'Eso define una constante: no agrega una biblioteca.');
+      return;
+    }
+    error(
+      'INCLUDE_FALTA',
+      'No encontré la directiva que agrega una biblioteca. Para usar las funciones de una biblioteca hay que agregar su archivo de cabecera, con una directiva del preprocesador.'
+    );
+  }
+
   // ---- un tipo definido con typedef -------------------------------------------
 
   // Una variable declarada con el alias que el alumno definio antes.
@@ -2797,6 +2866,16 @@ function erroresConocidos(respuesta) {
       new RegExp(`\\w\\s*\\(\\s*(?!${TIPO}\\b)\\w+\\s+\\w`),
       'FALTA_COMA',
       'Los argumentos de una función se separan con coma: `funcion(a, b);`',
+    ],
+    [
+      /^[ \t]*#[ \t]*define[ \t]*[<"]/m,
+      'INCLUDE_ES_DEFINE',
+      'Eso define una constante: no agrega una biblioteca.',
+    ],
+    [
+      /^[ \t]*include[ \t]*[<"]/m,
+      'INCLUDE_SIN_NUMERAL',
+      'Las directivas del preprocesador, como la que agrega una biblioteca, empiezan con `#`.',
     ],
     [
       /\btypedef\s+\w+\s+struct\b/,

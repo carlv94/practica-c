@@ -1,36 +1,17 @@
 {
   "id": "cadenas-biblioteca",
   "titulo": "Cadenas 3: la biblioteca de cadenas",
-  "descripcion": "Guardar, copiar, agregar, medir, comparar y leer cadenas con las funciones de string.h.",
+  "descripcion": "Agregar la biblioteca, y guardar, copiar, agregar, medir y comparar cadenas con sus funciones.",
   "dentroDeMain": true,
   "buenasPracticas": ["claridad"],
   "consignas": [
     {
-      "id": "cadenas-letra",
-      "titulo": "Una letra",
-      "enunciado": "Declare una variable que guarde un solo carácter, y déle como valor la letra `A`, en la misma sentencia.",
-      "requiere": [{ "variable": { "tipo": "caracter", "caracter": "A" } }],
-      "referencia": "char letra = 'A';"
-    },
-    {
-      "id": "cadenas-q-letra-y-texto",
-      "titulo": "Una letra y un texto de una letra",
-      "enunciado": "Después de ejecutar el código de abajo, ¿qué valor tendría `sizeof(texto)`?",
-      "codigo": "char letra = 'A';\nchar texto[] = \"A\";",
-      "opciones": [
-        {
-          "valor": "1",
-          "texto": "lo mismo que `letra`",
-          "codigo": "OPCION_TEXTO_COMO_LETRA",
-          "explicacion": "Un texto entre comillas dobles siempre lleva el `'\\0'`, aunque tenga una sola letra: ocupa un espacio más que sus letras."
-        },
-        { "valor": "2", "texto": "la letra y el carácter de fin", "correcta": true },
-        {
-          "texto": "No se puede saber",
-          "codigo": "OPCION_NO_SE_SABE_TAMANO",
-          "explicacion": "Sí se sabe: el compilador reserva justo el espacio de las letras más el del `'\\0'`."
-        }
-      ]
+      "id": "cadenas-incluir",
+      "titulo": "Usar la biblioteca de cadenas",
+      "persiste": true,
+      "enunciado": "Escriba el código necesario para agregar la biblioteca de cadenas y así poder usar sus funciones.",
+      "requiere": [{ "incluye": "string.h" }],
+      "referencia": "#include <string.h>"
     },
     {
       "id": "cadenas-copiar-literal",
@@ -111,23 +92,15 @@
           "valor": "1",
           "texto": "porque son iguales",
           "codigo": "OPCION_STRCMP_IGUALES_ES_UNO",
-          "explicacion": "`strcmp` devuelve cero cuando las cadenas son iguales. Por eso, para preguntar si son iguales, se compara con cero."
+          "explicacion": "`strcmp` devuelve `0` cuando las cadenas son iguales. Por eso, para preguntar si son iguales, se compara con `0`."
         },
         { "valor": "0", "texto": "las cadenas son iguales", "correcta": true },
         {
           "texto": "Verdadero",
           "codigo": "OPCION_STRCMP_ES_BOOLEANO",
-          "explicacion": "`strcmp` devuelve un número, no verdadero o falso: cero si son iguales, y otro número si no lo son."
+          "explicacion": "`strcmp` devuelve un número, no verdadero o falso."
         }
       ]
-    },
-    {
-      "id": "cadenas-leer",
-      "titulo": "Leer un texto",
-      "dado": "char nombre[21];",
-      "enunciado": "Escriba el código que lea por teclado un texto y lo guarde en la cadena `nombre`.",
-      "requiere": [{ "llamada": { "funcion": "scanf", "argumentos": ["*", "nombre"] } }],
-      "referencia": "scanf(\"%20s\", nombre);"
     }
   ]
 }

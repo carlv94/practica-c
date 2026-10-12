@@ -3,17 +3,21 @@
 // armen el contexto igual.
 //
 // El "avance" es lo que deja lo ya resuelto:
-//   { contexto, capturas }
-// y el codigo que tiene delante una consigna es, si continua, ese contexto, mas
-// su "dado": el codigo que la consigna trae escrito y el alumno no tiene que
-// tipear (las variables sobre las que se le pide trabajar).
+//   { contexto, capturas, base }
+// y el codigo que tiene delante una consigna es la "base", si continua el
+// contexto, y su "dado": el codigo que la consigna trae escrito y el alumno no
+// tiene que tipear (las variables sobre las que se le pide trabajar).
+//
+// La "base" es lo que dejan las consignas con "persiste": true (el #include de
+// la biblioteca): lo ven todas las que siguen, continuen o no, y no se mezcla
+// con el contexto acumulado de las que continuan.
 
 import { corregir, corregirOpcion } from './corrector.js';
 import { sustituir } from './enunciado.js';
 
 const unir = (...partes) => partes.filter((p) => p && p.trim()).join('\n\n');
 
-export const inicio = () => ({ contexto: '', capturas: {} });
+export const inicio = () => ({ contexto: '', capturas: {}, base: '' });
 
 // Si la consigna "indice" ve el codigo (y los nombres capturados) de las
 // anteriores. Por defecto no: cada consigna es un programa nuevo. La que
@@ -37,7 +41,7 @@ export const capturasPrevias = (serie, indice, avance) =>
 
 // El codigo que se ve arriba de la respuesta en la consigna numero "indice".
 export function codigoPrevio(serie, indice, avance) {
-  return unir(contextoPrevio(serie, indice, avance), serie.consignas[indice].dado);
+  return unir(avance.base, contextoPrevio(serie, indice, avance), serie.consignas[indice].dado);
 }
 
 export function corregirPaso(analizador, serie, indice, avance, respuesta) {
@@ -80,10 +84,16 @@ export function despuesDe(serie, indice, avance, respuesta, resultado) {
   if (consigna.opciones) {
     if (!consigna.queda) return avance;
     const codigo = sustituir(consigna.codigo || '', capturasPrevias(serie, indice, avance));
-    return { contexto: unir(avance.contexto, codigo), capturas: avance.capturas };
+    return { ...avance, contexto: unir(avance.contexto, codigo) };
+  }
+  // Lo que persiste pasa a ser de todas las que siguen, y no toca la cadena de
+  // las que continuan.
+  if (consigna.persiste) {
+    return { ...avance, base: unir(avance.base, respuesta.trim()) };
   }
   return {
-    contexto: unir(codigoPrevio(serie, indice, avance), respuesta.trim()),
+    contexto: unir(contextoPrevio(serie, indice, avance), consigna.dado, respuesta.trim()),
     capturas: resultado.capturas,
+    base: avance.base,
   };
 }
