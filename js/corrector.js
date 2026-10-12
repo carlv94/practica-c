@@ -1641,6 +1641,93 @@ export function corregir(
     verificarLectura(l, esperado, regla.formato, modelo);
   }
 
+  // Una llamada que muestra la cadena: "formato" es el texto que pide la consigna
+  // (sin el salto de linea del final), o nada si alcanza con mostrarla. Dice el
+  // error y devuelve false, o devuelve true si esta bien.
+  function verificarSalida(l, formato, esperado, modelo) {
+    if (l.funcion === 'puts') {
+      if (formato && formato !== '%s') {
+        error(
+          'FUNCION_EQUIVOCADA',
+          '`puts` muestra solo la cadena y termina con un salto de línea: para escribir el saludo y el nombre en la misma línea hace falta `printf`.',
+          l.fila
+        );
+        return false;
+      }
+      if (l.argumentos.length !== 1) {
+        error('ARGUMENTOS_CANTIDAD', '`puts` lleva un solo argumento: la cadena que se muestra.', l.fila);
+        return false;
+      }
+      if (!coincide(esperado, l.argumentos[0])) {
+        diagnosticarArgumento(l, 0, esperado, l.argumentos[0], modelo);
+        return false;
+      }
+      return true;
+    }
+
+    const formatoReal = l.argumentos[0];
+    if (!formatoReal) {
+      error('ARGUMENTOS_CANTIDAD', '`printf` lleva, como mínimo, el formato: un texto entre comillas dobles.', l.fila);
+      return false;
+    }
+    if (formatoReal.clase !== 'cadena') {
+      error(
+        'PRINTF_SIN_FORMATO',
+        'El primer argumento de `printf` es el formato: un texto entre comillas dobles que lleva `%s` en el lugar donde va el contenido de la cadena.',
+        l.fila
+      );
+      return false;
+    }
+    const conversiones = formatoReal.contenido.replace(/%%/g, '').match(/%[-+ #0]*\d*(?:\.\d+)?[a-zA-Z]/g) || [];
+    if (!conversiones.length) {
+      error(
+        'MUESTRA_TEXTO_FIJO',
+        `Eso escribe en pantalla el texto tal cual: para mostrar lo que guarda \`${esperado}\` el formato lleva \`%s\`, que se reemplaza por el contenido de la cadena.`,
+        l.fila
+      );
+      return false;
+    }
+    const mala = conversiones.find((c) => !c.endsWith('s'));
+    if (mala) {
+      error(
+        'FORMATO_NO_ES_TEXTO',
+        `\`${mala}\` no es el formato de un texto: cada tipo de dato tiene el suyo, y el de una cadena es \`%s\`.`,
+        l.fila
+      );
+      return false;
+    }
+    const valores = l.argumentos.length - 1;
+    if (valores !== conversiones.length) {
+      error(
+        'ARGUMENTOS_CANTIDAD',
+        `El formato pide ${conversiones.length === 1 ? '1 valor' : `${conversiones.length} valores`} y \`printf\` recibe ${valores}: hace falta uno por cada \`%s\`, separados por coma.`,
+        l.fila
+      );
+      return false;
+    }
+    for (let i = 1; i < l.argumentos.length; i++) {
+      if (!coincide(esperado, l.argumentos[i])) {
+        diagnosticarArgumento(l, i, esperado, l.argumentos[i], modelo);
+        return false;
+      }
+    }
+    if (formato) {
+      // El salto de linea del final es un detalle: no cambia el mensaje.
+      const escrito = formatoReal.contenido.replace(/(\\n)+$/, '');
+      if (escrito !== formato) {
+        error(
+          'TEXTO_DISTINTO',
+          escrito.toLowerCase() === formato.toLowerCase()
+            ? 'El texto no es el de la consigna: en C las mayúsculas y las minúsculas son letras distintas.'
+            : 'El texto que se muestra no es el que pide la consigna.',
+          l.fila
+        );
+        return false;
+      }
+    }
+    return true;
+  }
+
   // Mostrar en pantalla el texto de una variable.
   function reglaMuestra(regla, modelo) {
     const esperado = valorDe(regla.destino);
@@ -1660,88 +1747,57 @@ export function corregir(
     }
     const l = salidas[0];
 
-    if (l.funcion === 'puts') {
-      if (regla.formato) {
-        error(
-          'FUNCION_EQUIVOCADA',
-          '`puts` muestra solo la cadena, sin nada más: para escribir el saludo hace falta `printf`.',
-          l.fila
-        );
-        return;
-      }
-      if (l.argumentos.length !== 1) {
-        error('ARGUMENTOS_CANTIDAD', '`puts` lleva un solo argumento: la cadena que se muestra.', l.fila);
-        return;
-      }
-      if (!coincide(esperado, l.argumentos[0])) {
-        diagnosticarArgumento(l, 0, esperado, l.argumentos[0], modelo);
-        return;
-      }
-    } else {
-      const formato = l.argumentos[0];
-      if (!formato) {
-        error(
-          'ARGUMENTOS_CANTIDAD',
-          '`printf` lleva, como mínimo, el formato: un texto entre comillas dobles.',
-          l.fila
-        );
-        return;
-      }
-      if (formato.clase !== 'cadena') {
-        error(
-          'PRINTF_SIN_FORMATO',
-          'El primer argumento de `printf` es el formato: un texto entre comillas dobles que lleva `%s` en el lugar donde va el contenido de la cadena.',
-          l.fila
-        );
-        return;
-      }
-      const conversiones = formato.contenido.replace(/%%/g, '').match(/%[-+ #0]*\d*(?:\.\d+)?[a-zA-Z]/g) || [];
-      if (!conversiones.length) {
-        error(
-          'MUESTRA_TEXTO_FIJO',
-          `Eso escribe en pantalla el texto tal cual: para mostrar lo que guarda \`${esperado}\` el formato lleva \`%s\`, que se reemplaza por el contenido de la cadena.`,
-          l.fila
-        );
-        return;
-      }
-      const mala = conversiones.find((c) => !c.endsWith('s'));
-      if (mala) {
-        error(
-          'FORMATO_NO_ES_TEXTO',
-          `\`${mala}\` no es el formato de un texto: cada tipo de dato tiene el suyo, y el de una cadena es \`%s\`.`,
-          l.fila
-        );
-        return;
-      }
-      const valores = l.argumentos.length - 1;
-      if (valores !== conversiones.length) {
-        error(
-          'ARGUMENTOS_CANTIDAD',
-          `El formato pide ${conversiones.length === 1 ? '1 valor' : `${conversiones.length} valores`} y \`printf\` recibe ${valores}: hace falta uno por cada \`%s\`, separados por coma.`,
-          l.fila
-        );
-        return;
-      }
-      for (let i = 1; i < l.argumentos.length; i++) {
-        if (!coincide(esperado, l.argumentos[i])) {
-          diagnosticarArgumento(l, i, esperado, l.argumentos[i], modelo);
-          return;
-        }
-      }
-      if (regla.formato) {
-        // El salto de linea del final es un detalle: no cambia el mensaje.
-        const escrito = formato.contenido.replace(/(\\n)+$/, '');
-        if (escrito !== regla.formato) {
+    // Si la consigna pide "Hola, %s", vale un solo printf con ese formato o el
+    // saludo en una llamada y el nombre en la que sigue: en pantalla es lo mismo.
+    const saludo = regla.formato && /^[^%]+%s$/.test(regla.formato) ? regla.formato.slice(0, -2) : null;
+    const soloTexto = (x) =>
+      x.funcion === 'printf' &&
+      x.argumentos.length === 1 &&
+      x.argumentos[0].clase === 'cadena' &&
+      !x.argumentos[0].contenido.replace(/%%/g, '').includes('%');
+    const muestraLaVariable = (x) =>
+      (x.funcion === 'puts' && coincide(esperado, x.argumentos[0])) ||
+      (x.funcion === 'printf' &&
+        x.argumentos.length === 2 &&
+        x.argumentos[0].clase === 'cadena' &&
+        /^%s(\\n)*$/.test(x.argumentos[0].contenido) &&
+        coincide(esperado, x.argumentos[1]));
+
+    if (saludo && soloTexto(l)) {
+      const escrito = l.argumentos[0].contenido;
+      if (escrito !== saludo) {
+        if (escrito.replace(/(\\n)+$/, '') === saludo) {
+          error(
+            'MUESTRA_SALTO_ENTRE_MEDIO',
+            'Ese `\\n` hace que el nombre se muestre en otra línea: el saludo y el nombre tienen que quedar en la misma.',
+            l.fila
+          );
+        } else {
           error(
             'TEXTO_DISTINTO',
-            escrito.toLowerCase() === regla.formato.toLowerCase()
+            escrito.toLowerCase() === saludo.toLowerCase()
               ? 'El texto no es el de la consigna: en C las mayúsculas y las minúsculas son letras distintas.'
               : 'El texto que se muestra no es el que pide la consigna.',
             l.fila
           );
-          return;
         }
+        return;
       }
+      if (salidas.length < 2) {
+        error(
+          'MUESTRA_FALTA_EL_NOMBRE',
+          `Falta mostrar lo que guarda \`${esperado}\`, a continuación del saludo.`,
+          l.fila
+        );
+        return;
+      }
+      if (!verificarSalida(salidas[1], '%s', esperado, modelo)) return;
+    } else {
+      if (saludo && muestraLaVariable(l) && salidas.slice(1).some((x) => soloTexto(x) && x.argumentos[0].contenido === saludo)) {
+        error('MUESTRA_EN_OTRO_ORDEN', `El saludo va primero: \`${saludo}\` se escribe antes que el nombre.`, l.fila);
+        return;
+      }
+      if (!verificarSalida(l, regla.formato, esperado, modelo)) return;
     }
 
     if (regla.despuesDeLeer) {

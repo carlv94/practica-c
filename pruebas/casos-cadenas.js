@@ -675,7 +675,26 @@ const CASOS_DE_LECTURA = [
   },
   lectura(6, 'mostrar antes de leer', 'printf("Hola, %s\\n", nombre);\ngets(nombre);', ['MUESTRA_ANTES_DE_LEER']),
   lectura(6, 'puts no alcanza para el saludo', 'gets(nombre);\nputs(nombre);', ['FUNCION_EQUIVOCADA']),
-  lectura(6, 'el saludo sin el nombre', 'gets(nombre);\nprintf("Hola, ");', ['MUESTRA_TEXTO_FIJO']),
+  lectura(6, 'el saludo sin el nombre', 'gets(nombre);\nprintf("Hola, ");', ['MUESTRA_FALTA_EL_NOMBRE']),
+  // el saludo y el nombre en dos llamadas: en pantalla es lo mismo
+  lectura(6, 'el saludo y despues puts', 'gets(nombre);\nprintf("Hola, ");\nputs(nombre);'),
+  lectura(6, 'el saludo y despues printf con %s', 'gets(nombre);\nprintf("Hola, ");\nprintf("%s", nombre);'),
+  lectura(6, 'el saludo y despues printf con %s y salto', 'gets(nombre);\nprintf("Hola, ");\nprintf("%s\\n", nombre);'),
+  lectura(6, 'el saludo cortado sin el espacio', 'gets(nombre);\nprintf("Hola,");\nputs(nombre);', ['TEXTO_DISTINTO']),
+  lectura(6, 'el saludo con otra mayuscula', 'gets(nombre);\nprintf("hola, ");\nputs(nombre);', ['TEXTO_DISTINTO']),
+  {
+    ...lectura(6, 'un salto de linea entre el saludo y el nombre', 'gets(nombre);\nprintf("Hola, \\n");\nputs(nombre);', ['MUESTRA_SALTO_ENTRE_MEDIO']),
+    dice: ['en otra línea'],
+  },
+  lectura(6, 'puts para el saludo', 'gets(nombre);\nputs("Hola, ");\nputs(nombre);', ['FUNCION_EQUIVOCADA']),
+  {
+    ...lectura(6, 'el nombre antes que el saludo', 'gets(nombre);\nputs(nombre);\nprintf("Hola, ");', ['MUESTRA_EN_OTRO_ORDEN']),
+    dice: ['El saludo va primero'],
+  },
+  lectura(6, 'el saludo y despues un texto cualquiera', 'gets(nombre);\nprintf("Hola, ");\nputs("Ana");', ['ARGUMENTO_EQUIVOCADO']),
+  lectura(6, 'el saludo y despues el nombre entre comillas', 'gets(nombre);\nprintf("Hola, ");\nputs("nombre");', ['ARGUMENTO_ENTRE_COMILLAS']),
+  lectura(6, 'el saludo y despues el nombre como formato', 'gets(nombre);\nprintf("Hola, ");\nprintf(nombre);', ['PRINTF_SIN_FORMATO']),
+  lectura(6, 'el saludo y mostrar antes de leer', 'printf("Hola, ");\nputs(nombre);\ngets(nombre);', ['MUESTRA_ANTES_DE_LEER']),
   lectura(6, 'sin leer', 'printf("Hola, %s\\n", nombre);', ['LECTURA_FALTA']),
   lectura(6, 'sin mostrar', 'gets(nombre);', ['MUESTRA_FALTA']),
 

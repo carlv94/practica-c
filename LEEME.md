@@ -367,7 +367,11 @@ Para leer y mostrar una cadena hay tres reglas propias (serie `Cadenas 8`):
 - `{ "muestra": { "destino": "$N", "formato": "Hola, %s", "despuesDeLeer": true } }`:
   mostrarla con `printf` (un `%s` por cada valor, con su formato) o `puts`.
   `"formato"` pide ese texto (el `\n` del final no cuenta) y `puts` no vale
-  entonces; `"despuesDeLeer"` pide que haya una lectura antes.
+  entonces; `"despuesDeLeer"` pide que haya una lectura antes. Con un formato
+  de la forma `texto%s` vale también el texto en un `printf` y el nombre en la
+  llamada que sigue (`puts(nombre)` o `printf("%s", nombre)`), sin mejora: en
+  pantalla es lo mismo. El texto tiene que ser justo ese, sin salto de línea
+  en medio, y el saludo va antes que el nombre.
 - `{ "limpiaEntrada": true }`: entre un `scanf` y un `gets` o `fgets` tiene
   que haber algo que descarte el Enter que quedó sin leer.
 
