@@ -21,13 +21,13 @@
         {
           "texto": "1, lo mismo que letra",
           "codigo": "OPCION_TEXTO_COMO_LETRA",
-          "explicacion": "Un texto entre comillas dobles siempre lleva el carácter de fin, aunque tenga una sola letra: ocupa un lugar más que sus letras."
+          "explicacion": "Un texto entre comillas dobles siempre lleva el carácter de fin, aunque tenga una sola letra: ocupa un espacio más que sus letras."
         },
         { "texto": "2", "correcta": true },
         {
           "texto": "No se puede saber",
           "codigo": "OPCION_NO_SE_SABE_TAMANO",
-          "explicacion": "Sí se sabe: el compilador reserva justo el lugar de las letras más el del carácter de fin."
+          "explicacion": "Sí se sabe: el compilador reserva justo el espacio de las letras más el del carácter de fin."
         }
       ]
     },

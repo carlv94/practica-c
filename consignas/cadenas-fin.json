@@ -1,19 +1,19 @@
 {
   "id": "cadenas-fin",
   "titulo": "Cadenas 1: el carácter de fin",
-  "descripcion": "Cuánto lugar necesita una cadena, cómo se guarda un texto y qué marca dónde termina.",
+  "descripcion": "Cuánto espacio necesita una cadena, cómo se guarda un texto y qué marca dónde termina.",
   "dentroDeMain": true,
   "buenasPracticas": ["claridad"],
   "consignas": [
     {
       "id": "cadenas-declarar",
       "titulo": "Declarar una cadena",
-      "enunciado": "Declare una cadena de caracteres donde quepa un texto de hasta 10 letras.",
+      "enunciado": "Declare una cadena de caracteres con el tamaño justo para guardar un texto de hasta 10 letras.",
       "requiere": [
         {
           "variable": {
             "tipo": "caracter",
-            "arreglo": { "alMenos": 11, "letras": 10 },
+            "arreglo": { "tamano": 11, "letras": 10 },
             "capturar": "C",
             "capturarDimension": "N"
           }
@@ -98,8 +98,8 @@
     {
       "id": "cadenas-una-letra",
       "titulo": "Una cadena para una sola letra",
-      "enunciado": "Declare una cadena de caracteres donde quepa un texto de una sola letra.",
-      "requiere": [{ "variable": { "tipo": "caracter", "arreglo": { "alMenos": 2, "letras": 1 } } }],
+      "enunciado": "Declare una cadena de caracteres con el tamaño justo para guardar un texto de una sola letra.",
+      "requiere": [{ "variable": { "tipo": "caracter", "arreglo": { "tamano": 2, "letras": 1 } } }],
       "referencia": "char letra[2];"
     },
     {
@@ -112,7 +112,7 @@
     {
       "id": "cadenas-con-lista",
       "titulo": "Una cadena letra por letra",
-      "enunciado": "Declare una cadena de caracteres e inicialícela, en la misma sentencia, con las letras de \"Hola\" escritas una por una: cada letra entre comillas simples y todas entre llaves.",
+      "enunciado": "Declare una cadena de caracteres e inicialícela, en la misma sentencia, con las letras de \"Hola\" escritas una por una, separadas por comas, cada una entre comillas simples y todas entre llaves.",
       "requiere": [
         { "variable": { "tipo": "caracter", "arreglo": true, "texto": "Hola", "como": "lista" } }
       ],

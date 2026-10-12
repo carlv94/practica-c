@@ -8,12 +8,12 @@
     {
       "id": "cadenas-declarar-vacia",
       "titulo": "Declarar una cadena vacía",
-      "enunciado": "Declare una cadena de caracteres donde quepa un texto de hasta 20 letras, y que desde su declaración sea una cadena vacía.",
+      "enunciado": "Declare una cadena de caracteres con el tamaño justo para guardar un texto de hasta 20 letras, y que desde su declaración sea una cadena vacía.",
       "requiere": [
         {
           "variable": {
             "tipo": "caracter",
-            "arreglo": { "alMenos": 21, "letras": 20 },
+            "arreglo": { "tamano": 21, "letras": 20 },
             "vacia": true
           }
         }

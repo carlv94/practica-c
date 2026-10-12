@@ -8,12 +8,12 @@
     {
       "id": "cadenas-tabla-nombres",
       "titulo": "Declarar una tabla de cadenas",
-      "enunciado": "Un curso tiene hasta 30 estudiantes y cada nombre tiene hasta 25 letras. Declare la variable donde se guarden los nombres de los estudiantes del curso.",
+      "enunciado": "Un curso tiene hasta 30 estudiantes y cada nombre tiene hasta 25 letras. Declare la variable donde se guarden los nombres de los estudiantes del curso, con el tamaño justo.",
       "requiere": [
         {
           "variable": {
             "tipo": "caracter",
-            "arreglo": { "alMenos": [30, 26], "letras": 25 }
+            "arreglo": { "tamano": [30, 26], "letras": 25 }
           }
         }
       ],

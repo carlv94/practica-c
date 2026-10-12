@@ -8,8 +8,8 @@
     {
       "id": "cadenas-tipo",
       "titulo": "Definir un tipo para los textos",
-      "enunciado": "Defina un tipo nuevo para guardar un texto de hasta 25 letras.",
-      "requiere": [{ "alias": { "arreglo": { "alMenos": 26, "letras": 25 }, "capturar": "T" } }],
+      "enunciado": "Defina un tipo nuevo con el tamaño justo para guardar un texto de hasta 25 letras.",
+      "requiere": [{ "alias": { "arreglo": { "tamano": 26, "letras": 25 }, "capturar": "T" } }],
       "referencia": "typedef char Nombre[26];"
     },
     {
@@ -24,8 +24,8 @@
       "id": "cadenas-tabla-con-tipo",
       "titulo": "Una tabla con el tipo",
       "continua": true,
-      "enunciado": "Un curso tiene hasta 30 estudiantes. Declare la variable donde se guarden sus nombres, usando el tipo {T}.",
-      "requiere": [{ "usaAlias": { "alias": "$T", "arreglo": { "alMenos": 30 } } }],
+      "enunciado": "Un curso tiene hasta 30 estudiantes. Declare la variable donde se guarden sus nombres, con el tamaño justo y usando el tipo {T}.",
+      "requiere": [{ "usaAlias": { "alias": "$T", "arreglo": { "tamano": 30 } } }],
       "referencia": "Nombre curso[30];"
     }
   ]

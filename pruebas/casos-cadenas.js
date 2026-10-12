@@ -21,7 +21,9 @@ const CASOS_DE_FIN = [
   fin(1, 'justo para el fin', 'char frase[11];'),
   fin(1, 'con la cuenta escrita', 'char frase[10 + 1];'),
   fin(1, 'con una constante y la cuenta', '#define MAX 10\nchar frase[MAX + 1];'),
-  fin(1, 'de mas, tambien entra', 'char frase[20];'),
+  // Con el tamano justo, un numero cualquiera no alcanza: hay que haber pensado en el fin.
+  fin(1, 'de mas', 'char frase[20];', ['ARREGLO_GRANDE']),
+  fin(1, 'mucho de mas', 'char frase[100];', ['ARREGLO_GRANDE']),
   fin(1, 'sin el lugar del fin', 'char frase[10];', ['CADENA_SIN_FIN']),
   fin(1, 'sin el lugar del fin, con constante', '#define MAX 10\nchar frase[MAX];', ['CADENA_SIN_FIN']),
   fin(1, 'no alcanza', 'char frase[5];', ['ARREGLO_CHICO']),
@@ -70,6 +72,7 @@ const CASOS_DE_FIN = [
   // 6: una letra
   fin(6, 'una letra', 'char letra[2];'),
   fin(6, 'sin el lugar del fin', 'char letra[1];', ['CADENA_SIN_FIN']),
+  fin(6, 'de mas', 'char letra[10];', ['ARREGLO_GRANDE']),
   fin(6, 'un solo caracter', 'char letra;', ['VARIABLE_NO_ES_ARREGLO']),
 
   // 7: con su texto
@@ -79,6 +82,15 @@ const CASOS_DE_FIN = [
   fin(7, 'justo para las letras: C lo deja, pero no es una cadena', 'char saludo[4] = "Hola";', ['CADENA_SIN_FIN']),
   fin(7, 'no entra', 'char saludo[3] = "Hola";', ['ARREGLO_CHICO']),
   fin(7, 'otro texto', 'char saludo[] = "hola";', ['TEXTO_DISTINTO']),
+  fin(7, 'entre comillas simples', "char saludo[] = 'Hola';", ['CADENA_CON_COMILLAS_SIMPLES']),
+  fin(7, 'una letra entre comillas simples', "char saludo[] = 'H';", ['CADENA_CON_COMILLAS_SIMPLES']),
+  // Es el mismo texto: el fin escrito de mas es una mejora.
+  fin(7, 'con el fin escrito de mas: correcta y mejorable', 'char saludo[] = "Hola\\0";', 'ok', ['FIN_EN_EL_TEXTO']),
+  fin(7, 'con el fin escrito y el lugar justo', 'char saludo[5] = "Hola\\0";', 'ok', [
+    'FIN_EN_EL_TEXTO',
+    'CADENA_DIMENSION_INNECESARIA',
+  ]),
+  fin(7, 'con el fin escrito y sin lugar', 'char saludo[4] = "Hola\\0";', ['ARREGLO_CHICO']),
   fin(7, 'el texto despues', 'char saludo[10];\nstrcpy(saludo, "Hola");', ['CADENA_SIN_TEXTO']),
   fin(7, 'con una lista de caracteres: correcta y mejorable', "char saludo[] = {'H', 'o', 'l', 'a', '\\0'};", 'ok', [
     'CADENA_COMO_TEXTO',
@@ -109,6 +121,7 @@ const CASOS_DE_VACIA = [
   vacia(1, 'con una letra', 'char nombre[21] = "a";', ['CADENA_NO_VACIA']),
   vacia(1, 'una lista con un espacio', "char nombre[21] = {' '};", ['CADENA_NO_VACIA']),
   vacia(1, 'sin lugar para el fin', 'char nombre[20] = "";', ['CADENA_SIN_FIN']),
+  vacia(1, 'de mas', 'char nombre[30] = "";', ['ARREGLO_GRANDE']),
 
   // 2: vaciar una cadena que tiene texto
   vacia(2, 'el fin en la primera posicion', "nombre[0] = '\\0';"),
@@ -166,6 +179,9 @@ const CASOS_DE_BIBLIOTECA = [
   biblioteca(3, 'comillas simples', "strcpy(nombre, 'Juan');", ['ARGUMENTO_COMILLAS_SIMPLES']),
   biblioteca(3, 'sin comillas', 'strcpy(nombre, Juan);', ['ARGUMENTO_SIN_COMILLAS']),
   biblioteca(3, 'otro texto', 'strcpy(nombre, "Pedro");', ['TEXTO_DISTINTO']),
+  biblioteca(3, 'con el fin escrito de mas: correcta y mejorable', 'strcpy(nombre, "Juan\\0");', 'ok', [
+    'FIN_EN_EL_TEXTO',
+  ]),
   biblioteca(3, 'otras mayusculas', 'strcpy(nombre, "juan");', ['TEXTO_DISTINTO']),
   biblioteca(3, 'asignacion directa', 'nombre = "Juan";', ['ASIGNACION_DE_ARREGLO']),
   biblioteca(3, 'otra funcion', 'strcat(nombre, "Juan");', ['FUNCION_EQUIVOCADA']),
@@ -240,11 +256,12 @@ const CASOS_DE_TABLAS = [
   tablas(1, 'con constantes y el lugar del fin', '#define MAX_ESTUDIANTES 30\n#define LARGO_NOMBRE 25\nchar nombres[MAX_ESTUDIANTES][LARGO_NOMBRE + 1];'),
   tablas(1, 'con numeros sueltos: correcta y mejorable', 'char nombres[30][26];', 'ok', ['NUMERO_MAGICO']),
   tablas(1, 'con una sola constante', '#define N 30\nchar nombres[N][26];', 'ok', ['NUMERO_MAGICO']),
-  tablas(1, 'de mas', 'char nombres[40][30];', 'ok', ['NUMERO_MAGICO']),
+  tablas(1, 'estudiantes de mas', 'char nombres[40][26];', ['ARREGLO_GRANDE']),
+  tablas(1, 'ancho de mas', 'char nombres[30][40];', ['ARREGLO_GRANDE']),
   tablas(1, 'sin el lugar del fin', '#define MAX_ESTUDIANTES 30\n#define LARGO_NOMBRE 25\nchar nombres[MAX_ESTUDIANTES][LARGO_NOMBRE];', ['CADENA_SIN_FIN']),
   tablas(1, 'sin el lugar del fin, con numeros', 'char nombres[30][25];', ['CADENA_SIN_FIN']),
   tablas(1, 'faltan estudiantes', 'char nombres[20][26];', ['ARREGLO_CHICO']),
-  tablas(1, 'las dimensiones al reves', 'char nombres[26][30];', ['ARREGLO_CHICO']),
+  tablas(1, 'las dimensiones al reves', 'char nombres[26][30];', ['DIMENSIONES_AL_REVES']),
   tablas(1, 'un arreglo', 'char nombres[30];', ['TABLA_UNA_DIMENSION']),
   tablas(1, 'tres dimensiones', 'char nombres[30][26][3];', ['TABLA_DIMENSIONES']),
   tablas(1, 'otro tipo', 'int nombres[30][26];', ['VARIABLE_TIPO']),
@@ -254,6 +271,7 @@ const CASOS_DE_TABLAS = [
   tablas(2, 'con el ancho suelto: correcta y mejorable', `char dias[][10] = {${DIAS}};`, 'ok', ['NUMERO_MAGICO']),
   tablas(2, 'con la cantidad de filas repetida', `char dias[7][10] = {${DIAS}};`, 'ok', ['NUMERO_MAGICO', 'FILAS_REPETIDAS']),
   tablas(2, 'ancho justo: C lo deja, pero el texto no termina', `char dias[][9] = {${DIAS}};`, ['CADENA_SIN_FIN']),
+  tablas(2, 'con el fin escrito en cada texto: correcta y mejorable', '#define LARGO_DIA 10\nchar dias[][LARGO_DIA] = {"lunes\\0", "martes\\0", "miercoles\\0", "jueves\\0", "viernes\\0", "sabado\\0", "domingo\\0"};', 'ok', ['FIN_EN_EL_TEXTO']),
   tablas(2, 'ancho que no alcanza', `char dias[][8] = {${DIAS}};`, ['ARREGLO_CHICO']),
   tablas(2, 'sin el ancho', `char dias[][] = {${DIAS}};`, ['TABLA_SIN_COLUMNAS']),
   tablas(2, 'con pocas filas', `char dias[5][10] = {${DIAS}};`, ['ARREGLO_CHICO']),
@@ -300,7 +318,7 @@ const CASOS_DE_TYPEDEF = [
   // 1: el tipo
   typedef(1, 'un tipo con el lugar del fin', 'typedef char Nombre[26];'),
   typedef(1, 'con la cuenta', '#define LARGO 25\ntypedef char Nombre[LARGO + 1];'),
-  typedef(1, 'con lugar de mas', 'typedef char Nombre[100];'),
+  typedef(1, 'con espacio de mas', 'typedef char Nombre[100];', ['ARREGLO_GRANDE']),
   typedef(1, 'sin el lugar del fin', 'typedef char Nombre[25];', ['CADENA_SIN_FIN']),
   typedef(1, 'de pocas letras', 'typedef char Nombre[10];', ['ARREGLO_CHICO']),
   typedef(1, 'de un solo caracter', 'typedef char Nombre;', ['ALIAS_NO_ES_CADENA']),
@@ -319,6 +337,7 @@ const CASOS_DE_TYPEDEF = [
   typedef(3, 'un arreglo del tipo', 'Nombre curso[30];'),
   typedef(3, 'y llenar una', 'Nombre curso[30];\nstrcpy(curso[0], "Ana");'),
   typedef(3, 'con pocos', 'Nombre curso[20];', ['ARREGLO_CHICO']),
+  typedef(3, 'con de mas', 'Nombre curso[40];', ['ARREGLO_GRANDE']),
   typedef(3, 'una sola', 'Nombre curso;', ['VARIABLE_NO_ES_ARREGLO']),
   typedef(3, 'sin el tipo', 'char curso[30][26];', ['VARIABLE_SIN_ALIAS']),
 ];

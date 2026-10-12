@@ -97,6 +97,23 @@ function mismoTipo(a, b) {
   return false;
 }
 
+// Un texto entre comillas dobles ya termina en '\0': a veces se lo escribe de
+// mas ("Hola\0"). Devuelve el texto sin esos fines y cuantos habia: es el mismo
+// texto, y lo de mas es una mejora, no un error.
+function sinFinEscrito(contenido) {
+  const fin = /(\\0{1,3}|\\x0+)$/;
+  let texto = contenido;
+  let ceros = 0;
+  while (fin.test(texto)) {
+    texto = texto.replace(fin, '');
+    ceros++;
+  }
+  return { texto, ceros };
+}
+
+const MEJORA_FIN_EN_EL_TEXTO =
+  'Está bien, pero un texto entre comillas dobles ya termina en `\\0`: lo agrega el compilador, no hace falta escribirlo.';
+
 // Las funciones de la biblioteca que un alumno puede llegar a escribir: sirve
 // para distinguir "se equivoco de funcion" de "la escribio mal".
 const DE_LA_BIBLIOTECA = [
@@ -319,7 +336,7 @@ export function corregir(
       } else if (campo.punteros) {
         error(
           'CAMPO_CADENA_PUNTERO',
-          `\`${n}\` está declarado con \`*\`: así no reserva lugar para guardar el texto. Tiene que ser un arreglo de caracteres, con su dimensión.`,
+          `\`${n}\` está declarado con \`*\`: así no reserva espacio para guardar el texto. Tiene que ser un arreglo de caracteres, con su dimensión.`,
           campo.fila
         );
       } else if (campo.arreglo.length === 0) {
@@ -343,7 +360,7 @@ export function corregir(
       } else if (/^\d+$/.test(campo.arreglo[0].trim()) && Number(campo.arreglo[0]) < 2) {
         error(
           'CAMPO_CADENA_CORTA',
-          `En \`${n}\` no entra ningún texto: una cadena necesita un lugar más que sus letras, para el \`\\0\` del final.`,
+          `En \`${n}\` no entra ningún texto: una cadena necesita un espacio más que sus letras, para el \`\\0\` del final.`,
           campo.fila
         );
       }
@@ -422,7 +439,7 @@ export function corregir(
 
     // Valores en filas ([[5, 8], [0, 2]]) piden una tabla: dos dimensiones.
     const esTabla =
-      Array.isArray(regla.valores?.[0]) || Array.isArray(regla.arreglo?.alMenos) || Boolean(regla.textos);
+      Array.isArray(regla.valores?.[0]) || Array.isArray(regla.arreglo?.alMenos) || Array.isArray(regla.arreglo?.tamano) || Boolean(regla.textos);
     const dimensiones = !quiereArreglo ? 0 : esTabla ? 2 : 1;
     const forma = esTabla ? 'una tabla' : 'un arreglo';
 
@@ -479,13 +496,13 @@ export function corregir(
       if (tiene != null && tiene < regla.arreglo) {
         error(
           'ARREGLO_CHICO',
-          `\`${exacta.nombre}\` tiene lugar para ${elementos(tiene)} y hay que guardar ${regla.arreglo}: no alcanza.`,
+          `\`${exacta.nombre}\` puede guardar ${elementos(tiene)} y hay que guardar ${regla.arreglo}: no alcanza.`,
           exacta.fila
         );
       } else if (tiene != null && tiene > regla.arreglo) {
         error(
           'ARREGLO_GRANDE',
-          `\`${exacta.nombre}\` tiene lugar para ${elementos(tiene)} y la consigna pide ${regla.arreglo}: sobra lugar.`,
+          `\`${exacta.nombre}\` puede guardar ${elementos(tiene)} y la consigna pide ${regla.arreglo}: sobra espacio.`,
           exacta.fila
         );
       }
@@ -738,7 +755,7 @@ export function corregir(
       error(
         chica ? 'ARREGLO_CHICO' : 'ARREGLO_GRANDE',
         `\`${n}\` está definida de ${lugarFilas} por ${lugarColumnas} y la tabla del dibujo es de ${F} filas por ${C} columnas: ` +
-          (chica ? 'no entra.' : 'sobra lugar.'),
+          (chica ? 'no entra.' : 'sobra espacio.'),
         v.fila
       );
     } else {
@@ -840,7 +857,7 @@ export function corregir(
     if (escritos.length > total) {
       error(
         'ARREGLO_CHICO',
-        `\`${n}\` tiene lugar para ${elementos(total)} y la lista trae ${cuantos(escritos.length)}: no entran.`,
+        `\`${n}\` puede guardar ${elementos(total)} y la lista trae ${cuantos(escritos.length)}: no entran.`,
         v.fila
       );
       return;
@@ -868,7 +885,7 @@ export function corregir(
     } else if (total < valores.length) {
       error(
         'ARREGLO_CHICO',
-        `\`${n}\` tiene lugar para ${elementos(total)} y hay que guardar ${valores.length}: no alcanza.`,
+        `\`${n}\` puede guardar ${elementos(total)} y hay que guardar ${valores.length}: no alcanza.`,
         v.fila
       );
       return;
@@ -920,7 +937,7 @@ export function corregir(
     if (total > valores.length) {
       error(
         'ARREGLO_GRANDE',
-        `\`${n}\` tiene lugar para ${elementos(total)} y el arreglo del dibujo tiene ${valores.length}: sobra lugar.`,
+        `\`${n}\` puede guardar ${elementos(total)} y el arreglo del dibujo tiene ${valores.length}: sobra espacio.`,
         v.fila
       );
       return;
@@ -998,7 +1015,7 @@ export function corregir(
         if (tamano) {
           error(
             'SIZEOF_NO_CUENTA',
-            '`sizeof` dice cuánto lugar tiene la cadena declarada, no cuántas letras tiene guardadas.',
+            '`sizeof` dice el tamaño de la cadena declarada, no cuántas letras tiene guardadas.',
             tamano.fila
           );
           return;
@@ -1070,7 +1087,9 @@ export function corregir(
     const acierta = (i) => {
       if (libre(i)) return true;
       const real = reales[i];
-      if (esTexto(esperados[i])) return real.clase === 'cadena' && real.texto === esperados[i];
+      if (esTexto(esperados[i])) {
+        return real.clase === 'cadena' && sinFinEscrito(real.contenido).texto === esperados[i].slice(1, -1);
+      }
       if (esIndexado(esperados[i])) {
         return real.clase === 'indice' && sinEspacios(real.texto) === sinEspacios(esperados[i]);
       }
@@ -1111,7 +1130,7 @@ export function corregir(
         if (real.clase === 'cadena') {
           error(
             'TEXTO_DISTINTO',
-            real.contenido.toLowerCase() === pedido.toLowerCase()
+            sinFinEscrito(real.contenido).texto.toLowerCase() === pedido.toLowerCase()
               ? `El texto no es el de la consigna: en C las mayúsculas y las minúsculas son letras distintas.`
               : 'El texto no es el que pide la consigna.',
             llamada.fila
@@ -1212,6 +1231,14 @@ export function corregir(
     function verificarLlamada(l) {
       const argumentos = l.argumentos;
 
+      // "Juan\0": el mismo texto, con un fin que ya estaba puesto.
+      const conFin = esperados.findIndex(
+        (e, i) => esTexto(e) && argumentos[i].clase === 'cadena' && sinFinEscrito(argumentos[i].contenido).ceros > 0
+      );
+      if (conFin >= 0 && practicas.includes('claridad')) {
+        mejora('FIN_EN_EL_TEXTO', MEJORA_FIN_EN_EL_TEXTO, l.fila);
+      }
+
       // Donde queda lo que devuelve: n = strlen(s);
       if (regla.resultadoEn && l.destino !== regla.resultadoEn) {
         if (l.destino == null) {
@@ -1295,7 +1322,7 @@ export function corregir(
         } else if (lugar != null && Number(m[1]) >= lugar) {
           error(
             'LECTURA_SIN_LUGAR_PARA_FIN',
-            `Con ese límite se pueden leer ${m[1]} caracteres, y \`${esperados[1]}\` tiene lugar para ${lugar}: falta el lugar del \`\\0\` del final.`,
+            `Con ese límite se pueden leer ${m[1]} caracteres, y \`${esperados[1]}\` puede guardar ${lugar}: falta el espacio del \`\\0\` del final.`,
             l.fila
           );
         }
@@ -1316,17 +1343,32 @@ export function corregir(
     return (v.clase === 'caracter' || v.clase === 'numero') && v.valor === 0;
   }
 
-  // Un arreglo "de al menos" tantos elementos. Una cadena de hasta N letras
-  // necesita N + 1 lugares, el ultimo para el '\0': por eso la consigna pide
-  // "al menos", y cuando falta justo uno se dice por que. Con una tabla, cada
-  // numero es una dimension. Devuelve si quedo bien.
-  //   minimo: { alMenos: 11 | [30, 26], letras: 10 | 25 }
+  // El tamano de un arreglo de caracteres. Una cadena de hasta N letras
+  // necesita N + 1 espacios, el ultimo para el '\0', y cuando falta justo uno
+  // se dice por que. Con una tabla, cada numero es una dimension. Devuelve si
+  // quedo bien.
+  //   minimo: { tamano: 11 | [30, 26], letras: 10 | 25 }   justo ese tamano
+  //           { alMenos: 11 | [30, 26], letras: 10 | 25 }  ese o mas
   function verificarAlMenos(declarado, minimo, modelo) {
     const n = declarado.nombre;
-    const pedidos = [].concat(minimo.alMenos);
+    const exacto = minimo.tamano != null;
+    const pedidos = [].concat(exacto ? minimo.tamano : minimo.alMenos);
     const esTabla = pedidos.length > 1;
     const letras = minimo.letras;
     let bien = true;
+
+    // Los dos numeros de una tabla, uno por otro.
+    if (esTabla && pedidos[0] !== pedidos[1]) {
+      const escritos = pedidos.map((_, k) => valorDeDimension(declarado.arreglo[k] ?? '', modelo));
+      if (escritos[0] === pedidos[1] && escritos[1] === pedidos[0]) {
+        error(
+          'DIMENSIONES_AL_REVES',
+          `Las dimensiones de \`${n}\` están al revés: entre los primeros corchetes va la cantidad de textos y entre los segundos el tamaño de cada uno.`,
+          declarado.fila
+        );
+        return false;
+      }
+    }
 
     for (const [k, pedido] of pedidos.entries()) {
       const escrito = (declarado.arreglo[k] ?? '').trim();
@@ -1335,30 +1377,46 @@ export function corregir(
         return false;
       }
       const tiene = valorDeDimension(escrito, modelo);
-      if (tiene == null || tiene >= pedido) continue;
-      bien = false;
+      if (tiene == null) continue;
       const esDeLetras = letras != null && k === pedidos.length - 1;
+      if (tiene > pedido && exacto) {
+        // Entra, pero no es lo que se pide: con el tamano justo, un numero
+        // cualquiera no alcanza para mostrar que se penso en el fin.
+        bien = false;
+        error(
+          'ARREGLO_GRANDE',
+          esDeLetras
+            ? esTabla
+              ? `En \`${n}\`, cada texto puede tener ${caracteresDe(tiene)}, más de los que hacen falta para uno de ${letrasDe(letras)}.`
+              : `\`${n}\` puede guardar ${caracteresDe(tiene)}, más de los que hacen falta para un texto de ${letrasDe(letras)}.`
+            : `\`${n}\` puede guardar ${tiene} ${esTabla ? 'textos' : 'elementos'} y la consigna pide ${pedido}: sobra espacio.`,
+          declarado.fila
+        );
+        continue;
+      }
+      if (tiene >= pedido) continue;
+      bien = false;
       if (esDeLetras && tiene === pedido - 1) {
         error(
           'CADENA_SIN_FIN',
           (esTabla
-            ? `En \`${n}\`, cada texto tiene lugar para ${caracteresDe(tiene)}, y uno de ${letrasDe(letras)} los ocupa todos`
-            : `\`${n}\` tiene lugar para ${caracteresDe(tiene)}, y un texto de ${letrasDe(letras)} los ocupa todos`) +
-            ': no queda lugar para el `\\0` que marca el final de la cadena.',
+            ? `En \`${n}\`, cada texto puede tener ${caracteresDe(tiene)}, y uno de ${letrasDe(letras)} los ocupa todos`
+            : `\`${n}\` puede guardar ${caracteresDe(tiene)}, y un texto de ${letrasDe(letras)} los ocupa todos`) +
+            ': no queda espacio para el `\\0` que marca el final de la cadena.',
           declarado.fila
         );
       } else if (esDeLetras) {
         error(
           'ARREGLO_CHICO',
           esTabla
-            ? `En \`${n}\`, cada texto tiene lugar para ${caracteresDe(tiene)} y no alcanza para uno de ${letrasDe(letras)}.`
-            : `\`${n}\` tiene lugar para ${caracteresDe(tiene)} y no alcanza para un texto de ${letrasDe(letras)}.`,
+            ? `En \`${n}\`, cada texto puede tener ${caracteresDe(tiene)} y no alcanza para uno de ${letrasDe(letras)}.`
+            : `\`${n}\` puede guardar ${caracteresDe(tiene)} y no alcanza para un texto de ${letrasDe(letras)}.`,
           declarado.fila
         );
       } else {
         error(
           'ARREGLO_CHICO',
-          `\`${n}\` tiene lugar para ${tiene} ${esTabla ? 'textos' : 'elementos'} y hay que guardar ${pedido}: no alcanza.`,
+          `\`${n}\` puede guardar ${tiene} ${esTabla ? 'textos' : 'elementos'} y hay que guardar ${pedido}: no alcanza.`,
           declarado.fila
         );
       }
@@ -1482,7 +1540,8 @@ export function corregir(
         );
         return;
       }
-      const contenido = inicial.texto.slice(1, -1);
+      // "Hola\0" es el mismo texto: el fin escrito de mas no es un error.
+      const { texto: contenido, ceros } = sinFinEscrito(inicial.contenido ?? inicial.texto.slice(1, -1));
       if (contenido !== texto) {
         error(
           'TEXTO_DISTINTO',
@@ -1493,26 +1552,46 @@ export function corregir(
         );
         return;
       }
-      if (lugar == null) return;
-      if (lugar < texto.length) {
-        error(
-          'ARREGLO_CHICO',
-          `\`${n}\` tiene lugar para ${caracteresDe(lugar)} y el texto tiene ${letrasDe(texto.length)}: no entra.`,
-          v.fila
-        );
-      } else if (lugar === texto.length) {
-        error(
-          'CADENA_SIN_FIN',
-          `El texto ocupa todo el lugar de \`${n}\`: no queda lugar para el \`\\0\` del final. C lo permite, pero la cadena queda sin terminar.`,
-          v.fila
-        );
-      } else if (practicas.includes('claridad')) {
-        mejora(
-          'CADENA_DIMENSION_INNECESARIA',
-          'Está bien, pero si deja los corchetes vacíos el compilador reserva justo el lugar que hace falta, incluido el `\\0` del final.',
-          v.fila
-        );
+      // Lo que ocupa lo escrito: sus letras y los fines que se escribieron. Sin
+      // ninguno, tiene que quedar un espacio mas para el que pone el compilador.
+      const antes = diagnosticos.length;
+      if (lugar != null) {
+        if (lugar < texto.length + ceros) {
+          error(
+            'ARREGLO_CHICO',
+            `\`${n}\` puede guardar ${caracteresDe(lugar)} y el texto ocupa ${caracteresDe(texto.length + ceros)}: no entra.`,
+            v.fila
+          );
+        } else if (ceros === 0 && lugar === texto.length) {
+          error(
+            'CADENA_SIN_FIN',
+            `El texto ocupa todo el espacio de \`${n}\`: no queda espacio para el \`\\0\` del final. C lo permite, pero la cadena queda sin terminar.`,
+            v.fila
+          );
+        }
       }
+      if (diagnosticos.length === antes && practicas.includes('claridad')) {
+        if (ceros > 0) {
+          mejora('FIN_EN_EL_TEXTO', MEJORA_FIN_EN_EL_TEXTO, v.fila);
+        }
+        if (lugar != null) {
+          mejora(
+            'CADENA_DIMENSION_INNECESARIA',
+            'Está bien, pero si deja los corchetes vacíos el compilador reserva justo el espacio que hace falta, incluido el `\\0` del final.',
+            v.fila
+          );
+        }
+      }
+      return;
+    }
+
+    // 'Hola' entre comillas simples: el analizador lo lee como un caracter.
+    if (inicial.clase === 'caracter') {
+      error(
+        'CADENA_CON_COMILLAS_SIMPLES',
+        `\`${inicial.texto.trim()}\` entre comillas simples: un texto va entre comillas dobles, las simples son para un solo carácter.`,
+        v.fila
+      );
       return;
     }
 
@@ -1622,10 +1701,12 @@ export function corregir(
       );
       return;
     }
-    const noCoincide = escritos.findIndex((e, i) => e.contenido !== textos[i]);
+    // "lunes\0" es el mismo texto, con el fin escrito de mas.
+    const leidos = escritos.map((e) => sinFinEscrito(e.contenido));
+    const noCoincide = leidos.findIndex((e, i) => e.texto !== textos[i]);
     if (noCoincide >= 0) {
       const e = escritos[noCoincide];
-      const mismo = e.contenido.toLowerCase() === textos[noCoincide].toLowerCase();
+      const mismo = leidos[noCoincide].texto.toLowerCase() === textos[noCoincide].toLowerCase();
       error(
         'TEXTO_DISTINTO',
         `El ${ordinal(noCoincide)} texto de la lista (\`${e.texto.trim()}\`) no es el que corresponde` +
@@ -1646,18 +1727,21 @@ export function corregir(
       );
       return;
     }
-    const mayor = Math.max(...textos.map((t) => t.length));
+    // Lo que ocupa cada texto: sus letras y los fines que se escribieron.
+    const ocupan = leidos.map((e) => e.texto.length + e.ceros);
+    const mayor = Math.max(...ocupan);
+    const sinFinEnElMayor = leidos.some((e, i) => ocupan[i] === mayor && e.ceros === 0);
     const columnas = valorDeDimension(deColumnas, modelo);
     if (columnas != null && columnas < mayor) {
       error(
         'ARREGLO_CHICO',
-        `Cada texto de \`${n}\` tiene lugar para ${caracteresDe(columnas)} y el más largo tiene ${letrasDe(mayor)}: no entra.`,
+        `Cada texto de \`${n}\` puede tener ${caracteresDe(columnas)} y el más largo ocupa ${caracteresDe(mayor)}: no entra.`,
         v.fila
       );
-    } else if (columnas === mayor) {
+    } else if (columnas === mayor && sinFinEnElMayor) {
       error(
         'CADENA_SIN_FIN',
-        `En \`${n}\`, el texto más largo ocupa todo el lugar de su fila: no queda lugar para el \`\\0\` del final. C lo permite, pero ese texto queda sin terminar.`,
+        `En \`${n}\`, el texto más largo ocupa todo el espacio de su fila: no queda espacio para el \`\\0\` del final. C lo permite, pero ese texto queda sin terminar.`,
         v.fila
       );
     }
@@ -1665,15 +1749,18 @@ export function corregir(
     if (filas != null && filas < textos.length) {
       error(
         'ARREGLO_CHICO',
-        `\`${n}\` tiene lugar para ${filas} textos y la consigna pide ${textos.length}: no alcanza.`,
+        `\`${n}\` puede guardar ${filas} textos y la consigna pide ${textos.length}: no alcanza.`,
         v.fila
       );
     } else if (filas != null && filas > textos.length) {
       error(
         'ARREGLO_GRANDE',
-        `\`${n}\` tiene lugar para ${filas} textos y la consigna pide ${textos.length}: sobra lugar.`,
+        `\`${n}\` puede guardar ${filas} textos y la consigna pide ${textos.length}: sobra espacio.`,
         v.fila
       );
+    }
+    if (diagnosticos.length === antes && leidos.some((e) => e.ceros > 0) && practicas.includes('claridad')) {
+      mejora('FIN_EN_EL_TEXTO', MEJORA_FIN_EN_EL_TEXTO, v.fila);
     }
     if (diagnosticos.length === antes && deFilas && practicas.includes('constantes')) {
       mejora(
@@ -1720,7 +1807,7 @@ export function corregir(
         dice(
           'error',
           'ELEMENTOS_CORRIDOS',
-          `Los caracteres están corridos de lugar: el primer carácter del texto va en la posición 0, porque las posiciones se numeran desde 0.`,
+          `Los caracteres están corridos de posición: el primer carácter del texto va en la posición 0, porque las posiciones se numeran desde 0.`,
           asignados[0][1].fila
         );
         return hallazgos;
@@ -1992,7 +2079,7 @@ export function corregir(
       } else if (patron(`^${I}<(?:\\d+|[A-Z_][A-Z_0-9]*|sizeof\\(${N}\\))$`)) {
         error(
           'CICLO_HASTA_EL_TAMANO',
-          `El ciclo recorre todo el lugar de \`${nombre}\` y no solo su texto: la cadena termina en el carácter de fin, que puede estar antes.`,
+          `El ciclo recorre todo el tamaño de \`${nombre}\` y no solo su texto: la cadena termina en el carácter de fin, que puede estar antes.`,
           ciclo.fila
         );
       } else if (patron(`^${elemento}==${cero}$`)) {
@@ -2118,12 +2205,19 @@ export function corregir(
       );
       return;
     }
-    const pedido = regla.arreglo.alMenos;
+    const exacto = regla.arreglo.tamano != null;
+    const pedido = exacto ? regla.arreglo.tamano : regla.arreglo.alMenos;
     const tiene = valorDeDimension(v.arreglo[0], modelo);
     if (tiene != null && tiene < pedido) {
       error(
         'ARREGLO_CHICO',
-        `\`${v.nombre}\` tiene lugar para ${tiene} textos y hay que guardar ${pedido}: no alcanza.`,
+        `\`${v.nombre}\` puede guardar ${tiene} textos y hay que guardar ${pedido}: no alcanza.`,
+        v.fila
+      );
+    } else if (tiene != null && exacto && tiene > pedido) {
+      error(
+        'ARREGLO_GRANDE',
+        `\`${v.nombre}\` puede guardar ${tiene} textos y la consigna pide ${pedido}: sobra espacio.`,
         v.fila
       );
     }

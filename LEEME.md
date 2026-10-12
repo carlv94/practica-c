@@ -238,20 +238,25 @@ si no, es un error que dice que lo que no se nombra queda en cero.
 Las series `cadenas-*` (el fin de la cadena, la cadena vacía, la biblioteca,
 recorrer, tablas de cadenas y typedef) usan estas reglas.
 
-**Una cadena de hasta N letras necesita N + 1 lugares**, y la consigna lo pide
-con "al menos":
+**Una cadena de hasta N letras necesita N + 1 espacios**, y la consigna pide el
+tamaño justo. Con un "al menos" un número cualquiera (20) pasaría sin que el
+alumno haya pensado en el `\0`, y eso es justo lo que se quiere comprobar:
 
 ```json
-{ "variable": { "tipo": "caracter", "arreglo": { "alMenos": 11, "letras": 10 }, "capturar": "C", "capturarDimension": "N" } }
+{ "variable": { "tipo": "caracter", "arreglo": { "tamano": 11, "letras": 10 }, "capturar": "C", "capturarDimension": "N" } }
 ```
 
 | Respuesta | Resultado |
 |---|---|
-| `char s[11];`, `char s[10 + 1];`, `char s[MAX + 1];` | Correcta. Más lugar que 11 también vale. |
-| `char s[10];` | Error `CADENA_SIN_FIN`: no queda lugar para el `\0`. |
+| `char s[11];`, `char s[10 + 1];`, `char s[MAX + 1];` | Correcta. |
+| `char s[10];` | Error `CADENA_SIN_FIN`: no queda espacio para el `\0`. |
 | `char s[5];` | Error `ARREGLO_CHICO`. |
+| `char s[20];` | Error `ARREGLO_GRANDE`: es más de lo que hace falta. |
 
-Con una tabla, `"alMenos": [30, 26]`: la cantidad de textos y el lugar de cada
+`"alMenos"` en lugar de `"tamano"` acepta ese tamaño o más, para una consigna
+en la que la dimensión no sea el tema.
+
+Con una tabla, `"tamano": [30, 26]`: la cantidad de textos y el tamaño de cada
 uno (la última dimensión es la que lleva el fin). `capturarDimension` guarda lo
 que valía la dimensión, para nombrarla en un enunciado o una opción (`{N}`).
 
@@ -305,6 +310,11 @@ La regla `llamada` suma, para estas series:
 - `strncpy` con un límite que no deja lugar para el fin es error.
   `scanf("%s", ...)` sin límite es correcto con mejora; un límite que no deja
   lugar para el fin es error.
+
+Un texto entre comillas dobles con el fin escrito de más (`"Hola\0"`) es el mismo
+texto: vale, con la mejora `FIN_EN_EL_TEXTO` (el compilador ya lo agrega). Vale
+igual en `strcpy`, `strcmp` y en una tabla de textos. Entre comillas simples
+(`'Hola'`) es un error con su mensaje (`CADENA_CON_COMILLAS_SIMPLES`).
 
 Para cualquier consigna, y sin pedirlo: una posición que no existe
 (`nombres[30]` en una tabla de 30 filas, `INDICE_FUERA_DE_RANGO`) y un texto
