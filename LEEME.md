@@ -272,7 +272,11 @@ Otras formas de pedir una variable de caracteres:
   caracteres uno por uno entre llaves (`{'H', 'o', 'l', 'a', '\0'}`).
 - `"textos": ["lunes", ...]`: una tabla de textos, uno por fila. Se controla
   cada texto, que la cantidad de filas sea la justa y que el ancho deje lugar
-  para el fin del más largo.
+  para el fin del más largo; los mensajes nombran ese texto tal como el alumno
+  lo escribió. `"sinDistinguirMayusculas": true` acepta `"lunes"`, `"Lunes"` o
+  `"LUNES"`: es para cuando la consigna no dicta cómo se escribe el texto. Sin
+  esa opción, otra mayúscula es un error (`TEXTO_DISTINTO`), que es lo que
+  enseñan las consignas donde el texto está escrito en el enunciado.
 - `"caracter": "A"`: una variable de un solo carácter con ese valor (`'A'`, no
   `"A"`).
 - `"vacia": true`, junto con `tamano`: tiene que empezar vacía (`""`, `{0}`

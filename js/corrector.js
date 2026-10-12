@@ -1736,7 +1736,9 @@ export function corregir(
     }
     // "lunes\0" es el mismo texto, con el fin escrito de mas.
     const leidos = escritos.map((e) => sinFinEscrito(e.contenido));
-    const noCoincide = leidos.findIndex((e, i) => e.texto !== textos[i]);
+    // Cuando la consigna no dicta como se escriben, las mayusculas no cuentan.
+    const igual = (a, b) => (regla.sinDistinguirMayusculas ? a.toLowerCase() === b.toLowerCase() : a === b);
+    const noCoincide = leidos.findIndex((e, i) => !igual(e.texto, textos[i]));
     if (noCoincide >= 0) {
       const e = escritos[noCoincide];
       const mismo = leidos[noCoincide].texto.toLowerCase() === textos[noCoincide].toLowerCase();
@@ -1763,18 +1765,20 @@ export function corregir(
     // Lo que ocupa cada texto: sus letras y los fines que se escribieron.
     const ocupan = leidos.map((e) => e.texto.length + e.ceros);
     const mayor = Math.max(...ocupan);
-    const sinFinEnElMayor = leidos.some((e, i) => ocupan[i] === mayor && e.ceros === 0);
+    // El mas largo, tal como lo escribio el alumno; si hay varios, el que no tiene su fin.
+    const sinFinEnElMayor = leidos.findIndex((e, i) => ocupan[i] === mayor && e.ceros === 0);
+    const elMayor = escritos[sinFinEnElMayor >= 0 ? sinFinEnElMayor : ocupan.indexOf(mayor)].texto.trim();
     const columnas = valorDeDimension(deColumnas, modelo);
     if (columnas != null && columnas < mayor) {
       error(
         'ARREGLO_CHICO',
-        `Cada texto de \`${n}\` puede tener ${caracteresDe(columnas)} y el más largo ocupa ${caracteresDe(mayor)}: no entra.`,
+        `Cada texto de \`${n}\` puede tener ${caracteresDe(columnas)}, el más largo es \`${elMayor}\` y ocupa ${caracteresDe(mayor)}: no entra.`,
         v.fila
       );
-    } else if (columnas === mayor && sinFinEnElMayor) {
+    } else if (columnas === mayor && sinFinEnElMayor >= 0) {
       error(
         'CADENA_SIN_FIN',
-        `En \`${n}\`, el texto más largo ocupa todo el espacio de su fila: no queda espacio para el carácter \`'\\0'\` del final. C lo permite, pero ese texto queda sin terminar.`,
+        `En \`${n}\`, el texto más largo es \`${elMayor}\` y ocupa todo el tamaño declarado para cada texto: no queda espacio para el carácter \`'\\0'\` del final. C lo permite, pero ese texto queda sin terminar.`,
         v.fila
       );
     }

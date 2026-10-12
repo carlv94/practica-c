@@ -302,7 +302,20 @@ const CASOS_DE_TABLAS = [
   tablas(2, 'sin el ancho', `char dias[][] = {${DIAS}};`, ['TABLA_SIN_COLUMNAS']),
   tablas(2, 'con pocas filas', `char dias[5][10] = {${DIAS}};`, ['ARREGLO_CHICO']),
   tablas(2, 'falta un dia', 'char dias[][10] = {"lunes", "martes", "miercoles", "jueves", "viernes", "sabado"};', ['TEXTOS_DE_MENOS']),
-  tablas(2, 'otra mayuscula', 'char dias[][10] = {"lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "Domingo"};', ['TEXTO_DISTINTO']),
+  // Los dias no se dictan: da lo mismo como se escriban las mayusculas.
+  tablas(2, 'con la inicial en mayuscula', 'char dias[][10] = {"Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado", "Domingo"};', 'ok', ['NUMERO_MAGICO']),
+  tablas(2, 'todo en mayuscula', 'char dias[][10] = {"LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES", "SABADO", "DOMINGO"};', 'ok', ['NUMERO_MAGICO']),
+  tablas(2, 'con las mayusculas mezcladas', 'char dias[][10] = {"Lunes", "martes", "MIERCOLES", "jueves", "Viernes", "sabado", "domingo"};', 'ok', ['NUMERO_MAGICO']),
+  tablas(2, 'otro texto', 'char dias[][10] = {"lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingos"};', ['TEXTO_DISTINTO']),
+  // Los mensajes del tamaño dicen el texto mas largo tal como lo escribio el alumno.
+  {
+    ...tablas(2, 'ancho justo con mayuscula', 'char dias[][9] = {"lunes", "martes", "Miercoles", "jueves", "viernes", "sabado", "domingo"};', ['CADENA_SIN_FIN']),
+    dice: ['`"Miercoles"`'],
+  },
+  {
+    ...tablas(2, 'ancho que no alcanza con mayuscula', 'char dias[][8] = {"lunes", "martes", "MIERCOLES", "jueves", "viernes", "sabado", "domingo"};', ['ARREGLO_CHICO']),
+    dice: ['`"MIERCOLES"`', 'ocupa 9 caracteres'],
+  },
   tablas(2, 'dias en otro orden', 'char dias[][10] = {"lunes", "martes", "jueves", "miercoles", "viernes", "sabado", "domingo"};', ['TEXTO_DISTINTO']),
   tablas(2, 'comillas simples', `char dias[][10] = {'lunes', "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"};`, ['TEXTO_CON_COMILLAS_SIMPLES']),
   tablas(2, 'cada texto entre llaves', 'char dias[][10] = {{"lunes"}, {"martes"}, {"miercoles"}, {"jueves"}, {"viernes"}, {"sabado"}, {"domingo"}};', ['VALORES_ANIDADOS']),

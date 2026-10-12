@@ -27,7 +27,8 @@
         {
           "variable": {
             "tipo": "caracter",
-            "textos": ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"]
+            "textos": ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"],
+            "sinDistinguirMayusculas": true
           }
         }
       ],
