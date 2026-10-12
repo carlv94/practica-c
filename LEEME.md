@@ -335,7 +335,12 @@ Reglas de código:
 - `{ "alias": { "arreglo": { "tamano": 26, "letras": 25 }, "capturar": "T" } }`
   y `{ "usaAlias": { "alias": "$T", "arreglo": { "tamano": 30 } } }`: un
   `typedef` de un arreglo de caracteres, y una variable declarada con él. Una
-  variable de ese tipo se ve como el arreglo que es.
+  variable de ese tipo se ve como el arreglo que es. `usaAlias` también acepta
+  `"nombre"` (la variable tiene que llamarse así), `"capturar"` (guarda el
+  nombre que le puso el alumno, como en las demás reglas) y un `tamano` con
+  dos números (`[30, 3]`): una tabla, con sus filas y sus columnas. Solo
+  cuentan las dimensiones que el alumno escribe; el tamaño de cada texto ya
+  lo trae el tipo.
 
 La regla `llamada` suma, para estas series:
 

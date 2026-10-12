@@ -2532,6 +2532,15 @@ export function corregir(
       return;
     }
     const v = delAlias[0];
+    if (regla.nombre && v.nombre !== regla.nombre) {
+      error(
+        'VARIABLE_NOMBRE',
+        `La consigna pide que la variable se llame \`${regla.nombre}\`. La que está declarada se llama \`${v.nombre}\`.`,
+        v.fila
+      );
+      return;
+    }
+    if (regla.capturar) nuevas[regla.capturar] = v.nombre;
     const propias = v.arreglo.length - (v.dimsDeAlias || 0);
     if (!regla.arreglo) {
       if (propias > 0) {
@@ -2551,21 +2560,52 @@ export function corregir(
       );
       return;
     }
+    // Un tamano pide un arreglo de ese tipo; dos, una tabla (filas y columnas).
     const exacto = regla.arreglo.tamano != null;
-    const pedido = exacto ? regla.arreglo.tamano : regla.arreglo.alMenos;
-    const tiene = valorDeDimension(v.arreglo[0], modelo);
-    if (tiene != null && tiene < pedido) {
+    const pedidos = [].concat(exacto ? regla.arreglo.tamano : regla.arreglo.alMenos);
+    if (propias < pedidos.length) {
       error(
-        'ARREGLO_CHICO',
-        `\`${v.nombre}\` puede guardar ${tiene} textos y hay que guardar ${pedido}: no alcanza.`,
+        'TABLA_UNA_DIMENSION',
+        `\`${v.nombre}\` es un arreglo de ese tipo, con una sola dimensión propia. La consigna pide una tabla, con filas y columnas.`,
         v.fila
       );
-    } else if (tiene != null && exacto && tiene > pedido) {
+      return;
+    }
+    if (propias > pedidos.length) {
       error(
-        'ARREGLO_GRANDE',
-        `\`${v.nombre}\` puede guardar ${tiene} textos y la consigna pide ${pedido}: sobra espacio.`,
+        pedidos.length === 2 ? 'TABLA_DIMENSIONES' : 'ARREGLO_DIMENSIONES',
+        pedidos.length === 2
+          ? `\`${v.nombre}\` tiene ${propias} dimensiones propias. La consigna pide una tabla, con dos: las filas y las columnas.`
+          : `\`${v.nombre}\` tiene ${propias} dimensiones propias. La consigna pide un arreglo de ese tipo, con una sola.`,
         v.fila
       );
+      return;
+    }
+    const tienen = pedidos.map((_, k) => valorDeDimension(v.arreglo[k] ?? '', modelo));
+    if (pedidos.length === 2 && pedidos[0] !== pedidos[1] && tienen[0] === pedidos[1] && tienen[1] === pedidos[0]) {
+      error(
+        'DIMENSIONES_AL_REVES',
+        `Las dimensiones de \`${v.nombre}\` están al revés: entre los primeros corchetes va la cantidad de filas y entre los segundos la de columnas.`,
+        v.fila
+      );
+      return;
+    }
+    for (const [k, pedido] of pedidos.entries()) {
+      const tiene = tienen[k];
+      const unidad = pedidos.length === 2 ? (k === 0 ? 'filas' : 'columnas') : 'textos';
+      if (tiene != null && tiene < pedido) {
+        error(
+          'ARREGLO_CHICO',
+          `\`${v.nombre}\` puede guardar ${tiene} ${unidad} y hay que guardar ${pedido}: no alcanza.`,
+          v.fila
+        );
+      } else if (tiene != null && exacto && tiene > pedido) {
+        error(
+          'ARREGLO_GRANDE',
+          `\`${v.nombre}\` puede guardar ${tiene} ${unidad} y la consigna pide ${pedido}: sobra espacio.`,
+          v.fila
+        );
+      }
     }
   }
 
