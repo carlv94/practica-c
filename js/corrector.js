@@ -1146,6 +1146,25 @@ export function corregir(
       return;
     }
 
+    // El texto primero y la cadena despues: el orden es lo primero que hay que
+    // decir, aunque la posicion tampoco sea la que pide la consigna.
+    if (
+      esperados.length === 2 &&
+      !esTexto(esperados[0]) &&
+      esTexto(esperados[1]) &&
+      reales[0]?.clase === 'cadena' &&
+      reales[1] &&
+      reales[1].clase !== 'cadena'
+    ) {
+      error(
+        'ARGUMENTOS_EN_OTRO_ORDEN',
+        'Los argumentos están en otro orden.' +
+          (regla.orden ? ` En \`${llamada.funcion}\` ${regla.orden}.` : ''),
+        llamada.fila
+      );
+      return;
+    }
+
     esperados.forEach((esperado, i) => {
       if (acierta(i)) return;
       const real = reales[i];
@@ -1208,7 +1227,7 @@ export function corregir(
             llamada.fila
           );
         } else if (real.clase === 'indice' && real.nombre === base) {
-          const [codigo, mensaje] = distintaPosicion(real, esperado);
+          const [codigo, mensaje] = distintaPosicion(real, esperado, modelo);
           error(codigo, mensaje, llamada.fila);
         } else {
           error(
@@ -3036,19 +3055,27 @@ function revisarAsignaciones(modelo, error, aconsejarFuncion = true) {
 }
 
 // Una posicion que no es la que pide la consigna, dicha con precision: cual de
-// los indices no lo es, y si es el que sigue (se conto desde 1).
-function distintaPosicion(real, esperado) {
-  const pedidos = [...esperado.matchAll(/\[([^\]]*)\]/g)].map((m) => m[1].trim());
+// los indices no lo es, y si es el que sigue (se conto desde 1). Los indices
+// pueden ser cuentas sencillas (1 + 1) o constantes; una variable no se sabe.
+function distintaPosicion(real, esperado, modelo) {
+  const general = ['ARGUMENTO_OTRA_FILA', `\`${real.texto}\` no es la posición que pide la consigna.`];
+  const pedidos = [...esperado.matchAll(/\[([^\]]*)\]/g)].map((m) => valorDeDimension(m[1], modelo));
   const escritos = real.indices.map((x) => x.trim());
-  const sonNumeros =
-    escritos.length === pedidos.length && escritos.length <= 2 && [...escritos, ...pedidos].every((t) => /^\d+$/.test(t));
-  const difieren = sonNumeros ? escritos.map((_, k) => k).filter((k) => Number(escritos[k]) !== Number(pedidos[k])) : [];
-  if (!difieren.length) {
-    return ['ARGUMENTO_OTRA_FILA', `\`${real.texto}\` no es la posición que pide la consigna.`];
+  if (escritos.length !== pedidos.length || escritos.length > 2 || pedidos.some((n) => n == null)) return general;
+  const valores = escritos.map((x) => valorDeDimension(x, modelo));
+  const sueltos = escritos.filter((_, k) => valores[k] == null).map((x) => '\`' + x + '\`');
+  if (sueltos.length) {
+    const quienes = sueltos.length === 1 ? sueltos[0] + ' no es un número' : sueltos.join(' y ') + ' no son números';
+    return [
+      'ARGUMENTO_POSICION_CON_VARIABLE',
+      `En \`${real.texto}\`, ${quienes}: la consigna pide una posición concreta, no una que dependa de una variable.`,
+    ];
   }
+  const difieren = valores.map((_, k) => k).filter((k) => valores[k] !== pedidos[k]);
+  if (!difieren.length) return general;
   const corrida = (k, uno, varias) =>
-    Number(escritos[k]) === Number(pedidos[k]) + 1
-      ? ` Las ${varias} se numeran desde 0: la ${uno} ${Number(escritos[k])} es la ${ordinalFemenino(Number(escritos[k]))}.`
+    valores[k] === pedidos[k] + 1
+      ? ` Las ${varias} se numeran desde 0: la ${uno} ${valores[k]} es la ${ordinalFemenino(valores[k])}.`
       : '';
   if (escritos.length === 1) {
     return ['ARGUMENTO_OTRA_POSICION', `\`${real.texto}\` no es la posición que pide la consigna.` + corrida(0, 'posición', 'posiciones')];

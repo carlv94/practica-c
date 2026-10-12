@@ -375,7 +375,9 @@ son números escritos (si no, queda el mensaje general):
 | el texto en `nombres[2][k]` en lugar de `[1]` | `ELEMENTOS_OTRA_POSICION` | Dice dónde está (y si el texto está bien escrito). |
 | `datos[0][0][k]` en lugar de `datos[1][0][k]` | `ELEMENTOS_FILA_DISTINTA`, `_COLUMNA_DISTINTA`, `_FILA_Y_COLUMNA_DISTINTAS` | Cuál de las dos no es. |
 | `strcpy(datos[2], ...)` | `ARGUMENTO_FALTA_INDICE` | Es un arreglo de cadenas: falta el segundo índice. |
-| `strcpy(datos[2][1], ...)` | `ARGUMENTO_FILA_DISTINTA`, `_COLUMNA_DISTINTA`, `_FILA_Y_COLUMNA_DISTINTAS` (`ARGUMENTO_OTRA_POSICION` con un solo índice) | Cuál no es. |
+| `strcpy(datos[2][1], ...)` | `ARGUMENTO_FILA_DISTINTA`, `_COLUMNA_DISTINTA`, `_FILA_Y_COLUMNA_DISTINTAS` (`ARGUMENTO_OTRA_POSICION` con un solo índice) | Cuál no es. Una cuenta (`1 + 1`) o una constante se evalúan. |
+| `strcpy(datos[i][1], ...)` | `ARGUMENTO_POSICION_CON_VARIABLE` | `i` no es un número: la consigna pide una posición concreta. |
+| `strcpy("Perez", datos[2][1])` | `ARGUMENTOS_EN_OTRO_ORDEN` | El orden se dice primero, aunque la celda tampoco sea la pedida. |
 
 Si la posición escrita es justo la que sigue a la pedida (se contó desde 1),
 el mensaje agrega que las posiciones se numeran desde 0. Lo repetido en varias

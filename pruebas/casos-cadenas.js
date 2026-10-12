@@ -479,6 +479,17 @@ const CASOS_DE_TABLAS = [
     ...tablas(8, 'solo la fila', 'strcpy(datos[2], "Perez");', ['ARGUMENTO_FALTA_INDICE']),
     dice: ['es un arreglo de cadenas', 'segundo índice'],
   },
+
+  // La fila con una cuenta o con una variable, y los argumentos al reves con otra celda
+  tablas(8, 'la fila con una cuenta', 'strcpy(datos[1 + 1][1], "Perez");', ['ARGUMENTO_FILA_DISTINTA']),
+  {
+    ...tablas(8, 'la fila con una variable', 'strcpy(datos[i][1], "Perez");', ['ARGUMENTO_POSICION_CON_VARIABLE']),
+    dice: ['no es un número', 'una posición concreta'],
+  },
+  {
+    ...tablas(8, 'los argumentos al reves, con otra celda', 'strcpy("Perez", datos[2][1]);', ['ARGUMENTOS_EN_OTRO_ORDEN']),
+    dice: ['primero va la cadena donde se guarda'],
+  },
 ];
 
 const typedef = (paso, nombre, respuesta, espera, mejoras) =>
