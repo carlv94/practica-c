@@ -2,10 +2,12 @@
   "id": "estructuras",
   "titulo": "Estructuras: declarar, usar y dar un alias",
   "continua": true,
+  "dentroDeMain": true,
   "descripcion": "Los puestos de una feria: declarar la estructura, una variable, un alias y una variable con el alias.",
   "consignas": [
     {
       "id": "estructuras-1",
+      "en": "archivo",
       "titulo": "Declarar la estructura",
       "enunciado": "En la Gran Feria de Emprendedores del Parque de la Familia, se registran las ventas obtenidas por los puestos comerciales habilitados para la temporada. De cada puesto comercial se registra la siguiente información:\n• Nombre de fantasía del puesto (nombreFantasia)\n• Apellido y nombre del titular (titular)\n• Monto total recaudado (montoRecaudado)\n• Cantidad de ventas realizadas (cantidadVentas)\n\nDeclare la estructura necesaria para poder registrarlos.",
       "requiere": [
@@ -32,6 +34,7 @@
     },
     {
       "id": "estructuras-3",
+      "en": "archivo",
       "titulo": "Definir un alias",
       "enunciado": "Defina un alias para la estructura {S}.",
       "requiere": [{ "alias": { "de": "$S", "capturar": "A" } }],

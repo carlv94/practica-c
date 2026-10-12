@@ -544,10 +544,11 @@ export const CASOS = [
     espera: 'ok',
   },
   {
+    // La variable es local: el main no se escribe (lo pone la herramienta).
     nombre: 'variable dentro de main',
     paso: 2,
     respuesta: 'int main() {\n  struct Puesto p;\n  return 0;\n}',
-    espera: 'ok',
+    espera: ['MAIN_DE_MAS'],
   },
   {
     nombre: 'con typedef sin etiqueta, la variable usa el alias',

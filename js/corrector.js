@@ -1,6 +1,6 @@
 // Corrige una respuesta contra las reglas de su consigna.
 //
-//   corregir(analizador, consigna, { contexto, respuesta, capturas, dentroDeMain, practicas })
+//   corregir(analizador, consigna, { archivo, contexto, respuesta, capturas, dentroDeMain, enArchivo, practicas })
 //     -> { correcto, mejorable, diagnosticos, capturas }
 //
 // Un diagnostico es un error (la respuesta no vale), un aviso (vale, pero hay
@@ -143,15 +143,28 @@ export function corregirOpcion(consigna, respuesta) {
 export function corregir(
   analizador,
   consigna,
-  { contexto = '', respuesta = '', capturas = {}, dentroDeMain = false, practicas = [] }
+  { archivo = '', contexto = '', respuesta = '', capturas = {}, dentroDeMain = false, enArchivo = false, practicas = [] }
 ) {
   // Una sentencia suelta ("strcpy(a, b);") solo vale dentro de una funcion:
   // en las series de sentencias el codigo se analiza envuelto en una, que el
-  // alumno no ve ni escribe.
-  const previo =
-    (dentroDeMain ? 'void practica(void) {\n' : '') +
-    (contexto.trim() ? contexto.replace(/\s+$/, '') + '\n\n' : '');
-  const fuente = previo + respuesta + (dentroDeMain ? '\n}' : '');
+  // alumno no ve ni escribe. Lo que va fuera de ella (un typedef, un struct)
+  // se analiza a nivel de archivo: antes, y si la respuesta es de afuera, la
+  // respuesta va despues de la funcion para que sea siempre lo ultimo.
+  const juntar = (t) => (t.trim() ? t.replace(/\s+$/, '') + '\n\n' : '');
+  const afuera = juntar(archivo);
+  const adentro = juntar(contexto);
+  let previo;
+  let fuente;
+  if (!dentroDeMain) {
+    previo = afuera + adentro;
+    fuente = previo + respuesta;
+  } else if (enArchivo) {
+    previo = afuera + (adentro ? 'void practica(void) {\n' + adentro + '}\n\n' : '');
+    fuente = previo + respuesta;
+  } else {
+    previo = afuera + 'void practica(void) {\n' + adentro;
+    fuente = previo + respuesta + '\n}';
+  }
   const desde = previo.length;
   const filaBase = previo.split('\n').length - 1;
 

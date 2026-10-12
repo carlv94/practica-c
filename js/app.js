@@ -16,6 +16,8 @@ import { cargarAnalizador } from './analizador.js';
 import {
   inicio,
   codigoPrevio,
+  enArchivo,
+  esMixta,
   capturasPrevias,
   corregirPaso,
   despuesDe,
@@ -323,6 +325,15 @@ function mostrarConsigna() {
   );
   dibujar(figuraDe(consigna));
   pintar($('contexto'), previo);
+  // En una serie que mezcla definiciones y sentencias, se dice donde va lo que se escribe.
+  const ambito = $('ambito');
+  ambito.textContent =
+    esMixta(serie) && !esCuestionario
+      ? enArchivo(consigna)
+        ? 'Esta respuesta va fuera de main, antes de la función.'
+        : 'Esta respuesta va dentro de main.'
+      : '';
+  ambito.hidden = !ambito.textContent;
   $('comprobar').hidden = false;
   $('siguiente').hidden = true;
   if (esCuestionario) {

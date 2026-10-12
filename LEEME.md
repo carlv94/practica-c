@@ -448,6 +448,21 @@ de la respuesta, como las variables sobre las que se trabaja.
 El `dado` de una consigna queda para las siguientes **que continúan**, así que
 no hay que repetirlo.
 
+**Dónde va la respuesta: `"en": "archivo"`.** En una serie de sentencias
+(`"dentroDeMain": true`) todo se analiza dentro de una función que el alumno no
+escribe. Una consigna que pide una definición de tipo (`typedef`, `struct`,
+`union`, `enum`) lleva `"en": "archivo"`: su respuesta, y lo que le siga, se
+analiza fuera de esa función, que es donde va en C. Las demás (variables y
+sentencias) siguen yendo dentro. El `#include` de una consigna `persiste` va
+también afuera.
+
+Solo cuando una serie **mezcla** las dos cosas se le muestra al alumno el
+marco, con `int main(void) {` y un comentario donde va su respuesta, y la
+consigna dice "esta respuesta va fuera de `main`" o "dentro de `main`". Las
+líneas del preprocesador (`#define`) se ven arriba de todo. En las demás series
+todo se ve como siempre. Las series de estructuras son de este tipo: sus
+variables son locales y no escriben `main` (si lo escriben, `MAIN_DE_MAS`).
+
 **`capturar` guarda el nombre que eligió el alumno** para que lo usen las
 consignas que siguen con `$S`: así "la estructura anterior" es la suya, se
 llame como se llame.
