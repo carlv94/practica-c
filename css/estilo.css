@@ -449,6 +449,62 @@ button[hidden] {
   display: none;
 }
 
+/* Una consigna de opciones: elegir en vez de escribir. */
+#opciones {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+#opciones legend {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--suave);
+  padding: 0;
+  margin-bottom: 6px;
+}
+
+.opcion {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0 0 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--borde);
+  border-radius: 6px;
+  background: var(--fondo);
+  color: var(--texto);
+  font-size: 1rem;
+  font-weight: 400;
+  cursor: pointer;
+}
+
+.opcion:hover {
+  border-color: var(--acento);
+}
+
+.opcion:has(input:checked) {
+  border-color: var(--acento);
+  box-shadow: 0 0 0 1px var(--acento);
+}
+
+.opcion input {
+  margin-top: 5px;
+}
+
+/* El valor de una opcion, aparte de lo que dice. */
+.opcion .valor-opcion {
+  flex: none;
+  min-width: 3.2em;
+  text-align: center;
+  font-weight: 600;
+}
+
+.opcion .detalle {
+  color: var(--suave);
+}
+
 .atajo {
   margin-left: auto;
   font-size: 0.8rem;

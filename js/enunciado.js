@@ -23,10 +23,17 @@ const MARCA = /\{(\w+)\}/g;
 // Una consigna puede no llevar dibujo ("dibujo": false) cuando el enunciado
 // describe el arreglo con palabras y se quiere que el alumno lo deduzca.
 export function figuraDe(consigna) {
-  if (consigna.dibujo === false) return null;
+  if (consigna.dibujo === false || !consigna.requiere) return null;
   const valores = consigna.requiere.find((r) => r.variable?.valores)?.variable.valores;
   if (!valores) return null;
   return Array.isArray(valores[0]) ? { clase: 'tabla', filas: valores } : { clase: 'arreglo', valores };
+}
+
+// El texto con los nombres puestos y nada mas: para un codigo o una opcion.
+export function sustituir(texto, capturas) {
+  return partesDeEnunciado(texto, capturas)
+    .map((parte) => parte.nombre ?? parte.texto)
+    .join('');
 }
 
 // Las capturas que nombra un enunciado: "... {S} ... {A}" -> ['S', 'A']

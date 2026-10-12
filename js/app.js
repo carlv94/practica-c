@@ -22,7 +22,7 @@ import {
   pidePracticas,
 } from './serie.js';
 import { crearEditor, pintar } from './editor.js';
-import { partesDeEnunciado, figuraDe } from './enunciado.js';
+import { partesDeEnunciado, figuraDe, sustituir } from './enunciado.js';
 
 const CARPETA = 'consignas/';
 const INDICE = CARPETA + 'indice.json';
@@ -42,6 +42,7 @@ let pidioSolucion = false;
 
 const claveAvance = (s) => 'practica-c:avance:' + s.id;
 const CLAVE_INTENTOS = 'practica-c:intentos';
+const CLAVE_SEMILLA = 'practica-c:semilla';
 
 // El navegador puede negar el almacenamiento (modo privado): se sigue sin guardar.
 function leer(clave, porDefecto) {
@@ -128,11 +129,78 @@ function recorrer(s) {
       break;
     }
     if (!r.correcto) break;
+    // Los nombres con los que se le mostro la consigna: el resumen final los
+    // necesita, y al final de la serie ya no son los mismos.
+    const capturas = capturasPrevias(s, i, hasta);
     hasta = despuesDe(s, i, hasta, hecha.codigo, r);
     // Si quedo excelente se calcula de nuevo, igual que si sigue valiendo.
-    validas.push({ ...hecha, excelente: !r.mejorable });
+    validas.push({ ...hecha, excelente: !r.mejorable, capturas });
   }
   return { hechas: validas, avance: hasta };
+}
+
+// ---- consignas de opciones ----------------------------------------------------
+
+// Las opciones se mezclan para que la correcta no quede siempre en el mismo
+// lugar, pero con un orden fijo para cada alumno (y cada consigna): si recarga
+// la pagina, las encuentra donde estaban.
+function semilla() {
+  let n = leer(CLAVE_SEMILLA, null);
+  if (typeof n !== 'number') {
+    n = Math.floor(Math.random() * 2 ** 31);
+    guardar(CLAVE_SEMILLA, n);
+  }
+  return n;
+}
+
+function ordenDeOpciones(consigna) {
+  let h = semilla();
+  for (const c of consigna.id) h = (Math.imul(h, 31) + c.charCodeAt(0)) | 0;
+  const azar = () => {
+    // mulberry32
+    h = (h + 0x6d2b79f5) | 0;
+    let t = Math.imul(h ^ (h >>> 15), 1 | h);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  const orden = consigna.opciones.map((_, i) => i);
+  for (let i = orden.length - 1; i > 0; i--) {
+    const j = Math.floor(azar() * (i + 1));
+    [orden[i], orden[j]] = [orden[j], orden[i]];
+  }
+  return orden;
+}
+
+// Lo que se muestra de una respuesta al final: el codigo escrito, o la opcion
+// elegida con los nombres que tenia entonces.
+function respuestaEscrita(consigna, hecha) {
+  if (!consigna.opciones) return hecha.codigo;
+  const opcion = consigna.opciones[Number(hecha.codigo)];
+  const capturas = hecha.capturas || {};
+  const dicho = sustituir(opcion.texto, capturas);
+  return '// Respuesta: ' + (opcion.valor != null ? `${sustituir(opcion.valor, capturas)} — ${dicho}` : dicho);
+}
+
+function dibujarOpciones(consigna, capturas) {
+  const caja = $('opciones');
+  caja.replaceChildren(elemento('legend', null, 'Elija una opción'));
+  for (const lugar of ordenDeOpciones(consigna)) {
+    const etiqueta = elemento('label', 'opcion');
+    const radio = document.createElement('input');
+    radio.type = 'radio';
+    radio.name = 'opcion';
+    radio.value = String(lugar);
+    // El valor, aparte de lo que dice: "11" y "el tamaño que usted declaró".
+    const opcion = consigna.opciones[lugar];
+    const detalle = elemento('span', 'detalle');
+    detalle.appendChild(conCodigo(sustituir(opcion.texto, capturas)));
+    if (opcion.valor != null) {
+      etiqueta.append(radio, elemento('code', 'valor-opcion', sustituir(opcion.valor, capturas)), detalle);
+    } else {
+      etiqueta.append(radio, detalle);
+    }
+    caja.appendChild(etiqueta);
+  }
 }
 
 // ---- la lista de series -------------------------------------------------------
@@ -212,11 +280,17 @@ function mostrarConsigna() {
   );
 
   const termino = !consigna;
+  const esCuestionario = Boolean(consigna?.opciones);
+  const capturas = termino ? {} : capturasPrevias(serie, actual, avance);
   // Lo ya resuelto mas lo que esta consigna trae escrito.
   const previo = termino ? '' : codigoPrevio(serie, actual, avance);
   $('consigna').hidden = termino;
   $('bloque-contexto').hidden = !previo;
   $('bloque-respuesta').hidden = termino;
+  $('zona-codigo').hidden = esCuestionario;
+  $('opciones').hidden = !esCuestionario;
+  $('atajo').hidden = esCuestionario;
+  $('bloque-codigo').hidden = !(esCuestionario && consigna.codigo);
   $('final').hidden = !termino;
   $('resultado').replaceChildren();
 
@@ -232,23 +306,31 @@ function mostrarConsigna() {
     // independientes no hay un "codigo acumulado" que mostrar.
     pintar(
       $('codigo-final'),
-      serie.consignas.map((c, i) => `// ${i + 1}. ${c.titulo}\n${hechas[i].codigo}`).join('\n\n')
+      serie.consignas
+        .map((c, i) => `// ${i + 1}. ${c.titulo}\n${respuestaEscrita(c, hechas[i])}`)
+        .join('\n\n')
     );
     return;
   }
 
   $('titulo-consigna').textContent = `${actual + 1}. ${consigna.titulo}`;
   $('enunciado').replaceChildren(
-    ...partesDeEnunciado(consigna.enunciado, capturasPrevias(serie, actual, avance)).map((parte) =>
+    ...partesDeEnunciado(consigna.enunciado, capturas).map((parte) =>
       parte.nombre ? elemento('code', null, parte.nombre) : parte.texto
     )
   );
   dibujar(figuraDe(consigna));
   pintar($('contexto'), previo);
-  editor.poner('');
-  $('respuesta').readOnly = false;
   $('comprobar').hidden = false;
   $('siguiente').hidden = true;
+  if (esCuestionario) {
+    pintar($('codigo-consigna'), sustituir(consigna.codigo || '', capturas));
+    dibujarOpciones(consigna, capturas);
+    $('ver-solucion').hidden = true;
+    return;
+  }
+  editor.poner('');
+  $('respuesta').readOnly = false;
   $('ver-solucion').hidden = false;
   $('respuesta').focus();
 }
@@ -300,9 +382,16 @@ function dibujarTabla(caja, filas) {
 
 function comprobar() {
   const consigna = serie?.consignas[hechas.length];
-  if (!consigna || $('respuesta').readOnly) return;
+  const esCuestionario = Boolean(consigna?.opciones);
+  if (!consigna || (!esCuestionario && $('respuesta').readOnly)) return;
   pendiente = null;
-  const respuesta = $('respuesta').value;
+  // En una de opciones la respuesta es el lugar de la opcion elegida.
+  const elegida = esCuestionario ? document.querySelector('#opciones input:checked') : null;
+  if (esCuestionario && !elegida) {
+    mostrarResultado([mensaje('aviso', 'Elija una de las opciones para comprobar.')]);
+    return;
+  }
+  const respuesta = esCuestionario ? elegida.value : $('respuesta').value;
   let r;
   try {
     r = corregirPaso(analizador, serie, hechas.length, avance, respuesta);
@@ -317,7 +406,7 @@ function comprobar() {
     return;
   }
   registrarIntento(consigna, r);
-  editor.marcar(r.diagnosticos);
+  if (!esCuestionario) editor.marcar(r.diagnosticos);
 
   const cajas = r.diagnosticos.map((d) => mensaje(d.nivel, d.mensaje, d.linea));
   $('siguiente').hidden = !r.correcto;
@@ -339,6 +428,7 @@ function comprobar() {
     } else {
       cajas.unshift(mensaje('bien', pidePracticas(serie) ? 'Excelente.' : 'Correcto.'));
       $('respuesta').readOnly = true;
+      for (const radio of document.querySelectorAll('#opciones input')) radio.disabled = true;
       $('comprobar').hidden = true;
       $('ver-solucion').hidden = true;
       $('siguiente').textContent = ultima ? 'Terminar' : 'Siguiente';
@@ -370,6 +460,7 @@ function alEscribir() {
 function siguiente() {
   if (!pendiente) return;
   const { hecha, resultado } = pendiente;
+  hecha.capturas = capturasPrevias(serie, hechas.length, avance);
   avance = despuesDe(serie, hechas.length, avance, hecha.codigo, resultado);
   hechas.push(hecha);
   guardar(claveAvance(serie), hechas);
@@ -378,7 +469,7 @@ function siguiente() {
 
 function verSolucion() {
   const consigna = serie?.consignas[hechas.length];
-  if (!consigna) return;
+  if (!consigna || consigna.opciones) return;
   // La referencia nombra las cosas a su manera ("struct Puesto"): solo sirve
   // tal cual si el alumno viene siguiendo las referencias. Si no, se le
   // muestra como ejemplo y la adapta a sus nombres.
@@ -459,6 +550,12 @@ async function iniciar() {
   $('reiniciar').addEventListener('click', reiniciar);
   $('respuesta').addEventListener('keydown', teclaEnRespuesta);
   $('respuesta').addEventListener('input', alEscribir);
+  // Cambiar la opcion elegida deja sin efecto lo que se habia dicho de la anterior.
+  $('opciones').addEventListener('change', () => {
+    pendiente = null;
+    $('siguiente').hidden = true;
+    $('resultado').replaceChildren();
+  });
   window.addEventListener('hashchange', navegar);
   navegar();
 }

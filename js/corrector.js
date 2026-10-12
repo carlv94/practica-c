@@ -98,6 +98,25 @@ const DE_LA_BIBLIOTECA = [
   'printf', 'scanf', 'puts', 'gets', 'fgets', 'sprintf', 'memcpy',
 ];
 
+// Una consigna de opciones: elegir la respuesta en vez de escribirla. Cada
+// opcion equivocada tiene su codigo y su explicacion, asi se sabe cual es el
+// error de concepto que cometio. "respuesta" es el lugar de la opcion elegida,
+// como esta en el archivo de la serie.
+export function corregirOpcion(consigna, respuesta) {
+  const lugar = respuesta === "" || respuesta == null ? NaN : Number(respuesta);
+  const opcion = consigna.opciones[lugar];
+  const resultado = (correcto, diagnosticos) => ({ correcto, mejorable: false, diagnosticos, capturas: {} });
+  if (!Number.isInteger(lugar) || !opcion) {
+    return resultado(false, [
+      { nivel: 'error', codigo: 'OPCION_FALTA', mensaje: 'Elija una de las opciones.', linea: null },
+    ]);
+  }
+  if (opcion.correcta) return resultado(true, []);
+  return resultado(false, [
+    { nivel: 'error', codigo: opcion.codigo, mensaje: opcion.explicacion, linea: null },
+  ]);
+}
+
 export function corregir(
   analizador,
   consigna,

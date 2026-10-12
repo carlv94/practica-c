@@ -233,6 +233,43 @@ arreglo:
 Una fila o unas filas que no se escriben valen si en el dibujo son de ceros;
 si no, es un error que dice que lo que no se nombra queda en cero.
 
+### Consignas de opciones
+
+Una consigna con `"opciones"` se responde eligiendo, no escribiendo. Sirven
+para lo que no se puede corregir sin ejecutar: "¿cuánto vale `n` al terminar
+el ciclo?".
+
+```json
+{
+  "id": "cadenas-q-strlen",
+  "titulo": "Cuántas letras tiene",
+  "continua": true,
+  "enunciado": "Con el texto que guardó en {C}, ¿cuál es el valor de longitud?",
+  "codigo": "int longitud = strlen({C});",
+  "opciones": [
+    { "valor": "{N}", "texto": "el tamaño que usted declaró", "codigo": "OPCION_TAMANO_DECLARADO",
+      "explicacion": "`strlen` no mira el tamaño con el que se declaró la cadena..." },
+    { "valor": "4", "texto": "la cantidad de letras", "correcta": true }
+  ]
+}
+```
+
+- **Una sola correcta**, y cada equivocada con su `codigo` y su
+  `explicacion`: cada opción es un error de concepto con nombre, y los
+  intentos quedan anotados con ese código. Las pruebas lo verifican.
+- `codigo` es el código que se muestra (con `{C}` el nombre que eligió el
+  alumno). Las opciones y las explicaciones también pueden usar `{C}`, `{N}`.
+- `valor` es lo que la opción vale (`11`, `'\0'`), y `texto` lo que dice de él: se
+  muestran separados. Una opción sin valor (`No se puede saber`) lleva solo
+  `texto`.
+- Las opciones se muestran **mezcladas, con un orden fijo para cada alumno**.
+- No agrega código a lo que sigue, salvo que la consigna diga `"queda": true`:
+  entonces su `codigo` aparece en "El código hasta acá" de las siguientes (la 3
+  deja `int longitud = strlen(frase);` para que la 5 lo use).
+- El resumen final muestra la opción elegida con los nombres que tenía en esa
+  consigna.
+- Una consigna de opciones no tiene "Ver una solución".
+
 ### Consignas de sentencias
 
 Para pedir código que va dentro de una función ("escriba el código que copia
@@ -297,6 +334,10 @@ La práctica `constantes` mira las dimensiones de los arreglos:
 La práctica `claridad` es para lo que funciona pero se lee mal. Hoy tiene un
 solo caso: la tabla definida con todos los valores seguidos, sin llaves por
 fila.
+
+**Una consigna puede pedir otras prácticas que su serie**:
+`"buenasPracticas": ["claridad", "constantes"]` en la consigna reemplaza a la
+de la serie.
 
 La solución de `referencia` de una serie con prácticas tiene que ser
 excelente: las pruebas lo verifican.

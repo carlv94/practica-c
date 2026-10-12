@@ -8,7 +8,8 @@
 // su "dado": el codigo que la consigna trae escrito y el alumno no tiene que
 // tipear (las variables sobre las que se le pide trabajar).
 
-import { corregir } from './corrector.js';
+import { corregir, corregirOpcion } from './corrector.js';
+import { sustituir } from './enunciado.js';
 
 const unir = (...partes) => partes.filter((p) => p && p.trim()).join('\n\n');
 
@@ -40,21 +41,47 @@ export function codigoPrevio(serie, indice, avance) {
 }
 
 export function corregirPaso(analizador, serie, indice, avance, respuesta) {
-  return corregir(analizador, serie.consignas[indice], {
+  const consigna = serie.consignas[indice];
+  const capturas = capturasPrevias(serie, indice, avance);
+  // Una consigna de opciones: la "respuesta" es el lugar de la opcion elegida,
+  // y lo que se explica puede nombrar lo que el alumno escribio antes.
+  if (consigna.opciones) {
+    const r = corregirOpcion(consigna, respuesta);
+    return {
+      ...r,
+      diagnosticos: r.diagnosticos.map((d) => ({ ...d, mensaje: sustituir(d.mensaje, capturas) })),
+    };
+  }
+  return corregir(analizador, consigna, {
     contexto: codigoPrevio(serie, indice, avance),
     respuesta,
-    capturas: capturasPrevias(serie, indice, avance),
+    capturas,
     dentroDeMain: Boolean(serie.dentroDeMain),
-    practicas: serie.buenasPracticas || [],
+    // Una consigna puede pedir otras practicas que las de la serie.
+    practicas: consigna.buenasPracticas ?? serie.buenasPracticas ?? [],
   });
 }
 
+// La respuesta modelo de una consigna: lo que escribiria quien la resuelve
+// bien. En una de opciones es el lugar de la correcta.
+export const respuestaDeReferencia = (consigna) =>
+  consigna.opciones ? String(consigna.opciones.findIndex((o) => o.correcta)) : consigna.referencia;
+
 // Si la serie pide buenas practicas, una respuesta puede ser excelente.
-export const pidePracticas = (serie) => Boolean(serie.buenasPracticas?.length);
+export const pidePracticas = (serie) =>
+  Boolean(serie.buenasPracticas?.length) || serie.consignas.some((c) => c.buenasPracticas?.length);
 
 // El avance despues de aceptar una respuesta correcta. Si la consigna no
 // continuaba, el codigo y las capturas arrancan de ella.
 export function despuesDe(serie, indice, avance, respuesta, resultado) {
+  // Elegir una opcion no agrega codigo, salvo que la consigna diga que el suyo
+  // "queda": lo que sigue lo ve entre lo ya escrito.
+  const consigna = serie.consignas[indice];
+  if (consigna.opciones) {
+    if (!consigna.queda) return avance;
+    const codigo = sustituir(consigna.codigo || '', capturasPrevias(serie, indice, avance));
+    return { contexto: unir(avance.contexto, codigo), capturas: avance.capturas };
+  }
   return {
     contexto: unir(codigoPrevio(serie, indice, avance), respuesta.trim()),
     capturas: resultado.capturas,

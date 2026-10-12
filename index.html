@@ -30,14 +30,22 @@
           <pre id="contexto"></pre>
         </section>
 
+        <section id="bloque-codigo" hidden>
+          <h3>El código</h3>
+          <pre id="codigo-consigna"></pre>
+        </section>
+
         <section id="bloque-respuesta">
-          <label for="respuesta">Su respuesta</label>
-          <textarea id="respuesta" rows="9" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
+          <div id="zona-codigo">
+            <label for="respuesta">Su respuesta</label>
+            <textarea id="respuesta" rows="9" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
+          </div>
+          <fieldset id="opciones" hidden></fieldset>
           <div class="botones">
             <button id="comprobar" class="principal" disabled>Comprobar</button>
             <button id="siguiente" class="principal" hidden>Siguiente</button>
             <button id="ver-solucion">Ver una solución</button>
-            <span class="atajo">Ctrl + Enter comprueba · Esc y Tab sale del editor</span>
+            <span class="atajo" id="atajo">Ctrl + Enter comprueba · Esc y Tab sale del editor</span>
           </div>
         </section>
 
