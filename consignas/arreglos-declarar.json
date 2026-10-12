@@ -1,0 +1,39 @@
+{
+  "id": "arreglos-declarar",
+  "titulo": "Declarar un arreglo",
+  "descripcion": "Declarar arreglos con el tamaño justo, usando una constante.",
+  "dentroDeMain": true,
+  "buenasPracticas": ["constantes"],
+  "consignas": [
+    {
+      "id": "arreglos-notas",
+      "titulo": "Un arreglo de enteros",
+      "enunciado": "Se necesita guardar la nota, un número entero, de cada uno de los 20 alumnos de una comisión. Declare el arreglo necesario, con el tamaño justo.",
+      "requiere": [{ "variable": { "tipo": "entero", "arreglo": 20, "capturar": "N" } }],
+      "referencia": "#define MAX_ALUMNOS 20\n\nint notas[MAX_ALUMNOS];"
+    },
+    {
+      "id": "arreglos-promedios",
+      "titulo": "Otro arreglo del mismo tamaño",
+      "continua": true,
+      "enunciado": "De esos mismos alumnos se quiere guardar también el promedio, que tiene decimales. Declare el arreglo necesario, con el mismo tamaño.",
+      "requiere": [{ "variable": { "tipo": "real", "arreglo": 20, "capturar": "P" } }],
+      "referencia": "float promedios[MAX_ALUMNOS];"
+    },
+    {
+      "id": "arreglos-temperaturas",
+      "titulo": "Un arreglo de decimales",
+      "enunciado": "Se registra la temperatura, con decimales, de cada día de una semana. Declare el arreglo necesario, con el tamaño justo.",
+      "requiere": [{ "variable": { "tipo": "real", "arreglo": 7, "capturar": "T" } }],
+      "referencia": "#define DIAS_SEMANA 7\n\nfloat temperaturas[DIAS_SEMANA];"
+    },
+    {
+      "id": "arreglos-dos-semanas",
+      "titulo": "El tamaño sale de una cuenta",
+      "continua": true,
+      "enunciado": "Ahora se quiere guardar la temperatura de cada día de dos semanas. Declare el arreglo necesario, con el tamaño justo.",
+      "requiere": [{ "variable": { "tipo": "real", "arreglo": 14 } }],
+      "referencia": "#define SEMANAS 2\n\nfloat temperaturasDosSemanas[SEMANAS * DIAS_SEMANA];"
+    }
+  ]
+}

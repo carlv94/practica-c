@@ -78,7 +78,7 @@ const CASOS_DE_CADENAS = [
 // Los arreglos, en una serie que pide la buena practica de las constantes:
 // "mejoras" es lo que deja la respuesta correcta pero no excelente.
 const arreglos = (paso, nombre, respuesta, espera, mejoras = []) => ({
-  serie: 'arreglos',
+  serie: 'arreglos-declarar',
   paso,
   nombre,
   respuesta,
@@ -104,7 +104,7 @@ const CASOS_DE_ARREGLOS = [
   arreglos(1, 'sin corchetes', 'int notas;', ['VARIABLE_NO_ES_ARREGLO']),
   arreglos(1, 'dos dimensiones', '#define F 4\n#define C 5\nint notas[F][C];', ['ARREGLO_DIMENSIONES']),
   arreglos(1, 'otro tipo', '#define MAX 20\nfloat notas[MAX];', ['VARIABLE_TIPO']),
-  arreglos(1, 'otro nombre', '#define MAX 20\nint nota[MAX];', ['VARIABLE_NOMBRE']),
+  arreglos(1, 'cualquier nombre sirve', '#define MAX 20\nint nota[MAX];', 'ok'),
   arreglos(1, 'el #define sin el arreglo', '#define MAX 20', ['VARIABLE_FALTA']),
   arreglos(2, 'usa la constante del paso anterior', 'float promedios[MAX_ALUMNOS];', 'ok'),
   arreglos(2, 'double tambien es real', 'double promedios[MAX_ALUMNOS];', 'ok'),
@@ -120,6 +120,27 @@ const CASOS_DE_ARREGLOS = [
     'NUMERO_MAGICO',
   ]),
   arreglos(2, 'constante mal escrita', 'float promedios[MAX_ALUMNO];', ['CONSTANTE_SIN_DEFINIR']),
+  arreglos(2, 'el mismo nombre del paso anterior', 'float notas[MAX_ALUMNOS];', ['VARIABLE_REDEFINIDA']),
+  arreglos(2, 'con otro tipo entero', 'int promedios[MAX_ALUMNOS];', ['VARIABLE_TIPO']),
+  arreglos(2, 'con otro tamano', 'float promedios[10];', ['ARREGLO_CHICO']),
+
+  // 3: un arreglo de decimales (un programa nuevo)
+  arreglos(3, 'con #define es excelente', '#define DIAS_SEMANA 7\nfloat temperaturas[DIAS_SEMANA];', 'ok'),
+  arreglos(3, 'double tambien es real', '#define DIAS_SEMANA 7\ndouble temperaturas[DIAS_SEMANA];', 'ok'),
+  arreglos(3, 'numero suelto: correcto pero mejorable', 'float temperaturas[7];', 'ok', ['NUMERO_MAGICO']),
+  arreglos(3, 'de menos', '#define DIAS_SEMANA 6\nfloat temperaturas[DIAS_SEMANA];', ['ARREGLO_CHICO']),
+  arreglos(3, 'de mas', '#define DIAS_SEMANA 8\nfloat temperaturas[DIAS_SEMANA];', ['ARREGLO_GRANDE']),
+  arreglos(3, 'de enteros', '#define DIAS_SEMANA 7\nint temperaturas[DIAS_SEMANA];', ['VARIABLE_TIPO']),
+  arreglos(3, 'una sola temperatura', 'float temperatura;', ['VARIABLE_NO_ES_ARREGLO']),
+
+  // 4: el tamano sale de una cuenta (sigue de la anterior, que dejo DIAS_SEMANA)
+  arreglos(4, 'con dos constantes', '#define SEMANAS 2\nfloat dosSemanas[SEMANAS * DIAS_SEMANA];', 'ok'),
+  arreglos(4, 'el total con su propia constante', '#define TOTAL 14\nfloat dosSemanas[TOTAL];', 'ok'),
+  arreglos(4, 'con el dos suelto: correcto y mejorable', 'float dosSemanas[2 * DIAS_SEMANA];', 'ok', ['NUMERO_MAGICO']),
+  arreglos(4, 'con el catorce suelto: correcto y mejorable', 'float dosSemanas[14];', 'ok', ['NUMERO_MAGICO']),
+  arreglos(4, 'solo una semana', 'float dosSemanas[DIAS_SEMANA];', ['ARREGLO_CHICO']),
+  arreglos(4, 'tres semanas', '#define SEMANAS 3\nfloat dosSemanas[SEMANAS * DIAS_SEMANA];', ['ARREGLO_GRANDE']),
+  arreglos(4, 'el nombre del arreglo anterior', '#define SEMANAS 2\nfloat temperaturas[SEMANAS * DIAS_SEMANA];', ['VARIABLE_REDEFINIDA']),
 ];
 
 // Arreglos definidos con sus valores: los del dibujo, 3 6 0 7 1 5.
@@ -343,7 +364,7 @@ const CASOS_DE_NOMBRES = [
   { paso: 4, nombre: 'el nombre de la variable de mas arriba', respuesta: 'TPuesto unPuesto;', espera: ['VARIABLE_REDEFINIDA'] },
   { paso: 4, nombre: 'otro nombre', respuesta: 'TPuesto otro;', espera: 'ok' },
   {
-    serie: 'arreglos',
+    serie: 'arreglos-declarar',
     paso: 1,
     nombre: 'dos constantes con otro valor en la misma respuesta',
     respuesta: '#define MAX 20\n#define MAX 30\nint notas[MAX];',
