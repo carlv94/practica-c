@@ -1,7 +1,7 @@
 {
   "id": "cadenas-tablas",
   "titulo": "Cadenas 5: arreglos y tablas de cadenas",
-  "descripcion": "Varios textos guardados juntos: un arreglo de cadenas (declararlo, inicializarlo, llenar una posición y recorrerlo) y una tabla de cadenas, con un texto en cada celda.",
+  "descripcion": "Varios textos guardados juntos: un arreglo de cadenas (declararlo, llenar una posición, vaciarlo e inicializarlo) y una tabla de cadenas, con un texto en cada celda.",
   "dentroDeMain": true,
   "buenasPracticas": ["claridad", "constantes"],
   "consignas": [
@@ -13,51 +13,30 @@
         {
           "variable": {
             "tipo": "caracter",
-            "arreglo": { "tamano": [30, 26], "letras": 25 }
+            "arreglo": { "tamano": [30, 26], "letras": 25 },
+            "capturar": "N"
           }
         }
       ],
       "referencia": "#define MAX_ESTUDIANTES 30\n#define LARGO_NOMBRE 25\n\nchar nombres[MAX_ESTUDIANTES][LARGO_NOMBRE + 1];"
     },
     {
-      "id": "cadenas-tabla-dias",
-      "titulo": "Un arreglo de cadenas con sus textos",
-      "enunciado": "Declare e inicialice, en la misma sentencia, un arreglo de cadenas con los nombres de los días de la semana, de lunes a domingo. Escríbalos sin acentos.",
-      "requiere": [
-        {
-          "variable": {
-            "tipo": "caracter",
-            "textos": ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"],
-            "sinDistinguirMayusculas": true
-          }
-        }
-      ],
-      "referencia": "#define LARGO_DIA 10\n\nchar dias[][LARGO_DIA] = {\"lunes\", \"martes\", \"miercoles\", \"jueves\", \"viernes\", \"sabado\", \"domingo\"};"
-    },
-    {
       "id": "cadenas-fila",
       "titulo": "Guardar un texto en una posición",
-      "dado": "#define MAX_ESTUDIANTES 30\n#define LARGO_NOMBRE 25\nchar nombres[MAX_ESTUDIANTES][LARGO_NOMBRE + 1];",
-      "enunciado": "Guarde el texto `\"Ana\"` en la primera posición del arreglo `nombres`.",
+      "continua": true,
+      "enunciado": "Guarde el texto `\"Ana\"` en la primera posición del arreglo {N}.",
       "requiere": [
         {
           "llamada": {
             "funcion": "strcpy",
             "alternativas": ["strncpy"],
-            "argumentos": ["nombres[0]", "\"Ana\""],
-            "orden": "primero va la cadena donde se guarda y después el texto"
+            "argumentos": ["$N[0]", "\"Ana\""],
+            "orden": "primero va la cadena donde se guarda y después el texto",
+            "aMano": { "variable": "$N", "en": [0], "texto": "Ana" }
           }
         }
       ],
       "referencia": "strcpy(nombres[0], \"Ana\");"
-    },
-    {
-      "id": "cadenas-vaciar-tabla",
-      "titulo": "Vaciar todas las cadenas",
-      "dado": "#define MAX_ESTUDIANTES 30\n#define LARGO_NOMBRE 25\nchar nombres[MAX_ESTUDIANTES][LARGO_NOMBRE + 1];\nint i;",
-      "enunciado": "Con un ciclo, deje vacías todas las cadenas del arreglo `nombres`. Use el índice `i`.",
-      "requiere": [{ "ciclo": { "indice": "i", "filasDe": "nombres" } }],
-      "referencia": "for (i = 0; i < MAX_ESTUDIANTES; i++) {\n  nombres[i][0] = '\\0';\n}"
     },
     {
       "id": "cadenas-q-tabla",
@@ -81,6 +60,38 @@
       ]
     },
     {
+      "id": "cadenas-fila-a-mano",
+      "titulo": "Una posición, carácter por carácter",
+      "continua": true,
+      "enunciado": "Guarde el texto `\"Luis\"` en la segunda posición del arreglo {N}, asignando cada carácter en su posición: una asignación por cada posición, indicando sus índices.",
+      "requiere": [{ "elementos": { "de": "$N", "en": [1], "texto": "Luis" } }],
+      "referencia": "nombres[1][0] = 'L';\nnombres[1][1] = 'u';\nnombres[1][2] = 'i';\nnombres[1][3] = 's';\nnombres[1][4] = '\\0';"
+    },
+    {
+      "id": "cadenas-vaciar-tabla",
+      "titulo": "Vaciar todas las cadenas",
+      "continua": true,
+      "dado": "int i;",
+      "enunciado": "Con un ciclo, deje vacías todas las cadenas del arreglo {N}. Use el índice `i`.",
+      "requiere": [{ "ciclo": { "indice": "i", "filasDe": "$N" } }],
+      "referencia": "for (i = 0; i < MAX_ESTUDIANTES; i++) {\n  nombres[i][0] = '\\0';\n}"
+    },
+    {
+      "id": "cadenas-tabla-dias",
+      "titulo": "Un arreglo de cadenas con sus textos",
+      "enunciado": "Declare e inicialice, en la misma sentencia, un arreglo de cadenas con los nombres de los días de la semana, de lunes a domingo. Escríbalos sin acentos.",
+      "requiere": [
+        {
+          "variable": {
+            "tipo": "caracter",
+            "textos": ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"],
+            "sinDistinguirMayusculas": true
+          }
+        }
+      ],
+      "referencia": "#define LARGO_DIA 10\n\nchar dias[][LARGO_DIA] = {\"lunes\", \"martes\", \"miercoles\", \"jueves\", \"viernes\", \"sabado\", \"domingo\"};"
+    },
+    {
       "id": "cadenas-tabla-datos",
       "titulo": "Declarar una tabla de cadenas",
       "enunciado": "Un curso tiene hasta 30 estudiantes. De cada uno se guardan su nombre, su apellido y su carrera, y cada texto tiene hasta 25 letras. Declare la variable donde se guarden estos datos de todo el curso, con una fila por estudiante y el tamaño justo.",
@@ -88,7 +99,8 @@
         {
           "variable": {
             "tipo": "caracter",
-            "arreglo": { "tamano": [30, 3, 26], "letras": 25 }
+            "arreglo": { "tamano": [30, 3, 26], "letras": 25 },
+            "capturar": "D"
           }
         }
       ],
@@ -97,19 +109,58 @@
     {
       "id": "cadenas-celda",
       "titulo": "Guardar un texto en una celda",
-      "dado": "#define MAX_ESTUDIANTES 30\n#define CAMPOS 3\n#define LARGO_TEXTO 25\nchar datos[MAX_ESTUDIANTES][CAMPOS][LARGO_TEXTO + 1];",
-      "enunciado": "En la tabla `datos`, cada fila es un estudiante y sus columnas son: la `0` el nombre, la `1` el apellido y la `2` la carrera. Guarde el apellido `\"Perez\"` del primer estudiante.",
+      "continua": true,
+      "enunciado": "En la tabla {D}, cada fila es un estudiante y sus columnas son: la `0` el nombre, la `1` el apellido y la `2` la carrera. Guarde el apellido `\"Perez\"` del primer estudiante.",
       "requiere": [
         {
           "llamada": {
             "funcion": "strcpy",
             "alternativas": ["strncpy"],
-            "argumentos": ["datos[0][1]", "\"Perez\""],
-            "orden": "primero va la cadena donde se guarda y después el texto"
+            "argumentos": ["$D[0][1]", "\"Perez\""],
+            "orden": "primero va la cadena donde se guarda y después el texto",
+            "aMano": { "variable": "$D", "en": [0, 1], "texto": "Perez" }
           }
         }
       ],
       "referencia": "strcpy(datos[0][1], \"Perez\");"
+    },
+    {
+      "id": "cadenas-q-celda",
+      "titulo": "Qué hay en una celda",
+      "enunciado": "Después de ejecutar el código de abajo, ¿qué contendría `datos[0][1][0]`?",
+      "codigo": "char datos[2][3][10];\nstrcpy(datos[0][1], \"Perez\");",
+      "opciones": [
+        {
+          "valor": "\"Perez\"",
+          "texto": "el texto completo de la celda",
+          "codigo": "OPCION_CELDA_ES_EL_TEXTO",
+          "explicacion": "`datos[0][1]` es la celda con el texto completo, `Perez`. Con el tercer índice se elige una letra de ese texto."
+        },
+        { "valor": "'P'", "texto": "la primera letra del texto", "correcta": true },
+        {
+          "valor": "'\\0'",
+          "texto": "el carácter de fin",
+          "codigo": "OPCION_FIN_EN_LA_PRIMERA",
+          "explicacion": "El `'\\0'` está después de la última letra, en la posición 5 de ese texto, no en la primera."
+        }
+      ]
+    },
+    {
+      "id": "cadenas-celda-a-mano",
+      "titulo": "Una celda, carácter por carácter",
+      "continua": true,
+      "enunciado": "En la tabla {D}, la columna `0` de cada fila es el nombre. Guarde el nombre `\"Ana\"` del segundo estudiante, asignando cada carácter en su posición: una asignación por cada posición, indicando sus índices.",
+      "requiere": [{ "elementos": { "de": "$D", "en": [1, 0], "texto": "Ana" } }],
+      "referencia": "datos[1][0][0] = 'A';\ndatos[1][0][1] = 'n';\ndatos[1][0][2] = 'a';\ndatos[1][0][3] = '\\0';"
+    },
+    {
+      "id": "cadenas-vaciar-datos",
+      "titulo": "Vaciar todos los textos de la tabla",
+      "continua": true,
+      "dado": "int i;\nint j;",
+      "enunciado": "Con ciclos, deje vacíos todos los textos de la tabla {D}. Use los índices `i` y `j`.",
+      "requiere": [{ "ciclo": { "indice": "i", "filasDe": "$D", "columnas": { "indice": "j" } } }],
+      "referencia": "for (i = 0; i < MAX_ESTUDIANTES; i++) {\n  for (j = 0; j < CAMPOS; j++) {\n    datos[i][j][0] = '\\0';\n  }\n}"
     }
   ]
 }
