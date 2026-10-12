@@ -374,6 +374,8 @@ son números escritos (si no, queda el mensaje general):
 | `nombres[i] = '\0';` | `ASIGNACION_CARACTER_A_CADENA` | Una cadena completa no recibe un carácter; con `'\0'`, recuerda que va en la primera posición. |
 | el texto en `nombres[2][k]` en lugar de `[1]` | `ELEMENTOS_OTRA_POSICION` | Dice dónde está (y si el texto está bien escrito). |
 | `datos[0][0][k]` en lugar de `datos[1][0][k]` | `ELEMENTOS_FILA_DISTINTA`, `_COLUMNA_DISTINTA`, `_FILA_Y_COLUMNA_DISTINTAS` | Cuál de las dos no es. |
+| `strcpy(datos[2], ...)` | `ARGUMENTO_FALTA_INDICE` | Es un arreglo de cadenas: falta el segundo índice. |
+| `strcpy(datos[2][1], ...)` | `ARGUMENTO_FILA_DISTINTA`, `_COLUMNA_DISTINTA`, `_FILA_Y_COLUMNA_DISTINTAS` (`ARGUMENTO_OTRA_POSICION` con un solo índice) | Cuál no es. |
 
 Si la posición escrita es justo la que sigue a la pedida (se contó desde 1),
 el mensaje agrega que las posiciones se numeran desde 0. Lo repetido en varias

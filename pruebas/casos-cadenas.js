@@ -327,7 +327,7 @@ const CASOS_DE_TABLAS = [
   tablas(2, 'la tabla entera', 'strcpy(nombres, "Ana");', ['ARGUMENTO_TABLA_ENTERA']),
   tablas(2, 'una fila asignada con =', 'nombres[0] = "Ana";', ['ASIGNACION_DE_ARREGLO']),
   tablas(2, 'un solo caracter', 'strcpy(nombres[0][0], "Ana");', ['ARGUMENTO_CON_CORCHETES']),
-  tablas(2, 'otra fila', 'strcpy(nombres[1], "Ana");', ['ARGUMENTO_OTRA_FILA']),
+  tablas(2, 'otra fila', 'strcpy(nombres[1], "Ana");', ['ARGUMENTO_OTRA_POSICION']),
   tablas(2, 'una fila que no existe', 'strcpy(nombres[30], "Ana");', ['INDICE_FUERA_DE_RANGO']),
   tablas(2, 'un texto en un caracter', 'nombres[0][0] = "Ana";', ['ELEMENTO_ENTRE_COMILLAS_DOBLES']),
 
@@ -368,8 +368,8 @@ const CASOS_DE_TABLAS = [
   tablas(8, 'la tabla entera', 'strcpy(datos, "Perez");', ['ARGUMENTO_TABLA_ENTERA']),
   tablas(8, 'solo la fila', 'strcpy(datos[0], "Perez");', ['ARGUMENTO_FALTA_INDICE']),
   tablas(8, 'un solo caracter', 'strcpy(datos[0][1][0], "Perez");', ['ARGUMENTO_CON_CORCHETES']),
-  tablas(8, 'otra columna', 'strcpy(datos[0][2], "Perez");', ['ARGUMENTO_OTRA_FILA']),
-  tablas(8, 'otra fila', 'strcpy(datos[1][1], "Perez");', ['ARGUMENTO_OTRA_FILA']),
+  tablas(8, 'otra columna', 'strcpy(datos[0][2], "Perez");', ['ARGUMENTO_COLUMNA_DISTINTA']),
+  tablas(8, 'otra fila', 'strcpy(datos[1][1], "Perez");', ['ARGUMENTO_FILA_DISTINTA']),
   tablas(8, 'una fila que no existe', 'strcpy(datos[30][1], "Perez");', ['INDICE_FUERA_DE_RANGO']),
   tablas(8, 'una fila asignada con =', 'datos[0] = "Perez";', ['ASIGNACION_DE_ARREGLO']),
   tablas(8, 'una celda asignada con =', 'datos[0][1] = "Perez";', ['ASIGNACION_DE_ARREGLO']),
@@ -454,6 +454,30 @@ const CASOS_DE_TABLAS = [
   {
     ...tablas(10, 'otra fila y otra columna', "datos[0][1][0] = 'A';\ndatos[0][1][1] = 'n';\ndatos[0][1][2] = 'a';\ndatos[0][1][3] = '\\0';", ['ELEMENTOS_FILA_Y_COLUMNA_DISTINTAS']),
     dice: ['El texto está bien escrito'],
+  },
+
+  // Los argumentos de una llamada: que parte de la posicion no es la que pide la consigna
+  {
+    ...tablas(2, 'la segunda posicion es la 1', 'strcpy(nombres[1], "Ana");', ['ARGUMENTO_OTRA_POSICION']),
+    dice: ['la posición 1 es la segunda'],
+  },
+  tablas(2, 'dos posiciones de mas', 'strcpy(nombres[2], "Ana");', ['ARGUMENTO_OTRA_POSICION']),
+  tablas(8, 'la fila de mas', 'strcpy(datos[2][1], "Perez");', ['ARGUMENTO_FILA_DISTINTA']),
+  {
+    ...tablas(8, 'la fila contada desde 1', 'strcpy(datos[1][1], "Perez");', ['ARGUMENTO_FILA_DISTINTA']),
+    dice: ['la columna es la que pide la consigna, pero la fila no', 'la fila 1 es la segunda'],
+  },
+  {
+    ...tablas(8, 'la columna contada desde 1', 'strcpy(datos[0][2], "Perez");', ['ARGUMENTO_COLUMNA_DISTINTA']),
+    dice: ['la fila es la que pide la consigna, pero la columna no', 'la columna 2 es la tercera'],
+  },
+  {
+    ...tablas(8, 'fila y columna distintas', 'strcpy(datos[3][0], "Perez");', ['ARGUMENTO_FILA_Y_COLUMNA_DISTINTAS']),
+    dice: ['ni la fila ni la columna'],
+  },
+  {
+    ...tablas(8, 'solo la fila', 'strcpy(datos[2], "Perez");', ['ARGUMENTO_FALTA_INDICE']),
+    dice: ['es un arreglo de cadenas', 'segundo índice'],
   },
 ];
 

@@ -1200,17 +1200,16 @@ export function corregir(
         } else if (real.clase === 'indice' && real.nombre === base && diagnosticos.some((d) => d.codigo === 'INDICE_FUERA_DE_RANGO')) {
           // ya se dijo que esa fila no existe
         } else if (real.clase === 'indice' && real.nombre === base && real.indices.length < cantidad) {
+          const variable = modelo.variables.findLast((v) => v.nombre === base);
+          const quedan = variable ? variable.arreglo.length - real.indices.length : 2;
           error(
             'ARGUMENTO_FALTA_INDICE',
-            `\`${real.texto}\` todavía no es un solo texto: tiene varios adentro, y falta indicar cuál.`,
+            `\`${real.texto}\` es ${quedan > 2 ? 'una tabla de cadenas' : 'un arreglo de cadenas'}, así que tiene varias adentro: falta indicar cuál con un ${ordinal(real.indices.length)} índice.`,
             llamada.fila
           );
         } else if (real.clase === 'indice' && real.nombre === base) {
-          error(
-            'ARGUMENTO_OTRA_FILA',
-            `\`${real.texto}\` no es la posición que pide la consigna.`,
-            llamada.fila
-          );
+          const [codigo, mensaje] = distintaPosicion(real, esperado);
+          error(codigo, mensaje, llamada.fila);
         } else {
           error(
             'ARGUMENTO_EQUIVOCADO',
@@ -3034,6 +3033,42 @@ function revisarAsignaciones(modelo, error, aconsejarFuncion = true) {
         : '';
     error(r.codigo, r.mensaje + suma, r.fila);
   }
+}
+
+// Una posicion que no es la que pide la consigna, dicha con precision: cual de
+// los indices no lo es, y si es el que sigue (se conto desde 1).
+function distintaPosicion(real, esperado) {
+  const pedidos = [...esperado.matchAll(/\[([^\]]*)\]/g)].map((m) => m[1].trim());
+  const escritos = real.indices.map((x) => x.trim());
+  const sonNumeros =
+    escritos.length === pedidos.length && escritos.length <= 2 && [...escritos, ...pedidos].every((t) => /^\d+$/.test(t));
+  const difieren = sonNumeros ? escritos.map((_, k) => k).filter((k) => Number(escritos[k]) !== Number(pedidos[k])) : [];
+  if (!difieren.length) {
+    return ['ARGUMENTO_OTRA_FILA', `\`${real.texto}\` no es la posición que pide la consigna.`];
+  }
+  const corrida = (k, uno, varias) =>
+    Number(escritos[k]) === Number(pedidos[k]) + 1
+      ? ` Las ${varias} se numeran desde 0: la ${uno} ${Number(escritos[k])} es la ${ordinalFemenino(Number(escritos[k]))}.`
+      : '';
+  if (escritos.length === 1) {
+    return ['ARGUMENTO_OTRA_POSICION', `\`${real.texto}\` no es la posición que pide la consigna.` + corrida(0, 'posición', 'posiciones')];
+  }
+  if (difieren.length === 2) {
+    return [
+      'ARGUMENTO_FILA_Y_COLUMNA_DISTINTAS',
+      `En \`${real.texto}\` ni la fila ni la columna son las que pide la consigna.` + corrida(0, 'fila', 'filas') + corrida(1, 'columna', 'columnas'),
+    ];
+  }
+  if (difieren[0] === 0) {
+    return [
+      'ARGUMENTO_FILA_DISTINTA',
+      `En \`${real.texto}\` la columna es la que pide la consigna, pero la fila no.` + corrida(0, 'fila', 'filas'),
+    ];
+  }
+  return [
+    'ARGUMENTO_COLUMNA_DISTINTA',
+    `En \`${real.texto}\` la fila es la que pide la consigna, pero la columna no.` + corrida(1, 'columna', 'columnas'),
+  ];
 }
 
 // Una posicion que no existe: con 30 filas van de 0 a 29. Solo cuando el
