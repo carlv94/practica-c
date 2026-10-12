@@ -22,13 +22,13 @@
           "valor": "1",
           "texto": "lo mismo que `letra`",
           "codigo": "OPCION_TEXTO_COMO_LETRA",
-          "explicacion": "Un texto entre comillas dobles siempre lleva el carácter de fin, aunque tenga una sola letra: ocupa un espacio más que sus letras."
+          "explicacion": "Un texto entre comillas dobles siempre lleva el `'\\0'`, aunque tenga una sola letra: ocupa un espacio más que sus letras."
         },
         { "valor": "2", "texto": "la letra y el carácter de fin", "correcta": true },
         {
           "texto": "No se puede saber",
           "codigo": "OPCION_NO_SE_SABE_TAMANO",
-          "explicacion": "Sí se sabe: el compilador reserva justo el espacio de las letras más el del carácter de fin."
+          "explicacion": "Sí se sabe: el compilador reserva justo el espacio de las letras más el del `'\\0'`."
         }
       ]
     },

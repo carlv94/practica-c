@@ -41,13 +41,13 @@
           "valor": "{N}",
           "texto": "el tamaño que usted declaró para la cadena",
           "codigo": "OPCION_TAMANO_DECLARADO",
-          "explicacion": "`strlen` no mira el tamaño con el que se declaró la cadena, sino cuántas letras tiene guardadas hasta el carácter de fin."
+          "explicacion": "`strlen` no mira el tamaño con el que se declaró la cadena, sino cuántas letras tiene guardadas hasta el primer `'\\0'`."
         },
         {
           "valor": "5",
           "texto": "la cantidad de letras más el carácter de fin",
           "codigo": "OPCION_CUENTA_EL_FIN",
-          "explicacion": "`strlen` cuenta las letras hasta el carácter de fin, pero no cuenta el carácter de fin."
+          "explicacion": "`strlen` cuenta las letras hasta el primer `'\\0'`, pero no cuenta el `'\\0'`."
         },
         { "valor": "4", "texto": "la cantidad de letras", "correcta": true }
       ]
@@ -69,7 +69,7 @@
           "valor": "5",
           "texto": "la cantidad de letras más el carácter de fin",
           "codigo": "OPCION_SIZEOF_CUENTA_FIN",
-          "explicacion": "`sizeof` no cuenta las letras guardadas, ni siquiera con el carácter de fin: dice el tamaño de la cadena en memoria, esté llena o no."
+          "explicacion": "`sizeof` no cuenta las letras guardadas, ni siquiera con el `'\\0'`: dice el tamaño de la cadena en memoria, esté llena o no."
         },
         { "valor": "{N}", "texto": "el tamaño que usted declaró para la cadena", "correcta": true }
       ]
@@ -91,7 +91,7 @@
         {
           "texto": "No se puede saber",
           "codigo": "OPCION_NO_SE_SABE_FIN",
-          "explicacion": "Sí se puede saber: la posición 4 es justo donde usted guardó el carácter de fin."
+          "explicacion": "Sí se puede saber: la posición 4 es justo donde usted guardó el `'\\0'`."
         }
       ]
     },

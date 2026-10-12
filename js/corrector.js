@@ -112,7 +112,7 @@ function sinFinEscrito(contenido) {
 }
 
 const MEJORA_FIN_EN_EL_TEXTO =
-  'Está bien, pero un texto entre comillas dobles ya termina en `\\0`: lo agrega el compilador, no hace falta escribirlo.';
+  'Está bien, pero un texto entre comillas dobles ya termina en el carácter `\'\\0\'`: lo agrega el compilador, no hace falta escribirlo.';
 
 // Las funciones de la biblioteca que un alumno puede llegar a escribir: sirve
 // para distinguir "se equivoco de funcion" de "la escribio mal".
@@ -360,7 +360,7 @@ export function corregir(
       } else if (/^\d+$/.test(campo.arreglo[0].trim()) && Number(campo.arreglo[0]) < 2) {
         error(
           'CAMPO_CADENA_CORTA',
-          `En \`${n}\` no entra ningún texto: una cadena necesita un espacio más que sus letras, para el \`\\0\` del final.`,
+          `En \`${n}\` no entra ningún texto: una cadena necesita un espacio más que sus letras, para el carácter \`'\\0'\` del final.`,
           campo.fila
         );
       }
@@ -1291,7 +1291,7 @@ export function corregir(
         if (tope != null && tope < esperados[1].length - 2 + 1) {
           error(
             'COPIA_SIN_FIN',
-            'Con ese límite no se copia el carácter de fin: el texto queda sin terminar.',
+            'Con ese límite no se copia el `\'\\0\'`: el texto queda sin terminar.',
             l.fila
           );
         }
@@ -1322,7 +1322,7 @@ export function corregir(
         } else if (lugar != null && Number(m[1]) >= lugar) {
           error(
             'LECTURA_SIN_LUGAR_PARA_FIN',
-            `Con ese límite se pueden leer ${m[1]} caracteres, y \`${esperados[1]}\` puede guardar ${lugar}: falta el espacio del \`\\0\` del final.`,
+            `Con ese límite se pueden leer ${m[1]} caracteres, y \`${esperados[1]}\` puede guardar ${lugar}: falta el espacio del \`'\\0'\` del final.`,
             l.fila
           );
         }
@@ -1402,7 +1402,7 @@ export function corregir(
           (esTabla
             ? `En \`${n}\`, cada texto puede tener ${caracteresDe(tiene)}, y uno de ${letrasDe(letras)} los ocupa todos`
             : `\`${n}\` puede guardar ${caracteresDe(tiene)}, y un texto de ${letrasDe(letras)} los ocupa todos`) +
-            ': no queda espacio para el `\\0` que marca el final de la cadena.',
+            ': no queda espacio para el carácter `\'\\0\'` que marca el final de la cadena.',
           declarado.fila
         );
       } else if (esDeLetras) {
@@ -1565,7 +1565,7 @@ export function corregir(
         } else if (ceros === 0 && lugar === texto.length) {
           error(
             'CADENA_SIN_FIN',
-            `El texto ocupa todo el espacio de \`${n}\`: no queda espacio para el \`\\0\` del final. C lo permite, pero la cadena queda sin terminar.`,
+            `El texto ocupa todo el espacio de \`${n}\`: no queda espacio para el carácter \`'\\0'\` del final. C lo permite, pero la cadena queda sin terminar.`,
             v.fila
           );
         }
@@ -1577,7 +1577,7 @@ export function corregir(
         if (lugar != null) {
           mejora(
             'CADENA_DIMENSION_INNECESARIA',
-            'Está bien, pero si deja los corchetes vacíos el compilador reserva justo el espacio que hace falta, incluido el `\\0` del final.',
+            'Está bien, pero si deja los corchetes vacíos el compilador reserva justo el espacio que hace falta, incluido el carácter `\'\\0\'` del final.',
             v.fila
           );
         }
@@ -1640,7 +1640,7 @@ export function corregir(
       if (regla.como !== 'lista' && practicas.includes('claridad')) {
         mejora(
           'CADENA_COMO_TEXTO',
-          'Está bien, pero un texto entre comillas dobles se escribe más corto y deja puesto el `\\0` del final.',
+          'Está bien, pero un texto entre comillas dobles se escribe más corto y deja puesto el carácter `\'\\0\'` del final.',
           v.fila
         );
       }
@@ -1741,7 +1741,7 @@ export function corregir(
     } else if (columnas === mayor && sinFinEnElMayor) {
       error(
         'CADENA_SIN_FIN',
-        `En \`${n}\`, el texto más largo ocupa todo el espacio de su fila: no queda espacio para el \`\\0\` del final. C lo permite, pero ese texto queda sin terminar.`,
+        `En \`${n}\`, el texto más largo ocupa todo el espacio de su fila: no queda espacio para el carácter \`'\\0'\` del final. C lo permite, pero ese texto queda sin terminar.`,
         v.fila
       );
     }
@@ -1844,7 +1844,7 @@ export function corregir(
         dice(
           'mejora',
           'FIN_CON_CERO',
-          'Está bien, pero `\\0` dice con claridad que es el carácter de fin de la cadena, y `0` se lee como un número.',
+          'Está bien, pero `\'\\0\'` dice con claridad que es el carácter de fin de la cadena, y `0` se lee como un número.',
           a.fila
         );
       } else if (v.clase === 'cadena') {
@@ -1854,7 +1854,7 @@ export function corregir(
         dice(
           'error',
           'FIN_CON_DIGITO',
-          `\`${v.texto}\` es el carácter del dígito cero: no es el que marca el final de la cadena.`,
+          `\`${v.texto}\` es el carácter del dígito cero; el que marca el final de la cadena es \`'\\0'\`.`,
           a.fila
         );
       } else if (esperado === 0 && v.clase === 'caracter' && v.valor === 32) {
@@ -1961,7 +1961,7 @@ export function corregir(
       if (alInicio.derecha.clase === 'numero' && practicas.includes('claridad')) {
         mejora(
           'FIN_CON_CERO',
-          'Está bien, pero `\\0` dice con claridad que es el carácter de fin de la cadena, y `0` se lee como un número.',
+          'Está bien, pero `\'\\0\'` dice con claridad que es el carácter de fin de la cadena, y `0` se lee como un número.',
           alInicio.fila
         );
       }
@@ -1974,7 +1974,7 @@ export function corregir(
       if (practicas.includes('claridad')) {
         mejora(
           'VACIAR_DE_MAS',
-          'Está bien, pero para vaciar una cadena alcanza con marcar el fin en su primera posición: lo que hay después ya no se lee.',
+          'Está bien, pero para vaciar una cadena alcanza con poner el `\'\\0\'` en su primera posición: lo que hay después ya no se lee.',
           conCiclo.fila
         );
       }
@@ -1993,7 +1993,7 @@ export function corregir(
       if (practicas.includes('claridad')) {
         mejora(
           'VACIAR_CON_FUNCION',
-          'Está bien, pero para vaciar una cadena no hace falta copiar nada: alcanza con marcar el fin en su primera posición.',
+          'Está bien, pero para vaciar una cadena no hace falta copiar nada: alcanza con poner el `\'\\0\'` en su primera posición.',
           copia.fila
         );
       }
@@ -2008,13 +2008,13 @@ export function corregir(
     }
     const v = otra.derecha;
     if (v.clase === 'caracter' && v.valor === 48) {
-      error('FIN_CON_DIGITO', `\`${v.texto}\` es el carácter del dígito cero: no es el que marca el final de la cadena.`, otra.fila);
+      error('FIN_CON_DIGITO', `\`${v.texto}\` es el carácter del dígito cero; el que marca el final de la cadena es \`'\\0'\`.`, otra.fila);
     } else if (v.clase === 'caracter' && v.valor === 32) {
       error('FIN_CON_ESPACIO', 'Un espacio es un carácter más del texto: no marca el final de la cadena.', otra.fila);
     } else if (esFinDeCadena(v)) {
       error(
         'VACIAR_OTRA_POSICION',
-        'La cadena termina en el primer carácter de fin que aparece: para que no tenga ninguna letra, el fin tiene que estar en la primera posición.',
+        'La cadena termina en el primer carácter `\'\\0\'` que aparece: para que no tenga ninguna letra, el `\'\\0\'` tiene que estar en la primera posición.',
         otra.fila
       );
     } else {
@@ -2073,13 +2073,13 @@ export function corregir(
       } else if (patron(`^${I}<=strlen\\(${N}\\)$`)) {
         error(
           'CICLO_UNO_DE_MAS',
-          `Con \`<=\` el ciclo llega también al \`\\0\` del final: el índice pasa una vez más de las letras de \`${nombre}\`.`,
+          `Con \`<=\` el ciclo llega también al \`'\\0'\` del final: el índice pasa una vez más de las letras de \`${nombre}\`.`,
           ciclo.fila
         );
       } else if (patron(`^${I}<(?:\\d+|[A-Z_][A-Z_0-9]*|sizeof\\(${N}\\))$`)) {
         error(
           'CICLO_HASTA_EL_TAMANO',
-          `El ciclo recorre todo el tamaño de \`${nombre}\` y no solo su texto: la cadena termina en el carácter de fin, que puede estar antes.`,
+          `El ciclo recorre todo el tamaño de \`${nombre}\` y no solo su texto: la cadena termina en el primer \`'\\0'\`, que puede estar antes.`,
           ciclo.fila
         );
       } else if (patron(`^${elemento}==${cero}$`)) {

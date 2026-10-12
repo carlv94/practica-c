@@ -38,13 +38,13 @@
           "valor": "5",
           "texto": "las letras que tenía",
           "codigo": "OPCION_VACIAR_NO_CAMBIA",
-          "explicacion": "La cadena ya no tiene letras: `strlen` cuenta hasta el primer carácter de fin, y ahora está en la primera posición."
+          "explicacion": "La cadena ya no tiene letras: `strlen` cuenta hasta el primer `'\\0'`, y ahora está en la primera posición."
         },
         {
           "valor": "21",
           "texto": "el tamaño de la cadena",
           "codigo": "OPCION_TAMANO_DECLARADO",
-          "explicacion": "`strlen` no mira el tamaño con el que se declaró la cadena, sino cuántas letras tiene guardadas hasta el carácter de fin."
+          "explicacion": "`strlen` no mira el tamaño con el que se declaró la cadena, sino cuántas letras tiene guardadas hasta el primer `'\\0'`."
         },
         { "valor": "0", "texto": "la cadena ya no tiene letras", "correcta": true }
       ]
@@ -59,7 +59,7 @@
           "valor": "'\\0'",
           "texto": "el carácter de fin",
           "codigo": "OPCION_VACIAR_BORRA_TODO",
-          "explicacion": "Vaciar una cadena solo marca el final en la primera posición: las demás posiciones conservan lo que tenían."
+          "explicacion": "Vaciar una cadena solo pone el `'\\0'` en la primera posición: las demás posiciones conservan lo que tenían."
         },
         { "valor": "'a'", "texto": "la letra que ya tenía", "correcta": true },
         {
@@ -86,7 +86,7 @@
           "valor": "10",
           "texto": "el tamaño de la cadena",
           "codigo": "OPCION_TAMANO_DECLARADO",
-          "explicacion": "`strlen` no mira el tamaño con el que se declaró la cadena, sino cuántas letras tiene guardadas hasta el carácter de fin."
+          "explicacion": "`strlen` no mira el tamaño con el que se declaró la cadena, sino cuántas letras tiene guardadas hasta el primer `'\\0'`."
         },
         { "texto": "No se puede saber", "correcta": true }
       ]

@@ -463,6 +463,11 @@ antes de la línea que lo usa.
 - Lo que el alumno declaró se describe en palabras ("un arreglo de `float`"),
   nunca como `float[20]`, que no es algo que se escriba en C. Y sin la palabra
   "puntero", que en la materia se ve al final: se dice "le sobra el `*`".
+- El `'\0'` se nombra por su símbolo, con comillas simples, igual que como se
+  escribe en el código y como lo muestran las opciones. Se lo dice por su
+  concepto ("el carácter que marca el final") solo donde nombrarlo le daría al
+  alumno la respuesta de una consigna que justamente quiere comprobar que lo
+  recuerda: `FIN_DISTINTO`, `FIN_CON_ESPACIO`, `CADENA_SIN_FIN` de una lista.
 - Cada mensaje lleva un **código fijo** (`CAMPO_FALTA`, `FALTA_PUNTO_Y_COMA`).
   El texto se puede reescribir; el código es lo que sirve para contar errores.
 - Cada intento queda anotado en el navegador (`practica-c:intentos`) con sus

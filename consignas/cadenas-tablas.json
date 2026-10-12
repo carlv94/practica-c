@@ -75,7 +75,7 @@
           "valor": "'\\0'",
           "texto": "el carácter de fin",
           "codigo": "OPCION_FIN_EN_LA_PRIMERA",
-          "explicacion": "El carácter de fin está después de la última letra, en la posición 3 de esa fila, no en la primera."
+          "explicacion": "El `'\\0'` está después de la última letra, en la posición 3 de esa fila, no en la primera."
         }
       ]
     }
