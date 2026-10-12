@@ -3,6 +3,7 @@
   "titulo": "Cadenas 6: tablas de cadenas",
   "descripcion": "Una tabla con un texto en cada celda: declararla, guardar un texto, qué hay en cada nivel y vaciarla.",
   "dentroDeMain": true,
+  "cabecera": "#include <string.h>",
   "buenasPracticas": ["claridad", "constantes"],
   "consignas": [
     {

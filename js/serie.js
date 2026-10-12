@@ -17,12 +17,17 @@
 // y el "contexto" (lo que va dentro: variables y sentencias). Una consigna
 // dice dónde va su respuesta con "en": "archivo"; si no dice nada, va en main.
 // Solo cuando una serie mezcla las dos cosas se le muestra al alumno el marco
-// con main: en las demas, lo que escribe es todo del mismo lugar.
+// con main: en las demas, lo que escribe es todo del mismo lugar. Una consigna
+// de opciones, en cambio, muestra siempre un programa completo para leer.
+// La serie puede traer una "cabecera" (un #include) que se ve arriba de todo.
 
 import { corregir, corregirOpcion } from './corrector.js';
 import { sustituir } from './enunciado.js';
 
 const unir = (...partes) => partes.filter((p) => p && p.trim()).join('\n\n');
+// Lo que va dentro de main: una respuesta tras otra, sin lineas en blanco de por medio
+// (las que el alumno escribio dentro de la suya se quedan).
+const unirEnMain = (...partes) => partes.filter((p) => p && p.trim()).join('\n');
 
 export const inicio = () => ({ contexto: '', archivo: '', capturas: {}, base: '' });
 
@@ -62,41 +67,91 @@ export function partesPrevias(serie, indice, avance) {
   const consigna = serie.consignas[indice];
   const afuera = enArchivo(consigna);
   return {
-    archivo: unir(avance.base, archivoPrevio(serie, indice, avance), afuera ? consigna.dado : ''),
-    main: unir(contextoPrevio(serie, indice, avance), afuera ? '' : consigna.dado),
+    archivo: unir(
+      serie.cabecera,
+      avance.base,
+      archivoPrevio(serie, indice, avance),
+      afuera ? consigna.dado : ''
+    ),
+    main: unirEnMain(contextoPrevio(serie, indice, avance), afuera ? '' : consigna.dado),
   };
 }
 
-// Las lineas del preprocesador (#define, #include) se ven arriba de todo, aunque
-// esten entre las sentencias: no pertenecen a main.
-function separarPreprocesador(codigo) {
-  const arriba = [];
+// Sin espacios al final, y nunca mas de una linea en blanco seguida.
+const limpiar = (t) =>
+  t
+    .replace(/[ \t]+$/gm, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .replace(/^\n+|\n+$/g, '');
+
+// Las lineas del preprocesador (#define, #include) no pertenecen a main ni a
+// ningun bloque: se ven juntas arriba de todo.
+function sacarPreprocesador(codigo) {
+  const pre = [];
   const resto = [];
-  for (const linea of codigo.split('\n')) (/^\s*#/.test(linea) ? arriba : resto).push(linea.trim());
-  return { arriba: arriba.join('\n'), resto: resto.join('\n').replace(/^\n+|\n+$/g, '') };
+  const lineas = codigo.split('\n');
+  for (let i = 0; i < lineas.length; i++) {
+    if (/^\s*#/.test(lineas[i])) {
+      pre.push(lineas[i].trim());
+      // La linea en blanco que le seguia (el #define y despues un espacio) se va con ella.
+      if (i + 1 < lineas.length && !lineas[i + 1].trim()) i++;
+    } else {
+      resto.push(lineas[i]);
+    }
+  }
+  return { pre, resto: limpiar(resto.join('\n')) };
+}
+
+// Un main con lo que va adentro, sangrado, y su return 0; al final. Los
+// parentesis quedan vacios hasta que se vean las funciones.
+function conMain(interior) {
+  const lineas = [interior, 'return 0;'].filter(Boolean).join('\n');
+  const sangrado = lineas
+    .split('\n')
+    .map((l) => (l ? '  ' + l : l))
+    .join('\n');
+  return 'int main() {\n' + sangrado + '\n}';
+}
+
+// El programa que se muestra: el preprocesador arriba (los #include primero),
+// lo de afuera, y main con lo de adentro. "aqui" es el lugar de la respuesta.
+function armar(archivo, main, { aquiAfuera = false, aquiAdentro = false } = {}) {
+  const a = sacarPreprocesador(archivo);
+  const m = sacarPreprocesador(main);
+  const pre = [...new Set([...a.pre, ...m.pre])];
+  const arriba = [...pre.filter((l) => /^#\s*include/.test(l)), ...pre.filter((l) => !/^#\s*include/.test(l))];
+  const aqui = '/* su respuesta va aquí */';
+  // El comentario con una linea en blanco antes y despues, para que se ubique
+  // enseguida entre el resto del codigo.
+  const interior = aquiAdentro ? (m.resto ? m.resto + '\n\n' : '') + aqui + '\n' : m.resto;
+  return unir(arriba.join('\n'), a.resto, aquiAfuera ? aqui : '', interior ? conMain(interior) : '');
 }
 
 // El marco que se le muestra al alumno: lo de afuera arriba, y lo de adentro
 // en main, con un comentario donde va su respuesta.
 function marco(serie, indice, avance) {
-  const consigna = serie.consignas[indice];
+  const afuera = enArchivo(serie.consignas[indice]);
   const { archivo, main } = partesPrevias(serie, indice, avance);
-  const { arriba, resto } = separarPreprocesador(main);
-  const aqui = '/* su respuesta va aquí */';
-  const afuera = enArchivo(consigna);
   // Si no hay nada antes y la respuesta va afuera, no hay marco que mostrar.
-  if (afuera && !arriba && !archivo && !resto) return '';
-  const interior = [resto, afuera ? '' : aqui].filter(Boolean).join('\n');
-  const sangrado = interior
-    .split('\n')
-    .map((l) => (l ? '  ' + l : l))
-    .join('\n');
-  return unir(
-    arriba,
-    archivo,
-    afuera ? aqui : '',
-    interior ? 'int main(void) {\n' + sangrado + '\n}' : ''
+  if (afuera && !archivo.trim() && !main.trim()) return '';
+  return armar(archivo, main, { aquiAfuera: afuera, aquiAdentro: !afuera });
+}
+
+// El programa que se le muestra en una consigna de opciones: el "archivo" y
+// el "codigo" de la consigna (con lo que dejaron las anteriores, si continua),
+// dentro de un main. Es para leer: no lleva el lugar de la respuesta.
+export function programaDeOpciones(serie, indice, avance) {
+  const consigna = serie.consignas[indice];
+  if (!consigna.codigo) return '';
+  const capturas = capturasPrevias(serie, indice, avance);
+  const archivo = unir(
+    serie.cabecera,
+    avance.base,
+    archivoPrevio(serie, indice, avance),
+    sustituir(consigna.archivo || '', capturas)
   );
+  const main = unirEnMain(contextoPrevio(serie, indice, avance), sustituir(consigna.codigo, capturas));
+  return armar(archivo, main);
 }
 
 // El codigo que se ve arriba de la respuesta en la consigna numero "indice".
@@ -147,8 +202,12 @@ export function despuesDe(serie, indice, avance, respuesta, resultado) {
   const consigna = serie.consignas[indice];
   if (consigna.opciones) {
     if (!consigna.queda) return avance;
-    const codigo = sustituir(consigna.codigo || '', capturasPrevias(serie, indice, avance));
-    return { ...avance, contexto: unir(avance.contexto, codigo) };
+    const capturas = capturasPrevias(serie, indice, avance);
+    return {
+      ...avance,
+      contexto: unirEnMain(avance.contexto, sustituir(consigna.codigo || '', capturas)),
+      archivo: unir(avance.archivo, sustituir(consigna.archivo || '', capturas)),
+    };
   }
   // Lo que persiste pasa a ser de todas las que siguen, y no toca la cadena de
   // las que continuan.
@@ -157,7 +216,11 @@ export function despuesDe(serie, indice, avance, respuesta, resultado) {
   }
   const afuera = enArchivo(consigna);
   return {
-    contexto: unir(contextoPrevio(serie, indice, avance), afuera ? '' : consigna.dado, afuera ? '' : respuesta.trim()),
+    contexto: unirEnMain(
+      contextoPrevio(serie, indice, avance),
+      afuera ? '' : consigna.dado,
+      afuera ? '' : respuesta.trim()
+    ),
     archivo: unir(archivoPrevio(serie, indice, avance), afuera ? consigna.dado : '', afuera ? respuesta.trim() : ''),
     capturas: resultado.capturas,
     base: avance.base,

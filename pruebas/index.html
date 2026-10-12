@@ -16,7 +16,14 @@
 
     <script type="module">
       import { cargarAnalizador } from '../js/analizador.js';
-      import { inicio, corregirPaso, despuesDe, capturasPrevias, respuestaDeReferencia } from '../js/serie.js';
+      import {
+        inicio,
+        corregirPaso,
+        despuesDe,
+        capturasPrevias,
+        respuestaDeReferencia,
+        programaDeOpciones,
+      } from '../js/serie.js';
       import { marcasDe, partesDeEnunciado } from '../js/enunciado.js';
       import { CASOS } from './casos.js';
 
@@ -105,6 +112,13 @@
                 !sueltas.length,
                 `cuestionario ${consigna.id}: nombres capturados`,
                 `usa ${sueltas.map((m) => `{${m}}`).join(', ')}, que ninguna consigna anterior captura`
+              );
+              // El codigo se ve como un programa completo, con su main y su return.
+              const programa = programaDeOpciones(s, i, previo);
+              anotar(
+                !consigna.codigo || (/int main\(\) \{/.test(programa) && /return 0;/.test(programa)),
+                `programa de ${consigna.id}`,
+                programa
               );
               const r = corregirPaso(analizador, s, i, previo, respuestaDeReferencia(consigna));
               anotar(r.correcto, `respuesta correcta de ${consigna.id}`, '');

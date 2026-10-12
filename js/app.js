@@ -18,6 +18,7 @@ import {
   codigoPrevio,
   enArchivo,
   esMixta,
+  programaDeOpciones,
   capturasPrevias,
   corregirPaso,
   despuesDe,
@@ -285,14 +286,17 @@ function mostrarConsigna() {
   const esCuestionario = Boolean(consigna?.opciones);
   const capturas = termino ? {} : capturasPrevias(serie, actual, avance);
   // Lo ya resuelto mas lo que esta consigna trae escrito.
-  const previo = termino ? '' : codigoPrevio(serie, actual, avance);
+  // En una consigna de opciones el codigo es un programa completo, de una sola
+  // pieza: no hay un "codigo hasta aca" aparte.
+  const previo = termino || esCuestionario ? '' : codigoPrevio(serie, actual, avance);
+  const programa = !termino && esCuestionario ? programaDeOpciones(serie, actual, avance) : '';
   $('consigna').hidden = termino;
   $('bloque-contexto').hidden = !previo;
   $('bloque-respuesta').hidden = termino;
   $('zona-codigo').hidden = esCuestionario;
   $('opciones').hidden = !esCuestionario;
   $('atajo').hidden = esCuestionario;
-  $('bloque-codigo').hidden = !(esCuestionario && consigna.codigo);
+  $('bloque-codigo').hidden = !programa;
   $('final').hidden = !termino;
   $('resultado').replaceChildren();
 
@@ -323,6 +327,13 @@ function mostrarConsigna() {
       parte.nombre ? elemento('code', null, parte.nombre) : conCodigo(parte.texto)
     )
   );
+  // Un ejemplo antes del enunciado: lo que se hacia hasta ahora, para compararlo.
+  const ejemplo = consigna.ejemplo;
+  $('bloque-ejemplo').hidden = !ejemplo;
+  if (ejemplo) {
+    $('ejemplo-texto').replaceChildren(conCodigo(ejemplo.texto));
+    pintar($('ejemplo-codigo'), ejemplo.codigo);
+  }
   dibujar(figuraDe(consigna));
   pintar($('contexto'), previo);
   // En una serie que mezcla definiciones y sentencias, se dice donde va lo que se escribe.
@@ -337,7 +348,7 @@ function mostrarConsigna() {
   $('comprobar').hidden = false;
   $('siguiente').hidden = true;
   if (esCuestionario) {
-    pintar($('codigo-consigna'), sustituir(consigna.codigo || '', capturas));
+    pintar($('codigo-consigna'), programa);
     dibujarOpciones(consigna, capturas);
     $('ver-solucion').hidden = true;
     return;

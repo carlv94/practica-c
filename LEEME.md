@@ -420,6 +420,12 @@ el ciclo?".
   intentos quedan anotados con ese código. Las pruebas lo verifican.
 - `codigo` es el código que se muestra (con `{C}` el nombre que eligió el
   alumno). Las opciones y las explicaciones también pueden usar `{C}`, `{N}`.
+  **Se muestra como un programa completo**: lo de la consigna (y, si
+  continúa, lo que dejaron las anteriores) dentro de `int main() {` con su
+  `return 0;`, en una sola caja, sin "El código hasta acá" aparte. Lo que va
+  fuera de `main` (un `typedef`) se escribe en `"archivo"`; el `#define` se ve
+  arriba solo. No lleva el comentario de "su respuesta va aquí": no hay nada
+  que escribir.
 - `valor` es lo que la opción vale (`11`, `'\0'`), y `texto` lo que dice de él: se
   muestran separados. Una opción sin valor (`No se puede saber`) lleva solo
   `texto`.
@@ -457,11 +463,22 @@ sentencias) siguen yendo dentro. El `#include` de una consigna `persiste` va
 también afuera.
 
 Solo cuando una serie **mezcla** las dos cosas se le muestra al alumno el
-marco, con `int main(void) {` y un comentario donde va su respuesta, y la
+marco, con `int main() {` (los paréntesis quedan vacíos hasta que se vean las
+funciones), un comentario donde va su respuesta y `return 0;` al final, y la
 consigna dice "esta respuesta va fuera de `main`" o "dentro de `main`". Las
 líneas del preprocesador (`#define`) se ven arriba de todo. En las demás series
 todo se ve como siempre. Las series de estructuras son de este tipo: sus
 variables son locales y no escriben `main` (si lo escriben, `MAIN_DE_MAS`).
+
+**`"cabecera"`** de una serie es un `#include` (`"#include <string.h>"`) que se
+ve arriba de todo, fuera de `main`, en el marco y en los programas de los
+cuestionarios. Las series que usan `strcpy` (arreglos, tablas y typedef) la
+llevan.
+
+**`"ejemplo"`** de una consigna (`{ "texto": ..., "codigo": ... }`) muestra,
+antes del enunciado, un código para comparar: lo que se hacía hasta ahora, por
+ejemplo. No es parte del código de arriba, así que no choca con lo que el
+alumno escribe.
 
 **`capturar` guarda el nombre que eligió el alumno** para que lo usen las
 consignas que siguen con `$S`: así "la estructura anterior" es la suya, se
