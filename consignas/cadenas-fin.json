@@ -1,0 +1,122 @@
+{
+  "id": "cadenas-fin",
+  "titulo": "Cadenas 1: el carácter de fin",
+  "descripcion": "Cuánto lugar necesita una cadena, cómo se guarda un texto y qué marca dónde termina.",
+  "dentroDeMain": true,
+  "buenasPracticas": ["claridad"],
+  "consignas": [
+    {
+      "id": "cadenas-declarar",
+      "titulo": "Declarar una cadena",
+      "enunciado": "Declare una cadena de caracteres donde quepa un texto de hasta 10 letras.",
+      "requiere": [
+        {
+          "variable": {
+            "tipo": "caracter",
+            "arreglo": { "alMenos": 11, "letras": 10 },
+            "capturar": "C",
+            "capturarDimension": "N"
+          }
+        }
+      ],
+      "referencia": "char frase[11];"
+    },
+    {
+      "id": "cadenas-por-caracter",
+      "titulo": "Guardar un texto, carácter por carácter",
+      "continua": true,
+      "enunciado": "Guarde el texto \"Hola\" en la cadena {C}, asignando cada carácter en su posición: una asignación por cada posición, indicando su índice.",
+      "requiere": [{ "elementos": { "de": "$C", "texto": "Hola" } }],
+      "referencia": "frase[0] = 'H';\nfrase[1] = 'o';\nfrase[2] = 'l';\nfrase[3] = 'a';\nfrase[4] = '\\0';"
+    },
+    {
+      "id": "cadenas-q-strlen",
+      "titulo": "Cuántas letras tiene",
+      "continua": true,
+      "queda": true,
+      "enunciado": "Con el texto que acaba de guardar en {C}, se ejecuta la línea de abajo. ¿Cuál es el valor de longitud?",
+      "codigo": "int longitud = strlen({C});",
+      "opciones": [
+        {
+          "valor": "{N}",
+          "texto": "el tamaño que usted declaró para la cadena",
+          "codigo": "OPCION_TAMANO_DECLARADO",
+          "explicacion": "`strlen` no mira el tamaño con el que se declaró la cadena, sino cuántas letras tiene guardadas hasta el carácter de fin."
+        },
+        {
+          "valor": "5",
+          "texto": "la cantidad de letras más el carácter de fin",
+          "codigo": "OPCION_CUENTA_EL_FIN",
+          "explicacion": "`strlen` cuenta las letras hasta el carácter de fin, pero no cuenta el carácter de fin."
+        },
+        { "valor": "4", "texto": "la cantidad de letras", "correcta": true }
+      ]
+    },
+    {
+      "id": "cadenas-q-sizeof",
+      "titulo": "Qué tamaño tiene la cadena",
+      "continua": true,
+      "enunciado": "Con la misma cadena {C}, se ejecuta la línea de abajo. ¿Cuál es el valor de tamano?",
+      "codigo": "int tamano = sizeof({C});",
+      "opciones": [
+        {
+          "valor": "4",
+          "texto": "la cantidad de letras",
+          "codigo": "OPCION_SIZEOF_CUENTA_LETRAS",
+          "explicacion": "`sizeof` no cuenta las letras guardadas: dice el tamaño de la cadena en memoria, esté llena o no."
+        },
+        {
+          "valor": "5",
+          "texto": "la cantidad de letras más el carácter de fin",
+          "codigo": "OPCION_SIZEOF_CUENTA_FIN",
+          "explicacion": "`sizeof` no cuenta las letras guardadas, ni siquiera con el carácter de fin: dice el tamaño de la cadena en memoria, esté llena o no."
+        },
+        { "valor": "{N}", "texto": "el tamaño que usted declaró para la cadena", "correcta": true }
+      ]
+    },
+    {
+      "id": "cadenas-q-fin",
+      "titulo": "Qué contiene la variable",
+      "continua": true,
+      "enunciado": "Con el texto que guardó en {C}, se ejecuta la línea de abajo. ¿Qué contiene la variable caracter?",
+      "codigo": "char caracter = {C}[longitud];",
+      "opciones": [
+        {
+          "valor": "'a'",
+          "texto": "la última letra del texto",
+          "codigo": "OPCION_ULTIMA_LETRA",
+          "explicacion": "`longitud` vale 4: la cantidad de letras, y también la posición que sigue a la última. La `a` está en la posición 3."
+        },
+        { "valor": "'\\0'", "texto": "el carácter de fin", "correcta": true },
+        {
+          "texto": "No se puede saber",
+          "codigo": "OPCION_NO_SE_SABE_FIN",
+          "explicacion": "Sí se puede saber: la posición 4 es justo donde usted guardó el carácter de fin."
+        }
+      ]
+    },
+    {
+      "id": "cadenas-una-letra",
+      "titulo": "Una cadena para una sola letra",
+      "enunciado": "Declare una cadena de caracteres donde quepa un texto de una sola letra.",
+      "requiere": [{ "variable": { "tipo": "caracter", "arreglo": { "alMenos": 2, "letras": 1 } } }],
+      "referencia": "char letra[2];"
+    },
+    {
+      "id": "cadenas-con-texto",
+      "titulo": "Declarar una cadena con su texto",
+      "enunciado": "Declare una cadena de caracteres e inicialícela, en la misma sentencia, con el texto \"Hola\".",
+      "requiere": [{ "variable": { "tipo": "caracter", "arreglo": true, "texto": "Hola" } }],
+      "referencia": "char saludo[] = \"Hola\";"
+    },
+    {
+      "id": "cadenas-con-lista",
+      "titulo": "Una cadena letra por letra",
+      "enunciado": "Declare una cadena de caracteres e inicialícela, en la misma sentencia, con las letras de \"Hola\" escritas una por una: cada letra entre comillas simples y todas entre llaves.",
+      "requiere": [
+        { "variable": { "tipo": "caracter", "arreglo": true, "texto": "Hola", "como": "lista" } }
+      ],
+      "referencia": "char saludo[] = {'H', 'o', 'l', 'a', '\\0'};"
+    }
+  ]
+}

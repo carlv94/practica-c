@@ -11,6 +11,8 @@
 //
 // Sumar un caso cada vez que un alumno escriba algo que el corrector entienda mal.
 
+import { CASOS_DE_CADENAS_NUEVAS } from './casos-cadenas.js';
+
 const TYPEDEF_SIN_ETIQUETA = `typedef struct {
   char nombreFantasia[50];
   char titular[50];
@@ -21,7 +23,13 @@ const TYPEDEF_SIN_ETIQUETA = `typedef struct {
 const campos = (cuerpo) => `struct Puesto {\n${cuerpo}\n};`;
 
 // Las sentencias de la serie de cadenas.
-const cadenas = (paso, nombre, respuesta, espera) => ({ serie: 'cadenas', paso, nombre, respuesta, espera });
+const cadenas = (paso, nombre, respuesta, espera) => ({
+  serie: 'cadenas-biblioteca',
+  paso: paso + 3,
+  nombre,
+  respuesta,
+  espera,
+});
 
 const CASOS_DE_CADENAS = [
   cadenas(1, 'strcpy', 'strcpy(cadena2, cadena1);', 'ok'),
@@ -348,6 +356,7 @@ export const CASOS = [
   ...CASOS_DE_VALORES,
   ...CASOS_DE_ARREGLOS,
   ...CASOS_DE_CADENAS,
+  ...CASOS_DE_CADENAS_NUEVAS,
   // ---- 1: declarar la estructura ----
   {
     nombre: 'otro nombre, otras dimensiones, otro orden, double y unsigned',

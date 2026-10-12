@@ -1,0 +1,32 @@
+{
+  "id": "cadenas-typedef",
+  "titulo": "Cadenas 6: un tipo para los textos",
+  "descripcion": "Darle un nombre propio al tipo de las cadenas con typedef, y usarlo.",
+  "dentroDeMain": true,
+  "buenasPracticas": ["claridad"],
+  "consignas": [
+    {
+      "id": "cadenas-tipo",
+      "titulo": "Definir un tipo para los textos",
+      "enunciado": "Defina un tipo nuevo para guardar un texto de hasta 25 letras.",
+      "requiere": [{ "alias": { "arreglo": { "alMenos": 26, "letras": 25 }, "capturar": "T" } }],
+      "referencia": "typedef char Nombre[26];"
+    },
+    {
+      "id": "cadenas-con-tipo",
+      "titulo": "Usar el tipo",
+      "continua": true,
+      "enunciado": "Declare una variable del tipo {T} para guardar el nombre de un estudiante.",
+      "requiere": [{ "usaAlias": { "alias": "$T" } }],
+      "referencia": "Nombre estudiante;"
+    },
+    {
+      "id": "cadenas-tabla-con-tipo",
+      "titulo": "Una tabla con el tipo",
+      "continua": true,
+      "enunciado": "Un curso tiene hasta 30 estudiantes. Declare la variable donde se guarden sus nombres, usando el tipo {T}.",
+      "requiere": [{ "usaAlias": { "alias": "$T", "arreglo": { "alMenos": 30 } } }],
+      "referencia": "Nombre curso[30];"
+    }
+  ]
+}

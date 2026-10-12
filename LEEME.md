@@ -31,7 +31,7 @@ hosting de archivos estáticos: no hay nada que corra del lado del servidor.
 | `js/enunciado.js` | Pone en el enunciado los nombres que eligió el alumno (`{S}`). |
 | `js/editor.js` | El editor de la respuesta: colores, números de línea y sangría. |
 | `js/app.js` | La pantalla y el avance del alumno. |
-| `pruebas/casos.js` | Respuestas de ejemplo con el resultado que tienen que dar. |
+| `pruebas/casos.js`, `pruebas/casos-cadenas.js` | Respuestas de ejemplo con el resultado que tienen que dar. |
 | `vendor/tree-sitter/` | El analizador, copiado de terceros. No se edita: ver su `LEEME.md`. |
 
 `modelo.js` y `corrector.js` no saben nada de la pantalla: si un día la
@@ -233,6 +233,84 @@ arreglo:
 Una fila o unas filas que no se escriben valen si en el dibujo son de ceros;
 si no, es un error que dice que lo que no se nombra queda en cero.
 
+### Cadenas de caracteres
+
+Las series `cadenas-*` (el fin de la cadena, la cadena vacía, la biblioteca,
+recorrer, tablas de cadenas y typedef) usan estas reglas.
+
+**Una cadena de hasta N letras necesita N + 1 lugares**, y la consigna lo pide
+con "al menos":
+
+```json
+{ "variable": { "tipo": "caracter", "arreglo": { "alMenos": 11, "letras": 10 }, "capturar": "C", "capturarDimension": "N" } }
+```
+
+| Respuesta | Resultado |
+|---|---|
+| `char s[11];`, `char s[10 + 1];`, `char s[MAX + 1];` | Correcta. Más lugar que 11 también vale. |
+| `char s[10];` | Error `CADENA_SIN_FIN`: no queda lugar para el `\0`. |
+| `char s[5];` | Error `ARREGLO_CHICO`. |
+
+Con una tabla, `"alMenos": [30, 26]`: la cantidad de textos y el lugar de cada
+uno (la última dimensión es la que lleva el fin). `capturarDimension` guarda lo
+que valía la dimensión, para nombrarla en un enunciado o una opción (`{N}`).
+
+Otras formas de pedir una variable de caracteres:
+
+- `"texto": "Hola"`: declarada con ese texto en la misma sentencia. `[]` es
+  excelente; `[4]` es el error silencioso de C (`CADENA_SIN_FIN`); más lugar
+  que el necesario es correcto con mejora. Con `"como": "lista"` se piden los
+  caracteres uno por uno entre llaves (`{'H', 'o', 'l', 'a', '\0'}`).
+- `"textos": ["lunes", ...]`: una tabla de textos, uno por fila. Se controla
+  cada texto, que la cantidad de filas sea la justa y que el ancho deje lugar
+  para el fin del más largo.
+- `"caracter": "A"`: una variable de un solo carácter con ese valor (`'A'`, no
+  `"A"`).
+- `"vacia": true`, junto con `alMenos`: tiene que empezar vacía (`""`, `{0}`
+  o `{'\0'}`).
+
+Reglas de código:
+
+- `{ "elementos": { "de": "$C", "texto": "Hola" } }`: el texto asignado
+  carácter por carácter (`frase[0] = 'H';` ...), con su `'\0'`, en cualquier
+  orden. Falta el fin (`CADENA_SIN_FIN`), una posición salteada, todo corrido
+  un lugar (`ELEMENTOS_CORRIDOS`), `"H"` en vez de `'H'`, `0` por `'\0'`
+  (correcta, con mejora).
+- `{ "vaciar": "nombre" }`: dejar vacía una cadena, con el fin en la primera
+  posición. `strcpy(nombre, "")` y vaciarla con un ciclo valen, con mejora.
+- `{ "ciclo": { "indice": "i", "hastaElFinDe": "nombre" } }`: un ciclo que
+  avanza el índice hasta el final del texto. **Sin ejecutarlo**: se reconocen
+  las condiciones de siempre (`nombre[i] != '\0'`, `nombre[i]`,
+  `i < strlen(nombre)`) y los errores típicos (`<=`, recorrer todo el
+  tamaño, condición al revés, índice que no avanza). Una condición que no se
+  reconoce **no es un error**: sale un aviso (`CICLO_NO_VERIFICADO`).
+  `"filasDe": "tabla"` pide recorrer las filas de una tabla, y que dentro se
+  vacíe cada una.
+- `{ "alias": { "arreglo": { "alMenos": 26, "letras": 25 }, "capturar": "T" } }`
+  y `{ "usaAlias": { "alias": "$T", "arreglo": { "alMenos": 30 } } }`: un
+  `typedef` de un arreglo de caracteres, y una variable declarada con él. Una
+  variable de ese tipo se ve como el arreglo que es.
+
+La regla `llamada` suma, para estas series:
+
+- Un argumento puede ser un texto (`"\"Juan\""`) o una posición de una tabla
+  (`"nombres[0]"`).
+- `"resultadoEn": "largo"`: lo que devuelve tiene que guardarse en esa variable.
+- `"comparar": true` (`strcmp`): tiene que estar en la condición de un `if` y
+  mirar el cero. `strcmp(a, b)` sola o con `!= 0` se cumple al revés
+  (error); `!strcmp(a, b)` vale, con mejora; `==` entre cadenas es error.
+  El orden de las dos cadenas da lo mismo.
+- `"aMano": { "variable": "nombre", "texto": "Juan" }`: guardar el texto
+  carácter por carácter también llega, pero con mejora.
+- `strncpy` con un límite que no deja lugar para el fin es error.
+  `scanf("%s", ...)` sin límite es correcto con mejora; un límite que no deja
+  lugar para el fin es error.
+
+Para cualquier consigna, y sin pedirlo: una posición que no existe
+(`nombres[30]` en una tabla de 30 filas, `INDICE_FUERA_DE_RANGO`) y un texto
+asignado a un carácter (`ELEMENTO_ENTRE_COMILLAS_DOBLES`) son errores. Y una
+dimensión puede ser una cuenta sencilla (`MAX + 1`, `10 + 1`).
+
 ### Consignas de opciones
 
 Una consigna con `"opciones"` se responde eligiendo, no escribiendo. Sirven
@@ -331,9 +409,10 @@ La práctica `constantes` mira las dimensiones de los arreglos:
 | `const int MAX = 20;` o una variable como dimensión | Correcto. Mejora: lo ideal es `#define` (`DIMENSION_CON_VARIABLE`). |
 | `#define max 20` | Correcto. Mejora: las constantes van en mayúscula (`CONSTANTE_EN_MINUSCULA`). |
 
-La práctica `claridad` es para lo que funciona pero se lee mal. Hoy tiene un
-solo caso: la tabla definida con todos los valores seguidos, sin llaves por
-fila.
+La práctica `claridad` es para lo que funciona pero se lee mal: la tabla con
+todos los valores seguidos, `{0, 0, 0}` donde alcanza `{0}`, `0` por `'\0'`,
+guardar un texto letra por letra habiendo una función, `!strcmp(a, b)` sin el
+cero, leer sin un límite.
 
 **Una consigna puede pedir otras prácticas que su serie**:
 `"buenasPracticas": ["claridad", "constantes"]` en la consigna reemplaza a la

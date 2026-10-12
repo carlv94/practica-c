@@ -1,0 +1,36 @@
+{
+  "id": "cadenas-recorrer",
+  "titulo": "Cadenas 4: recorrer una cadena",
+  "descripcion": "Un ciclo que avanza por las letras de una cadena hasta su final.",
+  "dentroDeMain": true,
+  "buenasPracticas": ["claridad"],
+  "consignas": [
+    {
+      "id": "cadenas-recorrer-final",
+      "titulo": "Recorrer hasta el final",
+      "dado": "char nombre[21] = \"Maria\";\nint i = 0;",
+      "enunciado": "Escriba un ciclo que avance el índice i mientras no se haya llegado al final del texto de la cadena nombre.",
+      "requiere": [{ "ciclo": { "indice": "i", "hastaElFinDe": "nombre" } }],
+      "referencia": "while (nombre[i] != '\\0') {\n  i++;\n}"
+    },
+    {
+      "id": "cadenas-q-seguimiento",
+      "titulo": "Seguir un ciclo",
+      "enunciado": "Se ejecuta el código de abajo. ¿Cuál es el valor de n al terminar el ciclo?",
+      "codigo": "char palabra[10] = \"Banana\";\nint n = 0;\nint i = 0;\nwhile (palabra[i] != '\\0') {\n  if (palabra[i] == 'a') {\n    n++;\n  }\n  i++;\n}",
+      "opciones": [
+        {
+          "texto": "6",
+          "codigo": "OPCION_CUENTA_TODAS_LAS_LETRAS",
+          "explicacion": "Ese es el total de letras, pero `n` solo aumenta cuando la letra es una `a`."
+        },
+        { "texto": "3", "correcta": true },
+        {
+          "texto": "1",
+          "codigo": "OPCION_CUENTA_UNA_SOLA",
+          "explicacion": "El ciclo no termina en la primera coincidencia: sigue hasta el final de la cadena y cuenta todas las `a`."
+        }
+      ]
+    }
+  ]
+}

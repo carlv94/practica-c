@@ -1,0 +1,81 @@
+{
+  "id": "cadenas-tablas",
+  "titulo": "Cadenas 5: tablas de cadenas",
+  "descripcion": "Una lista de textos guardada en una tabla: declararla, inicializarla, llenar una fila y recorrerla.",
+  "dentroDeMain": true,
+  "buenasPracticas": ["claridad", "constantes"],
+  "consignas": [
+    {
+      "id": "cadenas-tabla-nombres",
+      "titulo": "Declarar una tabla de cadenas",
+      "enunciado": "Un curso tiene hasta 30 estudiantes y cada nombre tiene hasta 25 letras. Declare la variable donde se guarden los nombres de los estudiantes del curso.",
+      "requiere": [
+        {
+          "variable": {
+            "tipo": "caracter",
+            "arreglo": { "alMenos": [30, 26], "letras": 25 }
+          }
+        }
+      ],
+      "referencia": "#define MAX_ESTUDIANTES 30\n#define LARGO_NOMBRE 25\n\nchar nombres[MAX_ESTUDIANTES][LARGO_NOMBRE + 1];"
+    },
+    {
+      "id": "cadenas-tabla-dias",
+      "titulo": "Una tabla con sus textos",
+      "enunciado": "Declare e inicialice, en la misma sentencia, una tabla con los nombres de los días de la semana, de lunes a domingo. Escríbalos sin acentos.",
+      "requiere": [
+        {
+          "variable": {
+            "tipo": "caracter",
+            "textos": ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"]
+          }
+        }
+      ],
+      "referencia": "#define LARGO_DIA 10\n\nchar dias[][LARGO_DIA] = {\"lunes\", \"martes\", \"miercoles\", \"jueves\", \"viernes\", \"sabado\", \"domingo\"};"
+    },
+    {
+      "id": "cadenas-fila",
+      "titulo": "Guardar un texto en una fila",
+      "dado": "#define MAX_ESTUDIANTES 30\n#define LARGO_NOMBRE 25\nchar nombres[MAX_ESTUDIANTES][LARGO_NOMBRE + 1];",
+      "enunciado": "Guarde el texto \"Ana\" en la primera posición de la tabla nombres.",
+      "requiere": [
+        {
+          "llamada": {
+            "funcion": "strcpy",
+            "alternativas": ["strncpy"],
+            "argumentos": ["nombres[0]", "\"Ana\""],
+            "orden": "primero va la cadena donde se guarda y después el texto"
+          }
+        }
+      ],
+      "referencia": "strcpy(nombres[0], \"Ana\");"
+    },
+    {
+      "id": "cadenas-vaciar-tabla",
+      "titulo": "Vaciar todas las filas",
+      "dado": "#define MAX_ESTUDIANTES 30\n#define LARGO_NOMBRE 25\nchar nombres[MAX_ESTUDIANTES][LARGO_NOMBRE + 1];\nint i;",
+      "enunciado": "Con un ciclo, deje vacías todas las cadenas de la tabla nombres. Use el índice i.",
+      "requiere": [{ "ciclo": { "indice": "i", "filasDe": "nombres" } }],
+      "referencia": "for (i = 0; i < MAX_ESTUDIANTES; i++) {\n  nombres[i][0] = '\\0';\n}"
+    },
+    {
+      "id": "cadenas-q-tabla",
+      "titulo": "Qué es una fila de la tabla",
+      "enunciado": "Se ejecuta el código de abajo. ¿Qué es nombres[0][0]?",
+      "codigo": "char nombres[3][10];\nstrcpy(nombres[0], \"Ana\");",
+      "opciones": [
+        {
+          "texto": "El texto \"Ana\"",
+          "codigo": "OPCION_FILA_ES_EL_TEXTO",
+          "explicacion": "`nombres[0]` es la cadena completa, `Ana`. Con el segundo índice se elige un carácter de esa cadena."
+        },
+        { "texto": "La letra `A`", "correcta": true },
+        {
+          "texto": "El carácter de fin, `\\0`",
+          "codigo": "OPCION_FIN_EN_LA_PRIMERA",
+          "explicacion": "El carácter de fin está después de la última letra, en la posición 3 de esa fila, no en la primera."
+        }
+      ]
+    }
+  ]
+}

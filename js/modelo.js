@@ -16,16 +16,26 @@
 // y de las sentencias, lo que hace falta para las consignas de "escriba el
 // codigo que...": las llamadas a funciones con sus argumentos, las
 // asignaciones y si hay algun ciclo.
-//   llamada:    { funcion, argumentos, nuevo, fila }
-//   asignacion: { izquierda, derecha, nuevo, fila }
-//   ciclo:      { nuevo, fila }
+//   llamada:    { funcion, argumentos, destino, uso, enIf, posicion, fin, nuevo, fila }
+//   asignacion: { izquierda, derecha, posicion, nuevo, fila }
+//   ciclo:      { tipo, condicion, texto, posicion, fin, nuevo, fila }
+//   si:         { posicion, fin, nuevo, fila }                        un if
+//   comparacion: { operador, izquierda, derecha, enIf, nuevo, fila }  a == b, a != b
+//   sizeof:     { argumento, nuevo, fila }
 // Un argumento (o un lado de una asignacion) es:
-//   { clase: 'nombre', nombre }       cadena1
-//   { clase: 'cadena', contenido }    "cadena1"
-//   { clase: 'direccion', nombre }    &cadena1
-//   { clase: 'indice', nombre }       cadena1[0]
-//   { clase: 'otro' }                 cualquier otra expresion
+//   { clase: 'nombre', nombre }               cadena1
+//   { clase: 'cadena', contenido }            "cadena1"
+//   { clase: 'direccion', nombre }            &cadena1
+//   { clase: 'indice', nombre, indices }      cadena1[0], t[2][1] (indices: ['2', '1'])
+//   { clase: 'caracter', valor }              'a', '\0' (valor: su codigo)
+//   { clase: 'numero', valor }                0, 25
+//   { clase: 'otro' }                         cualquier otra expresion
 // todos con "texto", que es como esta escrito.
+//
+// De una llamada: "destino" es la variable donde se guarda lo que devuelve
+// (n = strlen(s); o int n = strlen(s);) y "uso" lo que se hace con eso cuando
+// es parte de una comparacion: 'igual-cero' (f(...) == 0), 'distinto-cero',
+// 'negada' (!f(...)), 'sola' (if (f(...))) u 'otro'.
 //
 // "tipo" es el tipo tal como esta escrito:
 //   { clase: 'primitivo', nombre: 'unsigned int' }
@@ -74,8 +84,8 @@ function leerInicial(n) {
   if (/^[-+]?(\d+\.?\d*|\.\d+)[fFlLuU]*$/.test(limpio)) {
     return { clase: 'numero', valor: parseFloat(limpio), texto };
   }
-  if (n.type === 'char_literal') return { clase: 'caracter', texto };
-  if (n.type === 'string_literal') return { clase: 'cadena', texto };
+  if (n.type === 'char_literal') return { clase: 'caracter', valor: codigoDeCaracter(texto), texto };
+  if (n.type === 'string_literal') return { clase: 'cadena', contenido: texto.slice(1, -1), texto };
   return { clase: 'otro', texto };
 }
 
@@ -127,6 +137,37 @@ function desenvolver(nodo) {
   return d;
 }
 
+// El codigo de un caracter escrito entre comillas simples: 'a' -> 97, '\0' -> 0.
+function codigoDeCaracter(texto) {
+  const c = texto.slice(1, -1);
+  if ([...c].length === 1) return c.codePointAt(0);
+  const m = /^\\(?:x([0-9a-fA-F]+)|([0-7]{1,3})|(.))$/.exec(c);
+  if (!m) return null;
+  if (m[1]) return parseInt(m[1], 16);
+  if (m[2]) return parseInt(m[2], 8);
+  const ESCAPES = { n: 10, t: 9, r: 13, a: 7, b: 8, f: 12, v: 11, '\\': 92, "'": 39, '"': 34, '?': 63 };
+  return ESCAPES[m[3]] ?? null;
+}
+
+// Una variable de un tipo definido con typedef sobre un arreglo
+// (typedef char Nombre[26]; Nombre alumno;) es un arreglo de esos caracteres:
+// se la expande para que las reglas la vean asi. "dimsDeAlias" son las
+// dimensiones que vienen del alias: las que el alumno escribio en esa
+// sentencia son las demas.
+function expandirAlias(lista, modelo) {
+  for (const d of lista) {
+    if (d.tipo.clase !== 'nombre' || d.punteros) continue;
+    const alias = modelo.aliases.find(
+      (a) => a !== d && a.nombre === d.tipo.nombre && a.indice < d.indice
+    );
+    if (!alias || !alias.arreglo.length || alias.punteros) continue;
+    d.deAlias = alias.nombre;
+    d.dimsDeAlias = alias.arreglo.length;
+    d.arreglo = [...d.arreglo, ...alias.arreglo];
+    d.tipo = alias.tipo;
+  }
+}
+
 export function construirModelo(arbol, desde) {
   const modelo = {
     structs: [],
@@ -136,6 +177,9 @@ export function construirModelo(arbol, desde) {
     llamadas: [],
     asignaciones: [],
     ciclos: [],
+    ifs: [],
+    comparaciones: [],
+    sizeofs: [],
   };
 
   // Un argumento, o un lado de una asignacion.
@@ -146,6 +190,12 @@ export function construirModelo(arbol, desde) {
         return { clase: 'nombre', nombre: texto, texto };
       case 'string_literal':
         return { clase: 'cadena', contenido: texto.slice(1, -1), texto };
+      case 'char_literal':
+        return { clase: 'caracter', valor: codigoDeCaracter(texto), texto };
+      case 'number_literal': {
+        const valor = Number(texto.replace(/[uUlL]+$/, ''));
+        return { clase: 'numero', valor: Number.isNaN(valor) ? null : valor, texto };
+      }
       case 'pointer_expression': {
         const de = n.childForFieldName('argument');
         return texto.startsWith('&') && de && de.type === 'identifier'
@@ -154,13 +204,62 @@ export function construirModelo(arbol, desde) {
       }
       case 'subscript_expression': {
         // En t[0][1] el nombre esta dos niveles adentro.
-        let de = n.childForFieldName('argument');
-        while (de && de.type === 'subscript_expression') de = de.childForFieldName('argument');
-        return { clase: 'indice', nombre: de ? de.text : null, texto };
+        const indices = [];
+        let de = n;
+        while (de && de.type === 'subscript_expression') {
+          const indice = de.childForFieldName('index') || de.childForFieldName('indices');
+          indices.unshift(indice ? indice.text : '');
+          de = de.childForFieldName('argument');
+        }
+        return { clase: 'indice', nombre: de ? de.text : null, indices, texto };
       }
       default:
         return { clase: 'otro', texto };
     }
+  }
+
+  // De una llamada: donde se guarda lo que devuelve, que se hace con eso en
+  // una comparacion, y si esta en la condicion de un if.
+  function contextoDeLlamada(n) {
+    const contexto = { destino: null, uso: 'otro', enIf: false };
+    let hijo = n;
+    let padre = n.parent;
+    while (padre && padre.type === 'parenthesized_expression') {
+      hijo = padre;
+      padre = padre.parent;
+    }
+    if (padre) {
+      if (padre.type === 'assignment_expression' && padre.childForFieldName('right')?.id === hijo.id) {
+        const izquierda = padre.childForFieldName('left');
+        contexto.destino = izquierda && izquierda.type === 'identifier' ? izquierda.text : null;
+      } else if (padre.type === 'init_declarator' && padre.childForFieldName('value')?.id === hijo.id) {
+        contexto.destino = desenvolver(padre.childForFieldName('declarator')).nombre;
+      } else if (padre.type === 'binary_expression') {
+        const operador = padre.childForFieldName('operator')?.text;
+        const otro =
+          padre.childForFieldName('left')?.id === hijo.id
+            ? padre.childForFieldName('right')
+            : padre.childForFieldName('left');
+        const esCero = otro && otro.type === 'number_literal' && Number(otro.text) === 0;
+        if (esCero && operador === '==') contexto.uso = 'igual-cero';
+        else if (esCero && operador === '!=') contexto.uso = 'distinto-cero';
+      } else if (padre.type === 'unary_expression' && padre.text.startsWith('!')) {
+        contexto.uso = 'negada';
+      } else if (padre.type === 'if_statement' && padre.childForFieldName('condition')?.id === hijo.id) {
+        contexto.uso = 'sola';
+      }
+    }
+    contexto.enIf = estaEnCondicion(n);
+    return contexto;
+  }
+
+  // Si el nodo esta dentro de la condicion de algun if.
+  function estaEnCondicion(n) {
+    for (let a = n, p = n.parent; p; a = p, p = p.parent) {
+      if (p.type === 'if_statement' && p.childForFieldName('condition')?.id === a.id) return true;
+      if (p.type === 'function_definition') return false;
+    }
+    return false;
   }
   const structDeNodo = new Map();
 
@@ -266,6 +365,9 @@ export function construirModelo(arbol, desde) {
           argumentos: argumentos
             ? argumentos.namedChildren.filter((a) => a.type !== 'comment').map(leerValor)
             : [],
+          ...contextoDeLlamada(n),
+          posicion: n.startIndex,
+          fin: n.endIndex,
           nuevo: n.startIndex >= desde,
           fila: n.startPosition.row,
         });
@@ -278,20 +380,80 @@ export function construirModelo(arbol, desde) {
           modelo.asignaciones.push({
             izquierda: leerValor(izquierda),
             derecha: leerValor(derecha),
+            operador: n.childForFieldName('operator')?.text || '=',
+            posicion: n.startIndex,
             nuevo: n.startIndex >= desde,
             fila: n.startPosition.row,
           });
         }
         break;
       }
+      case 'binary_expression': {
+        const operador = n.childForFieldName('operator')?.text;
+        const izquierda = n.childForFieldName('left');
+        const derecha = n.childForFieldName('right');
+        if ((operador === '==' || operador === '!=') && izquierda && derecha) {
+          modelo.comparaciones.push({
+            operador,
+            izquierda: leerValor(izquierda),
+            derecha: leerValor(derecha),
+            enIf: estaEnCondicion(n),
+            nuevo: n.startIndex >= desde,
+            fila: n.startPosition.row,
+          });
+        }
+        break;
+      }
+      case 'sizeof_expression':
+        modelo.sizeofs.push({
+          argumento: n.text.replace(/^sizeof\s*\(?\s*/, '').replace(/\s*\)?\s*$/, ''),
+          nuevo: n.startIndex >= desde,
+          fila: n.startPosition.row,
+        });
+        break;
+      case 'if_statement':
+        modelo.ifs.push({
+          posicion: n.startIndex,
+          fin: n.endIndex,
+          nuevo: n.startIndex >= desde,
+          fila: n.startPosition.row,
+        });
+        break;
       case 'for_statement':
       case 'while_statement':
-      case 'do_statement':
-        modelo.ciclos.push({ nuevo: n.startIndex >= desde, fila: n.startPosition.row });
+      case 'do_statement': {
+        // La condicion tal como esta escrita, sin el parentesis de afuera
+        // (while, do) ni el ";" (for).
+        const condicion = n.childForFieldName('condition');
+        modelo.ciclos.push({
+          tipo: n.type.replace('_statement', ''),
+          condicion: !condicion
+            ? ''
+            : (condicion.type === 'parenthesized_expression'
+                ? condicion.text.slice(1, -1)
+                : condicion.text
+              )
+                .replace(/;\s*$/, '')
+                .trim(),
+          texto: n.text,
+          posicion: n.startIndex,
+          fin: n.endIndex,
+          nuevo: n.startIndex >= desde,
+          fila: n.startPosition.row,
+        });
         break;
+      }
     }
     for (const hijo of n.namedChildren) visitar(hijo, local);
   })(arbol.rootNode, false);
+
+  // Los typedef de un arreglo, en el orden en que estan escritos.
+  expandirAlias(modelo.aliases, modelo);
+  expandirAlias(modelo.variables, modelo);
+  expandirAlias(
+    modelo.structs.flatMap((s) => s.campos),
+    modelo
+  );
 
   return modelo;
 }

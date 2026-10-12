@@ -29,6 +29,12 @@
 //   { "variable": { "tipo": "entero", "valores": [3, 6, 0], "capturar": "V" } }
 //   { "alias":    { "de": "$S", "capturar": "A" } }
 //   { "llamada":  { "funcion": "strcpy", "argumentos": ["cadena2", "cadena1"] } }
+//   { "variable": { "tipo": "caracter", "arreglo": { "alMenos": 11, "letras": 10 } } }
+//   { "variable": { "tipo": "caracter", "arreglo": true, "texto": "Hola" } }
+//   { "elementos": { "de": "$C", "texto": "Hola" } }
+//   { "vaciar":   "nombre" }
+//   { "ciclo":    { "indice": "i", "hastaElFinDe": "nombre" } }
+//   { "usaAlias": { "alias": "$T", "arreglo": { "alMenos": 30 } } }
 
 import {
   construirModelo,
@@ -192,7 +198,11 @@ export function corregir(
     const modelo = construirModelo(arbol, desde);
     revisarNombres(modelo, error);
     revisarRedefiniciones(modelo, error, practicas.includes('constantes') ? mejora : null);
-    revisarAsignaciones(modelo, error);
+    // Cuando la consigna pide los caracteres de a uno, o vaciar la cadena,
+    // aconsejarle una funcion de la biblioteca seria mandarlo a otra cosa.
+    const sinFuncion = consigna.requiere.some((r) => r.elementos || r.vaciar || r.ciclo);
+    revisarAsignaciones(modelo, error, !sinFuncion);
+    revisarIndices(modelo, error);
     revisarDimensiones(modelo, error, practicas.includes('constantes') ? mejora : null);
     for (const regla of consigna.requiere) aplicarRegla(regla, modelo);
     return terminar();
@@ -216,6 +226,10 @@ export function corregir(
     if (regla.variable) return reglaVariable(regla.variable, modelo);
     if (regla.alias) return reglaAlias(regla.alias, modelo);
     if (regla.llamada) return reglaLlamada(regla.llamada, modelo);
+    if (regla.elementos) return reglaElementos(regla.elementos, modelo);
+    if (regla.vaciar) return reglaVaciar(regla.vaciar, modelo);
+    if (regla.ciclo) return reglaCiclo(regla.ciclo, modelo);
+    if (regla.usaAlias) return reglaUsaAlias(regla.usaAlias, modelo);
     throw new Error(`La consigna "${consigna.id}" tiene una regla que no conozco.`);
   }
 
@@ -371,7 +385,8 @@ export function corregir(
         : mismoTipo(real, objetivo);
     };
     // Con "valores" se pide un arreglo definido con esos valores.
-    const quiereArreglo = Boolean(regla.valores) || (regla.arreglo != null && regla.arreglo !== false);
+    const quiereArreglo =
+      Boolean(regla.valores) || Boolean(regla.textos) || (regla.arreglo != null && regla.arreglo !== false);
     let candidatas = modelo.variables.filter((v) => v.nuevo);
 
     if (!candidatas.length) {
@@ -406,7 +421,8 @@ export function corregir(
     }
 
     // Valores en filas ([[5, 8], [0, 2]]) piden una tabla: dos dimensiones.
-    const esTabla = Array.isArray(regla.valores?.[0]);
+    const esTabla =
+      Array.isArray(regla.valores?.[0]) || Array.isArray(regla.arreglo?.alMenos) || Boolean(regla.textos);
     const dimensiones = !quiereArreglo ? 0 : esTabla ? 2 : 1;
     const forma = esTabla ? 'una tabla' : 'un arreglo';
 
@@ -429,6 +445,22 @@ export function corregir(
         return;
       }
       if (regla.capturar) nuevas[regla.capturar] = exacta.nombre;
+
+      // Una lista de textos (la tabla de los dias), o un texto para una cadena.
+      if (regla.textos) return verificarTextos(exacta, regla, modelo);
+      if (regla.texto != null) return verificarCadenaInicial(exacta, regla, modelo);
+      if (regla.caracter != null) return verificarCaracter(exacta, regla);
+      // Un arreglo "de al menos" tantos elementos (la cadena de hasta N letras).
+      if (regla.arreglo && typeof regla.arreglo === 'object') {
+        if (regla.capturarDimension) {
+          const lugar = valorDeDimension(exacta.arreglo[0], modelo);
+          nuevas[regla.capturarDimension] = String(lugar ?? exacta.arreglo[0].trim());
+        }
+        if (verificarAlMenos(exacta, regla.arreglo, modelo) && regla.vacia) {
+          verificarVacia(exacta, modelo);
+        }
+        return;
+      }
 
       // Con un numero, el arreglo tiene que tener justo esa cantidad, este
       // escrita como numero o con una constante que valga eso.
@@ -925,9 +957,70 @@ export function corregir(
     const llamadas = modelo.llamadas.filter((l) => l.nuevo);
     const llamada = llamadas.find((l) => aceptadas.includes(l.funcion));
 
+    // Un argumento esperado es el nombre de una variable, un texto entre
+    // comillas dobles ("Juan") o una posicion de una tabla (nombres[0]).
+    const esTexto = (e) => e.startsWith('"');
+    const esIndexado = (e) => /^[A-Za-z_]\w*\s*(\[[^\]]*\]\s*)+$/.test(e);
+    const sinEspacios = (t) => t.replace(/\s+/g, '');
+
     if (!llamada) {
-      // Si ya se le dijo que un arreglo no se asigna con "=", con eso alcanza.
-      if (diagnosticos.some((d) => d.codigo === 'ASIGNACION_DE_ARREGLO')) return;
+      // Los caracteres de a uno tambien llegan al mismo texto: vale, pero hay
+      // una funcion que lo hace de una vez.
+      if (regla.aMano) {
+        const nombre = valorDe(regla.aMano.variable);
+        const propias = alElementoDe(modelo, nombre).filter(
+          (a) => valorDeDimension(a.izquierda.indices[0], modelo) != null
+        );
+        if (propias.length) {
+          const hallazgos = verificarElementos(nombre, regla.aMano.texto, propias, modelo);
+          decir(hallazgos);
+          if (!hallazgos.some((h) => h.nivel === 'error') && practicas.includes('claridad')) {
+            mejora(
+              'COPIA_A_MANO',
+              'Está bien, pero la biblioteca de cadenas tiene una función que copia un texto de una vez.',
+              propias[0].fila
+            );
+          }
+          return;
+        }
+      }
+
+      // Si ya se le dijo que un arreglo no se asigna con "=", o que un texto
+      // no va en un caracter, con eso alcanza.
+      if (
+        diagnosticos.some((d) => ['ASIGNACION_DE_ARREGLO', 'ELEMENTO_ENTRE_COMILLAS_DOBLES'].includes(d.codigo))
+      ) {
+        return;
+      }
+
+      if (regla.funcion === 'strlen') {
+        const tamano = modelo.sizeofs.find((s) => s.nuevo);
+        if (tamano) {
+          error(
+            'SIZEOF_NO_CUENTA',
+            '`sizeof` dice cuánto lugar tiene la cadena declarada, no cuántas letras tiene guardadas.',
+            tamano.fila
+          );
+          return;
+        }
+      }
+      if (regla.comparar) {
+        const esDeTexto = (v) =>
+          v.clase === 'cadena' ||
+          (v.clase === 'nombre' &&
+            modelo.variables.some((x) => x.nombre === v.nombre && x.arreglo.length > 0));
+        const igual = modelo.comparaciones.find(
+          (c) => c.nuevo && (esDeTexto(c.izquierda) || esDeTexto(c.derecha))
+        );
+        if (igual) {
+          error(
+            'COMPARAR_CON_IGUAL',
+            'Con `==` no se comparan los textos de dos cadenas: hace falta una función de la biblioteca de cadenas.',
+            igual.fila
+          );
+          return;
+        }
+      }
 
       const ciclo = modelo.ciclos.find((c) => c.nuevo);
       const otra = llamadas[0];
@@ -974,12 +1067,32 @@ export function corregir(
     }
 
     const libre = (i) => esperados[i] === '*';
-    const acierta = (i) => libre(i) || (reales[i].clase === 'nombre' && reales[i].nombre === esperados[i]);
-    if (esperados.every((_, i) => acierta(i))) return;
+    const acierta = (i) => {
+      if (libre(i)) return true;
+      const real = reales[i];
+      if (esTexto(esperados[i])) return real.clase === 'cadena' && real.texto === esperados[i];
+      if (esIndexado(esperados[i])) {
+        return real.clase === 'indice' && sinEspacios(real.texto) === sinEspacios(esperados[i]);
+      }
+      return real.clase === 'nombre' && real.nombre === esperados[i];
+    };
+    if (esperados.every((_, i) => acierta(i))) {
+      verificarLlamada(llamada);
+      return;
+    }
 
-    // Los mismos nombres, en otro lugar.
-    const escritos = esperados.map((_, i) => (reales[i].clase === 'nombre' ? reales[i].nombre : null));
-    if (!escritos.includes(null) && [...escritos].sort().join() === [...esperados].sort().join()) {
+    // Lo mismo, en otro lugar.
+    const escritos = esperados.map((_, i) => sinEspacios(reales[i].texto));
+    const pedidos = esperados.map(sinEspacios);
+    // Para saber si dos cadenas son iguales, el orden da lo mismo.
+    if (regla.comparar && esperados.length === 2 && escritos[0] === pedidos[1] && escritos[1] === pedidos[0]) {
+      verificarLlamada(llamada);
+      return;
+    }
+    if (
+      !esperados.includes('*') &&
+      [...escritos].sort().join('\n') === [...pedidos].sort().join('\n')
+    ) {
       error(
         'ARGUMENTOS_EN_OTRO_ORDEN',
         'Los argumentos están en otro orden.' +
@@ -992,6 +1105,72 @@ export function corregir(
     esperados.forEach((esperado, i) => {
       if (acierta(i)) return;
       const real = reales[i];
+
+      if (esTexto(esperado)) {
+        const pedido = esperado.slice(1, -1);
+        if (real.clase === 'cadena') {
+          error(
+            'TEXTO_DISTINTO',
+            real.contenido.toLowerCase() === pedido.toLowerCase()
+              ? `El texto no es el de la consigna: en C las mayúsculas y las minúsculas son letras distintas.`
+              : 'El texto no es el que pide la consigna.',
+            llamada.fila
+          );
+        } else if ((real.clase === 'otro' || real.clase === 'caracter') && real.texto.startsWith("'")) {
+          error(
+            'ARGUMENTO_COMILLAS_SIMPLES',
+            `\`${real.texto}\` entre comillas simples: un texto va entre comillas dobles, las simples son para un solo carácter.`,
+            llamada.fila
+          );
+        } else if (real.clase === 'nombre') {
+          error(
+            'ARGUMENTO_SIN_COMILLAS',
+            `\`${real.nombre}\` sin comillas es el nombre de una variable, no un texto: un texto va entre comillas dobles.`,
+            llamada.fila
+          );
+        } else {
+          error(
+            'ARGUMENTO_EQUIVOCADO',
+            `El argumento ${i + 1} de \`${llamada.funcion}\` (\`${real.texto}\`) no es el que corresponde.`,
+            llamada.fila
+          );
+        }
+        return;
+      }
+
+      if (esIndexado(esperado)) {
+        const base = /^[A-Za-z_]\w*/.exec(esperado)[0];
+        const cantidad = (esperado.match(/\[/g) || []).length;
+        if (real.clase === 'nombre' && real.nombre === base) {
+          error(
+            'ARGUMENTO_TABLA_ENTERA',
+            `\`${base}\` es la tabla entera: para guardar un texto hay que elegir una de sus filas.`,
+            llamada.fila
+          );
+        } else if (real.clase === 'indice' && real.nombre === base && real.indices.length > cantidad) {
+          error(
+            'ARGUMENTO_CON_CORCHETES',
+            `\`${real.texto}\` es un solo carácter de la cadena. Para pasar la cadena entera va la fila sola, sin el último índice.`,
+            llamada.fila
+          );
+        } else if (real.clase === 'indice' && real.nombre === base && diagnosticos.some((d) => d.codigo === 'INDICE_FUERA_DE_RANGO')) {
+          // ya se dijo que esa fila no existe
+        } else if (real.clase === 'indice' && real.nombre === base) {
+          error(
+            'ARGUMENTO_OTRA_FILA',
+            `\`${real.texto}\` no es la posición que pide la consigna.`,
+            llamada.fila
+          );
+        } else {
+          error(
+            'ARGUMENTO_EQUIVOCADO',
+            `El argumento ${i + 1} de \`${llamada.funcion}\` (\`${real.texto}\`) no es el que corresponde.`,
+            llamada.fila
+          );
+        }
+        return;
+      }
+
       if (real.clase === 'cadena' && real.contenido === esperado) {
         error(
           'ARGUMENTO_ENTRE_COMILLAS',
@@ -1028,11 +1207,974 @@ export function corregir(
         );
       }
     });
+
+    // Con los argumentos bien: lo que se hace con la llamada.
+    function verificarLlamada(l) {
+      const argumentos = l.argumentos;
+
+      // Donde queda lo que devuelve: n = strlen(s);
+      if (regla.resultadoEn && l.destino !== regla.resultadoEn) {
+        if (l.destino == null) {
+          error(
+            'RESULTADO_PERDIDO',
+            `\`${l.funcion}\` devuelve un valor, pero acá no se guarda en ninguna variable.`,
+            l.fila
+          );
+        } else {
+          error(
+            'RESULTADO_EN_OTRA',
+            `El valor que devuelve \`${l.funcion}\` se guarda en \`${l.destino}\`, y la consigna pide \`${regla.resultadoEn}\`.`,
+            l.fila
+          );
+        }
+        return;
+      }
+
+      // Comparar dos cadenas: en la condicion de un if, y mirando el cero.
+      if (regla.comparar) {
+        if (!l.enIf) {
+          error('COMPARACION_FUERA_DEL_IF', 'La comparación tiene que estar en la condición de un `if`.', l.fila);
+        } else if (l.uso === 'negada') {
+          if (practicas.includes('claridad')) {
+            mejora(
+              'STRCMP_SIN_COMPARAR',
+              'Está bien, pero `strcmp` devuelve cero cuando las cadenas son iguales, y compararlo con `0` deja a la vista qué se está preguntando.',
+              l.fila
+            );
+          }
+        } else if (l.uso === 'sola' || l.uso === 'distinto-cero') {
+          error(
+            'STRCMP_AL_REVES',
+            '`strcmp` devuelve cero cuando las cadenas son iguales: así la condición se cumple cuando son distintas.',
+            l.fila
+          );
+        } else if (l.uso !== 'igual-cero') {
+          error(
+            'STRCMP_USO',
+            'Para saber si dos cadenas son iguales hay que mirar si `strcmp` devuelve cero.',
+            l.fila
+          );
+        }
+      }
+
+      // strncpy con un limite que no deja lugar para el '\0'.
+      if (l.funcion === 'strncpy' && esperados.length >= 2 && esTexto(esperados[1]) && argumentos[2]) {
+        const tope =
+          argumentos[2].clase === 'numero' ? argumentos[2].valor : valorDeDimension(argumentos[2].texto, modelo);
+        if (tope != null && tope < esperados[1].length - 2 + 1) {
+          error(
+            'COPIA_SIN_FIN',
+            'Con ese límite no se copia el carácter de fin: el texto queda sin terminar.',
+            l.fila
+          );
+        }
+      }
+
+      // Leer un texto: el formato, y cuanto se deja leer.
+      if (l.funcion === 'scanf') {
+        const formato = argumentos[0];
+        const m = formato && formato.clase === 'cadena' ? /^%(\d*)s$/.exec(formato.contenido) : null;
+        if (!m) {
+          error(
+            'FORMATO_NO_ES_TEXTO',
+            'El primer argumento no es el formato de lectura de un texto: cada tipo de dato tiene el suyo.',
+            l.fila
+          );
+          return;
+        }
+        const variable = modelo.variables.findLast((v) => v.nombre === esperados[1]);
+        const lugar = variable ? valorDeDimension(variable.arreglo[0] ?? '', modelo) : null;
+        if (m[1] === '') {
+          if (practicas.includes('claridad')) {
+            mejora(
+              'LECTURA_SIN_LIMITE',
+              'Está bien, pero si se escribe más texto del que entra, se pisa lo que sigue en memoria. El formato `%s` permite indicar, con un número entre el `%` y la `s`, cuántos caracteres leer como máximo.',
+              l.fila
+            );
+          }
+        } else if (lugar != null && Number(m[1]) >= lugar) {
+          error(
+            'LECTURA_SIN_LUGAR_PARA_FIN',
+            `Con ese límite se pueden leer ${m[1]} caracteres, y \`${esperados[1]}\` tiene lugar para ${lugar}: falta el lugar del \`\\0\` del final.`,
+            l.fila
+          );
+        }
+      }
+    }
+  }
+
+  // ---- cadenas --------------------------------------------------------------
+
+  // (funciones y no constantes: las reglas se aplican antes de llegar a esta parte)
+  function letrasDe(n) {
+    return n === 1 ? '1 letra' : `${n} letras`;
+  }
+  function caracteresDe(n) {
+    return n === 1 ? '1 carácter' : `${n} caracteres`;
+  }
+  function esFinDeCadena(v) {
+    return (v.clase === 'caracter' || v.clase === 'numero') && v.valor === 0;
+  }
+
+  // Un arreglo "de al menos" tantos elementos. Una cadena de hasta N letras
+  // necesita N + 1 lugares, el ultimo para el '\0': por eso la consigna pide
+  // "al menos", y cuando falta justo uno se dice por que. Con una tabla, cada
+  // numero es una dimension. Devuelve si quedo bien.
+  //   minimo: { alMenos: 11 | [30, 26], letras: 10 | 25 }
+  function verificarAlMenos(declarado, minimo, modelo) {
+    const n = declarado.nombre;
+    const pedidos = [].concat(minimo.alMenos);
+    const esTabla = pedidos.length > 1;
+    const letras = minimo.letras;
+    let bien = true;
+
+    for (const [k, pedido] of pedidos.entries()) {
+      const escrito = (declarado.arreglo[k] ?? '').trim();
+      if (!escrito) {
+        error('ARREGLO_SIN_DIMENSION', `A \`${n}\` le falta la cantidad entre los corchetes.`, declarado.fila);
+        return false;
+      }
+      const tiene = valorDeDimension(escrito, modelo);
+      if (tiene == null || tiene >= pedido) continue;
+      bien = false;
+      const esDeLetras = letras != null && k === pedidos.length - 1;
+      if (esDeLetras && tiene === pedido - 1) {
+        error(
+          'CADENA_SIN_FIN',
+          (esTabla
+            ? `En \`${n}\`, cada texto tiene lugar para ${caracteresDe(tiene)}, y uno de ${letrasDe(letras)} los ocupa todos`
+            : `\`${n}\` tiene lugar para ${caracteresDe(tiene)}, y un texto de ${letrasDe(letras)} los ocupa todos`) +
+            ': no queda lugar para el `\\0` que marca el final de la cadena.',
+          declarado.fila
+        );
+      } else if (esDeLetras) {
+        error(
+          'ARREGLO_CHICO',
+          esTabla
+            ? `En \`${n}\`, cada texto tiene lugar para ${caracteresDe(tiene)} y no alcanza para uno de ${letrasDe(letras)}.`
+            : `\`${n}\` tiene lugar para ${caracteresDe(tiene)} y no alcanza para un texto de ${letrasDe(letras)}.`,
+          declarado.fila
+        );
+      } else {
+        error(
+          'ARREGLO_CHICO',
+          `\`${n}\` tiene lugar para ${tiene} ${esTabla ? 'textos' : 'elementos'} y hay que guardar ${pedido}: no alcanza.`,
+          declarado.fila
+        );
+      }
+    }
+    return bien;
+  }
+
+  // Una variable de un solo caracter con su valor: 'A', no "A".
+  function verificarCaracter(v, regla) {
+    const n = v.nombre;
+    const inicial = v.inicial;
+    const esperado = regla.caracter.codePointAt(0);
+    if (!inicial) {
+      error(
+        'CARACTER_SIN_VALOR',
+        `\`${n}\` está declarada, pero sin valor: la consigna pide dárselo en la misma sentencia.`,
+        v.fila
+      );
+      return;
+    }
+    if (inicial.clase === 'cadena') {
+      error(
+        'CARACTER_CON_COMILLAS_DOBLES',
+        `\`${inicial.texto}\` entre comillas dobles es un texto: un solo carácter va entre comillas simples.`,
+        v.fila
+      );
+      return;
+    }
+    if (inicial.clase === 'caracter' && inicial.valor === esperado) return;
+    if (inicial.clase === 'numero' && inicial.valor === esperado) {
+      if (practicas.includes('claridad')) {
+        mejora(
+          'CARACTER_COMO_NUMERO',
+          'Funciona, porque cada carácter tiene un código numérico, pero la letra entre comillas simples se lee mejor.',
+          v.fila
+        );
+      }
+      return;
+    }
+    const mismo =
+      inicial.clase === 'caracter' &&
+      inicial.valor != null &&
+      String.fromCodePoint(inicial.valor).toLowerCase() === regla.caracter.toLowerCase();
+    error(
+      'CARACTER_DISTINTO',
+      mismo
+        ? `\`${inicial.texto}\` no es la letra de la consigna: en C las mayúsculas y las minúsculas son letras distintas.`
+        : `\`${n}\` no guarda la letra que pide la consigna.`,
+      v.fila
+    );
+  }
+
+  // Una cadena que tiene que empezar vacia: con "", con {0} o con {'\0'}.
+  function verificarVacia(v) {
+    const n = v.nombre;
+    const inicial = v.inicial;
+    if (!inicial) {
+      error(
+        'CADENA_SIN_INICIAL',
+        `\`${n}\` está declarada pero sin valor inicial: lo que tiene adentro es lo que hubiera en esa memoria, no una cadena vacía.`,
+        v.fila
+      );
+      return;
+    }
+    if (inicial.clase === 'cadena') {
+      if (inicial.texto.length > 2) {
+        error('CADENA_NO_VACIA', `\`${n}\` empieza con texto: no es una cadena vacía.`, v.fila);
+      }
+      return;
+    }
+    if (inicial.clase === 'lista') {
+      const e = inicial.elementos;
+      if (!e.length || !esFinDeCadena(e[0])) {
+        error(
+          'CADENA_NO_VACIA',
+          e.length && e[0].clase === 'caracter'
+            ? `\`${e[0].texto}\` no es el carácter de fin de la cadena: así \`${n}\` no empieza vacía.`
+            : `\`${n}\` no empieza vacía: el primer carácter tiene que ser el que marca el final de la cadena.`,
+          v.fila
+        );
+      } else if (e.length > 1 && e.every(esFinDeCadena) && practicas.includes('claridad')) {
+        mejora(
+          'VACIA_DE_MAS',
+          'Está bien, pero para que la cadena quede vacía alcanza con el primer carácter: lo que la lista no nombra queda en cero.',
+          v.fila
+        );
+      }
+      return;
+    }
+    error('CADENA_NO_VACIA', `\`${n}\` tiene que empezar como una cadena vacía.`, v.fila);
+  }
+
+  // Una cadena declarada con su texto en la misma sentencia: "Hola", o sus
+  // caracteres uno por uno entre llaves ("como": "lista").
+  function verificarCadenaInicial(v, regla, modelo) {
+    const n = v.nombre;
+    const texto = regla.texto;
+    const inicial = v.inicial;
+    if (!inicial) {
+      const aparte = modelo.asignaciones.some(
+        (a) => a.nuevo && a.izquierda.clase === 'indice' && a.izquierda.nombre === n
+      );
+      error(
+        aparte ? 'VALORES_APARTE' : 'CADENA_SIN_TEXTO',
+        aparte
+          ? `La consigna pide darle el texto a \`${n}\` en la misma sentencia en que se la declara, no de a una posición después.`
+          : `\`${n}\` está declarada, pero sin el texto: la consigna pide dárselo en esa misma sentencia.`,
+        v.fila
+      );
+      return;
+    }
+    const dimension = v.arreglo[0].trim();
+    const lugar = dimension ? valorDeDimension(dimension, modelo) : null;
+
+    if (inicial.clase === 'cadena') {
+      if (regla.como === 'lista') {
+        error(
+          'CADENA_NO_ES_LISTA',
+          'La consigna pide los caracteres uno por uno: cada uno entre comillas simples, y todos entre llaves.',
+          v.fila
+        );
+        return;
+      }
+      const contenido = inicial.texto.slice(1, -1);
+      if (contenido !== texto) {
+        error(
+          'TEXTO_DISTINTO',
+          contenido.toLowerCase() === texto.toLowerCase()
+            ? 'El texto no es el de la consigna: en C las mayúsculas y las minúsculas son letras distintas.'
+            : 'El texto no es el que pide la consigna.',
+          v.fila
+        );
+        return;
+      }
+      if (lugar == null) return;
+      if (lugar < texto.length) {
+        error(
+          'ARREGLO_CHICO',
+          `\`${n}\` tiene lugar para ${caracteresDe(lugar)} y el texto tiene ${letrasDe(texto.length)}: no entra.`,
+          v.fila
+        );
+      } else if (lugar === texto.length) {
+        error(
+          'CADENA_SIN_FIN',
+          `El texto ocupa todo el lugar de \`${n}\`: no queda lugar para el \`\\0\` del final. C lo permite, pero la cadena queda sin terminar.`,
+          v.fila
+        );
+      } else if (practicas.includes('claridad')) {
+        mejora(
+          'CADENA_DIMENSION_INNECESARIA',
+          'Está bien, pero si deja los corchetes vacíos el compilador reserva justo el lugar que hace falta, incluido el `\\0` del final.',
+          v.fila
+        );
+      }
+      return;
+    }
+
+    if (inicial.clase === 'lista') {
+      const elementos = inicial.elementos;
+      const esperados = [...texto].map((c) => c.codePointAt(0));
+      const noEsCaracter = elementos.find(
+        (e) => e.clase !== 'caracter' && !(e.clase === 'numero' && e.valor === 0)
+      );
+      if (noEsCaracter) {
+        error(
+          'LISTA_DE_CARACTERES',
+          `\`${noEsCaracter.texto.trim()}\` no es un carácter: los de la lista van cada uno entre comillas simples.`,
+          v.fila
+        );
+        return;
+      }
+      const distinto = elementos.findIndex((e, i) => i < esperados.length && e.valor !== esperados[i]);
+      if (distinto >= 0) {
+        error('VALOR_DISTINTO', `El ${ordinal(distinto)} carácter de la lista no es el del texto.`, v.fila);
+        return;
+      }
+      const total = lugar ?? elementos.length;
+      if (elementos.length < esperados.length || total < esperados.length) {
+        error(
+          'ARREGLO_CHICO',
+          `La lista tiene ${elementos.length} caracteres y el texto tiene ${letrasDe(esperados.length)}: faltan letras.`,
+          v.fila
+        );
+        return;
+      }
+      if (elementos.slice(esperados.length).some((e) => !esFinDeCadena(e))) {
+        error('VALORES_DE_MAS', 'Después de las letras del texto sobra algún carácter en la lista.', v.fila);
+        return;
+      }
+      // Termina en '\0' si lo escribe o si queda lugar: lo que no se nombra vale cero.
+      const terminada = elementos.length > esperados.length || total > esperados.length;
+      if (!terminada) {
+        error(
+          'CADENA_SIN_FIN',
+          `Esa lista termina en la última letra: así \`${n}\` es un arreglo de caracteres, pero no una cadena, porque falta el carácter que marca el final.`,
+          v.fila
+        );
+        return;
+      }
+      if (regla.como !== 'lista' && practicas.includes('claridad')) {
+        mejora(
+          'CADENA_COMO_TEXTO',
+          'Está bien, pero un texto entre comillas dobles se escribe más corto y deja puesto el `\\0` del final.',
+          v.fila
+        );
+      }
+      return;
+    }
+
+    error('CADENA_INICIAL_NO_TEXTO', `\`${n}\` tiene que empezar con el texto que pide la consigna.`, v.fila);
+  }
+
+  // Una tabla definida con textos: una cadena por fila.
+  function verificarTextos(v, regla, modelo) {
+    const n = v.nombre;
+    const textos = regla.textos;
+    const inicial = v.inicial;
+    if (!inicial) {
+      const aparte = modelo.asignaciones.some(
+        (a) => a.nuevo && a.izquierda.clase === 'indice' && a.izquierda.nombre === n
+      );
+      error(
+        aparte ? 'VALORES_APARTE' : 'VALORES_FALTAN',
+        aparte
+          ? `La consigna pide darle los textos a \`${n}\` en la misma sentencia en que se la define.`
+          : `\`${n}\` está definida, pero sin sus textos: la consigna pide dárselos en esa misma sentencia.`,
+        v.fila
+      );
+      return;
+    }
+    if (inicial.clase !== 'lista') {
+      error('VALORES_SIN_LISTA', 'Los textos de una tabla van todos juntos, en una lista entre llaves.', v.fila);
+      return;
+    }
+    const escritos = inicial.elementos;
+    if (!escritos.length) {
+      error('LISTA_VACIA', 'La lista está vacía: tiene que traer los textos.', v.fila);
+      return;
+    }
+    if (escritos.some((e) => e.clase === 'lista')) {
+      error('VALORES_ANIDADOS', 'Cada texto va entre sus comillas dobles, sin llaves propias.', v.fila);
+      return;
+    }
+    const noTexto = escritos.find((e) => e.clase !== 'cadena');
+    if (noTexto) {
+      const simples = noTexto.texto.trim().startsWith("'");
+      error(
+        simples ? 'TEXTO_CON_COMILLAS_SIMPLES' : 'VALOR_NO_ES_TEXTO',
+        simples
+          ? `\`${noTexto.texto.trim()}\` entre comillas simples: un texto va entre comillas dobles, las simples son para un solo carácter.`
+          : `\`${noTexto.texto.trim()}\` no es un texto: cada texto va entre comillas dobles.`,
+        v.fila
+      );
+      return;
+    }
+    if (escritos.length !== textos.length) {
+      error(
+        escritos.length < textos.length ? 'TEXTOS_DE_MENOS' : 'TEXTOS_DE_MAS',
+        `La lista tiene ${escritos.length} textos y la consigna pide ${textos.length}.`,
+        v.fila
+      );
+      return;
+    }
+    const noCoincide = escritos.findIndex((e, i) => e.contenido !== textos[i]);
+    if (noCoincide >= 0) {
+      const e = escritos[noCoincide];
+      const mismo = e.contenido.toLowerCase() === textos[noCoincide].toLowerCase();
+      error(
+        'TEXTO_DISTINTO',
+        `El ${ordinal(noCoincide)} texto de la lista (\`${e.texto.trim()}\`) no es el que corresponde` +
+          (mismo ? ': en C las mayúsculas y las minúsculas son letras distintas.' : '.'),
+        v.fila
+      );
+      return;
+    }
+
+    const antes = diagnosticos.length;
+    const deFilas = v.arreglo[0].trim();
+    const deColumnas = v.arreglo[1].trim();
+    if (!deColumnas) {
+      error(
+        'TABLA_SIN_COLUMNAS',
+        'En una tabla solo se puede dejar vacía la cantidad de filas: la de columnas hay que escribirla.',
+        v.fila
+      );
+      return;
+    }
+    const mayor = Math.max(...textos.map((t) => t.length));
+    const columnas = valorDeDimension(deColumnas, modelo);
+    if (columnas != null && columnas < mayor) {
+      error(
+        'ARREGLO_CHICO',
+        `Cada texto de \`${n}\` tiene lugar para ${caracteresDe(columnas)} y el más largo tiene ${letrasDe(mayor)}: no entra.`,
+        v.fila
+      );
+    } else if (columnas === mayor) {
+      error(
+        'CADENA_SIN_FIN',
+        `En \`${n}\`, el texto más largo ocupa todo el lugar de su fila: no queda lugar para el \`\\0\` del final. C lo permite, pero ese texto queda sin terminar.`,
+        v.fila
+      );
+    }
+    const filas = deFilas ? valorDeDimension(deFilas, modelo) : escritos.length;
+    if (filas != null && filas < textos.length) {
+      error(
+        'ARREGLO_CHICO',
+        `\`${n}\` tiene lugar para ${filas} textos y la consigna pide ${textos.length}: no alcanza.`,
+        v.fila
+      );
+    } else if (filas != null && filas > textos.length) {
+      error(
+        'ARREGLO_GRANDE',
+        `\`${n}\` tiene lugar para ${filas} textos y la consigna pide ${textos.length}: sobra lugar.`,
+        v.fila
+      );
+    }
+    if (diagnosticos.length === antes && deFilas && practicas.includes('constantes')) {
+      mejora(
+        'FILAS_REPETIDAS',
+        'La cantidad de filas ya la dicen los textos: si deja vacíos los primeros corchetes, el compilador la cuenta solo, y no hay que acordarse de cambiarla el día de mañana si se agrega o se quita un texto.',
+        v.fila
+      );
+    }
+  }
+
+  // ---- los caracteres de una cadena, de a uno ---------------------------------
+
+  // Las asignaciones a los elementos de una cadena ("frase[0] = 'H';") contra
+  // el texto que tienen que formar, con su fin. Devuelve los hallazgos, sin
+  // decirlos: la consigna que lo usa decide que hacer con ellos.
+  function verificarElementos(nombre, texto, asignaciones, modelo) {
+    const esperados = [...texto].map((c) => c.codePointAt(0));
+    esperados.push(0);
+    const ultimo = esperados.length - 1;
+    const hallazgos = [];
+    const dice = (nivel, codigo, mensaje, fila) => hallazgos.push({ nivel, codigo, mensaje, fila });
+
+    const porPosicion = new Map();
+    for (const a of asignaciones) {
+      const posicion = valorDeDimension(a.izquierda.indices[0], modelo);
+      if (posicion == null) {
+        dice('error', 'ELEMENTO_POSICION', `En \`${a.izquierda.texto}\` la posición tiene que ser un número.`, a.fila);
+        continue;
+      }
+      if (!porPosicion.has(posicion)) porPosicion.set(posicion, []);
+      porPosicion.get(posicion).push(a);
+    }
+
+    // Todo corrido unos lugares (se empezo en la posicion 1): un solo mensaje.
+    if (hallazgos.length) return hallazgos;
+    const asignados = [...porPosicion.entries()].map(([posicion, lista]) => [posicion, lista[lista.length - 1]]);
+    for (const corrido of [1, 2, 3]) {
+      if (
+        asignados.length > 1 &&
+        asignados.every(
+          ([posicion, a]) => a.derecha.clase === 'caracter' && esperados[posicion - corrido] === a.derecha.valor
+        )
+      ) {
+        dice(
+          'error',
+          'ELEMENTOS_CORRIDOS',
+          `Los caracteres están corridos de lugar: el primer carácter del texto va en la posición 0, porque las posiciones se numeran desde 0.`,
+          asignados[0][1].fila
+        );
+        return hallazgos;
+      }
+    }
+
+    // Con una posicion que no es un numero (un ciclo), lo demas no se puede juzgar.
+    if (hallazgos.length) return hallazgos;
+
+    for (const [posicion, lista] of [...porPosicion.entries()].sort((a, b) => a[0] - b[0])) {
+      const a = lista[lista.length - 1];
+      if (lista.some((x) => x.derecha.texto !== a.derecha.texto)) {
+        dice(
+          'error',
+          'ELEMENTO_REPETIDO',
+          `La posición ${posicion} de \`${nombre}\` se asigna más de una vez, con valores distintos: queda solo el último.`,
+          a.fila
+        );
+      }
+      if (posicion > ultimo) {
+        dice(
+          'error',
+          'ELEMENTO_DE_MAS',
+          `Sobra \`${a.izquierda.texto}\`: el texto y su fin ocupan las posiciones de 0 a ${ultimo}.`,
+          a.fila
+        );
+        continue;
+      }
+      const esperado = esperados[posicion];
+      const v = a.derecha;
+      if (v.clase === 'caracter' && v.valor === esperado) continue;
+
+      if (esperado === 0 && v.clase === 'numero' && v.valor === 0) {
+        dice(
+          'mejora',
+          'FIN_CON_CERO',
+          'Está bien, pero `\\0` dice con claridad que es el carácter de fin de la cadena, y `0` se lee como un número.',
+          a.fila
+        );
+      } else if (v.clase === 'cadena') {
+        // ya lo dice revisarAsignaciones
+        continue;
+      } else if (esperado === 0 && v.clase === 'caracter' && v.valor === 48) {
+        dice(
+          'error',
+          'FIN_CON_DIGITO',
+          `\`${v.texto}\` es el carácter del dígito cero: no es el que marca el final de la cadena.`,
+          a.fila
+        );
+      } else if (esperado === 0 && v.clase === 'caracter' && v.valor === 32) {
+        dice('error', 'FIN_CON_ESPACIO', 'Un espacio es un carácter más del texto: no marca el final de la cadena.', a.fila);
+      } else if (esperado === 0) {
+        dice(
+          'error',
+          'FIN_DISTINTO',
+          `En la posición ${posicion} tiene que ir el carácter que marca el final de la cadena.`,
+          a.fila
+        );
+      } else if (
+        v.clase === 'caracter' &&
+        v.valor != null &&
+        String.fromCodePoint(v.valor).toLowerCase() === String.fromCodePoint(esperado).toLowerCase()
+      ) {
+        dice(
+          'error',
+          'ELEMENTO_MAYUSCULA',
+          `\`${v.texto}\` no es el carácter del texto: en C las mayúsculas y las minúsculas son letras distintas.`,
+          a.fila
+        );
+      } else if (v.clase === 'numero') {
+        dice('error', 'ELEMENTO_NUMERO', `\`${v.texto}\` es un número: un carácter se escribe entre comillas simples.`, a.fila);
+      } else {
+        dice(
+          'error',
+          'ELEMENTO_DISTINTO',
+          `En la posición ${posicion} no va \`${v.texto}\`: ese no es el carácter que corresponde del texto.`,
+          a.fila
+        );
+      }
+    }
+
+    const faltan = esperados.map((_, i) => i).filter((i) => !porPosicion.has(i));
+    for (const i of faltan.filter((x) => x !== ultimo)) {
+      dice(
+        'error',
+        'ELEMENTO_FALTA',
+        `Falta asignar la posición ${i} de \`${nombre}\`: las posiciones se numeran desde 0 y cada una necesita su carácter.`,
+        null
+      );
+    }
+    if (faltan.includes(ultimo)) {
+      dice('error', 'CADENA_SIN_FIN', `Falta marcar dónde termina el texto: sin eso \`${nombre}\` no es una cadena.`, null);
+    }
+    return hallazgos;
+  }
+
+  function decir(hallazgos) {
+    for (const h of hallazgos) {
+      if (h.nivel === 'mejora' && !practicas.includes('claridad')) continue;
+      diag(h.nivel, h.codigo, h.mensaje, h.fila);
+    }
+  }
+
+  // Las asignaciones a una posicion de una cadena, por su nombre.
+  function alElementoDe(modelo, nombre) {
+    return modelo.asignaciones.filter(
+      (a) =>
+        a.nuevo &&
+        a.operador === '=' &&
+        a.izquierda.clase === 'indice' &&
+        a.izquierda.nombre === nombre &&
+        a.izquierda.indices.length === 1
+    );
+  }
+
+  function reglaElementos(regla, modelo) {
+    const nombre = valorDe(regla.de);
+    const propias = alElementoDe(modelo, nombre);
+    if (!propias.length) {
+      if (diagnosticos.some((d) => d.codigo === 'ASIGNACION_DE_ARREGLO')) return;
+      const funcion = modelo.llamadas.find(
+        (l) => l.nuevo && ['strcpy', 'strncpy', 'sprintf', 'memcpy'].includes(l.funcion)
+      );
+      if (funcion) {
+        error(
+          'ELEMENTOS_CON_FUNCION',
+          `La consigna pide guardar los caracteres de a uno, no copiar el texto con \`${funcion.funcion}\`.`,
+          funcion.fila
+        );
+      } else {
+        error(
+          'ELEMENTOS_FALTAN',
+          `No encontré asignaciones a las posiciones de \`${nombre}\`: cada carácter se guarda en la posición que le corresponde.`
+        );
+      }
+      return;
+    }
+    if (diagnosticos.some((d) => ['INDICE_FUERA_DE_RANGO', 'ELEMENTO_ENTRE_COMILLAS_DOBLES'].includes(d.codigo))) return;
+    decir(verificarElementos(nombre, regla.texto, propias, modelo));
+  }
+
+  // Dejar vacia una cadena que ya tiene texto: el fin en la primera posicion.
+  function reglaVaciar(referencia, modelo) {
+    const nombre = valorDe(referencia);
+    const propias = alElementoDe(modelo, nombre);
+    const esPrimera = (a) => valorDeDimension(a.izquierda.indices[0], modelo) === 0;
+    const enCiclo = (a) => modelo.ciclos.some((c) => c.nuevo && a.posicion >= c.posicion && a.posicion <= c.fin);
+
+    const alInicio = propias.find((a) => esPrimera(a) && esFinDeCadena(a.derecha));
+    if (alInicio) {
+      if (alInicio.derecha.clase === 'numero' && practicas.includes('claridad')) {
+        mejora(
+          'FIN_CON_CERO',
+          'Está bien, pero `\\0` dice con claridad que es el carácter de fin de la cadena, y `0` se lee como un número.',
+          alInicio.fila
+        );
+      }
+      return;
+    }
+    const conCiclo = propias.find(
+      (a) => esFinDeCadena(a.derecha) && valorDeDimension(a.izquierda.indices[0], modelo) == null && enCiclo(a)
+    );
+    if (conCiclo) {
+      if (practicas.includes('claridad')) {
+        mejora(
+          'VACIAR_DE_MAS',
+          'Está bien, pero para vaciar una cadena alcanza con marcar el fin en su primera posición: lo que hay después ya no se lee.',
+          conCiclo.fila
+        );
+      }
+      return;
+    }
+    const copia = modelo.llamadas.find(
+      (l) =>
+        l.nuevo &&
+        l.funcion === 'strcpy' &&
+        l.argumentos[0]?.clase === 'nombre' &&
+        l.argumentos[0].nombre === nombre &&
+        l.argumentos[1]?.clase === 'cadena' &&
+        l.argumentos[1].contenido === ''
+    );
+    if (copia) {
+      if (practicas.includes('claridad')) {
+        mejora(
+          'VACIAR_CON_FUNCION',
+          'Está bien, pero para vaciar una cadena no hace falta copiar nada: alcanza con marcar el fin en su primera posición.',
+          copia.fila
+        );
+      }
+      return;
+    }
+
+    if (diagnosticos.some((d) => ['ASIGNACION_DE_ARREGLO', 'ELEMENTO_ENTRE_COMILLAS_DOBLES'].includes(d.codigo))) return;
+    const otra = propias[0];
+    if (!otra) {
+      error('VACIAR_FALTA', `No encontré nada que deje vacía a \`${nombre}\`.`);
+      return;
+    }
+    const v = otra.derecha;
+    if (v.clase === 'caracter' && v.valor === 48) {
+      error('FIN_CON_DIGITO', `\`${v.texto}\` es el carácter del dígito cero: no es el que marca el final de la cadena.`, otra.fila);
+    } else if (v.clase === 'caracter' && v.valor === 32) {
+      error('FIN_CON_ESPACIO', 'Un espacio es un carácter más del texto: no marca el final de la cadena.', otra.fila);
+    } else if (esFinDeCadena(v)) {
+      error(
+        'VACIAR_OTRA_POSICION',
+        'La cadena termina en el primer carácter de fin que aparece: para que no tenga ninguna letra, el fin tiene que estar en la primera posición.',
+        otra.fila
+      );
+    } else {
+      error(
+        'FIN_DISTINTO',
+        `En la posición ${otra.izquierda.indices[0]} tiene que ir el carácter que marca el final de la cadena.`,
+        otra.fila
+      );
+    }
+  }
+
+  // ---- ciclos -----------------------------------------------------------------
+
+  // Un ciclo que recorre una cadena hasta su fin, o las filas de una tabla.
+  // Sin ejecutarlo: se reconocen las condiciones de siempre, y una que no se
+  // reconoce no es un error, solo no se puede comprobar.
+  function reglaCiclo(regla, modelo) {
+    const ciclos = modelo.ciclos.filter((c) => c.nuevo);
+    if (!ciclos.length) {
+      error('CICLO_FALTA', 'La consigna pide un ciclo: una sentencia que se repite, como `for` o `while`.');
+      return;
+    }
+    const ciclo = ciclos[0];
+    const escapar = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const I = escapar(regla.indice);
+    const condicion = ciclo.condicion.replace(/\s+/g, '');
+    const texto = ciclo.texto.replace(/\s+/g, '');
+    const avanza = new RegExp(`\\b${I}\\+\\+|\\+\\+${I}\\b|\\b${I}\\+=1\\b|\\b${I}=${I}\\+1\\b`).test(texto);
+    const sinAvance = () =>
+      error('CICLO_SIN_AVANCE', `El índice \`${regla.indice}\` nunca avanza dentro del ciclo: así no termina.`, ciclo.fila);
+    const noVerificado = () =>
+      aviso(
+        'CICLO_NO_VERIFICADO',
+        'No pude comprobar esta condición. Verifique que el ciclo se repita hasta llegar al final y no más.',
+        ciclo.fila
+      );
+
+    if (regla.hastaElFinDe) {
+      const nombre = valorDe(regla.hastaElFinDe);
+      const N = escapar(nombre);
+      const elemento = `${N}\\[${I}\\]`;
+      const cero = `(?:0|'\\\\0'|'\\\\x0+'|'\\\\0{1,3}')`;
+      const patron = (p) => new RegExp(p).test(condicion);
+      const bien = [
+        `^${elemento}$`,
+        `^${elemento}!=${cero}$`,
+        `^${cero}!=${elemento}$`,
+        `^${elemento}>0$`,
+        `^${I}<strlen\\(${N}\\)$`,
+        `^strlen\\(${N}\\)>${I}$`,
+        `^${I}!=strlen\\(${N}\\)$`,
+      ].some(patron);
+
+      if (bien) {
+        // nada que decir
+      } else if (patron(`^${I}<=strlen\\(${N}\\)$`)) {
+        error(
+          'CICLO_UNO_DE_MAS',
+          `Con \`<=\` el ciclo llega también al \`\\0\` del final: el índice pasa una vez más de las letras de \`${nombre}\`.`,
+          ciclo.fila
+        );
+      } else if (patron(`^${I}<(?:\\d+|[A-Z_][A-Z_0-9]*|sizeof\\(${N}\\))$`)) {
+        error(
+          'CICLO_HASTA_EL_TAMANO',
+          `El ciclo recorre todo el lugar de \`${nombre}\` y no solo su texto: la cadena termina en el carácter de fin, que puede estar antes.`,
+          ciclo.fila
+        );
+      } else if (patron(`^${elemento}==${cero}$`)) {
+        error(
+          'CICLO_AL_REVES',
+          'El ciclo tiene que repetirse mientras no se haya llegado al final, y esa condición se cumple justo al llegar.',
+          ciclo.fila
+        );
+      } else {
+        noVerificado();
+      }
+      if (!avanza) sinAvance();
+      return;
+    }
+
+    if (regla.filasDe) {
+      const tabla = valorDe(regla.filasDe);
+      const variable = modelo.variables.findLast((v) => v.nombre === tabla);
+      const filas = variable ? valorDeDimension(variable.arreglo[0] ?? '', modelo) : null;
+      const m = new RegExp(`^${I}(<=|<)(.+)$`).exec(condicion);
+      const tope = m ? valorDeDimension(m[2], modelo) : null;
+      if (filas != null && tope != null) {
+        const ultimaFila = m[1] === '<' ? tope - 1 : tope;
+        if (ultimaFila >= filas) {
+          error(
+            'CICLO_SE_PASA',
+            `El ciclo llega hasta la fila ${ultimaFila} y \`${tabla}\` tiene ${filas} filas, numeradas de 0 a ${filas - 1}.`,
+            ciclo.fila
+          );
+        } else if (ultimaFila < filas - 1) {
+          error(
+            'CICLO_NO_LLEGA',
+            `El ciclo llega hasta la fila ${ultimaFila}, pero \`${tabla}\` tiene ${filas} filas: quedan filas sin recorrer.`,
+            ciclo.fila
+          );
+        }
+      } else {
+        noVerificado();
+      }
+
+      const dentro = (x) => x.posicion >= ciclo.posicion && x.posicion <= ciclo.fin;
+      const indice = regla.indice;
+      const vacia =
+        modelo.asignaciones.some(
+          (a) =>
+            a.nuevo &&
+            dentro(a) &&
+            a.operador === '=' &&
+            a.izquierda.clase === 'indice' &&
+            a.izquierda.nombre === tabla &&
+            a.izquierda.indices.length === 2 &&
+            a.izquierda.indices[0].trim() === indice &&
+            valorDeDimension(a.izquierda.indices[1], modelo) === 0 &&
+            esFinDeCadena(a.derecha)
+        ) ||
+        modelo.llamadas.some(
+          (l) =>
+            l.nuevo &&
+            dentro(l) &&
+            l.funcion === 'strcpy' &&
+            l.argumentos[0]?.clase === 'indice' &&
+            l.argumentos[0].nombre === tabla &&
+            l.argumentos[0].indices.length === 1 &&
+            l.argumentos[0].indices[0].trim() === indice &&
+            l.argumentos[1]?.clase === 'cadena' &&
+            l.argumentos[1].contenido === ''
+        );
+      if (!vacia && !diagnosticos.some((d) => d.codigo === 'ASIGNACION_DE_ARREGLO')) {
+        error(
+          'CICLO_NO_VACIA',
+          `Lo que hace el ciclo no deja vacía cada cadena de \`${tabla}\`: en cada vuelta hay que vaciar la fila que corresponde al índice.`,
+          ciclo.fila
+        );
+      }
+      if (!avanza) sinAvance();
+      return;
+    }
+
+    throw new Error(`La consigna "${consigna.id}" tiene una regla de ciclo que no conozco.`);
+  }
+
+  // ---- un tipo definido con typedef -------------------------------------------
+
+  // Una variable declarada con el alias que el alumno definio antes.
+  function reglaUsaAlias(regla, modelo) {
+    const alias = valorDe(regla.alias);
+    const variables = modelo.variables.filter((v) => v.nuevo);
+    if (!variables.length) {
+      error(
+        'VARIABLE_FALTA',
+        'No encontré la declaración de una variable. Una variable se declara con el tipo y después el nombre: `tipo nombre;`'
+      );
+      return;
+    }
+    const delAlias = variables.filter((v) => v.deAlias === alias);
+    if (!delAlias.length) {
+      if (diagnosticos.some((d) => d.codigo === 'TIPO_DESCONOCIDO')) return;
+      const v = variables[0];
+      error(
+        'VARIABLE_SIN_ALIAS',
+        `\`${v.nombre}\` no está declarada con el tipo \`${alias}\` que se definió antes: la consigna pide usarlo.`,
+        v.fila
+      );
+      return;
+    }
+    const v = delAlias[0];
+    const propias = v.arreglo.length - (v.dimsDeAlias || 0);
+    if (!regla.arreglo) {
+      if (propias > 0) {
+        error(
+          'VARIABLE_ARREGLO',
+          `\`${v.nombre}\` es un arreglo de ese tipo. La consigna pide una sola variable: sobran los corchetes.`,
+          v.fila
+        );
+      }
+      return;
+    }
+    if (propias === 0) {
+      error(
+        'VARIABLE_NO_ES_ARREGLO',
+        `\`${v.nombre}\` es una sola variable de ese tipo. La consigna pide varias: falta indicar cuántas.`,
+        v.fila
+      );
+      return;
+    }
+    const pedido = regla.arreglo.alMenos;
+    const tiene = valorDeDimension(v.arreglo[0], modelo);
+    if (tiene != null && tiene < pedido) {
+      error(
+        'ARREGLO_CHICO',
+        `\`${v.nombre}\` tiene lugar para ${tiene} textos y hay que guardar ${pedido}: no alcanza.`,
+        v.fila
+      );
+    }
+  }
+
+  // Un alias de un arreglo de caracteres: un tipo para guardar un texto.
+  function reglaAliasDeCadena(regla, modelo) {
+    const candidatos = modelo.aliases.filter((a) => a.nuevo);
+    if (!candidatos.length && /\btypedef\s+\w+\s+(?:char|int|float|double|long|short|unsigned)\s*\[/.test(respuesta)) {
+      error(
+        'TYPEDEF_AL_REVES',
+        'En un `typedef` va primero el tipo que ya existe y después el nombre nuevo, y los corchetes van después del nombre.'
+      );
+      return;
+    }
+    if (!candidatos.length) {
+      error(
+        'ALIAS_FALTA',
+        (modelo.variables.some((v) => v.nuevo)
+          ? 'Eso declara una variable, no un alias. '
+          : 'No encontré la definición de un alias. ') +
+          'Un alias es un nombre nuevo para un tipo que ya existe.'
+      );
+      return;
+    }
+    const a = candidatos[0];
+    if (regla.capturar) nuevas[regla.capturar] = a.nombre;
+    const real = resolver(a.tipo, modelo);
+    if (a.punteros) {
+      error('ALIAS_PUNTERO', `A \`${a.nombre}\` le sobra el \`*\`: el alias tiene que ser de un arreglo de caracteres.`, a.fila);
+    } else if (real.clase !== 'primitivo' || real.nombre !== 'char') {
+      error(
+        'ALIAS_TIPO',
+        `\`${a.nombre}\` es un alias de ${enPalabras(a)}. Para guardar un texto tiene que ser un alias de un arreglo de caracteres.`,
+        a.fila
+      );
+    } else if (!a.arreglo.length) {
+      error(
+        'ALIAS_NO_ES_CADENA',
+        `\`${a.nombre}\` es un alias de un solo carácter. Para guardar un texto tiene que ser un alias de un arreglo de caracteres, con su dimensión.`,
+        a.fila
+      );
+    } else {
+      verificarAlMenos(a, regla.arreglo, modelo);
+    }
   }
 
   // ---- alias ----------------------------------------------------------------
 
   function reglaAlias(regla, modelo) {
+    if (regla.arreglo) return reglaAliasDeCadena(regla, modelo);
     const pedido = valorDe(regla.de);
     const objetivo = resolver(tipoDesdeTexto(pedido), modelo);
     const candidatos = modelo.aliases.filter((a) => a.nuevo);
@@ -1147,12 +2289,59 @@ function revisarNombres(modelo, error) {
 }
 
 // Cuanto vale una dimension: 20 si dice "20", o si dice "MAX" y hay un
-// "#define MAX 20". null si no se puede saber sin calcular (MAX + 1).
-function valorDeDimension(texto, modelo) {
+// "#define MAX 20", o una cuenta sencilla con eso ("MAX + 1", "10 + 1").
+// null si no se puede saber.
+function valorDeDimension(texto, modelo, vistos = new Set()) {
   const escrito = texto.trim();
-  const constante = modelo.constantes.find((c) => c.nombre === escrito);
-  const numero = /^\(?\s*(\d+)\s*\)?$/.exec(constante ? constante.valor : escrito);
-  return numero ? Number(numero[1]) : null;
+  if (!escrito) return null;
+  const partes = escrito.match(/[A-Za-z_]\w*|\d+|[()+\-*/]/g);
+  if (!partes || partes.join('') !== escrito.replace(/\s+/g, '')) return null;
+
+  let i = 0;
+  const falla = () => {
+    throw new Error('no se puede calcular');
+  };
+  function primario() {
+    const t = partes[i++];
+    if (t === undefined) falla();
+    if (t === '(') {
+      const v = suma();
+      if (partes[i++] !== ')') falla();
+      return v;
+    }
+    if (/^\d+$/.test(t)) return Number(t);
+    if (/^[A-Za-z_]\w*$/.test(t)) {
+      const constante = modelo.constantes.find((c) => c.nombre === t);
+      if (!constante || vistos.has(t)) falla();
+      const v = valorDeDimension(constante.valor, modelo, new Set([...vistos, t]));
+      if (v == null) falla();
+      return v;
+    }
+    return falla();
+  }
+  function producto() {
+    let v = primario();
+    while (partes[i] === '*' || partes[i] === '/') {
+      const op = partes[i++];
+      const w = primario();
+      if (op === '/' && w === 0) falla();
+      v = op === '*' ? v * w : Math.trunc(v / w);
+    }
+    return v;
+  }
+  function suma() {
+    let v = producto();
+    while (partes[i] === '+' || partes[i] === '-') {
+      v = partes[i++] === '+' ? v + producto() : v - producto();
+    }
+    return v;
+  }
+  try {
+    const v = suma();
+    return i === partes.length ? v : null;
+  } catch {
+    return null;
+  }
 }
 
 // Un nombre que ya existe mas arriba (en el codigo que la consigna recibe o en
@@ -1211,6 +2400,12 @@ function seDeduceDeLaLista(lista, declarado, d, numero, modelo) {
   if (declarado.arreglo.length === 1) return cuantos >= numero;
   if (declarado.arreglo.length > 2) return true; // no se opina sobre mas dimensiones
 
+  // Una tabla de textos: la cantidad de filas la dicen los textos; el ancho no
+  // esta en ningun lado (es el del mas largo, mas el lugar del fin).
+  if (lista.elementos.length && lista.elementos.every((e) => e.clase === 'cadena')) {
+    return d === 0 ? cuantos >= numero : false;
+  }
+
   if (lista.elementos.some((e) => e.clase === 'lista')) {
     return d === 0
       ? cuantos >= numero
@@ -1241,8 +2436,17 @@ function revisarDimensiones(modelo, error, mejora) {
   const unaVez = (clave) => !dichos.has(clave) && dichos.add(clave);
 
   for (const declarado of arreglos) {
-    for (const [d, dimension] of declarado.arreglo.entries()) {
-      const escrito = dimension.trim();
+    // Solo las dimensiones que escribio el alumno en esta sentencia: las que
+    // vienen de un alias ya se revisaron donde se lo definio. De una cuenta
+    // ("LARGO + 1") se miran las partes: cada nombre tiene que estar definido
+    // y cada numero, salvo el 1, es un numero suelto.
+    const propias = declarado.arreglo.slice(0, declarado.arreglo.length - (declarado.dimsDeAlias || 0));
+    const partes = propias.flatMap((dimension, d) => {
+      const texto = dimension.trim();
+      if (/^\d+$/.test(texto) || /^[A-Za-z_]\w*$/.test(texto)) return [[d, texto]];
+      return (texto.match(/[A-Za-z_]\w*|\d+/g) || []).filter((t) => t !== '1').map((t) => [d, t]);
+    });
+    for (const [d, escrito] of partes) {
       if (/^\d+$/.test(escrito)) {
         // Un numero es magico cuando lleva informacion que no esta escrita en
         // otro lugar de la misma sentencia. Con la lista de valores al lado,
@@ -1327,18 +2531,78 @@ function revisarDimensiones(modelo, error, mejora) {
 // Un arreglo no se asigna entero con "=": vale para cualquier consigna, porque
 // en C nunca es valido. Con una cadena, es el error de quien todavia no sabe
 // que para copiarla hay una funcion.
-function revisarAsignaciones(modelo, error) {
+function revisarAsignaciones(modelo, error, aconsejarFuncion = true) {
   for (const a of modelo.asignaciones) {
-    if (!a.nuevo || a.izquierda.clase !== 'nombre') continue;
-    const variable = modelo.variables.findLast((v) => v.nombre === a.izquierda.nombre);
-    if (!variable || !variable.arreglo.length || variable.punteros) continue;
+    if (!a.nuevo || a.operador !== '=') continue;
+    const izquierda = a.izquierda;
+    if (izquierda.clase !== 'nombre' && izquierda.clase !== 'indice') continue;
+    const variable = modelo.variables.findLast((v) => v.nombre === izquierda.nombre);
+    if (!variable || variable.punteros) continue;
     const esCadena = variable.tipo.clase === 'primitivo' && variable.tipo.nombre === 'char';
-    error(
-      'ASIGNACION_DE_ARREGLO',
-      `\`${variable.nombre}\` es un arreglo: no se puede asignar completo con \`=\`.` +
-        (esCadena ? ' Para copiar una cadena en otra se usa una función de la biblioteca de cadenas.' : ''),
-      a.fila
-    );
+
+    if (izquierda.clase === 'nombre') {
+      if (!variable.arreglo.length) continue;
+      error(
+        'ASIGNACION_DE_ARREGLO',
+        `\`${variable.nombre}\` es un arreglo: no se puede asignar completo con \`=\`.` +
+          (esCadena && aconsejarFuncion
+            ? ' Para copiar una cadena en otra se usa una función de la biblioteca de cadenas.'
+            : ''),
+        a.fila
+      );
+    } else if (esCadena && a.derecha.clase === 'cadena' && izquierda.indices.length === variable.arreglo.length) {
+      error(
+        'ELEMENTO_ENTRE_COMILLAS_DOBLES',
+        `\`${a.derecha.texto}\` entre comillas dobles es un texto, no un carácter: un carácter va entre comillas simples.`,
+        a.fila
+      );
+    } else if (variable.arreglo.length > izquierda.indices.length) {
+      // Una fila de una tabla: con t[0] queda una cadena (o un arreglo).
+      error(
+        'ASIGNACION_DE_ARREGLO',
+        `\`${izquierda.texto}\` es ${esCadena ? 'una cadena (una fila de la tabla)' : 'una fila de la tabla'}: no se puede asignar completa con \`=\`.` +
+          (esCadena && aconsejarFuncion
+            ? ' Para copiar un texto en una cadena se usa una función de la biblioteca de cadenas.'
+            : ''),
+        a.fila
+      );
+    }
+  }
+}
+
+// Una posicion que no existe: con 30 filas van de 0 a 29. Solo cuando el
+// numero esta escrito y se sabe cuantas posiciones tiene el arreglo.
+function revisarIndices(modelo, error) {
+  const dichos = new Set();
+  const revisar = (valor, fila, argumento = false) => {
+    if (!valor || valor.clase !== 'indice') return;
+    const variable = modelo.variables.findLast((v) => v.nombre === valor.nombre);
+    if (!variable) return;
+    // Una cadena pasada con un indice (f(cadena[30])) ya tiene su propio
+    // mensaje: el problema es pasar un caracter, no la posicion.
+    if (argumento && variable.arreglo.length === 1) return;
+    for (const [k, indice] of valor.indices.entries()) {
+      if (k >= variable.arreglo.length || !/^\d+$/.test(indice.trim())) continue;
+      const lugar = valorDeDimension(variable.arreglo[k], modelo);
+      if (lugar == null || Number(indice) < lugar) continue;
+      const clave = valor.texto + ':' + k;
+      if (dichos.has(clave)) continue;
+      dichos.add(clave);
+      const que = variable.arreglo.length === 1 ? 'posiciones' : k === 0 ? 'filas' : 'columnas';
+      error(
+        'INDICE_FUERA_DE_RANGO',
+        `\`${variable.nombre}\` tiene ${lugar} ${que}, numeradas de 0 a ${lugar - 1}: la ${Number(indice)} no existe.`,
+        fila
+      );
+    }
+  };
+  for (const l of modelo.llamadas) {
+    if (l.nuevo) l.argumentos.forEach((a) => revisar(a, l.fila, true));
+  }
+  for (const a of modelo.asignaciones) {
+    if (!a.nuevo) continue;
+    revisar(a.izquierda, a.fila);
+    revisar(a.derecha, a.fila);
   }
 }
 
@@ -1444,6 +2708,11 @@ function erroresConocidos(respuesta) {
       /\btypedef\s+\w+\s+struct\b/,
       'TYPEDEF_AL_REVES',
       'En un `typedef` va primero el tipo que ya existe y al final el nombre nuevo: `typedef tipoQueYaExiste nombreNuevo;`',
+    ],
+    [
+      new RegExp(`\\btypedef\\s+\\w+\\s+${TIPO}\\s*\\[`),
+      'TYPEDEF_AL_REVES',
+      'En un `typedef` va primero el tipo que ya existe y después el nombre nuevo, y los corchetes van después del nombre.',
     ],
     [
       /\bstruct\s+\w*\s*\{[^}]*=/,

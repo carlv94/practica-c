@@ -1,3 +1,14 @@
 {
-  "series": ["estructuras.json", "estructuras-alumno.json", "arreglos.json", "arreglos-valores.json","cadenas.json"]
+  "series": [
+    "estructuras.json",
+    "estructuras-alumno.json",
+    "arreglos.json",
+    "arreglos-valores.json",
+    "cadenas-fin.json",
+    "cadenas-vacia.json",
+    "cadenas-biblioteca.json",
+    "cadenas-recorrer.json",
+    "cadenas-tablas.json",
+    "cadenas-typedef.json"
+  ]
 }
