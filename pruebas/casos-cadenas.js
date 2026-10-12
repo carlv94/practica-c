@@ -272,224 +272,246 @@ const CASOS_DE_RECORRER = [
   recorrer(2, 'seguimiento: la primera', '2', ['OPCION_CUENTA_UNA_SOLA']),
 ];
 
+const arreglos = (paso, nombre, respuesta, espera, mejoras) =>
+  caso('cadenas-arreglos', paso, nombre, respuesta, espera, mejoras);
 const tablas = (paso, nombre, respuesta, espera, mejoras) =>
   caso('cadenas-tablas', paso, nombre, respuesta, espera, mejoras);
 
 const DIAS = '"lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"';
 
-const CASOS_DE_TABLAS = [
-  // 1: la tabla de nombres
-  tablas(1, 'con constantes y el lugar del fin', '#define MAX_ESTUDIANTES 30\n#define LARGO_NOMBRE 25\nchar nombres[MAX_ESTUDIANTES][LARGO_NOMBRE + 1];'),
-  tablas(1, 'con numeros sueltos: correcta y mejorable', 'char nombres[30][26];', 'ok', ['NUMERO_MAGICO']),
-  tablas(1, 'con una sola constante', '#define N 30\nchar nombres[N][26];', 'ok', ['NUMERO_MAGICO']),
-  tablas(1, 'estudiantes de mas', 'char nombres[40][26];', ['ARREGLO_GRANDE']),
-  tablas(1, 'ancho de mas', 'char nombres[30][40];', ['ARREGLO_GRANDE']),
-  tablas(1, 'sin el lugar del fin', '#define MAX_ESTUDIANTES 30\n#define LARGO_NOMBRE 25\nchar nombres[MAX_ESTUDIANTES][LARGO_NOMBRE];', ['CADENA_SIN_FIN']),
-  tablas(1, 'sin el lugar del fin, con numeros', 'char nombres[30][25];', ['CADENA_SIN_FIN']),
-  tablas(1, 'faltan estudiantes', 'char nombres[20][26];', ['ARREGLO_CHICO']),
-  tablas(1, 'las dimensiones al reves', 'char nombres[26][30];', ['DIMENSIONES_AL_REVES']),
-  tablas(1, 'un arreglo', 'char nombres[30];', ['TABLA_UNA_DIMENSION']),
-  tablas(1, 'tres dimensiones', 'char nombres[30][26][3];', ['TABLA_DIMENSIONES']),
-  tablas(1, 'otro tipo', 'int nombres[30][26];', ['VARIABLE_TIPO']),
+const CASOS_DE_ARREGLOS_Y_TABLAS = [
+  // la tabla de nombres
+  arreglos(1, 'con constantes y el lugar del fin', '#define MAX_ESTUDIANTES 30\n#define LARGO_NOMBRE 25\nchar nombres[MAX_ESTUDIANTES][LARGO_NOMBRE + 1];'),
+  arreglos(1, 'con numeros sueltos: correcta y mejorable', 'char nombres[30][26];', 'ok', ['NUMERO_MAGICO']),
+  arreglos(1, 'con una sola constante', '#define N 30\nchar nombres[N][26];', 'ok', ['NUMERO_MAGICO']),
+  arreglos(1, 'estudiantes de mas', 'char nombres[40][26];', ['ARREGLO_GRANDE']),
+  arreglos(1, 'ancho de mas', 'char nombres[30][40];', ['ARREGLO_GRANDE']),
+  arreglos(1, 'sin el lugar del fin', '#define MAX_ESTUDIANTES 30\n#define LARGO_NOMBRE 25\nchar nombres[MAX_ESTUDIANTES][LARGO_NOMBRE];', ['CADENA_SIN_FIN']),
+  arreglos(1, 'sin el lugar del fin, con numeros', 'char nombres[30][25];', ['CADENA_SIN_FIN']),
+  arreglos(1, 'faltan estudiantes', 'char nombres[20][26];', ['ARREGLO_CHICO']),
+  arreglos(1, 'las dimensiones al reves', 'char nombres[26][30];', ['DIMENSIONES_AL_REVES']),
+  arreglos(1, 'un arreglo', 'char nombres[30];', ['TABLA_UNA_DIMENSION']),
+  arreglos(1, 'tres dimensiones', 'char nombres[30][26][3];', ['TABLA_DIMENSIONES']),
+  arreglos(1, 'otro tipo', 'int nombres[30][26];', ['VARIABLE_TIPO']),
 
-  // 6: los dias
-  tablas(6, 'con una constante para el ancho', `#define LARGO_DIA 10\nchar dias[][LARGO_DIA] = {${DIAS}};`),
-  tablas(6, 'con el ancho suelto: correcta y mejorable', `char dias[][10] = {${DIAS}};`, 'ok', ['NUMERO_MAGICO']),
-  tablas(6, 'con la cantidad de filas repetida', `char dias[7][10] = {${DIAS}};`, 'ok', ['NUMERO_MAGICO', 'FILAS_REPETIDAS']),
-  tablas(6, 'ancho justo: C lo deja, pero el texto no termina', `char dias[][9] = {${DIAS}};`, ['CADENA_SIN_FIN']),
-  tablas(6, 'con el fin escrito en cada texto: correcta y mejorable', '#define LARGO_DIA 10\nchar dias[][LARGO_DIA] = {"lunes\\0", "martes\\0", "miercoles\\0", "jueves\\0", "viernes\\0", "sabado\\0", "domingo\\0"};', 'ok', ['FIN_EN_EL_TEXTO']),
-  tablas(6, 'ancho que no alcanza', `char dias[][8] = {${DIAS}};`, ['ARREGLO_CHICO']),
-  tablas(6, 'sin el ancho', `char dias[][] = {${DIAS}};`, ['TABLA_SIN_COLUMNAS']),
-  tablas(6, 'con pocas filas', `char dias[5][10] = {${DIAS}};`, ['ARREGLO_CHICO']),
-  tablas(6, 'falta un dia', 'char dias[][10] = {"lunes", "martes", "miercoles", "jueves", "viernes", "sabado"};', ['TEXTOS_DE_MENOS']),
+  // los dias
+  arreglos(8, 'con una constante para el ancho', `#define LARGO_DIA 10\nchar dias[][LARGO_DIA] = {${DIAS}};`),
+  arreglos(8, 'con el ancho suelto: correcta y mejorable', `char dias[][10] = {${DIAS}};`, 'ok', ['NUMERO_MAGICO']),
+  arreglos(8, 'con la cantidad de filas repetida', `char dias[7][10] = {${DIAS}};`, 'ok', ['NUMERO_MAGICO', 'FILAS_REPETIDAS']),
+  arreglos(8, 'ancho justo: C lo deja, pero el texto no termina', `char dias[][9] = {${DIAS}};`, ['CADENA_SIN_FIN']),
+  arreglos(8, 'con el fin escrito en cada texto: correcta y mejorable', '#define LARGO_DIA 10\nchar dias[][LARGO_DIA] = {"lunes\\0", "martes\\0", "miercoles\\0", "jueves\\0", "viernes\\0", "sabado\\0", "domingo\\0"};', 'ok', ['FIN_EN_EL_TEXTO']),
+  arreglos(8, 'ancho que no alcanza', `char dias[][8] = {${DIAS}};`, ['ARREGLO_CHICO']),
+  arreglos(8, 'sin el ancho', `char dias[][] = {${DIAS}};`, ['TABLA_SIN_COLUMNAS']),
+  arreglos(8, 'con pocas filas', `char dias[5][10] = {${DIAS}};`, ['ARREGLO_CHICO']),
+  arreglos(8, 'falta un dia', 'char dias[][10] = {"lunes", "martes", "miercoles", "jueves", "viernes", "sabado"};', ['TEXTOS_DE_MENOS']),
   // Los dias no se dictan: da lo mismo como se escriban las mayusculas.
-  tablas(6, 'con la inicial en mayuscula', 'char dias[][10] = {"Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado", "Domingo"};', 'ok', ['NUMERO_MAGICO']),
-  tablas(6, 'todo en mayuscula', 'char dias[][10] = {"LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES", "SABADO", "DOMINGO"};', 'ok', ['NUMERO_MAGICO']),
-  tablas(6, 'con las mayusculas mezcladas', 'char dias[][10] = {"Lunes", "martes", "MIERCOLES", "jueves", "Viernes", "sabado", "domingo"};', 'ok', ['NUMERO_MAGICO']),
-  tablas(6, 'otro texto', 'char dias[][10] = {"lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingos"};', ['TEXTO_DISTINTO']),
+  arreglos(8, 'con la inicial en mayuscula', 'char dias[][10] = {"Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado", "Domingo"};', 'ok', ['NUMERO_MAGICO']),
+  arreglos(8, 'todo en mayuscula', 'char dias[][10] = {"LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES", "SABADO", "DOMINGO"};', 'ok', ['NUMERO_MAGICO']),
+  arreglos(8, 'con las mayusculas mezcladas', 'char dias[][10] = {"Lunes", "martes", "MIERCOLES", "jueves", "Viernes", "sabado", "domingo"};', 'ok', ['NUMERO_MAGICO']),
+  arreglos(8, 'otro texto', 'char dias[][10] = {"lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingos"};', ['TEXTO_DISTINTO']),
   // Los mensajes del tamaño dicen el texto mas largo tal como lo escribio el alumno.
   {
-    ...tablas(6, 'ancho justo con mayuscula', 'char dias[][9] = {"lunes", "martes", "Miercoles", "jueves", "viernes", "sabado", "domingo"};', ['CADENA_SIN_FIN']),
+    ...arreglos(8, 'ancho justo con mayuscula', 'char dias[][9] = {"lunes", "martes", "Miercoles", "jueves", "viernes", "sabado", "domingo"};', ['CADENA_SIN_FIN']),
     dice: ['`"Miercoles"`'],
   },
   {
-    ...tablas(6, 'ancho que no alcanza con mayuscula', 'char dias[][8] = {"lunes", "martes", "MIERCOLES", "jueves", "viernes", "sabado", "domingo"};', ['ARREGLO_CHICO']),
+    ...arreglos(8, 'ancho que no alcanza con mayuscula', 'char dias[][8] = {"lunes", "martes", "MIERCOLES", "jueves", "viernes", "sabado", "domingo"};', ['ARREGLO_CHICO']),
     dice: ['`"MIERCOLES"`', 'ocupa 9 caracteres'],
   },
-  tablas(6, 'dias en otro orden', 'char dias[][10] = {"lunes", "martes", "jueves", "miercoles", "viernes", "sabado", "domingo"};', ['TEXTO_DISTINTO']),
-  tablas(6, 'comillas simples', `char dias[][10] = {'lunes', "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"};`, ['TEXTO_CON_COMILLAS_SIMPLES']),
-  tablas(6, 'cada texto entre llaves', 'char dias[][10] = {{"lunes"}, {"martes"}, {"miercoles"}, {"jueves"}, {"viernes"}, {"sabado"}, {"domingo"}};', ['VALORES_ANIDADOS']),
-  tablas(6, 'los textos despues', 'char dias[7][10];\nstrcpy(dias[0], "lunes");', ['VALORES_FALTAN']),
+  arreglos(8, 'dias en otro orden', 'char dias[][10] = {"lunes", "martes", "jueves", "miercoles", "viernes", "sabado", "domingo"};', ['TEXTO_DISTINTO']),
+  arreglos(8, 'comillas simples', `char dias[][10] = {'lunes', "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"};`, ['TEXTO_CON_COMILLAS_SIMPLES']),
+  arreglos(8, 'cada texto entre llaves', 'char dias[][10] = {{"lunes"}, {"martes"}, {"miercoles"}, {"jueves"}, {"viernes"}, {"sabado"}, {"domingo"}};', ['VALORES_ANIDADOS']),
+  arreglos(8, 'los textos despues', 'char dias[7][10];\nstrcpy(dias[0], "lunes");', ['VALORES_FALTAN']),
 
-  // 2: una posicion
-  tablas(2, 'strcpy a la primera fila', 'strcpy(nombres[0], "Ana");'),
-  tablas(2, 'con espacios en el indice', 'strcpy(nombres[ 0 ], "Ana");'),
-  tablas(2, 'la tabla entera', 'strcpy(nombres, "Ana");', ['ARGUMENTO_TABLA_ENTERA']),
-  tablas(2, 'una fila asignada con =', 'nombres[0] = "Ana";', ['ASIGNACION_DE_ARREGLO']),
-  tablas(2, 'un solo caracter', 'strcpy(nombres[0][0], "Ana");', ['ARGUMENTO_CON_CORCHETES']),
-  tablas(2, 'otra fila', 'strcpy(nombres[1], "Ana");', ['ARGUMENTO_OTRA_POSICION']),
-  tablas(2, 'una fila que no existe', 'strcpy(nombres[30], "Ana");', ['INDICE_FUERA_DE_RANGO']),
-  tablas(2, 'un texto en un caracter', 'nombres[0][0] = "Ana";', ['ELEMENTO_ENTRE_COMILLAS_DOBLES']),
+  // una posicion
+  arreglos(2, 'strcpy a la primera fila', 'strcpy(nombres[0], "Ana");'),
+  arreglos(2, 'con espacios en el indice', 'strcpy(nombres[ 0 ], "Ana");'),
+  arreglos(2, 'la tabla entera', 'strcpy(nombres, "Ana");', ['ARGUMENTO_TABLA_ENTERA']),
+  arreglos(2, 'una fila asignada con =', 'nombres[0] = "Ana";', ['ASIGNACION_DE_ARREGLO']),
+  arreglos(2, 'un solo caracter', 'strcpy(nombres[0][0], "Ana");', ['ARGUMENTO_CON_CORCHETES']),
+  arreglos(2, 'otra fila', 'strcpy(nombres[1], "Ana");', ['ARGUMENTO_OTRA_POSICION']),
+  arreglos(2, 'una fila que no existe', 'strcpy(nombres[30], "Ana");', ['INDICE_FUERA_DE_RANGO']),
+  arreglos(2, 'un texto en un caracter', 'nombres[0][0] = "Ana";', ['ELEMENTO_ENTRE_COMILLAS_DOBLES']),
 
-  // 5: vaciar todas las cadenas
-  tablas(5, 'for con la constante', "for (i = 0; i < MAX_ESTUDIANTES; i++) {\n  nombres[i][0] = '\\0';\n}"),
-  tablas(5, 'for con el numero', "for (i = 0; i < 30; i++) {\n  nombres[i][0] = '\\0';\n}"),
-  tablas(5, 'con strcpy', 'for (i = 0; i < MAX_ESTUDIANTES; i++) {\n  strcpy(nombres[i], "");\n}'),
-  tablas(5, 'while', "i = 0;\nwhile (i < MAX_ESTUDIANTES) {\n  nombres[i][0] = '\\0';\n  i++;\n}"),
-  tablas(5, 'una fila de mas', "for (i = 0; i <= MAX_ESTUDIANTES; i++) {\n  nombres[i][0] = '\\0';\n}", ['CICLO_SE_PASA']),
-  tablas(5, 'una fila de menos', "for (i = 0; i < 29; i++) {\n  nombres[i][0] = '\\0';\n}", ['CICLO_NO_LLEGA']),
-  tablas(5, 'siempre la misma fila', "for (i = 0; i < MAX_ESTUDIANTES; i++) {\n  nombres[0][0] = '\\0';\n}", ['CICLO_NO_VACIA']),
-  tablas(5, 'el fin en la segunda posicion', "for (i = 0; i < MAX_ESTUDIANTES; i++) {\n  nombres[i][1] = '\\0';\n}", ['CICLO_NO_VACIA']),
-  tablas(5, 'asignando la fila entera', 'for (i = 0; i < MAX_ESTUDIANTES; i++) {\n  nombres[i] = "";\n}', ['ASIGNACION_DE_ARREGLO']),
-  tablas(5, 'sin avanzar', "for (i = 0; i < MAX_ESTUDIANTES; ) {\n  nombres[i][0] = '\\0';\n}", ['CICLO_SIN_AVANCE']),
-  tablas(5, 'sin ciclo', "nombres[0][0] = '\\0';", ['CICLO_FALTA']),
+  // vaciar todas las cadenas
+  arreglos(7, 'for con la constante', "for (i = 0; i < MAX_ESTUDIANTES; i++) {\n  nombres[i][0] = '\\0';\n}"),
+  arreglos(7, 'for con el numero', "for (i = 0; i < 30; i++) {\n  nombres[i][0] = '\\0';\n}"),
+  arreglos(7, 'con strcpy', 'for (i = 0; i < MAX_ESTUDIANTES; i++) {\n  strcpy(nombres[i], "");\n}'),
+  arreglos(7, 'while', "i = 0;\nwhile (i < MAX_ESTUDIANTES) {\n  nombres[i][0] = '\\0';\n  i++;\n}"),
+  arreglos(7, 'una fila de mas', "for (i = 0; i <= MAX_ESTUDIANTES; i++) {\n  nombres[i][0] = '\\0';\n}", ['CICLO_SE_PASA']),
+  arreglos(7, 'una fila de menos', "for (i = 0; i < 29; i++) {\n  nombres[i][0] = '\\0';\n}", ['CICLO_NO_LLEGA']),
+  arreglos(7, 'siempre la misma fila', "for (i = 0; i < MAX_ESTUDIANTES; i++) {\n  nombres[0][0] = '\\0';\n}", ['CICLO_NO_VACIA']),
+  arreglos(7, 'el fin en la segunda posicion', "for (i = 0; i < MAX_ESTUDIANTES; i++) {\n  nombres[i][1] = '\\0';\n}", ['CICLO_NO_VACIA']),
+  arreglos(7, 'asignando la fila entera', 'for (i = 0; i < MAX_ESTUDIANTES; i++) {\n  nombres[i] = "";\n}', ['ASIGNACION_DE_ARREGLO']),
+  arreglos(7, 'sin avanzar', "for (i = 0; i < MAX_ESTUDIANTES; ) {\n  nombres[i][0] = '\\0';\n}", ['CICLO_SIN_AVANCE']),
+  arreglos(7, 'sin ciclo', "nombres[0][0] = '\\0';", ['CICLO_FALTA']),
 
-  // 3: una posicion es una cadena
-  tablas(3, 'fila: la correcta', '1'),
-  tablas(3, 'fila: el texto', '0', ['OPCION_FILA_ES_EL_TEXTO']),
-  tablas(3, 'fila: el fin', '2', ['OPCION_FIN_EN_LA_PRIMERA']),
+  // una posicion es una cadena
+  arreglos(3, 'fila: la correcta', '1'),
+  arreglos(3, 'fila: el texto', '0', ['OPCION_FILA_ES_EL_TEXTO']),
+  arreglos(3, 'fila: el fin', '2', ['OPCION_FIN_EN_LA_PRIMERA']),
 
-  // 7: una tabla de cadenas, con un texto en cada celda
-  tablas(7, 'con constantes y el lugar del fin', '#define MAX_ESTUDIANTES 30\n#define CAMPOS 3\n#define LARGO_TEXTO 25\nchar datos[MAX_ESTUDIANTES][CAMPOS][LARGO_TEXTO + 1];'),
-  tablas(7, 'con numeros sueltos: correcta y mejorable', 'char datos[30][3][26];', 'ok', ['NUMERO_MAGICO']),
-  tablas(7, 'sin el lugar del fin', 'char datos[30][3][25];', ['CADENA_SIN_FIN']),
-  tablas(7, 'textos que no alcanzan', 'char datos[30][3][24];', ['ARREGLO_CHICO']),
-  tablas(7, 'faltan columnas', 'char datos[30][2][26];', ['ARREGLO_CHICO']),
-  tablas(7, 'estudiantes de mas', 'char datos[40][3][26];', ['ARREGLO_GRANDE']),
-  tablas(7, 'filas y columnas al reves', 'char datos[3][30][26];', ['DIMENSIONES_AL_REVES']),
-  tablas(7, 'columnas y tamaño al reves', 'char datos[30][26][3];', ['DIMENSIONES_AL_REVES']),
-  tablas(7, 'dos dimensiones', 'char datos[30][26];', ['TABLA_DIMENSIONES']),
-  tablas(7, 'cuatro dimensiones', 'char datos[30][3][26][2];', ['TABLA_DIMENSIONES']),
-  tablas(7, 'una sola dimension', 'char datos[26];', ['TABLA_UNA_DIMENSION']),
-  tablas(7, 'otro tipo', 'int datos[30][3][26];', ['VARIABLE_TIPO']),
+  // una tabla de cadenas, con un texto en cada celda
+  tablas(1, 'con constantes y el lugar del fin', '#define MAX_ESTUDIANTES 30\n#define CAMPOS 3\n#define LARGO_TEXTO 25\nchar datos[MAX_ESTUDIANTES][CAMPOS][LARGO_TEXTO + 1];'),
+  tablas(1, 'con numeros sueltos: correcta y mejorable', 'char datos[30][3][26];', 'ok', ['NUMERO_MAGICO']),
+  tablas(1, 'sin el lugar del fin', 'char datos[30][3][25];', ['CADENA_SIN_FIN']),
+  tablas(1, 'textos que no alcanzan', 'char datos[30][3][24];', ['ARREGLO_CHICO']),
+  tablas(1, 'faltan columnas', 'char datos[30][2][26];', ['ARREGLO_CHICO']),
+  tablas(1, 'estudiantes de mas', 'char datos[40][3][26];', ['ARREGLO_GRANDE']),
+  tablas(1, 'filas y columnas al reves', 'char datos[3][30][26];', ['DIMENSIONES_AL_REVES']),
+  tablas(1, 'columnas y tamaño al reves', 'char datos[30][26][3];', ['DIMENSIONES_AL_REVES']),
+  tablas(1, 'dos dimensiones', 'char datos[30][26];', ['TABLA_DIMENSIONES']),
+  tablas(1, 'cuatro dimensiones', 'char datos[30][3][26][2];', ['TABLA_DIMENSIONES']),
+  tablas(1, 'una sola dimension', 'char datos[26];', ['TABLA_UNA_DIMENSION']),
+  tablas(1, 'otro tipo', 'int datos[30][3][26];', ['VARIABLE_TIPO']),
 
-  // 8: guardar un texto en una celda
-  tablas(8, 'strcpy a la celda', 'strcpy(datos[0][1], "Perez");'),
-  tablas(8, 'la tabla entera', 'strcpy(datos, "Perez");', ['ARGUMENTO_TABLA_ENTERA']),
-  tablas(8, 'solo la fila', 'strcpy(datos[0], "Perez");', ['ARGUMENTO_FALTA_INDICE']),
-  tablas(8, 'un solo caracter', 'strcpy(datos[0][1][0], "Perez");', ['ARGUMENTO_CON_CORCHETES']),
-  tablas(8, 'otra columna', 'strcpy(datos[0][2], "Perez");', ['ARGUMENTO_COLUMNA_DISTINTA']),
-  tablas(8, 'otra fila', 'strcpy(datos[1][1], "Perez");', ['ARGUMENTO_FILA_DISTINTA']),
-  tablas(8, 'una fila que no existe', 'strcpy(datos[30][1], "Perez");', ['INDICE_FUERA_DE_RANGO']),
-  tablas(8, 'una fila asignada con =', 'datos[0] = "Perez";', ['ASIGNACION_DE_ARREGLO']),
-  tablas(8, 'una celda asignada con =', 'datos[0][1] = "Perez";', ['ASIGNACION_DE_ARREGLO']),
+  // guardar un texto en una celda
+  tablas(2, 'strcpy a la celda', 'strcpy(datos[0][1], "Perez");'),
+  tablas(2, 'la tabla entera', 'strcpy(datos, "Perez");', ['ARGUMENTO_TABLA_ENTERA']),
+  tablas(2, 'solo la fila', 'strcpy(datos[0], "Perez");', ['ARGUMENTO_FALTA_INDICE']),
+  tablas(2, 'un solo caracter', 'strcpy(datos[0][1][0], "Perez");', ['ARGUMENTO_CON_CORCHETES']),
+  tablas(2, 'otra columna', 'strcpy(datos[0][2], "Perez");', ['ARGUMENTO_COLUMNA_DISTINTA']),
+  tablas(2, 'otra fila', 'strcpy(datos[1][1], "Perez");', ['ARGUMENTO_FILA_DISTINTA']),
+  tablas(2, 'una fila que no existe', 'strcpy(datos[30][1], "Perez");', ['INDICE_FUERA_DE_RANGO']),
+  tablas(2, 'una fila asignada con =', 'datos[0] = "Perez";', ['ASIGNACION_DE_ARREGLO']),
+  tablas(2, 'una celda asignada con =', 'datos[0][1] = "Perez";', ['ASIGNACION_DE_ARREGLO']),
 
-  // 2: lo mismo, caracter por caracter, tambien llega
-  tablas(2, 'a mano: correcta y mejorable', "nombres[0][0] = 'A';\nnombres[0][1] = 'n';\nnombres[0][2] = 'a';\nnombres[0][3] = '\\0';", 'ok', ['COPIA_A_MANO']),
-  tablas(2, 'a mano: falta una letra', "nombres[0][0] = 'A';\nnombres[0][2] = 'a';\nnombres[0][3] = '\\0';", ['ELEMENTO_FALTA']),
-  tablas(2, 'a mano: sin el fin', "nombres[0][0] = 'A';\nnombres[0][1] = 'n';\nnombres[0][2] = 'a';", ['CADENA_SIN_FIN']),
+  // lo mismo, caracter por caracter, tambien llega
+  arreglos(2, 'a mano: correcta y mejorable', "nombres[0][0] = 'A';\nnombres[0][1] = 'n';\nnombres[0][2] = 'a';\nnombres[0][3] = '\\0';", 'ok', ['COPIA_A_MANO']),
+  arreglos(2, 'a mano: falta una letra', "nombres[0][0] = 'A';\nnombres[0][2] = 'a';\nnombres[0][3] = '\\0';", ['ELEMENTO_FALTA']),
+  arreglos(2, 'a mano: sin el fin', "nombres[0][0] = 'A';\nnombres[0][1] = 'n';\nnombres[0][2] = 'a';", ['CADENA_SIN_FIN']),
 
-  // 4: una posicion, caracter por caracter
-  tablas(4, 'la correcta', "nombres[1][0] = 'L';\nnombres[1][1] = 'u';\nnombres[1][2] = 'i';\nnombres[1][3] = 's';\nnombres[1][4] = '\\0';"),
-  tablas(4, 'con espacios en los indices', "nombres[ 1 ][ 0 ] = 'L';\nnombres[ 1 ][ 1 ] = 'u';\nnombres[ 1 ][ 2 ] = 'i';\nnombres[ 1 ][ 3 ] = 's';\nnombres[ 1 ][ 4 ] = '\\0';"),
-  tablas(4, 'con strcpy', 'strcpy(nombres[1], "Luis");', ['ELEMENTOS_CON_FUNCION']),
-  tablas(4, 'en otra posicion', "nombres[0][0] = 'L';\nnombres[0][1] = 'u';\nnombres[0][2] = 'i';\nnombres[0][3] = 's';\nnombres[0][4] = '\\0';", ['ELEMENTOS_OTRA_POSICION']),
-  tablas(4, 'sin el fin', "nombres[1][0] = 'L';\nnombres[1][1] = 'u';\nnombres[1][2] = 'i';\nnombres[1][3] = 's';", ['CADENA_SIN_FIN']),
-  tablas(4, 'falta una letra', "nombres[1][0] = 'L';\nnombres[1][1] = 'u';\nnombres[1][3] = 's';\nnombres[1][4] = '\\0';", ['ELEMENTO_FALTA']),
-  tablas(4, 'una letra equivocada', "nombres[1][0] = 'L';\nnombres[1][1] = 'u';\nnombres[1][2] = 'y';\nnombres[1][3] = 's';\nnombres[1][4] = '\\0';", ['ELEMENTO_DISTINTO']),
-  tablas(4, 'una mayuscula de mas', "nombres[1][0] = 'L';\nnombres[1][1] = 'U';\nnombres[1][2] = 'i';\nnombres[1][3] = 's';\nnombres[1][4] = '\\0';", ['ELEMENTO_MAYUSCULA']),
-  tablas(4, 'la primera letra en la posicion 1', "nombres[1][1] = 'L';\nnombres[1][2] = 'u';\nnombres[1][3] = 'i';\nnombres[1][4] = 's';\nnombres[1][5] = '\\0';", ['ELEMENTOS_CORRIDOS']),
-  tablas(4, 'letras entre comillas dobles', 'nombres[1][0] = "L";', ['ELEMENTO_ENTRE_COMILLAS_DOBLES']),
-  tablas(4, 'el fin con cero: correcta y mejorable', "nombres[1][0] = 'L';\nnombres[1][1] = 'u';\nnombres[1][2] = 'i';\nnombres[1][3] = 's';\nnombres[1][4] = 0;", 'ok', ['FIN_CON_CERO']),
-  tablas(4, 'el texto completo con =', 'nombres[1] = "Luis";', ['ASIGNACION_DE_ARREGLO']),
+  // una posicion, caracter por caracter
+  arreglos(6, 'la correcta', "nombres[1][0] = 'L';\nnombres[1][1] = 'u';\nnombres[1][2] = 'i';\nnombres[1][3] = 's';\nnombres[1][4] = '\\0';"),
+  arreglos(6, 'con espacios en los indices', "nombres[ 1 ][ 0 ] = 'L';\nnombres[ 1 ][ 1 ] = 'u';\nnombres[ 1 ][ 2 ] = 'i';\nnombres[ 1 ][ 3 ] = 's';\nnombres[ 1 ][ 4 ] = '\\0';"),
+  arreglos(6, 'con strcpy', 'strcpy(nombres[1], "Luis");', ['ELEMENTOS_CON_FUNCION']),
+  arreglos(6, 'en otra posicion', "nombres[0][0] = 'L';\nnombres[0][1] = 'u';\nnombres[0][2] = 'i';\nnombres[0][3] = 's';\nnombres[0][4] = '\\0';", ['ELEMENTOS_OTRA_POSICION']),
+  arreglos(6, 'sin el fin', "nombres[1][0] = 'L';\nnombres[1][1] = 'u';\nnombres[1][2] = 'i';\nnombres[1][3] = 's';", ['CADENA_SIN_FIN']),
+  arreglos(6, 'falta una letra', "nombres[1][0] = 'L';\nnombres[1][1] = 'u';\nnombres[1][3] = 's';\nnombres[1][4] = '\\0';", ['ELEMENTO_FALTA']),
+  arreglos(6, 'una letra equivocada', "nombres[1][0] = 'L';\nnombres[1][1] = 'u';\nnombres[1][2] = 'y';\nnombres[1][3] = 's';\nnombres[1][4] = '\\0';", ['ELEMENTO_DISTINTO']),
+  arreglos(6, 'una mayuscula de mas', "nombres[1][0] = 'L';\nnombres[1][1] = 'U';\nnombres[1][2] = 'i';\nnombres[1][3] = 's';\nnombres[1][4] = '\\0';", ['ELEMENTO_MAYUSCULA']),
+  arreglos(6, 'la primera letra en la posicion 1', "nombres[1][1] = 'L';\nnombres[1][2] = 'u';\nnombres[1][3] = 'i';\nnombres[1][4] = 's';\nnombres[1][5] = '\\0';", ['ELEMENTOS_CORRIDOS']),
+  arreglos(6, 'letras entre comillas dobles', 'nombres[1][0] = "L";', ['ELEMENTO_ENTRE_COMILLAS_DOBLES']),
+  arreglos(6, 'el fin con cero: correcta y mejorable', "nombres[1][0] = 'L';\nnombres[1][1] = 'u';\nnombres[1][2] = 'i';\nnombres[1][3] = 's';\nnombres[1][4] = 0;", 'ok', ['FIN_CON_CERO']),
+  arreglos(6, 'el texto completo con =', 'nombres[1] = "Luis";', ['ASIGNACION_DE_ARREGLO']),
 
-  // 8: una celda, con strcpy o a mano
-  tablas(8, 'a mano: correcta y mejorable', "datos[0][1][0] = 'P';\ndatos[0][1][1] = 'e';\ndatos[0][1][2] = 'r';\ndatos[0][1][3] = 'e';\ndatos[0][1][4] = 'z';\ndatos[0][1][5] = '\\0';", 'ok', ['COPIA_A_MANO']),
+  // una celda, con strcpy o a mano
+  tablas(2, 'a mano: correcta y mejorable', "datos[0][1][0] = 'P';\ndatos[0][1][1] = 'e';\ndatos[0][1][2] = 'r';\ndatos[0][1][3] = 'e';\ndatos[0][1][4] = 'z';\ndatos[0][1][5] = '\\0';", 'ok', ['COPIA_A_MANO']),
 
-  // 9: una celda es una cadena
-  tablas(9, 'celda: la correcta', '1'),
-  tablas(9, 'celda: el texto', '0', ['OPCION_CELDA_ES_EL_TEXTO']),
-  tablas(9, 'celda: el fin', '2', ['OPCION_FIN_EN_LA_PRIMERA']),
+  // una celda es una cadena
+  tablas(3, 'celda: la correcta', '1'),
+  tablas(3, 'celda: el texto', '0', ['OPCION_CELDA_ES_EL_TEXTO']),
+  tablas(3, 'celda: el fin', '2', ['OPCION_FIN_EN_LA_PRIMERA']),
 
-  // 10: una celda, caracter por caracter
-  tablas(10, 'la correcta', "datos[1][0][0] = 'A';\ndatos[1][0][1] = 'n';\ndatos[1][0][2] = 'a';\ndatos[1][0][3] = '\\0';"),
-  tablas(10, 'con strcpy', 'strcpy(datos[1][0], "Ana");', ['ELEMENTOS_CON_FUNCION']),
-  tablas(10, 'en otra fila', "datos[0][0][0] = 'A';\ndatos[0][0][1] = 'n';\ndatos[0][0][2] = 'a';\ndatos[0][0][3] = '\\0';", ['ELEMENTOS_FILA_DISTINTA']),
-  tablas(10, 'en otra columna', "datos[1][1][0] = 'A';\ndatos[1][1][1] = 'n';\ndatos[1][1][2] = 'a';\ndatos[1][1][3] = '\\0';", ['ELEMENTOS_COLUMNA_DISTINTA']),
-  tablas(10, 'sin el fin', "datos[1][0][0] = 'A';\ndatos[1][0][1] = 'n';\ndatos[1][0][2] = 'a';", ['CADENA_SIN_FIN']),
-  tablas(10, 'una letra equivocada', "datos[1][0][0] = 'A';\ndatos[1][0][1] = 'm';\ndatos[1][0][2] = 'a';\ndatos[1][0][3] = '\\0';", ['ELEMENTO_DISTINTO']),
+  // una celda, caracter por caracter
+  tablas(7, 'la correcta', "datos[1][0][0] = 'A';\ndatos[1][0][1] = 'n';\ndatos[1][0][2] = 'a';\ndatos[1][0][3] = '\\0';"),
+  tablas(7, 'con strcpy', 'strcpy(datos[1][0], "Ana");', ['ELEMENTOS_CON_FUNCION']),
+  tablas(7, 'en otra fila', "datos[0][0][0] = 'A';\ndatos[0][0][1] = 'n';\ndatos[0][0][2] = 'a';\ndatos[0][0][3] = '\\0';", ['ELEMENTOS_FILA_DISTINTA']),
+  tablas(7, 'en otra columna', "datos[1][1][0] = 'A';\ndatos[1][1][1] = 'n';\ndatos[1][1][2] = 'a';\ndatos[1][1][3] = '\\0';", ['ELEMENTOS_COLUMNA_DISTINTA']),
+  tablas(7, 'sin el fin', "datos[1][0][0] = 'A';\ndatos[1][0][1] = 'n';\ndatos[1][0][2] = 'a';", ['CADENA_SIN_FIN']),
+  tablas(7, 'una letra equivocada', "datos[1][0][0] = 'A';\ndatos[1][0][1] = 'm';\ndatos[1][0][2] = 'a';\ndatos[1][0][3] = '\\0';", ['ELEMENTO_DISTINTO']),
 
-  // 11: vaciar todos los textos de la tabla
-  tablas(11, 'dos for con constantes', "for (i = 0; i < MAX_ESTUDIANTES; i++) {\n  for (j = 0; j < CAMPOS; j++) {\n    datos[i][j][0] = '\\0';\n  }\n}"),
-  tablas(11, 'con strcpy', 'for (i = 0; i < MAX_ESTUDIANTES; i++) {\n  for (j = 0; j < CAMPOS; j++) {\n    strcpy(datos[i][j], "");\n  }\n}'),
-  tablas(11, 'dos while', "i = 0;\nwhile (i < MAX_ESTUDIANTES) {\n  j = 0;\n  while (j < CAMPOS) {\n    datos[i][j][0] = '\\0';\n    j++;\n  }\n  i++;\n}"),
-  tablas(11, 'una fila de mas', "for (i = 0; i <= MAX_ESTUDIANTES; i++) {\n  for (j = 0; j < CAMPOS; j++) {\n    datos[i][j][0] = '\\0';\n  }\n}", ['CICLO_SE_PASA']),
-  tablas(11, 'una columna de menos', "for (i = 0; i < MAX_ESTUDIANTES; i++) {\n  for (j = 0; j < 2; j++) {\n    datos[i][j][0] = '\\0';\n  }\n}", ['CICLO_NO_LLEGA']),
-  tablas(11, 'una columna de mas', "for (i = 0; i < MAX_ESTUDIANTES; i++) {\n  for (j = 0; j <= CAMPOS; j++) {\n    datos[i][j][0] = '\\0';\n  }\n}", ['CICLO_SE_PASA']),
-  tablas(11, 'los indices al reves', "for (i = 0; i < MAX_ESTUDIANTES; i++) {\n  for (j = 0; j < CAMPOS; j++) {\n    datos[j][i][0] = '\\0';\n  }\n}", ['CICLO_NO_VACIA']),
-  tablas(11, 'siempre la misma columna', "for (i = 0; i < MAX_ESTUDIANTES; i++) {\n  for (j = 0; j < CAMPOS; j++) {\n    datos[i][0][0] = '\\0';\n  }\n}", ['CICLO_NO_VACIA']),
-  tablas(11, 'un solo ciclo', "for (i = 0; i < MAX_ESTUDIANTES; i++) {\n  datos[i][0][0] = '\\0';\n}", ['CICLO_INTERNO_FALTA']),
-  tablas(11, 'sin avanzar el de adentro', "for (i = 0; i < MAX_ESTUDIANTES; i++) {\n  for (j = 0; j < CAMPOS; ) {\n    datos[i][j][0] = '\\0';\n  }\n}", ['CICLO_SIN_AVANCE']),
-  tablas(11, 'sin ciclos', "datos[0][0][0] = '\\0';", ['CICLO_FALTA']),
+  // vaciar todos los textos de la tabla
+  tablas(8, 'dos for con constantes', "for (i = 0; i < MAX_ESTUDIANTES; i++) {\n  for (j = 0; j < CAMPOS; j++) {\n    datos[i][j][0] = '\\0';\n  }\n}"),
+  tablas(8, 'con strcpy', 'for (i = 0; i < MAX_ESTUDIANTES; i++) {\n  for (j = 0; j < CAMPOS; j++) {\n    strcpy(datos[i][j], "");\n  }\n}'),
+  tablas(8, 'dos while', "i = 0;\nwhile (i < MAX_ESTUDIANTES) {\n  j = 0;\n  while (j < CAMPOS) {\n    datos[i][j][0] = '\\0';\n    j++;\n  }\n  i++;\n}"),
+  tablas(8, 'una fila de mas', "for (i = 0; i <= MAX_ESTUDIANTES; i++) {\n  for (j = 0; j < CAMPOS; j++) {\n    datos[i][j][0] = '\\0';\n  }\n}", ['CICLO_SE_PASA']),
+  tablas(8, 'una columna de menos', "for (i = 0; i < MAX_ESTUDIANTES; i++) {\n  for (j = 0; j < 2; j++) {\n    datos[i][j][0] = '\\0';\n  }\n}", ['CICLO_NO_LLEGA']),
+  tablas(8, 'una columna de mas', "for (i = 0; i < MAX_ESTUDIANTES; i++) {\n  for (j = 0; j <= CAMPOS; j++) {\n    datos[i][j][0] = '\\0';\n  }\n}", ['CICLO_SE_PASA']),
+  tablas(8, 'los indices al reves', "for (i = 0; i < MAX_ESTUDIANTES; i++) {\n  for (j = 0; j < CAMPOS; j++) {\n    datos[j][i][0] = '\\0';\n  }\n}", ['CICLO_NO_VACIA']),
+  tablas(8, 'siempre la misma columna', "for (i = 0; i < MAX_ESTUDIANTES; i++) {\n  for (j = 0; j < CAMPOS; j++) {\n    datos[i][0][0] = '\\0';\n  }\n}", ['CICLO_NO_VACIA']),
+  tablas(8, 'un solo ciclo', "for (i = 0; i < MAX_ESTUDIANTES; i++) {\n  datos[i][0][0] = '\\0';\n}", ['CICLO_INTERNO_FALTA']),
+  tablas(8, 'sin avanzar el de adentro', "for (i = 0; i < MAX_ESTUDIANTES; i++) {\n  for (j = 0; j < CAMPOS; ) {\n    datos[i][j][0] = '\\0';\n  }\n}", ['CICLO_SIN_AVANCE']),
+  tablas(8, 'sin ciclos', "datos[0][0][0] = '\\0';", ['CICLO_FALTA']),
 
   // Una letra con un solo indice, o un caracter a una cadena completa
   {
-    ...tablas(2, 'las letras con un solo indice', "nombres[0] = 'A';\nnombres[1] = 'n';\nnombres[2] = 'a';\nnombres[3] = '\\0';", ['ELEMENTOS_COMO_UNA_SOLA_CADENA']),
+    ...arreglos(2, 'las letras con un solo indice', "nombres[0] = 'A';\nnombres[1] = 'n';\nnombres[2] = 'a';\nnombres[3] = '\\0';", ['ELEMENTOS_COMO_UNA_SOLA_CADENA']),
     dice: ['guarda varias cadenas', 'dos índices'],
   },
-  tablas(4, 'las letras con un solo indice', "nombres[0] = 'L';\nnombres[1] = 'u';\nnombres[2] = 'i';\nnombres[3] = 's';\nnombres[4] = '\\0';", ['ELEMENTOS_COMO_UNA_SOLA_CADENA']),
-  tablas(4, 'una letra con un solo indice entre las demas', "nombres[1][0] = 'L';\nnombres[1][1] = 'u';\nnombres[1] = 'i';\nnombres[1][3] = 's';\nnombres[1][4] = '\\0';", ['ASIGNACION_CARACTER_A_CADENA', 'ELEMENTO_FALTA']),
+  arreglos(6, 'las letras con un solo indice', "nombres[0] = 'L';\nnombres[1] = 'u';\nnombres[2] = 'i';\nnombres[3] = 's';\nnombres[4] = '\\0';", ['ELEMENTOS_COMO_UNA_SOLA_CADENA']),
+  arreglos(6, 'una letra con un solo indice entre las demas', "nombres[1][0] = 'L';\nnombres[1][1] = 'u';\nnombres[1] = 'i';\nnombres[1][3] = 's';\nnombres[1][4] = '\\0';", ['ASIGNACION_CARACTER_A_CADENA', 'ELEMENTO_FALTA']),
   {
-    ...tablas(5, 'un caracter a la cadena completa', "for (i = 0; i < MAX_ESTUDIANTES; i++)\n  nombres[i] = '\\0';", ['ASIGNACION_CARACTER_A_CADENA']),
+    ...arreglos(7, 'un caracter a la cadena completa', "for (i = 0; i < MAX_ESTUDIANTES; i++)\n  nombres[i] = '\\0';", ['ASIGNACION_CARACTER_A_CADENA']),
     dice: ['es una cadena completa', 'no se le puede asignar un carácter', 'primera posición'],
   },
   {
-    ...tablas(5, 'cualquier caracter a la cadena completa', "for (i = 0; i < MAX_ESTUDIANTES; i++) {\n  nombres[i] = 'x';\n}", ['ASIGNACION_CARACTER_A_CADENA']),
+    ...arreglos(7, 'cualquier caracter a la cadena completa', "for (i = 0; i < MAX_ESTUDIANTES; i++) {\n  nombres[i] = 'x';\n}", ['ASIGNACION_CARACTER_A_CADENA']),
     dice: ['no se le puede asignar un carácter'],
   },
   {
-    ...tablas(10, 'las letras con un solo indice', "datos[0] = 'A';\ndatos[1] = 'n';\ndatos[2] = 'a';\ndatos[3] = '\\0';", ['ELEMENTOS_COMO_UNA_SOLA_CADENA']),
+    ...tablas(7, 'las letras con un solo indice', "datos[0] = 'A';\ndatos[1] = 'n';\ndatos[2] = 'a';\ndatos[3] = '\\0';", ['ELEMENTOS_COMO_UNA_SOLA_CADENA']),
     dice: ['tres índices'],
   },
 
   // El texto, en otra posicion (o en otra fila o columna)
   {
-    ...tablas(4, 'el texto, en la tercera posicion', "nombres[2][0] = 'L';\nnombres[2][1] = 'u';\nnombres[2][2] = 'i';\nnombres[2][3] = 's';\nnombres[2][4] = '\\0';", ['ELEMENTOS_OTRA_POSICION']),
+    ...arreglos(6, 'el texto, en la tercera posicion', "nombres[2][0] = 'L';\nnombres[2][1] = 'u';\nnombres[2][2] = 'i';\nnombres[2][3] = 's';\nnombres[2][4] = '\\0';", ['ELEMENTOS_OTRA_POSICION']),
     dice: ['El texto está bien escrito', 'la posición 2 es la tercera'],
   },
   {
-    ...tablas(4, 'otro texto, en la primera posicion', "nombres[0][0] = 'L';\nnombres[0][1] = 'o';\nnombres[0][2] = 'l';\nnombres[0][3] = 'a';\nnombres[0][4] = '\\0';", ['ELEMENTOS_OTRA_POSICION']),
+    ...arreglos(6, 'otro texto, en la primera posicion', "nombres[0][0] = 'L';\nnombres[0][1] = 'o';\nnombres[0][2] = 'l';\nnombres[0][3] = 'a';\nnombres[0][4] = '\\0';", ['ELEMENTOS_OTRA_POSICION']),
     dice: ['Los caracteres están asignados a `nombres[0]`'],
   },
   {
-    ...tablas(10, 'otra fila y otra columna', "datos[0][1][0] = 'A';\ndatos[0][1][1] = 'n';\ndatos[0][1][2] = 'a';\ndatos[0][1][3] = '\\0';", ['ELEMENTOS_FILA_Y_COLUMNA_DISTINTAS']),
+    ...tablas(7, 'otra fila y otra columna', "datos[0][1][0] = 'A';\ndatos[0][1][1] = 'n';\ndatos[0][1][2] = 'a';\ndatos[0][1][3] = '\\0';", ['ELEMENTOS_FILA_Y_COLUMNA_DISTINTAS']),
     dice: ['El texto está bien escrito'],
   },
 
   // Los argumentos de una llamada: que parte de la posicion no es la que pide la consigna
   {
-    ...tablas(2, 'la segunda posicion es la 1', 'strcpy(nombres[1], "Ana");', ['ARGUMENTO_OTRA_POSICION']),
+    ...arreglos(2, 'la segunda posicion es la 1', 'strcpy(nombres[1], "Ana");', ['ARGUMENTO_OTRA_POSICION']),
     dice: ['la posición 1 es la segunda'],
   },
-  tablas(2, 'dos posiciones de mas', 'strcpy(nombres[2], "Ana");', ['ARGUMENTO_OTRA_POSICION']),
-  tablas(8, 'la fila de mas', 'strcpy(datos[2][1], "Perez");', ['ARGUMENTO_FILA_DISTINTA']),
+  arreglos(2, 'dos posiciones de mas', 'strcpy(nombres[2], "Ana");', ['ARGUMENTO_OTRA_POSICION']),
+  tablas(2, 'la fila de mas', 'strcpy(datos[2][1], "Perez");', ['ARGUMENTO_FILA_DISTINTA']),
   {
-    ...tablas(8, 'la fila contada desde 1', 'strcpy(datos[1][1], "Perez");', ['ARGUMENTO_FILA_DISTINTA']),
+    ...tablas(2, 'la fila contada desde 1', 'strcpy(datos[1][1], "Perez");', ['ARGUMENTO_FILA_DISTINTA']),
     dice: ['la columna es la que pide la consigna, pero la fila no', 'la fila 1 es la segunda'],
   },
   {
-    ...tablas(8, 'la columna contada desde 1', 'strcpy(datos[0][2], "Perez");', ['ARGUMENTO_COLUMNA_DISTINTA']),
+    ...tablas(2, 'la columna contada desde 1', 'strcpy(datos[0][2], "Perez");', ['ARGUMENTO_COLUMNA_DISTINTA']),
     dice: ['la fila es la que pide la consigna, pero la columna no', 'la columna 2 es la tercera'],
   },
   {
-    ...tablas(8, 'fila y columna distintas', 'strcpy(datos[3][0], "Perez");', ['ARGUMENTO_FILA_Y_COLUMNA_DISTINTAS']),
+    ...tablas(2, 'fila y columna distintas', 'strcpy(datos[3][0], "Perez");', ['ARGUMENTO_FILA_Y_COLUMNA_DISTINTAS']),
     dice: ['ni la fila ni la columna'],
   },
   {
-    ...tablas(8, 'solo la fila', 'strcpy(datos[2], "Perez");', ['ARGUMENTO_FALTA_INDICE']),
+    ...tablas(2, 'solo la fila', 'strcpy(datos[2], "Perez");', ['ARGUMENTO_FALTA_INDICE']),
     dice: ['es un arreglo de cadenas', 'segundo índice'],
   },
 
   // La fila con una cuenta o con una variable, y los argumentos al reves con otra celda
-  tablas(8, 'la fila con una cuenta', 'strcpy(datos[1 + 1][1], "Perez");', ['ARGUMENTO_FILA_DISTINTA']),
+  tablas(2, 'la fila con una cuenta', 'strcpy(datos[1 + 1][1], "Perez");', ['ARGUMENTO_FILA_DISTINTA']),
   {
-    ...tablas(8, 'la fila con una variable', 'strcpy(datos[i][1], "Perez");', ['ARGUMENTO_POSICION_CON_VARIABLE']),
+    ...tablas(2, 'la fila con una variable', 'strcpy(datos[i][1], "Perez");', ['ARGUMENTO_POSICION_CON_VARIABLE']),
     dice: ['no es un número', 'una posición concreta'],
   },
   {
-    ...tablas(8, 'los argumentos al reves, con otra celda', 'strcpy("Perez", datos[2][1]);', ['ARGUMENTOS_EN_OTRO_ORDEN']),
+    ...tablas(2, 'los argumentos al reves, con otra celda', 'strcpy("Perez", datos[2][1]);', ['ARGUMENTOS_EN_OTRO_ORDEN']),
     dice: ['primero va la cadena donde se guarda'],
   },
+
+  // 4 y 5 de los arreglos: que hay en una posicion y en todo el arreglo
+  arreglos(4, 'texto: el de la tercera posicion', '1'),
+  arreglos(4, 'texto: contando desde uno', '0', ['OPCION_POSICION_DESDE_UNO']),
+  arreglos(4, 'texto: una letra', '2', ['OPCION_CADENA_ES_UNA_LETRA']),
+  arreglos(5, 'todo: los tres textos', '2'),
+  arreglos(5, 'todo: el primero', '0', ['OPCION_ARREGLO_ES_EL_PRIMERO']),
+  arreglos(5, 'todo: una sola cadena', '1', ['OPCION_ARREGLO_ES_UNA_CADENA']),
+
+  // 4 a 6 de las tablas: que hay en una celda, una fila y toda la tabla
+  tablas(4, 'celda: la del segundo estudiante', '1'),
+  tablas(4, 'celda: contando desde uno', '0', ['OPCION_POSICION_DESDE_UNO']),
+  tablas(4, 'celda: una letra', '2', ['OPCION_CADENA_ES_UNA_LETRA']),
+  tablas(5, 'fila: los tres textos del segundo estudiante', '2'),
+  tablas(5, 'fila: contando desde uno', '0', ['OPCION_POSICION_DESDE_UNO']),
+  tablas(5, 'fila: la columna', '1', ['OPCION_FILA_ES_COLUMNA']),
+  tablas(5, 'fila: un solo texto', '3', ['OPCION_FILA_ES_UNA_CELDA']),
+  tablas(6, 'toda la tabla: las dos filas', '2'),
+  tablas(6, 'toda la tabla: la primera fila', '0', ['OPCION_ARREGLO_ES_EL_PRIMERO']),
+  tablas(6, 'toda la tabla: una sola cadena', '1', ['OPCION_ARREGLO_ES_UNA_CADENA']),
 ];
 
 const typedef = (paso, nombre, respuesta, espera, mejoras) =>
@@ -528,6 +550,6 @@ export const CASOS_DE_CADENAS_NUEVAS = [
   ...CASOS_DE_VACIA,
   ...CASOS_DE_BIBLIOTECA,
   ...CASOS_DE_RECORRER,
-  ...CASOS_DE_TABLAS,
+  ...CASOS_DE_ARREGLOS_Y_TABLAS,
   ...CASOS_DE_TYPEDEF,
 ];

@@ -240,7 +240,7 @@ si no, es un error que dice que lo que no se nombra queda en cero.
 ### Cadenas de caracteres
 
 Las series `cadenas-*` (el fin de la cadena, la cadena vacía, la biblioteca,
-recorrer, arreglos y tablas de cadenas, y typedef) usan estas reglas.
+recorrer, arreglos de cadenas, tablas de cadenas y typedef) usan estas reglas.
 
 **Una cadena de hasta N letras necesita N + 1 espacios**, y la consigna pide el
 tamaño justo. Con un "al menos" un número cualquiera (20) pasaría sin que el

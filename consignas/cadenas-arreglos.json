@@ -1,0 +1,137 @@
+{
+  "id": "cadenas-arreglos",
+  "titulo": "Cadenas 5: arreglos de cadenas",
+  "descripcion": "Varios textos guardados juntos en un arreglo de cadenas: declararlo, llenar una posición, qué hay en cada nivel, vaciarlo e inicializarlo.",
+  "dentroDeMain": true,
+  "buenasPracticas": ["claridad", "constantes"],
+  "consignas": [
+    {
+      "id": "cadenas-tabla-nombres",
+      "titulo": "Declarar un arreglo de cadenas",
+      "enunciado": "Un curso tiene hasta 30 estudiantes y cada nombre tiene hasta 25 letras. Declare la variable donde se guarden los nombres de los estudiantes del curso, con el tamaño justo.",
+      "requiere": [
+        {
+          "variable": {
+            "tipo": "caracter",
+            "arreglo": { "tamano": [30, 26], "letras": 25 },
+            "capturar": "N"
+          }
+        }
+      ],
+      "referencia": "#define MAX_ESTUDIANTES 30\n#define LARGO_NOMBRE 25\n\nchar nombres[MAX_ESTUDIANTES][LARGO_NOMBRE + 1];"
+    },
+    {
+      "id": "cadenas-fila",
+      "titulo": "Guardar un texto en una posición",
+      "continua": true,
+      "enunciado": "Guarde el texto `\"Ana\"` en la primera posición del arreglo {N}.",
+      "requiere": [
+        {
+          "llamada": {
+            "funcion": "strcpy",
+            "alternativas": ["strncpy"],
+            "argumentos": ["$N[0]", "\"Ana\""],
+            "orden": "primero va la cadena donde se guarda y después el texto",
+            "aMano": { "variable": "$N", "en": [0], "texto": "Ana" }
+          }
+        }
+      ],
+      "referencia": "strcpy(nombres[0], \"Ana\");"
+    },
+    {
+      "id": "cadenas-q-tabla",
+      "titulo": "Qué hay en una letra",
+      "enunciado": "Después de ejecutar el código de abajo, ¿qué contendría `nombres[0][0]`?",
+      "codigo": "char nombres[3][10];\nstrcpy(nombres[0], \"Ana\");",
+      "opciones": [
+        {
+          "valor": "\"Ana\"",
+          "texto": "el texto completo que está en esa posición",
+          "codigo": "OPCION_FILA_ES_EL_TEXTO",
+          "explicacion": "`nombres[0]` es la cadena completa, `Ana`. Con el segundo índice se elige un carácter de esa cadena."
+        },
+        { "valor": "'A'", "texto": "la primera letra del texto", "correcta": true },
+        {
+          "valor": "'\\0'",
+          "texto": "el carácter de fin",
+          "codigo": "OPCION_FIN_EN_LA_PRIMERA",
+          "explicacion": "El `'\\0'` está después de la última letra, en la posición 3 de ese texto, no en la primera."
+        }
+      ]
+    },
+    {
+      "id": "cadenas-q-arreglo-texto",
+      "titulo": "Qué hay en una posición",
+      "enunciado": "Después de ejecutar el código de abajo, ¿qué contendría `alumnos[2]`?",
+      "codigo": "char alumnos[3][10];\nstrcpy(alumnos[0], \"Ana\");\nstrcpy(alumnos[1], \"Beto\");\nstrcpy(alumnos[2], \"Luis\");",
+      "opciones": [
+        {
+          "valor": "\"Beto\"",
+          "texto": "el texto de la segunda posición",
+          "codigo": "OPCION_POSICION_DESDE_UNO",
+          "explicacion": "Las posiciones se numeran desde 0: `alumnos[0]` es el primer texto, `alumnos[1]` el segundo y `alumnos[2]` el tercero."
+        },
+        { "valor": "\"Luis\"", "texto": "el texto de la tercera posición", "correcta": true },
+        {
+          "valor": "'L'",
+          "texto": "la primera letra del texto",
+          "codigo": "OPCION_CADENA_ES_UNA_LETRA",
+          "explicacion": "`alumnos[2]` es la cadena completa, `Luis`. Para llegar a una letra hace falta un segundo índice: `alumnos[2][0]` es la `L`."
+        }
+      ]
+    },
+    {
+      "id": "cadenas-q-arreglo-todo",
+      "titulo": "Qué hay en todo el arreglo",
+      "enunciado": "Después de ejecutar el código de abajo, ¿qué contendría `alumnos`?",
+      "codigo": "char alumnos[3][10];\nstrcpy(alumnos[0], \"Ana\");\nstrcpy(alumnos[1], \"Beto\");\nstrcpy(alumnos[2], \"Luis\");",
+      "opciones": [
+        {
+          "valor": "\"Ana\"",
+          "texto": "el primer texto",
+          "codigo": "OPCION_ARREGLO_ES_EL_PRIMERO",
+          "explicacion": "`alumnos` es el arreglo completo: guarda los tres textos, no solo el primero. El primero es `alumnos[0]`."
+        },
+        {
+          "valor": "\"AnaBetoLuis\"",
+          "texto": "un solo texto, con los tres juntos",
+          "codigo": "OPCION_ARREGLO_ES_UNA_CADENA",
+          "explicacion": "Cada texto es una cadena aparte, con su propio `'\\0'` al final: `alumnos` no los junta en una sola cadena, guarda las tres."
+        },
+        { "valor": "{\"Ana\", \"Beto\", \"Luis\"}", "texto": "los tres textos, cada uno en su posición", "correcta": true }
+      ]
+    },
+    {
+      "id": "cadenas-fila-a-mano",
+      "titulo": "Una posición, carácter por carácter",
+      "continua": true,
+      "enunciado": "Guarde el texto `\"Luis\"` en la segunda posición del arreglo {N}, asignando cada carácter en su posición: una asignación por cada posición, indicando sus índices.",
+      "requiere": [{ "elementos": { "de": "$N", "en": [1], "texto": "Luis" } }],
+      "referencia": "nombres[1][0] = 'L';\nnombres[1][1] = 'u';\nnombres[1][2] = 'i';\nnombres[1][3] = 's';\nnombres[1][4] = '\\0';"
+    },
+    {
+      "id": "cadenas-vaciar-tabla",
+      "titulo": "Vaciar todas las cadenas",
+      "continua": true,
+      "dado": "int i;",
+      "enunciado": "Con un ciclo, deje vacías todas las cadenas del arreglo {N}. Use el índice `i`.",
+      "requiere": [{ "ciclo": { "indice": "i", "filasDe": "$N" } }],
+      "referencia": "for (i = 0; i < MAX_ESTUDIANTES; i++) {\n  nombres[i][0] = '\\0';\n}"
+    },
+    {
+      "id": "cadenas-tabla-dias",
+      "titulo": "Un arreglo de cadenas con sus textos",
+      "enunciado": "Declare e inicialice, en la misma sentencia, un arreglo de cadenas con los nombres de los días de la semana, de lunes a domingo. Escríbalos sin acentos.",
+      "requiere": [
+        {
+          "variable": {
+            "tipo": "caracter",
+            "textos": ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"],
+            "sinDistinguirMayusculas": true
+          }
+        }
+      ],
+      "referencia": "#define LARGO_DIA 10\n\nchar dias[][LARGO_DIA] = {\"lunes\", \"martes\", \"miercoles\", \"jueves\", \"viernes\", \"sabado\", \"domingo\"};"
+    }
+  ]
+}

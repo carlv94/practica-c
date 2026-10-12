@@ -1,6 +1,6 @@
 {
   "id": "cadenas-typedef",
-  "titulo": "Cadenas 6: un tipo para los textos",
+  "titulo": "Cadenas 7: un tipo para los textos",
   "descripcion": "Darle un nombre propio al tipo de las cadenas con typedef, y usarlo.",
   "dentroDeMain": true,
   "buenasPracticas": ["claridad"],

@@ -1,96 +1,10 @@
 {
   "id": "cadenas-tablas",
-  "titulo": "Cadenas 5: arreglos y tablas de cadenas",
-  "descripcion": "Varios textos guardados juntos: un arreglo de cadenas (declararlo, llenar una posición, vaciarlo e inicializarlo) y una tabla de cadenas, con un texto en cada celda.",
+  "titulo": "Cadenas 6: tablas de cadenas",
+  "descripcion": "Una tabla con un texto en cada celda: declararla, guardar un texto, qué hay en cada nivel y vaciarla.",
   "dentroDeMain": true,
   "buenasPracticas": ["claridad", "constantes"],
   "consignas": [
-    {
-      "id": "cadenas-tabla-nombres",
-      "titulo": "Declarar un arreglo de cadenas",
-      "enunciado": "Un curso tiene hasta 30 estudiantes y cada nombre tiene hasta 25 letras. Declare la variable donde se guarden los nombres de los estudiantes del curso, con el tamaño justo.",
-      "requiere": [
-        {
-          "variable": {
-            "tipo": "caracter",
-            "arreglo": { "tamano": [30, 26], "letras": 25 },
-            "capturar": "N"
-          }
-        }
-      ],
-      "referencia": "#define MAX_ESTUDIANTES 30\n#define LARGO_NOMBRE 25\n\nchar nombres[MAX_ESTUDIANTES][LARGO_NOMBRE + 1];"
-    },
-    {
-      "id": "cadenas-fila",
-      "titulo": "Guardar un texto en una posición",
-      "continua": true,
-      "enunciado": "Guarde el texto `\"Ana\"` en la primera posición del arreglo {N}.",
-      "requiere": [
-        {
-          "llamada": {
-            "funcion": "strcpy",
-            "alternativas": ["strncpy"],
-            "argumentos": ["$N[0]", "\"Ana\""],
-            "orden": "primero va la cadena donde se guarda y después el texto",
-            "aMano": { "variable": "$N", "en": [0], "texto": "Ana" }
-          }
-        }
-      ],
-      "referencia": "strcpy(nombres[0], \"Ana\");"
-    },
-    {
-      "id": "cadenas-q-tabla",
-      "titulo": "Qué hay en cada posición",
-      "enunciado": "Después de ejecutar el código de abajo, ¿qué contendría `nombres[0][0]`?",
-      "codigo": "char nombres[3][10];\nstrcpy(nombres[0], \"Ana\");",
-      "opciones": [
-        {
-          "valor": "\"Ana\"",
-          "texto": "el texto completo que está en esa posición",
-          "codigo": "OPCION_FILA_ES_EL_TEXTO",
-          "explicacion": "`nombres[0]` es la cadena completa, `Ana`. Con el segundo índice se elige un carácter de esa cadena."
-        },
-        { "valor": "'A'", "texto": "la primera letra del texto", "correcta": true },
-        {
-          "valor": "'\\0'",
-          "texto": "el carácter de fin",
-          "codigo": "OPCION_FIN_EN_LA_PRIMERA",
-          "explicacion": "El `'\\0'` está después de la última letra, en la posición 3 de ese texto, no en la primera."
-        }
-      ]
-    },
-    {
-      "id": "cadenas-fila-a-mano",
-      "titulo": "Una posición, carácter por carácter",
-      "continua": true,
-      "enunciado": "Guarde el texto `\"Luis\"` en la segunda posición del arreglo {N}, asignando cada carácter en su posición: una asignación por cada posición, indicando sus índices.",
-      "requiere": [{ "elementos": { "de": "$N", "en": [1], "texto": "Luis" } }],
-      "referencia": "nombres[1][0] = 'L';\nnombres[1][1] = 'u';\nnombres[1][2] = 'i';\nnombres[1][3] = 's';\nnombres[1][4] = '\\0';"
-    },
-    {
-      "id": "cadenas-vaciar-tabla",
-      "titulo": "Vaciar todas las cadenas",
-      "continua": true,
-      "dado": "int i;",
-      "enunciado": "Con un ciclo, deje vacías todas las cadenas del arreglo {N}. Use el índice `i`.",
-      "requiere": [{ "ciclo": { "indice": "i", "filasDe": "$N" } }],
-      "referencia": "for (i = 0; i < MAX_ESTUDIANTES; i++) {\n  nombres[i][0] = '\\0';\n}"
-    },
-    {
-      "id": "cadenas-tabla-dias",
-      "titulo": "Un arreglo de cadenas con sus textos",
-      "enunciado": "Declare e inicialice, en la misma sentencia, un arreglo de cadenas con los nombres de los días de la semana, de lunes a domingo. Escríbalos sin acentos.",
-      "requiere": [
-        {
-          "variable": {
-            "tipo": "caracter",
-            "textos": ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"],
-            "sinDistinguirMayusculas": true
-          }
-        }
-      ],
-      "referencia": "#define LARGO_DIA 10\n\nchar dias[][LARGO_DIA] = {\"lunes\", \"martes\", \"miercoles\", \"jueves\", \"viernes\", \"sabado\", \"domingo\"};"
-    },
     {
       "id": "cadenas-tabla-datos",
       "titulo": "Declarar una tabla de cadenas",
@@ -126,7 +40,7 @@
     },
     {
       "id": "cadenas-q-celda",
-      "titulo": "Qué hay en una celda",
+      "titulo": "Qué hay en una letra",
       "enunciado": "Después de ejecutar el código de abajo, ¿qué contendría `datos[0][1][0]`?",
       "codigo": "char datos[2][3][10];\nstrcpy(datos[0][1], \"Perez\");",
       "opciones": [
@@ -142,6 +56,79 @@
           "texto": "el carácter de fin",
           "codigo": "OPCION_FIN_EN_LA_PRIMERA",
           "explicacion": "El `'\\0'` está después de la última letra, en la posición 5 de ese texto, no en la primera."
+        }
+      ]
+    },
+    {
+      "id": "cadenas-q-celda-texto",
+      "titulo": "Qué hay en una celda",
+      "enunciado": "Después de ejecutar el código de abajo, ¿qué contendría `datos[1][1]`?",
+      "codigo": "char datos[2][3][10];\nstrcpy(datos[0][0], \"Ana\");\nstrcpy(datos[0][1], \"Perez\");\nstrcpy(datos[0][2], \"Medicina\");\nstrcpy(datos[1][0], \"Beto\");\nstrcpy(datos[1][1], \"Lopez\");\nstrcpy(datos[1][2], \"Derecho\");",
+      "opciones": [
+        {
+          "valor": "\"Perez\"",
+          "texto": "el apellido del primer estudiante",
+          "codigo": "OPCION_POSICION_DESDE_UNO",
+          "explicacion": "Las posiciones se numeran desde 0: `datos[1]` es la segunda fila y `[1]` la segunda columna, que es `Lopez`. `Perez` está en `datos[0][1]`."
+        },
+        { "valor": "\"Lopez\"", "texto": "el apellido del segundo estudiante", "correcta": true },
+        {
+          "valor": "'L'",
+          "texto": "la primera letra del texto",
+          "codigo": "OPCION_CADENA_ES_UNA_LETRA",
+          "explicacion": "`datos[1][1]` es la cadena completa, `Lopez`. Para llegar a una letra hace falta un tercer índice: `datos[1][1][0]` es la `L`."
+        }
+      ]
+    },
+    {
+      "id": "cadenas-q-fila",
+      "titulo": "Qué hay en una fila",
+      "enunciado": "Después de ejecutar el código de abajo, ¿qué contendría `datos[1]`?",
+      "codigo": "char datos[2][3][10];\nstrcpy(datos[0][0], \"Ana\");\nstrcpy(datos[0][1], \"Perez\");\nstrcpy(datos[0][2], \"Medicina\");\nstrcpy(datos[1][0], \"Beto\");\nstrcpy(datos[1][1], \"Lopez\");\nstrcpy(datos[1][2], \"Derecho\");",
+      "opciones": [
+        {
+          "valor": "{\"Ana\", \"Perez\", \"Medicina\"}",
+          "texto": "los tres textos del primer estudiante",
+          "codigo": "OPCION_POSICION_DESDE_UNO",
+          "explicacion": "Las posiciones se numeran desde 0: `datos[0]` es la primera fila y `datos[1]` la segunda, la de `Beto`."
+        },
+        {
+          "valor": "{\"Perez\", \"Lopez\"}",
+          "texto": "la segunda columna",
+          "codigo": "OPCION_FILA_ES_COLUMNA",
+          "explicacion": "El primer índice elige la fila, no la columna: `datos[1]` es la fila del segundo estudiante, con sus tres textos. La segunda columna son `datos[0][1]` y `datos[1][1]`."
+        },
+        { "valor": "{\"Beto\", \"Lopez\", \"Derecho\"}", "texto": "los tres textos del segundo estudiante", "correcta": true },
+        {
+          "valor": "\"Lopez\"",
+          "texto": "un solo texto",
+          "codigo": "OPCION_FILA_ES_UNA_CELDA",
+          "explicacion": "`datos[1]` es la fila completa: guarda tres textos. Un solo texto necesita los dos índices: `datos[1][1]`."
+        }
+      ]
+    },
+    {
+      "id": "cadenas-q-tabla-completa",
+      "titulo": "Qué hay en toda la tabla",
+      "enunciado": "Después de ejecutar el código de abajo, ¿qué contendría `datos`?",
+      "codigo": "char datos[2][3][10];\nstrcpy(datos[0][0], \"Ana\");\nstrcpy(datos[0][1], \"Perez\");\nstrcpy(datos[0][2], \"Medicina\");\nstrcpy(datos[1][0], \"Beto\");\nstrcpy(datos[1][1], \"Lopez\");\nstrcpy(datos[1][2], \"Derecho\");",
+      "opciones": [
+        {
+          "valor": "{\"Ana\", \"Perez\", \"Medicina\"}",
+          "texto": "los textos de la primera fila",
+          "codigo": "OPCION_ARREGLO_ES_EL_PRIMERO",
+          "explicacion": "`datos` es la tabla completa: guarda las dos filas, no solo la primera. La primera fila es `datos[0]`."
+        },
+        {
+          "valor": "\"AnaPerezMedicinaBetoLopezDerecho\"",
+          "texto": "un solo texto, con todos juntos",
+          "codigo": "OPCION_ARREGLO_ES_UNA_CADENA",
+          "explicacion": "Cada texto es una cadena aparte, con su propio `'\\0'` al final: `datos` no los junta en una sola cadena, guarda seis."
+        },
+        {
+          "valor": "{{\"Ana\", \"Perez\", \"Medicina\"}, {\"Beto\", \"Lopez\", \"Derecho\"}}",
+          "texto": "las dos filas, con sus tres textos cada una",
+          "correcta": true
         }
       ]
     },
