@@ -372,9 +372,12 @@ son números escritos (si no, queda el mensaje general):
 |---|---|---|
 | `nombres[0] = 'L'; nombres[1] = 'u'; ...` | `ELEMENTOS_COMO_UNA_SOLA_CADENA` | Una vez: `nombres` guarda varias cadenas y hacen falta dos índices. |
 | `nombres[i] = '\0';` | `ASIGNACION_CARACTER_A_CADENA` | Una cadena completa no recibe un carácter; con `'\0'`, recuerda que va en la primera posición. |
+| el texto en `nombres[2][k]` en lugar de `[1]` | `ELEMENTOS_OTRA_POSICION` | Dice dónde está (y si el texto está bien escrito). |
+| `datos[0][0][k]` en lugar de `datos[1][0][k]` | `ELEMENTOS_FILA_DISTINTA`, `_COLUMNA_DISTINTA`, `_FILA_Y_COLUMNA_DISTINTAS` | Cuál de las dos no es. |
 
-Lo repetido en varias líneas se dice una vez ("lo mismo ocurre en las otras 4
-asignaciones").
+Si la posición escrita es justo la que sigue a la pedida (se contó desde 1),
+el mensaje agrega que las posiciones se numeran desde 0. Lo repetido en varias
+líneas se dice una vez ("lo mismo ocurre en las otras 4 asignaciones").
 
 ### Consignas de opciones
 

@@ -383,7 +383,7 @@ const CASOS_DE_TABLAS = [
   tablas(4, 'la correcta', "nombres[1][0] = 'L';\nnombres[1][1] = 'u';\nnombres[1][2] = 'i';\nnombres[1][3] = 's';\nnombres[1][4] = '\\0';"),
   tablas(4, 'con espacios en los indices', "nombres[ 1 ][ 0 ] = 'L';\nnombres[ 1 ][ 1 ] = 'u';\nnombres[ 1 ][ 2 ] = 'i';\nnombres[ 1 ][ 3 ] = 's';\nnombres[ 1 ][ 4 ] = '\\0';"),
   tablas(4, 'con strcpy', 'strcpy(nombres[1], "Luis");', ['ELEMENTOS_CON_FUNCION']),
-  tablas(4, 'en otra posicion', "nombres[0][0] = 'L';\nnombres[0][1] = 'u';\nnombres[0][2] = 'i';\nnombres[0][3] = 's';\nnombres[0][4] = '\\0';", ['ELEMENTOS_FALTAN']),
+  tablas(4, 'en otra posicion', "nombres[0][0] = 'L';\nnombres[0][1] = 'u';\nnombres[0][2] = 'i';\nnombres[0][3] = 's';\nnombres[0][4] = '\\0';", ['ELEMENTOS_OTRA_POSICION']),
   tablas(4, 'sin el fin', "nombres[1][0] = 'L';\nnombres[1][1] = 'u';\nnombres[1][2] = 'i';\nnombres[1][3] = 's';", ['CADENA_SIN_FIN']),
   tablas(4, 'falta una letra', "nombres[1][0] = 'L';\nnombres[1][1] = 'u';\nnombres[1][3] = 's';\nnombres[1][4] = '\\0';", ['ELEMENTO_FALTA']),
   tablas(4, 'una letra equivocada', "nombres[1][0] = 'L';\nnombres[1][1] = 'u';\nnombres[1][2] = 'y';\nnombres[1][3] = 's';\nnombres[1][4] = '\\0';", ['ELEMENTO_DISTINTO']),
@@ -404,8 +404,8 @@ const CASOS_DE_TABLAS = [
   // 10: una celda, caracter por caracter
   tablas(10, 'la correcta', "datos[1][0][0] = 'A';\ndatos[1][0][1] = 'n';\ndatos[1][0][2] = 'a';\ndatos[1][0][3] = '\\0';"),
   tablas(10, 'con strcpy', 'strcpy(datos[1][0], "Ana");', ['ELEMENTOS_CON_FUNCION']),
-  tablas(10, 'en otra fila', "datos[0][0][0] = 'A';\ndatos[0][0][1] = 'n';\ndatos[0][0][2] = 'a';\ndatos[0][0][3] = '\\0';", ['ELEMENTOS_FALTAN']),
-  tablas(10, 'en otra columna', "datos[1][1][0] = 'A';\ndatos[1][1][1] = 'n';\ndatos[1][1][2] = 'a';\ndatos[1][1][3] = '\\0';", ['ELEMENTOS_FALTAN']),
+  tablas(10, 'en otra fila', "datos[0][0][0] = 'A';\ndatos[0][0][1] = 'n';\ndatos[0][0][2] = 'a';\ndatos[0][0][3] = '\\0';", ['ELEMENTOS_FILA_DISTINTA']),
+  tablas(10, 'en otra columna', "datos[1][1][0] = 'A';\ndatos[1][1][1] = 'n';\ndatos[1][1][2] = 'a';\ndatos[1][1][3] = '\\0';", ['ELEMENTOS_COLUMNA_DISTINTA']),
   tablas(10, 'sin el fin', "datos[1][0][0] = 'A';\ndatos[1][0][1] = 'n';\ndatos[1][0][2] = 'a';", ['CADENA_SIN_FIN']),
   tablas(10, 'una letra equivocada', "datos[1][0][0] = 'A';\ndatos[1][0][1] = 'm';\ndatos[1][0][2] = 'a';\ndatos[1][0][3] = '\\0';", ['ELEMENTO_DISTINTO']),
 
@@ -440,6 +440,20 @@ const CASOS_DE_TABLAS = [
   {
     ...tablas(10, 'las letras con un solo indice', "datos[0] = 'A';\ndatos[1] = 'n';\ndatos[2] = 'a';\ndatos[3] = '\\0';", ['ELEMENTOS_COMO_UNA_SOLA_CADENA']),
     dice: ['tres índices'],
+  },
+
+  // El texto, en otra posicion (o en otra fila o columna)
+  {
+    ...tablas(4, 'el texto, en la tercera posicion', "nombres[2][0] = 'L';\nnombres[2][1] = 'u';\nnombres[2][2] = 'i';\nnombres[2][3] = 's';\nnombres[2][4] = '\\0';", ['ELEMENTOS_OTRA_POSICION']),
+    dice: ['El texto está bien escrito', 'la posición 2 es la tercera'],
+  },
+  {
+    ...tablas(4, 'otro texto, en la primera posicion', "nombres[0][0] = 'L';\nnombres[0][1] = 'o';\nnombres[0][2] = 'l';\nnombres[0][3] = 'a';\nnombres[0][4] = '\\0';", ['ELEMENTOS_OTRA_POSICION']),
+    dice: ['Los caracteres están asignados a `nombres[0]`'],
+  },
+  {
+    ...tablas(10, 'otra fila y otra columna', "datos[0][1][0] = 'A';\ndatos[0][1][1] = 'n';\ndatos[0][1][2] = 'a';\ndatos[0][1][3] = '\\0';", ['ELEMENTOS_FILA_Y_COLUMNA_DISTINTAS']),
+    dice: ['El texto está bien escrito'],
   },
 ];
 

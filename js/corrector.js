@@ -2010,13 +2010,63 @@ export function corregir(
       const funcion = modelo.llamadas.find(
         (l) => l.nuevo && ['strcpy', 'strncpy', 'sprintf', 'memcpy'].includes(l.funcion)
       );
+      // Los caracteres estan, pero en otra posicion (o en otra fila o columna).
+      const otraPosicion = () => {
+        const otras = modelo.asignaciones.filter(
+          (a) =>
+            a.nuevo &&
+            a.operador === '=' &&
+            a.izquierda.clase === 'indice' &&
+            a.izquierda.nombre === nombre &&
+            a.izquierda.indices.length === en.length + 1
+        );
+        if (!otras.length || !en.length) return false;
+        const prefijos = otras.map((a) => a.izquierda.indices.slice(0, en.length).map((x) => valorDeDimension(x, modelo)));
+        const hay = prefijos[0];
+        if (hay.some((n) => n == null) || prefijos.some((p) => p.join() !== hay.join())) return false;
+        const donde = nombre + hay.map((n) => '[' + n + ']').join('');
+        const bien = !verificarElementos(nombre, regla.texto, otras, modelo, hay).some((h) => h.nivel === 'error');
+        const difieren = hay.map((_, k) => k).filter((k) => hay[k] !== en[k]);
+        const dimension = (k) => (en.length === 1 ? ['posición', 'posiciones'] : k === 0 ? ['fila', 'filas'] : ['columna', 'columnas']);
+        let codigo;
+        let que;
+        if (en.length === 1) {
+          codigo = 'ELEMENTOS_OTRA_POSICION';
+          que = ', y la consigna pide otra posición del arreglo.';
+        } else if (difieren.length === 2) {
+          codigo = 'ELEMENTOS_FILA_Y_COLUMNA_DISTINTAS';
+          que = ': ni la fila ni la columna son las que pide la consigna.';
+        } else if (difieren[0] === 0) {
+          codigo = 'ELEMENTOS_FILA_DISTINTA';
+          que = ': la columna es la que pide la consigna, pero la fila no.';
+        } else {
+          codigo = 'ELEMENTOS_COLUMNA_DISTINTA';
+          que = ': la fila es la que pide la consigna, pero la columna no.';
+        }
+        const corridas = difieren
+          .filter((k) => hay[k] === en[k] + 1)
+          .map((k) => {
+            const [uno, varias] = dimension(k);
+            return ` Las ${varias} se numeran desde 0: la ${uno} ${hay[k]} es la ${ordinalFemenino(hay[k])}.`;
+          })
+          .join('');
+        error(
+          codigo,
+          (bien ? 'El texto está bien escrito, pero está asignado a ' : 'Los caracteres están asignados a ') +
+            `\`${donde}\`` +
+            que +
+            corridas,
+          otras[0].fila
+        );
+        return true;
+      };
       if (funcion) {
         error(
           'ELEMENTOS_CON_FUNCION',
           `La consigna pide guardar los caracteres de a uno, no copiar el texto con \`${funcion.funcion}\`.`,
           funcion.fila
         );
-      } else {
+      } else if (!otraPosicion()) {
         error(
           'ELEMENTOS_FALTAN',
           `No encontré asignaciones a las posiciones de \`${etiqueta}\`: cada carácter se guarda en la posición que le corresponde.`
