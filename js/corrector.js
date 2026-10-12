@@ -2198,6 +2198,15 @@ export function corregir(
     const propios = modelo.includes.filter((i) => i.nuevo);
     const bien = propios.find((i) => i.ruta === esperado);
     if (bien) {
+      // Una directiva no es una sentencia: no termina con ";". Compila, porque
+      // dentro de una funcion queda una sentencia vacia, y por eso es una mejora.
+      if (/#[ \t]*include[^\n]*;/.test(respuesta) && practicas.includes('claridad')) {
+        mejora(
+          'INCLUDE_CON_PUNTO_Y_COMA',
+          'Está bien, pero una directiva del preprocesador no termina con `;`.',
+          bien.fila
+        );
+      }
       if (!bien.sistema && practicas.includes('claridad')) {
         mejora(
           'INCLUDE_ENTRE_COMILLAS',
@@ -2215,7 +2224,7 @@ export function corregir(
           : 'INCLUDE_OTRA_BIBLIOTECA',
         otro.ruta.replace(/\.h$/, '') === esperado.replace(/\.h$/, '')
           ? `\`${otro.ruta}\` no es un archivo de cabecera de C: los de C terminan en \`.h\`.`
-          : `\`${otro.ruta}\` es otra biblioteca: no es la de las cadenas.`,
+          : `\`${otro.ruta}\` no es la biblioteca de cadenas.`,
         otro.fila
       );
       return;
@@ -2226,7 +2235,7 @@ export function corregir(
     }
     error(
       'INCLUDE_FALTA',
-      'No encontré la directiva que agrega una biblioteca. Para usar las funciones de una biblioteca hay que agregar su archivo de cabecera, con una directiva del preprocesador.'
+      'No encontré la directiva que agrega una biblioteca. Para usar las funciones de una biblioteca hay que agregar su archivo de cabecera, con una directiva del preprocesador. Las directivas del preprocesador comienzan con `#`.'
     );
   }
 
@@ -2875,7 +2884,7 @@ function erroresConocidos(respuesta) {
     [
       /^[ \t]*include[ \t]*[<"]/m,
       'INCLUDE_SIN_NUMERAL',
-      'Las directivas del preprocesador, como la que agrega una biblioteca, empiezan con `#`.',
+      'Las directivas del preprocesador comienzan con `#`.',
     ],
     [
       /\btypedef\s+\w+\s+struct\b/,

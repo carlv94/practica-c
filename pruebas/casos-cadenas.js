@@ -69,41 +69,41 @@ const CASOS_DE_FIN = [
   fin(5, 'que contiene la variable: la ultima letra', '0', ['OPCION_ULTIMA_LETRA']),
   fin(5, 'que contiene la variable: no se sabe', '2', ['OPCION_NO_SE_SABE_FIN']),
 
-  // 6: una letra
-  fin(6, 'una letra', 'char letra[2];'),
-  fin(6, 'sin el lugar del fin', 'char letra[1];', ['CADENA_SIN_FIN']),
-  fin(6, 'de mas', 'char letra[10];', ['ARREGLO_GRANDE']),
-  fin(6, 'un solo caracter', 'char letra;', ['VARIABLE_NO_ES_ARREGLO']),
+  // 10: una letra (al final: se aprende en la 9)
+  fin(10, 'una letra', 'char letra[2];'),
+  fin(10, 'sin el lugar del fin', 'char letra[1];', ['CADENA_SIN_FIN']),
+  fin(10, 'de mas', 'char letra[10];', ['ARREGLO_GRANDE']),
+  fin(10, 'un solo caracter', 'char letra;', ['VARIABLE_NO_ES_ARREGLO']),
 
-  // 7: con su texto
-  fin(7, 'corchetes vacios', 'char saludo[] = "Hola";'),
-  fin(7, 'con el lugar justo: correcto y mejorable', 'char saludo[5] = "Hola";', 'ok', ['CADENA_DIMENSION_INNECESARIA']),
-  fin(7, 'con lugar de mas: correcto y mejorable', 'char saludo[20] = "Hola";', 'ok', ['CADENA_DIMENSION_INNECESARIA']),
-  fin(7, 'justo para las letras: C lo deja, pero no es una cadena', 'char saludo[4] = "Hola";', ['CADENA_SIN_FIN']),
-  fin(7, 'no entra', 'char saludo[3] = "Hola";', ['ARREGLO_CHICO']),
-  fin(7, 'otro texto', 'char saludo[] = "hola";', ['TEXTO_DISTINTO']),
-  fin(7, 'entre comillas simples', "char saludo[] = 'Hola';", ['CADENA_CON_COMILLAS_SIMPLES']),
-  fin(7, 'una letra entre comillas simples', "char saludo[] = 'H';", ['CADENA_CON_COMILLAS_SIMPLES']),
+  // 6: con su texto
+  fin(6, 'corchetes vacios', 'char saludo[] = "Hola";'),
+  fin(6, 'con el lugar justo: correcto y mejorable', 'char saludo[5] = "Hola";', 'ok', ['CADENA_DIMENSION_INNECESARIA']),
+  fin(6, 'con lugar de mas: correcto y mejorable', 'char saludo[20] = "Hola";', 'ok', ['CADENA_DIMENSION_INNECESARIA']),
+  fin(6, 'justo para las letras: C lo deja, pero no es una cadena', 'char saludo[4] = "Hola";', ['CADENA_SIN_FIN']),
+  fin(6, 'no entra', 'char saludo[3] = "Hola";', ['ARREGLO_CHICO']),
+  fin(6, 'otro texto', 'char saludo[] = "hola";', ['TEXTO_DISTINTO']),
+  fin(6, 'entre comillas simples', "char saludo[] = 'Hola';", ['CADENA_CON_COMILLAS_SIMPLES']),
+  fin(6, 'una letra entre comillas simples', "char saludo[] = 'H';", ['CADENA_CON_COMILLAS_SIMPLES']),
   // Es el mismo texto: el fin escrito de mas es una mejora.
-  fin(7, 'con el fin escrito de mas: correcta y mejorable', 'char saludo[] = "Hola\\0";', 'ok', ['FIN_EN_EL_TEXTO']),
-  fin(7, 'con el fin escrito y el lugar justo', 'char saludo[5] = "Hola\\0";', 'ok', [
+  fin(6, 'con el fin escrito de mas: correcta y mejorable', 'char saludo[] = "Hola\\0";', 'ok', ['FIN_EN_EL_TEXTO']),
+  fin(6, 'con el fin escrito y el lugar justo', 'char saludo[5] = "Hola\\0";', 'ok', [
     'FIN_EN_EL_TEXTO',
     'CADENA_DIMENSION_INNECESARIA',
   ]),
-  fin(7, 'con el fin escrito y sin lugar', 'char saludo[4] = "Hola\\0";', ['ARREGLO_CHICO']),
-  fin(7, 'el texto despues', 'char saludo[10];\nstrcpy(saludo, "Hola");', ['CADENA_SIN_TEXTO']),
-  fin(7, 'con una lista de caracteres: correcta y mejorable', "char saludo[] = {'H', 'o', 'l', 'a', '\\0'};", 'ok', [
+  fin(6, 'con el fin escrito y sin lugar', 'char saludo[4] = "Hola\\0";', ['ARREGLO_CHICO']),
+  fin(6, 'el texto despues', 'char saludo[10];\nstrcpy(saludo, "Hola");', ['CADENA_SIN_TEXTO']),
+  fin(6, 'con una lista de caracteres: correcta y mejorable', "char saludo[] = {'H', 'o', 'l', 'a', '\\0'};", 'ok', [
     'CADENA_COMO_TEXTO',
   ]),
-  fin(7, 'con una lista sin el fin', "char saludo[] = {'H', 'o', 'l', 'a'};", ['CADENA_SIN_FIN']),
+  fin(6, 'con una lista sin el fin', "char saludo[] = {'H', 'o', 'l', 'a'};", ['CADENA_SIN_FIN']),
 
-  // 8: letra por letra
-  fin(8, 'la lista con su fin', "char saludo[] = {'H', 'o', 'l', 'a', '\\0'};"),
-  fin(8, 'la lista sin el fin pero con lugar', "char saludo[5] = {'H', 'o', 'l', 'a'};"),
-  fin(8, 'la lista sin el fin ni lugar', "char saludo[] = {'H', 'o', 'l', 'a'};", ['CADENA_SIN_FIN']),
-  fin(8, 'con comillas dobles', 'char saludo[] = "Hola";', ['CADENA_NO_ES_LISTA']),
-  fin(8, 'letras con comillas dobles', 'char saludo[] = {"H", "o", "l", "a"};', ['LISTA_DE_CARACTERES']),
-  fin(8, 'una letra distinta', "char saludo[] = {'H', 'o', 'l', 'b', '\\0'};", ['VALOR_DISTINTO']),
+  // 7: letra por letra
+  fin(7, 'la lista con su fin', "char saludo[] = {'H', 'o', 'l', 'a', '\\0'};"),
+  fin(7, 'la lista sin el fin pero con lugar', "char saludo[5] = {'H', 'o', 'l', 'a'};"),
+  fin(7, 'la lista sin el fin ni lugar', "char saludo[] = {'H', 'o', 'l', 'a'};", ['CADENA_SIN_FIN']),
+  fin(7, 'con comillas dobles', 'char saludo[] = "Hola";', ['CADENA_NO_ES_LISTA']),
+  fin(7, 'letras con comillas dobles', 'char saludo[] = {"H", "o", "l", "a"};', ['LISTA_DE_CARACTERES']),
+  fin(7, 'una letra distinta', "char saludo[] = {'H', 'o', 'l', 'b', '\\0'};", ['VALOR_DISTINTO']),
 ];
 
 const vacia = (paso, nombre, respuesta, espera, mejoras) =>
@@ -159,20 +159,22 @@ const CASOS_DE_BIBLIOTECA = [
   biblioteca(1, 'entre comillas: correcta y mejorable', '#include "string.h"', 'ok', ['INCLUDE_ENTRE_COMILLAS']),
   biblioteca(1, 'sin la extension', '#include <string>', ['INCLUDE_SIN_EXTENSION']),
   biblioteca(1, 'otra biblioteca', '#include <stdio.h>', ['INCLUDE_OTRA_BIBLIOTECA']),
+  biblioteca(1, 'una que no existe', '#include <otracosa.h>', ['INCLUDE_OTRA_BIBLIOTECA']),
+  biblioteca(1, 'con punto y coma: correcta y mejorable', '#include <string.h>;', 'ok', ['INCLUDE_CON_PUNTO_Y_COMA']),
   biblioteca(1, 'con define', '#define <string.h>', ['INCLUDE_ES_DEFINE']),
   biblioteca(1, 'sin el numeral', 'include <string.h>', ['INCLUDE_SIN_NUMERAL']),
   biblioteca(1, 'nada', 'int x;', ['INCLUDE_FALTA']),
   // 1: una letra
-  fin(9, 'la letra entre comillas simples', "char letra = 'A';"),
-  fin(9, 'la letra como numero: correcta y mejorable', 'char letra = 65;', 'ok', ['CARACTER_COMO_NUMERO']),
-  fin(9, 'con comillas dobles', 'char letra = "A";', ['CARACTER_CON_COMILLAS_DOBLES']),
-  fin(9, 'una minuscula', "char letra = 'a';", ['CARACTER_DISTINTO']),
-  fin(9, 'otra letra', "char letra = 'B';", ['CARACTER_DISTINTO']),
-  fin(9, 'sin valor', 'char letra;', ['CARACTER_SIN_VALOR']),
-  fin(9, 'como arreglo', 'char letra[2] = "A";', ['VARIABLE_ARREGLO']),
-  fin(9, 'otro tipo', "int letra = 'A';", ['VARIABLE_TIPO']),
-  fin(10, 'sizeof de un texto de una letra: la correcta', '1'),
-  fin(10, 'sizeof de un texto de una letra: lo mismo que la letra', '0', ['OPCION_TEXTO_COMO_LETRA']),
+  fin(8, 'la letra entre comillas simples', "char letra = 'A';"),
+  fin(8, 'la letra como numero: correcta y mejorable', 'char letra = 65;', 'ok', ['CARACTER_COMO_NUMERO']),
+  fin(8, 'con comillas dobles', 'char letra = "A";', ['CARACTER_CON_COMILLAS_DOBLES']),
+  fin(8, 'una minuscula', "char letra = 'a';", ['CARACTER_DISTINTO']),
+  fin(8, 'otra letra', "char letra = 'B';", ['CARACTER_DISTINTO']),
+  fin(8, 'sin valor', 'char letra;', ['CARACTER_SIN_VALOR']),
+  fin(8, 'como arreglo', 'char letra[2] = "A";', ['VARIABLE_ARREGLO']),
+  fin(8, 'otro tipo', "int letra = 'A';", ['VARIABLE_TIPO']),
+  fin(9, 'sizeof de un texto de una letra: la correcta', '1'),
+  fin(9, 'sizeof de un texto de una letra: lo mismo que la letra', '0', ['OPCION_TEXTO_COMO_LETRA']),
 
   // 3: guardar un texto
   biblioteca(2, 'strcpy', 'strcpy(nombre, "Juan");'),
@@ -206,27 +208,27 @@ const CASOS_DE_BIBLIOTECA = [
   biblioteca(5, 'con &', 'largo = strlen(&nombre);', ['ARGUMENTO_CON_AMPERSAND']),
 
   // 7: comparar
-  biblioteca(6, 'strcmp con cero', 'if (strcmp(nombre, "Ana") == 0) {\n  iguales = 1;\n}'),
-  biblioteca(6, 'con las cadenas al reves: da lo mismo', 'if (strcmp("Ana", nombre) == 0) {\n  iguales = 1;\n}'),
-  biblioteca(6, 'con la negacion: correcta y mejorable', 'if (!strcmp(nombre, "Ana")) {\n  iguales = 1;\n}', 'ok', [
+  biblioteca(7, 'strcmp con cero', 'if (strcmp(nombre, "Ana") == 0) {\n  iguales = 1;\n}'),
+  biblioteca(7, 'con las cadenas al reves: da lo mismo', 'if (strcmp("Ana", nombre) == 0) {\n  iguales = 1;\n}'),
+  biblioteca(7, 'con la negacion: correcta y mejorable', 'if (!strcmp(nombre, "Ana")) {\n  iguales = 1;\n}', 'ok', [
     'STRCMP_SIN_COMPARAR',
   ]),
-  biblioteca(6, 'strcmp solo: se cumple al reves', 'if (strcmp(nombre, "Ana")) {\n  iguales = 1;\n}', ['STRCMP_AL_REVES']),
-  biblioteca(6, 'comparado con distinto de cero', 'if (strcmp(nombre, "Ana") != 0) {\n  iguales = 1;\n}', ['STRCMP_AL_REVES']),
+  biblioteca(7, 'strcmp solo: se cumple al reves', 'if (strcmp(nombre, "Ana")) {\n  iguales = 1;\n}', ['STRCMP_AL_REVES']),
+  biblioteca(7, 'comparado con distinto de cero', 'if (strcmp(nombre, "Ana") != 0) {\n  iguales = 1;\n}', ['STRCMP_AL_REVES']),
   // El resultado guardado en una variable y comparado despues.
-  biblioteca(6, 'guardado y comparado con 0', 'int respuesta = strcmp(nombre, "Ana");\nif (respuesta == 0) {\n  iguales = 1;\n}'),
-  biblioteca(6, 'guardado en una variable ya declarada', 'int respuesta;\nrespuesta = strcmp(nombre, "Ana");\nif (respuesta == 0) {\n  iguales = 1;\n}'),
-  biblioteca(6, 'guardado y negado: correcta y mejorable', 'int respuesta = strcmp(nombre, "Ana");\nif (!respuesta) {\n  iguales = 1;\n}', 'ok', ['STRCMP_SIN_COMPARAR']),
-  biblioteca(6, 'guardado, y el if se cumple al reves', 'int respuesta = strcmp(nombre, "Ana");\nif (respuesta) {\n  iguales = 1;\n}', ['STRCMP_AL_REVES']),
-  biblioteca(6, 'guardado, y comparado con distinto de 0', 'int respuesta = strcmp(nombre, "Ana");\nif (respuesta != 0) {\n  iguales = 1;\n}', ['STRCMP_AL_REVES']),
-  biblioteca(6, 'guardado y nunca comparado', 'int respuesta = strcmp(nombre, "Ana");', ['RESULTADO_SIN_COMPARAR']),
-  biblioteca(6, 'con ==', 'if (nombre == "Ana") {\n  iguales = 1;\n}', ['COMPARAR_CON_IGUAL']),
-  biblioteca(6, 'fuera de un if', 'iguales = strcmp(nombre, "Ana") == 0;', ['COMPARACION_FUERA_DEL_IF']),
-  biblioteca(6, 'otro texto', 'if (strcmp(nombre, "ana") == 0) {\n  iguales = 1;\n}', ['TEXTO_DISTINTO']),
-  biblioteca(6, 'mayor o menor', 'if (strcmp(nombre, "Ana") < 0) {\n  iguales = 1;\n}', ['STRCMP_USO']),
-  biblioteca(7, 'que devuelve strcmp: la correcta', '1'),
-  biblioteca(7, 'que devuelve strcmp: uno', '0', ['OPCION_STRCMP_IGUALES_ES_UNO']),
-  biblioteca(7, 'que devuelve strcmp: verdadero', '2', ['OPCION_STRCMP_ES_BOOLEANO']),
+  biblioteca(7, 'guardado y comparado con 0', 'int respuesta = strcmp(nombre, "Ana");\nif (respuesta == 0) {\n  iguales = 1;\n}'),
+  biblioteca(7, 'guardado en una variable ya declarada', 'int respuesta;\nrespuesta = strcmp(nombre, "Ana");\nif (respuesta == 0) {\n  iguales = 1;\n}'),
+  biblioteca(7, 'guardado y negado: correcta y mejorable', 'int respuesta = strcmp(nombre, "Ana");\nif (!respuesta) {\n  iguales = 1;\n}', 'ok', ['STRCMP_SIN_COMPARAR']),
+  biblioteca(7, 'guardado, y el if se cumple al reves', 'int respuesta = strcmp(nombre, "Ana");\nif (respuesta) {\n  iguales = 1;\n}', ['STRCMP_AL_REVES']),
+  biblioteca(7, 'guardado, y comparado con distinto de 0', 'int respuesta = strcmp(nombre, "Ana");\nif (respuesta != 0) {\n  iguales = 1;\n}', ['STRCMP_AL_REVES']),
+  biblioteca(7, 'guardado y nunca comparado', 'int respuesta = strcmp(nombre, "Ana");', ['RESULTADO_SIN_COMPARAR']),
+  biblioteca(7, 'con ==', 'if (nombre == "Ana") {\n  iguales = 1;\n}', ['COMPARAR_CON_IGUAL']),
+  biblioteca(7, 'fuera de un if', 'iguales = strcmp(nombre, "Ana") == 0;', ['COMPARACION_FUERA_DEL_IF']),
+  biblioteca(7, 'otro texto', 'if (strcmp(nombre, "ana") == 0) {\n  iguales = 1;\n}', ['TEXTO_DISTINTO']),
+  biblioteca(7, 'mayor o menor', 'if (strcmp(nombre, "Ana") < 0) {\n  iguales = 1;\n}', ['STRCMP_USO']),
+  biblioteca(6, 'que devuelve strcmp: la correcta', '1'),
+  biblioteca(6, 'que devuelve strcmp: uno', '0', ['OPCION_STRCMP_IGUALES_ES_UNO']),
+  biblioteca(6, 'que devuelve strcmp: verdadero', '2', ['OPCION_STRCMP_ES_BOOLEANO']),
 
 ];
 

@@ -56,8 +56,8 @@
       "id": "cadenas-q-sizeof",
       "titulo": "Qué tamaño tiene la cadena",
       "continua": true,
-      "enunciado": "Después de ejecutar el código de abajo, ¿qué valor tendría `tamano`?",
-      "codigo": "int tamano = sizeof({C});",
+      "enunciado": "Después de ejecutar el código de abajo, ¿qué valor tendría `tamanio`?",
+      "codigo": "int tamanio = sizeof({C});",
       "opciones": [
         {
           "valor": "4",
@@ -96,13 +96,6 @@
       ]
     },
     {
-      "id": "cadenas-una-letra",
-      "titulo": "Una cadena para una sola letra",
-      "enunciado": "Declare una cadena de caracteres con el tamaño justo para guardar un texto de una sola letra.",
-      "requiere": [{ "variable": { "tipo": "caracter", "arreglo": { "tamano": 2, "letras": 1 } } }],
-      "referencia": "char letra[2];"
-    },
-    {
       "id": "cadenas-con-texto",
       "titulo": "Declarar una cadena con su texto",
       "enunciado": "Declare una cadena de caracteres e inicialícela, en la misma sentencia, con el texto `\"Hola\"`.",
@@ -128,8 +121,8 @@
     {
       "id": "cadenas-q-letra-y-texto",
       "titulo": "Una letra y un texto de una letra",
-      "enunciado": "Después de ejecutar el código de abajo, ¿qué valor tendría `sizeof(texto)`?",
-      "codigo": "char letra = 'A';\nchar texto[] = \"A\";",
+      "enunciado": "Después de ejecutar el código de abajo, ¿qué valor tendría `tamanio`?",
+      "codigo": "char letra = 'A';\nchar texto[] = \"A\";\nint tamanio = sizeof(texto);",
       "opciones": [
         {
           "valor": "1",
@@ -144,6 +137,13 @@
           "explicacion": "Sí se sabe: el compilador reserva justo el espacio de las letras más el del `'\\0'`."
         }
       ]
+    },
+    {
+      "id": "cadenas-una-letra",
+      "titulo": "Una cadena para una sola letra",
+      "enunciado": "Declare una cadena de caracteres con el tamaño justo para guardar un texto de una sola letra.",
+      "requiere": [{ "variable": { "tipo": "caracter", "arreglo": { "tamano": 2, "letras": 1 } } }],
+      "referencia": "char letra[2];"
     }
   ]
 }

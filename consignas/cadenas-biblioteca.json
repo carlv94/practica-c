@@ -73,16 +73,6 @@
       "referencia": "largo = strlen(nombre);"
     },
     {
-      "id": "cadenas-comparar",
-      "titulo": "Comparar dos cadenas",
-      "dado": "char nombre[21];\nint iguales = 0;",
-      "enunciado": "Escriba un `if` que asigne `1` a la variable `iguales` cuando la cadena `nombre` sea igual al texto `\"Ana\"`.",
-      "requiere": [
-        { "llamada": { "funcion": "strcmp", "argumentos": ["nombre", "\"Ana\""], "comparar": true } }
-      ],
-      "referencia": "if (strcmp(nombre, \"Ana\") == 0) {\n  iguales = 1;\n}"
-    },
-    {
       "id": "cadenas-q-strcmp",
       "titulo": "Qué devuelve strcmp",
       "enunciado": "Después de ejecutar el código de abajo, ¿qué valor tendría `r`?",
@@ -101,6 +91,16 @@
           "explicacion": "`strcmp` devuelve un número, no verdadero o falso."
         }
       ]
+    },
+    {
+      "id": "cadenas-comparar",
+      "titulo": "Comparar dos cadenas",
+      "dado": "char nombre[21];\nint iguales = 0;",
+      "enunciado": "Escriba un `if` que asigne `1` a la variable `iguales` cuando la cadena `nombre` sea igual al texto `\"Ana\"`.",
+      "requiere": [
+        { "llamada": { "funcion": "strcmp", "argumentos": ["nombre", "\"Ana\""], "comparar": true } }
+      ],
+      "referencia": "if (strcmp(nombre, \"Ana\") == 0) {\n  iguales = 1;\n}"
     }
   ]
 }

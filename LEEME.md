@@ -476,6 +476,8 @@ antes de la línea que lo usa.
   concepto ("el carácter que marca el final") solo donde nombrarlo le daría al
   alumno la respuesta de una consigna que justamente quiere comprobar que lo
   recuerda: `FIN_DISTINTO`, `FIN_CON_ESPACIO`, `CADENA_SIN_FIN` de una lista.
+- Se dice siempre **"biblioteca"** (la de cadenas, la de entrada y salida), no
+  "librería": una sola palabra en todos los enunciados y mensajes.
 - Cada mensaje lleva un **código fijo** (`CAMPO_FALTA`, `FALTA_PUNTO_Y_COMA`).
   El texto se puede reescribir; el código es lo que sirve para contar errores.
 - Cada intento queda anotado en el navegador (`practica-c:intentos`) con sus
