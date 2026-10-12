@@ -37,7 +37,7 @@
       "id": "cadenas-fila",
       "titulo": "Guardar un texto en una fila",
       "dado": "#define MAX_ESTUDIANTES 30\n#define LARGO_NOMBRE 25\nchar nombres[MAX_ESTUDIANTES][LARGO_NOMBRE + 1];",
-      "enunciado": "Guarde el texto \"Ana\" en la primera posición de la tabla nombres.",
+      "enunciado": "Guarde el texto `\"Ana\"` en la primera posición de la tabla `nombres`.",
       "requiere": [
         {
           "llamada": {
@@ -54,24 +54,26 @@
       "id": "cadenas-vaciar-tabla",
       "titulo": "Vaciar todas las filas",
       "dado": "#define MAX_ESTUDIANTES 30\n#define LARGO_NOMBRE 25\nchar nombres[MAX_ESTUDIANTES][LARGO_NOMBRE + 1];\nint i;",
-      "enunciado": "Con un ciclo, deje vacías todas las cadenas de la tabla nombres. Use el índice i.",
+      "enunciado": "Con un ciclo, deje vacías todas las cadenas de la tabla `nombres`. Use el índice `i`.",
       "requiere": [{ "ciclo": { "indice": "i", "filasDe": "nombres" } }],
       "referencia": "for (i = 0; i < MAX_ESTUDIANTES; i++) {\n  nombres[i][0] = '\\0';\n}"
     },
     {
       "id": "cadenas-q-tabla",
       "titulo": "Qué es una fila de la tabla",
-      "enunciado": "Se ejecuta el código de abajo. ¿Qué es nombres[0][0]?",
+      "enunciado": "Después de ejecutar el código de abajo, ¿qué contendría `nombres[0][0]`?",
       "codigo": "char nombres[3][10];\nstrcpy(nombres[0], \"Ana\");",
       "opciones": [
         {
-          "texto": "El texto \"Ana\"",
+          "valor": "\"Ana\"",
+          "texto": "el texto completo de la fila",
           "codigo": "OPCION_FILA_ES_EL_TEXTO",
           "explicacion": "`nombres[0]` es la cadena completa, `Ana`. Con el segundo índice se elige un carácter de esa cadena."
         },
-        { "texto": "La letra `A`", "correcta": true },
+        { "valor": "'A'", "texto": "la primera letra del texto", "correcta": true },
         {
-          "texto": "El carácter de fin, `\\0`",
+          "valor": "'\\0'",
+          "texto": "el carácter de fin",
           "codigo": "OPCION_FIN_EN_LA_PRIMERA",
           "explicacion": "El carácter de fin está después de la última letra, en la posición 3 de esa fila, no en la primera."
         }

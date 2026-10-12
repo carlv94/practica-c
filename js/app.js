@@ -315,8 +315,10 @@ function mostrarConsigna() {
 
   $('titulo-consigna').textContent = `${actual + 1}. ${consigna.titulo}`;
   $('enunciado').replaceChildren(
+    // Lo que va entre acentos graves (y lo que capturo el alumno) en estilo de
+    // codigo: que "nombre" no se lea como una palabra mas del enunciado.
     ...partesDeEnunciado(consigna.enunciado, capturas).map((parte) =>
-      parte.nombre ? elemento('code', null, parte.nombre) : parte.texto
+      parte.nombre ? elemento('code', null, parte.nombre) : conCodigo(parte.texto)
     )
   );
   dibujar(figuraDe(consigna));

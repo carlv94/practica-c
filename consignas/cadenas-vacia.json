@@ -24,18 +24,19 @@
       "id": "cadenas-vaciar",
       "titulo": "Vaciar una cadena",
       "dado": "#define MAX_NOMBRE 20\nchar nombre[MAX_NOMBRE + 1] = \"Maria\";",
-      "enunciado": "La cadena nombre guarda el texto \"Maria\". Escriba el código que la deje vacía.",
+      "enunciado": "La cadena `nombre` guarda el texto `\"Maria\"`. Escriba el código que la deje vacía.",
       "requiere": [{ "vaciar": "nombre" }],
       "referencia": "nombre[0] = '\\0';"
     },
     {
       "id": "cadenas-q-vaciar-largo",
       "titulo": "Cuántas letras tiene una cadena vaciada",
-      "enunciado": "Se ejecuta el código de abajo. ¿Cuál es el valor de largo?",
+      "enunciado": "Después de ejecutar el código de abajo, ¿qué valor tendría `largo`?",
       "codigo": "char nombre[21] = \"Maria\";\nnombre[0] = '\\0';\nint largo = strlen(nombre);",
       "opciones": [
         {
-          "texto": "5, las letras que tenía",
+          "valor": "5",
+          "texto": "las letras que tenía",
           "codigo": "OPCION_VACIAR_NO_CAMBIA",
           "explicacion": "La cadena ya no tiene letras: `strlen` cuenta hasta el primer carácter de fin, y ahora está en la primera posición."
         },
@@ -45,23 +46,25 @@
           "codigo": "OPCION_TAMANO_DECLARADO",
           "explicacion": "`strlen` no mira el tamaño con el que se declaró la cadena, sino cuántas letras tiene guardadas hasta el carácter de fin."
         },
-        { "texto": "0", "correcta": true }
+        { "valor": "0", "texto": "la cadena ya no tiene letras", "correcta": true }
       ]
     },
     {
       "id": "cadenas-q-vaciar-resto",
       "titulo": "Qué queda en el resto de la cadena",
-      "enunciado": "Se ejecuta el código de abajo. ¿Qué contiene la posición 1 de nombre?",
+      "enunciado": "Después de ejecutar el código de abajo, ¿qué contendría la posición `1` de `nombre`?",
       "codigo": "char nombre[21] = \"Maria\";\nnombre[0] = '\\0';",
       "opciones": [
         {
-          "texto": "El carácter de fin, `\\0`",
+          "valor": "'\\0'",
+          "texto": "el carácter de fin",
           "codigo": "OPCION_VACIAR_BORRA_TODO",
           "explicacion": "Vaciar una cadena solo marca el final en la primera posición: las demás posiciones conservan lo que tenían."
         },
-        { "texto": "La letra `a`, que ya tenía", "correcta": true },
+        { "valor": "'a'", "texto": "la letra que ya tenía", "correcta": true },
         {
-          "texto": "Un espacio",
+          "valor": "' '",
+          "texto": "un espacio",
           "codigo": "OPCION_VACIAR_PONE_ESPACIOS",
           "explicacion": "Ninguna posición se llena de espacios: solo cambia la que se modificó."
         }
@@ -70,13 +73,14 @@
     {
       "id": "cadenas-q-sin-iniciar",
       "titulo": "Una cadena recién declarada",
-      "enunciado": "Se ejecuta el código de abajo. ¿Cuál es el valor de largo?",
+      "enunciado": "Después de ejecutar el código de abajo, ¿qué valor tendría `largo`?",
       "codigo": "char s[10];\nint largo = strlen(s);",
       "opciones": [
         {
-          "texto": "0, porque la cadena está vacía",
+          "valor": "0",
+          "texto": "porque la cadena está vacía",
           "codigo": "OPCION_SIN_INICIAR_ES_VACIA",
-          "explicacion": "Una cadena recién declarada no está vacía: no tiene nada asignado, así que contiene lo que hubiera en esa memoria."
+          "explicacion": "Una cadena recién declarada no está vacía: no tiene nada asignado, así que contiene lo que hubiera anteriormente en esa memoria."
         },
         {
           "valor": "10",

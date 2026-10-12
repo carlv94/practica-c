@@ -323,6 +323,17 @@ dimensión puede ser una cuenta sencilla (`MAX + 1`, `10 + 1`).
 
 ### Consignas de opciones
 
+En un enunciado, lo que va entre acentos graves (`nombre`, `"Maria"`, `1`) se
+muestra en estilo de código, igual que lo que capturó el alumno (`{C}`): que
+un nombre no se lea como una palabra más. Va en estilo de código lo que
+aparece tal cual en el código (nombres, funciones, índices, valores, textos
+con sus comillas) y no las cantidades del problema ("hasta 10 letras").
+
+Las preguntas de cuánto vale algo se escriben siempre igual: "Después de
+ejecutar el código de abajo, ¿qué valor tendría `x`?" o "¿qué contendría
+`nombre[1]`?". Es un seguimiento mental: el presente ("se ejecuta") se leía
+como algo que ocurre ante el alumno.
+
 Una consigna con `"opciones"` se responde eligiendo, no escribiendo. Sirven
 para lo que no se puede corregir sin ejecutar: "¿cuánto vale `n` al terminar
 el ciclo?".
