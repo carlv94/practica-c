@@ -550,7 +550,8 @@ button[hidden] {
 /* Una mejora no es un error ni un aviso: la respuesta vale. Una nota se ve igual,
    pero no cuenta como algo para mejorar. */
 .mensaje.mejora,
-.mensaje.nota {
+.mensaje.nota,
+.mensaje.explicacion {
   border-color: var(--mejora);
   background: var(--mejora-fondo);
 }

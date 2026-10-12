@@ -74,7 +74,7 @@ function registrarIntento(consigna, resultado) {
     correcto: resultado.correcto,
     mejorable: resultado.mejorable,
     conAyuda: pidioSolucion,
-    codigos: resultado.diagnosticos.map((d) => d.codigo),
+    codigos: resultado.diagnosticos.filter((d) => d.nivel !== 'explicacion').map((d) => d.codigo),
   });
   guardar(CLAVE_INTENTOS, intentos.slice(-MAX_INTENTOS));
 }

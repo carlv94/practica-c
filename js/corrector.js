@@ -139,7 +139,15 @@ export function corregirOpcion(consigna, respuesta) {
       { nivel: 'error', codigo: 'OPCION_FALTA', mensaje: 'Elija una de las opciones.', linea: null },
     ]);
   }
-  if (opcion.correcta) return resultado(true, []);
+  // Tambien se explica por que es la correcta: que un acierto no se deba al azar.
+  if (opcion.correcta) {
+    return resultado(
+      true,
+      opcion.explicacion
+        ? [{ nivel: 'explicacion', codigo: 'OPCION_CORRECTA', mensaje: opcion.explicacion, linea: null }]
+        : []
+    );
+  }
   return resultado(false, [
     { nivel: 'error', codigo: opcion.codigo, mensaje: opcion.explicacion, linea: null },
   ]);
