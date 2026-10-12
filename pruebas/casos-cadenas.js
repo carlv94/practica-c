@@ -518,31 +518,68 @@ const typedef = (paso, nombre, respuesta, espera, mejoras) =>
   caso('cadenas-typedef', paso, nombre, respuesta, espera, mejoras);
 
 const CASOS_DE_TYPEDEF = [
-  // 1: el tipo
-  typedef(1, 'un tipo con el lugar del fin', 'typedef char Nombre[26];'),
-  typedef(1, 'con la cuenta', '#define LARGO 25\ntypedef char Nombre[LARGO + 1];'),
-  typedef(1, 'con espacio de mas', 'typedef char Nombre[100];', ['ARREGLO_GRANDE']),
-  typedef(1, 'sin el lugar del fin', 'typedef char Nombre[25];', ['CADENA_SIN_FIN']),
-  typedef(1, 'de pocas letras', 'typedef char Nombre[10];', ['ARREGLO_CHICO']),
-  typedef(1, 'de un solo caracter', 'typedef char Nombre;', ['ALIAS_NO_ES_CADENA']),
-  typedef(1, 'de otro tipo', 'typedef int Nombre[26];', ['ALIAS_TIPO']),
-  typedef(1, 'con *', 'typedef char *Nombre;', ['ALIAS_PUNTERO']),
-  typedef(1, 'sin typedef', 'char Nombre[26];', ['ALIAS_FALTA']),
-  typedef(1, 'el nombre y el tipo al reves', 'typedef Nombre char[26];', ['TYPEDEF_AL_REVES']),
+  // el tipo (fuera de main)
+  typedef(1, 'un tipo con la constante', '#define LARGO_TEXTO 25\ntypedef char Texto[LARGO_TEXTO + 1];'),
+  typedef(1, 'con el numero suelto: correcto y mejorable', 'typedef char Texto[26];', 'ok', ['NUMERO_MAGICO']),
+  typedef(1, 'con espacio de mas', 'typedef char Texto[100];', ['ARREGLO_GRANDE']),
+  typedef(1, 'sin el lugar del fin', 'typedef char Texto[25];', ['CADENA_SIN_FIN']),
+  typedef(1, 'de pocas letras', 'typedef char Texto[10];', ['ARREGLO_CHICO']),
+  typedef(1, 'de un solo caracter', 'typedef char Texto;', ['ALIAS_NO_ES_CADENA']),
+  typedef(1, 'de otro tipo', 'typedef int Texto[26];', ['ALIAS_TIPO']),
+  typedef(1, 'con *', 'typedef char *Texto;', ['ALIAS_PUNTERO']),
+  typedef(1, 'sin typedef', 'char Texto[26];', ['ALIAS_FALTA']),
+  typedef(1, 'el nombre y el tipo al reves', 'typedef Texto char[26];', ['TYPEDEF_AL_REVES']),
 
-  // 2: usarlo
-  typedef(2, 'una variable del tipo', 'Nombre estudiante;'),
-  typedef(2, 'sin usar el tipo', 'char estudiante[26];', ['VARIABLE_SIN_ALIAS']),
-  typedef(2, 'varias en vez de una', 'Nombre estudiante[5];', ['VARIABLE_ARREGLO']),
-  typedef(2, 'el tipo con otra mayuscula', 'nombre estudiante;', ['TIPO_DESCONOCIDO']),
+  // la misma variable, con el tipo
+  typedef(2, 'la variable del tipo', 'Texto nombre;'),
+  typedef(2, 'con otro nombre', 'Texto estudiante;', ['VARIABLE_NOMBRE']),
+  typedef(2, 'sin usar el tipo', 'char nombre[26];', ['VARIABLE_SIN_ALIAS']),
+  typedef(2, 'varias en vez de una', 'Texto nombre[5];', ['VARIABLE_ARREGLO']),
+  typedef(2, 'el tipo con otra mayuscula', 'texto nombre;', ['TIPO_DESCONOCIDO']),
 
-  // 3: una tabla con el tipo
-  typedef(3, 'un arreglo del tipo', 'Nombre curso[30];'),
-  typedef(3, 'y llenar una', 'Nombre curso[30];\nstrcpy(curso[0], "Ana");'),
-  typedef(3, 'con pocos', 'Nombre curso[20];', ['ARREGLO_CHICO']),
-  typedef(3, 'con de mas', 'Nombre curso[40];', ['ARREGLO_GRANDE']),
-  typedef(3, 'una sola', 'Nombre curso;', ['VARIABLE_NO_ES_ARREGLO']),
+  // un arreglo del tipo
+  typedef(3, 'con la constante', '#define MAX_ESTUDIANTES 30\nTexto curso[MAX_ESTUDIANTES];'),
+  typedef(3, 'con el numero suelto: correcto y mejorable', 'Texto curso[30];', 'ok', ['NUMERO_MAGICO']),
+  typedef(3, 'y llenar una', '#define MAX_ESTUDIANTES 30\nTexto curso[MAX_ESTUDIANTES];\nstrcpy(curso[0], "Ana");'),
+  typedef(3, 'con pocos', 'Texto curso[20];', ['ARREGLO_CHICO']),
+  typedef(3, 'con de mas', 'Texto curso[40];', ['ARREGLO_GRANDE']),
+  typedef(3, 'una sola', 'Texto curso;', ['VARIABLE_NO_ES_ARREGLO']),
   typedef(3, 'sin el tipo', 'char curso[30][26];', ['VARIABLE_SIN_ALIAS']),
+
+  // que hay en una letra, con el tipo
+  typedef(4, 'letra: la primera', '2'),
+  typedef(4, 'letra: el texto completo', '0', ['OPCION_FILA_ES_EL_TEXTO']),
+  typedef(4, 'letra: un error', '1', ['OPCION_ALIAS_UN_INDICE']),
+
+  // una tabla del tipo
+  typedef(5, 'con constantes', '#define CAMPOS 3\nTexto datos[MAX_ESTUDIANTES][CAMPOS];'),
+  // El 30 ya es una constante del codigo de arriba: se avisa que conviene usarla.
+  typedef(5, 'con numeros sueltos: correcta y mejorable', 'Texto datos[30][3];', 'ok', ['NUMERO_MAGICO', 'CONSTANTE_SIN_REUTILIZAR']),
+  typedef(5, 'estudiantes de mas', 'Texto datos[40][3];', ['ARREGLO_GRANDE']),
+  typedef(5, 'faltan columnas', 'Texto datos[30][2];', ['ARREGLO_CHICO']),
+  typedef(5, 'filas y columnas al reves', 'Texto datos[3][30];', ['DIMENSIONES_AL_REVES']),
+  typedef(5, 'un arreglo', 'Texto datos[30];', ['TABLA_UNA_DIMENSION']),
+  typedef(5, 'una dimension de mas', 'Texto datos[30][3][2];', ['TABLA_DIMENSIONES']),
+  typedef(5, 'una sola variable', 'Texto datos;', ['VARIABLE_NO_ES_ARREGLO']),
+  typedef(5, 'sin el tipo', 'char datos[30][3][26];', ['VARIABLE_SIN_ALIAS']),
+
+  // que hay en una fila y en una letra de la tabla, con el tipo
+  typedef(6, 'fila: los textos del segundo estudiante', '2'),
+  typedef(6, 'fila: contando desde uno', '0', ['OPCION_POSICION_DESDE_UNO']),
+  typedef(6, 'fila: un solo texto', '1', ['OPCION_FILA_ES_UNA_CELDA']),
+  typedef(6, 'fila: la columna', '3', ['OPCION_FILA_ES_COLUMNA']),
+  typedef(7, 'letra: la primera', '2'),
+  typedef(7, 'letra: el texto completo', '0', ['OPCION_CELDA_ES_EL_TEXTO']),
+  typedef(7, 'letra: un error', '1', ['OPCION_ALIAS_DOS_INDICES']),
+
+  // guardar un texto en una celda, con los tres indices
+  typedef(8, 'strcpy a la celda', 'strcpy(datos[0][1], "Perez");'),
+  typedef(8, 'a mano: correcta y mejorable', "datos[0][1][0] = 'P';\ndatos[0][1][1] = 'e';\ndatos[0][1][2] = 'r';\ndatos[0][1][3] = 'e';\ndatos[0][1][4] = 'z';\ndatos[0][1][5] = '\\0';", 'ok', ['COPIA_A_MANO']),
+  typedef(8, 'con dos indices', 'strcpy(datos[0], "Perez");', ['ARGUMENTO_FALTA_INDICE']),
+  typedef(8, 'otra fila', 'strcpy(datos[2][1], "Perez");', ['ARGUMENTO_FILA_DISTINTA']),
+  typedef(8, 'otra columna', 'strcpy(datos[0][2], "Perez");', ['ARGUMENTO_COLUMNA_DISTINTA']),
+  typedef(8, 'un solo caracter', 'strcpy(datos[0][1][0], "Perez");', ['ARGUMENTO_CON_CORCHETES']),
+  typedef(8, 'la tabla entera', 'strcpy(datos, "Perez");', ['ARGUMENTO_TABLA_ENTERA']),
 ];
 
 export const CASOS_DE_CADENAS_NUEVAS = [

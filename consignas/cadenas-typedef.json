@@ -1,32 +1,136 @@
 {
   "id": "cadenas-typedef",
   "titulo": "Cadenas 7: un tipo para los textos",
-  "descripcion": "Darle un nombre propio al tipo de las cadenas con typedef, y usarlo.",
+  "descripcion": "Darle un nombre propio al tipo de las cadenas con typedef y usarlo en una variable, un arreglo y una tabla.",
   "dentroDeMain": true,
-  "buenasPracticas": ["claridad"],
+  "cabecera": "#include <string.h>",
+  "buenasPracticas": ["claridad", "constantes"],
   "consignas": [
     {
       "id": "cadenas-tipo",
       "titulo": "Definir un tipo para los textos",
+      "en": "archivo",
       "enunciado": "Defina un tipo nuevo con el tamaño justo para guardar un texto de hasta 25 letras.",
       "requiere": [{ "alias": { "arreglo": { "tamano": 26, "letras": 25 }, "capturar": "T" } }],
-      "referencia": "typedef char Nombre[26];"
+      "referencia": "#define LARGO_TEXTO 25\n\ntypedef char Texto[LARGO_TEXTO + 1];"
     },
     {
       "id": "cadenas-con-tipo",
-      "titulo": "Usar el tipo",
+      "titulo": "Declarar la misma variable con el tipo",
       "continua": true,
-      "enunciado": "Declare una variable del tipo {T} para guardar el nombre de un estudiante.",
-      "requiere": [{ "usaAlias": { "alias": "$T" } }],
-      "referencia": "Nombre estudiante;"
+      "ejemplo": {
+        "texto": "Hasta ahora, para declarar una variable de tipo cadena hacíamos lo siguiente:",
+        "codigo": "#define LARGO_TEXTO 25\nchar nombre[LARGO_TEXTO + 1];"
+      },
+      "enunciado": "Declare de nuevo la variable `nombre`, pero esta vez del tipo {T}.",
+      "requiere": [{ "usaAlias": { "alias": "$T", "nombre": "nombre" } }],
+      "referencia": "Texto nombre;"
     },
     {
-      "id": "cadenas-tabla-con-tipo",
-      "titulo": "Varios textos con el tipo",
+      "id": "cadenas-arreglo-con-tipo",
+      "titulo": "Un arreglo del tipo",
       "continua": true,
       "enunciado": "Un curso tiene hasta 30 estudiantes. Declare la variable donde se guarden sus nombres, con el tamaño justo y usando el tipo {T}.",
       "requiere": [{ "usaAlias": { "alias": "$T", "arreglo": { "tamano": 30 } } }],
-      "referencia": "Nombre curso[30];"
+      "referencia": "#define MAX_ESTUDIANTES 30\n\nTexto curso[MAX_ESTUDIANTES];"
+    },
+    {
+      "id": "cadenas-q-alias-letra",
+      "titulo": "Qué hay en una letra, con el tipo",
+      "enunciado": "Después de ejecutar el código de abajo, ¿qué contendría `alumnos[0][0]`?",
+      "archivo": "typedef char Texto[26];",
+      "codigo": "Texto alumnos[3];\nstrcpy(alumnos[0], \"Ana\");",
+      "opciones": [
+        {
+          "valor": "\"Ana\"",
+          "texto": "el texto completo de la posición",
+          "codigo": "OPCION_FILA_ES_EL_TEXTO",
+          "explicacion": "`alumnos[0]` es la cadena completa, `Ana`. Con el segundo índice se elige una letra de ella, aunque en la declaración haya un solo corchete: `Texto` ya es un arreglo de caracteres."
+        },
+        {
+          "valor": "un error",
+          "texto": "`alumnos` se declaró con un solo índice",
+          "codigo": "OPCION_ALIAS_UN_INDICE",
+          "explicacion": "`Texto` ya es un arreglo de 26 caracteres: `alumnos` es un arreglo de 3 de ellos, y por eso tiene dos dimensiones aunque en la declaración se escriba un solo corchete. `alumnos[0]` es la cadena y `alumnos[0][0]`, su primera letra."
+        },
+        { "valor": "'A'", "texto": "la primera letra del texto", "correcta": true }
+      ]
+    },
+    {
+      "id": "cadenas-tabla-con-tipo",
+      "titulo": "Una tabla del tipo",
+      "continua": true,
+      "enunciado": "Un curso tiene hasta 30 estudiantes. De cada uno se guardan su nombre, su apellido y su carrera, y cada texto tiene hasta 25 letras. Declare la variable donde se guarden estos datos de todo el curso, con una fila por estudiante, con el tamaño justo y usando el tipo {T}.",
+      "requiere": [{ "usaAlias": { "alias": "$T", "arreglo": { "tamano": [30, 3] }, "capturar": "D" } }],
+      "referencia": "#define CAMPOS 3\n\nTexto datos[MAX_ESTUDIANTES][CAMPOS];"
+    },
+    {
+      "id": "cadenas-q-alias-fila",
+      "titulo": "Qué hay en una fila, con el tipo",
+      "enunciado": "Después de ejecutar el código de abajo, ¿qué contendría `datos[1]`?",
+      "archivo": "typedef char Texto[26];",
+      "codigo": "Texto datos[2][3];\nstrcpy(datos[0][0], \"Ana\");\nstrcpy(datos[0][1], \"Perez\");\nstrcpy(datos[0][2], \"Medicina\");\nstrcpy(datos[1][0], \"Beto\");\nstrcpy(datos[1][1], \"Lopez\");\nstrcpy(datos[1][2], \"Derecho\");",
+      "opciones": [
+        {
+          "valor": "{\"Ana\", \"Perez\", \"Medicina\"}",
+          "texto": "los tres textos del primer estudiante",
+          "codigo": "OPCION_POSICION_DESDE_UNO",
+          "explicacion": "Las posiciones se numeran desde 0: `datos[0]` es la primera fila y `datos[1]` la segunda, la de `Beto`."
+        },
+        {
+          "valor": "\"Lopez\"",
+          "texto": "un solo texto",
+          "codigo": "OPCION_FILA_ES_UNA_CELDA",
+          "explicacion": "`datos[1]` es la fila completa: guarda tres textos. Un solo texto necesita los dos índices: `datos[1][1]`."
+        },
+        { "valor": "{\"Beto\", \"Lopez\", \"Derecho\"}", "texto": "los tres textos del segundo estudiante", "correcta": true },
+        {
+          "valor": "{\"Perez\", \"Lopez\"}",
+          "texto": "la segunda columna",
+          "codigo": "OPCION_FILA_ES_COLUMNA",
+          "explicacion": "El primer índice elige la fila, no la columna: `datos[1]` es la fila del segundo estudiante, con sus tres textos."
+        }
+      ]
+    },
+    {
+      "id": "cadenas-q-alias-celda-letra",
+      "titulo": "Qué hay en una letra de la tabla, con el tipo",
+      "enunciado": "Después de ejecutar el código de abajo, ¿qué contendría `datos[1][1][0]`?",
+      "archivo": "typedef char Texto[26];",
+      "codigo": "Texto datos[2][3];\nstrcpy(datos[0][0], \"Ana\");\nstrcpy(datos[0][1], \"Perez\");\nstrcpy(datos[0][2], \"Medicina\");\nstrcpy(datos[1][0], \"Beto\");\nstrcpy(datos[1][1], \"Lopez\");\nstrcpy(datos[1][2], \"Derecho\");",
+      "opciones": [
+        {
+          "valor": "\"Lopez\"",
+          "texto": "el texto completo de la celda",
+          "codigo": "OPCION_CELDA_ES_EL_TEXTO",
+          "explicacion": "`datos[1][1]` es la celda con el texto completo, `Lopez`. Con el tercer índice se elige una letra de ese texto."
+        },
+        {
+          "valor": "un error",
+          "texto": "`datos` se declaró con dos índices",
+          "codigo": "OPCION_ALIAS_DOS_INDICES",
+          "explicacion": "`Texto` ya es un arreglo de 26 caracteres: `datos` es una tabla de 2 por 3 de ellos, y por eso tiene tres dimensiones aunque en la declaración se escriban dos corchetes. `datos[1][1]` es la cadena y `datos[1][1][0]`, su primera letra."
+        },
+        { "valor": "'L'", "texto": "la primera letra del texto", "correcta": true }
+      ]
+    },
+    {
+      "id": "cadenas-celda-con-tipo",
+      "titulo": "Guardar un texto en una celda, con el tipo",
+      "continua": true,
+      "enunciado": "En la tabla {D}, cada fila es un estudiante y sus columnas son: la `0` el nombre, la `1` el apellido y la `2` la carrera. Guarde el apellido `\"Perez\"` del primer estudiante.",
+      "requiere": [
+        {
+          "llamada": {
+            "funcion": "strcpy",
+            "alternativas": ["strncpy"],
+            "argumentos": ["$D[0][1]", "\"Perez\""],
+            "orden": "primero va la cadena donde se guarda y después el texto",
+            "aMano": { "variable": "$D", "en": [0, 1], "texto": "Perez" }
+          }
+        }
+      ],
+      "referencia": "strcpy(datos[0][1], \"Perez\");"
     }
   ]
 }
