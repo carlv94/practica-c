@@ -84,7 +84,12 @@
           "codigo": "OPCION_STRCMP_IGUALES_ES_UNO",
           "explicacion": "`strcmp` devuelve `0` cuando las cadenas son iguales. Por eso, para preguntar si son iguales, se compara con `0`."
         },
-        { "valor": "0", "texto": "las cadenas son iguales", "correcta": true },
+        {
+          "valor": "0",
+          "texto": "las cadenas son iguales",
+          "correcta": true,
+          "explicacion": "`strcmp` devuelve `0` cuando las dos cadenas son iguales y un número distinto de `0` cuando no lo son. Por eso, para preguntar si son iguales, se compara con `0`."
+        },
         {
           "texto": "Verdadero",
           "codigo": "OPCION_STRCMP_ES_BOOLEANO",

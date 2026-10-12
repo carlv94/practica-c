@@ -53,7 +53,12 @@
           "codigo": "OPCION_ALIAS_UN_INDICE",
           "explicacion": "`Texto` ya es un arreglo de 26 caracteres: `alumnos` es un arreglo de 3 de ellos, y por eso tiene dos dimensiones aunque en la declaración se escriba un solo corchete. `alumnos[0]` es la cadena y `alumnos[0][0]`, su primera letra."
         },
-        { "valor": "'A'", "texto": "la primera letra del texto", "correcta": true }
+        {
+          "valor": "'A'",
+          "texto": "la primera letra del texto",
+          "correcta": true,
+          "explicacion": "`Texto` ya es un arreglo de 26 caracteres. `alumnos[0]` es el texto `Ana`, y el segundo índice indica la posición de una de sus letras, por lo que `alumnos[0][0]` es la primera: `'A'`."
+        }
       ]
     },
     {
@@ -83,7 +88,12 @@
           "codigo": "OPCION_FILA_ES_UNA_CELDA",
           "explicacion": "`datos[1]` es la fila completa: guarda tres textos. Un solo texto necesita los dos índices: `datos[1][1]`."
         },
-        { "valor": "{\"Beto\", \"Lopez\", \"Derecho\"}", "texto": "los tres textos del segundo estudiante", "correcta": true },
+        {
+          "valor": "{\"Beto\", \"Lopez\", \"Derecho\"}",
+          "texto": "los tres textos del segundo estudiante",
+          "correcta": true,
+          "explicacion": "Con un solo índice, que indica la fila, se obtiene la fila completa: `datos[1]` es la segunda, con los tres textos del segundo estudiante. La declaración `Texto datos[2][3]` lo dice: 2 filas de 3 textos."
+        },
         {
           "valor": "{\"Perez\", \"Lopez\"}",
           "texto": "la segunda columna",
@@ -111,7 +121,12 @@
           "codigo": "OPCION_ALIAS_DOS_INDICES",
           "explicacion": "`Texto` ya es un arreglo de 26 caracteres: `datos` es una tabla de 2 por 3 de ellos, y por eso tiene tres dimensiones aunque en la declaración se escriban dos corchetes. `datos[1][1]` es la cadena y `datos[1][1][0]`, su primera letra."
         },
-        { "valor": "'L'", "texto": "la primera letra del texto", "correcta": true }
+        {
+          "valor": "'L'",
+          "texto": "la primera letra del texto",
+          "correcta": true,
+          "explicacion": "`datos[1][1]` es el texto `Lopez`. Como cada celda es un `Texto`, un arreglo de caracteres, el tercer índice indica la posición de una letra de ese texto, por lo que `datos[1][1][0]` es la primera, `'L'`: fila `1`, columna `1`, carácter `0`."
+        }
       ]
     },
     {

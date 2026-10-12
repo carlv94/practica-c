@@ -49,7 +49,12 @@
           "codigo": "OPCION_CUENTA_EL_FIN",
           "explicacion": "`strlen` cuenta las letras hasta el primer `'\\0'`, pero no cuenta el `'\\0'`."
         },
-        { "valor": "4", "texto": "la cantidad de letras", "correcta": true }
+        {
+          "valor": "4",
+          "texto": "la cantidad de letras",
+          "correcta": true,
+          "explicacion": "`strlen` cuenta las letras desde el principio hasta el primer `'\\0'`, sin contarlo: `Hola` tiene 4. El tamaño con que se declaró la cadena no influye."
+        }
       ]
     },
     {
@@ -71,7 +76,12 @@
           "codigo": "OPCION_SIZEOF_CUENTA_FIN",
           "explicacion": "`sizeof` no cuenta las letras guardadas, ni siquiera con el `'\\0'`: dice el tamaño de la cadena en memoria, esté llena o no."
         },
-        { "valor": "{N}", "texto": "el tamaño que usted declaró para la cadena", "correcta": true }
+        {
+          "valor": "{N}",
+          "texto": "el tamaño que usted declaró para la cadena",
+          "correcta": true,
+          "explicacion": "`sizeof` dice cuánto ocupa la cadena en memoria, o sea, el tamaño con que se declaró ({N}). Es siempre el mismo valor, tenga el texto que tenga."
+        }
       ]
     },
     {
@@ -87,7 +97,12 @@
           "codigo": "OPCION_ULTIMA_LETRA",
           "explicacion": "`longitud` vale 4: la cantidad de letras, y también la posición que sigue a la última. La `a` está en la posición 3."
         },
-        { "valor": "'\\0'", "texto": "el carácter de fin", "correcta": true },
+        {
+          "valor": "'\\0'",
+          "texto": "el carácter de fin",
+          "correcta": true,
+          "explicacion": "`longitud` vale 4, que es la cantidad de letras y también la posición que sigue a la última. Justo ahí está el `'\\0'` que cierra el texto."
+        },
         {
           "texto": "No se puede saber",
           "codigo": "OPCION_NO_SE_SABE_FIN",
@@ -130,7 +145,12 @@
           "codigo": "OPCION_TEXTO_COMO_LETRA",
           "explicacion": "Un texto entre comillas dobles siempre lleva el `'\\0'`, aunque tenga una sola letra: ocupa un espacio más que sus letras."
         },
-        { "valor": "2", "texto": "la letra y el `'\\0'`", "correcta": true },
+        {
+          "valor": "2",
+          "texto": "la letra y el `'\\0'`",
+          "correcta": true,
+          "explicacion": "Un texto entre comillas dobles siempre termina en `'\\0'`. `texto` guarda la `A` y el `'\\0'`: 2 caracteres, aunque se vea una sola letra. `letra`, en cambio, es un único carácter."
+        },
         {
           "texto": "No se puede saber",
           "codigo": "OPCION_NO_SE_SABE_TAMANO",

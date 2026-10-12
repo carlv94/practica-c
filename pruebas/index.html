@@ -96,11 +96,11 @@
             // con su codigo y su explicacion. Y lo que nombra tiene que existir.
             if (consigna.opciones) {
               const correctas = consigna.opciones.filter((o) => o.correcta).length;
-              const sinExplicar = consigna.opciones.filter((o) => !o.correcta && (!o.codigo || !o.explicacion));
+              const sinExplicar = consigna.opciones.filter((o) => !o.explicacion || (!o.correcta && !o.codigo));
               anotar(
                 correctas === 1 && sinExplicar.length === 0 && consigna.opciones.length >= 2,
                 `opciones de ${consigna.id}`,
-                `${correctas} correctas; ${sinExplicar.length} equivocadas sin codigo o sin explicacion`
+                `${correctas} correctas; ${sinExplicar.length} opciones sin explicacion (o equivocadas sin codigo)`
               );
               const textos = [
                 consigna.enunciado,

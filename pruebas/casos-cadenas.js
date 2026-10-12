@@ -59,7 +59,7 @@ const CASOS_DE_FIN = [
   fin(2, 'sin asignaciones', 'int x;', ['ELEMENTOS_FALTAN']),
 
   // 3 a 5: cuestionarios (la respuesta es el lugar de la opcion)
-  fin(3, 'strlen: la correcta', '2'),
+  { ...fin(3, 'strlen: la correcta', '2'), dice: ['`Hola` tiene 4'] },
   fin(3, 'strlen: el lugar declarado', '0', ['OPCION_TAMANO_DECLARADO']),
   fin(3, 'strlen: cuenta el fin', '1', ['OPCION_CUENTA_EL_FIN']),
   fin(3, 'sin elegir', '', ['OPCION_FALTA']),
@@ -505,7 +505,7 @@ const CASOS_DE_ARREGLOS_Y_TABLAS = [
   tablas(4, 'celda: la del segundo estudiante', '1'),
   tablas(4, 'celda: contando desde uno', '0', ['OPCION_POSICION_DESDE_UNO']),
   tablas(4, 'celda: una letra', '2', ['OPCION_CADENA_ES_UNA_LETRA']),
-  tablas(5, 'fila: los tres textos del segundo estudiante', '2'),
+  { ...tablas(5, 'fila: los tres textos del segundo estudiante', '2'), dice: ['`datos[1]` es la segunda'] },
   tablas(5, 'fila: contando desde uno', '0', ['OPCION_POSICION_DESDE_UNO']),
   tablas(5, 'fila: la columna', '1', ['OPCION_FILA_ES_COLUMNA']),
   tablas(5, 'fila: un solo texto', '3', ['OPCION_FILA_ES_UNA_CELDA']),
@@ -634,7 +634,7 @@ const CASOS_DE_LECTURA = [
   lectura(3, 'con otra funcion', 'strlen(nombre);', ['FUNCION_EQUIVOCADA']),
 
   // 4: cuestionario, con un espacio
-  lectura(4, 'espacio: la primera palabra', '1'),
+  { ...lectura(4, 'espacio: la primera palabra', '1'), dice: ['guarda `Ana`'] },
   lectura(4, 'espacio: el nombre completo', '0', ['OPCION_LEE_TODA_LA_LINEA']),
   lectura(4, 'espacio: la ultima palabra', '2', ['OPCION_LEE_LA_ULTIMA']),
   lectura(4, 'espacio: con el espacio', '3', ['OPCION_INCLUYE_EL_ESPACIO']),
@@ -713,7 +713,7 @@ const CASOS_DE_LECTURA = [
   lectura(8, 'en una variable mas grande que la posicion', 'char nombre[100];\nfor (i = 0; i < MAX_ESTUDIANTES; i++) {\n  scanf("%25s", nombre);\n  strcpy(curso[i], nombre);\n}', ['LECTURA_MAS_GRANDE_QUE_LA_POSICION']),
 
   // 9: cuestionario, con el Enter
-  lectura(9, 'enter: la cadena vacia', '1'),
+  { ...lectura(9, 'enter: la cadena vacia', '1'), dice: ['deja el Enter sin leer'] },
   lectura(9, 'enter: el nombre', '0', ['OPCION_LEE_EL_NOMBRE']),
   lectura(9, 'enter: el numero', '2', ['OPCION_NOMBRE_RECIBE_LA_EDAD']),
   lectura(9, 'enter: un error', '3', ['OPCION_LECTURA_VACIA_ES_ERROR']),

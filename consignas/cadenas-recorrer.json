@@ -25,7 +25,12 @@
           "codigo": "OPCION_CUENTA_TODAS_LAS_LETRAS",
           "explicacion": "Ese es el total de letras, pero `n` solo aumenta cuando la letra es una `a`."
         },
-        { "valor": "3", "texto": "la cantidad de letras `a`", "correcta": true },
+        {
+          "valor": "3",
+          "texto": "la cantidad de letras `a`",
+          "correcta": true,
+          "explicacion": "El ciclo recorre `Banana` hasta el `'\\0'` y suma 1 cada vez que la letra es una `a`. Aparece en las posiciones 1, 3 y 5, así que `n` vale 3."
+        },
         {
           "valor": "1",
           "texto": "la primera `a`",

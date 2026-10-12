@@ -51,7 +51,12 @@
           "codigo": "OPCION_FILA_ES_EL_TEXTO",
           "explicacion": "`nombres[0]` es la cadena completa, `Ana`. Con el segundo índice se elige un carácter de esa cadena."
         },
-        { "valor": "'A'", "texto": "la primera letra del texto", "correcta": true },
+        {
+          "valor": "'A'",
+          "texto": "la primera letra del texto",
+          "correcta": true,
+          "explicacion": "`nombres[0]` es el texto `Ana`, y el segundo índice indica la posición de una de sus letras, por lo que `nombres[0][0]` es la primera: `'A'`."
+        },
         {
           "valor": "'\\0'",
           "texto": "el carácter de fin",
@@ -72,7 +77,12 @@
           "codigo": "OPCION_POSICION_DESDE_UNO",
           "explicacion": "Las posiciones se numeran desde 0: `alumnos[0]` es el primer texto, `alumnos[1]` el segundo y `alumnos[2]` el tercero."
         },
-        { "valor": "\"Luis\"", "texto": "el texto de la tercera posición", "correcta": true },
+        {
+          "valor": "\"Luis\"",
+          "texto": "el texto de la tercera posición",
+          "correcta": true,
+          "explicacion": "Las posiciones se numeran desde 0: `alumnos[2]` es la tercera, donde se guardó `Luis`. Con un solo índice se obtiene la cadena completa."
+        },
         {
           "valor": "'L'",
           "texto": "la primera letra del texto",
@@ -99,7 +109,12 @@
           "codigo": "OPCION_ARREGLO_ES_UNA_CADENA",
           "explicacion": "Cada texto es una cadena aparte, con su propio `'\\0'` al final: `alumnos` no los junta en una sola cadena, guarda las tres."
         },
-        { "valor": "{\"Ana\", \"Beto\", \"Luis\"}", "texto": "los tres textos, cada uno en su posición", "correcta": true }
+        {
+          "valor": "{\"Ana\", \"Beto\", \"Luis\"}",
+          "texto": "los tres textos, cada uno en su posición",
+          "correcta": true,
+          "explicacion": "`alumnos` sin índices es el arreglo completo: guarda los tres textos, cada uno en su posición y cada uno con su propio `'\\0'`."
+        }
       ]
     },
     {

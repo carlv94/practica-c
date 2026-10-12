@@ -49,7 +49,12 @@
           "codigo": "OPCION_LEE_TODA_LA_LINEA",
           "explicacion": "El formato `%s` deja de leer al llegar a un espacio: `Maria` queda sin leer, esperando en el teclado, y no entra en `nombre`."
         },
-        { "valor": "\"Ana\"", "texto": "la primera palabra", "correcta": true },
+        {
+          "valor": "\"Ana\"",
+          "texto": "la primera palabra",
+          "correcta": true,
+          "explicacion": "`%s` lee hasta el primer espacio y se detiene: guarda `Ana` y deja `Maria` sin leer en el teclado. Leer toda la línea es otra forma de lectura, que se ve a continuación."
+        },
         {
           "valor": "\"Maria\"",
           "texto": "la última palabra",
@@ -112,7 +117,12 @@
           "codigo": "OPCION_LEE_EL_NOMBRE",
           "explicacion": "Después de leer `20`, el Enter queda sin leer en el teclado. `gets` lo toma como si fuera la línea completa y termina ahí: `Ana` queda pendiente."
         },
-        { "valor": "\"\"", "texto": "una cadena vacía", "correcta": true },
+        {
+          "valor": "\"\"",
+          "texto": "una cadena vacía",
+          "correcta": true,
+          "explicacion": "Al escribir `20` y presionar Enter, `scanf` lee el número pero deja el Enter sin leer. `gets` lo encuentra enseguida y toma esa línea, que está vacía: `nombre` queda con el `'\\0'` en la primera posición, y `Ana` queda pendiente."
+        },
         {
           "valor": "\"20\"",
           "texto": "el número",

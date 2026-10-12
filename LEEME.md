@@ -454,7 +454,8 @@ el ciclo?".
   "opciones": [
     { "valor": "{N}", "texto": "el tamaño que usted declaró", "codigo": "OPCION_TAMANO_DECLARADO",
       "explicacion": "`strlen` no mira el tamaño con el que se declaró la cadena..." },
-    { "valor": "4", "texto": "la cantidad de letras", "correcta": true }
+    { "valor": "4", "texto": "la cantidad de letras", "correcta": true,
+      "explicacion": "`strlen` cuenta las letras hasta el primer `'\\0'`..." }
   ]
 }
 ```
@@ -462,6 +463,11 @@ el ciclo?".
 - **Una sola correcta**, y cada equivocada con su `codigo` y su
   `explicacion`: cada opción es un error de concepto con nombre, y los
   intentos quedan anotados con ese código. Las pruebas lo verifican.
+- **La correcta también lleva `explicacion`**: por qué es la correcta, para
+  que un acierto por azar no deje al alumno sin saber por qué. Se muestra
+  siempre debajo del "Correcto.", con el azul de una nota, y no se anota en los
+  intentos. Dice la regla y, cuando ayuda, lo que la distingue de la confusión
+  que atacan las equivocadas. Las pruebas piden que toda opción la tenga.
 - `codigo` es el código que se muestra (con `{C}` el nombre que eligió el
   alumno). Las opciones y las explicaciones también pueden usar `{C}`, `{N}`.
   **Se muestra como un programa completo**: lo de la consigna (y, si

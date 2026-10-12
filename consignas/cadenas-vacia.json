@@ -46,7 +46,12 @@
           "codigo": "OPCION_TAMANO_DECLARADO",
           "explicacion": "`strlen` no mira el tamaño con el que se declaró la cadena, sino cuántas letras tiene guardadas hasta el primer `'\\0'`."
         },
-        { "valor": "0", "texto": "la cadena ya no tiene letras", "correcta": true }
+        {
+          "valor": "0",
+          "texto": "la cadena ya no tiene letras",
+          "correcta": true,
+          "explicacion": "`strlen` cuenta hasta el primer `'\\0'`. Con el `'\\0'` en la primera posición, la cadena termina ahí y tiene 0 letras, aunque las demás posiciones sigan guardando lo que tenían anteriormente."
+        }
       ]
     },
     {
@@ -61,7 +66,12 @@
           "codigo": "OPCION_VACIAR_BORRA_TODO",
           "explicacion": "Vaciar una cadena solo pone el `'\\0'` en la primera posición: las demás posiciones conservan lo que tenían."
         },
-        { "valor": "'a'", "texto": "la letra que ya tenía", "correcta": true },
+        {
+          "valor": "'a'",
+          "texto": "la letra que ya tenía",
+          "correcta": true,
+          "explicacion": "Vaciar la cadena solo cambia la posición `0`. En la posición `1` sigue la `a` de `Maria`: no se borra, pero queda después del `'\\0'`, así que ya no forma parte del texto."
+        },
         {
           "valor": "' '",
           "texto": "un espacio",
@@ -88,7 +98,11 @@
           "codigo": "OPCION_TAMANO_DECLARADO",
           "explicacion": "`strlen` no mira el tamaño con el que se declaró la cadena, sino cuántas letras tiene guardadas hasta el primer `'\\0'`."
         },
-        { "texto": "No se puede saber", "correcta": true }
+        {
+          "texto": "No se puede saber",
+          "correcta": true,
+          "explicacion": "Una cadena que se declara sin valor tiene lo que hubiera antes en esa memoria. `strlen` cuenta hasta el primer `'\\0'` que encuentre, y si la cadena no se inicializó no se puede saber dónde está."
+        }
       ]
     }
   ]

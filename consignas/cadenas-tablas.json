@@ -51,7 +51,12 @@
           "codigo": "OPCION_CELDA_ES_EL_TEXTO",
           "explicacion": "`datos[0][1]` es la celda con el texto completo, `Perez`. Con el tercer índice se elige una letra de ese texto."
         },
-        { "valor": "'P'", "texto": "la primera letra del texto", "correcta": true },
+        {
+          "valor": "'P'",
+          "texto": "la primera letra del texto",
+          "correcta": true,
+          "explicacion": "`datos[0][1]` es el texto `Perez`. El tercer índice indica la posición de una letra de ese texto, por lo que `datos[0][1][0]` es la primera, `'P'`: fila `0`, columna `1`, carácter `0`."
+        },
         {
           "valor": "'\\0'",
           "texto": "el carácter de fin",
@@ -72,7 +77,12 @@
           "codigo": "OPCION_POSICION_DESDE_UNO",
           "explicacion": "Las posiciones se numeran desde 0: `datos[1]` es la segunda fila y `[1]` la segunda columna, que es `Lopez`. `Perez` está en `datos[0][1]`."
         },
-        { "valor": "\"Lopez\"", "texto": "el apellido del segundo estudiante", "correcta": true },
+        {
+          "valor": "\"Lopez\"",
+          "texto": "el apellido del segundo estudiante",
+          "correcta": true,
+          "explicacion": "El primer índice indica la fila (el segundo estudiante, `Beto`) y el segundo, la columna (la `1`, el apellido): `datos[1][1]` es `Lopez`."
+        },
         {
           "valor": "'L'",
           "texto": "la primera letra del texto",
@@ -99,7 +109,12 @@
           "codigo": "OPCION_FILA_ES_COLUMNA",
           "explicacion": "El primer índice elige la fila, no la columna: `datos[1]` es la fila del segundo estudiante, con sus tres textos. La segunda columna son `datos[0][1]` y `datos[1][1]`."
         },
-        { "valor": "{\"Beto\", \"Lopez\", \"Derecho\"}", "texto": "los tres textos del segundo estudiante", "correcta": true },
+        {
+          "valor": "{\"Beto\", \"Lopez\", \"Derecho\"}",
+          "texto": "los tres textos del segundo estudiante",
+          "correcta": true,
+          "explicacion": "Con un solo índice, que indica la fila, se obtiene la fila completa: `datos[1]` es la segunda, con los tres textos del segundo estudiante, uno por columna."
+        },
         {
           "valor": "\"Lopez\"",
           "texto": "un solo texto",
@@ -129,7 +144,8 @@
         {
           "valor": "{{\"Ana\", \"Perez\", \"Medicina\"}, {\"Beto\", \"Lopez\", \"Derecho\"}}",
           "texto": "las dos filas, con sus tres textos cada una",
-          "correcta": true
+          "correcta": true,
+          "explicacion": "`datos` sin índices es la tabla completa: sus dos filas, cada una con sus tres textos. Son seis cadenas independientes."
         }
       ]
     },
