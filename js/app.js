@@ -423,8 +423,16 @@ function comprobar() {
     if (r.mejorable) {
       // Vale, pero hay una forma mejor: puede arreglarla y comprobar de
       // nuevo, o seguir con lo que tiene. Por eso el editor no se bloquea.
+      // Sin nada que mejorar pero con algo que no se pudo comprobar: no es
+      // "excelente", y no se dice que haya algo para mejorar.
+      const hayMejoras = r.diagnosticos.some((d) => d.nivel === 'mejora');
       cajas.unshift(
-        mensaje('bien', 'Correcto, y se puede mejorar. Puede cambiarlo y comprobar de nuevo, o seguir así.')
+        mensaje(
+          'bien',
+          r.sinVerificar && !hayMejoras
+            ? 'Correcto, pero no pude comprobar todo. Puede revisarlo y comprobar de nuevo, o seguir así.'
+            : 'Correcto, y se puede mejorar. Puede cambiarlo y comprobar de nuevo, o seguir así.'
+        )
       );
       $('siguiente').textContent = ultima ? 'Terminar así' : 'Seguir así';
     } else {

@@ -177,9 +177,13 @@ export function corregir(
     // Las mejoras son para una respuesta que ya esta bien: con un error, lo
     // unico que importa es el error.
     const informados = correcto ? diagnosticos : diagnosticos.filter((d) => d.nivel !== 'mejora');
+    // Una condicion que no se pudo comprobar deja la respuesta como correcta,
+    // pero no como excelente: excelente es "lo verifique y no hay nada que mejorar".
+    const sinVerificar = correcto && diagnosticos.some((d) => d.codigo === 'CICLO_NO_VERIFICADO');
     return {
       correcto,
-      mejorable: correcto && diagnosticos.some((d) => d.nivel === 'mejora'),
+      mejorable: correcto && (sinVerificar || diagnosticos.some((d) => d.nivel === 'mejora')),
+      sinVerificar,
       diagnosticos: informados,
       capturas: correcto ? nuevas : capturas,
     };

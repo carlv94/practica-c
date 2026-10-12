@@ -261,8 +261,12 @@ const CASOS_DE_RECORRER = [
   recorrer(1, 'el caracter contra otro caracter', "while (nombre[i] != 'a') {\n  i++;\n}", ['CICLO_OTRO_CARACTER']),
   recorrer(1, 'el caracter contra un espacio', "while (nombre[i] != ' ') {\n  i++;\n}", ['CICLO_OTRO_CARACTER']),
   recorrer(1, 'sin mirar la cadena', 'while (i != 5) {\n  i++;\n}', ['CICLO_NO_MIRA_LA_CADENA']),
-  // Mira la cadena pero de una forma que no se reconoce: no se la da por mala, se avisa.
-  recorrer(1, 'una condicion que no se reconoce', "while (nombre[i] != '\\0' && i < 100) {\n  i++;\n}", 'ok', [], ['CICLO_NO_VERIFICADO']),
+  // Mira la cadena pero de una forma que no se reconoce: se avisa, y no es excelente.
+  {
+    ...caso('cadenas-recorrer', 1, 'una condicion que no se reconoce', "while (nombre[i] != '\\0' && i < 100) {\n  i++;\n}", 'ok', []),
+    avisos: ['CICLO_NO_VERIFICADO'],
+    sinVerificar: true,
+  },
   recorrer(2, 'seguimiento: la correcta', '1'),
   recorrer(2, 'seguimiento: todas las letras', '0', ['OPCION_CUENTA_TODAS_LAS_LETRAS']),
   recorrer(2, 'seguimiento: la primera', '2', ['OPCION_CUENTA_UNA_SOLA']),

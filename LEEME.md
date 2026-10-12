@@ -292,7 +292,9 @@ Reglas de código:
   las condiciones de siempre (`nombre[i] != '\0'`, `nombre[i]`,
   `i < strlen(nombre)`) y los errores típicos (`<=`, recorrer todo el
   tamaño, condición al revés, índice que no avanza). Una condición que no se
-  reconoce **no es un error**: sale un aviso (`CICLO_NO_VERIFICADO`). Sí es
+  reconoce **no es un error**: sale un aviso (`CICLO_NO_VERIFICADO`) y la
+  respuesta queda como "Correcto, pero no pude comprobar todo": no es
+  excelente, que quiere decir "lo verifiqué y no hay nada que mejorar". Sí es
   un error una condición que **no mira la cadena** (`i != '\0'`, `i != 5`):
   no hay forma de que vea el final.
   `"filasDe": "tabla"` pide recorrer las filas de una tabla, y que dentro se

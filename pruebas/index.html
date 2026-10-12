@@ -168,7 +168,8 @@
               mensajesBien &&
               errores.join() === esperados.join() &&
               (caso.avisos || []).every((a) => avisos.includes(a)) &&
-              (!caso.mejoras || mejoras.join() === [...caso.mejoras].sort().join());
+              (!caso.mejoras || mejoras.join() === [...caso.mejoras].sort().join()) &&
+              (caso.sinVerificar == null || Boolean(r.sinVerificar) === caso.sinVerificar);
             anotar(
               bien,
               titulo,
