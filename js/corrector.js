@@ -148,7 +148,16 @@ export function corregirOpcion(consigna, respuesta) {
 export function corregir(
   analizador,
   consigna,
-  { archivo = '', contexto = '', respuesta = '', capturas = {}, dentroDeMain = false, enArchivo = false, practicas = [] }
+  {
+    archivo = '',
+    contexto = '',
+    respuesta = '',
+    capturas = {},
+    dentroDeMain = false,
+    enArchivo = false,
+    practicas = [],
+    avisados = [],
+  }
 ) {
   // Una sentencia suelta ("strcpy(a, b);") solo vale dentro de una funcion:
   // en las series de sentencias el codigo se analiza envuelto en una, que el
@@ -189,12 +198,17 @@ export function corregir(
   const aviso = (codigo, mensaje, fila) => diag('aviso', codigo, mensaje, fila);
   // Una mejora no invalida: la respuesta esta bien, pero hay una forma mejor.
   const mejora = (codigo, mensaje, fila) => diag('mejora', codigo, mensaje, fila);
+  // Una nota es para algo que conviene saber y que no es para corregir: la
+  // respuesta sigue siendo excelente. Se dice una sola vez por serie ("avisados").
+  const nota = (codigo, mensaje, fila) => diag('nota', codigo, mensaje, fila);
 
   function terminar() {
     const correcto = !diagnosticos.some((d) => d.nivel === 'error');
-    // Las mejoras son para una respuesta que ya esta bien: con un error, lo
-    // unico que importa es el error.
-    const informados = correcto ? diagnosticos : diagnosticos.filter((d) => d.nivel !== 'mejora');
+    // Las mejoras y las notas son para una respuesta que ya esta bien: con un
+    // error, lo unico que importa es el error.
+    const informados = correcto
+      ? diagnosticos
+      : diagnosticos.filter((d) => d.nivel !== 'mejora' && d.nivel !== 'nota');
     // Una condicion que no se pudo comprobar deja la respuesta como correcta,
     // pero no como excelente: excelente es "lo verifique y no hay nada que mejorar".
     const sinVerificar = correcto && diagnosticos.some((d) => d.codigo === 'CICLO_NO_VERIFICADO');
@@ -1446,13 +1460,16 @@ export function corregir(
         return;
       }
       if (l.funcion === 'gets') {
-        // Un aviso y no una mejora: la respuesta esta completa, y es lo que se usa
-        // para practicar. Siempre, y no solo con la practica de claridad.
-        aviso(
-          'USO_DE_GETS',
-          '`gets` no controla cuánto texto se escribe, y por eso se lo considera peligroso: sirve para practicar, pero no se usa en programas reales. Una alternativa más segura es la función `fgets`.',
-          l.fila
-        );
+        // Una nota y no una mejora: la respuesta esta completa, y gets es lo que
+        // se usa para practicar. Solo la primera vez, y aunque la serie no
+        // tenga la practica de claridad.
+        if (!avisados.includes('USO_DE_GETS')) {
+          nota(
+            'USO_DE_GETS',
+            'Su respuesta es correcta. Solo una advertencia: `gets` no controla cuánto texto se escribe, y por eso se lo considera peligroso. Sirve para practicar, pero no se usa en programas reales. Una alternativa más segura es la función `fgets`.',
+            l.fila
+          );
+        }
         return;
       }
       const [, maximo, de] = l.argumentos;

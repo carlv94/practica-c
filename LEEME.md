@@ -381,7 +381,7 @@ vaciar pide leer en `curso[i]` en cada vuelta.
 | `scanf("%26s", nombre)` con lugar para 25 letras | `LECTURA_SIN_LUGAR_PARA_FIN` | Falta el lugar del `'\0'`. |
 | `scanf("%d", nombre)`, `printf("%d", nombre)` | `FORMATO_NO_ES_TEXTO` | Cada tipo de dato tiene su formato. |
 | `scanf("%s", nombre)` donde se pide la línea | `LECTURA_CORTA_EN_ESPACIO` | `%s` se detiene en el espacio; nombra `gets`. |
-| `gets(nombre)` | `USO_DE_GETS` (aviso, siempre) | Sirve para practicar, no para programas reales; nombra `fgets` sin mostrar cómo. La respuesta sigue siendo excelente. |
+| `gets(nombre)` | `USO_DE_GETS` (nota, una vez por serie) | "Su respuesta es correcta. Solo una advertencia…": sirve para practicar, no para programas reales; nombra `fgets` sin mostrar cómo. La respuesta sigue siendo excelente. |
 | `scanf` en `nombre` y después `strcpy(curso[0], nombre)` | `LECTURA_CON_INTERMEDIA` (mejora, con `claridad`) | Se puede leer directo en la posición. |
 | ídem, con `nombre` más grande que cada texto de `curso` | `LECTURA_MAS_GRANDE_QUE_LA_POSICION` | Dice los dos tamaños. |
 | ídem, sin copiar | `LECTURA_FALTA_COPIAR` | Lo leído queda en `nombre`. |
@@ -394,13 +394,13 @@ vaciar pide leer en `curso[i]` en cada vuelta.
 | `fflush(stdin);` | `FFLUSH_ENTRADA` (mejora, siempre) | Depende del compilador; propone el ciclo. |
 | el ciclo después de `gets`, con `==` o sin mirar el Enter | `LIMPIEZA_DESPUES`, `LIMPIEZA_AL_REVES`, `LIMPIEZA_SIN_ENTER` | Qué falla del ciclo. |
 
-`USO_DE_GETS` es un **aviso** y no una mejora: se muestra siempre, pero no
-quita lo excelente, porque `gets` es lo simple para quien recién empieza. Por
-eso la `referencia` puede usarlo. Si lo que se lee tiene que ir a una posición
-de un arreglo, vale leer en una variable y copiarla con `strcpy`, siempre
-que entre.
+`USO_DE_GETS` es una **nota** y no una mejora (ver "Buenas prácticas"): no quita
+lo excelente, porque `gets` es lo simple para quien recién empieza. Por eso la
+`referencia` puede usarlo. Si lo que se lee tiene que ir a una posición de un
+arreglo, vale leer en una variable y copiarla con `strcpy`, siempre que entre.
 
-Un texto entre comillas dobles con el fin escrito de más (`"Hola\0"`) es el mismotexto: vale, con la mejora `FIN_EN_EL_TEXTO` (el compilador ya lo agrega). Vale
+Un texto entre comillas dobles con el fin escrito de más (`"Hola\0"`) es el mismo
+texto: vale, con la mejora `FIN_EN_EL_TEXTO` (el compilador ya lo agrega). Vale
 igual en `strcpy`, `strcmp` y en un arreglo de cadenas. Entre comillas simples
 (`'Hola'`) es un error con su mensaje (`CADENA_CON_COMILLAS_SIMPLES`).
 
@@ -554,6 +554,13 @@ la serie muestran cuántas quedaron excelentes.
 
 Las mejoras se dicen solo cuando la respuesta ya está bien: con un error, se
 muestra el error y nada más.
+
+Una **nota** (`nivel: 'nota'`) es algo que conviene saber y no es para corregir:
+se ve con el mismo azul que una mejora, pero no cuenta como "se puede mejorar",
+así que la respuesta sigue siendo excelente. Como las mejoras, solo se muestra
+con la respuesta ya bien, y **se dice una sola vez por serie**: el avance
+guarda los códigos ya dados (`avisados`), que se rearman al corregir de nuevo
+las respuestas, y el corrector no los repite.
 
 **Va por serie y no para todo** porque no se le puede reclamar a un alumno
 algo que todavía no vio: se activa a partir de la unidad donde se enseña.

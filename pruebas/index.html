@@ -177,12 +177,14 @@
             const esperados = caso.espera === 'ok' ? [] : [...caso.espera].sort();
             const avisos = codigos(r, 'aviso');
             const mejoras = codigos(r, 'mejora');
+            const notas = codigos(r, 'nota');
             const mensajesBien = r.diagnosticos.every((d) => mensajeBienFormado(d.mensaje));
             const bien =
               mensajesBien &&
               errores.join() === esperados.join() &&
               (caso.avisos || []).every((a) => avisos.includes(a)) &&
               (!caso.mejoras || mejoras.join() === [...caso.mejoras].sort().join()) &&
+              (caso.notas == null || notas.join() === [...caso.notas].sort().join()) &&
               (caso.sinVerificar == null || Boolean(r.sinVerificar) === caso.sinVerificar) &&
               (caso.dice || []).every((t) => r.diagnosticos.some((d) => d.mensaje.includes(t)));
             anotar(

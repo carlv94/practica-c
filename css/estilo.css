@@ -341,7 +341,8 @@ pre {
   font-weight: 700;
 }
 
-.editor .numeros .mejora {
+.editor .numeros .mejora,
+.editor .numeros .nota {
   background: var(--mejora-fondo);
   color: var(--mejora);
   font-weight: 700;
@@ -546,8 +547,10 @@ button[hidden] {
   background: var(--error-fondo);
 }
 
-/* Una mejora no es un error ni un aviso: la respuesta vale. */
-.mensaje.mejora {
+/* Una mejora no es un error ni un aviso: la respuesta vale. Una nota se ve igual,
+   pero no cuenta como algo para mejorar. */
+.mensaje.mejora,
+.mensaje.nota {
   border-color: var(--mejora);
   background: var(--mejora-fondo);
 }

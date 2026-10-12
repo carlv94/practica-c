@@ -3,7 +3,9 @@
 // armen el contexto igual.
 //
 // El "avance" es lo que deja lo ya resuelto:
-//   { contexto, archivo, capturas, base }
+//   { contexto, archivo, capturas, base, avisados }
+// "avisados" son los codigos de las notas que ya se le dijeron: una nota se
+// dice una sola vez en toda la serie, continuen o no las consignas.
 // y el codigo que tiene delante una consigna es la "base", si continua el
 // contexto, y su "dado": el codigo que la consigna trae escrito y el alumno no
 // tiene que tipear (las variables sobre las que se le pide trabajar).
@@ -29,7 +31,7 @@ const unir = (...partes) => partes.filter((p) => p && p.trim()).join('\n\n');
 // (las que el alumno escribio dentro de la suya se quedan).
 const unirEnMain = (...partes) => partes.filter((p) => p && p.trim()).join('\n');
 
-export const inicio = () => ({ contexto: '', archivo: '', capturas: {}, base: '' });
+export const inicio = () => ({ contexto: '', archivo: '', capturas: {}, base: '', avisados: [] });
 
 // Si la consigna "indice" ve el codigo (y los nombres capturados) de las
 // anteriores. Por defecto no: cada consigna es un programa nuevo. La que
@@ -182,6 +184,7 @@ export function corregirPaso(analizador, serie, indice, avance, respuesta) {
     enArchivo: enArchivo(consigna),
     // Una consigna puede pedir otras practicas que las de la serie.
     practicas: consigna.buenasPracticas ?? serie.buenasPracticas ?? [],
+    avisados: avance.avisados || [],
   });
 }
 
@@ -215,7 +218,9 @@ export function despuesDe(serie, indice, avance, respuesta, resultado) {
     return { ...avance, base: unir(avance.base, respuesta.trim()) };
   }
   const afuera = enArchivo(consigna);
+  const notas = resultado.diagnosticos.filter((d) => d.nivel === 'nota').map((d) => d.codigo);
   return {
+    avisados: [...new Set([...(avance.avisados || []), ...notas])],
     contexto: unirEnMain(
       contextoPrevio(serie, indice, avance),
       afuera ? '' : consigna.dado,
