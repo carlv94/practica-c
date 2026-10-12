@@ -1529,6 +1529,60 @@ export function corregir(
     }
   }
 
+  // Leer en una variable y copiarla despues, con strcpy, a donde pide la consigna
+  // (una posicion de un arreglo): vale, con mejora, si lo leido entra. Devuelve
+  // true si es lo que escribio el alumno. "dentro" limita donde se busca (un ciclo).
+  function lecturaConIntermedia(esperado, formato, modelo, dentro = () => true) {
+    const copia = modelo.llamadas.find(
+      (c) =>
+        c.nuevo &&
+        dentro(c) &&
+        ['strcpy', 'strncpy'].includes(c.funcion) &&
+        coincide(esperado, c.argumentos[0]) &&
+        c.argumentos[1]?.clase === 'nombre'
+    );
+    if (!copia) return false;
+    const intermedia = copia.argumentos[1].nombre;
+    const lectura = modelo.llamadas.find(
+      (x) =>
+        x.nuevo &&
+        dentro(x) &&
+        LECTURAS.includes(x.funcion) &&
+        destinoDeLectura(x)?.clase === 'nombre' &&
+        destinoDeLectura(x).nombre === intermedia &&
+        x.fin <= copia.posicion
+    );
+    if (!lectura) return false;
+
+    const antes = diagnosticos.length;
+    verificarLectura(lectura, intermedia, formato, modelo);
+    if (diagnosticos.length > antes && diagnosticos.slice(antes).some((d) => d.nivel === "error")) return true;
+
+    // Lo que se lee tiene que entrar en la posicion donde se copia.
+    const base = /^[A-Za-z_]\w*/.exec(esperado)[0];
+    const indices = (esperado.match(/\[/g) || []).length;
+    const deLaLectura = modelo.variables.findLast((v) => v.nombre === intermedia);
+    const deLaPosicion = modelo.variables.findLast((v) => v.nombre === base);
+    const cabe = deLaLectura ? valorDeDimension(deLaLectura.arreglo[0] ?? '', modelo) : null;
+    const lugar = deLaPosicion ? valorDeDimension(deLaPosicion.arreglo[indices] ?? '', modelo) : null;
+    if (cabe != null && lugar != null && cabe > lugar) {
+      error(
+        'LECTURA_MAS_GRANDE_QUE_LA_POSICION',
+        `\`${intermedia}\` puede guardar ${cabe} caracteres y cada texto de \`${base}\` tiene lugar para ${lugar}: al copiarlo puede no entrar.`,
+        copia.fila
+      );
+      return true;
+    }
+    if (practicas.includes('claridad')) {
+      mejora(
+        'LECTURA_CON_INTERMEDIA',
+        `Está bien, pero \`${lectura.funcion}\` puede guardar el texto directamente en \`${esperado}\`, sin pasar por otra variable.`,
+        lectura.fila
+      );
+    }
+    return true;
+  }
+
   // Leer del teclado el texto de una variable (o de una posicion de un arreglo).
   function reglaLee(regla, modelo) {
     const esperado = valorDe(regla.destino);
@@ -1547,7 +1601,18 @@ export function corregir(
       }
       return;
     }
+    if (esIndexado(esperado) && lecturaConIntermedia(esperado, regla.formato, modelo)) return;
     const l = lecturas.find((x) => destinoDeLectura(x)?.nombre === base) || lecturas[0];
+    // Se leyo en otra variable y no se copio: eso es lo que falta, no que el argumento este mal.
+    const destino = destinoDeLectura(l);
+    if (esIndexado(esperado) && destino?.clase === 'nombre' && destino.nombre !== base) {
+      error(
+        'LECTURA_FALTA_COPIAR',
+        `Lo que se lee queda en \`${destino.nombre}\`: falta copiarlo a \`${esperado}\`.`,
+        l.fila
+      );
+      return;
+    }
     verificarLectura(l, esperado, regla.formato, modelo);
   }
 
@@ -2755,7 +2820,9 @@ export function corregir(
           const d = l.nuevo && dentro(l) && LECTURAS.includes(l.funcion) ? destinoDeLectura(l) : null;
           return d && d.clase === 'indice' && d.nombre === tabla && d.indices.length === 1 && d.indices[0].trim() === indice;
         });
-        if (!propia) {
+        if (!propia && lecturaConIntermedia(aqui, regla.lee, modelo, dentro)) {
+          // leyo en una variable y la copio a la posicion
+        } else if (!propia) {
           error(
             'CICLO_NO_LEE',
             `Lo que hace el ciclo no lee el texto de la posición \`${indice}\` de \`${tabla}\`: en cada vuelta hay que leer en la posición que corresponde al índice.`,

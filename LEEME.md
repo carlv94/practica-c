@@ -382,6 +382,9 @@ vaciar pide leer en `curso[i]` en cada vuelta.
 | `scanf("%d", nombre)`, `printf("%d", nombre)` | `FORMATO_NO_ES_TEXTO` | Cada tipo de dato tiene su formato. |
 | `scanf("%s", nombre)` donde se pide la línea | `LECTURA_CORTA_EN_ESPACIO` | `%s` se detiene en el espacio; nombra `gets`. |
 | `gets(nombre)` | `USO_DE_GETS` (aviso, siempre) | Sirve para practicar, no para programas reales; nombra `fgets` sin mostrar cómo. La respuesta sigue siendo excelente. |
+| `scanf` en `nombre` y después `strcpy(curso[0], nombre)` | `LECTURA_CON_INTERMEDIA` (mejora, con `claridad`) | Se puede leer directo en la posición. |
+| ídem, con `nombre` más grande que cada texto de `curso` | `LECTURA_MAS_GRANDE_QUE_LA_POSICION` | Dice los dos tamaños. |
+| ídem, sin copiar | `LECTURA_FALTA_COPIAR` | Lo leído queda en `nombre`. |
 | `fgets(nombre, 100, stdin)` con lugar para 26 | `LECTURA_SIN_LUGAR` | Lo que sobra pisa la memoria. |
 | `printf("nombre")`, `printf(nombre)` | `MUESTRA_TEXTO_FIJO`, `PRINTF_SIN_FORMATO` | Falta el `%s`; o el primer argumento es el formato. |
 | mostrar antes de leer | `MUESTRA_ANTES_DE_LEER` | Todavía no tiene el texto. |
@@ -393,7 +396,9 @@ vaciar pide leer en `curso[i]` en cada vuelta.
 
 `USO_DE_GETS` es un **aviso** y no una mejora: se muestra siempre, pero no
 quita lo excelente, porque `gets` es lo simple para quien recién empieza. Por
-eso la `referencia` puede usarlo.
+eso la `referencia` puede usarlo. Si lo que se lee tiene que ir a una posición
+de un arreglo, vale leer en una variable y copiarla con `strcpy`, siempre
+que entre.
 
 Un texto entre comillas dobles con el fin escrito de más (`"Hola\0"`) es el mismotexto: vale, con la mejora `FIN_EN_EL_TEXTO` (el compilador ya lo agrega). Vale
 igual en `strcpy`, `strcmp` y en un arreglo de cadenas. Entre comillas simples

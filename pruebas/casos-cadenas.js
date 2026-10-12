@@ -680,6 +680,17 @@ const CASOS_DE_LECTURA = [
   lectura(7, 'el arreglo completo', 'scanf("%25s", curso);', ['ARGUMENTO_TABLA_ENTERA']),
   lectura(7, 'una sola letra', 'scanf("%25s", curso[0][0]);', ['ARGUMENTO_CON_CORCHETES']),
   lectura(7, 'con un limite que no deja lugar para el fin', 'scanf("%26s", curso[0]);', ['LECTURA_SIN_LUGAR_PARA_FIN']),
+  // en una variable y despues copiada
+  lectura(7, 'en una variable y strcpy: correcto y mejorable', 'char nombre[LARGO_NOMBRE + 1];\nscanf("%25s", nombre);\nstrcpy(curso[0], nombre);', 'ok', ['LECTURA_CON_INTERMEDIA']),
+  lectura(7, 'en una variable y strncpy', 'char nombre[LARGO_NOMBRE + 1];\nscanf("%25s", nombre);\nstrncpy(curso[0], nombre, LARGO_NOMBRE);', 'ok', ['LECTURA_CON_INTERMEDIA']),
+  lectura(7, 'en una variable, sin limite', 'char nombre[LARGO_NOMBRE + 1];\nscanf("%s", nombre);\nstrcpy(curso[0], nombre);', 'ok', ['LECTURA_CON_INTERMEDIA', 'LECTURA_SIN_LIMITE']),
+  {
+    ...lectura(7, 'en una variable mas grande que la posicion', 'char nombre[100];\nscanf("%25s", nombre);\nstrcpy(curso[0], nombre);', ['LECTURA_MAS_GRANDE_QUE_LA_POSICION']),
+    dice: ['100', '26'],
+  },
+  lectura(7, 'en una variable, sin lugar para el fin', 'char nombre[LARGO_NOMBRE + 1];\nscanf("%26s", nombre);\nstrcpy(curso[0], nombre);', ['LECTURA_SIN_LUGAR_PARA_FIN']),
+  lectura(7, 'en una variable, sin copiarla', 'char nombre[LARGO_NOMBRE + 1];\nscanf("%25s", nombre);', ['LECTURA_FALTA_COPIAR']),
+  lectura(7, 'en una variable, copiada a otra posicion', 'char nombre[LARGO_NOMBRE + 1];\nscanf("%25s", nombre);\nstrcpy(curso[1], nombre);', ['LECTURA_FALTA_COPIAR']),
 
   // 8: todas las posiciones
   lectura(8, 'un ciclo for', 'for (i = 0; i < MAX_ESTUDIANTES; i++) {\n  scanf("%25s", curso[i]);\n}'),
@@ -692,6 +703,9 @@ const CASOS_DE_LECTURA = [
   lectura(8, 'el indice no avanza', 'for (i = 0; i < MAX_ESTUDIANTES; ) {\n  scanf("%25s", curso[i]);\n}', ['CICLO_SIN_AVANCE']),
   lectura(8, 'el formato de un entero', 'for (i = 0; i < MAX_ESTUDIANTES; i++) {\n  scanf("%d", curso[i]);\n}', ['FORMATO_NO_ES_TEXTO']),
   lectura(8, 'sin ciclo', 'scanf("%25s", curso[0]);', ['CICLO_FALTA']),
+  lectura(8, 'en una variable y strcpy: correcto y mejorable', 'char nombre[LARGO_NOMBRE + 1];\nfor (i = 0; i < MAX_ESTUDIANTES; i++) {\n  scanf("%25s", nombre);\n  strcpy(curso[i], nombre);\n}', 'ok', ['LECTURA_CON_INTERMEDIA']),
+  lectura(8, 'en una variable y siempre la misma posicion', 'char nombre[LARGO_NOMBRE + 1];\nfor (i = 0; i < MAX_ESTUDIANTES; i++) {\n  scanf("%25s", nombre);\n  strcpy(curso[0], nombre);\n}', ['CICLO_NO_LEE']),
+  lectura(8, 'en una variable mas grande que la posicion', 'char nombre[100];\nfor (i = 0; i < MAX_ESTUDIANTES; i++) {\n  scanf("%25s", nombre);\n  strcpy(curso[i], nombre);\n}', ['LECTURA_MAS_GRANDE_QUE_LA_POSICION']),
 
   // 9: cuestionario, con el Enter
   lectura(9, 'enter: la cadena vacia', '1'),
