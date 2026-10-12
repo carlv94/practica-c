@@ -126,11 +126,9 @@
             }
 
             const r = corregirPaso(analizador, s, i, previo, consigna.referencia);
-            // La referencia es la respuesta modelo: correcta y sin nada que mejorar,
-            // salvo lo que la consigna declara (gets es lo simple, y avisa).
-            const permitidas = consigna.mejorasEnReferencia || [];
+            // La referencia es la respuesta modelo: correcta y sin nada que mejorar.
             anotar(
-              r.correcto && !r.sinVerificar && codigos(r, 'mejora').every((c) => permitidas.includes(c)),
+              r.correcto && !r.mejorable,
               `referencia de ${consigna.id}`,
               [...codigos(r, 'error'), ...codigos(r, 'mejora')].join(', ')
             );

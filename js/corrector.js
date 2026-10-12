@@ -1446,10 +1446,11 @@ export function corregir(
         return;
       }
       if (l.funcion === 'gets') {
-        // Siempre, y no solo con la practica de claridad: es por seguridad.
-        mejora(
+        // Un aviso y no una mejora: la respuesta esta completa, y es lo que se usa
+        // para practicar. Siempre, y no solo con la practica de claridad.
+        aviso(
           'USO_DE_GETS',
-          `Está bien, pero \`gets\` no controla cuánto texto se escribe: si es más largo de lo que entra, pisa la memoria que sigue. Por eso se lo considera peligroso y algunos compiladores recientes ya no lo aceptan. Una alternativa segura es \`fgets(${esperado}, sizeof ${esperado}, stdin)\`.`,
+          '`gets` no controla cuánto texto se escribe, y por eso se lo considera peligroso: sirve para practicar, pero no se usa en programas reales. Una alternativa más segura es la función `fgets`.',
           l.fila
         );
         return;

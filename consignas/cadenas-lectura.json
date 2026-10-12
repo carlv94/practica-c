@@ -9,7 +9,7 @@
     {
       "id": "lectura-declarar",
       "titulo": "Declarar donde guardar lo que se lee",
-      "enunciado": "Un estudiante tiene un nombre de hasta 25 letras. Declare la variable donde se guarde, con el tamaño justo.",
+      "enunciado": "Un estudiante tiene un nombre de hasta 25 letras. Declare la variable donde se va a guardar, con el tamaño justo.",
       "requiere": [
         {
           "variable": {
@@ -70,8 +70,7 @@
       "continua": true,
       "enunciado": "Ahora el nombre puede tener varias palabras, como `Ana Maria`. Lea desde el teclado el nombre completo, hasta que se presione Enter, y guárdelo en {N}.",
       "requiere": [{ "lee": { "destino": "$N", "formato": "linea" } }],
-      "referencia": "gets(nombre);",
-      "mejorasEnReferencia": ["USO_DE_GETS"]
+      "referencia": "gets(nombre);"
     },
     {
       "id": "lectura-saludo",
@@ -82,8 +81,7 @@
         { "lee": { "destino": "nombre", "formato": "linea" } },
         { "muestra": { "destino": "nombre", "formato": "Hola, %s", "despuesDeLeer": true } }
       ],
-      "referencia": "gets(nombre);\nprintf(\"Hola, %s\\n\", nombre);",
-      "mejorasEnReferencia": ["USO_DE_GETS"]
+      "referencia": "gets(nombre);\nprintf(\"Hola, %s\\n\", nombre);"
     },
     {
       "id": "lectura-posicion",
@@ -142,8 +140,7 @@
         { "lee": { "destino": "nombre", "formato": "linea" } },
         { "limpiaEntrada": true }
       ],
-      "referencia": "while (getchar() != '\\n');\ngets(nombre);",
-      "mejorasEnReferencia": ["USO_DE_GETS"]
+      "referencia": "while (getchar() != '\\n');\ngets(nombre);"
     }
   ]
 }

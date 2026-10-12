@@ -641,8 +641,9 @@ const CASOS_DE_LECTURA = [
 
   // 5: leer una linea completa
   {
-    ...lectura(5, 'con gets: correcto, con la advertencia', 'gets(nombre);', 'ok', ['USO_DE_GETS']),
-    dice: ['fgets(nombre, sizeof nombre, stdin)'],
+    ...lectura(5, 'con gets: correcto, con el aviso', 'gets(nombre);'),
+    avisos: ['USO_DE_GETS'],
+    dice: ['sirve para practicar', '`fgets`'],
   },
   lectura(5, 'con fgets', 'fgets(nombre, sizeof nombre, stdin);'),
   lectura(5, 'con fgets y el tamano con la constante', 'fgets(nombre, LARGO_NOMBRE + 1, stdin);'),
@@ -660,7 +661,7 @@ const CASOS_DE_LECTURA = [
   lectura(5, 'gets con dos argumentos', 'gets(nombre, 25);', ['ARGUMENTOS_CANTIDAD']),
 
   // 6: leer y mostrar
-  lectura(6, 'gets y el saludo', 'gets(nombre);\nprintf("Hola, %s\\n", nombre);', 'ok', ['USO_DE_GETS']),
+  { ...lectura(6, 'gets y el saludo', 'gets(nombre);\nprintf("Hola, %s\\n", nombre);'), avisos: ['USO_DE_GETS'] },
   lectura(6, 'fgets y el saludo', 'fgets(nombre, sizeof nombre, stdin);\nprintf("Hola, %s", nombre);'),
   lectura(6, 'otro saludo', 'gets(nombre);\nprintf("Buen dia, %s", nombre);', ['TEXTO_DISTINTO']),
   {
@@ -699,7 +700,7 @@ const CASOS_DE_LECTURA = [
   lectura(9, 'enter: un error', '3', ['OPCION_LECTURA_VACIA_ES_ERROR']),
 
   // 10: descartar el Enter
-  lectura(10, 'el ciclo y gets: correcto, con la advertencia', "while (getchar() != '\\n');\ngets(nombre);", 'ok', ['USO_DE_GETS']),
+  { ...lectura(10, 'el ciclo y gets: correcto, con el aviso', "while (getchar() != '\\n');\ngets(nombre);"), avisos: ['USO_DE_GETS'] },
   lectura(10, 'el ciclo y fgets', "while (getchar() != '\\n');\nfgets(nombre, sizeof nombre, stdin);"),
   lectura(10, 'el ciclo con llaves vacias', "while (getchar() != '\\n') {\n}\nfgets(nombre, sizeof nombre, stdin);"),
   lectura(10, 'el ciclo con una variable', "int c;\nwhile ((c = getchar()) != '\\n');\nfgets(nombre, sizeof nombre, stdin);"),

@@ -381,7 +381,7 @@ vaciar pide leer en `curso[i]` en cada vuelta.
 | `scanf("%26s", nombre)` con lugar para 25 letras | `LECTURA_SIN_LUGAR_PARA_FIN` | Falta el lugar del `'\0'`. |
 | `scanf("%d", nombre)`, `printf("%d", nombre)` | `FORMATO_NO_ES_TEXTO` | Cada tipo de dato tiene su formato. |
 | `scanf("%s", nombre)` donde se pide la línea | `LECTURA_CORTA_EN_ESPACIO` | `%s` se detiene en el espacio; nombra `gets`. |
-| `gets(nombre)` | `USO_DE_GETS` (mejora, siempre) | Es peligroso; propone `fgets(nombre, sizeof nombre, stdin)`. |
+| `gets(nombre)` | `USO_DE_GETS` (aviso, siempre) | Sirve para practicar, no para programas reales; nombra `fgets` sin mostrar cómo. La respuesta sigue siendo excelente. |
 | `fgets(nombre, 100, stdin)` con lugar para 26 | `LECTURA_SIN_LUGAR` | Lo que sobra pisa la memoria. |
 | `printf("nombre")`, `printf(nombre)` | `MUESTRA_TEXTO_FIJO`, `PRINTF_SIN_FORMATO` | Falta el `%s`; o el primer argumento es el formato. |
 | mostrar antes de leer | `MUESTRA_ANTES_DE_LEER` | Todavía no tiene el texto. |
@@ -391,10 +391,9 @@ vaciar pide leer en `curso[i]` en cada vuelta.
 | `fflush(stdin);` | `FFLUSH_ENTRADA` (mejora, siempre) | Depende del compilador; propone el ciclo. |
 | el ciclo después de `gets`, con `==` o sin mirar el Enter | `LIMPIEZA_DESPUES`, `LIMPIEZA_AL_REVES`, `LIMPIEZA_SIN_ENTER` | Qué falla del ciclo. |
 
-Una de estas mejoras (`USO_DE_GETS`) puede estar en la propia solución de
-`referencia`, porque `gets` es lo simple para quien recién empieza: la
-consigna lo declara con `"mejorasEnReferencia": ["USO_DE_GETS"]` y las
-pruebas lo aceptan solo para ese código.
+`USO_DE_GETS` es un **aviso** y no una mejora: se muestra siempre, pero no
+quita lo excelente, porque `gets` es lo simple para quien recién empieza. Por
+eso la `referencia` puede usarlo.
 
 Un texto entre comillas dobles con el fin escrito de más (`"Hola\0"`) es el mismotexto: vale, con la mejora `FIN_EN_EL_TEXTO` (el compilador ya lo agrega). Vale
 igual en `strcpy`, `strcmp` y en un arreglo de cadenas. Entre comillas simples
@@ -574,8 +573,7 @@ cero, leer sin un límite.
 de la serie.
 
 La solución de `referencia` de una serie con prácticas tiene que ser
-excelente: las pruebas lo verifican (salvo las mejoras que la propia consigna
-declara en `mejorasEnReferencia`).
+excelente: las pruebas lo verifican.
 
 Aparte de las prácticas, y **en todas las series**: una dimensión con un
 nombre que nadie definió (`int lista[MAX];` sin `#define`) es un error. El
