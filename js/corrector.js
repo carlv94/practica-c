@@ -2876,15 +2876,19 @@ function erroresConocidos(respuesta) {
       'FALTA_COMA',
       'Los argumentos de una función se separan con coma: `funcion(a, b);`',
     ],
+    // Estas dos buscan sobre el texto original: lo que va entre comillas (el
+    // nombre del archivo) esta tapado en "codigo".
     [
       /^[ \t]*#[ \t]*define[ \t]*[<"]/m,
       'INCLUDE_ES_DEFINE',
       'Eso define una constante: no agrega una biblioteca.',
+      true,
     ],
     [
       /^[ \t]*include[ \t]*[<"]/m,
       'INCLUDE_SIN_NUMERAL',
       'Las directivas del preprocesador comienzan con `#`.',
+      true,
     ],
     [
       /\btypedef\s+\w+\s+struct\b/,
@@ -2902,8 +2906,8 @@ function erroresConocidos(respuesta) {
       'Dentro de una estructura solo se declaran los campos: no se les puede dar un valor ahí. El valor se pone después, en cada variable.',
     ],
   ];
-  for (const [forma, codigoError, mensaje] of FORMAS) {
-    const m = forma.exec(codigo);
+  for (const [forma, codigoError, mensaje, enElTextoOriginal] of FORMAS) {
+    const m = forma.exec(enElTextoOriginal ? respuesta : codigo);
     if (m) hallar(codigoError, mensaje, m.index + m[0].length - 1);
   }
   return hallados;

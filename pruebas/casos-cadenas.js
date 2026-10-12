@@ -163,6 +163,8 @@ const CASOS_DE_BIBLIOTECA = [
   biblioteca(1, 'con punto y coma: correcta y mejorable', '#include <string.h>;', 'ok', ['INCLUDE_CON_PUNTO_Y_COMA']),
   biblioteca(1, 'con define', '#define <string.h>', ['INCLUDE_ES_DEFINE']),
   biblioteca(1, 'sin el numeral', 'include <string.h>', ['INCLUDE_SIN_NUMERAL']),
+  biblioteca(1, 'sin el numeral y entre comillas', 'include "string.h"', ['INCLUDE_SIN_NUMERAL']),
+  biblioteca(1, 'con define y entre comillas', '#define "string.h"', ['INCLUDE_ES_DEFINE']),
   biblioteca(1, 'nada', 'int x;', ['INCLUDE_FALTA']),
   // 1: una letra
   fin(8, 'la letra entre comillas simples', "char letra = 'A';"),

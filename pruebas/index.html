@@ -29,6 +29,15 @@
         lineas.push({ bien, texto, detalle });
       }
 
+      
+      // Un mensaje bien escrito tiene los acentos graves de a pares y nada raro
+      // adentro: un par vacio, o con solo un conector, es un simbolo que se perdio.
+      function mensajeBienFormado(mensaje) {
+        const partes = mensaje.split('`');
+        if (partes.length % 2 === 0) return false;
+        return partes.every((p, i) => i % 2 === 0 || !['', 'y', 'o', 'e', 'u'].includes(p.trim()));
+      }
+
       const codigos = (resultado, nivel) =>
         [...new Set(resultado.diagnosticos.filter((d) => d.nivel === nivel).map((d) => d.codigo))].sort();
 
@@ -154,7 +163,9 @@
             const esperados = caso.espera === 'ok' ? [] : [...caso.espera].sort();
             const avisos = codigos(r, 'aviso');
             const mejoras = codigos(r, 'mejora');
+            const mensajesBien = r.diagnosticos.every((d) => mensajeBienFormado(d.mensaje));
             const bien =
+              mensajesBien &&
               errores.join() === esperados.join() &&
               (caso.avisos || []).every((a) => avisos.includes(a)) &&
               (!caso.mejoras || mejoras.join() === [...caso.mejoras].sort().join());
