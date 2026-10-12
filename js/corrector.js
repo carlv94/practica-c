@@ -1164,13 +1164,13 @@ export function corregir(
         if (real.clase === 'nombre' && real.nombre === base) {
           error(
             'ARGUMENTO_TABLA_ENTERA',
-            `\`${base}\` es la tabla entera: para guardar un texto hay que elegir una de sus filas.`,
+            `\`${base}\` es la tabla completa: para guardar un texto hay que elegir una de sus filas.`,
             llamada.fila
           );
         } else if (real.clase === 'indice' && real.nombre === base && real.indices.length > cantidad) {
           error(
             'ARGUMENTO_CON_CORCHETES',
-            `\`${real.texto}\` es un solo carácter de la cadena. Para pasar la cadena entera va la fila sola, sin el último índice.`,
+            `\`${real.texto}\` es un solo carácter de la cadena. Para pasar la cadena completa va la fila sola, sin el último índice.`,
             llamada.fila
           );
         } else if (real.clase === 'indice' && real.nombre === base && diagnosticos.some((d) => d.codigo === 'INDICE_FUERA_DE_RANGO')) {
@@ -1206,7 +1206,7 @@ export function corregir(
       } else if (real.clase === 'indice' && real.nombre === esperado) {
         error(
           'ARGUMENTO_CON_CORCHETES',
-          `\`${real.texto}\` es un solo carácter de la cadena. Para pasar la cadena entera va el nombre solo, sin corchetes.`,
+          `\`${real.texto}\` es un solo carácter de la cadena. Para pasar la cadena completa va el nombre solo, sin corchetes.`,
           llamada.fila
         );
       } else if (real.clase === 'nombre' && !modelo.variables.some((v) => v.nombre === real.nombre)) {
