@@ -357,11 +357,46 @@ La regla `llamada` suma, para estas series:
   carácter por carácter también llega, pero con mejora. Con `"en": [0]` o
   `"en": [0, 1]`, para un elemento de un arreglo o una celda de una tabla.
 - `strncpy` con un límite que no deja lugar para el fin es error.
-  `scanf("%s", ...)` sin límite es correcto con mejora; un límite que no deja
-  lugar para el fin es error.
 
-Un texto entre comillas dobles con el fin escrito de más (`"Hola\0"`) es el mismo
-texto: vale, con la mejora `FIN_EN_EL_TEXTO` (el compilador ya lo agrega). Vale
+Para leer y mostrar una cadena hay tres reglas propias (serie `Cadenas 8`):
+
+- `{ "lee": { "destino": "$N", "formato": "palabra" } }`: leer del teclado
+  el texto de una variable o de una posición (`"curso[0]"`). `"palabra"` es
+  `scanf` con `%s`; `"linea"` es hasta el Enter, con sus espacios: `gets`,
+  `fgets` o `scanf` con `%[^\n]`.
+- `{ "muestra": { "destino": "$N", "formato": "Hola, %s", "despuesDeLeer": true } }`:
+  mostrarla con `printf` (un `%s` por cada valor, con su formato) o `puts`.
+  `"formato"` pide ese texto (el `\n` del final no cuenta) y `puts` no vale
+  entonces; `"despuesDeLeer"` pide que haya una lectura antes.
+- `{ "limpiaEntrada": true }`: entre un `scanf` y un `gets` o `fgets` tiene
+  que haber algo que descarte el Enter que quedó sin leer.
+
+Y un `ciclo` con `"filasDe"` puede llevar `"lee": "palabra"`, que en lugar de
+vaciar pide leer en `curso[i]` en cada vuelta.
+
+| Respuesta | Código | Mensaje |
+|---|---|---|
+| `scanf("%s", &nombre)` | `ARGUMENTO_CON_AMPERSAND` | Le sobra el `&`; no explica por qué. |
+| `scanf("%s", nombre)` | `LECTURA_SIN_LIMITE` (mejora, con `claridad`) | Dice el límite justo para esa variable (`%25s`). |
+| `scanf("%26s", nombre)` con lugar para 25 letras | `LECTURA_SIN_LUGAR_PARA_FIN` | Falta el lugar del `'\0'`. |
+| `scanf("%d", nombre)`, `printf("%d", nombre)` | `FORMATO_NO_ES_TEXTO` | Cada tipo de dato tiene su formato. |
+| `scanf("%s", nombre)` donde se pide la línea | `LECTURA_CORTA_EN_ESPACIO` | `%s` se detiene en el espacio; nombra `gets`. |
+| `gets(nombre)` | `USO_DE_GETS` (mejora, siempre) | Es peligroso; propone `fgets(nombre, sizeof nombre, stdin)`. |
+| `fgets(nombre, 100, stdin)` con lugar para 26 | `LECTURA_SIN_LUGAR` | Lo que sobra pisa la memoria. |
+| `printf("nombre")`, `printf(nombre)` | `MUESTRA_TEXTO_FIJO`, `PRINTF_SIN_FORMATO` | Falta el `%s`; o el primer argumento es el formato. |
+| mostrar antes de leer | `MUESTRA_ANTES_DE_LEER` | Todavía no tiene el texto. |
+| `scanf("%d", &x); gets(s);` | `FALTA_LIMPIAR_ENTRADA` | Queda el Enter sin leer y `s` queda vacío. |
+| `while (getchar() != '\n');` | (nada) | Es la forma que anda en cualquier plataforma. |
+| `getchar();` | `GETCHAR_UN_SOLO_CARACTER` (mejora, siempre) | Alcanza si no se escribió nada más antes del Enter. |
+| `fflush(stdin);` | `FFLUSH_ENTRADA` (mejora, siempre) | Depende del compilador; propone el ciclo. |
+| el ciclo después de `gets`, con `==` o sin mirar el Enter | `LIMPIEZA_DESPUES`, `LIMPIEZA_AL_REVES`, `LIMPIEZA_SIN_ENTER` | Qué falla del ciclo. |
+
+Una de estas mejoras (`USO_DE_GETS`) puede estar en la propia solución de
+`referencia`, porque `gets` es lo simple para quien recién empieza: la
+consigna lo declara con `"mejorasEnReferencia": ["USO_DE_GETS"]` y las
+pruebas lo aceptan solo para ese código.
+
+Un texto entre comillas dobles con el fin escrito de más (`"Hola\0"`) es el mismotexto: vale, con la mejora `FIN_EN_EL_TEXTO` (el compilador ya lo agrega). Vale
 igual en `strcpy`, `strcmp` y en un arreglo de cadenas. Entre comillas simples
 (`'Hola'`) es un error con su mensaje (`CADENA_CON_COMILLAS_SIMPLES`).
 
@@ -539,7 +574,8 @@ cero, leer sin un límite.
 de la serie.
 
 La solución de `referencia` de una serie con prácticas tiene que ser
-excelente: las pruebas lo verifican.
+excelente: las pruebas lo verifican (salvo las mejoras que la propia consigna
+declara en `mejorasEnReferencia`).
 
 Aparte de las prácticas, y **en todas las series**: una dimensión con un
 nombre que nadie definió (`int lista[MAX];` sin `#define`) es un error. El

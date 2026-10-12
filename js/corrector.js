@@ -118,8 +118,13 @@ const MEJORA_FIN_EN_EL_TEXTO =
 // para distinguir "se equivoco de funcion" de "la escribio mal".
 const DE_LA_BIBLIOTECA = [
   'strcpy', 'strncpy', 'strcat', 'strncat', 'strcmp', 'strncmp', 'strlen', 'strchr', 'strstr',
-  'printf', 'scanf', 'puts', 'gets', 'fgets', 'sprintf', 'memcpy',
+  'printf', 'scanf', 'puts', 'gets', 'fgets', 'sprintf', 'memcpy', 'getchar', 'fflush',
 ];
+
+// Con que funciones se lee del teclado, y cual es el argumento donde se guarda.
+const LECTURAS = ['scanf', 'gets', 'fgets'];
+const MUESTRAS = ['printf', 'puts'];
+const destinoDeLectura = (l) => (l.funcion === 'scanf' ? l.argumentos[1] : l.argumentos[0]);
 
 // Una consigna de opciones: elegir la respuesta en vez de escribirla. Cada
 // opcion equivocada tiene su codigo y su explicacion, asi se sabe cual es el
@@ -267,6 +272,9 @@ export function corregir(
     if (regla.ciclo) return reglaCiclo(regla.ciclo, modelo);
     if (regla.usaAlias) return reglaUsaAlias(regla.usaAlias, modelo);
     if (regla.incluye) return reglaIncluye(regla.incluye, modelo);
+    if (regla.lee) return reglaLee(regla.lee, modelo);
+    if (regla.muestra) return reglaMuestra(regla.muestra, modelo);
+    if (regla.limpiaEntrada) return reglaLimpiaEntrada(regla.limpiaEntrada, modelo);
     throw new Error(`La consigna "${consigna.id}" tiene una regla que no conozco.`);
   }
 
@@ -1239,17 +1247,7 @@ export function corregir(
     }
 
     const libre = (i) => esperados[i] === '*';
-    const acierta = (i) => {
-      if (libre(i)) return true;
-      const real = reales[i];
-      if (esTexto(esperados[i])) {
-        return real.clase === 'cadena' && sinFinEscrito(real.contenido).texto === esperados[i].slice(1, -1);
-      }
-      if (esIndexado(esperados[i])) {
-        return real.clase === 'indice' && sinEspacios(real.texto) === sinEspacios(esperados[i]);
-      }
-      return real.clase === 'nombre' && real.nombre === esperados[i];
-    };
+    const acierta = (i) => libre(i) || coincide(esperados[i], reales[i]);
     if (esperados.every((_, i) => acierta(i))) {
       verificarLlamada(llamada);
       return;
@@ -1396,38 +1394,359 @@ export function corregir(
           );
         }
       }
+    }
+  }
 
-      // Leer un texto: el formato, y cuanto se deja leer.
-      if (l.funcion === 'scanf') {
-        const formato = argumentos[0];
-        const m = formato && formato.clase === 'cadena' ? /^%(\d*)s$/.exec(formato.contenido) : null;
-        if (!m) {
+  // ---- leer y mostrar ---------------------------------------------------------
+
+  // Si un argumento es justo lo que pedia la consigna, escrito como sea.
+  function coincide(esperado, real) {
+    if (!real) return false;
+    if (esTexto(esperado)) {
+      return real.clase === 'cadena' && sinFinEscrito(real.contenido).texto === esperado.slice(1, -1);
+    }
+    if (esIndexado(esperado)) {
+      return real.clase === 'indice' && sinEspacios(real.texto) === sinEspacios(esperado);
+    }
+    return real.clase === 'nombre' && real.nombre === esperado;
+  }
+
+  // Lo que se hace con una lectura ya encontrada: "esperado" es donde tiene que
+  // guardarse ("nombre", "curso[0]") y "formato" es "palabra" (scanf con %s) o
+  // "linea" (hasta el Enter, con sus espacios).
+  function verificarLectura(l, esperado, formato, modelo) {
+    const base = /^[A-Za-z_]\w*/.exec(esperado)[0];
+    const indices = (esperado.match(/\[/g) || []).length;
+    const variable = modelo.variables.findLast((v) => v.nombre === base);
+    const lugar = variable ? valorDeDimension(variable.arreglo[indices] ?? '', modelo) : null;
+    const palabra = formato === 'palabra';
+
+    if (l.funcion === 'gets' || l.funcion === 'fgets') {
+      if (palabra) {
+        error(
+          'LECTURA_LEE_LA_LINEA',
+          `\`${l.funcion}\` lee la línea completa, con sus espacios, y la consigna pide una palabra: para eso se usa \`scanf\` con \`%s\`.`,
+          l.fila
+        );
+        return;
+      }
+      const cantidad = l.funcion === 'gets' ? 1 : 3;
+      if (l.argumentos.length !== cantidad) {
+        error(
+          'ARGUMENTOS_CANTIDAD',
+          l.funcion === 'gets'
+            ? '`gets` lleva un solo argumento: la cadena donde se guarda lo que se lee.'
+            : '`fgets` lleva tres argumentos, separados por coma: la cadena donde se guarda, cuántos caracteres leer como máximo y de dónde se lee.',
+          l.fila
+        );
+        return;
+      }
+      if (!coincide(esperado, l.argumentos[0])) {
+        diagnosticarArgumento(l, 0, esperado, l.argumentos[0], modelo);
+        return;
+      }
+      if (l.funcion === 'gets') {
+        // Siempre, y no solo con la practica de claridad: es por seguridad.
+        mejora(
+          'USO_DE_GETS',
+          `Está bien, pero \`gets\` no controla cuánto texto se escribe: si es más largo de lo que entra, pisa la memoria que sigue. Por eso se lo considera peligroso y algunos compiladores recientes ya no lo aceptan. Una alternativa segura es \`fgets(${esperado}, sizeof ${esperado}, stdin)\`.`,
+          l.fila
+        );
+        return;
+      }
+      const [, maximo, de] = l.argumentos;
+      if (de.clase !== 'nombre' || de.nombre !== 'stdin') {
+        error(
+          'FGETS_SIN_STDIN',
+          'El tercer argumento de `fgets` dice de dónde se lee: para leer del teclado es `stdin`.',
+          l.fila
+        );
+      } else if (maximo.clase === 'numero' && lugar != null && maximo.valor > lugar) {
+        error(
+          'LECTURA_SIN_LUGAR',
+          `Con ese límite se pueden guardar ${maximo.valor} caracteres, y \`${esperado}\` tiene lugar para ${lugar}: lo que sobra pisa la memoria que sigue.`,
+          l.fila
+        );
+      }
+      return;
+    }
+
+    // scanf
+    if (l.argumentos.length !== 2) {
+      error(
+        'ARGUMENTOS_CANTIDAD',
+        '`scanf` lleva el formato y, separada con una coma, la variable donde se guarda lo que se lee.',
+        l.fila
+      );
+      return;
+    }
+    const formatoReal = l.argumentos[0];
+    const m = formatoReal.clase === 'cadena' ? /^\s*%(\d*)(s|\[\^\\n\])$/.exec(formatoReal.contenido) : null;
+    if (!m) {
+      error(
+        'FORMATO_NO_ES_TEXTO',
+        'El primer argumento no es el formato de lectura de un texto: cada tipo de dato tiene el suyo.',
+        l.fila
+      );
+      return;
+    }
+    if (palabra && m[2] !== 's') {
+      error(
+        'LECTURA_LEE_LA_LINEA',
+        'Ese formato lee la línea completa, con sus espacios, y la consigna pide una palabra: para eso alcanza `%s`.',
+        l.fila
+      );
+      return;
+    }
+    if (!palabra && m[2] === 's') {
+      error(
+        'LECTURA_CORTA_EN_ESPACIO',
+        'El formato `%s` deja de leer al llegar a un espacio: con un nombre como `Ana Maria` solo guardaría `Ana`. Para leer la línea completa, con sus espacios, se usa `gets`.',
+        l.fila
+      );
+      return;
+    }
+    if (!coincide(esperado, l.argumentos[1])) {
+      diagnosticarArgumento(l, 1, esperado, l.argumentos[1], modelo);
+      return;
+    }
+    if (m[1] === '') {
+      if (palabra && practicas.includes('claridad')) {
+        mejora(
+          'LECTURA_SIN_LIMITE',
+          'Está bien, pero si se escribe más texto del que entra, se pisa lo que sigue en memoria. El formato `%s` permite indicar, con un número entre el `%` y la `s`, cuántos caracteres leer como máximo.' +
+            (lugar != null ? ` Para \`${esperado}\`, que puede guardar ${lugar - 1} letras, sería \`%${lugar - 1}s\`.` : ''),
+          l.fila
+        );
+      }
+    } else if (lugar != null && Number(m[1]) >= lugar) {
+      error(
+        'LECTURA_SIN_LUGAR_PARA_FIN',
+        `Con ese límite se pueden leer ${m[1]} caracteres, y \`${esperado}\` puede guardar ${lugar}: falta el espacio del \`'\\0'\` del final.`,
+        l.fila
+      );
+    }
+  }
+
+  // Leer del teclado el texto de una variable (o de una posicion de un arreglo).
+  function reglaLee(regla, modelo) {
+    const esperado = valorDe(regla.destino);
+    const base = /^[A-Za-z_]\w*/.exec(esperado)[0];
+    const lecturas = modelo.llamadas.filter((l) => l.nuevo && LECTURAS.includes(l.funcion));
+
+    if (!lecturas.length) {
+      const otra = modelo.llamadas.find((l) => l.nuevo && !MUESTRAS.includes(l.funcion));
+      if (otra) {
+        error('FUNCION_EQUIVOCADA', `\`${otra.funcion}\` no es la función que pide esta consigna.`, otra.fila);
+      } else {
+        error(
+          'LECTURA_FALTA',
+          'No encontré la lectura desde el teclado. Una función se usa con su nombre y, entre paréntesis, sus argumentos: `funcion(a, b);`'
+        );
+      }
+      return;
+    }
+    const l = lecturas.find((x) => destinoDeLectura(x)?.nombre === base) || lecturas[0];
+    verificarLectura(l, esperado, regla.formato, modelo);
+  }
+
+  // Mostrar en pantalla el texto de una variable.
+  function reglaMuestra(regla, modelo) {
+    const esperado = valorDe(regla.destino);
+    const salidas = modelo.llamadas.filter((l) => l.nuevo && MUESTRAS.includes(l.funcion));
+
+    if (!salidas.length) {
+      const otra = modelo.llamadas.find((l) => l.nuevo && !LECTURAS.includes(l.funcion) && l.funcion !== 'getchar');
+      if (otra) {
+        error('FUNCION_EQUIVOCADA', `\`${otra.funcion}\` no es la función que pide esta consigna.`, otra.fila);
+      } else {
+        error(
+          'MUESTRA_FALTA',
+          'No encontré la llamada que muestra el texto en pantalla. Una función se usa con su nombre y, entre paréntesis, sus argumentos: `funcion(a, b);`'
+        );
+      }
+      return;
+    }
+    const l = salidas[0];
+
+    if (l.funcion === 'puts') {
+      if (regla.formato) {
+        error(
+          'FUNCION_EQUIVOCADA',
+          '`puts` muestra solo la cadena, sin nada más: para escribir el saludo hace falta `printf`.',
+          l.fila
+        );
+        return;
+      }
+      if (l.argumentos.length !== 1) {
+        error('ARGUMENTOS_CANTIDAD', '`puts` lleva un solo argumento: la cadena que se muestra.', l.fila);
+        return;
+      }
+      if (!coincide(esperado, l.argumentos[0])) {
+        diagnosticarArgumento(l, 0, esperado, l.argumentos[0], modelo);
+        return;
+      }
+    } else {
+      const formato = l.argumentos[0];
+      if (!formato) {
+        error(
+          'ARGUMENTOS_CANTIDAD',
+          '`printf` lleva, como mínimo, el formato: un texto entre comillas dobles.',
+          l.fila
+        );
+        return;
+      }
+      if (formato.clase !== 'cadena') {
+        error(
+          'PRINTF_SIN_FORMATO',
+          'El primer argumento de `printf` es el formato: un texto entre comillas dobles que lleva `%s` en el lugar donde va el contenido de la cadena.',
+          l.fila
+        );
+        return;
+      }
+      const conversiones = formato.contenido.replace(/%%/g, '').match(/%[-+ #0]*\d*(?:\.\d+)?[a-zA-Z]/g) || [];
+      if (!conversiones.length) {
+        error(
+          'MUESTRA_TEXTO_FIJO',
+          `Eso escribe en pantalla el texto tal cual: para mostrar lo que guarda \`${esperado}\` el formato lleva \`%s\`, que se reemplaza por el contenido de la cadena.`,
+          l.fila
+        );
+        return;
+      }
+      const mala = conversiones.find((c) => !c.endsWith('s'));
+      if (mala) {
+        error(
+          'FORMATO_NO_ES_TEXTO',
+          `\`${mala}\` no es el formato de un texto: cada tipo de dato tiene el suyo, y el de una cadena es \`%s\`.`,
+          l.fila
+        );
+        return;
+      }
+      const valores = l.argumentos.length - 1;
+      if (valores !== conversiones.length) {
+        error(
+          'ARGUMENTOS_CANTIDAD',
+          `El formato pide ${conversiones.length === 1 ? '1 valor' : `${conversiones.length} valores`} y \`printf\` recibe ${valores}: hace falta uno por cada \`%s\`, separados por coma.`,
+          l.fila
+        );
+        return;
+      }
+      for (let i = 1; i < l.argumentos.length; i++) {
+        if (!coincide(esperado, l.argumentos[i])) {
+          diagnosticarArgumento(l, i, esperado, l.argumentos[i], modelo);
+          return;
+        }
+      }
+      if (regla.formato) {
+        // El salto de linea del final es un detalle: no cambia el mensaje.
+        const escrito = formato.contenido.replace(/(\\n)+$/, '');
+        if (escrito !== regla.formato) {
           error(
-            'FORMATO_NO_ES_TEXTO',
-            'El primer argumento no es el formato de lectura de un texto: cada tipo de dato tiene el suyo.',
+            'TEXTO_DISTINTO',
+            escrito.toLowerCase() === regla.formato.toLowerCase()
+              ? 'El texto no es el de la consigna: en C las mayúsculas y las minúsculas son letras distintas.'
+              : 'El texto que se muestra no es el que pide la consigna.',
             l.fila
           );
           return;
         }
-        const variable = modelo.variables.findLast((v) => v.nombre === esperados[1]);
-        const lugar = variable ? valorDeDimension(variable.arreglo[0] ?? '', modelo) : null;
-        if (m[1] === '') {
-          if (practicas.includes('claridad')) {
-            mejora(
-              'LECTURA_SIN_LIMITE',
-              'Está bien, pero si se escribe más texto del que entra, se pisa lo que sigue en memoria. El formato `%s` permite indicar, con un número entre el `%` y la `s`, cuántos caracteres leer como máximo.',
-              l.fila
-            );
-          }
-        } else if (lugar != null && Number(m[1]) >= lugar) {
-          error(
-            'LECTURA_SIN_LUGAR_PARA_FIN',
-            `Con ese límite se pueden leer ${m[1]} caracteres, y \`${esperados[1]}\` puede guardar ${lugar}: falta el espacio del \`'\\0'\` del final.`,
-            l.fila
-          );
-        }
       }
     }
+
+    if (regla.despuesDeLeer) {
+      const leyo = modelo.llamadas.some((x) => LECTURAS.includes(x.funcion) && x.fin <= l.posicion);
+      const hayLectura = modelo.llamadas.some((x) => LECTURAS.includes(x.funcion));
+      if (hayLectura && !leyo) {
+        error(
+          'MUESTRA_ANTES_DE_LEER',
+          `Se muestra \`${esperado}\` antes de leerla: en ese momento todavía no tiene el texto que se escribe.`,
+          l.fila
+        );
+      }
+    }
+  }
+
+  // Despues de leer con scanf queda el Enter sin leer, y gets lo toma como una
+  // linea vacia: entre las dos lecturas hay que descartarlo. Vale cualquiera de
+  // las tres formas (la unica que anda en todos lados es el ciclo).
+  function reglaLimpiaEntrada(regla, modelo) {
+    const lectura = modelo.llamadas.find((l) => l.nuevo && (l.funcion === 'gets' || l.funcion === 'fgets'));
+    if (!lectura) return; // lo dice la regla de la lectura
+    const anterior = modelo.llamadas.filter((l) => l.funcion === 'scanf' && l.fin <= lectura.posicion).pop();
+    if (!anterior) return;
+
+    const entre = (x) => x.nuevo && x.posicion >= anterior.fin && x.fin <= lectura.posicion;
+    const sinEsp = (t) => t.replace(/\s+/g, '');
+    const limpiadores = modelo.ciclos.filter((c) => entre(c) && /getchar\(\)/.test(sinEsp(c.texto)));
+    const hastaElEnter = (c) => /!=(?:'\\n'|10)(?![\d])|(?:'\\n'|10)!=/.test(sinEsp(c.condicion));
+    const bien = limpiadores.find(hastaElEnter);
+
+    if (bien) {
+      if (/(?:!=10(?![\d])|10!=)/.test(sinEsp(bien.condicion)) && practicas.includes('claridad')) {
+        mejora(
+          'LIMPIEZA_CON_CODIGO',
+          "Está bien, pero `'\\n'` dice qué carácter es: con `10` hay que saber su código.",
+          bien.fila
+        );
+      }
+      return;
+    }
+    if (limpiadores.length) {
+      const c = limpiadores[0];
+      if (/==(?:'\\n'|10)/.test(sinEsp(c.condicion))) {
+        error(
+          'LIMPIEZA_AL_REVES',
+          'El ciclo tiene que repetirse mientras lo leído no sea el Enter: con `==` termina en cuanto lee un carácter distinto y no descarta lo que quedó sin leer.',
+          c.fila
+        );
+      } else {
+        error(
+          'LIMPIEZA_SIN_ENTER',
+          "El ciclo lee caracteres, pero no se detiene al llegar al Enter (`'\\n'`): así sigue esperando más texto.",
+          c.fila
+        );
+      }
+      return;
+    }
+
+    const fuera = (x) => !limpiadores.some((c) => x.posicion >= c.posicion && x.fin <= c.fin);
+    const sueltas = modelo.llamadas.filter((l) => entre(l) && l.funcion === 'getchar' && fuera(l));
+    if (sueltas.length) {
+      mejora(
+        'GETCHAR_UN_SOLO_CARACTER',
+        "Está bien, pero `getchar()` descarta un solo carácter: alcanza si no se escribió nada más antes del Enter. Para que funcione siempre, use `while (getchar() != '\\n');`, que descarta todo hasta el Enter.",
+        sueltas[0].fila
+      );
+      return;
+    }
+    const vaciadas = modelo.llamadas.filter(
+      (l) => entre(l) && l.funcion === 'fflush' && l.argumentos[0]?.clase === 'nombre' && l.argumentos[0].nombre === 'stdin'
+    );
+    if (vaciadas.length) {
+      mejora(
+        'FFLUSH_ENTRADA',
+        "Está bien, pero `fflush` con una entrada funciona en algunos compiladores y en otros no: el estándar no define qué hace. Para que ande en cualquier plataforma, use `while (getchar() != '\\n');`.",
+        vaciadas[0].fila
+      );
+      return;
+    }
+
+    const despues = modelo.llamadas.find(
+      (l) => l.nuevo && ['getchar', 'fflush'].includes(l.funcion) && l.posicion >= lectura.fin
+    );
+    if (despues || modelo.ciclos.some((c) => c.nuevo && c.posicion >= lectura.fin && /getchar\(\)/.test(sinEsp(c.texto)))) {
+      error(
+        'LIMPIEZA_DESPUES',
+        `Eso descarta el Enter, pero va después de \`${lectura.funcion}\`: para que sirva tiene que estar antes, porque \`${lectura.funcion}\` ya tomó el Enter que había quedado.`,
+        (despues || lectura).fila
+      );
+      return;
+    }
+    error(
+      'FALTA_LIMPIAR_ENTRADA',
+      `Después de leer con \`scanf\` queda el Enter sin leer, y \`${lectura.funcion}\` lo toma como si fuera lo escrito: el texto queda vacío. Antes de leer hay que descartarlo.`,
+      lectura.fila
+    );
   }
 
   // ---- cadenas --------------------------------------------------------------
@@ -2429,6 +2748,24 @@ export function corregir(
 
       const dentro = (x) => x.posicion >= ciclo.posicion && x.posicion <= ciclo.fin;
       const indice = regla.indice;
+      if (regla.lee) {
+        const aqui = `${tabla}[${indice}]`;
+        const propia = modelo.llamadas.find((l) => {
+          const d = l.nuevo && dentro(l) && LECTURAS.includes(l.funcion) ? destinoDeLectura(l) : null;
+          return d && d.clase === 'indice' && d.nombre === tabla && d.indices.length === 1 && d.indices[0].trim() === indice;
+        });
+        if (!propia) {
+          error(
+            'CICLO_NO_LEE',
+            `Lo que hace el ciclo no lee el texto de la posición \`${indice}\` de \`${tabla}\`: en cada vuelta hay que leer en la posición que corresponde al índice.`,
+            ciclo.fila
+          );
+        } else {
+          verificarLectura(propia, aqui, regla.lee, modelo);
+        }
+        if (!avanza) sinAvance();
+        return;
+      }
       const vacia =
         modelo.asignaciones.some(
           (a) =>
