@@ -1,6 +1,6 @@
 {
   "id": "cadenas-tablas",
-  "titulo": "Cadenas 6: tablas de cadenas",
+  "titulo": "Tablas de cadenas",
   "descripcion": "Una tabla con un texto en cada celda: declararla, guardar un texto, qué hay en cada nivel y vaciarla.",
   "dentroDeMain": true,
   "cabecera": "#include <string.h>",

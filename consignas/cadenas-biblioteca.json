@@ -1,6 +1,6 @@
 {
   "id": "cadenas-biblioteca",
-  "titulo": "Cadenas 3: la biblioteca de cadenas",
+  "titulo": "La biblioteca de cadenas",
   "descripcion": "Agregar la biblioteca, y guardar, copiar, agregar, medir y comparar cadenas con sus funciones.",
   "dentroDeMain": true,
   "buenasPracticas": ["claridad"],

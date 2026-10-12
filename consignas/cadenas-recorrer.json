@@ -1,6 +1,6 @@
 {
   "id": "cadenas-recorrer",
-  "titulo": "Cadenas 4: recorrer una cadena",
+  "titulo": "Recorrer una cadena",
   "descripcion": "Un ciclo que avanza por las letras de una cadena hasta su final.",
   "dentroDeMain": true,
   "buenasPracticas": ["claridad"],

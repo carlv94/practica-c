@@ -1,16 +1,37 @@
 {
-  "series": [
-    "estructuras.json",
-    "estructuras-alumno.json",
-    "arreglos.json",
-    "arreglos-valores.json",
-    "cadenas-fin.json",
-    "cadenas-vacia.json",
-    "cadenas-biblioteca.json",
-    "cadenas-recorrer.json",
-    "cadenas-arreglos.json",
-    "cadenas-tablas.json",
-    "cadenas-typedef.json",
-    "cadenas-lectura.json"
+  "grupos": [
+    {
+      "id": "estructuras",
+      "titulo": "Estructuras",
+      "descripcion": "Declarar estructuras, darles un alias y usarlas.",
+      "series": [
+        "estructuras.json",
+        "estructuras-alumno.json"
+      ]
+    },
+    {
+      "id": "arreglos",
+      "titulo": "Arreglos",
+      "descripcion": "Declarar arreglos con una constante y definirlos con sus valores.",
+      "series": [
+        "arreglos.json",
+        "arreglos-valores.json"
+      ]
+    },
+    {
+      "id": "cadenas",
+      "titulo": "Cadenas",
+      "descripcion": "Textos en C: el carácter de fin, la biblioteca, recorrerlos, guardarlos en arreglos y tablas, y leerlos y mostrarlos.",
+      "series": [
+        "cadenas-fin.json",
+        "cadenas-vacia.json",
+        "cadenas-biblioteca.json",
+        "cadenas-recorrer.json",
+        "cadenas-arreglos.json",
+        "cadenas-tablas.json",
+        "cadenas-typedef.json",
+        "cadenas-lectura.json"
+      ]
+    }
   ]
 }

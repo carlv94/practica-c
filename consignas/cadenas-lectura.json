@@ -1,6 +1,6 @@
 {
   "id": "cadenas-lectura",
-  "titulo": "Cadenas 8: leer y mostrar una cadena",
+  "titulo": "Leer y mostrar una cadena",
   "descripcion": "Leer una palabra o una línea completa desde el teclado, mostrarla en pantalla y qué pasa con el Enter que queda sin leer.",
   "dentroDeMain": true,
   "cabecera": "#include <stdio.h>",

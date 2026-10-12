@@ -1,6 +1,6 @@
 {
   "id": "cadenas-fin",
-  "titulo": "Cadenas 1: el carácter de fin",
+  "titulo": "El carácter de fin",
   "descripcion": "Cuánto espacio necesita una cadena, cómo se guarda un texto y qué marca dónde termina.",
   "dentroDeMain": true,
   "buenasPracticas": ["claridad"],

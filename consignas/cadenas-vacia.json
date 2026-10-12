@@ -1,6 +1,6 @@
 {
   "id": "cadenas-vacia",
-  "titulo": "Cadenas 2: la cadena vacía",
+  "titulo": "La cadena vacía",
   "descripcion": "Declarar una cadena que empiece vacía, vaciar una que ya tiene texto y qué queda guardado.",
   "dentroDeMain": true,
   "buenasPracticas": ["claridad"],

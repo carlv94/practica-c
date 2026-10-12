@@ -37,6 +37,7 @@ const $ = (id) => document.getElementById(id);
 const editor = crearEditor($('respuesta'));
 let analizador = null;
 let series = [];
+let grupos = []; // [{ id, titulo, descripcion, series }], en el orden del indice
 let serie = null; // la que esta abierta, o null en la lista
 let hechas = []; // [{ codigo, conAyuda }], una por consigna resuelta
 let avance = inicio(); // el codigo y las capturas que dejan las resueltas
@@ -217,33 +218,56 @@ function mostrarLista() {
   $('vista-serie').hidden = true;
   $('lista').hidden = false;
 
-  $('lista').replaceChildren(
-    ...series.map((s) => {
-      const total = s.consignas.length;
+  // Cada serie con lo que lleva resuelto; el resumen del grupo sale de lo mismo.
+  const estados = new Map(
+    series.map((s) => {
       const validas = recorrer(s).hechas;
-      const resueltas = validas.length;
-      const excelentes = validas.filter((h) => h.excelente).length;
+      return [s, { resueltas: validas.length, excelentes: validas.filter((h) => h.excelente).length }];
+    })
+  );
+  const tarjeta = (s) => {
+    const total = s.consignas.length;
+    const { resueltas, excelentes } = estados.get(s);
 
-      const tarjeta = elemento('a', 'tarjeta');
-      tarjeta.href = '#/serie/' + encodeURIComponent(s.id);
-      tarjeta.appendChild(elemento('h2', null, s.titulo));
-      if (s.descripcion) tarjeta.appendChild(elemento('p', null, s.descripcion));
+    const enlace = elemento('a', 'tarjeta');
+    enlace.href = '#/serie/' + encodeURIComponent(s.id);
+    enlace.appendChild(elemento('h3', null, `${s.numero}. ${s.titulo}`));
+    if (s.descripcion) enlace.appendChild(elemento('p', null, s.descripcion));
 
-      let estado = 'sin-empezar';
-      let texto = total === 1 ? '1 consigna' : `${total} consignas`;
-      if (resueltas >= total) {
-        estado = 'completa';
-        texto = 'Completa';
-        // Donde se piden buenas practicas, completa no es lo mismo que excelente.
-        if (pidePracticas(s)) {
-          texto += excelentes === total ? ', todo excelente' : ` · ${excelentes} de ${total} excelentes`;
-        }
-      } else if (resueltas > 0) {
-        estado = 'en-curso';
-        texto = `En curso: ${resueltas} de ${total}`;
+    let estado = 'sin-empezar';
+    let texto = total === 1 ? '1 consigna' : `${total} consignas`;
+    if (resueltas >= total) {
+      estado = 'completa';
+      texto = 'Completa';
+      // Donde se piden buenas practicas, completa no es lo mismo que excelente.
+      if (pidePracticas(s)) {
+        texto += excelentes === total ? ', todo excelente' : ` · ${excelentes} de ${total} excelentes`;
       }
-      tarjeta.appendChild(elemento('span', 'estado ' + estado, texto));
-      return tarjeta;
+    } else if (resueltas > 0) {
+      estado = 'en-curso';
+      texto = `En curso: ${resueltas} de ${total}`;
+    }
+    enlace.appendChild(elemento('span', 'estado ' + estado, texto));
+    return enlace;
+  };
+
+  $('lista').replaceChildren(
+    ...grupos.map((g) => {
+      const caja = elemento('div', 'grupo');
+      caja.id = 'grupo-' + g.id;
+      caja.appendChild(elemento('h2', null, g.titulo));
+      if (g.descripcion) caja.appendChild(elemento('p', 'grupo-descripcion', g.descripcion));
+      const completas = g.series.filter((s) => estados.get(s).resueltas >= s.consignas.length).length;
+      const cuantas = g.series.length;
+      caja.appendChild(
+        elemento(
+          'p',
+          'grupo-resumen',
+          `${completas} de ${cuantas} ${cuantas === 1 ? 'serie completa' : 'series completas'}`
+        )
+      );
+      caja.append(...g.series.map(tarjeta));
+      return caja;
     })
   );
   if (!series.length) {
@@ -259,6 +283,8 @@ function abrirSerie(s) {
   $('lista').hidden = true;
   $('vista-serie').hidden = false;
   $('volver').hidden = false;
+  $('volver').textContent = '← ' + s.grupo.titulo;
+  $('volver').href = '#/grupo/' + encodeURIComponent(s.grupo.id);
   $('pasos').hidden = false;
   mostrarConsigna();
 }
@@ -269,8 +295,9 @@ function mostrarConsigna() {
   pendiente = null;
   pidioSolucion = false;
 
-  document.title = `${serie.titulo} · ${TITULO}`;
-  $('titulo-serie').textContent = serie.titulo;
+  const nombre = `${serie.grupo.titulo} › ${serie.numero}. ${serie.titulo}`;
+  document.title = `${nombre} · ${TITULO}`;
+  $('titulo-serie').textContent = nombre;
   $('pasos').replaceChildren(
     ...serie.consignas.map((c, i) => {
       const estrella = i < actual && pidePracticas(serie) && hechas[i].excelente ? ' ★' : '';
@@ -538,7 +565,10 @@ function navegar() {
   const s = pedida && series.find((x) => x.id === decodeURIComponent(pedida[1]));
   if (s) abrirSerie(s);
   else mostrarLista();
-  window.scrollTo(0, 0);
+  const deGrupo = !s && /^#\/grupo\/(.+)$/.exec(location.hash);
+  const caja = deGrupo && document.getElementById('grupo-' + decodeURIComponent(deGrupo[1]));
+  if (caja) caja.scrollIntoView();
+  else window.scrollTo(0, 0);
 }
 
 async function leerJson(direccion) {
@@ -547,26 +577,43 @@ async function leerJson(direccion) {
   return r.json();
 }
 
-// Una serie que no se puede leer no deja sin practica a las demas.
+// Una serie que no se puede leer no deja sin practica a las demas. Cada una
+// lleva su grupo y su numero: la posicion que ocupa en el grupo, entre las que
+// se pudieron leer.
 async function cargarSeries() {
   const indice = await leerJson(INDICE);
-  const leidas = await Promise.allSettled(indice.series.map((archivo) => leerJson(CARPETA + archivo)));
+  const leidas = await Promise.all(
+    indice.grupos.map((g) =>
+      Promise.allSettled(g.series.map((archivo) => leerJson(CARPETA + archivo)))
+    )
+  );
   const buenas = [];
-  leidas.forEach((leida, i) => {
-    if (leida.status === 'rejected') {
-      console.error(`No se pudo cargar la serie ${indice.series[i]}:`, leida.reason);
-    } else if (buenas.some((s) => s.id === leida.value.id)) {
-      console.error(`La serie ${indice.series[i]} repite el id "${leida.value.id}" y no se muestra.`);
-    } else {
-      buenas.push(leida.value);
-    }
+  const delIndice = [];
+  indice.grupos.forEach((g, k) => {
+    const grupo = { id: g.id, titulo: g.titulo, descripcion: g.descripcion, series: [] };
+    leidas[k].forEach((leida, i) => {
+      if (leida.status === 'rejected') {
+        console.error(`No se pudo cargar la serie ${g.series[i]}:`, leida.reason);
+      } else if (buenas.some((s) => s.id === leida.value.id)) {
+        console.error(`La serie ${g.series[i]} repite el id "${leida.value.id}" y no se muestra.`);
+      } else {
+        const s = leida.value;
+        grupo.series.push(s);
+        s.numero = grupo.series.length;
+        s.grupo = { id: grupo.id, titulo: grupo.titulo };
+        buenas.push(s);
+      }
+    });
+    if (grupo.series.length) delIndice.push(grupo);
   });
-  return buenas;
+  return { series: buenas, grupos: delIndice };
 }
-
 async function iniciar() {
   try {
-    [analizador, series] = await Promise.all([cargarAnalizador(), cargarSeries()]);
+    let cargadas;
+    [analizador, cargadas] = await Promise.all([cargarAnalizador(), cargarSeries()]);
+    series = cargadas.series;
+    grupos = cargadas.grupos;
   } catch (e) {
     $('lista').replaceChildren(
       mensaje('error', 'No se pudo cargar la práctica. Revise la conexión y vuelva a abrir la página.')

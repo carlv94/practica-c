@@ -44,7 +44,7 @@ Una serie es un archivo en `consignas/`:
 ```json
 {
   "id": "estructuras",
-  "titulo": "Estructuras: declarar, usar y dar un alias",
+  "titulo": "Declarar, usar y dar un alias",
   "descripcion": "Lo que se lee debajo del título en la lista.",
   "consignas": [ ... ]
 }
@@ -52,6 +52,25 @@ Una serie es un archivo en `consignas/`:
 
 y se muestra recién cuando está anotada en `consignas/indice.json`, que
 además fija el orden de la lista. Sacarla de ahí la esconde sin borrarla.
+
+El índice agrupa las series:
+
+```json
+{
+  "grupos": [
+    { "id": "cadenas", "titulo": "Cadenas",
+      "descripcion": "Textos en C: el carácter de fin, la biblioteca…",
+      "series": ["cadenas-fin.json", "cadenas-vacia.json"] }
+  ]
+}
+```
+
+En la lista cada grupo es una sección, con su descripción y cuántas de sus
+series están completas. **La serie no lleva el grupo ni el número en su
+título**: el número es la posición que ocupa en el grupo, así que agregar o
+mover una serie renumera las demás sin tocar sus archivos. Una serie está en
+un solo grupo, y las pruebas lo verifican. Las direcciones `#/serie/<id>`
+no cambian, y `#/grupo/<id>` lleva a la lista, en ese grupo.
 
 **El `id` de una serie no se cambia** una vez que los alumnos la usaron: el
 avance de cada uno está guardado con ese nombre, y con otro arrancan de cero.
@@ -358,7 +377,7 @@ La regla `llamada` suma, para estas series:
   `"en": [0, 1]`, para un elemento de un arreglo o una celda de una tabla.
 - `strncpy` con un límite que no deja lugar para el fin es error.
 
-Para leer y mostrar una cadena hay tres reglas propias (serie `Cadenas 8`):
+Para leer y mostrar una cadena hay tres reglas propias (grupo Cadenas, serie "Leer y mostrar una cadena"):
 
 - `{ "lee": { "destino": "$N", "formato": "palabra" } }`: leer del teclado
   el texto de una variable o de una posición (`"curso[0]"`). `"palabra"` es

@@ -75,7 +75,22 @@
           anotar(id && !vistos.has(id), `${que} con id propio: ${id}`, 'falta el id o está repetido');
           vistos.add(id);
         };
-        for (const archivo of indice.series) {
+        // Los grupos: con titulo y descripcion, y cada serie en uno solo.
+        const enGrupos = new Set();
+        const gruposVistos = new Set();
+        for (const g of indice.grupos) {
+          anotar(
+            Boolean(g.id && g.titulo && g.descripcion) && !gruposVistos.has(g.id),
+            `grupo con id, título y descripción propios: ${g.id}`,
+            'falta algo o el id está repetido'
+          );
+          gruposVistos.add(g.id);
+          for (const archivo of g.series) {
+            anotar(!enGrupos.has(archivo), `serie en un solo grupo: ${archivo}`, 'está en más de un grupo');
+            enGrupos.add(archivo);
+          }
+        }
+        for (const archivo of indice.grupos.flatMap((g) => g.series)) {
           try {
             const leida = await (await fetch('../consignas/' + archivo)).json();
             unico(leida.id, 'serie');

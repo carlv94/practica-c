@@ -1,6 +1,6 @@
 {
   "id": "cadenas-arreglos",
-  "titulo": "Cadenas 5: arreglos de cadenas",
+  "titulo": "Arreglos de cadenas",
   "descripcion": "Varios textos guardados juntos en un arreglo de cadenas: declararlo, llenar una posición, qué hay en cada nivel, vaciarlo e inicializarlo.",
   "dentroDeMain": true,
   "cabecera": "#include <string.h>",

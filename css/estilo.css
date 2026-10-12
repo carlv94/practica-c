@@ -134,6 +134,27 @@ label {
   text-decoration: underline;
 }
 
+/* La lista agrupa las series: el titulo del grupo, lo que trata y su avance. */
+.grupo {
+  margin-bottom: 28px;
+}
+
+.grupo h2 {
+  font-size: 1.3rem;
+  margin-bottom: 4px;
+}
+
+.grupo-descripcion {
+  margin: 0 0 4px;
+  color: var(--suave);
+}
+
+.grupo-resumen {
+  margin: 0 0 12px;
+  font-size: 0.85rem;
+  color: var(--suave);
+}
+
 /* La lista de series: una tarjeta entera es el enlace. */
 .tarjeta {
   display: block;
@@ -153,8 +174,11 @@ label {
   box-shadow: 0 0 0 1px var(--acento);
 }
 
-.tarjeta h2 {
-  margin-bottom: 4px;
+.tarjeta h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: inherit;
+  margin: 0 0 4px;
 }
 
 .tarjeta p {

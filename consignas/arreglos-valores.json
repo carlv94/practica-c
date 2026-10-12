@@ -1,6 +1,6 @@
 {
   "id": "arreglos-valores",
-  "titulo": "Arreglos y tablas: definir con sus valores",
+  "titulo": "Definir con sus valores",
   "descripcion": "Definir un arreglo o una tabla y darle sus valores en la misma sentencia.",
   "buenasPracticas": ["constantes", "claridad"],
   "consignas": [

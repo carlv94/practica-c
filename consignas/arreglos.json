@@ -1,6 +1,6 @@
 {
   "id": "arreglos",
-  "titulo": "Arreglos: declarar con una constante",
+  "titulo": "Declarar con una constante",
   "continua": true,
   "descripcion": "Declarar arreglos dándole un nombre a su tamaño, en vez de dejar un número suelto.",
   "buenasPracticas": ["constantes"],
