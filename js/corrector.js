@@ -1003,17 +1003,134 @@ export function corregir(
 
   // ---- llamada a una funcion -------------------------------------------------
 
+  // Lo que se le dice a quien escribio mal un argumento: esperado es el nombre
+  // de una variable, un texto entre comillas dobles ("Juan") o una posicion de
+  // un arreglo o de una tabla (nombres[0]).
+  function esTexto(e) {
+    return e.startsWith('"');
+  }
+  function esIndexado(e) {
+    return /^[A-Za-z_]\w*\s*(\[[^\]]*\]\s*)+$/.test(e);
+  }
+  function sinEspacios(t) {
+    return t.replace(/\s+/g, '');
+  }
+
+  function diagnosticarArgumento(llamada, i, esperado, real, modelo) {
+
+    if (esTexto(esperado)) {
+      const pedido = esperado.slice(1, -1);
+      if (real.clase === 'cadena') {
+        error(
+          'TEXTO_DISTINTO',
+          sinFinEscrito(real.contenido).texto.toLowerCase() === pedido.toLowerCase()
+            ? `El texto no es el de la consigna: en C las mayúsculas y las minúsculas son letras distintas.`
+            : 'El texto no es el que pide la consigna.',
+          llamada.fila
+        );
+      } else if ((real.clase === 'otro' || real.clase === 'caracter') && real.texto.startsWith("'")) {
+        error(
+          'ARGUMENTO_COMILLAS_SIMPLES',
+          `\`${real.texto}\` entre comillas simples: un texto va entre comillas dobles, las simples son para un solo carácter.`,
+          llamada.fila
+        );
+      } else if (real.clase === 'nombre') {
+        error(
+          'ARGUMENTO_SIN_COMILLAS',
+          `\`${real.nombre}\` sin comillas es el nombre de una variable, no un texto: un texto va entre comillas dobles.`,
+          llamada.fila
+        );
+      } else {
+        error(
+          'ARGUMENTO_EQUIVOCADO',
+          `El argumento ${i + 1} de \`${llamada.funcion}\` (\`${real.texto}\`) no es el que corresponde.`,
+          llamada.fila
+        );
+      }
+      return;
+    }
+
+    if (esIndexado(esperado)) {
+      const base = /^[A-Za-z_]\w*/.exec(esperado)[0];
+      const cantidad = (esperado.match(/\[/g) || []).length;
+      if (real.clase === 'nombre' && real.nombre === base) {
+        error(
+          'ARGUMENTO_TABLA_ENTERA',
+          `\`${base}\` contiene todos los textos: para guardar uno hay que elegir cuál, con ${cantidad === 1 ? 'un índice' : `${cantidad} índices`}.`,
+          llamada.fila
+        );
+      } else if (real.clase === 'indice' && real.nombre === base && real.indices.length > cantidad) {
+        error(
+          'ARGUMENTO_CON_CORCHETES',
+          `\`${real.texto}\` es un solo carácter de la cadena. Para pasar la cadena completa hay que quitar el último índice.`,
+          llamada.fila
+        );
+      } else if (real.clase === 'indice' && real.nombre === base && diagnosticos.some((d) => d.codigo === 'INDICE_FUERA_DE_RANGO')) {
+        // ya se dijo que esa fila no existe
+      } else if (real.clase === 'indice' && real.nombre === base && real.indices.length < cantidad) {
+        const variable = modelo.variables.findLast((v) => v.nombre === base);
+        const quedan = variable ? variable.arreglo.length - real.indices.length : 2;
+        error(
+          'ARGUMENTO_FALTA_INDICE',
+          `\`${real.texto}\` es ${quedan > 2 ? 'una tabla de cadenas' : 'un arreglo de cadenas'}, así que tiene varias adentro: falta indicar cuál con un ${ordinal(real.indices.length)} índice.`,
+          llamada.fila
+        );
+      } else if (real.clase === 'indice' && real.nombre === base) {
+        const [codigo, mensaje] = distintaPosicion(real, esperado, modelo);
+        error(codigo, mensaje, llamada.fila);
+      } else {
+        error(
+          'ARGUMENTO_EQUIVOCADO',
+          `El argumento ${i + 1} de \`${llamada.funcion}\` (\`${real.texto}\`) no es el que corresponde.`,
+          llamada.fila
+        );
+      }
+      return;
+    }
+
+    if (real.clase === 'cadena' && real.contenido === esperado) {
+      error(
+        'ARGUMENTO_ENTRE_COMILLAS',
+        `\`${real.texto}\` con comillas es un texto, no la variable \`${esperado}\`: el nombre de una variable va sin comillas.`,
+        llamada.fila
+      );
+    } else if (real.clase === 'direccion' && real.nombre === esperado) {
+      error(
+        'ARGUMENTO_CON_AMPERSAND',
+        `A \`${esperado}\` le sobra el \`&\`: una cadena se pasa con su nombre solo.`,
+        llamada.fila
+      );
+    } else if (real.clase === 'indice' && real.nombre === esperado) {
+      error(
+        'ARGUMENTO_CON_CORCHETES',
+        `\`${real.texto}\` es un solo carácter de la cadena. Para pasar la cadena completa va el nombre solo, sin corchetes.`,
+        llamada.fila
+      );
+    } else if (real.clase === 'nombre' && !modelo.variables.some((v) => v.nombre === real.nombre)) {
+      const parecida = modelo.variables.find((v) => v.nombre.toLowerCase() === real.nombre.toLowerCase());
+      error(
+        'VARIABLE_DESCONOCIDA',
+        `No hay ninguna variable llamada \`${real.nombre}\`.` +
+          (parecida
+            ? ` La que está declarada es \`${parecida.nombre}\`: en C las mayúsculas y las minúsculas son letras distintas.`
+            : ''),
+        llamada.fila
+      );
+    } else {
+      error(
+        'ARGUMENTO_EQUIVOCADO',
+        `El argumento ${i + 1} de \`${llamada.funcion}\` (\`${real.texto}\`) no es el que corresponde.`,
+        llamada.fila
+      );
+    }
+  }
+
   function reglaLlamada(regla, modelo) {
     const aceptadas = [regla.funcion, ...(regla.alternativas || [])];
     const esperados = (regla.argumentos || []).map(valorDe);
     const llamadas = modelo.llamadas.filter((l) => l.nuevo);
     const llamada = llamadas.find((l) => aceptadas.includes(l.funcion));
 
-    // Un argumento esperado es el nombre de una variable, un texto entre
-    // comillas dobles ("Juan") o una posicion de una tabla (nombres[0]).
-    const esTexto = (e) => e.startsWith('"');
-    const esIndexado = (e) => /^[A-Za-z_]\w*\s*(\[[^\]]*\]\s*)+$/.test(e);
-    const sinEspacios = (t) => t.replace(/\s+/g, '');
 
     if (!llamada) {
       // Los caracteres de a uno tambien llegan al mismo texto: vale, pero hay
@@ -1179,114 +1296,7 @@ export function corregir(
     }
 
     esperados.forEach((esperado, i) => {
-      if (acierta(i)) return;
-      const real = reales[i];
-
-      if (esTexto(esperado)) {
-        const pedido = esperado.slice(1, -1);
-        if (real.clase === 'cadena') {
-          error(
-            'TEXTO_DISTINTO',
-            sinFinEscrito(real.contenido).texto.toLowerCase() === pedido.toLowerCase()
-              ? `El texto no es el de la consigna: en C las mayúsculas y las minúsculas son letras distintas.`
-              : 'El texto no es el que pide la consigna.',
-            llamada.fila
-          );
-        } else if ((real.clase === 'otro' || real.clase === 'caracter') && real.texto.startsWith("'")) {
-          error(
-            'ARGUMENTO_COMILLAS_SIMPLES',
-            `\`${real.texto}\` entre comillas simples: un texto va entre comillas dobles, las simples son para un solo carácter.`,
-            llamada.fila
-          );
-        } else if (real.clase === 'nombre') {
-          error(
-            'ARGUMENTO_SIN_COMILLAS',
-            `\`${real.nombre}\` sin comillas es el nombre de una variable, no un texto: un texto va entre comillas dobles.`,
-            llamada.fila
-          );
-        } else {
-          error(
-            'ARGUMENTO_EQUIVOCADO',
-            `El argumento ${i + 1} de \`${llamada.funcion}\` (\`${real.texto}\`) no es el que corresponde.`,
-            llamada.fila
-          );
-        }
-        return;
-      }
-
-      if (esIndexado(esperado)) {
-        const base = /^[A-Za-z_]\w*/.exec(esperado)[0];
-        const cantidad = (esperado.match(/\[/g) || []).length;
-        if (real.clase === 'nombre' && real.nombre === base) {
-          error(
-            'ARGUMENTO_TABLA_ENTERA',
-            `\`${base}\` contiene todos los textos: para guardar uno hay que elegir cuál, con ${cantidad === 1 ? 'un índice' : `${cantidad} índices`}.`,
-            llamada.fila
-          );
-        } else if (real.clase === 'indice' && real.nombre === base && real.indices.length > cantidad) {
-          error(
-            'ARGUMENTO_CON_CORCHETES',
-            `\`${real.texto}\` es un solo carácter de la cadena. Para pasar la cadena completa hay que quitar el último índice.`,
-            llamada.fila
-          );
-        } else if (real.clase === 'indice' && real.nombre === base && diagnosticos.some((d) => d.codigo === 'INDICE_FUERA_DE_RANGO')) {
-          // ya se dijo que esa fila no existe
-        } else if (real.clase === 'indice' && real.nombre === base && real.indices.length < cantidad) {
-          const variable = modelo.variables.findLast((v) => v.nombre === base);
-          const quedan = variable ? variable.arreglo.length - real.indices.length : 2;
-          error(
-            'ARGUMENTO_FALTA_INDICE',
-            `\`${real.texto}\` es ${quedan > 2 ? 'una tabla de cadenas' : 'un arreglo de cadenas'}, así que tiene varias adentro: falta indicar cuál con un ${ordinal(real.indices.length)} índice.`,
-            llamada.fila
-          );
-        } else if (real.clase === 'indice' && real.nombre === base) {
-          const [codigo, mensaje] = distintaPosicion(real, esperado, modelo);
-          error(codigo, mensaje, llamada.fila);
-        } else {
-          error(
-            'ARGUMENTO_EQUIVOCADO',
-            `El argumento ${i + 1} de \`${llamada.funcion}\` (\`${real.texto}\`) no es el que corresponde.`,
-            llamada.fila
-          );
-        }
-        return;
-      }
-
-      if (real.clase === 'cadena' && real.contenido === esperado) {
-        error(
-          'ARGUMENTO_ENTRE_COMILLAS',
-          `\`${real.texto}\` con comillas es un texto, no la variable \`${esperado}\`: el nombre de una variable va sin comillas.`,
-          llamada.fila
-        );
-      } else if (real.clase === 'direccion' && real.nombre === esperado) {
-        error(
-          'ARGUMENTO_CON_AMPERSAND',
-          `A \`${esperado}\` le sobra el \`&\`: una cadena se pasa con su nombre solo.`,
-          llamada.fila
-        );
-      } else if (real.clase === 'indice' && real.nombre === esperado) {
-        error(
-          'ARGUMENTO_CON_CORCHETES',
-          `\`${real.texto}\` es un solo carácter de la cadena. Para pasar la cadena completa va el nombre solo, sin corchetes.`,
-          llamada.fila
-        );
-      } else if (real.clase === 'nombre' && !modelo.variables.some((v) => v.nombre === real.nombre)) {
-        const parecida = modelo.variables.find((v) => v.nombre.toLowerCase() === real.nombre.toLowerCase());
-        error(
-          'VARIABLE_DESCONOCIDA',
-          `No hay ninguna variable llamada \`${real.nombre}\`.` +
-            (parecida
-              ? ` La que está declarada es \`${parecida.nombre}\`: en C las mayúsculas y las minúsculas son letras distintas.`
-              : ''),
-          llamada.fila
-        );
-      } else {
-        error(
-          'ARGUMENTO_EQUIVOCADO',
-          `El argumento ${i + 1} de \`${llamada.funcion}\` (\`${real.texto}\`) no es el que corresponde.`,
-          llamada.fila
-        );
-      }
+      if (!acierta(i)) diagnosticarArgumento(llamada, i, esperado, reales[i], modelo);
     });
 
     // Con los argumentos bien: lo que se hace con la llamada.
