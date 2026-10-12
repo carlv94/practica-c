@@ -245,15 +245,24 @@ const CASOS_DE_RECORRER = [
   recorrer(1, 'while con el elemento solo', 'while (nombre[i]) {\n  i++;\n}'),
   recorrer(1, 'for', "for (i = 0; nombre[i] != '\\0'; i++) {\n}"),
   recorrer(1, 'con strlen', 'while (i < strlen(nombre)) {\n  i++;\n}'),
-  recorrer(1, 'do while', "do {\n  i++;\n} while (nombre[i] != '\\0');"),
+  // El cuerpo corre antes de mirar la condicion: con una cadena vacia avanzaria de mas.
+  recorrer(1, 'do while: correcta y mejorable', "do {\n  i++;\n} while (nombre[i] != '\\0');", 'ok', ['CICLO_DO_WHILE']),
   recorrer(1, 'con strlen y <=', 'while (i <= strlen(nombre)) {\n  i++;\n}', ['CICLO_UNO_DE_MAS']),
   recorrer(1, 'hasta el tamano declarado', 'while (i < 21) {\n  i++;\n}', ['CICLO_HASTA_EL_TAMANO']),
   recorrer(1, 'hasta sizeof', 'while (i < sizeof(nombre)) {\n  i++;\n}', ['CICLO_HASTA_EL_TAMANO']),
   recorrer(1, 'al reves', "while (nombre[i] == '\\0') {\n  i++;\n}", ['CICLO_AL_REVES']),
   recorrer(1, 'sin avanzar', "while (nombre[i] != '\\0') {\n}", ['CICLO_SIN_AVANCE']),
   recorrer(1, 'sin ciclo', 'i++;', ['CICLO_FALTA']),
-  // No se la reconoce: no se la da por mala, se avisa.
-  recorrer(1, 'otra condicion', "while (nombre[i] != 'a') {\n  i++;\n}", 'ok', [], ['CICLO_NO_VERIFICADO']),
+  // Una condicion que no mira la cadena no puede estar viendo el final.
+  recorrer(1, 'el indice contra el fin', "while (i != '\\0') {\n  i += 1;\n}", ['CICLO_INDICE_CONTRA_FIN']),
+  recorrer(1, 'el indice contra 0', 'while (i != 0) {\n  i++;\n}', ['CICLO_INDICE_CONTRA_FIN']),
+  recorrer(1, 'la cadena completa contra el fin', "while (nombre != '\\0') {\n  i++;\n}", ['CICLO_CADENA_COMPLETA']),
+  recorrer(1, 'el caracter contra un texto', 'while (nombre[i] != "\\0") {\n  i++;\n}', ['CICLO_CARACTER_CON_TEXTO']),
+  recorrer(1, 'el caracter contra otro caracter', "while (nombre[i] != 'a') {\n  i++;\n}", ['CICLO_OTRO_CARACTER']),
+  recorrer(1, 'el caracter contra un espacio', "while (nombre[i] != ' ') {\n  i++;\n}", ['CICLO_OTRO_CARACTER']),
+  recorrer(1, 'sin mirar la cadena', 'while (i != 5) {\n  i++;\n}', ['CICLO_NO_MIRA_LA_CADENA']),
+  // Mira la cadena pero de una forma que no se reconoce: no se la da por mala, se avisa.
+  recorrer(1, 'una condicion que no se reconoce', "while (nombre[i] != '\\0' && i < 100) {\n  i++;\n}", 'ok', [], ['CICLO_NO_VERIFICADO']),
   recorrer(2, 'seguimiento: la correcta', '1'),
   recorrer(2, 'seguimiento: todas las letras', '0', ['OPCION_CUENTA_TODAS_LAS_LETRAS']),
   recorrer(2, 'seguimiento: la primera', '2', ['OPCION_CUENTA_UNA_SOLA']),

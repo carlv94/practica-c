@@ -2098,7 +2098,17 @@ export function corregir(
       ].some(patron);
 
       if (bien) {
-        // nada que decir
+        // Con do while el cuerpo corre antes de mirar la condicion: con una
+        // cadena vacia, el indice avanzaria de mas. Con "Maria" anda: mejora.
+        if (ciclo.tipo === 'do' && practicas.includes('claridad')) {
+          mejora(
+            'CICLO_DO_WHILE',
+            'Está bien, pero con `do while` el ciclo avanza antes de mirar la condición: si la cadena estuviera vacía, `' +
+              regla.indice +
+              '` pasaría de largo el final.',
+            ciclo.fila
+          );
+        }
       } else if (patron(`^${I}<=strlen\\(${N}\\)$`)) {
         error(
           'CICLO_UNO_DE_MAS',
@@ -2115,6 +2125,44 @@ export function corregir(
         error(
           'CICLO_AL_REVES',
           'El ciclo tiene que repetirse mientras no se haya llegado al final, y esa condición se cumple justo al llegar.',
+          ciclo.fila
+        );
+      } else if (patron('^' + I + '(?:!=|==)' + cero + '$|^' + cero + '(?:!=|==)' + I + '$')) {
+        // el indice contra el fin: se confunde la posicion con lo que hay en ella
+        error(
+          'CICLO_INDICE_CONTRA_FIN',
+          'La condición compara el índice `' +
+            regla.indice +
+            '` con `\'\\0\'`, pero el `\'\\0\'` es un carácter de la cadena, no una posición: hay que mirar el carácter que está en la posición `' +
+            regla.indice +
+            '`.',
+          ciclo.fila
+        );
+      } else if (patron('^' + N + '(?:!=|==)' + cero + '$|^' + cero + '(?:!=|==)' + N + '$')) {
+        error(
+          'CICLO_CADENA_COMPLETA',
+          'La condición compara la cadena completa con `\'\\0\'`: para mirar un carácter hay que indicar su posición.',
+          ciclo.fila
+        );
+      } else if (patron('^' + elemento + '(?:!=|==)"')) {
+        error(
+          'CICLO_CARACTER_CON_TEXTO',
+          'Un carácter se compara con un carácter entre comillas simples, no con un texto.',
+          ciclo.fila
+        );
+      } else if (patron('^' + elemento + "(?:!=|==)(?:'[^']*'|\\d+)$")) {
+        error(
+          'CICLO_OTRO_CARACTER',
+          'El ciclo se detiene al encontrar otro carácter, no al llegar al final de la cadena.',
+          ciclo.fila
+        );
+      } else if (!new RegExp('\\b' + N + '\\b').test(condicion) && !/strlen/.test(condicion)) {
+        // ni la cadena ni su largo: no hay forma de que mire el final
+        error(
+          'CICLO_NO_MIRA_LA_CADENA',
+          'La condición no mira la cadena `' +
+            nombre +
+            '`: para saber si se llegó al final hay que mirar lo que hay en ella.',
           ciclo.fila
         );
       } else {
