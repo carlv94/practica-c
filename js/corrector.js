@@ -445,8 +445,19 @@ export function corregir(
     // Valores en filas ([[5, 8], [0, 2]]) piden una tabla: dos dimensiones.
     const esTabla =
       Array.isArray(regla.valores?.[0]) || Array.isArray(regla.arreglo?.alMenos) || Array.isArray(regla.arreglo?.tamano) || Boolean(regla.textos);
-    const dimensiones = !quiereArreglo ? 0 : esTabla ? 2 : 1;
-    const forma = esTabla ? 'una tabla' : 'un arreglo';
+    // Con letras, el ultimo corchete es el de cada texto: dos corchetes son un
+    // arreglo de cadenas y tres, una tabla de cadenas.
+    const medidas = regla.arreglo ? [].concat(regla.arreglo.tamano ?? regla.arreglo.alMenos ?? []) : [];
+    const conLetras = regla.arreglo?.letras != null;
+    const deCadenas = Boolean(regla.textos) || (conLetras && medidas.length > 1);
+    const dimensiones = !quiereArreglo ? 0 : !esTabla ? 1 : conLetras ? medidas.length : 2;
+    const forma = deCadenas
+      ? dimensiones === 3
+        ? 'una tabla de cadenas'
+        : 'un arreglo de cadenas'
+      : esTabla
+        ? 'una tabla'
+        : 'un arreglo';
 
     const delTipo = candidatas.filter(esDelTipo);
     const exacta = delTipo.find((v) => !v.punteros && v.arreglo.length === dimensiones);
@@ -552,13 +563,17 @@ export function corregir(
     } else if (esTabla && v.arreglo.length === 1) {
       error(
         'TABLA_UNA_DIMENSION',
-        `\`${v.nombre}\` tiene una sola dimensión: es un arreglo. La consigna pide una tabla, con filas y columnas.`,
+        deCadenas
+          ? `\`${v.nombre}\` tiene una sola dimensión: guarda un solo texto. La consigna pide ${forma}.`
+          : `\`${v.nombre}\` tiene una sola dimensión: es un arreglo. La consigna pide una tabla, con filas y columnas.`,
         v.fila
       );
     } else if (esTabla) {
       error(
         'TABLA_DIMENSIONES',
-        `\`${v.nombre}\` tiene ${v.arreglo.length} dimensiones. Una tabla tiene dos: las filas y las columnas.`,
+        deCadenas
+          ? `\`${v.nombre}\` tiene ${v.arreglo.length} dimensiones. La consigna pide ${forma}, que tiene ${dimensiones === 3 ? 'tres: las filas, las columnas y el tamaño de cada texto' : 'dos: la cantidad de textos y el tamaño de cada uno'}.`
+          : `\`${v.nombre}\` tiene ${v.arreglo.length} dimensiones. Una tabla tiene dos: las filas y las columnas.`,
         v.fila
       );
     } else {
@@ -1179,6 +1194,12 @@ export function corregir(
           );
         } else if (real.clase === 'indice' && real.nombre === base && diagnosticos.some((d) => d.codigo === 'INDICE_FUERA_DE_RANGO')) {
           // ya se dijo que esa fila no existe
+        } else if (real.clase === 'indice' && real.nombre === base && real.indices.length < cantidad) {
+          error(
+            'ARGUMENTO_FALTA_INDICE',
+            `\`${real.texto}\` todavía no es un solo texto: tiene varios adentro, y falta indicar cuál.`,
+            llamada.fila
+          );
         } else if (real.clase === 'indice' && real.nombre === base) {
           error(
             'ARGUMENTO_OTRA_FILA',
@@ -1388,18 +1409,27 @@ export function corregir(
     const pedidos = [].concat(exacto ? minimo.tamano : minimo.alMenos);
     const esTabla = pedidos.length > 1;
     const letras = minimo.letras;
+    // Lo que cuenta cada corchete que no es el de las letras.
+    const unidad = (k) => (pedidos.length === 3 ? (k === 0 ? 'filas' : 'columnas') : esTabla ? 'textos' : 'elementos');
     let bien = true;
 
-    // Los dos numeros de una tabla, uno por otro.
-    if (esTabla && pedidos[0] !== pedidos[1]) {
+    // Dos numeros de una tabla, uno por otro.
+    if (esTabla) {
       const escritos = pedidos.map((_, k) => valorDeDimension(declarado.arreglo[k] ?? '', modelo));
-      if (escritos[0] === pedidos[1] && escritos[1] === pedidos[0]) {
-        error(
-          'DIMENSIONES_AL_REVES',
-          `Las dimensiones de \`${n}\` están al revés: entre los primeros corchetes va la cantidad de textos y entre los segundos el tamaño de cada uno.`,
-          declarado.fila
-        );
-        return false;
+      const lugares = pedidos.length === 3 ? ['primeros', 'segundos', 'últimos'] : ['primeros', 'segundos'];
+      const que =
+        pedidos.length === 3
+          ? ['la cantidad de filas', 'la de columnas', 'el tamaño de cada texto']
+          : ['la cantidad de textos', 'el tamaño de cada uno'];
+      for (let k = 0; k + 1 < pedidos.length; k++) {
+        if (pedidos[k] !== pedidos[k + 1] && escritos[k] === pedidos[k + 1] && escritos[k + 1] === pedidos[k]) {
+          error(
+            'DIMENSIONES_AL_REVES',
+            `Las dimensiones de \`${n}\` están al revés: entre los ${lugares[k]} corchetes va ${que[k]} y entre los ${lugares[k + 1]} ${que[k + 1]}.`,
+            declarado.fila
+          );
+          return false;
+        }
       }
     }
 
@@ -1422,7 +1452,7 @@ export function corregir(
             ? esTabla
               ? `En \`${n}\`, cada texto puede tener ${caracteresDe(tiene)}, más de los que hacen falta para uno de ${letrasDe(letras)}.`
               : `\`${n}\` puede guardar ${caracteresDe(tiene)}, más de los que hacen falta para un texto de ${letrasDe(letras)}.`
-            : `\`${n}\` puede guardar ${tiene} ${esTabla ? 'textos' : 'elementos'} y la consigna pide ${pedido}: sobra espacio.`,
+            : `\`${n}\` puede guardar ${tiene} ${unidad(k)} y la consigna pide ${pedido}: sobra espacio.`,
           declarado.fila
         );
         continue;
@@ -1449,7 +1479,7 @@ export function corregir(
       } else {
         error(
           'ARREGLO_CHICO',
-          `\`${n}\` puede guardar ${tiene} ${esTabla ? 'textos' : 'elementos'} y hay que guardar ${pedido}: no alcanza.`,
+          `\`${n}\` puede guardar ${tiene} ${unidad(k)} y hay que guardar ${pedido}: no alcanza.`,
           declarado.fila
         );
       }
@@ -2786,10 +2816,11 @@ function revisarAsignaciones(modelo, error, aconsejarFuncion = true) {
       );
     } else if (variable.arreglo.length > izquierda.indices.length) {
       // Una fila de una tabla: con t[0] queda una cadena (o un arreglo).
+      const quedan = variable.arreglo.length - izquierda.indices.length;
       error(
         'ASIGNACION_DE_ARREGLO',
-        `\`${izquierda.texto}\` es ${esCadena ? 'una cadena' : 'una fila de la tabla'}: no se puede asignar completa con \`=\`.` +
-          (esCadena && aconsejarFuncion
+        `\`${izquierda.texto}\` es ${esCadena ? (quedan === 1 ? 'una cadena' : 'un arreglo de cadenas') : 'una fila de la tabla'}: no se puede asignar completa con \`=\`.` +
+          (esCadena && quedan === 1 && aconsejarFuncion
             ? ' Para copiar un texto en una cadena se usa una función de la biblioteca de cadenas.'
             : ''),
         a.fila
@@ -2816,10 +2847,11 @@ function revisarIndices(modelo, error) {
       const clave = valor.texto + ':' + k;
       if (dichos.has(clave)) continue;
       dichos.add(clave);
-      // Con dos corchetes de char, el primero cuenta los textos: posiciones.
+      // En char, el ultimo corchete son las letras de un texto, y con dos
+      // corchetes el primero cuenta los textos: en los dos casos, posiciones.
       const esChar = variable.tipo.clase === 'primitivo' && variable.tipo.nombre === 'char';
-      const que =
-        variable.arreglo.length === 1 || (esChar && variable.arreglo.length === 2) ? 'posiciones' : k === 0 ? 'filas' : 'columnas';
+      const largo = variable.arreglo.length;
+      const que = largo === 1 || (esChar && (largo === 2 || k === largo - 1)) ? 'posiciones' : k === 0 ? 'filas' : 'columnas';
       error(
         'INDICE_FUERA_DE_RANGO',
         `\`${variable.nombre}\` tiene ${lugar} ${que}, numeradas de 0 a ${lugar - 1}: la ${Number(indice)} no existe.`,

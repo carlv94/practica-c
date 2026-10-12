@@ -1,7 +1,7 @@
 {
   "id": "cadenas-tablas",
-  "titulo": "Cadenas 5: arreglos de cadenas",
-  "descripcion": "Varios textos guardados juntos en un arreglo de cadenas: declararlo, inicializarlo, llenar una posición y recorrerlo.",
+  "titulo": "Cadenas 5: arreglos y tablas de cadenas",
+  "descripcion": "Varios textos guardados juntos: un arreglo de cadenas (declararlo, inicializarlo, llenar una posición y recorrerlo) y una tabla de cadenas, con un texto en cada celda.",
   "dentroDeMain": true,
   "buenasPracticas": ["claridad", "constantes"],
   "consignas": [
@@ -79,6 +79,37 @@
           "explicacion": "El `'\\0'` está después de la última letra, en la posición 3 de ese texto, no en la primera."
         }
       ]
+    },
+    {
+      "id": "cadenas-tabla-datos",
+      "titulo": "Declarar una tabla de cadenas",
+      "enunciado": "Un curso tiene hasta 30 estudiantes. De cada uno se guardan su nombre, su apellido y su carrera, y cada texto tiene hasta 25 letras. Declare la variable donde se guarden estos datos de todo el curso, con una fila por estudiante y el tamaño justo.",
+      "requiere": [
+        {
+          "variable": {
+            "tipo": "caracter",
+            "arreglo": { "tamano": [30, 3, 26], "letras": 25 }
+          }
+        }
+      ],
+      "referencia": "#define MAX_ESTUDIANTES 30\n#define CAMPOS 3\n#define LARGO_TEXTO 25\n\nchar datos[MAX_ESTUDIANTES][CAMPOS][LARGO_TEXTO + 1];"
+    },
+    {
+      "id": "cadenas-celda",
+      "titulo": "Guardar un texto en una celda",
+      "dado": "#define MAX_ESTUDIANTES 30\n#define CAMPOS 3\n#define LARGO_TEXTO 25\nchar datos[MAX_ESTUDIANTES][CAMPOS][LARGO_TEXTO + 1];",
+      "enunciado": "En la tabla `datos`, cada fila es un estudiante y sus columnas son: la `0` el nombre, la `1` el apellido y la `2` la carrera. Guarde el apellido `\"Perez\"` del primer estudiante.",
+      "requiere": [
+        {
+          "llamada": {
+            "funcion": "strcpy",
+            "alternativas": ["strncpy"],
+            "argumentos": ["datos[0][1]", "\"Perez\""],
+            "orden": "primero va la cadena donde se guarda y después el texto"
+          }
+        }
+      ],
+      "referencia": "strcpy(datos[0][1], \"Perez\");"
     }
   ]
 }

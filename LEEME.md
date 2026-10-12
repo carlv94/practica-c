@@ -240,7 +240,7 @@ si no, es un error que dice que lo que no se nombra queda en cero.
 ### Cadenas de caracteres
 
 Las series `cadenas-*` (el fin de la cadena, la cadena vacía, la biblioteca,
-recorrer, arreglos de cadenas y typedef) usan estas reglas.
+recorrer, arreglos y tablas de cadenas, y typedef) usan estas reglas.
 
 **Una cadena de hasta N letras necesita N + 1 espacios**, y la consigna pide el
 tamaño justo. Con un "al menos" un número cualquiera (20) pasaría sin que el
@@ -273,10 +273,14 @@ guarda cada elemento.
 |---|---|
 | `char c[26]` | una cadena |
 | `char nombres[30][26]` | un **arreglo de cadenas** (30 textos) |
+| `char datos[30][3][26]` | una **tabla de cadenas** (30 filas y 3 columnas, con un texto en cada celda) |
 
 "Tabla de caracteres" queda para lo que de verdad guarda caracteres sueltos
 (`char tablero[3][3]`). "Lista" no se usa para esto: en estas series es lo que
-va entre llaves (`{"lunes", ...}`).
+va entre llaves (`{"lunes", ...}`). Con tres corchetes, `"tamano": [30, 3, 26]`:
+las dimensiones al revés (`DIMENSIONES_AL_REVES`) se detectan entre cada par de
+corchetes seguidos, y los argumentos como `datos[0]` (que aún tiene varios
+textos adentro) tienen su mensaje (`ARGUMENTO_FALTA_INDICE`).
 
 Otras formas de pedir una variable de caracteres:
 
@@ -328,8 +332,8 @@ Reglas de código:
 
 La regla `llamada` suma, para estas series:
 
-- Un argumento puede ser un texto (`"\"Juan\""`) o una posición de un arreglo
-  de cadenas (`"nombres[0]"`).
+- Un argumento puede ser un texto (`"\"Juan\""`) o una posición de un arreglo o
+  de una tabla de cadenas (`"nombres[0]"`, `"datos[0][1]"`).
 - `"resultadoEn": "largo"`: lo que devuelve tiene que guardarse en esa variable.
 - `"comparar": true` (`strcmp`): tiene que estar en la condición de un `if` y
   mirar el cero. `strcmp(a, b)` sola o con `!= 0` se cumple al revés

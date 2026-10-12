@@ -348,6 +348,31 @@ const CASOS_DE_TABLAS = [
   tablas(5, 'fila: la correcta', '1'),
   tablas(5, 'fila: el texto', '0', ['OPCION_FILA_ES_EL_TEXTO']),
   tablas(5, 'fila: el fin', '2', ['OPCION_FIN_EN_LA_PRIMERA']),
+
+  // 6: una tabla de cadenas, con un texto en cada celda
+  tablas(6, 'con constantes y el lugar del fin', '#define MAX_ESTUDIANTES 30\n#define CAMPOS 3\n#define LARGO_TEXTO 25\nchar datos[MAX_ESTUDIANTES][CAMPOS][LARGO_TEXTO + 1];'),
+  tablas(6, 'con numeros sueltos: correcta y mejorable', 'char datos[30][3][26];', 'ok', ['NUMERO_MAGICO']),
+  tablas(6, 'sin el lugar del fin', 'char datos[30][3][25];', ['CADENA_SIN_FIN']),
+  tablas(6, 'textos que no alcanzan', 'char datos[30][3][24];', ['ARREGLO_CHICO']),
+  tablas(6, 'faltan columnas', 'char datos[30][2][26];', ['ARREGLO_CHICO']),
+  tablas(6, 'estudiantes de mas', 'char datos[40][3][26];', ['ARREGLO_GRANDE']),
+  tablas(6, 'filas y columnas al reves', 'char datos[3][30][26];', ['DIMENSIONES_AL_REVES']),
+  tablas(6, 'columnas y tamaño al reves', 'char datos[30][26][3];', ['DIMENSIONES_AL_REVES']),
+  tablas(6, 'dos dimensiones', 'char datos[30][26];', ['TABLA_DIMENSIONES']),
+  tablas(6, 'cuatro dimensiones', 'char datos[30][3][26][2];', ['TABLA_DIMENSIONES']),
+  tablas(6, 'una sola dimension', 'char datos[26];', ['TABLA_UNA_DIMENSION']),
+  tablas(6, 'otro tipo', 'int datos[30][3][26];', ['VARIABLE_TIPO']),
+
+  // 7: guardar un texto en una celda
+  tablas(7, 'strcpy a la celda', 'strcpy(datos[0][1], "Perez");'),
+  tablas(7, 'la tabla entera', 'strcpy(datos, "Perez");', ['ARGUMENTO_TABLA_ENTERA']),
+  tablas(7, 'solo la fila', 'strcpy(datos[0], "Perez");', ['ARGUMENTO_FALTA_INDICE']),
+  tablas(7, 'un solo caracter', 'strcpy(datos[0][1][0], "Perez");', ['ARGUMENTO_CON_CORCHETES']),
+  tablas(7, 'otra columna', 'strcpy(datos[0][2], "Perez");', ['ARGUMENTO_OTRA_FILA']),
+  tablas(7, 'otra fila', 'strcpy(datos[1][1], "Perez");', ['ARGUMENTO_OTRA_FILA']),
+  tablas(7, 'una fila que no existe', 'strcpy(datos[30][1], "Perez");', ['INDICE_FUERA_DE_RANGO']),
+  tablas(7, 'una fila asignada con =', 'datos[0] = "Perez";', ['ASIGNACION_DE_ARREGLO']),
+  tablas(7, 'una celda asignada con =', 'datos[0][1] = "Perez";', ['ASIGNACION_DE_ARREGLO']),
 ];
 
 const typedef = (paso, nombre, respuesta, espera, mejoras) =>
