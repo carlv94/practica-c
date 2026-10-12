@@ -10,6 +10,7 @@
     "cadenas-recorrer.json",
     "cadenas-arreglos.json",
     "cadenas-tablas.json",
-    "cadenas-typedef.json"
+    "cadenas-typedef.json",
+    "cadenas-lectura.json"
   ]
 }

@@ -1,0 +1,149 @@
+{
+  "id": "cadenas-lectura",
+  "titulo": "Cadenas 8: leer y mostrar una cadena",
+  "descripcion": "Leer una palabra o una línea completa desde el teclado, mostrarla en pantalla y qué pasa con el Enter que queda sin leer.",
+  "dentroDeMain": true,
+  "cabecera": "#include <stdio.h>",
+  "buenasPracticas": ["claridad", "constantes"],
+  "consignas": [
+    {
+      "id": "lectura-declarar",
+      "titulo": "Declarar donde guardar lo que se lee",
+      "enunciado": "Un estudiante tiene un nombre de hasta 25 letras. Declare la variable donde se guarde, con el tamaño justo.",
+      "requiere": [
+        {
+          "variable": {
+            "tipo": "caracter",
+            "arreglo": { "tamano": 26, "letras": 25 },
+            "capturar": "N"
+          }
+        }
+      ],
+      "referencia": "#define LARGO_NOMBRE 25\n\nchar nombre[LARGO_NOMBRE + 1];"
+    },
+    {
+      "id": "lectura-palabra",
+      "titulo": "Leer una palabra",
+      "continua": true,
+      "enunciado": "Lea desde el teclado una palabra y guárdela en {N}.",
+      "requiere": [{ "lee": { "destino": "$N", "formato": "palabra" } }],
+      "referencia": "scanf(\"%25s\", nombre);"
+    },
+    {
+      "id": "lectura-mostrar",
+      "titulo": "Mostrar una cadena",
+      "continua": true,
+      "enunciado": "Muestre en pantalla el contenido de {N}.",
+      "requiere": [{ "muestra": { "destino": "$N", "despuesDeLeer": true } }],
+      "referencia": "printf(\"%s\", nombre);"
+    },
+    {
+      "id": "lectura-q-espacio",
+      "titulo": "Qué se guarda con un espacio",
+      "enunciado": "Después de ejecutar el código de abajo, si usted escribe `Ana Maria`, ¿qué contendría `nombre`?",
+      "codigo": "char nombre[26];\nscanf(\"%25s\", nombre);",
+      "opciones": [
+        {
+          "valor": "\"Ana Maria\"",
+          "texto": "el nombre completo",
+          "codigo": "OPCION_LEE_TODA_LA_LINEA",
+          "explicacion": "El formato `%s` deja de leer al llegar a un espacio: `Maria` queda sin leer, esperando en el teclado, y no entra en `nombre`."
+        },
+        { "valor": "\"Ana\"", "texto": "la primera palabra", "correcta": true },
+        {
+          "valor": "\"Maria\"",
+          "texto": "la última palabra",
+          "codigo": "OPCION_LEE_LA_ULTIMA",
+          "explicacion": "La lectura empieza por lo primero que se escribe: guarda `Ana` y se detiene en el espacio. `Maria` queda pendiente."
+        },
+        {
+          "valor": "\"Ana \"",
+          "texto": "la primera palabra y el espacio",
+          "codigo": "OPCION_INCLUYE_EL_ESPACIO",
+          "explicacion": "El espacio separa las palabras y no se guarda: `%s` lo toma como el final de lo que lee."
+        }
+      ]
+    },
+    {
+      "id": "lectura-linea",
+      "titulo": "Leer una línea completa",
+      "continua": true,
+      "enunciado": "Ahora el nombre puede tener varias palabras, como `Ana Maria`. Lea desde el teclado el nombre completo, hasta que se presione Enter, y guárdelo en {N}.",
+      "requiere": [{ "lee": { "destino": "$N", "formato": "linea" } }],
+      "referencia": "gets(nombre);",
+      "mejorasEnReferencia": ["USO_DE_GETS"]
+    },
+    {
+      "id": "lectura-saludo",
+      "titulo": "Leer y mostrar",
+      "dado": "#define LARGO_NOMBRE 25\n\nchar nombre[LARGO_NOMBRE + 1];",
+      "enunciado": "Lea el nombre completo de una persona, con sus espacios, y muestre en pantalla `Hola, ` seguido de ese nombre.",
+      "requiere": [
+        { "lee": { "destino": "nombre", "formato": "linea" } },
+        { "muestra": { "destino": "nombre", "formato": "Hola, %s", "despuesDeLeer": true } }
+      ],
+      "referencia": "gets(nombre);\nprintf(\"Hola, %s\\n\", nombre);",
+      "mejorasEnReferencia": ["USO_DE_GETS"]
+    },
+    {
+      "id": "lectura-posicion",
+      "titulo": "Leer en una posición de un arreglo de cadenas",
+      "dado": "#define MAX_ESTUDIANTES 30\n#define LARGO_NOMBRE 25\n\nchar curso[MAX_ESTUDIANTES][LARGO_NOMBRE + 1];",
+      "enunciado": "Lea desde el teclado una palabra y guárdela en la primera posición del arreglo `curso`.",
+      "requiere": [{ "lee": { "destino": "curso[0]", "formato": "palabra" } }],
+      "referencia": "scanf(\"%25s\", curso[0]);"
+    },
+    {
+      "id": "lectura-ciclo",
+      "titulo": "Leer todas las posiciones",
+      "continua": true,
+      "dado": "int i;",
+      "enunciado": "Con un ciclo, lea desde el teclado una palabra para cada posición del arreglo `curso`. Use el índice `i`.",
+      "requiere": [{ "ciclo": { "indice": "i", "filasDe": "curso", "lee": "palabra" } }],
+      "referencia": "for (i = 0; i < MAX_ESTUDIANTES; i++) {\n  scanf(\"%25s\", curso[i]);\n}"
+    },
+    {
+      "id": "lectura-q-enter",
+      "titulo": "Qué se guarda después de leer un número",
+      "enunciado": "Después de ejecutar el código de abajo, si usted escribe `20`, presiona Enter, escribe `Ana` y vuelve a presionar Enter, ¿qué contendría `nombre`?",
+      "codigo": "int edad;\nchar nombre[26];\n\nscanf(\"%d\", &edad);\ngets(nombre);",
+      "opciones": [
+        {
+          "valor": "\"Ana\"",
+          "texto": "el nombre que se escribió",
+          "codigo": "OPCION_LEE_EL_NOMBRE",
+          "explicacion": "Después de leer `20`, el Enter queda sin leer en el teclado. `gets` lo toma como si fuera la línea completa y termina ahí: `Ana` queda pendiente."
+        },
+        { "valor": "\"\"", "texto": "una cadena vacía", "correcta": true },
+        {
+          "valor": "\"20\"",
+          "texto": "el número",
+          "codigo": "OPCION_NOMBRE_RECIBE_LA_EDAD",
+          "explicacion": "`20` lo leyó `scanf` y se guardó en `edad`. `nombre` solo recibe lo que lee `gets`."
+        },
+        {
+          "valor": "un error",
+          "texto": "el programa se detiene",
+          "codigo": "OPCION_LECTURA_VACIA_ES_ERROR",
+          "explicacion": "No es un error: `gets` lee una línea vacía sin problema, y `nombre` queda con el `'\\0'` en la primera posición. El programa sigue."
+        }
+      ]
+    },
+    {
+      "id": "lectura-enter",
+      "titulo": "Leer un nombre después de un número",
+      "dado": "#define LARGO_NOMBRE 25\n\nint edad;\nchar nombre[LARGO_NOMBRE + 1];\n\nscanf(\"%d\", &edad);",
+      "ejemplo": {
+        "texto": "Para descartar lo que quedó sin leer, un ciclo puede leer caracteres de a uno y tirarlos hasta llegar al Enter: `getchar()` lee un carácter del teclado, el ciclo se repite mientras no sea el Enter, y el `;` del final es su cuerpo vacío.",
+        "codigo": "while (getchar() != '\\n');"
+      },
+      "enunciado": "El programa ya leyó la edad. Escriba lo que sigue para que `nombre` guarde el nombre completo que se escribe después.",
+      "requiere": [
+        { "lee": { "destino": "nombre", "formato": "linea" } },
+        { "limpiaEntrada": true }
+      ],
+      "referencia": "while (getchar() != '\\n');\ngets(nombre);",
+      "mejorasEnReferencia": ["USO_DE_GETS"]
+    }
+  ]
+}

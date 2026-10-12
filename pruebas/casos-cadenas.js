@@ -582,6 +582,139 @@ const CASOS_DE_TYPEDEF = [
   typedef(8, 'la tabla entera', 'strcpy(datos, "Perez");', ['ARGUMENTO_TABLA_ENTERA']),
 ];
 
+const lectura = (paso, nombre, respuesta, espera, mejoras) =>
+  caso('cadenas-lectura', paso, nombre, respuesta, espera, mejoras);
+
+const CASOS_DE_LECTURA = [
+  // 1: declarar
+  lectura(1, 'el tamano justo', '#define LARGO_NOMBRE 25\nchar nombre[LARGO_NOMBRE + 1];'),
+  lectura(1, 'con el numero suelto: correcto y mejorable', 'char nombre[26];', 'ok', ['NUMERO_MAGICO']),
+  lectura(1, 'sin el lugar del fin', 'char nombre[25];', ['CADENA_SIN_FIN']),
+  lectura(1, 'de pocas letras', 'char nombre[10];', ['ARREGLO_CHICO']),
+  lectura(1, 'con de mas', 'char nombre[100];', ['ARREGLO_GRANDE']),
+
+  // 2: leer una palabra
+  lectura(2, 'con el limite', 'scanf("%25s", nombre);'),
+  lectura(2, 'con un espacio antes del formato', 'scanf(" %25s", nombre);'),
+  lectura(2, 'sin limite: correcto y mejorable', 'scanf("%s", nombre);', 'ok', ['LECTURA_SIN_LIMITE']),
+  {
+    ...lectura(2, 'la mejora dice cuanto', 'scanf("%s", nombre);', 'ok', ['LECTURA_SIN_LIMITE']),
+    dice: ['sería `%25s`'],
+  },
+  lectura(2, 'un limite que no deja lugar para el fin', 'scanf("%26s", nombre);', ['LECTURA_SIN_LUGAR_PARA_FIN']),
+  {
+    ...lectura(2, 'con el ampersand', 'scanf("%s", &nombre);', ['ARGUMENTO_CON_AMPERSAND']),
+    dice: ['le sobra el `&`'],
+  },
+  lectura(2, 'el formato de un entero', 'scanf("%d", nombre);', ['FORMATO_NO_ES_TEXTO']),
+  lectura(2, 'el formato de un caracter', 'scanf("%c", nombre);', ['FORMATO_NO_ES_TEXTO']),
+  lectura(2, 'los argumentos al reves', 'scanf(nombre, "%s");', ['FORMATO_NO_ES_TEXTO']),
+  lectura(2, 'sin el formato', 'scanf(nombre);', ['ARGUMENTOS_CANTIDAD']),
+  lectura(2, 'una variable que no existe', 'scanf("%s", apellido);', ['VARIABLE_DESCONOCIDA']),
+  lectura(2, 'con la linea completa', 'scanf("%[^\\n]", nombre);', ['LECTURA_LEE_LA_LINEA']),
+  lectura(2, 'con gets', 'gets(nombre);', ['LECTURA_LEE_LA_LINEA']),
+  lectura(2, 'con otra funcion', 'strcpy(nombre, "Ana");', ['FUNCION_EQUIVOCADA']),
+  lectura(2, 'sin leer', 'int x;', ['LECTURA_FALTA']),
+
+  // 3: mostrar
+  lectura(3, 'printf con %s', 'printf("%s", nombre);'),
+  lectura(3, 'con salto de linea', 'printf("%s\\n", nombre);'),
+  lectura(3, 'con puts', 'puts(nombre);'),
+  lectura(3, 'el formato de un entero', 'printf("%d", nombre);', ['FORMATO_NO_ES_TEXTO']),
+  lectura(3, 'el formato de un caracter', 'printf("%c", nombre);', ['FORMATO_NO_ES_TEXTO']),
+  lectura(3, 'el nombre como formato', 'printf(nombre);', ['PRINTF_SIN_FORMATO']),
+  lectura(3, 'el texto tal cual', 'printf("nombre");', ['MUESTRA_TEXTO_FIJO']),
+  lectura(3, 'sin el valor', 'printf("%s");', ['ARGUMENTOS_CANTIDAD']),
+  lectura(3, 'con valores de mas', 'printf("%s", nombre, nombre);', ['ARGUMENTOS_CANTIDAD']),
+  lectura(3, 'con el ampersand', 'printf("%s", &nombre);', ['ARGUMENTO_CON_AMPERSAND']),
+  lectura(3, 'el nombre entre comillas', 'printf("%s", "nombre");', ['ARGUMENTO_ENTRE_COMILLAS']),
+  lectura(3, 'una sola letra', 'printf("%s", nombre[0]);', ['ARGUMENTO_CON_CORCHETES']),
+  lectura(3, 'una variable que no existe', 'printf("%s", apellido);', ['VARIABLE_DESCONOCIDA']),
+  lectura(3, 'leyendo en lugar de mostrar', 'scanf("%25s", nombre);', ['MUESTRA_FALTA']),
+  lectura(3, 'con otra funcion', 'strlen(nombre);', ['FUNCION_EQUIVOCADA']),
+
+  // 4: cuestionario, con un espacio
+  lectura(4, 'espacio: la primera palabra', '1'),
+  lectura(4, 'espacio: el nombre completo', '0', ['OPCION_LEE_TODA_LA_LINEA']),
+  lectura(4, 'espacio: la ultima palabra', '2', ['OPCION_LEE_LA_ULTIMA']),
+  lectura(4, 'espacio: con el espacio', '3', ['OPCION_INCLUYE_EL_ESPACIO']),
+
+  // 5: leer una linea completa
+  {
+    ...lectura(5, 'con gets: correcto, con la advertencia', 'gets(nombre);', 'ok', ['USO_DE_GETS']),
+    dice: ['fgets(nombre, sizeof nombre, stdin)'],
+  },
+  lectura(5, 'con fgets', 'fgets(nombre, sizeof nombre, stdin);'),
+  lectura(5, 'con fgets y el tamano con la constante', 'fgets(nombre, LARGO_NOMBRE + 1, stdin);'),
+  lectura(5, 'con fgets y un limite de mas', 'fgets(nombre, 100, stdin);', ['LECTURA_SIN_LUGAR']),
+  lectura(5, 'con fgets sin stdin', 'fgets(nombre, 26, nombre);', ['FGETS_SIN_STDIN']),
+  lectura(5, 'con fgets y dos argumentos', 'fgets(nombre, stdin);', ['ARGUMENTOS_CANTIDAD']),
+  lectura(5, 'con scanf y la linea completa', 'scanf("%[^\\n]", nombre);'),
+  lectura(5, 'con scanf, un espacio y la linea completa', 'scanf(" %[^\\n]", nombre);'),
+  {
+    ...lectura(5, 'con scanf y %s', 'scanf("%s", nombre);', ['LECTURA_CORTA_EN_ESPACIO']),
+    dice: ['`Ana Maria`', '`gets`'],
+  },
+  lectura(5, 'gets con el ampersand', 'gets(&nombre);', ['ARGUMENTO_CON_AMPERSAND']),
+  lectura(5, 'gets de otra variable', 'gets(apellido);', ['VARIABLE_DESCONOCIDA']),
+  lectura(5, 'gets con dos argumentos', 'gets(nombre, 25);', ['ARGUMENTOS_CANTIDAD']),
+
+  // 6: leer y mostrar
+  lectura(6, 'gets y el saludo', 'gets(nombre);\nprintf("Hola, %s\\n", nombre);', 'ok', ['USO_DE_GETS']),
+  lectura(6, 'fgets y el saludo', 'fgets(nombre, sizeof nombre, stdin);\nprintf("Hola, %s", nombre);'),
+  lectura(6, 'otro saludo', 'gets(nombre);\nprintf("Buen dia, %s", nombre);', ['TEXTO_DISTINTO']),
+  {
+    ...lectura(6, 'el saludo con otra mayuscula', 'gets(nombre);\nprintf("hola, %s", nombre);', ['TEXTO_DISTINTO']),
+    dice: ['mayúsculas y las minúsculas'],
+  },
+  lectura(6, 'mostrar antes de leer', 'printf("Hola, %s\\n", nombre);\ngets(nombre);', ['MUESTRA_ANTES_DE_LEER']),
+  lectura(6, 'puts no alcanza para el saludo', 'gets(nombre);\nputs(nombre);', ['FUNCION_EQUIVOCADA']),
+  lectura(6, 'el saludo sin el nombre', 'gets(nombre);\nprintf("Hola, ");', ['MUESTRA_TEXTO_FIJO']),
+  lectura(6, 'sin leer', 'printf("Hola, %s\\n", nombre);', ['LECTURA_FALTA']),
+  lectura(6, 'sin mostrar', 'gets(nombre);', ['MUESTRA_FALTA']),
+
+  // 7: una posicion del arreglo
+  lectura(7, 'la primera posicion', 'scanf("%25s", curso[0]);'),
+  lectura(7, 'sin limite: correcto y mejorable', 'scanf("%s", curso[0]);', 'ok', ['LECTURA_SIN_LIMITE']),
+  lectura(7, 'el arreglo completo', 'scanf("%25s", curso);', ['ARGUMENTO_TABLA_ENTERA']),
+  lectura(7, 'una sola letra', 'scanf("%25s", curso[0][0]);', ['ARGUMENTO_CON_CORCHETES']),
+  lectura(7, 'con un limite que no deja lugar para el fin', 'scanf("%26s", curso[0]);', ['LECTURA_SIN_LUGAR_PARA_FIN']),
+
+  // 8: todas las posiciones
+  lectura(8, 'un ciclo for', 'for (i = 0; i < MAX_ESTUDIANTES; i++) {\n  scanf("%25s", curso[i]);\n}'),
+  lectura(8, 'un ciclo while', 'i = 0;\nwhile (i < MAX_ESTUDIANTES) {\n  scanf("%25s", curso[i]);\n  i++;\n}'),
+  lectura(8, 'sin limite: correcto y mejorable', 'for (i = 0; i < MAX_ESTUDIANTES; i++) {\n  scanf("%s", curso[i]);\n}', 'ok', ['LECTURA_SIN_LIMITE']),
+  lectura(8, 'sin llegar al final', 'for (i = 0; i < 20; i++) {\n  scanf("%25s", curso[i]);\n}', ['CICLO_NO_LLEGA']),
+  lectura(8, 'pasandose', 'for (i = 0; i <= MAX_ESTUDIANTES; i++) {\n  scanf("%25s", curso[i]);\n}', ['CICLO_SE_PASA']),
+  lectura(8, 'siempre la misma posicion', 'for (i = 0; i < MAX_ESTUDIANTES; i++) {\n  scanf("%25s", curso[0]);\n}', ['CICLO_NO_LEE']),
+  lectura(8, 'sin leer en el ciclo', 'for (i = 0; i < MAX_ESTUDIANTES; i++) {\n  printf("%s", curso[i]);\n}', ['CICLO_NO_LEE']),
+  lectura(8, 'el indice no avanza', 'for (i = 0; i < MAX_ESTUDIANTES; ) {\n  scanf("%25s", curso[i]);\n}', ['CICLO_SIN_AVANCE']),
+  lectura(8, 'el formato de un entero', 'for (i = 0; i < MAX_ESTUDIANTES; i++) {\n  scanf("%d", curso[i]);\n}', ['FORMATO_NO_ES_TEXTO']),
+  lectura(8, 'sin ciclo', 'scanf("%25s", curso[0]);', ['CICLO_FALTA']),
+
+  // 9: cuestionario, con el Enter
+  lectura(9, 'enter: la cadena vacia', '1'),
+  lectura(9, 'enter: el nombre', '0', ['OPCION_LEE_EL_NOMBRE']),
+  lectura(9, 'enter: el numero', '2', ['OPCION_NOMBRE_RECIBE_LA_EDAD']),
+  lectura(9, 'enter: un error', '3', ['OPCION_LECTURA_VACIA_ES_ERROR']),
+
+  // 10: descartar el Enter
+  lectura(10, 'el ciclo y gets: correcto, con la advertencia', "while (getchar() != '\\n');\ngets(nombre);", 'ok', ['USO_DE_GETS']),
+  lectura(10, 'el ciclo y fgets', "while (getchar() != '\\n');\nfgets(nombre, sizeof nombre, stdin);"),
+  lectura(10, 'el ciclo con llaves vacias', "while (getchar() != '\\n') {\n}\nfgets(nombre, sizeof nombre, stdin);"),
+  lectura(10, 'el ciclo con una variable', "int c;\nwhile ((c = getchar()) != '\\n');\nfgets(nombre, sizeof nombre, stdin);"),
+  lectura(10, 'el ciclo con el codigo del Enter', 'while (getchar() != 10);\nfgets(nombre, sizeof nombre, stdin);', 'ok', ['LIMPIEZA_CON_CODIGO']),
+  lectura(10, 'un solo getchar', 'getchar();\nfgets(nombre, sizeof nombre, stdin);', 'ok', ['GETCHAR_UN_SOLO_CARACTER']),
+  lectura(10, 'fflush', 'fflush(stdin);\nfgets(nombre, sizeof nombre, stdin);', 'ok', ['FFLUSH_ENTRADA']),
+  lectura(10, 'sin descartar nada', 'gets(nombre);', ['FALTA_LIMPIAR_ENTRADA']),
+  lectura(10, 'sin descartar, con fgets', 'fgets(nombre, sizeof nombre, stdin);', ['FALTA_LIMPIAR_ENTRADA']),
+  lectura(10, 'fflush de otra cosa', 'fflush(stdout);\ngets(nombre);', ['FALTA_LIMPIAR_ENTRADA']),
+  lectura(10, 'descartar despues de leer', "gets(nombre);\nwhile (getchar() != '\\n');", ['LIMPIEZA_DESPUES']),
+  lectura(10, 'el ciclo al reves', "while (getchar() == '\\n');\ngets(nombre);", ['LIMPIEZA_AL_REVES']),
+  lectura(10, 'el ciclo que no se detiene en el Enter', 'while (getchar() != EOF);\ngets(nombre);', ['LIMPIEZA_SIN_ENTER']),
+  lectura(10, 'leer con %s', "while (getchar() != '\\n');\nscanf(\"%s\", nombre);", ['LECTURA_CORTA_EN_ESPACIO']),
+];
+
 export const CASOS_DE_CADENAS_NUEVAS = [
   ...CASOS_DE_FIN,
   ...CASOS_DE_VACIA,
@@ -589,4 +722,5 @@ export const CASOS_DE_CADENAS_NUEVAS = [
   ...CASOS_DE_RECORRER,
   ...CASOS_DE_ARREGLOS_Y_TABLAS,
   ...CASOS_DE_TYPEDEF,
+  ...CASOS_DE_LECTURA,
 ];
