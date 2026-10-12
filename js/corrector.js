@@ -232,14 +232,16 @@ export function corregir(
   }
 
   function valorDe(referencia) {
-    if (!referencia.startsWith('$')) return referencia;
-    const valor = nuevas[referencia.slice(1)];
+    // "$D" es el nombre capturado; "$D[0][1]", ese nombre con sus indices.
+    const partes = /^\$([A-Za-z_]\w*)([\s\S]*)$/.exec(referencia);
+    if (!partes) return referencia;
+    const valor = nuevas[partes[1]];
     if (!valor) {
       throw new Error(
         `La consigna "${consigna.id}" usa ${referencia}, que ninguna consigna anterior capturó.`
       );
     }
-    return valor;
+    return valor + partes[2];
   }
 
   function aplicarRegla(regla, modelo) {
@@ -1005,11 +1007,14 @@ export function corregir(
       // una funcion que lo hace de una vez.
       if (regla.aMano) {
         const nombre = valorDe(regla.aMano.variable);
-        const propias = alElementoDe(modelo, nombre).filter(
-          (a) => valorDeDimension(a.izquierda.indices[0], modelo) != null
+        const en = regla.aMano.en || [];
+        const propias = alElementoDe(modelo, nombre, en).filter(
+          (a) => valorDeDimension(a.izquierda.indices[en.length], modelo) != null
         );
         if (propias.length) {
-          const hallazgos = verificarElementos(nombre, regla.aMano.texto, propias, modelo);
+          // Si ya se dijo que un texto no va en un caracter, o que esa posicion no existe, alcanza.
+          if (diagnosticos.some((d) => ['INDICE_FUERA_DE_RANGO', 'ELEMENTO_ENTRE_COMILLAS_DOBLES'].includes(d.codigo))) return;
+          const hallazgos = verificarElementos(nombre, regla.aMano.texto, propias, modelo, en);
           decir(hallazgos);
           if (!hallazgos.some((h) => h.nivel === 'error') && practicas.includes('claridad')) {
             mejora(
@@ -1843,7 +1848,9 @@ export function corregir(
   // Las asignaciones a los elementos de una cadena ("frase[0] = 'H';") contra
   // el texto que tienen que formar, con su fin. Devuelve los hallazgos, sin
   // decirlos: la consigna que lo usa decide que hacer con ellos.
-  function verificarElementos(nombre, texto, asignaciones, modelo) {
+  function verificarElementos(nombre, texto, asignaciones, modelo, en = []) {
+    // Como se nombra el texto: nombres, nombres[1], datos[1][0].
+    const etiqueta = nombre + en.map((n) => '[' + n + ']').join('');
     const esperados = [...texto].map((c) => c.codePointAt(0));
     esperados.push(0);
     const ultimo = esperados.length - 1;
@@ -1852,7 +1859,7 @@ export function corregir(
 
     const porPosicion = new Map();
     for (const a of asignaciones) {
-      const posicion = valorDeDimension(a.izquierda.indices[0], modelo);
+      const posicion = valorDeDimension(a.izquierda.indices[en.length], modelo);
       if (posicion == null) {
         dice('error', 'ELEMENTO_POSICION', `En \`${a.izquierda.texto}\` la posición tiene que ser un número.`, a.fila);
         continue;
@@ -1890,7 +1897,7 @@ export function corregir(
         dice(
           'error',
           'ELEMENTO_REPETIDO',
-          `La posición ${posicion} de \`${nombre}\` se asigna más de una vez, con valores distintos: queda solo el último.`,
+          `La posición ${posicion} de \`${etiqueta}\` se asigna más de una vez, con valores distintos: queda solo el último.`,
           a.fila
         );
       }
@@ -1961,12 +1968,12 @@ export function corregir(
       dice(
         'error',
         'ELEMENTO_FALTA',
-        `Falta asignar la posición ${i} de \`${nombre}\`: las posiciones se numeran desde 0 y cada una necesita su carácter.`,
+        `Falta asignar la posición ${i} de \`${etiqueta}\`: las posiciones se numeran desde 0 y cada una necesita su carácter.`,
         null
       );
     }
     if (faltan.includes(ultimo)) {
-      dice('error', 'CADENA_SIN_FIN', `Falta marcar dónde termina el texto: sin eso \`${nombre}\` no es una cadena.`, null);
+      dice('error', 'CADENA_SIN_FIN', `Falta marcar dónde termina el texto: sin eso \`${etiqueta}\` no es una cadena.`, null);
     }
     return hallazgos;
   }
@@ -1979,20 +1986,25 @@ export function corregir(
   }
 
   // Las asignaciones a una posicion de una cadena, por su nombre.
-  function alElementoDe(modelo, nombre) {
+  // "en" son los indices de adelante, cuando el texto es un elemento de un
+  // arreglo de cadenas (nombres[1][k]) o de una tabla (datos[1][0][k]).
+  function alElementoDe(modelo, nombre, en = []) {
     return modelo.asignaciones.filter(
       (a) =>
         a.nuevo &&
         a.operador === '=' &&
         a.izquierda.clase === 'indice' &&
         a.izquierda.nombre === nombre &&
-        a.izquierda.indices.length === 1
+        a.izquierda.indices.length === en.length + 1 &&
+        en.every((n, k) => valorDeDimension(a.izquierda.indices[k], modelo) === n)
     );
   }
 
   function reglaElementos(regla, modelo) {
     const nombre = valorDe(regla.de);
-    const propias = alElementoDe(modelo, nombre);
+    const en = regla.en || [];
+    const etiqueta = nombre + en.map((n) => '[' + n + ']').join('');
+    const propias = alElementoDe(modelo, nombre, en);
     if (!propias.length) {
       if (diagnosticos.some((d) => d.codigo === 'ASIGNACION_DE_ARREGLO')) return;
       const funcion = modelo.llamadas.find(
@@ -2007,13 +2019,13 @@ export function corregir(
       } else {
         error(
           'ELEMENTOS_FALTAN',
-          `No encontré asignaciones a las posiciones de \`${nombre}\`: cada carácter se guarda en la posición que le corresponde.`
+          `No encontré asignaciones a las posiciones de \`${etiqueta}\`: cada carácter se guarda en la posición que le corresponde.`
         );
       }
       return;
     }
     if (diagnosticos.some((d) => ['INDICE_FUERA_DE_RANGO', 'ELEMENTO_ENTRE_COMILLAS_DOBLES'].includes(d.codigo))) return;
-    decir(verificarElementos(nombre, regla.texto, propias, modelo));
+    decir(verificarElementos(nombre, regla.texto, propias, modelo, en));
   }
 
   // Dejar vacia una cadena que ya tiene texto: el fin en la primera posicion.
@@ -2207,6 +2219,95 @@ export function corregir(
         noVerificado();
       }
       if (!avanza) sinAvance();
+      return;
+    }
+
+    if (regla.filasDe && regla.columnas) {
+      // Una tabla de cadenas: un ciclo por las filas y, adentro, uno por las columnas.
+      const tabla = valorDe(regla.filasDe);
+      const variable = modelo.variables.findLast((v) => v.nombre === tabla);
+      const i = regla.indice;
+      const j = regla.columnas.indice;
+      const interno = ciclos.find((c) => c !== ciclo && c.posicion >= ciclo.posicion && c.fin <= ciclo.fin);
+      if (!interno) {
+        error(
+          'CICLO_INTERNO_FALTA',
+          `Hace falta otro ciclo adentro del primero: uno recorre las filas de \`${tabla}\` y el de adentro, las columnas de cada fila.`,
+          ciclo.fila
+        );
+        return;
+      }
+      const limites = (c, indice, dimension, uno, varios) => {
+        const cantidad = variable ? valorDeDimension(variable.arreglo[dimension] ?? '', modelo) : null;
+        const hasta = new RegExp('^' + escapar(indice) + '(<=|<)(.+)$').exec(c.condicion.replace(/\s+/g, ''));
+        const tope = hasta ? valorDeDimension(hasta[2], modelo) : null;
+        if (cantidad != null && tope != null) {
+          const ultima = hasta[1] === '<' ? tope - 1 : tope;
+          if (ultima >= cantidad) {
+            error(
+              'CICLO_SE_PASA',
+              `El ciclo de \`${indice}\` llega hasta la ${uno} ${ultima} y \`${tabla}\` tiene ${cantidad} ${varios}, numeradas de 0 a ${cantidad - 1}.`,
+              c.fila
+            );
+          } else if (ultima < cantidad - 1) {
+            error(
+              'CICLO_NO_LLEGA',
+              `El ciclo de \`${indice}\` llega hasta la ${uno} ${ultima}, pero \`${tabla}\` tiene ${cantidad} ${varios}: quedan ${varios} sin recorrer.`,
+              c.fila
+            );
+          }
+        } else {
+          aviso(
+            'CICLO_NO_VERIFICADO',
+            'No pude comprobar esta condición. Verifique que el ciclo se repita hasta llegar al final y no más.',
+            c.fila
+          );
+        }
+        const J = escapar(indice);
+        const cuerpo = c.texto.replace(/\s+/g, '');
+        if (!new RegExp(`\\b${J}\\+\\+|\\+\\+${J}\\b|\\b${J}\\+=1\\b|\\b${J}=${J}\\+1\\b`).test(cuerpo)) {
+          error('CICLO_SIN_AVANCE', `El índice \`${indice}\` nunca avanza dentro del ciclo: así no termina.`, c.fila);
+        }
+      };
+      limites(ciclo, i, 0, 'fila', 'filas');
+      limites(interno, j, 1, 'columna', 'columnas');
+
+      const dentro = (x) => x.posicion >= interno.posicion && x.posicion <= interno.fin;
+      const es = (texto, nombre) => texto.trim() === nombre;
+      const vacia =
+        modelo.asignaciones.some(
+          (a) =>
+            a.nuevo &&
+            dentro(a) &&
+            a.operador === '=' &&
+            a.izquierda.clase === 'indice' &&
+            a.izquierda.nombre === tabla &&
+            a.izquierda.indices.length === 3 &&
+            es(a.izquierda.indices[0], i) &&
+            es(a.izquierda.indices[1], j) &&
+            valorDeDimension(a.izquierda.indices[2], modelo) === 0 &&
+            esFinDeCadena(a.derecha)
+        ) ||
+        modelo.llamadas.some(
+          (l) =>
+            l.nuevo &&
+            dentro(l) &&
+            l.funcion === 'strcpy' &&
+            l.argumentos[0]?.clase === 'indice' &&
+            l.argumentos[0].nombre === tabla &&
+            l.argumentos[0].indices.length === 2 &&
+            es(l.argumentos[0].indices[0], i) &&
+            es(l.argumentos[0].indices[1], j) &&
+            l.argumentos[1]?.clase === 'cadena' &&
+            l.argumentos[1].contenido === ''
+        );
+      if (!vacia && !diagnosticos.some((d) => d.codigo === 'ASIGNACION_DE_ARREGLO')) {
+        error(
+          'CICLO_NO_VACIA',
+          `Lo que hace el ciclo no deja vacío cada texto de \`${tabla}\`: en cada vuelta hay que vaciar el texto de la fila \`${i}\` y la columna \`${j}\`.`,
+          interno.fila
+        );
+      }
       return;
     }
 

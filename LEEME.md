@@ -306,7 +306,10 @@ Reglas de código:
   carácter por carácter (`frase[0] = 'H';` ...), con su `'\0'`, en cualquier
   orden. Falta el fin (`CADENA_SIN_FIN`), una posición salteada, todo corrido
   un lugar (`ELEMENTOS_CORRIDOS`), `"H"` en vez de `'H'`, `0` por `'\0'`
-  (correcta, con mejora).
+  (correcta, con mejora). Con `"en": [1]` el texto es un elemento de un
+  arreglo de cadenas (`nombres[1][0] = ...`), y con `"en": [1, 0]` una celda
+  de una tabla de cadenas (`datos[1][0][0] = ...`); los mensajes nombran
+  `nombres[1]` o `datos[1][0]`.
 - `{ "vaciar": "nombre" }`: dejar vacía una cadena, con el fin en la primera
   posición. `strcpy(nombre, "")` y vaciarla con un ciclo valen, con mejora.
 - `{ "ciclo": { "indice": "i", "hastaElFinDe": "nombre" } }`: un ciclo que
@@ -320,7 +323,11 @@ Reglas de código:
   un error una condición que **no mira la cadena** (`i != '\0'`, `i != 5`):
   no hay forma de que vea el final.
   `"filasDe": "nombres"` pide recorrer un arreglo de cadenas, y que dentro se
-  vacíe cada una.
+  vacíe cada una. Con `"columnas": { "indice": "j" }` es una tabla de
+  cadenas: un ciclo por las filas y, adentro, uno por las columnas, y en cada
+  vuelta se vacía `datos[i][j]`. Un solo ciclo es `CICLO_INTERNO_FALTA`; los
+  límites de cada uno se controlan por separado (`CICLO_SE_PASA`,
+  `CICLO_NO_LLEGA`).
 - `{ "incluye": "string.h" }`: agregar una biblioteca con `#include`. Con
   comillas (`"string.h"`) vale con mejora; sin el `.h`, otra biblioteca, o con
   `#define` en lugar de `#include`, es error con su mensaje. Se usa con
@@ -333,14 +340,17 @@ Reglas de código:
 La regla `llamada` suma, para estas series:
 
 - Un argumento puede ser un texto (`"\"Juan\""`) o una posición de un arreglo o
-  de una tabla de cadenas (`"nombres[0]"`, `"datos[0][1]"`).
+  de una tabla de cadenas (`"nombres[0]"`, `"datos[0][1]"`). Con el nombre
+  que capturó una consigna anterior (`"$N[0]"`, `"$D[0][1]"`), para que se
+  use el que escribió el alumno.
 - `"resultadoEn": "largo"`: lo que devuelve tiene que guardarse en esa variable.
 - `"comparar": true` (`strcmp`): tiene que estar en la condición de un `if` y
   mirar el cero. `strcmp(a, b)` sola o con `!= 0` se cumple al revés
   (error); `!strcmp(a, b)` vale, con mejora; `==` entre cadenas es error.
   El orden de las dos cadenas da lo mismo.
 - `"aMano": { "variable": "nombre", "texto": "Juan" }`: guardar el texto
-  carácter por carácter también llega, pero con mejora.
+  carácter por carácter también llega, pero con mejora. Con `"en": [0]` o
+  `"en": [0, 1]`, para un elemento de un arreglo o una celda de una tabla.
 - `strncpy` con un límite que no deja lugar para el fin es error.
   `scanf("%s", ...)` sin límite es correcto con mejora; un límite que no deja
   lugar para el fin es error.
