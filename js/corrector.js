@@ -1030,7 +1030,7 @@ export function corregir(
       // Si ya se le dijo que un arreglo no se asigna con "=", o que un texto
       // no va en un caracter, con eso alcanza.
       if (
-        diagnosticos.some((d) => ['ASIGNACION_DE_ARREGLO', 'ELEMENTO_ENTRE_COMILLAS_DOBLES'].includes(d.codigo))
+        diagnosticos.some((d) => [...CODIGOS_DE_ASIGNACION, 'ELEMENTO_ENTRE_COMILLAS_DOBLES'].includes(d.codigo))
       ) {
         return;
       }
@@ -2006,7 +2006,7 @@ export function corregir(
     const etiqueta = nombre + en.map((n) => '[' + n + ']').join('');
     const propias = alElementoDe(modelo, nombre, en);
     if (!propias.length) {
-      if (diagnosticos.some((d) => d.codigo === 'ASIGNACION_DE_ARREGLO')) return;
+      if (diagnosticos.some((d) => CODIGOS_DE_ASIGNACION.includes(d.codigo))) return;
       const funcion = modelo.llamadas.find(
         (l) => l.nuevo && ['strcpy', 'strncpy', 'sprintf', 'memcpy'].includes(l.funcion)
       );
@@ -2079,7 +2079,7 @@ export function corregir(
       return;
     }
 
-    if (diagnosticos.some((d) => ['ASIGNACION_DE_ARREGLO', 'ELEMENTO_ENTRE_COMILLAS_DOBLES'].includes(d.codigo))) return;
+    if (diagnosticos.some((d) => [...CODIGOS_DE_ASIGNACION, 'ELEMENTO_ENTRE_COMILLAS_DOBLES'].includes(d.codigo))) return;
     const otra = propias[0];
     if (!otra) {
       error('VACIAR_FALTA', `No encontré nada que deje vacía a \`${nombre}\`.`);
@@ -2301,7 +2301,7 @@ export function corregir(
             l.argumentos[1]?.clase === 'cadena' &&
             l.argumentos[1].contenido === ''
         );
-      if (!vacia && !diagnosticos.some((d) => d.codigo === 'ASIGNACION_DE_ARREGLO')) {
+      if (!vacia && !diagnosticos.some((d) => CODIGOS_DE_ASIGNACION.includes(d.codigo))) {
         error(
           'CICLO_NO_VACIA',
           `Lo que hace el ciclo no deja vacío cada texto de \`${tabla}\`: en cada vuelta hay que vaciar el texto de la fila \`${i}\` y la columna \`${j}\`.`,
@@ -2363,7 +2363,7 @@ export function corregir(
             l.argumentos[1]?.clase === 'cadena' &&
             l.argumentos[1].contenido === ''
         );
-      if (!vacia && !diagnosticos.some((d) => d.codigo === 'ASIGNACION_DE_ARREGLO')) {
+      if (!vacia && !diagnosticos.some((d) => CODIGOS_DE_ASIGNACION.includes(d.codigo))) {
         error(
           'CICLO_NO_VACIA',
           `Lo que hace el ciclo no deja vacía cada cadena de \`${tabla}\`: en cada vuelta hay que vaciar la cadena que corresponde al índice.`,
@@ -2887,17 +2887,45 @@ function revisarDimensiones(modelo, error, mejora) {
   }
 }
 
+// Los codigos con que se dice que una cadena (o un arreglo de cadenas) completa
+// no se asigna con "=": las consignas que ya lo dijeron no suman otros errores.
+const CODIGOS_DE_ASIGNACION = ['ASIGNACION_DE_ARREGLO', 'ASIGNACION_CARACTER_A_CADENA', 'ELEMENTOS_COMO_UNA_SOLA_CADENA'];
+
 // Un arreglo no se asigna entero con "=": vale para cualquier consigna, porque
 // en C nunca es valido. Con una cadena, es el error de quien todavia no sabe
-// que para copiarla hay una funcion.
+// que para copiarla hay una funcion; con un caracter, el de quien confunde la
+// cadena con una de sus letras. Lo mismo repetido en varias lineas se dice una vez.
 function revisarAsignaciones(modelo, error, aconsejarFuncion = true) {
+  const esChar = (v) => v.tipo.clase === 'primitivo' && v.tipo.nombre === 'char';
+  // Una letra con un solo indice en un arreglo de cadenas: nombres[0] = 'L';
+  const variableDeLetraSuelta = (a) => {
+    if (!a.nuevo || a.operador !== '=' || a.izquierda.clase !== 'indice') return null;
+    if (a.izquierda.indices.length !== 1 || a.derecha.clase !== 'caracter') return null;
+    const v = modelo.variables.findLast((x) => x.nombre === a.izquierda.nombre);
+    return v && !v.punteros && esChar(v) && v.arreglo.length >= 2 ? v : null;
+  };
+  // Si las posiciones son 0, 1, 2...: escribio el texto como si fuera una sola cadena.
+  const posiciones = new Map();
+  for (const a of modelo.asignaciones) {
+    const v = variableDeLetraSuelta(a);
+    const indice = v ? a.izquierda.indices[0].trim() : '';
+    if (!v || !/^\d+$/.test(indice)) continue;
+    if (!posiciones.has(v.nombre)) posiciones.set(v.nombre, new Set());
+    posiciones.get(v.nombre).add(Number(indice));
+  }
+  const comoUnaSola = (nombre) => {
+    const p = [...(posiciones.get(nombre) || [])].sort((x, y) => x - y);
+    return p.length >= 2 && p.every((n, i) => n === i);
+  };
+
+  const repetidas = new Map();
   for (const a of modelo.asignaciones) {
     if (!a.nuevo || a.operador !== '=') continue;
     const izquierda = a.izquierda;
     if (izquierda.clase !== 'nombre' && izquierda.clase !== 'indice') continue;
     const variable = modelo.variables.findLast((v) => v.nombre === izquierda.nombre);
     if (!variable || variable.punteros) continue;
-    const esCadena = variable.tipo.clase === 'primitivo' && variable.tipo.nombre === 'char';
+    const esCadena = esChar(variable);
 
     if (izquierda.clase === 'nombre') {
       if (!variable.arreglo.length) continue;
@@ -2918,15 +2946,43 @@ function revisarAsignaciones(modelo, error, aconsejarFuncion = true) {
     } else if (variable.arreglo.length > izquierda.indices.length) {
       // Una fila de una tabla: con t[0] queda una cadena (o un arreglo).
       const quedan = variable.arreglo.length - izquierda.indices.length;
-      error(
-        'ASIGNACION_DE_ARREGLO',
-        `\`${izquierda.texto}\` es ${esCadena ? (quedan === 1 ? 'una cadena' : 'un arreglo de cadenas') : 'una fila de la tabla'}: no se puede asignar completa con \`=\`.` +
+      let codigo = 'ASIGNACION_DE_ARREGLO';
+      let mensaje;
+      if (esCadena && a.derecha.clase === 'caracter') {
+        const esFin = a.derecha.valor === 0;
+        if (variableDeLetraSuelta(a) && comoUnaSola(variable.nombre)) {
+          codigo = 'ELEMENTOS_COMO_UNA_SOLA_CADENA';
+          mensaje =
+            quedan === 1
+              ? `\`${variable.nombre}\` guarda varias cadenas, y \`${izquierda.texto}\` es una cadena completa: no se le puede asignar un carácter. Para escribir el texto letra por letra hay que indicar dos índices: primero cuál cadena y después la posición de la letra dentro de ella.`
+              : `\`${izquierda.texto}\` es un arreglo de cadenas: no se le puede asignar un carácter. Para escribir un texto letra por letra hay que indicar tres índices: la fila, la columna y la posición de la letra dentro del texto.`;
+        } else {
+          codigo = 'ASIGNACION_CARACTER_A_CADENA';
+          mensaje =
+            quedan === 1
+              ? `\`${izquierda.texto}\` es una cadena completa: no se le puede asignar un carácter. El carácter va en una posición de esa cadena.` +
+                (esFin ? ` Para dejarla vacía, el \`'\\0'\` va en su primera posición.` : '')
+              : `\`${izquierda.texto}\` es un arreglo de cadenas: no se le puede asignar un carácter. El carácter va en una posición de una de sus cadenas.`;
+        }
+      } else {
+        mensaje =
+          `\`${izquierda.texto}\` es ${esCadena ? (quedan === 1 ? 'una cadena' : 'un arreglo de cadenas') : 'una fila de la tabla'}: no se puede asignar completa con \`=\`.` +
           (esCadena && quedan === 1 && aconsejarFuncion
             ? ' Para copiar un texto en una cadena se usa una función de la biblioteca de cadenas.'
-            : ''),
-        a.fila
-      );
+            : '');
+      }
+      const clave = codigo + ':' + variable.nombre + ':' + quedan;
+      if (repetidas.has(clave)) repetidas.get(clave).veces++;
+      else repetidas.set(clave, { codigo, mensaje, fila: a.fila, veces: 1 });
     }
+  }
+  for (const r of repetidas.values()) {
+    const otras = r.veces - 1;
+    const suma =
+      otras > 0 && r.codigo !== 'ELEMENTOS_COMO_UNA_SOLA_CADENA'
+        ? ' Lo mismo ocurre en ' + (otras === 1 ? 'la otra asignación.' : 'las otras ' + otras + ' asignaciones.')
+        : '';
+    error(r.codigo, r.mensaje + suma, r.fila);
   }
 }
 

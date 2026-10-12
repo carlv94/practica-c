@@ -365,6 +365,17 @@ Para cualquier consigna, y sin pedirlo: una posición que no existe
 asignado a un carácter (`ELEMENTO_ENTRE_COMILLAS_DOBLES`) son errores. Y una
 dimensión puede ser una cuenta sencilla (`MAX + 1`, `10 + 1`).
 
+**Los mensajes dicen qué parte de la posición está mal**, cuando los índices
+son números escritos (si no, queda el mensaje general):
+
+| Respuesta | Código | Mensaje |
+|---|---|---|
+| `nombres[0] = 'L'; nombres[1] = 'u'; ...` | `ELEMENTOS_COMO_UNA_SOLA_CADENA` | Una vez: `nombres` guarda varias cadenas y hacen falta dos índices. |
+| `nombres[i] = '\0';` | `ASIGNACION_CARACTER_A_CADENA` | Una cadena completa no recibe un carácter; con `'\0'`, recuerda que va en la primera posición. |
+
+Lo repetido en varias líneas se dice una vez ("lo mismo ocurre en las otras 4
+asignaciones").
+
 ### Consignas de opciones
 
 En un enunciado, lo que va entre acentos graves (`nombre`, `"Maria"`, `1`) se

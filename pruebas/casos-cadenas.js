@@ -421,6 +421,26 @@ const CASOS_DE_TABLAS = [
   tablas(11, 'un solo ciclo', "for (i = 0; i < MAX_ESTUDIANTES; i++) {\n  datos[i][0][0] = '\\0';\n}", ['CICLO_INTERNO_FALTA']),
   tablas(11, 'sin avanzar el de adentro', "for (i = 0; i < MAX_ESTUDIANTES; i++) {\n  for (j = 0; j < CAMPOS; ) {\n    datos[i][j][0] = '\\0';\n  }\n}", ['CICLO_SIN_AVANCE']),
   tablas(11, 'sin ciclos', "datos[0][0][0] = '\\0';", ['CICLO_FALTA']),
+
+  // Una letra con un solo indice, o un caracter a una cadena completa
+  {
+    ...tablas(2, 'las letras con un solo indice', "nombres[0] = 'A';\nnombres[1] = 'n';\nnombres[2] = 'a';\nnombres[3] = '\\0';", ['ELEMENTOS_COMO_UNA_SOLA_CADENA']),
+    dice: ['guarda varias cadenas', 'dos índices'],
+  },
+  tablas(4, 'las letras con un solo indice', "nombres[0] = 'L';\nnombres[1] = 'u';\nnombres[2] = 'i';\nnombres[3] = 's';\nnombres[4] = '\\0';", ['ELEMENTOS_COMO_UNA_SOLA_CADENA']),
+  tablas(4, 'una letra con un solo indice entre las demas', "nombres[1][0] = 'L';\nnombres[1][1] = 'u';\nnombres[1] = 'i';\nnombres[1][3] = 's';\nnombres[1][4] = '\\0';", ['ASIGNACION_CARACTER_A_CADENA', 'ELEMENTO_FALTA']),
+  {
+    ...tablas(5, 'un caracter a la cadena completa', "for (i = 0; i < MAX_ESTUDIANTES; i++)\n  nombres[i] = '\\0';", ['ASIGNACION_CARACTER_A_CADENA']),
+    dice: ['es una cadena completa', 'no se le puede asignar un carácter', 'primera posición'],
+  },
+  {
+    ...tablas(5, 'cualquier caracter a la cadena completa', "for (i = 0; i < MAX_ESTUDIANTES; i++) {\n  nombres[i] = 'x';\n}", ['ASIGNACION_CARACTER_A_CADENA']),
+    dice: ['no se le puede asignar un carácter'],
+  },
+  {
+    ...tablas(10, 'las letras con un solo indice', "datos[0] = 'A';\ndatos[1] = 'n';\ndatos[2] = 'a';\ndatos[3] = '\\0';", ['ELEMENTOS_COMO_UNA_SOLA_CADENA']),
+    dice: ['tres índices'],
+  },
 ];
 
 const typedef = (paso, nombre, respuesta, espera, mejoras) =>
