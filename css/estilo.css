@@ -231,7 +231,10 @@ section[hidden] {
 #figura {
   margin-top: 14px;
   overflow-x: auto;
-  padding-bottom: 4px;
+  /* El borde de cada casillero se encima con el del vecino (margen de -1px): sin
+     este margen interior, el borde izquierdo (y el de arriba en una tabla) del
+     primero queda fuera del area y el overflow lo recorta. */
+  padding: 1px 1px 4px;
 }
 
 .arreglo {
@@ -278,7 +281,7 @@ section[hidden] {
   font: 600 1rem Consolas, "Cascadia Mono", Menlo, monospace;
 }
 
-.casillero:first-child .valor {
+#figura .casillero:first-child .valor {
   margin-left: 0;
 }
 
