@@ -1779,7 +1779,10 @@ export function corregir(
   // Un caso: con esos valores, cada variable termina con tal valor y/o se
   // muestra tal cosa. Dice que paso si no. Devuelve si estuvo bien.
   //   { "datos": { "ventas": [120, 85] }, "queda": { "total": 205 }, "muestra": [70] }
-  function revisarCaso(corrida, caso, modelo) {
+  // De la regla se usan "extremo" (el resultado tiene que ser uno de los valores
+  // del arreglo: el mayor, el menor) y "busca" (no es una acumulacion). Del
+  // caso, "sinCortar": lo que queda si la busqueda sigue despues de encontrarlo.
+  function revisarCaso(corrida, caso, modelo, regla) {
     const con = conLosValores(caso.datos);
     // Las veces que se le da un valor con "=" a la variable dentro de un ciclo.
     const asignacionesEnCiclo = (nombre) =>
@@ -1809,19 +1812,32 @@ export function corregir(
 
       const resumen = `${con}, \`${nombre}\` termina valiendo \`${tiene}\` y tendría que valer \`${debe}\``;
       const ultimos = Object.values(caso.datos || {}).map((lista) => lista[lista.length - 1]);
+      const valoresDeLosArreglos = Object.values(caso.datos || {}).flat();
       if (variable.flotante && !Number.isInteger(debe) && tiene === Math.trunc(debe)) {
         error(
           'DIVISION_ENTERA',
           `${resumen}: dividir dos enteros da un entero, aunque el resultado se guarde en un \`float\`, y la parte decimal ya se perdió. Alguno de los dos números tiene que ser decimal.`
         );
-      } else if (ultimos.includes(tiene) && asignacionesEnCiclo(nombre).length) {
+      } else if (caso.sinCortar !== undefined && tiene === caso.sinCortar) {
+        // La busqueda siguio despues de encontrarlo y quedo la ultima vez.
+        error(
+          'BUSQUEDA_SIN_CORTAR',
+          `${resumen}: es la última vez que aparece. Después de encontrarlo el ciclo sigue y lo reemplaza: hay que dejar de buscar cuando lo encuentra.`
+        );
+      } else if (regla.extremo && !valoresDeLosArreglos.includes(tiene)) {
+        // El mayor o el menor tiene que ser uno de los del arreglo.
+        error(
+          'EXTREMO_FUERA_DEL_ARREGLO',
+          `${resumen}: ese valor no es ninguno de los de \`${Object.keys(caso.datos || {})[0]}\`. El valor con que se empieza tiene que ser uno de los del arreglo.`
+        );
+      } else if (!regla.busca && ultimos.includes(tiene) && asignacionesEnCiclo(nombre).length) {
         // Lo que quedo es el ultimo elemento: se volvio a empezar en cada
         // vuelta, o se reemplazo el valor en lugar de acumularlo.
         const reinicio = asignacionesEnCiclo(nombre).find((a) => a.derecha.clase === 'numero');
         error(
           reinicio ? 'ACUMULADOR_REINICIADO' : 'ACUMULADOR_SE_PISA',
           reinicio
-            ? `${resumen}: dentro del ciclo se vuelve a poner en ${reinicio.derecha.valor} en cada vuelta y lo que se había acumulado se pierde. Esa línea va antes del ciclo.`
+            ? `${resumen}: dentro del ciclo se vuelve a poner en \`${reinicio.derecha.valor}\` en cada vuelta y lo que se había acumulado se pierde. Esa línea va antes del ciclo.`
             : `${resumen}: en cada vuelta se reemplaza el valor anterior en lugar de agregarle el nuevo.`,
           reinicio ? reinicio.fila : undefined
         );
@@ -1876,7 +1892,7 @@ export function corregir(
       for (const caso of regla.casos) {
         const hecha = correrCodigo(modelo, entrada, caso.datos);
         if (!hecha) return;
-        if (!revisarCaso(hecha, caso, modelo)) return;
+        if (!revisarCaso(hecha, caso, modelo, regla)) return;
       }
       notasYMejoras(regla, modelo);
       return;

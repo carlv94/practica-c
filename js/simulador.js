@@ -137,7 +137,8 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null) {
   function numero(texto, n) {
     const t = texto.replace(/[uUlLfF]+$/, '');
     if (/^0[xX][0-9a-fA-F]+$/.test(t)) return { v: parseInt(t, 16), f: false };
-    if (!/^(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?$/.test(t)) sinVerificar(n);
+    // El analizador entrega un numero negativo escrito, "-1", como un solo numero.
+    if (!/^[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?$/.test(t)) sinVerificar(n);
     return { v: Number(t), f: /[.eE]/.test(t) || /[fF]$/.test(texto) };
   }
 

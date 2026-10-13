@@ -499,6 +499,24 @@ para los arreglos de una dimensión, y se compara lo que dio.
 | `total = ventas[i];` en lugar de sumar | `ACUMULADOR_SE_PISA` | Se reemplaza el valor anterior en lugar de agregarle el nuevo. |
 | `suma / cantidad` en un `float` | `DIVISION_ENTERA` | Dividir dos enteros da un entero; alguno tiene que ser decimal. |
 
+**Buscar** (serie "Buscar en un arreglo"): la misma regla con `casos`, y tres
+opciones más:
+
+- `"busca": true` en la regla: no es una acumulación, así que no se buscan
+  `ACUMULADOR_REINICIADO` ni `ACUMULADOR_SE_PISA`.
+- `"extremo": true`: el resultado (el mayor, el menor) tiene que ser uno de los
+  valores del arreglo. Si no, `EXTREMO_FUERA_DEL_ARREGLO`: el valor con que se
+  empieza tiene que ser uno del arreglo.
+- `"sinCortar": 4` en un caso: lo que queda si la búsqueda sigue después de
+  encontrarlo (la última posición). Si el resultado es ese,
+  `BUSQUEDA_SIN_CORTAR`. El mensaje no nombra `break`: el curso no lo usa, y
+  `while (i < n && v[i] != x)` corta igual. `break` se acepta si lo escriben.
+
+Los casos se eligen para pisar los errores típicos: valores repetidos (la
+primera y la última posición), todos negativos (el mayor que empieza en cero),
+todos positivos (el menor que empieza en cero) y un único elemento que falla,
+primero, del medio o último (la bandera que vuelve a subir).
+
 Los errores de posición que ya existen (`INDICE_FUERA_DE_RANGO`,
 `RESULTADO_POSICION_SIN_VALOR`, `RESULTADO_VALOR_DISTINTO`) valen también acá. La
 `cabecera` de esa serie trae el `#include <stdio.h>`: no se ve en las consignas

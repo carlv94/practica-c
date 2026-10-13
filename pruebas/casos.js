@@ -434,7 +434,7 @@ const CASOS_DE_ACUMULAR = [
   acumular(1, 'sin iniciar el acumulador', 'for (i = 0; i < DIAS; i++) {\n  total += ventas[i];\n}', ['VARIABLE_SIN_VALOR']),
   {
     ...acumular(1, 'el acumulador vuelve a empezar', 'for (i = 0; i < DIAS; i++) {\n  total = 0;\n  total += ventas[i];\n}', ['ACUMULADOR_REINICIADO']),
-    dice: ['`ventas` valiendo `120`, `85`', '`90` y `310`, `total`', 'se vuelve a poner en 0', 'antes del ciclo'],
+    dice: ['`ventas` valiendo `120`, `85`', '`90` y `310`, `total`', 'se vuelve a poner en `0`', 'antes del ciclo'],
   },
   {
     ...acumular(1, 'se reemplaza en lugar de sumar', 'total = 0;\nfor (i = 0; i < DIAS; i++) {\n  total = ventas[i];\n}', ['ACUMULADOR_SE_PISA']),
