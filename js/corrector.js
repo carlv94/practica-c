@@ -44,6 +44,7 @@ import {
   textoDeTipo,
   enPalabras,
 } from './modelo.js';
+import { ejecutar, FueraDeRango, SinValor, NoTermina, SinVerificar } from './simulador.js';
 
 // Las palabras de un tipo entero van en cualquier orden: "unsigned int", "int unsigned".
 const DE_ENTERO = ['unsigned', 'signed', 'short', 'int', 'long'];
@@ -220,7 +221,7 @@ export function corregir(
     // Una condicion que no se pudo comprobar deja la respuesta como correcta,
     // pero no como excelente: excelente es "lo verifique y no hay nada que mejorar".
     const sinVerificar =
-      correcto && diagnosticos.some((d) => ['CICLO_NO_VERIFICADO', 'INTERCAMBIO_NO_VERIFICADO'].includes(d.codigo));
+      correcto && diagnosticos.some((d) => ['CICLO_NO_VERIFICADO', 'INTERCAMBIO_NO_VERIFICADO', 'EJECUCION_NO_VERIFICADA'].includes(d.codigo));
     return {
       correcto,
       mejorable: correcto && (sinVerificar || diagnosticos.some((d) => d.nivel === 'mejora')),
@@ -298,6 +299,7 @@ export function corregir(
     if (regla.lee) return reglaLee(regla.lee, modelo);
     if (regla.asigna) return reglaAsigna(regla.asigna, modelo);
     if (regla.suma) return reglaSuma(regla.suma, modelo);
+    if (regla.resultado) return reglaResultado(regla.resultado, modelo);
     if (regla.intercambia) return reglaIntercambia(regla.intercambia, modelo);
     if (regla.muestra) return reglaMuestra(regla.muestra, modelo);
     if (regla.limpiaEntrada) return reglaLimpiaEntrada(regla.limpiaEntrada, modelo);
@@ -1542,6 +1544,121 @@ export function corregir(
         `Está bien, pero el ${posicion} solo es la última posición mientras \`${dimension}\` valga ${tamano}: con \`${dimension} - 1\` sigue siéndolo aunque cambie la cantidad.`,
         a.fila
       );
+    }
+  }
+
+  // ---- el resultado de un ciclo: se sigue lo que hace -------------------------------
+
+  // "valores" son los que tiene que tener el arreglo al final: un numero (todos
+  // iguales), una formula con el indice ("i * i") o la lista completa. Se
+  // corrige siguiendo el codigo (ver simulador.js), asi que vale cualquier
+  // forma de escribirlo que llegue al mismo resultado.
+  //   { "resultado": { "variable": "notas", "valores": "i * 2", "conCiclo": true,
+  //                    "orden": "atras", "limite": true } }
+  function reglaResultado(regla, modelo) {
+    const nombre = valorDe(regla.variable);
+    if (regla.conCiclo && !modelo.ciclos.some((c) => c.nuevo)) {
+      error('CICLO_FALTA', 'La consigna pide un ciclo: una sentencia que se repite, como `for` o `while`.');
+      return;
+    }
+
+    const constante = (n) => {
+      const c = modelo.constantes.find((x) => x.nombre === n);
+      return c ? valorDeDimension(c.valor, modelo) : null;
+    };
+    let corrida;
+    try {
+      corrida = ejecutar(arbol, constante);
+    } catch (e) {
+      if (e instanceof FueraDeRango) {
+        // Con el numero escrito ya lo dijo la revision general.
+        if (!diagnosticos.some((d) => d.codigo === 'INDICE_FUERA_DE_RANGO')) {
+          error(
+            'INDICE_FUERA_DE_RANGO',
+            `\`${e.nombre}\` tiene ${e.tamano} posiciones, numeradas de 0 a ${e.tamano - 1}: se llega a la ${e.indice}, que no existe.`,
+            e.fila
+          );
+        }
+      } else if (e instanceof SinValor) {
+        error(
+          'VARIABLE_SIN_VALOR',
+          `\`${e.nombre}\` todavía no tiene un valor cuando se usa: hay que dárselo antes.`,
+          e.fila
+        );
+      } else if (e instanceof NoTermina) {
+        error(
+          'CICLO_NO_TERMINA',
+          'El ciclo no termina: la condición siempre se cumple. Revise que el índice avance hacia el final.',
+          e.fila
+        );
+      } else if (e instanceof SinVerificar) {
+        aviso(
+          'EJECUCION_NO_VERIFICADA',
+          'No pude seguir este código para comprobarlo. Verifique que el arreglo termine con los valores que pide la consigna.'
+        );
+      } else {
+        throw e;
+      }
+      return;
+    }
+
+    const variable = corrida.variables.get(nombre);
+    if (!variable || !variable.dims) {
+      error('RESULTADO_FALTA', `No encontré el arreglo \`${nombre}\`.`);
+      return;
+    }
+    const pedido = (k) => {
+      if (Array.isArray(regla.valores)) return regla.valores[k];
+      if (typeof regla.valores === 'number') return regla.valores;
+      return valorConEntorno(regla.valores, new Map([['i', k]]), modelo);
+    };
+    for (let k = 0; k < variable.datos.length; k++) {
+      const tiene = variable.datos[k];
+      const debe = pedido(k);
+      if (tiene === undefined) {
+        error(
+          'RESULTADO_POSICION_SIN_VALOR',
+          `\`${nombre}[${k}]\` no llega a recibir un valor: el ciclo no recorre todas las posiciones del arreglo.`
+        );
+        return;
+      }
+      if (Math.abs(tiene - debe) > 1e-9) {
+        error(
+          'RESULTADO_VALOR_DISTINTO',
+          `\`${nombre}[${k}]\` termina valiendo ${tiene}, y la consigna pide ${debe}.`
+        );
+        return;
+      }
+    }
+
+    // El sentido en que se recorre: las posiciones, en el orden en que se escribieron.
+    if (regla.orden === 'atras') {
+      const orden = corrida.escrituras
+        .filter((x) => x.nombre === nombre && x.indices.length === 1)
+        .map((x) => x.indices[0]);
+      if (!orden.every((p, k) => k === 0 || p < orden[k - 1])) {
+        error(
+          'RECORRIDO_EN_OTRO_SENTIDO',
+          'La consigna pide recorrer el arreglo de la última posición a la primera.'
+        );
+        return;
+      }
+    }
+
+    // El limite del ciclo con el numero suelto, habiendo una constante que vale eso.
+    if (regla.limite && practicas.includes('constantes')) {
+      for (const ciclo of modelo.ciclos.filter((c) => c.nuevo)) {
+        const m = /^\s*[A-Za-z_]\w*\s*(?:<=|<|!=)\s*(\d+)\s*$/.exec(ciclo.condicion);
+        const constanteIgual = m && modelo.constantes.find((c) => valorDeDimension(c.valor, modelo) === Number(m[1]));
+        if (constanteIgual) {
+          mejora(
+            'LIMITE_CON_NUMERO_SUELTO',
+            `Está bien, pero el ${m[1]} es el valor de \`${constanteIgual.nombre}\`: con la constante, el ciclo sigue siendo correcto si cambia la cantidad.`,
+            ciclo.fila
+          );
+          break;
+        }
+      }
     }
   }
 

@@ -419,6 +419,30 @@ Otras dos reglas de la misma serie:
   Con un ciclo o un `if` no se puede seguir: `INTERCAMBIO_NO_VERIFICADO`
   (correcto, pero no excelente).
 
+**Un ciclo se corrige siguiendo lo que hace** (`js/simulador.js`), no mirando
+cómo está escrito. Es un intérprete mínimo de C: enteros y decimales, arreglos
+de cualquier dimensión, asignaciones, `++` y `--`, la aritmética, las
+comparaciones, `if`, `for`, `while` y `do while`, sin entrada ni salida ni
+llamadas. Lo usa la regla:
+
+- `{ "resultado": { "variable": "notas", "valores": "i * i", "conCiclo": true } }`:
+  después de ejecutar todo (lo que la consigna da y lo que escribió el
+  alumno), el arreglo tiene que tener esos valores. `"valores"` es un número
+  (todos iguales), una fórmula con `i` (la posición) o la lista completa. Con
+  `"conCiclo": true` tiene que haber un ciclo; con `"orden": "atras"`, las
+  posiciones se tienen que escribir de la última a la primera; con
+  `"limite": true` (y `constantes`), el número suelto en la condición habiendo
+  una constante con ese valor es la mejora `LIMITE_CON_NUMERO_SUELTO`.
+
+Vale cualquier forma que llegue al resultado (`for`, `while`, `i += 2`, un `if`
+adentro, una cuenta equivalente). Si no, dice dónde:
+`RESULTADO_VALOR_DISTINTO` (qué posición, qué valor tiene y cuál se pide),
+`RESULTADO_POSICION_SIN_VALOR` (el ciclo no llega a esa posición),
+`INDICE_FUERA_DE_RANGO` (con `<=`, se llega a una posición que no existe),
+`VARIABLE_SIN_VALOR` (se usa `i` sin darle valor) y `CICLO_NO_TERMINA`. Con
+algo que no sabe seguir (una llamada, un `scanf`) es `EJECUCION_NO_VERIFICADA`:
+correcto, pero no excelente.
+
 Los nombres de variable de una sola letra se dejan para los índices (`i`, `j`),
 los tamaños (`n`) y algún uso particular: en el resto, un nombre que diga qué
 guarda (`dato`, `valores`, `resultado`) hace más fácil seguir el código.
