@@ -1,14 +1,14 @@
 {
   "id": "arreglos-tablas",
   "titulo": "Tablas",
-  "descripcion": "Definir una tabla y darle sus valores en la misma sentencia.",
+  "descripcion": "Definir una tabla con sus valores y acceder a un elemento con su fila y su columna.",
   "dentroDeMain": true,
   "buenasPracticas": ["constantes", "claridad"],
   "consignas": [
     {
-      "id": "arreglos-tablas-1",
+      "id": "tablas-definir",
       "titulo": "Una tabla",
-      "enunciado": "En la misma sentencia, defina e inicialice la siguiente tabla:",
+      "enunciado": "Un docente anotó las notas de 3 alumnos en los 4 parciales del cuatrimestre, que se muestran abajo: cada fila es un alumno y cada columna, un parcial.\n\nDefina e inicialice, en la misma sentencia, la tabla que las guarde.",
       "requiere": [
         {
           "variable": {
@@ -21,12 +21,12 @@
           }
         }
       ],
-      "referencia": "int tabla[][4] = {\n  {5, 8, 1, 4},\n  {0, 2, 9, 6},\n  {3, 7, 4, 8}\n};"
+      "referencia": "int notas[][4] = {\n  {5, 8, 1, 4},\n  {0, 2, 9, 6},\n  {3, 7, 4, 8}\n};"
     },
     {
-      "id": "arreglos-tablas-2",
-      "titulo": "Una tabla cuadrada",
-      "enunciado": "En la misma sentencia, defina e inicialice la siguiente tabla:",
+      "id": "tablas-cuadrada",
+      "titulo": "Una tabla con el mismo número de filas y de columnas",
+      "enunciado": "Una cafetería anotó cuántos cafés (columna 0) y cuántos tés (columna 1) vendió en cada uno de sus dos turnos, la mañana (fila 0) y la tarde (fila 1), que se muestran abajo.\n\nDefina e inicialice, en la misma sentencia, la tabla que guarde esas ventas.",
       "requiere": [
         {
           "variable": {
@@ -38,12 +38,12 @@
           }
         }
       ],
-      "referencia": "int cuadrada[][2] = {\n  {4, 7},\n  {2, 9}\n};"
+      "referencia": "int ventas[][2] = {\n  {4, 7},\n  {2, 9}\n};"
     },
     {
-      "id": "arreglos-tablas-3",
+      "id": "tablas-ceros",
       "titulo": "Una tabla en cero",
-      "enunciado": "En la misma sentencia declare e inicialice en cero todos los valores de una tabla de enteros de 3 filas y 4 columnas.",
+      "enunciado": "Un cine tiene 3 salas y en cada una da 4 funciones por día. El programa lleva en una tabla cuántas entradas se vendieron en cada función de cada sala, y al empezar el día todas están en cero.\n\nDefina e inicialice en cero, en la misma sentencia, la tabla de 3 filas y 4 columnas.",
       "dibujo": false,
       "requiere": [
         {
@@ -57,13 +57,13 @@
           }
         }
       ],
-      "referencia": "#define FILAS 3\n#define COLUMNAS 4\n\nint tablaCeros[FILAS][COLUMNAS] = {0};"
+      "referencia": "#define SALAS 3\n#define FUNCIONES 4\n\nint entradas[SALAS][FUNCIONES] = {0};"
     },
     {
-      "id": "arreglos-tablas-4",
+      "id": "tablas-dispersa",
       "titulo": "Ceros que no se escriben",
       "continua": true,
-      "enunciado": "En la misma sentencia, defina e inicialice la siguiente tabla:",
+      "enunciado": "Otro día, en el mismo cine, solo se registraron las primeras funciones: la sala 0 vendió 5 y 8 entradas en sus dos primeras funciones, y la sala 1 vendió 1 en la primera. Las demás funciones todavía no se realizaron, y se muestran abajo.\n\nDefina e inicialice, en la misma sentencia, la tabla de ese día, con las mismas dimensiones que la anterior.",
       "requiere": [
         {
           "variable": {
@@ -76,7 +76,66 @@
           }
         }
       ],
-      "referencia": "int dispersa[FILAS][COLUMNAS] = {{5, 8}, {1}};"
+      "referencia": "int entradasDelDia[SALAS][FUNCIONES] = {{5, 8}, {1}};"
+    },
+    {
+      "id": "tablas-q-fila-columna",
+      "titulo": "Fila y columna",
+      "enunciado": "Después de ejecutar el código de abajo, ¿qué valor tendría `dato`?",
+      "codigo": "int notas[3][4] = {\n  {5, 8, 1, 4},\n  {0, 2, 9, 6},\n  {3, 7, 4, 8}\n};\nint dato;\n\ndato = notas[1][2];",
+      "opciones": [
+        {
+          "valor": "7",
+          "texto": "lo que hay en la fila 2 y la columna 1",
+          "codigo": "OPCION_FILA_Y_COLUMNA_CAMBIADAS",
+          "explicacion": "El `7` está en `notas[2][1]`: la fila `2` y la columna `1`. En `notas[1][2]` el primer índice es la fila y el segundo, la columna: la fila `1` y la columna `2`."
+        },
+        {
+          "valor": "8",
+          "texto": "lo que hay en la primera fila y en la segunda columna",
+          "codigo": "OPCION_CUENTA_DESDE_UNO",
+          "explicacion": "Los índices empiezan en `0`: la fila `1` es la segunda y la columna `2` es la tercera. El `8` está en `notas[0][1]`."
+        },
+        {
+          "valor": "9",
+          "texto": "lo que hay en la fila 1 y en la columna 2",
+          "correcta": true,
+          "explicacion": "En `notas[1][2]` el primer índice es la fila y el segundo, la columna. Empezando a contar desde `0`, la fila `1` es `{0, 2, 9, 6}` y en ella la columna `2` es el `9`."
+        }
+      ]
+    },
+    {
+      "id": "tablas-cambiar",
+      "titulo": "Corregir un elemento",
+      "dado": "int notas[3][4] = {\n  {5, 8, 1, 4},\n  {0, 2, 9, 6},\n  {3, 7, 4, 8}\n};",
+      "enunciado": "Un docente cargó las notas de 3 alumnos en 4 parciales en la tabla `notas`: cada fila es un alumno y cada columna, un parcial. Al revisar, se dio cuenta de que la nota del tercer alumno en el segundo parcial no es un 7, sino un 9.\n\nCorrija ese valor en `notas`.",
+      "requiere": [
+        {
+          "ejecuta": {
+            "casos": [{ "queda": { "notas": [[5, 8, 1, 4], [0, 2, 9, 6], [3, 9, 4, 8]] } }]
+          }
+        }
+      ],
+      "referencia": "notas[2][1] = 9;"
+    },
+    {
+      "id": "tablas-sumar",
+      "titulo": "Sumar dos elementos de una fila",
+      "dado": "int notas[3][4] = {\n  {5, 8, 1, 4},\n  {0, 2, 9, 6},\n  {3, 7, 4, 8}\n};\nint suma;",
+      "enunciado": "La tabla `notas` guarda las notas de 3 alumnos en 4 parciales: cada fila es un alumno y cada columna, un parcial.\n\nDeje en `suma` la suma de las notas del tercer alumno en el primer y en el tercer parcial.",
+      "requiere": [
+        {
+          "ejecuta": {
+            "casos": [
+              { "datos": { "notas": [[5, 8, 1, 4], [0, 2, 9, 6], [3, 7, 4, 8]] }, "queda": { "suma": 7 } },
+              { "datos": { "notas": [[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]] }, "queda": { "suma": 20 } },
+              { "datos": { "notas": [[9, 9, 9, 9], [9, 9, 9, 9], [1, 0, 2, 0]] }, "queda": { "suma": 3 } },
+              { "datos": { "notas": [[9, 0, 9, 0], [9, 0, 9, 0], [9, 0, 9, 0]] }, "queda": { "suma": 18 } }
+            ]
+          }
+        }
+      ],
+      "referencia": "suma = notas[2][0] + notas[2][2];"
     }
   ]
 }

@@ -681,7 +681,7 @@ const valores = (paso, nombre, respuesta, espera, mejoras = []) => ({
 });
 
 // Las tablas con sus valores: su serie, todavia sin debatir.
-const tablas = (paso, nombre, respuesta, espera, mejoras = []) => ({
+const tablas = (paso, nombre, respuesta, espera = 'ok', mejoras = []) => ({
   serie: 'arreglos-tablas',
   paso,
   nombre,
@@ -854,7 +854,7 @@ const CASOS_DE_VALORES = [
 
   // Una tabla en cero: 3 filas por 4 columnas. Con {0} los numeros de los
   // corchetes son lo unico que dice la forma: hay que darles nombre.
-  tablas(3, 'cero con constantes es excelente', '#define FILAS 3\n#define COLUMNAS 4\nint t[FILAS][COLUMNAS] = {0};', 'ok'),
+  tablas(3, 'cero con constantes es excelente', '#define SALAS 3\n#define FUNCIONES 4\nint t[SALAS][FUNCIONES] = {0};', 'ok'),
   tablas(3, 'cero con los numeros sueltos', 'int t[3][4] = {0};', 'ok', ['NUMERO_MAGICO']),
   tablas(3, 'una fila en cero y el resto sin escribir', 'int t[3][4] = {{0}};', 'ok', ['NUMERO_MAGICO']),
   tablas(3, 'una fila por fila, con un cero cada una', 'int t[][4] = {{0}, {0}, {0}};', 'ok', [
@@ -877,30 +877,30 @@ const CASOS_DE_VALORES = [
   tablas(3, 'una fila de mas', 'int t[3][4] = {{0}, {0}, {0}, {0}};', ['FILAS_DE_MAS']),
 
   // Ceros que no se escriben en una tabla con valores: 5 8 0 0 / 1 0 0 0 / 0 0 0 0.
-  tablas(4, 'solo lo que no es cero, con constantes', 'int u[FILAS][COLUMNAS] = {{5, 8}, {1}};', 'ok'),
-  tablas(4, 'los ceros de las filas escritos', 'int u[FILAS][COLUMNAS] = {{5, 8, 0, 0}, {1}};', 'ok'),
-  tablas(4, 'todas las filas escritas: las filas estan repetidas', 'int u[FILAS][COLUMNAS] = {{5, 8, 0, 0}, {1, 0, 0, 0}, {0, 0, 0, 0}};', 'ok', [
+  tablas(4, 'solo lo que no es cero, con constantes', 'int u[SALAS][FUNCIONES] = {{5, 8}, {1}};', 'ok'),
+  tablas(4, 'los ceros de las filas escritos', 'int u[SALAS][FUNCIONES] = {{5, 8, 0, 0}, {1}};', 'ok'),
+  tablas(4, 'todas las filas escritas: las filas estan repetidas', 'int u[SALAS][FUNCIONES] = {{5, 8, 0, 0}, {1, 0, 0, 0}, {0, 0, 0, 0}};', 'ok', [
     'FILAS_REPETIDAS',
   ]),
   tablas(4, 'con los numeros habiendo constantes', 'int u[3][4] = {{5, 8}, {1}};', 'ok', ['CONSTANTE_SIN_REUTILIZAR']),
-  tablas(4, 'seguidos hasta el ultimo distinto de cero', 'int u[FILAS][COLUMNAS] = {5, 8, 0, 0, 1};', 'ok', [
+  tablas(4, 'seguidos hasta el ultimo distinto de cero', 'int u[SALAS][FUNCIONES] = {5, 8, 0, 0, 1};', 'ok', [
     'TABLA_SIN_FILAS',
   ]),
-  tablas(4, 'una fila que se queda corta', 'int u[FILAS][COLUMNAS] = {{5}, {1}};', ['FILA_OTRA_CANTIDAD']),
-  tablas(4, 'seguidos que se quedan cortos', 'int u[FILAS][COLUMNAS] = {5, 8};', ['VALORES_SIN_NOMBRAR']),
-  tablas(4, 'una fila que falta y no es de ceros', 'int u[FILAS][COLUMNAS] = {{5, 8}};', ['FILAS_DE_MENOS']),
+  tablas(4, 'una fila que se queda corta', 'int u[SALAS][FUNCIONES] = {{5}, {1}};', ['FILA_OTRA_CANTIDAD']),
+  tablas(4, 'seguidos que se quedan cortos', 'int u[SALAS][FUNCIONES] = {5, 8};', ['VALORES_SIN_NOMBRAR']),
+  tablas(4, 'una fila que falta y no es de ceros', 'int u[SALAS][FUNCIONES] = {{5, 8}};', ['FILAS_DE_MENOS']),
 
   // La 9 continua la 8: ve su codigo, y por eso no se puede repetir un nombre.
-  tablas(4, 'la variable de la consigna anterior otra vez', 'int tablaCeros[FILAS][COLUMNAS] = {{5, 8}, {1}};', [
+  tablas(4, 'la variable de la consigna anterior otra vez', 'int entradas[SALAS][FUNCIONES] = {{5, 8}, {1}};', [
     'VARIABLE_REDEFINIDA',
   ]),
-  tablas(4, 'la constante con otro valor', '#define FILAS 5\nint u[FILAS][COLUMNAS] = {{5, 8}, {1}};', [
+  tablas(4, 'la constante con otro valor', '#define SALAS 5\nint u[SALAS][FUNCIONES] = {{5, 8}, {1}};', [
     'CONSTANTE_REDEFINIDA',
   ]),
-  tablas(4, 'la constante con el mismo valor: mejorable', '#define FILAS 3\nint u[FILAS][COLUMNAS] = {{5, 8}, {1}};', 'ok', [
+  tablas(4, 'la constante con el mismo valor: mejorable', '#define SALAS 3\nint u[SALAS][FUNCIONES] = {{5, 8}, {1}};', 'ok', [
     'CONSTANTE_REPETIDA',
   ]),
-  tablas(4, 'la constante con el mismo valor y parentesis', '#define FILAS (3)\nint u[FILAS][COLUMNAS] = {{5, 8}, {1}};', 'ok', [
+  tablas(4, 'la constante con el mismo valor y parentesis', '#define SALAS (3)\nint u[SALAS][FUNCIONES] = {{5, 8}, {1}};', 'ok', [
     'CONSTANTE_REPETIDA',
   ]),
 
@@ -925,6 +925,38 @@ const CASOS_DE_NOMBRES = [
   },
 ];
 
+// Tablas: acceder a un elemento con su fila y su columna.
+const CASOS_DE_TABLAS = [
+  // 5: cuestionario, fila y columna
+  tablas(5, 'fila y columna: la correcta', '2'),
+  tablas(5, 'fila y columna: cambiadas', '0', ['OPCION_FILA_Y_COLUMNA_CAMBIADAS']),
+  tablas(5, 'fila y columna: contando desde uno', '1', ['OPCION_CUENTA_DESDE_UNO']),
+
+  // 6: corregir un elemento
+  tablas(6, 'el elemento correcto', 'notas[2][1] = 9;'),
+  tablas(6, 'el elemento con una cuenta', 'notas[2][1] = 4 + 5;'),
+  tablas(6, 'la fila y la columna cambiadas', 'notas[1][2] = 9;', ['RESULTADO_VALOR_DISTINTO']),
+  tablas(6, 'contando desde uno', 'notas[3][2] = 9;', ['INDICE_FUERA_DE_RANGO']),
+  tablas(6, 'otro elemento', 'notas[2][0] = 9;', ['RESULTADO_VALOR_DISTINTO']),
+  {
+    ...tablas(6, 'otro valor', 'notas[2][1] = 8;', ['RESULTADO_VALOR_DISTINTO']),
+    dice: ['`notas[2][1]` termina valiendo `8` y debería valer `9`'],
+  },
+  tablas(6, 'una columna que no existe', 'notas[2][4] = 9;', ['INDICE_FUERA_DE_RANGO']),
+
+  // 7: sumar dos elementos de una fila
+  tablas(7, 'los dos de la fila', 'suma = notas[2][0] + notas[2][2];'),
+  tablas(7, 'en el otro orden', 'suma = notas[2][2] + notas[2][0];'),
+  tablas(7, 'en dos pasos', 'suma = notas[2][0];\nsuma += notas[2][2];'),
+  tablas(7, 'la fila equivocada', 'suma = notas[1][0] + notas[1][2];', ['RESULTADO_VALOR_DISTINTO']),
+  {
+    ...tablas(7, 'la fila y la columna cambiadas', 'suma = notas[0][2] + notas[2][2];', ['RESULTADO_VALOR_DISTINTO']),
+    dice: ['Con `notas` valiendo `{5, 8, 1, 4}`, `{0, 2, 9, 6}` y `{3, 7, 4, 8}`', '`suma` termina valiendo `5` y debería valer `7`'],
+  },
+  tablas(7, 'el resultado escrito a mano', 'suma = 7;', ['RESULTADO_VALOR_DISTINTO']),
+  tablas(7, 'una fila que no existe', 'suma = notas[3][0] + notas[3][2];', ['INDICE_FUERA_DE_RANGO']),
+];
+
 export const CASOS = [
   ...CASOS_DE_NOMBRES,
   ...CASOS_DE_VALORES,
@@ -935,6 +967,7 @@ export const CASOS = [
   ...CASOS_DE_ACUMULAR,
   ...CASOS_DE_BUSCAR,
   ...CASOS_DE_TAMANO,
+  ...CASOS_DE_TABLAS,
   ...CASOS_DE_CADENAS,
   ...CASOS_DE_CADENAS_NUEVAS,
   // ---- 1: declarar la estructura ----
