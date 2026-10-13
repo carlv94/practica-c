@@ -75,8 +75,8 @@
     {
       "id": "cadenas-q-strcmp",
       "titulo": "Qué devuelve strcmp",
-      "enunciado": "Después de ejecutar el código de abajo, ¿qué valor tendría `r`?",
-      "codigo": "char a[10] = \"casa\";\nchar b[10] = \"casa\";\nint r = strcmp(a, b);",
+      "enunciado": "Después de ejecutar el código de abajo, ¿qué valor tendría `resultado`?",
+      "codigo": "char primera[10] = \"casa\";\nchar segunda[10] = \"casa\";\nint resultado = strcmp(primera, segunda);",
       "opciones": [
         {
           "valor": "1",

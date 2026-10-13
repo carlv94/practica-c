@@ -84,7 +84,7 @@
       "id": "cadenas-q-sin-iniciar",
       "titulo": "Una cadena recién declarada",
       "enunciado": "Después de ejecutar el código de abajo, ¿qué valor tendría `largo`?",
-      "codigo": "char s[10];\nint largo = strlen(s);",
+      "codigo": "char texto[10];\nint largo = strlen(texto);",
       "opciones": [
         {
           "valor": "0",
