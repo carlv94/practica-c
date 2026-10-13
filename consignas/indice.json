@@ -23,7 +23,8 @@
         "arreglos-buscar.json",
         "arreglos-tamano.json",
         "arreglos-tablas.json",
-        "arreglos-recorrer-tablas.json"
+        "arreglos-recorrer-tablas.json",
+        "arreglos-dimensiones.json"
       ]
     },
     {

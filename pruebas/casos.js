@@ -1057,6 +1057,92 @@ const CASOS_DE_RECORRER_TABLAS = [
   rtablas(10, 'los bytes como filas', 'filas = sizeof(temperaturas);\ncolumnas = sizeof(temperaturas[0]) / sizeof(temperaturas[0][0]);', ['RESULTADO_VALOR_DISTINTO']),
 ];
 
+// Mas de dos dimensiones: tres indices, tres ciclos.
+const dimensiones = (paso, nombre, respuesta, espera = 'ok', mejoras = []) => ({
+  serie: 'arreglos-dimensiones',
+  paso,
+  nombre,
+  respuesta,
+  espera,
+  mejoras,
+});
+
+const CASOS_DE_DIMENSIONES = [
+  // 1: declarar con el tamano justo
+  dimensiones(1, 'con constantes', '#define CURSOS 3\n#define MAX_ALUMNOS 30\n#define PARCIALES 4\n\nint notas[CURSOS][MAX_ALUMNOS][PARCIALES];'),
+  dimensiones(1, 'con los numeros: correcto y mejorable', 'int notas[3][30][4];', 'ok', ['NUMERO_MAGICO']),
+  {
+    ...dimensiones(1, 'los cursos y los alumnos al reves', 'int notas[30][3][4];', ['DIMENSIONES_AL_REVES']),
+    dice: ['entre los primeros corchetes va la cantidad de cursos', 'la de alumnos'],
+  },
+  {
+    ...dimensiones(1, 'un parcial de menos', 'int notas[3][30][3];', ['ARREGLO_CHICO']),
+    dice: ['`notas` puede guardar 3 parciales y hay que guardar 4'],
+  },
+  {
+    ...dimensiones(1, 'lugar de mas para los alumnos', 'int notas[3][40][4];', ['ARREGLO_GRANDE']),
+    dice: ['40 alumnos', 'la consigna pide 30'],
+  },
+  {
+    ...dimensiones(1, 'solo dos dimensiones', 'int notas[30][4];', ['TABLA_DIMENSIONES']),
+    dice: ['tiene 2 dimensiones', 'un arreglo de tres dimensiones: una para los cursos, otra para los alumnos y otra para los parciales'],
+  },
+  dimensiones(1, 'una sola dimension', 'int notas[30];', ['TABLA_UNA_DIMENSION']),
+  dimensiones(1, 'con decimales', 'float notas[3][30][4];', ['VARIABLE_TIPO']),
+  dimensiones(1, 'sin la cantidad de parciales', 'int notas[3][30][];', ['ARREGLO_SIN_DIMENSION']),
+
+  // 2: cuestionario, que hay en una posicion
+  dimensiones(2, 'posicion: la correcta', '2'),
+  dimensiones(2, 'posicion: curso y alumno cambiados', '0', ['OPCION_CURSO_Y_ALUMNO_CAMBIADOS']),
+  dimensiones(2, 'posicion: alumno y parcial cambiados', '1', ['OPCION_ALUMNO_Y_PARCIAL_CAMBIADOS']),
+
+  // 3: cuestionario, que hay en un nivel
+  dimensiones(3, 'nivel: la lista del alumno', '2'),
+  dimensiones(3, 'nivel: el curso y el alumno cambiados', '0', ['OPCION_CURSO_Y_ALUMNO_CAMBIADOS']),
+  dimensiones(3, 'nivel: una nota de cada alumno', '1', ['OPCION_UNA_COLUMNA']),
+
+  // 4: corregir una nota
+  dimensiones(4, 'la posicion', 'notas[1][2][3] = 9;'),
+  dimensiones(4, 'con una cuenta', 'notas[1][2][3] = 4 + 5;'),
+  dimensiones(4, 'el parcial equivocado', 'notas[1][2][2] = 9;', ['RESULTADO_VALOR_DISTINTO']),
+  dimensiones(4, 'el curso equivocado', 'notas[0][2][3] = 9;', ['RESULTADO_VALOR_DISTINTO']),
+  {
+    ...dimensiones(4, 'contando desde uno', 'notas[2][3][4] = 9;', ['INDICE_FUERA_DE_RANGO']),
+    dice: ['`notas` tiene 2'],
+  },
+  dimensiones(4, 'otro valor', 'notas[1][2][3] = 8;', ['RESULTADO_VALOR_DISTINTO']),
+
+  // 5: todas en cero
+  dimensiones(5, 'con tres for', 'for (i = 0; i < CURSOS; i++) {\n  for (j = 0; j < ALUMNOS; j++) {\n    for (k = 0; k < PARCIALES; k++) {\n      notas[i][j][k] = 0;\n    }\n  }\n}'),
+  dimensiones(5, 'con otro orden', 'for (k = 0; k < PARCIALES; k++) {\n  for (j = 0; j < ALUMNOS; j++) {\n    for (i = 0; i < CURSOS; i++) {\n      notas[i][j][k] = 0;\n    }\n  }\n}'),
+  dimensiones(5, 'con los numeros sueltos: correcto y mejorable', 'for (i = 0; i < 2; i++) {\n  for (j = 0; j < 3; j++) {\n    for (k = 0; k < 4; k++) {\n      notas[i][j][k] = 0;\n    }\n  }\n}', 'ok', ['LIMITE_CON_NUMERO_SUELTO']),
+  dimensiones(5, 'sin el ultimo parcial', 'for (i = 0; i < CURSOS; i++) {\n  for (j = 0; j < ALUMNOS; j++) {\n    for (k = 0; k < PARCIALES - 1; k++) {\n      notas[i][j][k] = 0;\n    }\n  }\n}', ['RESULTADO_POSICION_SIN_VALOR']),
+  dimensiones(5, 'con los limites cambiados', 'for (i = 0; i < PARCIALES; i++) {\n  for (j = 0; j < ALUMNOS; j++) {\n    for (k = 0; k < CURSOS; k++) {\n      notas[i][j][k] = 0;\n    }\n  }\n}', ['INDICE_FUERA_DE_RANGO']),
+  dimensiones(5, 'con un cero que no es de cada posicion', 'for (i = 0; i < CURSOS; i++) {\n  for (j = 0; j < ALUMNOS; j++) {\n    for (k = 0; k < PARCIALES; k++) {\n      notas[i][j][k] = 1;\n    }\n  }\n}', ['RESULTADO_VALOR_DISTINTO']),
+
+  // 6: la suma de todas las notas
+  dimensiones(6, 'con tres for', 'total = 0;\nfor (i = 0; i < CURSOS; i++) {\n  for (j = 0; j < ALUMNOS; j++) {\n    for (k = 0; k < PARCIALES; k++) {\n      total += notas[i][j][k];\n    }\n  }\n}'),
+  dimensiones(6, 'con el curso adentro', 'total = 0;\nfor (k = 0; k < PARCIALES; k++) {\n  for (j = 0; j < ALUMNOS; j++) {\n    for (i = 0; i < CURSOS; i++) {\n      total += notas[i][j][k];\n    }\n  }\n}'),
+  dimensiones(6, 'sin iniciar el total', 'for (i = 0; i < CURSOS; i++) {\n  for (j = 0; j < ALUMNOS; j++) {\n    for (k = 0; k < PARCIALES; k++) {\n      total += notas[i][j][k];\n    }\n  }\n}', ['VARIABLE_SIN_VALOR']),
+  dimensiones(6, 'sin recorrer el ultimo curso', 'total = 0;\nfor (i = 0; i < CURSOS - 1; i++) {\n  for (j = 0; j < ALUMNOS; j++) {\n    for (k = 0; k < PARCIALES; k++) {\n      total += notas[i][j][k];\n    }\n  }\n}', ['RESULTADO_VALOR_DISTINTO']),
+
+  // 7: la suma de cada curso
+  dimensiones(7, 'con el total en el arreglo', 'for (i = 0; i < CURSOS; i++) {\n  totales[i] = 0;\n  for (j = 0; j < ALUMNOS; j++) {\n    for (k = 0; k < PARCIALES; k++) {\n      totales[i] += notas[i][j][k];\n    }\n  }\n}'),
+  {
+    ...dimensiones(7, 'el acumulador no vuelve a cero', 'int suma = 0;\nfor (i = 0; i < CURSOS; i++) {\n  for (j = 0; j < ALUMNOS; j++) {\n    for (k = 0; k < PARCIALES; k++) {\n      suma += notas[i][j][k];\n    }\n  }\n  totales[i] = suma;\n}', ['ACUMULADOR_SIN_REINICIAR_POR_FILA']),
+    dice: ['`totales` termina con `57` y `110`', 'cada total arrastra lo de las filas anteriores'],
+  },
+  dimensiones(7, 'sin iniciar los totales', 'for (i = 0; i < CURSOS; i++) {\n  for (j = 0; j < ALUMNOS; j++) {\n    for (k = 0; k < PARCIALES; k++) {\n      totales[i] += notas[i][j][k];\n    }\n  }\n}', ['VARIABLE_SIN_VALOR']),
+  dimensiones(7, 'sumando todo en el primero', 'totales[0] = 0;\nfor (i = 0; i < CURSOS; i++) {\n  for (j = 0; j < ALUMNOS; j++) {\n    for (k = 0; k < PARCIALES; k++) {\n      totales[0] += notas[i][j][k];\n    }\n  }\n}', ['RESULTADO_VALOR_DISTINTO']),
+
+  // 8: mostrar un curso como tabla
+  dimensiones(8, 'un renglon por alumno', 'for (j = 0; j < ALUMNOS; j++) {\n  for (k = 0; k < PARCIALES; k++) {\n    printf("%d ", notas[1][j][k]);\n  }\n  printf("\\n");\n}'),
+  dimensiones(8, 'con tabuladores', 'for (j = 0; j < ALUMNOS; j++) {\n  for (k = 0; k < PARCIALES; k++) {\n    printf("%d\\t", notas[1][j][k]);\n  }\n  printf("\\n");\n}'),
+  dimensiones(8, 'el primer curso en lugar del segundo', 'for (j = 0; j < ALUMNOS; j++) {\n  for (k = 0; k < PARCIALES; k++) {\n    printf("%d ", notas[0][j][k]);\n  }\n  printf("\\n");\n}', ['MUESTRA_DISTINTA']),
+  dimensiones(8, 'todo en un renglon', 'for (j = 0; j < ALUMNOS; j++) {\n  for (k = 0; k < PARCIALES; k++) {\n    printf("%d ", notas[1][j][k]);\n  }\n}', ['TABLA_SIN_RENGLONES']),
+  dimensiones(8, 'los parciales como renglones', 'for (k = 0; k < PARCIALES; k++) {\n  for (j = 0; j < ALUMNOS; j++) {\n    printf("%d ", notas[1][j][k]);\n  }\n  printf("\\n");\n}', ['MUESTRA_DISTINTA']),
+];
+
 export const CASOS = [
   ...CASOS_DE_NOMBRES,
   ...CASOS_DE_VALORES,
@@ -1069,6 +1155,7 @@ export const CASOS = [
   ...CASOS_DE_TAMANO,
   ...CASOS_DE_TABLAS,
   ...CASOS_DE_RECORRER_TABLAS,
+  ...CASOS_DE_DIMENSIONES,
   ...CASOS_DE_CADENAS,
   ...CASOS_DE_CADENAS_NUEVAS,
   // ---- 1: declarar la estructura ----
