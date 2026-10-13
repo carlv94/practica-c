@@ -1,7 +1,7 @@
 {
   "id": "arreglos-recorrer",
   "titulo": "Recorrer un arreglo",
-  "descripcion": "Recorrer un arreglo con un ciclo para llenarlo, y cuántas vueltas da.",
+  "descripcion": "Recorrer un arreglo con un ciclo para llenarlo, y dónde queda el índice al terminar.",
   "dentroDeMain": true,
   "buenasPracticas": ["constantes"],
   "consignas": [
@@ -16,10 +16,10 @@
     {
       "id": "recorrer-posicion",
       "titulo": "Cada posición con su número",
-      "dado": "#define MAX_ALUMNOS 20\n\nint notas[MAX_ALUMNOS];\nint i;",
-      "enunciado": "Un listado numera a los alumnos de una comisión según el lugar que ocupan: el primero es el número 0, el segundo el 1, y así hasta el último.\n\nCon un ciclo, guarde en cada posición del arreglo `notas` su propio número de posición. Use el índice `i`.",
-      "requiere": [{ "resultado": { "variable": "notas", "valores": "i", "conCiclo": true, "limite": true } }],
-      "referencia": "for (i = 0; i < MAX_ALUMNOS; i++) {\n  notas[i] = i;\n}"
+      "dado": "#define MAX_ALUMNOS 20\n\nint alumnos[MAX_ALUMNOS];\nint i;",
+      "enunciado": "Un listado numera a los alumnos de una comisión según el lugar que ocupan: el primero es el número 0, el segundo el 1, y así hasta el último.\n\nCon un ciclo, guarde en cada posición del arreglo `alumnos` su propio número de posición. Use el índice `i`.",
+      "requiere": [{ "resultado": { "variable": "alumnos", "valores": "i", "conCiclo": true, "limite": true } }],
+      "referencia": "for (i = 0; i < MAX_ALUMNOS; i++) {\n  alumnos[i] = i;\n}"
     },
     {
       "id": "recorrer-q-doble",
@@ -56,28 +56,27 @@
       "referencia": "for (i = 0; i < CANTIDAD; i++) {\n  cuadrados[i] = i * i;\n}"
     },
     {
-      "id": "recorrer-q-vueltas",
-      "titulo": "Cuántas vueltas da",
-      "enunciado": "Después de ejecutar el código de abajo, ¿qué valor tendría `veces`?",
-      "codigo": "int veces = 0;\nint i;\n\nfor (i = 0; i <= 5; i++) {\n  veces++;\n}",
+      "id": "recorrer-q-indice",
+      "titulo": "Dónde queda el índice",
+      "enunciado": "Después de ejecutar el código de abajo, ¿qué valor mostraría el último `printf`?",
+      "codigo": "#include <stdio.h>\n\nint i;\n\nfor (i = 0; i < 5; i++) {\n  printf(\"%d\\n\", i);\n}\nprintf(\"%d\\n\", i);",
       "opciones": [
         {
-          "valor": "5",
-          "texto": "las posiciones de un arreglo de 5",
-          "codigo": "OPCION_NO_CUENTA_EL_IGUAL",
-          "explicacion": "Con `<=` el ciclo también se ejecuta cuando `i` vale `5`: `i` toma los valores `0`, `1`, `2`, `3`, `4` y `5`."
-        },
-        {
           "valor": "4",
-          "texto": "el último índice de un arreglo de 5",
-          "codigo": "OPCION_CUENTA_DE_MENOS",
-          "explicacion": "El ciclo empieza con `i` en `0` y llega hasta `5` inclusive: son más vueltas que las que dice el último índice."
+          "texto": "lo último que se mostró en el ciclo",
+          "codigo": "OPCION_ULTIMA_VUELTA",
+          "explicacion": "El `4` es lo último que se mostró dentro del ciclo, pero no es el valor final de `i`: después de la vuelta con `i` en `4`, el `i++` lo deja en `5`, y recién ahí la condición `i < 5` falla."
         },
         {
-          "valor": "6",
-          "texto": "una vuelta más que las posiciones de un arreglo de 5",
+          "texto": "no se puede saber, porque `i` solo existe mientras el ciclo se ejecuta",
+          "codigo": "OPCION_INDICE_SOLO_EN_EL_CICLO",
+          "explicacion": "`i` está declarada antes del ciclo: es una variable común, que no desaparece cuando el ciclo termina. El `for` le dio el valor `0` y el `i++` fue cambiándolo, así que al salir tiene un valor perfectamente determinado: `5`."
+        },
+        {
+          "valor": "5",
+          "texto": "el valor que tiene `i` cuando el ciclo termina",
           "correcta": true,
-          "explicacion": "`i` toma los valores `0`, `1`, `2`, `3`, `4` y `5`: son 6 vueltas. En un arreglo de 5 posiciones, que van de 0 a 4, la última vuelta usaría una posición que no existe."
+          "explicacion": "Después de la vuelta con `i` en `4`, el `i++` lo deja en `5`. La condición `i < 5` ya no se cumple, el ciclo termina, y `i` conserva ese `5`: es lo que muestra el último `printf`."
         }
       ]
     },

@@ -422,8 +422,8 @@ Otras dos reglas de la misma serie:
 **Un ciclo se corrige siguiendo lo que hace** (`js/simulador.js`), no mirando
 cómo está escrito. Es un intérprete mínimo de C: enteros y decimales, arreglos
 de cualquier dimensión, asignaciones, `++` y `--`, la aritmética, las
-comparaciones, `if`, `for`, `while` y `do while`, sin entrada ni salida ni
-llamadas. Lo usa la regla:
+comparaciones, `if`, `for`, `while` y `do while`, y la función `pow`; sin
+entrada ni salida ni otras llamadas. Lo usa la regla:
 
 - `{ "resultado": { "variable": "notas", "valores": "i * i", "conCiclo": true } }`:
   después de ejecutar todo (lo que la consigna da y lo que escribió el
@@ -439,7 +439,13 @@ adentro, una cuenta equivalente). Si no, dice dónde:
 `RESULTADO_VALOR_DISTINTO` (qué posición, qué valor tiene y cuál se pide),
 `RESULTADO_POSICION_SIN_VALOR` (el ciclo no llega a esa posición),
 `INDICE_FUERA_DE_RANGO` (con `<=`, se llega a una posición que no existe),
-`VARIABLE_SIN_VALOR` (se usa `i` sin darle valor) y `CICLO_NO_TERMINA`. Con
+`VARIABLE_SIN_VALOR` (se usa `i` sin darle valor) y `CICLO_NO_TERMINA`. Si usa
+`pow` es correcto y excelente, con la nota `USO_DE_POW` (una vez por serie):
+trabaja con decimales, y para un entero multiplicarlo por sí mismo es más
+directo. El `#include <math.h>` lo escribe el alumno, al principio de su
+respuesta: sin él, `pow` es el error `INCLUDE_FALTA_PARA_FUNCION` (la tabla
+`BIBLIOTECA_DE` de `js/corrector.js` dice qué función necesita qué biblioteca;
+solo la mira esta regla). Con
 algo que no sabe seguir (una llamada, un `scanf`) es `EJECUCION_NO_VERIFICADA`:
 correcto, pero no excelente.
 

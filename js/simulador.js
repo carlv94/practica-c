@@ -3,8 +3,9 @@
 //
 // Sabe seguir una funcion con enteros y decimales, arreglos de cualquier
 // dimension, asignaciones (=, +=, -=, *=, /=, %=), ++ y --, la aritmetica, las
-// comparaciones, && y ||, if / else, for, while, do while, break y continue.
-// No tiene entrada, salida, llamadas a funciones ni punteros: si encuentra algo
+// comparaciones, && y ||, if / else, for, while, do while, break y continue, y
+// la funcion pow.
+// No tiene entrada, salida, otras llamadas a funciones ni punteros: si encuentra algo
 // que no sabe seguir, dice "SinVerificar" y la respuesta se deja como correcta
 // pero sin comprobar.
 //
@@ -210,6 +211,18 @@ export function ejecutar(arbol, constante) {
       case 'conditional_expression': {
         const condicion = evaluar(n.childForFieldName('condition'));
         return evaluar(n.childForFieldName(condicion.v !== 0 ? 'consequence' : 'alternative'));
+      }
+      case 'call_expression': {
+        // Solo pow, de la biblioteca matematica: una funcion pura, que da un decimal.
+        const funcion = n.childForFieldName('function');
+        const argumentos = n.childForFieldName('arguments');
+        const lista = argumentos ? argumentos.namedChildren.filter((a) => a.type !== 'comment') : [];
+        if (!funcion || funcion.text !== 'pow' || lista.length !== 2) return sinVerificar(n);
+        const base = evaluar(lista[0]);
+        const exponente = evaluar(lista[1]);
+        const v = Math.pow(base.v, exponente.v);
+        if (!Number.isFinite(v)) return sinVerificar(n, 'una potencia que no se sabe calcular');
+        return { v, f: true };
       }
       case 'assignment_expression': {
         const izquierda = n.childForFieldName('left');

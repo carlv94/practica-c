@@ -268,10 +268,10 @@ const CASOS_DE_RECORRER = [
   },
 
   // 2: cada posicion con su numero
-  recorrer(2, 'el indice', 'for (i = 0; i < MAX_ALUMNOS; i++) {\n  notas[i] = i;\n}'),
-  recorrer(2, 'sumando uno cada vez', 'int numero = 0;\nfor (i = 0; i < MAX_ALUMNOS; i++) {\n  notas[i] = numero;\n  numero++;\n}'),
-  recorrer(2, 'contando desde uno', 'for (i = 0; i < MAX_ALUMNOS; i++) {\n  notas[i] = i + 1;\n}', ['RESULTADO_VALOR_DISTINTO']),
-  recorrer(2, 'siempre cero', 'for (i = 0; i < MAX_ALUMNOS; i++) {\n  notas[i] = 0;\n}', ['RESULTADO_VALOR_DISTINTO']),
+  recorrer(2, 'el indice', 'for (i = 0; i < MAX_ALUMNOS; i++) {\n  alumnos[i] = i;\n}'),
+  recorrer(2, 'sumando uno cada vez', 'int numero = 0;\nfor (i = 0; i < MAX_ALUMNOS; i++) {\n  alumnos[i] = numero;\n  numero++;\n}'),
+  recorrer(2, 'contando desde uno', 'for (i = 0; i < MAX_ALUMNOS; i++) {\n  alumnos[i] = i + 1;\n}', ['RESULTADO_VALOR_DISTINTO']),
+  recorrer(2, 'siempre cero', 'for (i = 0; i < MAX_ALUMNOS; i++) {\n  alumnos[i] = 0;\n}', ['RESULTADO_VALOR_DISTINTO']),
 
   // 3: cuestionario, que queda en una posicion
   recorrer(3, 'queda el doble: la correcta', '2'),
@@ -281,13 +281,24 @@ const CASOS_DE_RECORRER = [
   // 4: el cuadrado
   recorrer(4, 'el indice por el indice', 'for (i = 0; i < CANTIDAD; i++) {\n  cuadrados[i] = i * i;\n}'),
   recorrer(4, 'con la cuenta al reves', 'for (i = CANTIDAD - 1; i >= 0; i--) {\n  cuadrados[i] = i * i;\n}'),
+  {
+    ...recorrer(4, 'con pow y la biblioteca: correcto, con la nota', '#include <math.h>\nfor (i = 0; i < CANTIDAD; i++) {\n  cuadrados[i] = pow(i, 2);\n}'),
+    notas: ['USO_DE_POW'],
+    dice: ['Su respuesta es correcta', '`pow` trabaja con decimales'],
+  },
+  {
+    ...recorrer(4, 'con pow sin la biblioteca', 'for (i = 0; i < CANTIDAD; i++) {\n  cuadrados[i] = pow(i, 2);\n}', ['INCLUDE_FALTA_PARA_FUNCION']),
+    dice: ['`pow`', '`math.h`', '`#include <math.h>`'],
+  },
+  recorrer(4, 'con la biblioteca de mas y sin pow', '#include <math.h>\nfor (i = 0; i < CANTIDAD; i++) {\n  cuadrados[i] = i * i;\n}'),
+  recorrer(4, 'con pow y un exponente equivocado', '#include <math.h>\nfor (i = 0; i < CANTIDAD; i++) {\n  cuadrados[i] = pow(i, 3);\n}', ['RESULTADO_VALOR_DISTINTO']),
   recorrer(4, 'el doble', 'for (i = 0; i < CANTIDAD; i++) {\n  cuadrados[i] = i * 2;\n}', ['RESULTADO_VALOR_DISTINTO']),
   recorrer(4, 'el cuadrado de la posicion que sigue', 'for (i = 0; i < CANTIDAD; i++) {\n  cuadrados[i] = (i + 1) * (i + 1);\n}', ['RESULTADO_VALOR_DISTINTO']),
 
-  // 5: cuestionario, cuantas vueltas da
-  recorrer(5, 'vueltas: seis', '2'),
-  recorrer(5, 'vueltas: cinco', '0', ['OPCION_NO_CUENTA_EL_IGUAL']),
-  recorrer(5, 'vueltas: cuatro', '1', ['OPCION_CUENTA_DE_MENOS']),
+  // 5: cuestionario, donde queda el indice
+  recorrer(5, 'indice final: cinco', '2'),
+  recorrer(5, 'indice final: cuatro', '0', ['OPCION_ULTIMA_VUELTA']),
+  recorrer(5, 'indice final: no se puede saber', '1', ['OPCION_INDICE_SOLO_EN_EL_CICLO']),
 
   // 6: solo las posiciones pares
   recorrer(6, 'de a dos', 'for (i = 0; i < CANTIDAD; i += 2) {\n  notas[i] = 0;\n}'),

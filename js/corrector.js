@@ -122,6 +122,10 @@ const DE_LA_BIBLIOTECA = [
   'printf', 'scanf', 'puts', 'gets', 'fgets', 'sprintf', 'memcpy', 'getchar', 'fflush',
 ];
 
+// La biblioteca que hay que agregar para usar una funcion, en las reglas que la
+// controlan (hoy solo la de resultado).
+const BIBLIOTECA_DE = { pow: 'math.h' };
+
 // Con que funciones se lee del teclado, y cual es el argumento donde se guarda.
 const LECTURAS = ['scanf', 'gets', 'fgets'];
 const MUESTRAS = ['printf', 'puts'];
@@ -1562,6 +1566,19 @@ export function corregir(
       return;
     }
 
+    // Una funcion de una biblioteca que no se agrego: no compilaria.
+    for (const llamada of modelo.llamadas.filter((l) => l.nuevo && l.funcion in BIBLIOTECA_DE)) {
+      const archivo = BIBLIOTECA_DE[llamada.funcion];
+      if (!modelo.includes.some((i) => i.sistema && i.ruta === archivo)) {
+        error(
+          'INCLUDE_FALTA_PARA_FUNCION',
+          `\`${llamada.funcion}\` es una función de la biblioteca \`${archivo}\`: para usarla hay que agregar \`#include <${archivo}>\`.`,
+          llamada.fila
+        );
+        return;
+      }
+    }
+
     const constante = (n) => {
       const c = modelo.constantes.find((x) => x.nombre === n);
       return c ? valorDeDimension(c.valor, modelo) : null;
@@ -1643,6 +1660,16 @@ export function corregir(
         );
         return;
       }
+    }
+
+    // pow da lo mismo que el producto, y es una forma valida: se avisa una vez.
+    const conPow = modelo.llamadas.find((l) => l.nuevo && l.funcion === 'pow');
+    if (conPow && !avisados.includes('USO_DE_POW')) {
+      nota(
+        'USO_DE_POW',
+        'Su respuesta es correcta. Solo una observación: `pow` trabaja con decimales. Para elevar un entero al cuadrado, multiplicarlo por sí mismo es más directo y no tiene redondeos.',
+        conPow.fila
+      );
     }
 
     // El limite del ciclo con el numero suelto, habiendo una constante que vale eso.
