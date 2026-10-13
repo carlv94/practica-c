@@ -57,6 +57,7 @@ import {
   FormatoDistinto,
   ConversionesDistintas,
   DivisionPorCero,
+  NombreDesconocido,
 } from './simulador.js';
 
 // Las palabras de un tipo entero van en cualquier orden: "unsigned int", "int unsigned".
@@ -138,6 +139,9 @@ const DE_LA_BIBLIOTECA = [
 // La biblioteca que hay que agregar para usar una funcion, en las reglas que la
 // controlan (hoy solo la de resultado).
 const BIBLIOTECA_DE = { pow: 'math.h' };
+
+// El plural de un nombre de nivel: curso -> cursos, parcial -> parciales.
+const enPlural = (s) => (/[aeiou]$/i.test(s) ? `${s}s` : `${s}es`);
 
 // Los valores de una variable en un mensaje, cada uno como esta en el codigo y
 // con "y" antes del ultimo: `120`, `85` y `310`.
@@ -221,15 +225,18 @@ export function corregir(
   const nuevas = { ...capturas };
 
   // "fila" es la del codigo completo; al alumno se le dice la linea de SU respuesta.
-  function diag(nivel, codigo, mensaje, fila) {
+  // "bloques" son lo que se muestra aparte del texto, como una salida de consola:
+  // [{ titulo, lineas }].
+  function diag(nivel, codigo, mensaje, fila, bloques) {
     diagnosticos.push({
       nivel,
       codigo,
       mensaje,
       linea: fila == null ? null : fila - filaBase + 1,
+      ...(bloques ? { bloques } : {}),
     });
   }
-  const error = (codigo, mensaje, fila) => diag('error', codigo, mensaje, fila);
+  const error = (codigo, mensaje, fila, bloques) => diag('error', codigo, mensaje, fila, bloques);
   const aviso = (codigo, mensaje, fila) => diag('aviso', codigo, mensaje, fila);
   // Una mejora no invalida: la respuesta esta bien, pero hay una forma mejor.
   const mejora = (codigo, mensaje, fila) => diag('mejora', codigo, mensaje, fila);
@@ -1691,7 +1698,7 @@ export function corregir(
             e.dimensiones !== 2 ? ['posición', 'posiciones'] : e.dimension === 0 ? ['fila', 'filas'] : ['columna', 'columnas'];
           error(
             'INDICE_FUERA_DE_RANGO',
-            `${conContexto}\`${e.nombre}\` tiene ${e.tamano} ${plural}, numeradas de 0 a ${e.tamano - 1}: ${e.escrito ? `la ${singular} ${e.indice} no existe.` : `se llega a la ${singular} ${e.indice}, que no existe.`}`,
+            `${conContexto}\`${e.nombre}\` tiene ${e.tamano} ${plural}, numeradas de 0 a ${e.tamano - 1}${e.escrito ? ': ' : ', y '}${e.escrito ? `la ${singular} ${e.indice} no existe.` : `el ciclo llega hasta la ${singular} ${e.indice}, que no existe.`}`,
             e.fila
           );
         }
@@ -1707,6 +1714,24 @@ export function corregir(
           `${opciones.contexto ? `${opciones.contexto}, el` : 'El'} ciclo no termina: la condición siempre se cumple. Revise que el índice avance hacia el final.`,
           e.fila
         );
+      } else if (e instanceof NombreDesconocido) {
+        const declarados = [...modelo.constantes.map((c) => c.nombre), ...modelo.variables.map((v) => v.nombre)];
+        if (declarados.includes(e.nombre)) {
+          // Esta declarado, pero no sabemos su valor: no es un error del alumno.
+          aviso('EJECUCION_NO_VERIFICADA', 'No pude seguir este código para comprobarlo. Verifique que haga lo que pide la consigna.');
+        } else {
+          const parecido = declarados
+            .map((nombre) => ({ nombre, d: distancia(e.nombre.toLowerCase(), nombre.toLowerCase()) }))
+            .filter((x) => x.d <= Math.max(1, Math.floor(e.nombre.length / 4)))
+            .sort((x, y) => x.d - y.d)[0];
+          error(
+            'NOMBRE_NO_DECLARADO',
+            parecido
+              ? `${conContexto}\`${e.nombre}\` no está declarado. ¿Quiso decir \`${parecido.nombre}\`?`
+              : `${conContexto}\`${e.nombre}\` no está declarado: hay que declararlo antes de usarlo.`,
+            e.fila
+          );
+        }
       } else if (e instanceof DivisionPorCero) {
         error(
           'DIVISION_POR_CERO',
@@ -1802,6 +1827,54 @@ export function corregir(
     }
   }
 
+  // Lo que muestra el programa, renglon por renglon, y con valores de prueba
+  // tambien lo que deberia mostrar (el alumno solo ve la salida esperada de los
+  // valores de la consigna).
+  function bloquesDeSalida(corrida, pedidas, conOtrosValores) {
+    const renglones = corrida.salida.split('\n').map((l) => l.replace(/\s+$/, ''));
+    while (renglones.length && !renglones[renglones.length - 1]) renglones.pop();
+    const bloques = [{ lineas: renglones.length ? renglones : ['(no muestra nada)'] }];
+    if (conOtrosValores) {
+      bloques.push({ titulo: 'Debería mostrar:', lineas: pedidas.map((fila) => fila.join(' ')) });
+    }
+    return bloques;
+  }
+
+  // Cada arreglo de "recorre" tiene que tener tocadas todas sus filas y columnas.
+  //   "recorre": "tabla" | ["tabla", "ventas"] | { "notas": ["el curso", "el alumno", "el parcial"] }
+  // Cada nivel va con su articulo: de ahi sale "recorrerlos todos" o "recorrerlas todas".
+  function recorreTodo(corrida, recorre, antes) {
+    const pedidos = Array.isArray(recorre)
+      ? recorre.map((n) => [n, null])
+      : typeof recorre === 'object'
+        ? Object.entries(recorre)
+        : [[recorre, null]];
+    for (const [nombre, niveles] of pedidos) {
+      const variable = corrida.variables.get(nombre);
+      if (!variable || !variable.dims) continue;
+      const visitadas = corrida.visitas.get(nombre);
+      const chico = variable.dims.length === 2 ? ['la fila', 'la columna'] : variable.dims.map(() => 'la posición');
+      for (let k = 0; k < variable.dims.length; k++) {
+        // Cada nivel con su articulo: "la fila", "el curso".
+        const [articulo, ...resto] = ((niveles && niveles[k]) || chico[k]).split(' ');
+        const unidad = resto.join(' ');
+        const femenino = articulo === 'la';
+        const n = variable.dims[k];
+        const tocadas = visitadas ? visitadas[k] : new Set();
+        if (tocadas.size >= n) continue;
+        const toco = tocadas.size > 0;
+        error(
+          'RECORRIDO_INCOMPLETO',
+          !toco
+            ? `${antes}\`${nombre}\` tiene ${n} ${enPlural(unidad)} y el programa no ${femenino ? 'las' : 'los'} recorre: la consigna pide un ciclo que pase por ${femenino ? 'todas' : 'todos'}.`
+            : `${antes}\`${nombre}\` tiene ${n} ${enPlural(unidad)} y el ciclo no llega a ${femenino ? 'recorrerlas todas' : 'recorrerlos todos'}.`
+        );
+        return false;
+      }
+    }
+    return true;
+  }
+
   // "con `ventas` valiendo 120, 85 y 240": los valores con que se probo.
   function conLosValores(datos) {
     // Las variables sueltas primero y los arreglos al final, que son los largos.
@@ -1827,7 +1900,13 @@ export function corregir(
   }
 
   function revisarCaso(corrida, caso, modelo, regla) {
-    const con = conLosValores(caso.datos);
+    // Con los valores que el alumno ve en la consigna no hace falta decirlos.
+    const con = caso.visible || !caso.datos ? '' : conLosValores(caso.datos);
+    const antes = con ? `${con}, ` : '';
+    const elPrograma = con ? 'el programa' : 'El programa';
+    // Cada arreglo que se tiene que recorrer entero, primero: si el ciclo no
+    // llega a todas las filas o columnas, lo demas no importa.
+    if (regla.recorre && !recorreTodo(corrida, regla.recorre, antes)) return false;
     // Las veces que se le da un valor con "=" a la variable dentro de un ciclo.
     const asignacionesEnCiclo = (nombre) =>
       modelo.asignaciones.filter(
@@ -1862,7 +1941,7 @@ export function corregir(
           if (p.que === undefined) {
             error(
               'RESULTADO_POSICION_SIN_VALOR',
-              `${con}, \`${p.nombre}\` no llega a recibir un valor: debería valer \`${p.debe}\`.`
+              `${antes}\`${p.nombre}\` no llega a recibir un valor: debería valer \`${p.debe}\`.`
             );
             return false;
           }
@@ -1876,20 +1955,20 @@ export function corregir(
             if (tieneEso(caso.acumulado && caso.acumulado[nombre])) {
               error(
                 'ACUMULADOR_SIN_REINICIAR_POR_FILA',
-                `${con}, \`${nombre}\` termina con ${enLista(caso.acumulado[nombre])} y debería tener ${enLista(debe)}: cada total arrastra lo de las filas anteriores. El acumulador tiene que volver a \`0\` al empezar cada fila.`
+                `${antes}\`${nombre}\` termina con ${enLista(caso.acumulado[nombre])} y debería tener ${enLista(debe)}: cada total arrastra lo de las filas anteriores. El acumulador tiene que volver a \`0\` al empezar cada fila.`
               );
               return false;
             }
             if (tieneEso(caso.cambiadas && caso.cambiadas[nombre])) {
               error(
                 'FILAS_Y_COLUMNAS_CAMBIADAS',
-                `${con}, \`${nombre}\` termina con ${enLista(caso.cambiadas[nombre])}, que es lo que da con la fila y la columna cambiadas: el primer índice es la fila y el segundo, la columna.`
+                `${antes}\`${nombre}\` termina con ${enLista(caso.cambiadas[nombre])}, que es lo que da con la fila y la columna cambiadas: el primer índice es la fila y el segundo, la columna.`
               );
               return false;
             }
             error(
               'RESULTADO_VALOR_DISTINTO',
-              `${con}, \`${p.nombre}\` termina valiendo \`${p.que}\` y debería valer \`${p.debe}\`.`
+              `${antes}\`${p.nombre}\` termina valiendo \`${p.que}\` y debería valer \`${p.debe}\`.`
             );
             return false;
           }
@@ -1904,13 +1983,13 @@ export function corregir(
       if (tiene === undefined) {
         error(
           'RESULTADO_VARIABLE_SIN_VALOR',
-          `${con}, \`${nombre}\` no llega a recibir un valor: debería valer \`${debe}\`.`
+          `${antes}\`${nombre}\` no llega a recibir un valor: debería valer \`${debe}\`.`
         );
         return false;
       }
       if (Math.abs(tiene - debe) < 1e-9) continue;
 
-      const resumen = `${con}, \`${nombre}\` termina valiendo \`${tiene}\` y debería valer \`${debe}\``;
+      const resumen = `${antes}\`${nombre}\` termina valiendo \`${tiene}\` y debería valer \`${debe}\``;
       const ultimos = Object.values(caso.datos || {}).map((lista) => lista[lista.length - 1]);
       const valoresDeLosArreglos = Object.values(caso.datos || {}).flat(Infinity);
       if (variable.flotante && !Number.isInteger(debe) && tiene === Math.trunc(debe)) {
@@ -1966,12 +2045,16 @@ export function corregir(
         if (iguales(corrida.mostrados, pedidas.flat())) {
           error(
             'TABLA_SIN_RENGLONES',
-            `${con}, el programa muestra los valores en ${filas.length} ${filas.length === 1 ? 'renglón' : 'renglones'} y la tabla tiene ${pedidas.length} filas: cada fila tiene que ir en su propio renglón.`
+            `${antes}${elPrograma} muestra los valores en ${filas.length} ${filas.length === 1 ? 'renglón' : 'renglones'} y la tabla tiene ${pedidas.length} filas: cada fila tiene que ir en su propio renglón.`,
+            undefined,
+            bloquesDeSalida(corrida, pedidas, Boolean(con))
           );
         } else {
           error(
             'MUESTRA_DISTINTA',
-            `${con}, el programa muestra ${enLista(filas)} cuando debería mostrar ${enLista(pedidas)}.`
+            `${antes}${elPrograma} muestra:`,
+            undefined,
+            bloquesDeSalida(corrida, pedidas, Boolean(con))
           );
         }
         return false;
@@ -1989,7 +2072,7 @@ export function corregir(
       if (!iguales) {
         error(
           'MUESTRA_DISTINTA',
-          `${con}, el programa muestra ${enLista(sale)} cuando debería mostrar ${enLista(caso.muestra)}.`
+          `${antes}${elPrograma} muestra ${enLista(sale)} cuando debería mostrar ${enLista(caso.muestra)}.`
         );
         return false;
       }
@@ -2022,7 +2105,7 @@ export function corregir(
     if (regla.casos) {
       for (const caso of regla.casos) {
         const hecha = correrCodigo(modelo, caso.entrada || entrada, caso.datos, {
-          contexto: conLosValores(caso.datos),
+          contexto: caso.visible || !caso.datos ? '' : conLosValores(caso.datos),
           centinela: regla.centinela,
         });
         if (!hecha) return;

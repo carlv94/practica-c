@@ -35,6 +35,19 @@ export class FueraDeRango extends Error {
   }
 }
 
+// Un nombre que no es una variable ni una constante conocida: casi siempre, un
+// error de tipeo.
+export class NombreDesconocido extends Error {
+  constructor(nombre, fila) {
+    super(`${nombre} no esta declarado`);
+    Object.assign(this, { nombre, fila });
+  }
+}
+
+// Nombres de la biblioteca que valen sin declararse: no se pueden seguir, pero
+// tampoco son un error.
+const DE_LA_BIBLIOTECA = ['NULL', 'EOF', 'stdin', 'stdout', 'stderr', 'RAND_MAX', 'INT_MAX', 'INT_MIN', 'true', 'false'];
+
 // Una variable (o una posicion) que se usa sin que nadie le haya dado un valor.
 export class SinValor extends Error {
   constructor(nombre, fila) {
@@ -136,6 +149,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null) {
   const mostrados = []; // los numeros que muestra printf, en orden
   const delArreglo = []; // de esos, los que salen de una posicion de un arreglo
   const origenes = []; // de cada uno de esos, { nombre, indices } o null
+  const visitas = new Map(); // arreglo -> un conjunto de indices tocados por cada dimension
   const lineas = []; // los numeros que salen en cada renglon, uno por renglon
   let renglon = [];
   const leidos = new Set(); // los arreglos de los que se leyo alguna posicion
@@ -176,7 +190,10 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null) {
       const variable = variables.get(n.text);
       if (!variable) {
         const valor = constante(n.text);
-        if (valor == null) sinVerificar(n, `el nombre ${n.text}`);
+        if (valor == null) {
+          if (DE_LA_BIBLIOTECA.includes(n.text)) sinVerificar(n, `el nombre ${n.text}`);
+          throw new NombreDesconocido(n.text, fila(n));
+        }
         return { constante: valor };
       }
       return { variable, nombre: n.text, indices: [] };
@@ -216,6 +233,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null) {
     }
     if (indices.length !== variable.dims.length) sinVerificar(n, `el arreglo ${nombre} entero`);
     leidos.add(nombre);
+    visitar(nombre, variable.dims.length, indices);
     let dato = variable.datos;
     for (const i of indices) dato = dato[i];
     if (dato === undefined) {
@@ -228,6 +246,12 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null) {
     guardar(posicion(n), valor, n);
   }
 
+  // Anota las posiciones tocadas: cada indice, en el conjunto de su dimension.
+  function visitar(nombre, dimensiones, indices) {
+    if (!visitas.has(nombre)) visitas.set(nombre, Array.from({ length: dimensiones }, () => new Set()));
+    indices.forEach((i, k) => visitas.get(nombre)[k].add(i));
+  }
+
   function guardar(p, valor, n) {
     if (p.constante != null) sinVerificar(n, 'una constante');
     const { variable, nombre, indices } = p;
@@ -237,6 +261,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null) {
       return;
     }
     if (indices.length !== variable.dims.length) sinVerificar(n);
+    visitar(nombre, variable.dims.length, indices);
     let dato = variable.datos;
     for (const i of indices.slice(0, -1)) dato = dato[i];
     dato[indices[indices.length - 1]] = v;
@@ -689,5 +714,5 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null) {
 
   bloque(cuerpo);
   if (renglon.length) lineas.push(renglon);
-  return { variables, escrituras, mostrados, delArreglo, origenes, lineas, salida, lecturas, leidos };
+  return { variables, escrituras, mostrados, delArreglo, origenes, lineas, salida, lecturas, leidos, visitas };
 }
