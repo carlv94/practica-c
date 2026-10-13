@@ -233,6 +233,76 @@ const CASOS_DE_POSICIONES = [
   posiciones(10, 'variable: resta de mas', '1', ['OPCION_RESTA_DE_MAS']),
 ];
 
+// Recorrer un arreglo: se corrige siguiendo lo que hace el ciclo.
+const recorrer = (paso, nombre, respuesta, espera = 'ok', mejoras = []) => ({
+  serie: 'arreglos-recorrer',
+  paso,
+  nombre,
+  respuesta,
+  espera,
+  mejoras,
+});
+
+const CASOS_DE_RECORRER = [
+  // 1: dejar todo en cero
+  recorrer(1, 'un for con la constante', 'for (i = 0; i < MAX_ALUMNOS; i++) {\n  notas[i] = 0;\n}'),
+  recorrer(1, 'un while', 'i = 0;\nwhile (i < MAX_ALUMNOS) {\n  notas[i] = 0;\n  i++;\n}'),
+  recorrer(1, 'un do while', 'i = 0;\ndo {\n  notas[i] = 0;\n  i++;\n} while (i < MAX_ALUMNOS);'),
+  recorrer(1, 'sin llaves', 'for (i = 0; i < MAX_ALUMNOS; i++)\n  notas[i] = 0;'),
+  recorrer(1, 'con otra forma de contar', 'for (i = 0; i <= MAX_ALUMNOS - 1; i += 1) {\n  notas[i] = 0;\n}'),
+  recorrer(1, 'hacia atras', 'for (i = MAX_ALUMNOS - 1; i >= 0; i--) {\n  notas[i] = 0;\n}'),
+  recorrer(1, 'con el numero suelto: correcto y mejorable', 'for (i = 0; i < 20; i++) {\n  notas[i] = 0;\n}', 'ok', ['LIMITE_CON_NUMERO_SUELTO']),
+  recorrer(1, 'una vuelta de mas', 'for (i = 0; i <= MAX_ALUMNOS; i++) {\n  notas[i] = 0;\n}', ['INDICE_FUERA_DE_RANGO']),
+  recorrer(1, 'sin llegar a la ultima', 'for (i = 0; i < MAX_ALUMNOS - 1; i++) {\n  notas[i] = 0;\n}', ['RESULTADO_POSICION_SIN_VALOR']),
+  recorrer(1, 'empezando en uno', 'for (i = 1; i < MAX_ALUMNOS; i++) {\n  notas[i] = 0;\n}', ['RESULTADO_POSICION_SIN_VALOR']),
+  recorrer(1, 'otro valor', 'for (i = 0; i < MAX_ALUMNOS; i++) {\n  notas[i] = 1;\n}', ['RESULTADO_VALOR_DISTINTO']),
+  recorrer(1, 'siempre la misma posicion', 'for (i = 0; i < MAX_ALUMNOS; i++) {\n  notas[0] = 0;\n}', ['RESULTADO_POSICION_SIN_VALOR']),
+  recorrer(1, 'el indice no avanza', 'for (i = 0; i < MAX_ALUMNOS; ) {\n  notas[i] = 0;\n}', ['CICLO_NO_TERMINA']),
+  recorrer(1, 'una condicion que siempre se cumple', 'i = 0;\nwhile (i >= 0) {\n  notas[i % MAX_ALUMNOS] = 0;\n  i++;\n}', ['CICLO_NO_TERMINA']),
+  recorrer(1, 'un while sin darle valor al indice', 'while (i < MAX_ALUMNOS) {\n  notas[i] = 0;\n  i++;\n}', ['VARIABLE_SIN_VALOR']),
+  recorrer(1, 'sin ciclo', 'notas[0] = 0;', ['CICLO_FALTA']),
+  recorrer(1, 'con un solo corchete de mas', 'for (i = 0; i < MAX_ALUMNOS; i++) {\n  notas = 0;\n}', ['ASIGNACION_DE_ARREGLO']),
+  {
+    ...recorrer(1, 'algo que no se sabe seguir: queda sin comprobar', 'for (i = 0; i < MAX_ALUMNOS; i++) {\n  notas[i] = 0;\n  printf("%d", notas[i]);\n}'),
+    sinVerificar: true,
+  },
+
+  // 2: cada posicion con su numero
+  recorrer(2, 'el indice', 'for (i = 0; i < MAX_ALUMNOS; i++) {\n  notas[i] = i;\n}'),
+  recorrer(2, 'sumando uno cada vez', 'int numero = 0;\nfor (i = 0; i < MAX_ALUMNOS; i++) {\n  notas[i] = numero;\n  numero++;\n}'),
+  recorrer(2, 'contando desde uno', 'for (i = 0; i < MAX_ALUMNOS; i++) {\n  notas[i] = i + 1;\n}', ['RESULTADO_VALOR_DISTINTO']),
+  recorrer(2, 'siempre cero', 'for (i = 0; i < MAX_ALUMNOS; i++) {\n  notas[i] = 0;\n}', ['RESULTADO_VALOR_DISTINTO']),
+
+  // 3: cuestionario, que queda en una posicion
+  recorrer(3, 'queda el doble: la correcta', '2'),
+  recorrer(3, 'queda el doble: el indice', '0', ['OPCION_EL_INDICE_ES_EL_VALOR']),
+  recorrer(3, 'queda el doble: el ultimo valor', '1', ['OPCION_ULTIMA_VUELTA']),
+
+  // 4: el cuadrado
+  recorrer(4, 'el indice por el indice', 'for (i = 0; i < CANTIDAD; i++) {\n  cuadrados[i] = i * i;\n}'),
+  recorrer(4, 'con la cuenta al reves', 'for (i = CANTIDAD - 1; i >= 0; i--) {\n  cuadrados[i] = i * i;\n}'),
+  recorrer(4, 'el doble', 'for (i = 0; i < CANTIDAD; i++) {\n  cuadrados[i] = i * 2;\n}', ['RESULTADO_VALOR_DISTINTO']),
+  recorrer(4, 'el cuadrado de la posicion que sigue', 'for (i = 0; i < CANTIDAD; i++) {\n  cuadrados[i] = (i + 1) * (i + 1);\n}', ['RESULTADO_VALOR_DISTINTO']),
+
+  // 5: cuestionario, cuantas vueltas da
+  recorrer(5, 'vueltas: seis', '2'),
+  recorrer(5, 'vueltas: cinco', '0', ['OPCION_NO_CUENTA_EL_IGUAL']),
+  recorrer(5, 'vueltas: cuatro', '1', ['OPCION_CUENTA_DE_MENOS']),
+
+  // 6: solo las posiciones pares
+  recorrer(6, 'de a dos', 'for (i = 0; i < CANTIDAD; i += 2) {\n  notas[i] = 0;\n}'),
+  recorrer(6, 'con un if', 'for (i = 0; i < CANTIDAD; i++) {\n  if (i % 2 == 0) {\n    notas[i] = 0;\n  }\n}'),
+  recorrer(6, 'todas', 'for (i = 0; i < CANTIDAD; i++) {\n  notas[i] = 0;\n}', ['RESULTADO_VALOR_DISTINTO']),
+  recorrer(6, 'las impares', 'for (i = 1; i < CANTIDAD; i += 2) {\n  notas[i] = 0;\n}', ['RESULTADO_VALOR_DISTINTO']),
+
+  // 7: de la ultima a la primera
+  recorrer(7, 'hacia atras', 'for (i = CANTIDAD - 1; i >= 0; i--) {\n  cuenta[i] = 10 - i;\n}'),
+  recorrer(7, 'hacia atras con while', 'i = CANTIDAD - 1;\nwhile (i >= 0) {\n  cuenta[i] = 10 - i;\n  i--;\n}'),
+  recorrer(7, 'hacia adelante: el resultado es el mismo, el sentido no', 'for (i = 0; i < CANTIDAD; i++) {\n  cuenta[i] = 10 - i;\n}', ['RECORRIDO_EN_OTRO_SENTIDO']),
+  recorrer(7, 'hacia atras con otro valor', 'for (i = CANTIDAD - 1; i >= 0; i--) {\n  cuenta[i] = i;\n}', ['RESULTADO_VALOR_DISTINTO']),
+  recorrer(7, 'hacia atras sin llegar a la primera', 'for (i = CANTIDAD - 1; i > 0; i--) {\n  cuenta[i] = 10 - i;\n}', ['RESULTADO_POSICION_SIN_VALOR']),
+];
+
 // Arreglos definidos con sus valores: los del dibujo, 3 6 0 7 1 5.
 const valores = (paso, nombre, respuesta, espera, mejoras = []) => ({
   serie: 'arreglos-valores',
@@ -493,6 +563,7 @@ export const CASOS = [
   ...CASOS_DE_VALORES,
   ...CASOS_DE_ARREGLOS,
   ...CASOS_DE_POSICIONES,
+  ...CASOS_DE_RECORRER,
   ...CASOS_DE_CADENAS,
   ...CASOS_DE_CADENAS_NUEVAS,
   // ---- 1: declarar la estructura ----

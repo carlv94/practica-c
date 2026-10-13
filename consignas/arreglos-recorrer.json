@@ -1,0 +1,105 @@
+{
+  "id": "arreglos-recorrer",
+  "titulo": "Recorrer un arreglo",
+  "descripcion": "Recorrer un arreglo con un ciclo para llenarlo, y cuántas vueltas da.",
+  "dentroDeMain": true,
+  "buenasPracticas": ["constantes"],
+  "consignas": [
+    {
+      "id": "recorrer-ceros",
+      "titulo": "Dejar todo en cero",
+      "dado": "#define MAX_ALUMNOS 20\n\nint notas[MAX_ALUMNOS];\nint i;",
+      "enunciado": "Antes de empezar a cargar las notas de los 20 alumnos de una comisión, hay que dejar en cero todas las posiciones del arreglo `notas`.\n\nCon un ciclo, deje en cero todas las posiciones de `notas`. Use el índice `i`.",
+      "requiere": [{ "resultado": { "variable": "notas", "valores": 0, "conCiclo": true, "limite": true } }],
+      "referencia": "for (i = 0; i < MAX_ALUMNOS; i++) {\n  notas[i] = 0;\n}"
+    },
+    {
+      "id": "recorrer-posicion",
+      "titulo": "Cada posición con su número",
+      "dado": "#define MAX_ALUMNOS 20\n\nint notas[MAX_ALUMNOS];\nint i;",
+      "enunciado": "Un listado numera a los alumnos de una comisión según el lugar que ocupan: el primero es el número 0, el segundo el 1, y así hasta el último.\n\nCon un ciclo, guarde en cada posición del arreglo `notas` su propio número de posición. Use el índice `i`.",
+      "requiere": [{ "resultado": { "variable": "notas", "valores": "i", "conCiclo": true, "limite": true } }],
+      "referencia": "for (i = 0; i < MAX_ALUMNOS; i++) {\n  notas[i] = i;\n}"
+    },
+    {
+      "id": "recorrer-q-doble",
+      "titulo": "Qué queda en una posición",
+      "enunciado": "Después de ejecutar el código de abajo, ¿qué valor tendría `dato`?",
+      "codigo": "int valores[5];\nint i;\n\nfor (i = 0; i < 5; i++) {\n  valores[i] = i * 2;\n}\nint dato = valores[3];",
+      "opciones": [
+        {
+          "valor": "3",
+          "texto": "el número de la posición",
+          "codigo": "OPCION_EL_INDICE_ES_EL_VALOR",
+          "explicacion": "El `3` es la posición, no lo que hay en ella: en cada vuelta se guarda `i * 2`, así que `valores[3]` guarda el doble de `3`."
+        },
+        {
+          "valor": "8",
+          "texto": "el último valor que se guardó",
+          "codigo": "OPCION_ULTIMA_VUELTA",
+          "explicacion": "El `8` es lo que queda en `valores[4]`, la última vuelta. `valores[3]` se guardó en la vuelta en que `i` valía `3`."
+        },
+        {
+          "valor": "6",
+          "texto": "el doble del número de la posición",
+          "correcta": true,
+          "explicacion": "En la vuelta en que `i` vale `3` se ejecuta `valores[3] = 3 * 2;`, así que `valores[3]` guarda `6`."
+        }
+      ]
+    },
+    {
+      "id": "recorrer-cuadrados",
+      "titulo": "El cuadrado de cada posición",
+      "dado": "#define CANTIDAD 10\n\nint cuadrados[CANTIDAD];\nint i;",
+      "enunciado": "Una tabla de cuadrados necesita guardar, en cada posición del arreglo `cuadrados`, el cuadrado de su número de posición: 0 en la primera, 1 en la segunda, 4 en la tercera, y así.\n\nCon un ciclo, guarde en cada posición de `cuadrados` el cuadrado de su número de posición. Use el índice `i`.",
+      "requiere": [{ "resultado": { "variable": "cuadrados", "valores": "i * i", "conCiclo": true, "limite": true } }],
+      "referencia": "for (i = 0; i < CANTIDAD; i++) {\n  cuadrados[i] = i * i;\n}"
+    },
+    {
+      "id": "recorrer-q-vueltas",
+      "titulo": "Cuántas vueltas da",
+      "enunciado": "Después de ejecutar el código de abajo, ¿qué valor tendría `veces`?",
+      "codigo": "int veces = 0;\nint i;\n\nfor (i = 0; i <= 5; i++) {\n  veces++;\n}",
+      "opciones": [
+        {
+          "valor": "5",
+          "texto": "las posiciones de un arreglo de 5",
+          "codigo": "OPCION_NO_CUENTA_EL_IGUAL",
+          "explicacion": "Con `<=` el ciclo también se ejecuta cuando `i` vale `5`: `i` toma los valores `0`, `1`, `2`, `3`, `4` y `5`."
+        },
+        {
+          "valor": "4",
+          "texto": "el último índice de un arreglo de 5",
+          "codigo": "OPCION_CUENTA_DE_MENOS",
+          "explicacion": "El ciclo empieza con `i` en `0` y llega hasta `5` inclusive: son más vueltas que las que dice el último índice."
+        },
+        {
+          "valor": "6",
+          "texto": "una vuelta más que las posiciones de un arreglo de 5",
+          "correcta": true,
+          "explicacion": "`i` toma los valores `0`, `1`, `2`, `3`, `4` y `5`: son 6 vueltas. En un arreglo de 5 posiciones, que van de 0 a 4, la última vuelta usaría una posición que no existe."
+        }
+      ]
+    },
+    {
+      "id": "recorrer-pares",
+      "titulo": "Solo las posiciones pares",
+      "dado": "#define CANTIDAD 10\n\nint notas[CANTIDAD] = {7, 4, 9, 6, 8, 5, 10, 3, 7, 6};\nint i;",
+      "enunciado": "Un docente anula las notas que están en las posiciones pares del arreglo `notas`: la 0, la 2, la 4, y así. Las de las posiciones impares se conservan.\n\nCon un ciclo, deje en cero las notas de las posiciones pares y no toque las demás. Use el índice `i`.",
+      "requiere": [
+        { "resultado": { "variable": "notas", "valores": [0, 4, 0, 6, 0, 5, 0, 3, 0, 6], "conCiclo": true, "limite": true } }
+      ],
+      "referencia": "for (i = 0; i < CANTIDAD; i += 2) {\n  notas[i] = 0;\n}"
+    },
+    {
+      "id": "recorrer-atras",
+      "titulo": "De la última a la primera",
+      "dado": "#define CANTIDAD 10\n\nint cuenta[CANTIDAD];\nint i;",
+      "enunciado": "Una cuenta regresiva guarda, en cada posición del arreglo `cuenta`, el valor que falta para llegar a cero: la primera posición guarda 10, la segunda 9, y así hasta la última, que guarda 1.\n\nCon un ciclo, cargue `cuenta` recorriendo el arreglo de la última posición a la primera. Use el índice `i`.",
+      "requiere": [
+        { "resultado": { "variable": "cuenta", "valores": "10 - i", "conCiclo": true, "orden": "atras", "limite": true } }
+      ],
+      "referencia": "for (i = CANTIDAD - 1; i >= 0; i--) {\n  cuenta[i] = 10 - i;\n}"
+    }
+  ]
+}
