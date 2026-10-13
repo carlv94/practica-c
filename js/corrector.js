@@ -138,6 +138,13 @@ const DE_LA_BIBLIOTECA = [
 // controlan (hoy solo la de resultado).
 const BIBLIOTECA_DE = { pow: 'math.h' };
 
+// Los valores de una variable en un mensaje, cada uno como esta en el codigo y
+// con "y" antes del ultimo: `120`, `85` y `310`.
+const enLista = (valores) => {
+  const cada = valores.map((v) => `\`${v}\``);
+  return cada.length < 2 ? cada.join('') : `${cada.slice(0, -1).join(', ')} y ${cada[cada.length - 1]}`;
+};
+
 // Con que funciones se lee del teclado, y cual es el argumento donde se guarda.
 const LECTURAS = ['scanf', 'gets', 'fgets'];
 const MUESTRAS = ['printf', 'puts'];
@@ -1606,7 +1613,7 @@ export function corregir(
       if (Math.abs(tiene - debe) > 1e-9) {
         error(
           'RESULTADO_VALOR_DISTINTO',
-          `\`${nombre}[${k}]\` termina valiendo ${tiene}, y la consigna pide ${debe}.`
+          `\`${nombre}[${k}]\` termina valiendo \`${tiene}\`, y la consigna pide \`${debe}\`.`
         );
         return;
       }
@@ -1647,13 +1654,13 @@ export function corregir(
 
   // Sigue el codigo con la entrada dada (los datos que "escribe el usuario").
   // Si algo impide seguirlo lo dice y devuelve null.
-  function correrCodigo(modelo, entrada) {
+  function correrCodigo(modelo, entrada, prueba = null) {
     const constante = (n) => {
       const c = modelo.constantes.find((x) => x.nombre === n);
       return c ? valorDeDimension(c.valor, modelo) : null;
     };
     try {
-      return ejecutar(arbol, constante, entrada);
+      return ejecutar(arbol, constante, entrada, prueba);
     } catch (e) {
       if (e instanceof FueraDeRango) {
         // Con el numero escrito ya lo dijo la revision general.
@@ -1763,6 +1770,86 @@ export function corregir(
     }
   }
 
+  // "con `ventas` valiendo 120, 85 y 240": los valores con que se probo.
+  function conLosValores(datos) {
+    const partes = Object.entries(datos || {}).map(([nombre, lista]) => `\`${nombre}\` valiendo ${enLista(lista)}`);
+    return partes.length ? `Con ${partes.join(' y ')}` : 'Con los datos de la consigna';
+  }
+
+  // Un caso: con esos valores, cada variable termina con tal valor y/o se
+  // muestra tal cosa. Dice que paso si no. Devuelve si estuvo bien.
+  //   { "datos": { "ventas": [120, 85] }, "queda": { "total": 205 }, "muestra": [70] }
+  function revisarCaso(corrida, caso, modelo) {
+    const con = conLosValores(caso.datos);
+    // Las veces que se le da un valor con "=" a la variable dentro de un ciclo.
+    const asignacionesEnCiclo = (nombre) =>
+      modelo.asignaciones.filter(
+        (a) =>
+          a.nuevo &&
+          a.operador === '=' &&
+          a.izquierda.clase === 'nombre' &&
+          a.izquierda.nombre === nombre &&
+          modelo.ciclos.some((c) => c.nuevo && c.posicion < a.posicion && a.posicion < c.fin)
+      );
+    for (const [nombre, debe] of Object.entries(caso.queda || {})) {
+      const variable = corrida.variables.get(nombre);
+      if (!variable || variable.dims) {
+        error('RESULTADO_FALTA', `No encontré la variable \`${nombre}\`.`);
+        return false;
+      }
+      const tiene = variable.valor;
+      if (tiene === undefined) {
+        error(
+          'RESULTADO_VARIABLE_SIN_VALOR',
+          `${con}, \`${nombre}\` no llega a recibir un valor: tendría que valer \`${debe}\`.`
+        );
+        return false;
+      }
+      if (Math.abs(tiene - debe) < 1e-9) continue;
+
+      const resumen = `${con}, \`${nombre}\` termina valiendo \`${tiene}\` y tendría que valer \`${debe}\``;
+      const ultimos = Object.values(caso.datos || {}).map((lista) => lista[lista.length - 1]);
+      if (variable.flotante && !Number.isInteger(debe) && tiene === Math.trunc(debe)) {
+        error(
+          'DIVISION_ENTERA',
+          `${resumen}: dividir dos enteros da un entero, aunque el resultado se guarde en un \`float\`, y la parte decimal ya se perdió. Alguno de los dos números tiene que ser decimal.`
+        );
+      } else if (ultimos.includes(tiene) && asignacionesEnCiclo(nombre).length) {
+        // Lo que quedo es el ultimo elemento: se volvio a empezar en cada
+        // vuelta, o se reemplazo el valor en lugar de acumularlo.
+        const reinicio = asignacionesEnCiclo(nombre).find((a) => a.derecha.clase === 'numero');
+        error(
+          reinicio ? 'ACUMULADOR_REINICIADO' : 'ACUMULADOR_SE_PISA',
+          reinicio
+            ? `${resumen}: dentro del ciclo se vuelve a poner en ${reinicio.derecha.valor} en cada vuelta y lo que se había acumulado se pierde. Esa línea va antes del ciclo.`
+            : `${resumen}: en cada vuelta se reemplaza el valor anterior en lugar de agregarle el nuevo.`,
+          reinicio ? reinicio.fila : undefined
+        );
+      } else {
+        error('RESULTADO_VALOR_DISTINTO', `${resumen}.`);
+      }
+      return false;
+    }
+
+    if (caso.muestra) {
+      if (!corrida.mostrados.length) {
+        error('MUESTRA_FALTA', 'La consigna pide mostrar en pantalla, con `printf`: el programa no muestra ningún número.');
+        return false;
+      }
+      const sale = corrida.mostrados;
+      const iguales =
+        sale.length === caso.muestra.length && sale.every((v, k) => Math.abs(v - caso.muestra[k]) < 1e-6);
+      if (!iguales) {
+        error(
+          'MUESTRA_DISTINTA',
+          `${con}, el programa muestra ${enLista(sale)} y se ${caso.muestra.length === 1 ? 'pide' : 'piden'} ${enLista(caso.muestra)}.`
+        );
+        return false;
+      }
+    }
+    return true;
+  }
+
   // ---- leer del teclado y mostrar: se sigue con datos de prueba ------------------
 
   // Se ejecuta el codigo con los datos que "escribe el usuario" y se compara lo
@@ -1782,6 +1869,19 @@ export function corregir(
     }
     if (bibliotecaFalta(modelo)) return;
     const entrada = regla.entrada || [];
+
+    // Varios conjuntos de valores para los arreglos, cada uno con lo que tiene
+    // que dar: asi no vale escribir el resultado a mano.
+    if (regla.casos) {
+      for (const caso of regla.casos) {
+        const hecha = correrCodigo(modelo, entrada, caso.datos);
+        if (!hecha) return;
+        if (!revisarCaso(hecha, caso, modelo)) return;
+      }
+      notasYMejoras(regla, modelo);
+      return;
+    }
+
     const corrida = correrCodigo(modelo, entrada);
     if (!corrida) return;
 
@@ -1810,7 +1910,7 @@ export function corregir(
         if (Math.abs(tiene - debe[k]) > 1e-9) {
           error(
             'RESULTADO_VALOR_DISTINTO',
-            `\`${nombre}[${k}]\` termina valiendo ${tiene}, y con los datos de la consigna tendría que guardar ${debe[k]}.`
+            `\`${nombre}[${k}]\` termina valiendo \`${tiene}\`, y con los datos de la consigna tendría que guardar \`${debe[k]}\`.`
           );
           return;
         }
@@ -1842,8 +1942,8 @@ export function corregir(
         error(
           'MUESTRA_DISTINTA',
           origen && origen.indices.length === 1
-            ? `Con los datos de la consigna el programa muestra ${sale[0]}, que es lo que hay en la posición ${origen.indices[0]} de \`${origen.nombre}\`.`
-            : `Con los datos de la consigna el programa muestra ${sale.join(', ')}, y se piden ${debe.join(', ')}, en ese orden.`
+            ? `Con los datos de la consigna el programa muestra \`${sale[0]}\`, que es lo que hay en la posición ${origen.indices[0]} de \`${origen.nombre}\`.`
+            : `Con los datos de la consigna el programa muestra ${enLista(sale)}, y se ${debe.length === 1 ? 'pide' : 'piden'} ${enLista(debe)}, en ese orden.`
         );
         return;
       }

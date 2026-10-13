@@ -3,7 +3,8 @@
 //
 // Sabe seguir una funcion con enteros y decimales, arreglos de cualquier
 // dimension, asignaciones (=, +=, -=, *=, /=, %=), ++ y --, la aritmetica, las
-// comparaciones, && y ||, if / else, for, while, do while, break y continue, y
+// comparaciones, && y ||, el cambio de tipo ((float) suma), if / else, for,
+// while, do while, break y continue, y
 // las funciones pow, scanf (con datos de entrada que se le dan) y printf (que
 // anota lo que muestra).
 // No tiene otras llamadas a funciones ni punteros: si encuentra algo
@@ -105,7 +106,9 @@ const ESCAPES = { n: 10, t: 9, r: 13, '0': 0, "'": 39, '"': 34, '\\': 92 };
 
 // "entrada" es lo que el usuario escribe, un numero por cada dato que se lee;
 // sin ella, cualquier scanf queda sin verificar.
-export function ejecutar(arbol, constante, entrada = null) {
+// "prueba" cambia los valores con que se declaran arreglos de una dimension:
+// { ventas: [5, 3, 8] } deja a "ventas" con esos valores, aunque diga otros.
+export function ejecutar(arbol, constante, entrada = null, prueba = null) {
   const funcion = arbol.rootNode.namedChildren.find((n) => n.type === 'function_definition');
   const cuerpo = funcion && funcion.childForFieldName('body');
   if (!cuerpo) throw new SinVerificar('no hay una funcion que seguir');
@@ -377,6 +380,17 @@ export function ejecutar(arbol, constante, entrada = null) {
         return leer(n);
       case 'parenthesized_expression':
         return evaluar(n.namedChildren[0]);
+      case 'cast_expression': {
+        // (float) suma: lo que cambia es si la cuenta que sigue es decimal o entera.
+        const tipo = n.childForFieldName('type');
+        const valor = evaluar(n.childForFieldName('value'));
+        const texto = tipo ? tipo.text.replace(/\s+/g, ' ').trim() : '';
+        if (/^(float|double)$/.test(texto)) return { v: valor.v, f: true };
+        if (/^(int|long|short|long long|unsigned|unsigned int)$/.test(texto)) {
+          return { v: Math.trunc(valor.v), f: false };
+        }
+        return sinVerificar(n);
+      }
       case 'unary_expression': {
         const operador = n.childForFieldName('operator').text;
         const a = evaluar(n.childForFieldName('argument'));
@@ -494,9 +508,14 @@ export function ejecutar(arbol, constante, entrada = null) {
         dims[0] = inicial.namedChildren.filter((h) => h.type !== 'comment').length;
       }
       if (dims.some((k) => !Number.isInteger(k) || k < 0)) sinVerificar(d);
-      const datos =
+      let datos =
         inicial && inicial.type === 'initializer_list' ? llenar(dims, inicial, flotante) : sinLista(dims);
       if (inicial && inicial.type !== 'initializer_list') sinVerificar(inicial);
+      if (prueba && prueba[nombre.text] && dims.length === 1) {
+        const otros = prueba[nombre.text];
+        if (otros.length !== dims[0]) sinVerificar(d, 'valores de otro tamano');
+        datos = otros.map((v) => (flotante ? v : Math.trunc(v)));
+      }
       variables.set(nombre.text, { flotante, tipo: nombreDeTipo, dims, datos });
     }
   }

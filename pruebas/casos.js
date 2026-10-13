@@ -346,7 +346,7 @@ const CASOS_DE_LEER = [
   leer(2, 'en dos printf', 'printf("La nota es ");\nprintf("%d", notas[2]);'),
   {
     ...leer(2, 'otra posicion: dice de cual salio', 'printf("%d\\n", notas[3]);', ['MUESTRA_DISTINTA']),
-    dice: ['muestra 6', 'la posición 3 de `notas`'],
+    dice: ['muestra `6`', 'la posición 3 de `notas`'],
   },
   {
     ...leer(2, 'una posicion que no existe: dice cuales hay', 'printf("%d\\n", notas[6]);', ['INDICE_FUERA_DE_RANGO']),

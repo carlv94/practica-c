@@ -477,6 +477,28 @@ programa los datos que "escribe el usuario". La regla es:
 | el número escrito en el programa | `MUESTRA_SIN_EL_ARREGLO` | Tiene que salir del arreglo. |
 | otro mensaje | `TEXTO_DISTINTO` | Dice el mensaje que se pide. |
 
+**Acumular y contar** (serie "Acumular y contar"): la misma regla `ejecuta`
+con `"casos"`: el código se ejecuta una vez por cada caso, con otros valores
+para los arreglos de una dimensión, y se compara lo que dio.
+
+- `{ "ejecuta": { "casos": [ { "datos": { "ventas": [5, 3, 8] }, "queda": { "total": 16 } }, { "datos": { "notas": [7, 4] }, "muestra": [70] } ], "conCiclo": true, "limite": true } }`.
+  `"datos"` reemplaza los valores con que se declara el arreglo (el mismo
+  tamaño); `"queda"` es el valor final de cada variable; `"muestra"`, la
+  secuencia de números que se muestra. El alumno ve un solo arreglo (el del
+  `dado`) y su código se prueba con los otros: no vale escribir el resultado a
+  mano. El primer caso lleva los valores del `dado`.
+- El intérprete sabe el cambio de tipo (`(float) suma`) y que una cuenta entre
+  dos enteros da un entero.
+
+| Respuesta | Código | Mensaje |
+|---|---|---|
+| el valor distinto | `RESULTADO_VALOR_DISTINTO` | "Con `ventas` valiendo `5`, `3` y `8`, `total` termina valiendo `X` y tendría que valer `Y`." Todo número que es valor de una variable va entre acentos graves, con "y" antes del último. |
+| una variable que no llega a recibir un valor | `RESULTADO_VARIABLE_SIN_VALOR` | Dice cuánto tendría que valer. |
+| se usa sin darle valor antes | `VARIABLE_SIN_VALOR` | Hay que dárselo antes. |
+| `total = 0;` adentro del ciclo | `ACUMULADOR_REINICIADO` | Se vuelve a poner en cada vuelta; esa línea va antes del ciclo. |
+| `total = ventas[i];` en lugar de sumar | `ACUMULADOR_SE_PISA` | Se reemplaza el valor anterior en lugar de agregarle el nuevo. |
+| `suma / cantidad` en un `float` | `DIVISION_ENTERA` | Dividir dos enteros da un entero; alguno tiene que ser decimal. |
+
 Los errores de posición que ya existen (`INDICE_FUERA_DE_RANGO`,
 `RESULTADO_POSICION_SIN_VALOR`, `RESULTADO_VALOR_DISTINTO`) valen también acá. La
 `cabecera` de esa serie trae el `#include <stdio.h>`: no se ve en las consignas
