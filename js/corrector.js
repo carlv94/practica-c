@@ -56,6 +56,7 @@ import {
   ArregloSinPosicion,
   FormatoDistinto,
   ConversionesDistintas,
+  DivisionPorCero,
 } from './simulador.js';
 
 // Las palabras de un tipo entero van en cualquier orden: "unsigned int", "int unsigned".
@@ -1654,11 +1655,15 @@ export function corregir(
 
   // Sigue el codigo con la entrada dada (los datos que "escribe el usuario").
   // Si algo impide seguirlo lo dice y devuelve null.
-  function correrCodigo(modelo, entrada, prueba = null) {
+  // "opciones": "contexto" (el "Con `cantidad` valiendo `0`" del caso, para los
+  // mensajes) y "centinela" (el dato que marca el final de lo que se lee).
+  function correrCodigo(modelo, entrada, prueba = null, opciones = {}) {
     const constante = (n) => {
       const c = modelo.constantes.find((x) => x.nombre === n);
       return c ? valorDeDimension(c.valor, modelo) : null;
     };
+    // Con valores de prueba, los mensajes dicen con cuales fallo.
+    const conContexto = opciones.contexto ? `${opciones.contexto}, ` : '';
     try {
       return ejecutar(arbol, constante, entrada, prueba);
     } catch (e) {
@@ -1667,26 +1672,34 @@ export function corregir(
         if (!diagnosticos.some((d) => d.codigo === 'INDICE_FUERA_DE_RANGO')) {
           error(
             'INDICE_FUERA_DE_RANGO',
-            `\`${e.nombre}\` tiene ${e.tamano} posiciones, numeradas de 0 a ${e.tamano - 1}: ${e.escrito ? `la posición ${e.indice} no existe.` : `se llega a la posición ${e.indice}, que no existe.`}`,
+            `${conContexto}\`${e.nombre}\` tiene ${e.tamano} posiciones, numeradas de 0 a ${e.tamano - 1}: ${e.escrito ? `la posición ${e.indice} no existe.` : `se llega a la posición ${e.indice}, que no existe.`}`,
             e.fila
           );
         }
       } else if (e instanceof SinValor) {
         error(
           'VARIABLE_SIN_VALOR',
-          `\`${e.nombre}\` todavía no tiene un valor cuando se usa: hay que dárselo antes.`,
+          `${conContexto}\`${e.nombre}\` todavía no tiene un valor cuando se usa: hay que dárselo antes.`,
           e.fila
         );
       } else if (e instanceof NoTermina) {
         error(
           'CICLO_NO_TERMINA',
-          'El ciclo no termina: la condición siempre se cumple. Revise que el índice avance hacia el final.',
+          `${opciones.contexto ? `${opciones.contexto}, el` : 'El'} ciclo no termina: la condición siempre se cumple. Revise que el índice avance hacia el final.`,
+          e.fila
+        );
+      } else if (e instanceof DivisionPorCero) {
+        error(
+          'DIVISION_POR_CERO',
+          `${opciones.contexto ? `${opciones.contexto}, el` : 'El'} programa divide por \`0\`: esa división no se puede calcular. Hay que controlar antes que el divisor no sea cero.`,
           e.fila
         );
       } else if (e instanceof SinEntrada) {
         error(
           'LECTURA_DE_MAS',
-          `El programa intenta leer más datos de los que se escriben: la consigna dice que son ${entrada.length}.`,
+          opciones.centinela !== undefined
+            ? `El programa sigue pidiendo datos después de leer el \`${opciones.centinela}\` que marca el final, o con el arreglo ya lleno: tiene que dejar de leer.`
+            : `El programa intenta leer más datos de los que se escriben: la consigna dice que son ${entrada.length}.`,
           e.fila
         );
       } else if (e instanceof AmpersandFalta) {
@@ -1772,7 +1785,13 @@ export function corregir(
 
   // "con `ventas` valiendo 120, 85 y 240": los valores con que se probo.
   function conLosValores(datos) {
-    const partes = Object.entries(datos || {}).map(([nombre, lista]) => `\`${nombre}\` valiendo ${enLista(lista)}`);
+    // Las variables sueltas primero y los arreglos al final, que son los largos.
+    const ordenados = Object.entries(datos || {}).sort(
+      ([, a], [, b]) => Number(Array.isArray(a)) - Number(Array.isArray(b))
+    );
+    const partes = ordenados.map(
+      ([nombre, lista]) => `\`${nombre}\` valiendo ${enLista(Array.isArray(lista) ? lista : [lista])}`
+    );
     return partes.length ? `Con ${partes.join(' y ')}` : 'Con los datos de la consigna';
   }
 
@@ -1796,6 +1815,31 @@ export function corregir(
       );
     for (const [nombre, debe] of Object.entries(caso.queda || {})) {
       const variable = corrida.variables.get(nombre);
+      // Un arreglo: las primeras posiciones tienen que tener esos valores.
+      if (Array.isArray(debe)) {
+        if (!variable || !variable.dims) {
+          error('RESULTADO_FALTA', `No encontré el arreglo \`${nombre}\`.`);
+          return false;
+        }
+        for (let k = 0; k < debe.length; k++) {
+          const que = variable.datos[k];
+          if (que === undefined) {
+            error(
+              'RESULTADO_POSICION_SIN_VALOR',
+              `${con}, \`${nombre}[${k}]\` no llega a recibir un valor: debería valer \`${debe[k]}\`.`
+            );
+            return false;
+          }
+          if (Math.abs(que - debe[k]) > 1e-9) {
+            error(
+              'RESULTADO_VALOR_DISTINTO',
+              `${con}, \`${nombre}[${k}]\` termina valiendo \`${que}\` y debería valer \`${debe[k]}\`.`
+            );
+            return false;
+          }
+        }
+        continue;
+      }
       if (!variable || variable.dims) {
         error('RESULTADO_FALTA', `No encontré la variable \`${nombre}\`.`);
         return false;
@@ -1804,19 +1848,25 @@ export function corregir(
       if (tiene === undefined) {
         error(
           'RESULTADO_VARIABLE_SIN_VALOR',
-          `${con}, \`${nombre}\` no llega a recibir un valor: tendría que valer \`${debe}\`.`
+          `${con}, \`${nombre}\` no llega a recibir un valor: debería valer \`${debe}\`.`
         );
         return false;
       }
       if (Math.abs(tiene - debe) < 1e-9) continue;
 
-      const resumen = `${con}, \`${nombre}\` termina valiendo \`${tiene}\` y tendría que valer \`${debe}\``;
+      const resumen = `${con}, \`${nombre}\` termina valiendo \`${tiene}\` y debería valer \`${debe}\``;
       const ultimos = Object.values(caso.datos || {}).map((lista) => lista[lista.length - 1]);
       const valoresDeLosArreglos = Object.values(caso.datos || {}).flat();
       if (variable.flotante && !Number.isInteger(debe) && tiene === Math.trunc(debe)) {
         error(
           'DIVISION_ENTERA',
           `${resumen}: dividir dos enteros da un entero, aunque el resultado se guarde en un \`float\`, y la parte decimal ya se perdió. Alguno de los dos números tiene que ser decimal.`
+        );
+      } else if (regla.centinela !== undefined && tiene === debe + 1) {
+        // Cuenta tambien el dato que marca el final, que no es uno de los cargados.
+        error(
+          'CENTINELA_CONTADO',
+          `${resumen}: está contando también el \`${regla.centinela}\` que marca el final, que no es uno de los datos.`
         );
       } else if (caso.sinCortar !== undefined && tiene === caso.sinCortar) {
         // La busqueda siguio despues de encontrarlo y quedo la ultima vez.
@@ -1858,7 +1908,7 @@ export function corregir(
       if (!iguales) {
         error(
           'MUESTRA_DISTINTA',
-          `${con}, el programa muestra ${enLista(sale)} y se ${caso.muestra.length === 1 ? 'pide' : 'piden'} ${enLista(caso.muestra)}.`
+          `${con}, el programa muestra ${enLista(sale)} cuando debería mostrar ${enLista(caso.muestra)}.`
         );
         return false;
       }
@@ -1890,7 +1940,10 @@ export function corregir(
     // que dar: asi no vale escribir el resultado a mano.
     if (regla.casos) {
       for (const caso of regla.casos) {
-        const hecha = correrCodigo(modelo, entrada, caso.datos);
+        const hecha = correrCodigo(modelo, caso.entrada || entrada, caso.datos, {
+          contexto: conLosValores(caso.datos),
+          centinela: regla.centinela,
+        });
         if (!hecha) return;
         if (!revisarCaso(hecha, caso, modelo, regla)) return;
       }
@@ -1926,7 +1979,7 @@ export function corregir(
         if (Math.abs(tiene - debe[k]) > 1e-9) {
           error(
             'RESULTADO_VALOR_DISTINTO',
-            `\`${nombre}[${k}]\` termina valiendo \`${tiene}\`, y con los datos de la consigna tendría que guardar \`${debe[k]}\`.`
+            `\`${nombre}[${k}]\` termina valiendo \`${tiene}\`, y con los datos de la consigna debería guardar \`${debe[k]}\`.`
           );
           return;
         }
@@ -1959,7 +2012,7 @@ export function corregir(
           'MUESTRA_DISTINTA',
           origen && origen.indices.length === 1
             ? `Con los datos de la consigna el programa muestra \`${sale[0]}\`, que es lo que hay en la posición ${origen.indices[0]} de \`${origen.nombre}\`.`
-            : `Con los datos de la consigna el programa muestra ${enLista(sale)}, y se ${debe.length === 1 ? 'pide' : 'piden'} ${enLista(debe)}, en ese orden.`
+            : `Con los datos de la consigna el programa muestra ${enLista(sale)} cuando debería mostrar ${enLista(debe)}.`
         );
         return;
       }

@@ -472,7 +472,7 @@ programa los datos que "escribe el usuario". La regla es:
 | más (o menos) conversiones que valores | `FORMATO_CANTIDAD_DISTINTA` | Tiene que haber uno por cada `%`. |
 | no lee, o no muestra | `LECTURA_FALTA`, `MUESTRA_FALTA` | Pide usar `scanf` o `printf`. |
 | lee más datos de los que se escriben | `LECTURA_DE_MAS` | Dice cuántos son. |
-| muestra otros números, o en otro orden | `MUESTRA_DISTINTA` | Dice lo que muestra y lo que se pide; si es un solo valor, de qué posición salió ("lo que hay en la posición 3 de `notas`"). |
+| muestra otros números, o en otro orden | `MUESTRA_DISTINTA` | Dice lo que muestra "cuando debería mostrar" tal cosa; si es un solo valor, de qué posición salió ("lo que hay en la posición 3 de `notas`"). |
 | `notas[6]` en 5 posiciones | `INDICE_FUERA_DE_RANGO` | "`notas` tiene 5 posiciones, numeradas de 0 a 4: la posición 6 no existe." En un ciclo: "se llega a la posición 6, que no existe". |
 | el número escrito en el programa | `MUESTRA_SIN_EL_ARREGLO` | Tiene que salir del arreglo. |
 | otro mensaje | `TEXTO_DISTINTO` | Dice el mensaje que se pide. |
@@ -492,8 +492,8 @@ para los arreglos de una dimensión, y se compara lo que dio.
 
 | Respuesta | Código | Mensaje |
 |---|---|---|
-| el valor distinto | `RESULTADO_VALOR_DISTINTO` | "Con `ventas` valiendo `5`, `3` y `8`, `total` termina valiendo `X` y tendría que valer `Y`." Todo número que es valor de una variable va entre acentos graves, con "y" antes del último. |
-| una variable que no llega a recibir un valor | `RESULTADO_VARIABLE_SIN_VALOR` | Dice cuánto tendría que valer. |
+| el valor distinto | `RESULTADO_VALOR_DISTINTO` | "Con `ventas` valiendo `5`, `3` y `8`, `total` termina valiendo `X` y debería valer `Y`." Todo número que es valor de una variable va entre acentos graves, con "y" antes del último. |
+| una variable que no llega a recibir un valor | `RESULTADO_VARIABLE_SIN_VALOR` | Dice cuánto debería valer. |
 | se usa sin darle valor antes | `VARIABLE_SIN_VALOR` | Hay que dárselo antes. |
 | `total = 0;` adentro del ciclo | `ACUMULADOR_REINICIADO` | Se vuelve a poner en cada vuelta; esa línea va antes del ciclo. |
 | `total = ventas[i];` en lugar de sumar | `ACUMULADOR_SE_PISA` | Se reemplaza el valor anterior en lugar de agregarle el nuevo. |
@@ -516,6 +516,29 @@ Los casos se eligen para pisar los errores típicos: valores repetidos (la
 primera y la última posición), todos negativos (el mayor que empieza en cero),
 todos positivos (el menor que empieza en cero) y un único elemento que falla,
 primero, del medio o último (la bandera que vuelve a subir).
+
+**Tamaño físico y lógico** (serie "Tamaño físico y tamaño lógico"): la misma
+regla con `casos`, y estas ampliaciones:
+
+- `"entrada"` en un caso: los datos que escribe el usuario en ese caso (si no,
+  vale la de la regla). Sirve para leer hasta un `-1`: un caso con el `-1` al
+  medio, uno sin `-1` que llena el arreglo y uno con más datos que lugar.
+- `"datos"` también cambia el valor con que empieza una variable suelta
+  (`{ "cantidad": 10 }`), y en un arreglo definido sin tamaño
+  (`int notas[] = {...}`) la cantidad de valores: así no vale escribir el
+  tamaño a mano.
+- `"queda"` con una lista compara las primeras posiciones de un arreglo.
+- `"centinela": -1` en la regla: el dato que marca el final. Si la cantidad
+  termina valiendo una más, `CENTINELA_CONTADO`; si el programa sigue leyendo
+  después, `LECTURA_DE_MAS` con un mensaje propio.
+- El intérprete sabe `sizeof` de un tipo, de un arreglo y de un elemento
+  (`char` 1, `short` 2, `int` y `float` 4, `long` y `double` 8), y una división
+  o un resto por cero es `DIVISION_POR_CERO` (el mensaje dice con qué valores).
+- Cuando falla un caso, los mensajes de posición que no existe, variable sin
+  valor y ciclo que no termina empiezan con "Con `notas` valiendo …".
+
+Un cuestionario puede agregar una suposición al enunciado ("y suponiendo que
+cada `int` ocupa 4 bytes"), como el "si usted escribe" de los que leen.
 
 Los errores de posición que ya existen (`INDICE_FUERA_DE_RANGO`,
 `RESULTADO_POSICION_SIN_VALOR`, `RESULTADO_VALOR_DISTINTO`) valen también acá. La

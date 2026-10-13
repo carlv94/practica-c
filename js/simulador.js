@@ -5,8 +5,8 @@
 // dimension, asignaciones (=, +=, -=, *=, /=, %=), ++ y --, la aritmetica, las
 // comparaciones, && y ||, el cambio de tipo ((float) suma), if / else, for,
 // while, do while, break y continue, y
-// las funciones pow, scanf (con datos de entrada que se le dan) y printf (que
-// anota lo que muestra).
+// sizeof, las funciones pow, scanf (con datos de entrada que se le dan) y
+// printf (que anota lo que muestra).
 // No tiene otras llamadas a funciones ni punteros: si encuentra algo
 // que no sabe seguir, dice "SinVerificar" y la respuesta se deja como correcta
 // pero sin comprobar.
@@ -48,6 +48,23 @@ export class NoTermina extends Error {
     super('el ciclo no termina');
     this.fila = fila;
   }
+}
+
+// Una division (o un resto) por cero.
+export class DivisionPorCero extends Error {
+  constructor(fila) {
+    super('division por cero');
+    this.fila = fila;
+  }
+}
+
+// Lo que ocupa un tipo, en una maquina de uso comun: char 1, short 2, int y
+// float 4, long y double 8.
+function bytesDe(texto) {
+  if (/double|long/.test(texto)) return 8;
+  if (/char/.test(texto)) return 1;
+  if (/short/.test(texto)) return 2;
+  return 4;
 }
 
 // scanf pide un dato y no hay mas para darle.
@@ -225,10 +242,11 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null) {
       case '*':
         return { v: a.v * b.v, f };
       case '/':
-        if (b.v === 0) sinVerificar(n, 'una division por cero');
+        if (b.v === 0) throw new DivisionPorCero(fila(n));
         return { v: f ? a.v / b.v : Math.trunc(a.v / b.v), f };
       case '%':
-        if (f || b.v === 0) sinVerificar(n);
+        if (b.v === 0) throw new DivisionPorCero(fila(n));
+        if (f) sinVerificar(n);
         return { v: a.v % b.v, f: false };
       case '<':
         return { v: a.v < b.v ? 1 : 0, f: false };
@@ -245,6 +263,31 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null) {
       default:
         return sinVerificar(n, `el operador ${operador}`);
     }
+  }
+
+  // Lo que ocupa una variable (todo el arreglo) o un elemento: sizeof(v) y
+  // sizeof(v[0]).
+  function bytesDeNodo(x, n) {
+    while (x && (x.type === 'parenthesized_expression' || x.type === 'type_descriptor')) x = x.namedChildren[0];
+    if (!x) return sinVerificar(n);
+    const producto = (dims) => dims.reduce((a, b) => a * b, 1);
+    if (x.type === 'identifier' || x.type === 'type_identifier') {
+      const v = variables.get(x.text);
+      if (!v) return sinVerificar(n, `sizeof de ${x.text}`);
+      return v.dims ? producto(v.dims) * v.bytes : v.bytes;
+    }
+    if (x.type === 'subscript_expression') {
+      let k = 0;
+      let base = x;
+      while (base.type === 'subscript_expression') {
+        k++;
+        base = base.childForFieldName('argument');
+      }
+      const v = base.type === 'identifier' ? variables.get(base.text) : null;
+      if (!v || !v.dims || k > v.dims.length) return sinVerificar(n);
+      return producto(v.dims.slice(k)) * v.bytes;
+    }
+    return sinVerificar(n);
   }
 
   // ---- printf y scanf --------------------------------------------------------
@@ -381,6 +424,20 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null) {
         return leer(n);
       case 'parenthesized_expression':
         return evaluar(n.namedChildren[0]);
+      case 'sizeof_expression': {
+        // sizeof(int), sizeof(v), sizeof(v[0]): lo que ocupa, en bytes.
+        const tipoNodo = n.childForFieldName('type');
+        const valorNodo = n.childForFieldName('value');
+        const texto = tipoNodo ? tipoNodo.text.replace(/\s+/g, ' ').trim() : null;
+        // "sizeof(v)" a veces se lee como un tipo llamado v.
+        if (texto != null && !variables.has(texto)) {
+          if (/^(char|short|int|long|long long|unsigned|unsigned int|float|double)$/.test(texto)) {
+            return { v: bytesDe(texto), f: false };
+          }
+          return sinVerificar(n);
+        }
+        return { v: bytesDeNodo(valorNodo || tipoNodo, n), f: false };
+      }
       case 'cast_expression': {
         // (float) suma: lo que cambia es si la cuenta que sigue es decimal o entera.
         const tipo = n.childForFieldName('type');
@@ -495,15 +552,19 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null) {
       }
       if (nombre.type !== 'identifier') sinVerificar(declarador, 'un puntero');
       if (!dims.length) {
-        const valor = inicial ? evaluar(inicial) : null;
+        let valor = inicial ? evaluar(inicial) : null;
+        // La prueba tambien puede cambiar el valor con que empieza una variable.
+        if (prueba && typeof prueba[nombre.text] === 'number') valor = { v: prueba[nombre.text], f: flotante };
         variables.set(nombre.text, {
           flotante,
           tipo: nombreDeTipo,
+          bytes: bytesDe(tipo.text),
           valor: valor ? (flotante ? valor.v : Math.trunc(valor.v)) : undefined,
         });
         continue;
       }
       // "int v[] = {...}": la cantidad sale de la lista
+      const sinTamano = dims[0] === null;
       if (dims[0] === null) {
         if (!inicial || inicial.type !== 'initializer_list') sinVerificar(d);
         dims[0] = inicial.namedChildren.filter((h) => h.type !== 'comment').length;
@@ -512,12 +573,14 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null) {
       let datos =
         inicial && inicial.type === 'initializer_list' ? llenar(dims, inicial, flotante) : sinLista(dims);
       if (inicial && inicial.type !== 'initializer_list') sinVerificar(inicial);
-      if (prueba && prueba[nombre.text] && dims.length === 1) {
+      if (prueba && Array.isArray(prueba[nombre.text]) && dims.length === 1) {
         const otros = prueba[nombre.text];
-        if (otros.length !== dims[0]) sinVerificar(d, 'valores de otro tamano');
+        // Sin tamano escrito, la prueba puede traer otra cantidad de valores.
+        if (sinTamano) dims[0] = otros.length;
+        else if (otros.length !== dims[0]) sinVerificar(d, 'valores de otro tamano');
         datos = otros.map((v) => (flotante ? v : Math.trunc(v)));
       }
-      variables.set(nombre.text, { flotante, tipo: nombreDeTipo, dims, datos });
+      variables.set(nombre.text, { flotante, tipo: nombreDeTipo, bytes: bytesDe(tipo.text), dims, datos });
     }
   }
 

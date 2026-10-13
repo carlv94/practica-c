@@ -478,7 +478,7 @@ const CASOS_DE_ACUMULAR = [
   acumular(6, 'acumulando en el promedio', 'promedio = 0;\nfor (i = 0; i < CANTIDAD; i++) {\n  promedio += notas[i];\n}\npromedio = promedio / CANTIDAD;'),
   {
     ...acumular(6, 'la division de enteros', 'suma = 0;\nfor (i = 0; i < CANTIDAD; i++) {\n  suma += notas[i];\n}\npromedio = suma / CANTIDAD;', ['DIVISION_ENTERA']),
-    dice: ['termina valiendo `6` y tendría que valer `6.5`', 'dividir dos enteros da un entero'],
+    dice: ['termina valiendo `6` y debería valer `6.5`', 'dividir dos enteros da un entero'],
   },
   acumular(6, 'sin dividir', 'suma = 0;\nfor (i = 0; i < CANTIDAD; i++) {\n  suma += notas[i];\n}\npromedio = suma;', ['RESULTADO_VALOR_DISTINTO']),
   acumular(6, 'dividiendo por uno menos', 'suma = 0;\nfor (i = 0; i < CANTIDAD; i++) {\n  suma += notas[i];\n}\npromedio = (float) suma / (CANTIDAD - 1);', ['RESULTADO_VALOR_DISTINTO']),
