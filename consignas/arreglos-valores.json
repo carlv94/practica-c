@@ -1,119 +1,78 @@
 {
   "id": "arreglos-valores",
   "titulo": "Definir con sus valores",
-  "descripcion": "Definir un arreglo o una tabla y darle sus valores en la misma sentencia.",
+  "descripcion": "Declarar un arreglo y darle sus valores en la misma sentencia.",
+  "dentroDeMain": true,
   "buenasPracticas": ["constantes", "claridad"],
   "consignas": [
     {
       "id": "arreglos-valores-1",
       "titulo": "Un arreglo de enteros",
-      "enunciado": "En la misma sentencia, defina e inicialice el siguiente arreglo:",
-      "requiere": [{ "variable": { "tipo": "entero", "valores": [3, 6, 0, 7, 1, 5], "capturar": "V" } }],
-      "referencia": "int numeros[] = {3, 6, 0, 7, 1, 5};"
+      "enunciado": "Se corrigió un examen y se obtuvieron las notas de seis alumnos, que se muestran abajo. Declare e inicialice, en la misma sentencia, el arreglo que las guarde.",
+      "requiere": [{ "variable": { "tipo": "entero", "valores": [3, 6, 0, 7, 1, 5] } }],
+      "referencia": "int notas[] = {3, 6, 0, 7, 1, 5};"
     },
     {
       "id": "arreglos-valores-2",
       "titulo": "Un arreglo con decimales",
-      "continua": true,
-      "enunciado": "Además de {V} hace falta otro arreglo, con valores que tienen decimales.\n\nEn la misma sentencia, defina e inicialice el siguiente arreglo:",
+      "enunciado": "Se necesita guardar el precio, en pesos, de cuatro útiles escolares, que tiene decimales.\n\nDeclare e inicialice, en la misma sentencia, el arreglo que guarde los precios que se muestran abajo.",
       "requiere": [{ "variable": { "tipo": "real", "valores": [12.5, 8, 99.9, 0.75] } }],
       "referencia": "float precios[] = {12.5, 8, 99.9, 0.75};"
     },
     {
       "id": "arreglos-valores-3",
-      "titulo": "Una tabla",
-      "enunciado": "En la misma sentencia, defina e inicialice la siguiente tabla:",
-      "requiere": [
-        {
-          "variable": {
-            "tipo": "entero",
-            "valores": [
-              [5, 8, 1, 4],
-              [0, 2, 9, 6],
-              [3, 7, 4, 8]
-            ]
-          }
-        }
-      ],
-      "referencia": "int tabla[][4] = {\n  {5, 8, 1, 4},\n  {0, 2, 9, 6},\n  {3, 7, 4, 8}\n};"
+      "titulo": "Algunos valores",
+      "enunciado": "Una biblioteca anota cuántas personas la visitan cada día de la semana. Hasta ahora se registraron los primeros cuatro días, que se muestran abajo, y los otros tres todavía no ocurrieron.\n\nDeclare e inicialice, en la misma sentencia, el arreglo para los siete días de la semana, con los valores ya registrados.",
+      "requiere": [{ "variable": { "tipo": "entero", "valores": [12, 9, 15, 11, 0, 0, 0] } }],
+      "referencia": "#define DIAS_SEMANA 7\n\nint visitas[DIAS_SEMANA] = {12, 9, 15, 11};"
     },
     {
       "id": "arreglos-valores-4",
-      "titulo": "Una tabla cuadrada",
-      "enunciado": "En la misma sentencia, defina e inicialice la siguiente tabla:",
-      "requiere": [
-        {
-          "variable": {
-            "tipo": "entero",
-            "valores": [
-              [4, 7],
-              [2, 9]
-            ]
-          }
-        }
-      ],
-      "referencia": "int cuadrada[][2] = {\n  {4, 7},\n  {2, 9}\n};"
+      "titulo": "Todos en cero",
+      "enunciado": "Al empezar el mes, un comercio lleva la cantidad de ventas de cada una de sus 4 semanas, y todas empiezan en cero.\n\nDeclare e inicialice en cero, en la misma sentencia, el arreglo de 4 elementos enteros.",
+      "dibujo": false,
+      "requiere": [{ "variable": { "tipo": "entero", "valores": [0, 0, 0, 0] } }],
+      "referencia": "#define SEMANAS_DEL_MES 4\n\nint ventas[SEMANAS_DEL_MES] = {0};"
     },
     {
       "id": "arreglos-valores-5",
-      "titulo": "Todos en cero",
-      "enunciado": "En la misma sentencia declare e inicialice en cero todos los valores de una lista de 4 elementos enteros.",
+      "titulo": "Todos en dos",
+      "enunciado": "En un torneo, cada uno de los 4 equipos arranca con 2 puntos de bonificación.\n\nDeclare e inicialice en dos, en la misma sentencia, todos los valores de un arreglo de 4 elementos enteros.",
       "dibujo": false,
-      "requiere": [{ "variable": { "tipo": "entero", "valores": [0, 0, 0, 0] } }],
-      "referencia": "#define CANTIDAD 4\n\nint ceros[CANTIDAD] = {0};"
+      "requiere": [{ "variable": { "tipo": "entero", "valores": [2, 2, 2, 2] } }],
+      "referencia": "int puntos[] = {2, 2, 2, 2};"
     },
     {
       "id": "arreglos-valores-6",
-      "titulo": "Todos en dos",
-      "enunciado": "En la misma sentencia declare e inicialice en dos todos los valores de una lista de 4 elementos enteros.",
-      "dibujo": false,
-      "requiere": [{ "variable": { "tipo": "entero", "valores": [2, 2, 2, 2] } }],
-      "referencia": "int dos[] = {2, 2, 2, 2};"
-    },
-    {
-      "id": "arreglos-valores-7",
       "titulo": "Ceros al final",
-      "enunciado": "En la misma sentencia, defina e inicialice el siguiente arreglo:",
+      "enunciado": "Un equipo registra los goles de cada uno de sus 4 partidos del torneo, pero solo jugó los dos primeros, que se muestran abajo.\n\nDeclare e inicialice, en la misma sentencia, el arreglo de los 4 partidos.",
       "requiere": [{ "variable": { "tipo": "entero", "valores": [5, 1, 0, 0] } }],
-      "referencia": "int cola[] = {5, 1, 0, 0};"
+      "referencia": "int goles[] = {5, 1, 0, 0};"
     },
     {
-      "id": "arreglos-valores-8",
-      "titulo": "Una tabla en cero",
-      "enunciado": "En la misma sentencia declare e inicialice en cero todos los valores de una tabla de enteros de 3 filas y 4 columnas.",
-      "dibujo": false,
-      "requiere": [
+      "id": "arreglos-valores-q-resto",
+      "titulo": "Lo que no se nombra",
+      "enunciado": "Después de ejecutar el código de abajo, ¿qué valor tendría `dato`?",
+      "codigo": "int notas[5] = {7, 9};\nint dato = notas[4];",
+      "opciones": [
         {
-          "variable": {
-            "tipo": "entero",
-            "valores": [
-              [0, 0, 0, 0],
-              [0, 0, 0, 0],
-              [0, 0, 0, 0]
-            ]
-          }
-        }
-      ],
-      "referencia": "#define FILAS 3\n#define COLUMNAS 4\n\nint tablaCeros[FILAS][COLUMNAS] = {0};"
-    },
-    {
-      "id": "arreglos-valores-9",
-      "titulo": "Ceros que no se escriben",
-      "continua": true,
-      "enunciado": "En la misma sentencia, defina e inicialice la siguiente tabla:",
-      "requiere": [
+          "valor": "9",
+          "texto": "repite el último valor",
+          "codigo": "OPCION_REPITE_EL_ULTIMO",
+          "explicacion": "La inicialización no repite el último valor: lo que la lista no nombra queda en cero."
+        },
         {
-          "variable": {
-            "tipo": "entero",
-            "valores": [
-              [5, 8, 0, 0],
-              [1, 0, 0, 0],
-              [0, 0, 0, 0]
-            ]
-          }
+          "texto": "No se puede saber",
+          "codigo": "OPCION_SIN_VALOR_CON_LISTA",
+          "explicacion": "Eso vale para un arreglo que no se inicializó. Cuando hay una lista de valores, el resto se completa con ceros."
+        },
+        {
+          "valor": "0",
+          "texto": "lo que no se nombra queda en cero",
+          "correcta": true,
+          "explicacion": "Cuando un arreglo se inicializa, lo que la lista no nombra queda en cero: `notas[2]`, `notas[3]` y `notas[4]` valen `0`."
         }
-      ],
-      "referencia": "int dispersa[FILAS][COLUMNAS] = {{5, 8}, {1}};"
+      ]
     }
   ]
 }

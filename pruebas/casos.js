@@ -243,11 +243,21 @@ const valores = (paso, nombre, respuesta, espera, mejoras = []) => ({
   mejoras,
 });
 
+// Las tablas con sus valores: su serie, todavia sin debatir.
+const tablas = (paso, nombre, respuesta, espera, mejoras = []) => ({
+  serie: 'arreglos-tablas',
+  paso,
+  nombre,
+  respuesta,
+  espera,
+  mejoras,
+});
+
 const CASOS_DE_VALORES = [
   valores(1, 'corchetes vacios es excelente', 'int v[] = {3, 6, 0, 7, 1, 5};', 'ok'),
   valores(1, 'en varios renglones y con coma al final', 'int v[] = {\n  3, 6, 0,\n  7, 1, 5,\n};', 'ok'),
   valores(1, 'otro tipo entero', 'long v[] = {3, 6, 0, 7, 1, 5};', 'ok'),
-  valores(1, 'dentro de main', 'int main() {\n  int v[] = {3, 6, 0, 7, 1, 5};\n  return 0;\n}', 'ok'),
+  valores(1, 'con main de mas', 'int main() {\n  int v[] = {3, 6, 0, 7, 1, 5};\n  return 0;\n}', ['MAIN_DE_MAS']),
   valores(1, 'con la cantidad justa: correcto y mejorable', 'int v[6] = {3, 6, 0, 7, 1, 5};', 'ok', [
     'DIMENSION_REPETIDA',
   ]),
@@ -281,170 +291,186 @@ const CASOS_DE_VALORES = [
   valores(2, 'enteros donde van decimales', 'int p[] = {12.5, 8, 99.9, 0.75};', ['VARIABLE_TIPO']),
   valores(2, 'coma decimal', 'float p[] = {12,5, 8, 99,9, 0,75};', ['VALORES_DE_MAS']),
 
+  // Algunos valores: siete dias y solo cuatro valores, lo demas queda en cero.
+  valores(3, 'con una constante es excelente', '#define DIAS_SEMANA 7\nint visitas[DIAS_SEMANA] = {12, 9, 15, 11};', 'ok'),
+  valores(3, 'con el numero suelto', 'int visitas[7] = {12, 9, 15, 11};', 'ok', ['NUMERO_MAGICO']),
+  valores(3, 'los siete valores escritos', 'int visitas[] = {12, 9, 15, 11, 0, 0, 0};', 'ok'),
+  valores(3, 'los siete valores y la cantidad repetida', 'int visitas[7] = {12, 9, 15, 11, 0, 0, 0};', 'ok', ['DIMENSION_REPETIDA']),
+  valores(3, 'solo cuatro lugares', 'int visitas[] = {12, 9, 15, 11};', ['VALORES_DE_MENOS']),
+  valores(3, 'lugar de menos', 'int visitas[5] = {12, 9, 15, 11};', ['ARREGLO_CHICO']),
+  valores(3, 'lugar de mas', 'int visitas[10] = {12, 9, 15, 11};', ['ARREGLO_GRANDE']),
+  valores(3, 'un valor distinto', '#define DIAS_SEMANA 7\nint visitas[DIAS_SEMANA] = {12, 9, 15, 10};', ['VALOR_DISTINTO']),
+  valores(3, 'falta un valor y no es cero', '#define DIAS_SEMANA 7\nint visitas[DIAS_SEMANA] = {12, 9, 15};', ['VALORES_SIN_NOMBRAR']),
+
   // La tabla del dibujo: 3 filas por 4 columnas.
-  valores(3, 'tabla sin la cantidad de filas es excelente', 'int t[][4] = {{5, 8, 1, 4}, {0, 2, 9, 6}, {3, 7, 4, 8}};', 'ok'),
-  valores(3, 'tabla en varios renglones sin la cantidad de filas', 'int t[][4] = {\n  {5, 8, 1, 4},\n  {0, 2, 9, 6},\n  {3, 7, 4, 8},\n};', 'ok'),
-  valores(3, 'tabla con sus dos dimensiones: las filas estan repetidas', 'int t[3][4] = {{5, 8, 1, 4}, {0, 2, 9, 6}, {3, 7, 4, 8}};', 'ok', [
+  tablas(1, 'tabla sin la cantidad de filas es excelente', 'int t[][4] = {{5, 8, 1, 4}, {0, 2, 9, 6}, {3, 7, 4, 8}};', 'ok'),
+  tablas(1, 'tabla en varios renglones sin la cantidad de filas', 'int t[][4] = {\n  {5, 8, 1, 4},\n  {0, 2, 9, 6},\n  {3, 7, 4, 8},\n};', 'ok'),
+  tablas(1, 'tabla con sus dos dimensiones: las filas estan repetidas', 'int t[3][4] = {{5, 8, 1, 4}, {0, 2, 9, 6}, {3, 7, 4, 8}};', 'ok', [
     'FILAS_REPETIDAS',
   ]),
-  valores(3, 'tabla con constantes: tambien repetidas', '#define F 3\n#define C 4\nint t[F][C] = {{5, 8, 1, 4}, {0, 2, 9, 6}, {3, 7, 4, 8}};', 'ok', [
+  tablas(1, 'tabla con constantes: tambien repetidas', '#define F 3\n#define C 4\nint t[F][C] = {{5, 8, 1, 4}, {0, 2, 9, 6}, {3, 7, 4, 8}};', 'ok', [
     'FILAS_REPETIDAS',
   ]),
-  valores(3, 'todo seguido: dos mejoras a la vez', 'int t[3][4] = {5, 8, 1, 4, 0, 2, 9, 6, 3, 7, 4, 8};', 'ok', [
+  tablas(1, 'todo seguido: dos mejoras a la vez', 'int t[3][4] = {5, 8, 1, 4, 0, 2, 9, 6, 3, 7, 4, 8};', 'ok', [
     'FILAS_REPETIDAS',
     'TABLA_SIN_FILAS',
   ]),
-  valores(3, 'todo seguido sin la cantidad de filas', 'int t[][4] = {5, 8, 1, 4, 0, 2, 9, 6, 3, 7, 4, 8};', 'ok', [
+  tablas(1, 'todo seguido sin la cantidad de filas', 'int t[][4] = {5, 8, 1, 4, 0, 2, 9, 6, 3, 7, 4, 8};', 'ok', [
     'TABLA_SIN_FILAS',
   ]),
-  valores(3, 'sin la cantidad de columnas', 'int t[3][] = {{5, 8, 1, 4}, {0, 2, 9, 6}, {3, 7, 4, 8}};', ['TABLA_SIN_COLUMNAS']),
-  valores(3, 'sin ninguna cantidad', 'int t[][] = {{5, 8, 1, 4}, {0, 2, 9, 6}, {3, 7, 4, 8}};', ['TABLA_SIN_COLUMNAS']),
-  valores(3, 'dimensiones al reves', 'int t[4][3] = {{5, 8, 1, 4}, {0, 2, 9, 6}, {3, 7, 4, 8}};', ['DIMENSIONES_AL_REVES']),
-  valores(3, 'cargada por columnas', 'int t[4][3] = {{5, 0, 3}, {8, 2, 7}, {1, 9, 4}, {4, 6, 8}};', ['TABLA_AL_REVES']),
-  valores(3, 'una fila de menos', 'int t[3][4] = {{5, 8, 1, 4}, {0, 2, 9, 6}};', ['FILAS_DE_MENOS']),
-  valores(3, 'una fila de mas', 'int t[4][4] = {{5, 8, 1, 4}, {0, 2, 9, 6}, {3, 7, 4, 8}, {1, 1, 1, 1}};', ['FILAS_DE_MAS']),
-  valores(3, 'una fila con un valor de menos', 'int t[3][4] = {{5, 8, 1, 4}, {0, 2, 9}, {3, 7, 4, 8}};', ['FILA_OTRA_CANTIDAD']),
-  valores(3, 'un valor distinto', 'int t[3][4] = {{5, 8, 1, 4}, {0, 2, 5, 6}, {3, 7, 4, 8}};', ['VALOR_DISTINTO']),
-  valores(3, 'todo seguido con un valor distinto', 'int t[3][4] = {5, 8, 1, 4, 0, 2, 5, 6, 3, 7, 4, 8};', ['VALOR_DISTINTO']),
-  valores(3, 'todo seguido con valores de menos', 'int t[3][4] = {5, 8, 1, 4, 0, 2, 9, 6};', ['VALORES_SIN_NOMBRAR']),
-  valores(3, 'todo seguido con valores de menos y las filas vacias', 'int t[][4] = {5, 8, 1, 4, 0, 2, 9, 6};', ['VALORES_DE_MENOS']),
-  valores(3, 'unas filas con llaves y otras no', 'int t[3][4] = {{5, 8, 1, 4}, 0, 2, 9, 6, {3, 7, 4, 8}};', ['TABLA_LLAVES_MEZCLADAS']),
-  valores(3, 'llaves de mas', 'int t[3][4] = {{{5, 8, 1, 4}}, {{0, 2, 9, 6}}, {{3, 7, 4, 8}}};', ['VALORES_ANIDADOS']),
-  valores(3, 'lugar de mas', 'int t[5][4] = {{5, 8, 1, 4}, {0, 2, 9, 6}, {3, 7, 4, 8}};', ['ARREGLO_GRANDE']),
-  valores(3, 'columnas de menos', 'int t[3][2] = {{5, 8, 1, 4}, {0, 2, 9, 6}, {3, 7, 4, 8}};', ['ARREGLO_CHICO']),
-  valores(3, 'una sola dimension', 'int t[12] = {5, 8, 1, 4, 0, 2, 9, 6, 3, 7, 4, 8};', ['TABLA_UNA_DIMENSION']),
-  valores(3, 'tres dimensiones', 'int t[1][3][4] = {{{5, 8, 1, 4}, {0, 2, 9, 6}, {3, 7, 4, 8}}};', ['TABLA_DIMENSIONES']),
-  valores(3, 'tabla sin valores', 'int t[3][4];', ['VALORES_FALTAN']),
-  valores(3, 'tabla con valores de a uno', 'int t[3][4];\nt[0][0] = 5;\nt[0][1] = 8;', ['VALORES_APARTE']),
-  valores(3, 'tabla con decimales donde van enteros', 'float t[3][4] = {{5, 8, 1, 4}, {0, 2, 9, 6}, {3, 7, 4, 8}};', ['VARIABLE_TIPO']),
-  valores(3, 'filas entre corchetes', 'int t[3][4] = {[5, 8, 1, 4], [0, 2, 9, 6], [3, 7, 4, 8]};', ['CORCHETES_EN_LA_LISTA']),
-  valores(3, 'filas entre parentesis', 'int t[3][4] = {(5, 8, 1, 4), (0, 2, 9, 6), (3, 7, 4, 8)};', ['FILAS_ENTRE_PARENTESIS']),
+  tablas(1, 'sin la cantidad de columnas', 'int t[3][] = {{5, 8, 1, 4}, {0, 2, 9, 6}, {3, 7, 4, 8}};', ['TABLA_SIN_COLUMNAS']),
+  tablas(1, 'sin ninguna cantidad', 'int t[][] = {{5, 8, 1, 4}, {0, 2, 9, 6}, {3, 7, 4, 8}};', ['TABLA_SIN_COLUMNAS']),
+  tablas(1, 'dimensiones al reves', 'int t[4][3] = {{5, 8, 1, 4}, {0, 2, 9, 6}, {3, 7, 4, 8}};', ['DIMENSIONES_AL_REVES']),
+  tablas(1, 'cargada por columnas', 'int t[4][3] = {{5, 0, 3}, {8, 2, 7}, {1, 9, 4}, {4, 6, 8}};', ['TABLA_AL_REVES']),
+  tablas(1, 'una fila de menos', 'int t[3][4] = {{5, 8, 1, 4}, {0, 2, 9, 6}};', ['FILAS_DE_MENOS']),
+  tablas(1, 'una fila de mas', 'int t[4][4] = {{5, 8, 1, 4}, {0, 2, 9, 6}, {3, 7, 4, 8}, {1, 1, 1, 1}};', ['FILAS_DE_MAS']),
+  tablas(1, 'una fila con un valor de menos', 'int t[3][4] = {{5, 8, 1, 4}, {0, 2, 9}, {3, 7, 4, 8}};', ['FILA_OTRA_CANTIDAD']),
+  tablas(1, 'un valor distinto', 'int t[3][4] = {{5, 8, 1, 4}, {0, 2, 5, 6}, {3, 7, 4, 8}};', ['VALOR_DISTINTO']),
+  tablas(1, 'todo seguido con un valor distinto', 'int t[3][4] = {5, 8, 1, 4, 0, 2, 5, 6, 3, 7, 4, 8};', ['VALOR_DISTINTO']),
+  tablas(1, 'todo seguido con valores de menos', 'int t[3][4] = {5, 8, 1, 4, 0, 2, 9, 6};', ['VALORES_SIN_NOMBRAR']),
+  tablas(1, 'todo seguido con valores de menos y las filas vacias', 'int t[][4] = {5, 8, 1, 4, 0, 2, 9, 6};', ['VALORES_DE_MENOS']),
+  tablas(1, 'unas filas con llaves y otras no', 'int t[3][4] = {{5, 8, 1, 4}, 0, 2, 9, 6, {3, 7, 4, 8}};', ['TABLA_LLAVES_MEZCLADAS']),
+  tablas(1, 'llaves de mas', 'int t[3][4] = {{{5, 8, 1, 4}}, {{0, 2, 9, 6}}, {{3, 7, 4, 8}}};', ['VALORES_ANIDADOS']),
+  tablas(1, 'lugar de mas', 'int t[5][4] = {{5, 8, 1, 4}, {0, 2, 9, 6}, {3, 7, 4, 8}};', ['ARREGLO_GRANDE']),
+  tablas(1, 'columnas de menos', 'int t[3][2] = {{5, 8, 1, 4}, {0, 2, 9, 6}, {3, 7, 4, 8}};', ['ARREGLO_CHICO']),
+  tablas(1, 'una sola dimension', 'int t[12] = {5, 8, 1, 4, 0, 2, 9, 6, 3, 7, 4, 8};', ['TABLA_UNA_DIMENSION']),
+  tablas(1, 'tres dimensiones', 'int t[1][3][4] = {{{5, 8, 1, 4}, {0, 2, 9, 6}, {3, 7, 4, 8}}};', ['TABLA_DIMENSIONES']),
+  tablas(1, 'tabla sin valores', 'int t[3][4];', ['VALORES_FALTAN']),
+  tablas(1, 'tabla con valores de a uno', 'int t[3][4];\nt[0][0] = 5;\nt[0][1] = 8;', ['VALORES_APARTE']),
+  tablas(1, 'tabla con decimales donde van enteros', 'float t[3][4] = {{5, 8, 1, 4}, {0, 2, 9, 6}, {3, 7, 4, 8}};', ['VARIABLE_TIPO']),
+  tablas(1, 'filas entre corchetes', 'int t[3][4] = {[5, 8, 1, 4], [0, 2, 9, 6], [3, 7, 4, 8]};', ['CORCHETES_EN_LA_LISTA']),
+  tablas(1, 'filas entre parentesis', 'int t[3][4] = {(5, 8, 1, 4), (0, 2, 9, 6), (3, 7, 4, 8)};', ['FILAS_ENTRE_PARENTESIS']),
 
   // La cuadrada: 4 7 / 2 9. Ahi "al reves" no se nota en la forma, solo en los valores.
-  valores(4, 'cuadrada', 'int c[][2] = {{4, 7}, {2, 9}};', 'ok'),
-  valores(4, 'cuadrada con las filas repetidas', 'int c[2][2] = {{4, 7}, {2, 9}};', 'ok', ['FILAS_REPETIDAS']),
-  valores(4, 'cuadrada cargada por columnas', 'int c[2][2] = {{4, 2}, {7, 9}};', ['TABLA_AL_REVES']),
-  valores(4, 'cuadrada con un valor distinto', 'int c[2][2] = {{4, 7}, {2, 8}};', ['VALOR_DISTINTO']),
+  tablas(2, 'cuadrada', 'int c[][2] = {{4, 7}, {2, 9}};', 'ok'),
+  tablas(2, 'cuadrada con las filas repetidas', 'int c[2][2] = {{4, 7}, {2, 9}};', 'ok', ['FILAS_REPETIDAS']),
+  tablas(2, 'cuadrada cargada por columnas', 'int c[2][2] = {{4, 2}, {7, 9}};', ['TABLA_AL_REVES']),
+  tablas(2, 'cuadrada con un valor distinto', 'int c[2][2] = {{4, 7}, {2, 8}};', ['VALOR_DISTINTO']),
 
   // Todos en cero: {0} alcanza, y el 4 pasa a ser un numero que solo esta en
   // los corchetes. El dibujo no se muestra (dibujo: false).
-  valores(5, 'cero con una constante es excelente', '#define TAM 4\nint lista[TAM] = {0};', 'ok'),
-  valores(5, 'cero con el numero suelto', 'int lista[4] = {0};', 'ok', ['NUMERO_MAGICO']),
-  valores(5, 'cero con el numero suelto habiendo una constante', '#define TAM 4\nint lista[4] = {0};', 'ok', [
+  valores(4, 'cero con una constante es excelente', '#define TAM 4\nint lista[TAM] = {0};', 'ok'),
+  valores(4, 'cero con el numero suelto', 'int lista[4] = {0};', 'ok', ['NUMERO_MAGICO']),
+  valores(4, 'cero con el numero suelto habiendo una constante', '#define TAM 4\nint lista[4] = {0};', 'ok', [
     'CONSTANTE_SIN_REUTILIZAR',
   ]),
-  valores(5, 'cuatro ceros: alcanza uno', 'int lista[4] = {0, 0, 0, 0};', 'ok', ['CERO_ALCANZA']),
-  valores(5, 'cuatro ceros con una constante: alcanza uno', '#define TAM 4\nint lista[TAM] = {0, 0, 0, 0};', 'ok', [
+  valores(4, 'cuatro ceros: alcanza uno', 'int lista[4] = {0, 0, 0, 0};', 'ok', ['CERO_ALCANZA']),
+  valores(4, 'cuatro ceros con una constante: alcanza uno', '#define TAM 4\nint lista[TAM] = {0, 0, 0, 0};', 'ok', [
     'CERO_ALCANZA',
   ]),
   // La lista no cubre los cuatro lugares: el 4 ya no se deduce de ella.
-  valores(5, 'dos ceros: alcanza uno, y el 4 es un numero suelto', 'int lista[4] = {0, 0};', 'ok', [
+  valores(4, 'dos ceros: alcanza uno, y el 4 es un numero suelto', 'int lista[4] = {0, 0};', 'ok', [
     'CERO_ALCANZA',
     'NUMERO_MAGICO',
   ]),
-  valores(5, 'cuatro ceros con los corchetes vacios', 'int lista[] = {0, 0, 0, 0};', 'ok', ['CERO_ALCANZA']),
-  valores(5, 'un cero con los corchetes vacios', 'int lista[] = {0};', ['VALORES_DE_MENOS']),
-  valores(5, 'un cero para dos lugares', 'int lista[2] = {0};', ['ARREGLO_CHICO']),
-  valores(5, 'un cero para cinco lugares', 'int lista[5] = {0};', ['ARREGLO_GRANDE']),
-  valores(5, 'cinco ceros para cuatro lugares', 'int lista[4] = {0, 0, 0, 0, 0};', ['ARREGLO_CHICO']),
-  valores(5, 'lista vacia', 'int lista[4] = {};', ['LISTA_VACIA']),
-  valores(5, 'un uno en vez del cero', 'int lista[4] = {1};', ['VALOR_DISTINTO']),
+  valores(4, 'cuatro ceros con los corchetes vacios', 'int lista[] = {0, 0, 0, 0};', 'ok', ['CERO_ALCANZA']),
+  valores(4, 'un cero con los corchetes vacios', 'int lista[] = {0};', ['VALORES_DE_MENOS']),
+  valores(4, 'un cero para dos lugares', 'int lista[2] = {0};', ['ARREGLO_CHICO']),
+  valores(4, 'un cero para cinco lugares', 'int lista[5] = {0};', ['ARREGLO_GRANDE']),
+  valores(4, 'cinco ceros para cuatro lugares', 'int lista[4] = {0, 0, 0, 0, 0};', ['ARREGLO_CHICO']),
+  valores(4, 'lista vacia', 'int lista[4] = {};', ['LISTA_VACIA']),
+  valores(4, 'un uno en vez del cero', 'int lista[4] = {1};', ['VALOR_DISTINTO']),
 
   // Todos en dos: {2} no llena de dos. Lo que la lista no nombra queda en cero.
-  valores(6, 'cuatro dos con los corchetes vacios', 'int dos[] = {2, 2, 2, 2};', 'ok'),
-  valores(6, 'cuatro dos con la cantidad repetida', 'int dos[4] = {2, 2, 2, 2};', 'ok', ['DIMENSION_REPETIDA']),
-  valores(6, 'cuatro dos con la constante repetida', '#define N 4\nint dos[N] = {2, 2, 2, 2};', 'ok', [
+  valores(5, 'cuatro dos con los corchetes vacios', 'int dos[] = {2, 2, 2, 2};', 'ok'),
+  valores(5, 'cuatro dos con la cantidad repetida', 'int dos[4] = {2, 2, 2, 2};', 'ok', ['DIMENSION_REPETIDA']),
+  valores(5, 'cuatro dos con la constante repetida', '#define N 4\nint dos[N] = {2, 2, 2, 2};', 'ok', [
     'DIMENSION_REPETIDA',
   ]),
-  valores(6, 'un solo dos: no repite', 'int dos[4] = {2};', ['VALORES_SIN_NOMBRAR']),
-  valores(6, 'un solo dos con la constante', '#define N 4\nint dos[N] = {2};', ['VALORES_SIN_NOMBRAR']),
+  valores(5, 'un solo dos: no repite', 'int dos[4] = {2};', ['VALORES_SIN_NOMBRAR']),
+  valores(5, 'un solo dos con la constante', '#define N 4\nint dos[N] = {2};', ['VALORES_SIN_NOMBRAR']),
   // La consigna anterior no se arrastra: usar el mismo nombre es lo natural.
   {
     serie: 'arreglos-valores',
-    paso: 6,
+    paso: 5,
     nombre: 'el mismo nombre que en la consigna anterior no choca',
-    previas: [null, null, null, null, '#define TAM 4\nint lista[TAM] = {0};'],
+    previas: [null, null, null, '#define TAM 4\nint lista[TAM] = {0};'],
     respuesta: 'int lista[] = {2, 2, 2, 2};',
     espera: 'ok',
     mejoras: [],
   },
   {
     serie: 'arreglos-valores',
-    paso: 6,
+    paso: 5,
     nombre: 'una constante de la consigna anterior no esta: no se puede usar',
-    previas: [null, null, null, null, '#define TAM 4\nint lista[TAM] = {0};'],
+    previas: [null, null, null, '#define TAM 4\nint lista[TAM] = {0};'],
     respuesta: 'int dos[TAM] = {2, 2, 2, 2};',
     espera: ['CONSTANTE_SIN_DEFINIR'],
   },
-  valores(6, 'dos dos: tampoco', 'int dos[4] = {2, 2};', ['VALORES_SIN_NOMBRAR']),
-  valores(6, 'un solo dos con los corchetes vacios', 'int dos[] = {2};', ['VALORES_DE_MENOS']),
-  valores(6, 'cero donde van doses', 'int dos[4] = {0};', ['VALOR_DISTINTO']),
-  valores(6, 'cinco doses para cuatro lugares', 'int dos[4] = {2, 2, 2, 2, 2};', ['ARREGLO_CHICO']),
+  valores(5, 'dos dos: tampoco', 'int dos[4] = {2, 2};', ['VALORES_SIN_NOMBRAR']),
+  valores(5, 'un solo dos con los corchetes vacios', 'int dos[] = {2};', ['VALORES_DE_MENOS']),
+  valores(5, 'cero donde van doses', 'int dos[4] = {0};', ['VALOR_DISTINTO']),
+  valores(5, 'cinco doses para cuatro lugares', 'int dos[4] = {2, 2, 2, 2, 2};', ['ARREGLO_CHICO']),
 
   // Ceros al final: {5, 1} con cuatro lugares es el mismo arreglo que {5, 1, 0, 0}.
-  valores(7, 'todos los valores escritos', 'int c[] = {5, 1, 0, 0};', 'ok'),
-  valores(7, 'ceros al final sin escribir, con una constante', '#define N 4\nint c[N] = {5, 1};', 'ok'),
-  valores(7, 'ceros al final sin escribir, con el numero', 'int c[4] = {5, 1};', 'ok', ['NUMERO_MAGICO']),
-  valores(7, 'con el numero habiendo una constante en la respuesta', '#define N 4\nint c[4] = {5, 1};', 'ok', [
+  valores(6, 'todos los valores escritos', 'int c[] = {5, 1, 0, 0};', 'ok'),
+  valores(6, 'ceros al final sin escribir, con una constante', '#define N 4\nint c[N] = {5, 1};', 'ok'),
+  valores(6, 'ceros al final sin escribir, con el numero', 'int c[4] = {5, 1};', 'ok', ['NUMERO_MAGICO']),
+  valores(6, 'con el numero habiendo una constante en la respuesta', '#define N 4\nint c[4] = {5, 1};', 'ok', [
     'CONSTANTE_SIN_REUTILIZAR',
   ]),
-  valores(7, 'ceros al final escritos con la cantidad repetida', 'int c[4] = {5, 1, 0, 0};', 'ok', [
+  valores(6, 'ceros al final escritos con la cantidad repetida', 'int c[4] = {5, 1, 0, 0};', 'ok', [
     'DIMENSION_REPETIDA',
   ]),
-  valores(7, 'ceros al final sin escribir, con los corchetes vacios', 'int c[] = {5, 1};', ['VALORES_DE_MENOS']),
-  valores(7, 'falta el uno', 'int c[4] = {5};', ['VALORES_SIN_NOMBRAR']),
+  valores(6, 'ceros al final sin escribir, con los corchetes vacios', 'int c[] = {5, 1};', ['VALORES_DE_MENOS']),
+  valores(6, 'falta el uno', 'int c[4] = {5};', ['VALORES_SIN_NOMBRAR']),
 
   // Una tabla en cero: 3 filas por 4 columnas. Con {0} los numeros de los
   // corchetes son lo unico que dice la forma: hay que darles nombre.
-  valores(8, 'cero con constantes es excelente', '#define FILAS 3\n#define COLUMNAS 4\nint t[FILAS][COLUMNAS] = {0};', 'ok'),
-  valores(8, 'cero con los numeros sueltos', 'int t[3][4] = {0};', 'ok', ['NUMERO_MAGICO']),
-  valores(8, 'una fila en cero y el resto sin escribir', 'int t[3][4] = {{0}};', 'ok', ['NUMERO_MAGICO']),
-  valores(8, 'una fila por fila, con un cero cada una', 'int t[][4] = {{0}, {0}, {0}};', 'ok', [
+  tablas(3, 'cero con constantes es excelente', '#define FILAS 3\n#define COLUMNAS 4\nint t[FILAS][COLUMNAS] = {0};', 'ok'),
+  tablas(3, 'cero con los numeros sueltos', 'int t[3][4] = {0};', 'ok', ['NUMERO_MAGICO']),
+  tablas(3, 'una fila en cero y el resto sin escribir', 'int t[3][4] = {{0}};', 'ok', ['NUMERO_MAGICO']),
+  tablas(3, 'una fila por fila, con un cero cada una', 'int t[][4] = {{0}, {0}, {0}};', 'ok', [
     'CERO_ALCANZA',
     'NUMERO_MAGICO',
   ]),
-  valores(8, 'todos los ceros escritos en filas', 'int t[3][4] = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}};', 'ok', [
+  tablas(3, 'todos los ceros escritos en filas', 'int t[3][4] = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}};', 'ok', [
     'CERO_ALCANZA',
   ]),
-  valores(8, 'una fila de ceros seguidos', 'int t[3][4] = {0, 0, 0, 0};', 'ok', [
+  tablas(3, 'una fila de ceros seguidos', 'int t[3][4] = {0, 0, 0, 0};', 'ok', [
     'CERO_ALCANZA',
     'NUMERO_MAGICO',
   ]),
-  valores(8, 'un cero con las filas vacias: es una sola fila', 'int t[][4] = {0};', ['ARREGLO_CHICO']),
-  valores(8, 'un uno en vez del cero', 'int t[3][4] = {1};', ['VALOR_DISTINTO']),
-  valores(8, 'lugar de menos', 'int t[2][4] = {0};', ['ARREGLO_CHICO']),
-  valores(8, 'dimensiones al reves', 'int t[4][3] = {0};', ['DIMENSIONES_AL_REVES']),
-  valores(8, 'lista vacia', 'int t[3][4] = {};', ['LISTA_VACIA']),
-  valores(8, 'una fila con un valor de mas', 'int t[3][4] = {{0, 0, 0, 0, 0}};', ['FILA_OTRA_CANTIDAD']),
-  valores(8, 'una fila de mas', 'int t[3][4] = {{0}, {0}, {0}, {0}};', ['FILAS_DE_MAS']),
+  tablas(3, 'un cero con las filas vacias: es una sola fila', 'int t[][4] = {0};', ['ARREGLO_CHICO']),
+  tablas(3, 'un uno en vez del cero', 'int t[3][4] = {1};', ['VALOR_DISTINTO']),
+  tablas(3, 'lugar de menos', 'int t[2][4] = {0};', ['ARREGLO_CHICO']),
+  tablas(3, 'dimensiones al reves', 'int t[4][3] = {0};', ['DIMENSIONES_AL_REVES']),
+  tablas(3, 'lista vacia', 'int t[3][4] = {};', ['LISTA_VACIA']),
+  tablas(3, 'una fila con un valor de mas', 'int t[3][4] = {{0, 0, 0, 0, 0}};', ['FILA_OTRA_CANTIDAD']),
+  tablas(3, 'una fila de mas', 'int t[3][4] = {{0}, {0}, {0}, {0}};', ['FILAS_DE_MAS']),
 
   // Ceros que no se escriben en una tabla con valores: 5 8 0 0 / 1 0 0 0 / 0 0 0 0.
-  valores(9, 'solo lo que no es cero, con constantes', 'int u[FILAS][COLUMNAS] = {{5, 8}, {1}};', 'ok'),
-  valores(9, 'los ceros de las filas escritos', 'int u[FILAS][COLUMNAS] = {{5, 8, 0, 0}, {1}};', 'ok'),
-  valores(9, 'todas las filas escritas: las filas estan repetidas', 'int u[FILAS][COLUMNAS] = {{5, 8, 0, 0}, {1, 0, 0, 0}, {0, 0, 0, 0}};', 'ok', [
+  tablas(4, 'solo lo que no es cero, con constantes', 'int u[FILAS][COLUMNAS] = {{5, 8}, {1}};', 'ok'),
+  tablas(4, 'los ceros de las filas escritos', 'int u[FILAS][COLUMNAS] = {{5, 8, 0, 0}, {1}};', 'ok'),
+  tablas(4, 'todas las filas escritas: las filas estan repetidas', 'int u[FILAS][COLUMNAS] = {{5, 8, 0, 0}, {1, 0, 0, 0}, {0, 0, 0, 0}};', 'ok', [
     'FILAS_REPETIDAS',
   ]),
-  valores(9, 'con los numeros habiendo constantes', 'int u[3][4] = {{5, 8}, {1}};', 'ok', ['CONSTANTE_SIN_REUTILIZAR']),
-  valores(9, 'seguidos hasta el ultimo distinto de cero', 'int u[FILAS][COLUMNAS] = {5, 8, 0, 0, 1};', 'ok', [
+  tablas(4, 'con los numeros habiendo constantes', 'int u[3][4] = {{5, 8}, {1}};', 'ok', ['CONSTANTE_SIN_REUTILIZAR']),
+  tablas(4, 'seguidos hasta el ultimo distinto de cero', 'int u[FILAS][COLUMNAS] = {5, 8, 0, 0, 1};', 'ok', [
     'TABLA_SIN_FILAS',
   ]),
-  valores(9, 'una fila que se queda corta', 'int u[FILAS][COLUMNAS] = {{5}, {1}};', ['FILA_OTRA_CANTIDAD']),
-  valores(9, 'seguidos que se quedan cortos', 'int u[FILAS][COLUMNAS] = {5, 8};', ['VALORES_SIN_NOMBRAR']),
-  valores(9, 'una fila que falta y no es de ceros', 'int u[FILAS][COLUMNAS] = {{5, 8}};', ['FILAS_DE_MENOS']),
+  tablas(4, 'una fila que se queda corta', 'int u[FILAS][COLUMNAS] = {{5}, {1}};', ['FILA_OTRA_CANTIDAD']),
+  tablas(4, 'seguidos que se quedan cortos', 'int u[FILAS][COLUMNAS] = {5, 8};', ['VALORES_SIN_NOMBRAR']),
+  tablas(4, 'una fila que falta y no es de ceros', 'int u[FILAS][COLUMNAS] = {{5, 8}};', ['FILAS_DE_MENOS']),
 
   // La 9 continua la 8: ve su codigo, y por eso no se puede repetir un nombre.
-  valores(9, 'la variable de la consigna anterior otra vez', 'int tablaCeros[FILAS][COLUMNAS] = {{5, 8}, {1}};', [
+  tablas(4, 'la variable de la consigna anterior otra vez', 'int tablaCeros[FILAS][COLUMNAS] = {{5, 8}, {1}};', [
     'VARIABLE_REDEFINIDA',
   ]),
-  valores(9, 'la constante con otro valor', '#define FILAS 5\nint u[FILAS][COLUMNAS] = {{5, 8}, {1}};', [
+  tablas(4, 'la constante con otro valor', '#define FILAS 5\nint u[FILAS][COLUMNAS] = {{5, 8}, {1}};', [
     'CONSTANTE_REDEFINIDA',
   ]),
-  valores(9, 'la constante con el mismo valor: mejorable', '#define FILAS 3\nint u[FILAS][COLUMNAS] = {{5, 8}, {1}};', 'ok', [
+  tablas(4, 'la constante con el mismo valor: mejorable', '#define FILAS 3\nint u[FILAS][COLUMNAS] = {{5, 8}, {1}};', 'ok', [
     'CONSTANTE_REPETIDA',
   ]),
-  valores(9, 'la constante con el mismo valor y parentesis', '#define FILAS (3)\nint u[FILAS][COLUMNAS] = {{5, 8}, {1}};', 'ok', [
+  tablas(4, 'la constante con el mismo valor y parentesis', '#define FILAS (3)\nint u[FILAS][COLUMNAS] = {{5, 8}, {1}};', 'ok', [
     'CONSTANTE_REPETIDA',
   ]),
+
+  // 7: cuestionario, lo que la lista no nombra
+  valores(7, 'resto: queda en cero', '2', 'ok'),
+  valores(7, 'resto: repite el ultimo', '0', ['OPCION_REPITE_EL_ULTIMO']),
+  valores(7, 'resto: no se puede saber', '1', ['OPCION_SIN_VALOR_CON_LISTA']),
 ];
 
 // Repetir un nombre: en la misma respuesta, o en el codigo que la consigna
