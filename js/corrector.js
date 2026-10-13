@@ -142,7 +142,9 @@ const BIBLIOTECA_DE = { pow: 'math.h' };
 // Los valores de una variable en un mensaje, cada uno como esta en el codigo y
 // con "y" antes del ultimo: `120`, `85` y `310`.
 const enLista = (valores) => {
-  const cada = valores.map((v) => `\`${v}\``);
+  // Una fila de una tabla se escribe como en el codigo: {5, 8, 1, 4}.
+  const comoEsta = (v) => (Array.isArray(v) ? `{${v.map(comoEsta).join(', ')}}` : String(v));
+  const cada = valores.map((v) => `\`${comoEsta(v)}\``);
   return cada.length < 2 ? cada.join('') : `${cada.slice(0, -1).join(', ')} y ${cada[cada.length - 1]}`;
 };
 
@@ -1670,9 +1672,12 @@ export function corregir(
       if (e instanceof FueraDeRango) {
         // Con el numero escrito ya lo dijo la revision general.
         if (!diagnosticos.some((d) => d.codigo === 'INDICE_FUERA_DE_RANGO')) {
+          // En una tabla, el primer indice cuenta filas y el segundo columnas.
+          const [singular, plural] =
+            e.dimensiones === 1 || e.dimension >= 2 ? ['posición', 'posiciones'] : e.dimension === 0 ? ['fila', 'filas'] : ['columna', 'columnas'];
           error(
             'INDICE_FUERA_DE_RANGO',
-            `${conContexto}\`${e.nombre}\` tiene ${e.tamano} posiciones, numeradas de 0 a ${e.tamano - 1}: ${e.escrito ? `la posición ${e.indice} no existe.` : `se llega a la posición ${e.indice}, que no existe.`}`,
+            `${conContexto}\`${e.nombre}\` tiene ${e.tamano} ${plural}, numeradas de 0 a ${e.tamano - 1}: ${e.escrito ? `la ${singular} ${e.indice} no existe.` : `se llega a la ${singular} ${e.indice}, que no existe.`}`,
             e.fila
           );
         }
@@ -1821,19 +1826,30 @@ export function corregir(
           error('RESULTADO_FALTA', `No encontré el arreglo \`${nombre}\`.`);
           return false;
         }
-        for (let k = 0; k < debe.length; k++) {
-          const que = variable.datos[k];
-          if (que === undefined) {
+        // Las posiciones de una lista, o de una lista de listas (una tabla):
+        // con su nombre completo, notas[2][1].
+        const posiciones = [];
+        const juntar = (lista, camino, real) => {
+          lista.forEach((valor, k) => {
+            const cual = [...camino, k];
+            const que = real ? real[k] : undefined;
+            if (Array.isArray(valor)) juntar(valor, cual, Array.isArray(que) ? que : undefined);
+            else posiciones.push({ nombre: `${nombre}${cual.map((i) => `[${i}]`).join('')}`, debe: valor, que });
+          });
+        };
+        juntar(debe, [], variable.datos);
+        for (const p of posiciones) {
+          if (p.que === undefined) {
             error(
               'RESULTADO_POSICION_SIN_VALOR',
-              `${con}, \`${nombre}[${k}]\` no llega a recibir un valor: debería valer \`${debe[k]}\`.`
+              `${con}, \`${p.nombre}\` no llega a recibir un valor: debería valer \`${p.debe}\`.`
             );
             return false;
           }
-          if (Math.abs(que - debe[k]) > 1e-9) {
+          if (Math.abs(p.que - p.debe) > 1e-9) {
             error(
               'RESULTADO_VALOR_DISTINTO',
-              `${con}, \`${nombre}[${k}]\` termina valiendo \`${que}\` y debería valer \`${debe[k]}\`.`
+              `${con}, \`${p.nombre}\` termina valiendo \`${p.que}\` y debería valer \`${p.debe}\`.`
             );
             return false;
           }

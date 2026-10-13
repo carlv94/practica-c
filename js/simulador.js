@@ -27,10 +27,11 @@ export class SinVerificar extends Error {}
 
 // Un indice que no existe: v[5] en un arreglo de 5.
 export class FueraDeRango extends Error {
-  // "escrito" es si el indice es un numero escrito: notas[6].
-  constructor(nombre, indice, tamano, fila, escrito = false) {
+  // "escrito" es si el indice es un numero escrito: notas[6]. "dimension" es
+  // cual de los indices (0 es la fila) y "dimensiones", cuantos tiene el arreglo.
+  constructor(nombre, indice, tamano, fila, escrito = false, dimension = 0, dimensiones = 1) {
     super(`${nombre}[${indice}] fuera de rango`);
-    Object.assign(this, { nombre, indice, tamano, fila, escrito });
+    Object.assign(this, { nombre, indice, tamano, fila, escrito, dimension, dimensiones });
   }
 }
 
@@ -187,7 +188,15 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null) {
       if (k >= base.variable.dims.length) sinVerificar(n);
       const tamano = base.variable.dims[k];
       if (!Number.isInteger(indice.v) || indice.v < 0 || indice.v >= tamano) {
-        throw new FueraDeRango(base.nombre, indice.v, tamano, fila(n), nodoIndice.type === 'number_literal');
+        throw new FueraDeRango(
+          base.nombre,
+          indice.v,
+          tamano,
+          fila(n),
+          nodoIndice.type === 'number_literal',
+          k,
+          base.variable.dims.length
+        );
       }
       return { ...base, indices: [...base.indices, indice.v] };
     }
@@ -573,12 +582,18 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null) {
       let datos =
         inicial && inicial.type === 'initializer_list' ? llenar(dims, inicial, flotante) : sinLista(dims);
       if (inicial && inicial.type !== 'initializer_list') sinVerificar(inicial);
-      if (prueba && Array.isArray(prueba[nombre.text]) && dims.length === 1) {
+      if (prueba && Array.isArray(prueba[nombre.text])) {
         const otros = prueba[nombre.text];
+        // Una lista de listas para una tabla: la forma tiene que ser la misma.
+        const forma = (x) => (Array.isArray(x) ? [x.length, ...forma(x[0])] : []);
+        const otraForma = forma(otros);
         // Sin tamano escrito, la prueba puede traer otra cantidad de valores.
-        if (sinTamano) dims[0] = otros.length;
-        else if (otros.length !== dims[0]) sinVerificar(d, 'valores de otro tamano');
-        datos = otros.map((v) => (flotante ? v : Math.trunc(v)));
+        if (sinTamano) dims[0] = otraForma[0];
+        if (otraForma.length !== dims.length || otraForma.some((k, i) => k !== dims[i])) {
+          sinVerificar(d, 'valores de otro tamano');
+        }
+        const copia = (x) => (Array.isArray(x) ? x.map(copia) : flotante ? x : Math.trunc(x));
+        datos = copia(otros);
       }
       variables.set(nombre.text, { flotante, tipo: nombreDeTipo, bytes: bytesDe(tipo.text), dims, datos });
     }

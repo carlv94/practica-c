@@ -537,6 +537,17 @@ regla con `casos`, y estas ampliaciones:
 - Cuando falla un caso, los mensajes de posición que no existe, variable sin
   valor y ciclo que no termina empiezan con "Con `notas` valiendo …".
 
+**Tablas** (serie "Tablas"): la regla `variable` con `valores` matriciales
+define la tabla, y `ejecuta` con `casos` corrige el acceso a un elemento:
+
+- `"datos"` y `"queda"` aceptan una lista de listas para una tabla (con la
+  misma forma que la tabla declarada). Los mensajes nombran la posición con
+  sus dos índices (`notas[2][1]`), y una fila de la tabla se escribe como en el
+  código: "Con `notas` valiendo `{5, 8, 1, 4}`, `{0, 2, 9, 6}` y `{3, 7, 4, 8}`".
+- Una fila o una columna que no existe dice "`notas` tiene 3 filas, numeradas
+  de 0 a 2: la fila 3 no existe" (o "columnas"), igual que la revisión de los
+  números escritos.
+
 Un cuestionario puede agregar una suposición al enunciado ("y suponiendo que
 cada `int` ocupa 4 bytes"), como el "si usted escribe" de los que leen.
 
