@@ -1,0 +1,142 @@
+{
+  "id": "arreglos-leer",
+  "titulo": "Leer y mostrar un arreglo",
+  "descripcion": "Leer del teclado los valores de un arreglo con scanf y mostrarlos con printf.",
+  "dentroDeMain": true,
+  "cabecera": "#include <stdio.h>",
+  "buenasPracticas": ["constantes"],
+  "consignas": [
+    {
+      "id": "leer-una-nota",
+      "titulo": "Leer una nota",
+      "dado": "int notas[5];",
+      "enunciado": "Un docente carga en el programa las notas de un parcial. Lea del teclado la nota del primer alumno y guárdela en la posición 0 del arreglo `notas`.",
+      "requiere": [{ "ejecuta": { "entrada": [8], "queda": { "notas": "entrada" } } }],
+      "referencia": "scanf(\"%d\", &notas[0]);"
+    },
+    {
+      "id": "leer-mostrar-una-nota",
+      "titulo": "Mostrar una nota",
+      "dado": "int notas[5] = {7, 4, 9, 6, 8};",
+      "enunciado": "El docente quiere ver en pantalla la nota del tercer alumno.\n\nMuestre con `printf` la nota del tercer alumno, que está guardada en `notas`.",
+      "requiere": [{ "ejecuta": { "muestra": [9], "deArreglo": "notas" } }],
+      "referencia": "printf(\"%d\\n\", notas[2]);"
+    },
+    {
+      "id": "leer-q-misma-posicion",
+      "titulo": "Siempre la misma posición",
+      "enunciado": "Después de ejecutar el código de abajo, si usted escribe `5`, `6` y `7`, ¿qué valor tendría `valores[0]`?",
+      "codigo": "int valores[3];\nint i;\n\nfor (i = 0; i < 3; i++) {\n  scanf(\"%d\", &valores[0]);\n}",
+      "opciones": [
+        {
+          "valor": "5",
+          "texto": "el primer número que se escribió",
+          "codigo": "OPCION_PRIMERA_LECTURA",
+          "explicacion": "El `5` se guarda en `valores[0]` en la primera vuelta, pero en las que siguen se lee en la misma posición: lo que se escribe después ocupa su lugar y lo reemplaza."
+        },
+        {
+          "valor": "18",
+          "texto": "la suma de los números que se escribieron",
+          "codigo": "OPCION_SUMA_DE_LAS_LECTURAS",
+          "explicacion": "`scanf` guarda el número en la posición: no lo suma a lo que había. Cada lectura reemplaza el valor anterior."
+        },
+        {
+          "valor": "7",
+          "texto": "el último número que se escribió",
+          "correcta": true,
+          "explicacion": "En cada vuelta se lee un número y se guarda en `valores[0]`, reemplazando al anterior. En la última vuelta se escribe el `7`, que es el que queda. `valores[1]` y `valores[2]` nunca reciben un valor."
+        }
+      ]
+    },
+    {
+      "id": "leer-cargar",
+      "titulo": "Cargar las notas de la comisión",
+      "dado": "#define MAX_ALUMNOS 20\n\nint notas[MAX_ALUMNOS];\nint i;",
+      "enunciado": "Una comisión de 20 alumnos rindió un parcial y el docente carga las notas en el programa.\n\nCon un ciclo, lea del teclado las notas de los 20 alumnos y guárdelas en `notas`, una en cada posición, en el orden en que se escriben. Use el índice `i`.",
+      "requiere": [
+        {
+          "ejecuta": {
+            "entrada": [7, 4, 9, 6, 8, 5, 10, 3, 7, 6, 9, 8, 4, 6, 7, 10, 5, 8, 9, 6],
+            "queda": { "notas": "entrada" },
+            "conCiclo": true,
+            "limite": true
+          }
+        }
+      ],
+      "referencia": "for (i = 0; i < MAX_ALUMNOS; i++) {\n  scanf(\"%d\", &notas[i]);\n}"
+    },
+    {
+      "id": "leer-mostrar-todas",
+      "titulo": "Mostrar todas las notas",
+      "dado": "#define CANTIDAD 8\n\nint notas[CANTIDAD] = {7, 4, 9, 6, 8, 5, 10, 3};\nint i;",
+      "enunciado": "El docente quiere ver el listado de notas de su comisión.\n\nCon un ciclo, muestre con `printf` todas las notas de `notas`, de la primera a la última. Use el índice `i`.",
+      "requiere": [
+        {
+          "ejecuta": {
+            "muestra": [7, 4, 9, 6, 8, 5, 10, 3],
+            "deArreglo": "notas",
+            "conCiclo": true,
+            "limite": true
+          }
+        }
+      ],
+      "referencia": "for (i = 0; i < CANTIDAD; i++) {\n  printf(\"%d\\n\", notas[i]);\n}"
+    },
+    {
+      "id": "leer-temperaturas",
+      "titulo": "Temperaturas con decimales",
+      "dado": "#define CANTIDAD 6\n\nfloat temperaturas[CANTIDAD];\nint i;",
+      "enunciado": "Una estación meteorológica registra la temperatura de las últimas 6 horas.\n\nLea del teclado las 6 temperaturas y guárdelas en `temperaturas`; después muéstrelas con `printf` en el mismo orden en que se escribieron. Use el índice `i`.",
+      "requiere": [
+        {
+          "ejecuta": {
+            "entrada": [21.5, 19, 18.25, 17.5, 20, 23.75],
+            "queda": { "temperaturas": "entrada" },
+            "muestra": "entrada",
+            "deArreglo": "temperaturas",
+            "conCiclo": true,
+            "limite": true
+          }
+        }
+      ],
+      "referencia": "for (i = 0; i < CANTIDAD; i++) {\n  scanf(\"%f\", &temperaturas[i]);\n}\n\nfor (i = 0; i < CANTIDAD; i++) {\n  printf(\"%f\\n\", temperaturas[i]);\n}"
+    },
+    {
+      "id": "leer-de-atras",
+      "titulo": "De la más reciente a la más antigua",
+      "dado": "#define CANTIDAD 5\n\nint ventas[CANTIDAD];\nint i;",
+      "enunciado": "Un comercio carga los importes de sus últimas 5 ventas, de la más antigua a la más reciente.\n\nLea del teclado los 5 importes y guárdelos en `ventas`, en el orden en que se escriben, de la posición 0 a la 4. Después muéstrelos con `printf` de la más reciente a la más antigua, es decir, de la última posición a la primera. Use el índice `i`.",
+      "requiere": [
+        {
+          "ejecuta": {
+            "entrada": [120, 85, 240, 60, 175],
+            "queda": { "ventas": "entrada" },
+            "muestra": "alReves",
+            "deArreglo": "ventas",
+            "conCiclo": true,
+            "limite": true
+          }
+        }
+      ],
+      "referencia": "for (i = 0; i < CANTIDAD; i++) {\n  scanf(\"%d\", &ventas[i]);\n}\n\nfor (i = CANTIDAD - 1; i >= 0; i--) {\n  printf(\"%d\\n\", ventas[i]);\n}"
+    },
+    {
+      "id": "leer-con-mensaje",
+      "titulo": "Pedir cada nota con su mensaje",
+      "dado": "#define CANTIDAD 5\n\nint notas[CANTIDAD];\nint i;",
+      "enunciado": "Antes de leer cada nota, el programa tiene que pedirla con un mensaje que lleva el número del alumno: `Ingrese la nota 1:`, después `Ingrese la nota 2:`, y así hasta la 5.\n\nCon un ciclo, pida y lea las 5 notas, y guárdelas en `notas` en el orden en que se escriben. Use el índice `i`.",
+      "requiere": [
+        {
+          "ejecuta": {
+            "entrada": [7, 4, 9, 6, 8],
+            "queda": { "notas": "entrada" },
+            "pregunta": "Ingrese la nota %d:",
+            "conCiclo": true,
+            "limite": true
+          }
+        }
+      ],
+      "referencia": "for (i = 0; i < CANTIDAD; i++) {\n  printf(\"Ingrese la nota %d: \", i + 1);\n  scanf(\"%d\", &notas[i]);\n}"
+    }
+  ]
+}

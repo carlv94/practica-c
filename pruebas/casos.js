@@ -314,6 +314,106 @@ const CASOS_DE_RECORRER = [
   recorrer(7, 'hacia atras sin llegar a la primera', 'for (i = CANTIDAD - 1; i > 0; i--) {\n  cuenta[i] = 10 - i;\n}', ['RESULTADO_POSICION_SIN_VALOR']),
 ];
 
+// Leer y mostrar un arreglo: se corrige ejecutando con datos de prueba.
+const leer = (paso, nombre, respuesta, espera = 'ok', mejoras = []) => ({
+  serie: 'arreglos-leer',
+  paso,
+  nombre,
+  respuesta,
+  espera,
+  mejoras,
+});
+
+const CASOS_DE_LEER = [
+  // 1: leer una nota
+  leer(1, 'scanf con el ampersand', 'scanf("%d", &notas[0]);'),
+  leer(1, 'con %i', 'scanf("%i", &notas[0]);'),
+  leer(1, 'sin el ampersand', 'scanf("%d", notas[0]);', ['AMPERSAND_FALTA']),
+  leer(1, 'con el arreglo entero', 'scanf("%d", &notas);', ['ARREGLO_SIN_POSICION']),
+  leer(1, 'con el formato de un decimal', 'scanf("%f", &notas[0]);', ['FORMATO_NO_CORRESPONDE_AL_TIPO']),
+  leer(1, 'en otra posicion', 'scanf("%d", &notas[1]);', ['RESULTADO_POSICION_SIN_VALOR']),
+  leer(1, 'la nota escrita en el programa', 'notas[0] = 8;', ['LECTURA_FALTA']),
+  leer(1, 'una posicion que no existe', 'scanf("%d", &notas[5]);', ['INDICE_FUERA_DE_RANGO']),
+  leer(1, 'dos conversiones y una sola posicion', 'scanf("%d %d", &notas[0]);', ['FORMATO_CANTIDAD_DISTINTA']),
+  {
+    ...leer(1, 'el ampersand que falta dice por que', 'scanf("%d", notas[0]);', ['AMPERSAND_FALTA']),
+    dice: ['A `notas[0]` le falta el `&` adelante'],
+  },
+
+  // 2: mostrar una nota
+  leer(2, 'printf con la posicion', 'printf("%d\\n", notas[2]);'),
+  leer(2, 'con un texto antes', 'printf("La nota es %d\\n", notas[2]);'),
+  leer(2, 'en dos printf', 'printf("La nota es ");\nprintf("%d", notas[2]);'),
+  {
+    ...leer(2, 'otra posicion: dice de cual salio', 'printf("%d\\n", notas[3]);', ['MUESTRA_DISTINTA']),
+    dice: ['muestra 6', 'la posición 3 de `notas`'],
+  },
+  {
+    ...leer(2, 'una posicion que no existe: dice cuales hay', 'printf("%d\\n", notas[6]);', ['INDICE_FUERA_DE_RANGO']),
+    dice: ['`notas` tiene 5 posiciones, numeradas de 0 a 4', 'la posición 6 no existe'],
+  },
+  leer(2, 'el numero escrito en el programa', 'printf("%d\\n", 9);', ['MUESTRA_SIN_EL_ARREGLO']),
+  leer(2, 'sin mostrar nada', 'int nota = notas[2];', ['MUESTRA_FALTA']),
+  leer(2, 'con el ampersand', 'printf("%d\\n", &notas[2]);', ['AMPERSAND_DE_MAS']),
+  leer(2, 'con el arreglo entero', 'printf("%d\\n", notas);', ['ARREGLO_SIN_POSICION']),
+  leer(2, 'con el formato de un decimal', 'printf("%f\\n", notas[2]);', ['FORMATO_NO_CORRESPONDE_AL_TIPO']),
+  leer(2, 'sin el formato', 'printf("notas[2]");', ['MUESTRA_FALTA']),
+  leer(2, 'un formato y ningun valor', 'printf("%d\\n");', ['FORMATO_CANTIDAD_DISTINTA']),
+
+  // 3: cuestionario, siempre la misma posicion
+  leer(3, 'la misma posicion: el ultimo', '2'),
+  leer(3, 'la misma posicion: el primero', '0', ['OPCION_PRIMERA_LECTURA']),
+  leer(3, 'la misma posicion: la suma', '1', ['OPCION_SUMA_DE_LAS_LECTURAS']),
+
+  // 4: cargar las notas
+  leer(4, 'un for', 'for (i = 0; i < MAX_ALUMNOS; i++) {\n  scanf("%d", &notas[i]);\n}'),
+  leer(4, 'un while', 'i = 0;\nwhile (i < MAX_ALUMNOS) {\n  scanf("%d", &notas[i]);\n  i++;\n}'),
+  leer(4, 'sin llaves', 'for (i = 0; i < MAX_ALUMNOS; i++)\n  scanf("%d", &notas[i]);'),
+  leer(4, 'con el numero suelto: correcto y mejorable', 'for (i = 0; i < 20; i++) {\n  scanf("%d", &notas[i]);\n}', 'ok', ['LIMITE_CON_NUMERO_SUELTO']),
+  leer(4, 'sin ciclo', 'scanf("%d", &notas[0]);', ['CICLO_FALTA']),
+  leer(4, 'sin el ampersand', 'for (i = 0; i < MAX_ALUMNOS; i++) {\n  scanf("%d", notas[i]);\n}', ['AMPERSAND_FALTA']),
+  leer(4, 'siempre en la misma posicion', 'for (i = 0; i < MAX_ALUMNOS; i++) {\n  scanf("%d", &notas[0]);\n}', ['RESULTADO_VALOR_DISTINTO']),
+  leer(4, 'una vuelta de mas', 'for (i = 0; i <= MAX_ALUMNOS; i++) {\n  scanf("%d", &notas[i]);\n}', ['INDICE_FUERA_DE_RANGO']),
+  leer(4, 'sin llegar a la ultima', 'for (i = 0; i < MAX_ALUMNOS - 1; i++) {\n  scanf("%d", &notas[i]);\n}', ['RESULTADO_POSICION_SIN_VALOR']),
+  leer(4, 'leyendo en el indice', 'for (i = 0; i < MAX_ALUMNOS; i++) {\n  scanf("%d", &i);\n}', ['LECTURA_DE_MAS']),
+
+  // 5: mostrar todas
+  leer(5, 'un for', 'for (i = 0; i < CANTIDAD; i++) {\n  printf("%d\\n", notas[i]);\n}'),
+  leer(5, 'en una linea, con espacios', 'for (i = 0; i < CANTIDAD; i++) {\n  printf("%d ", notas[i]);\n}'),
+  leer(5, 'con el numero de cada una', 'for (i = 0; i < CANTIDAD; i++) {\n  printf("Alumno %d: %d\\n", i + 1, notas[i]);\n}'),
+  leer(5, 'sin ciclo', 'printf("%d", notas[0]);', ['CICLO_FALTA']),
+  leer(5, 'sin llegar a la ultima', 'for (i = 0; i < CANTIDAD - 1; i++) {\n  printf("%d\\n", notas[i]);\n}', ['MUESTRA_DISTINTA']),
+  leer(5, 'de atras', 'for (i = CANTIDAD - 1; i >= 0; i--) {\n  printf("%d\\n", notas[i]);\n}', ['MUESTRA_DISTINTA']),
+  leer(5, 'con el arreglo entero', 'for (i = 0; i < CANTIDAD; i++) {\n  printf("%d\\n", notas);\n}', ['ARREGLO_SIN_POSICION']),
+  leer(5, 'el indice en lugar de la nota', 'for (i = 0; i < CANTIDAD; i++) {\n  printf("%d\\n", i);\n}', ['MUESTRA_SIN_EL_ARREGLO']),
+  leer(5, 'una vuelta de mas', 'for (i = 0; i <= CANTIDAD; i++) {\n  printf("%d\\n", notas[i]);\n}', ['INDICE_FUERA_DE_RANGO']),
+
+  // 6: temperaturas
+  leer(6, 'dos ciclos', 'for (i = 0; i < CANTIDAD; i++) {\n  scanf("%f", &temperaturas[i]);\n}\nfor (i = 0; i < CANTIDAD; i++) {\n  printf("%f\\n", temperaturas[i]);\n}'),
+  leer(6, 'un solo ciclo', 'for (i = 0; i < CANTIDAD; i++) {\n  scanf("%f", &temperaturas[i]);\n  printf("%.2f\\n", temperaturas[i]);\n}'),
+  leer(6, 'leer con %d', 'for (i = 0; i < CANTIDAD; i++) {\n  scanf("%d", &temperaturas[i]);\n}\nfor (i = 0; i < CANTIDAD; i++) {\n  printf("%f\\n", temperaturas[i]);\n}', ['FORMATO_NO_CORRESPONDE_AL_TIPO']),
+  leer(6, 'mostrar con %d', 'for (i = 0; i < CANTIDAD; i++) {\n  scanf("%f", &temperaturas[i]);\n}\nfor (i = 0; i < CANTIDAD; i++) {\n  printf("%d\\n", temperaturas[i]);\n}', ['FORMATO_NO_CORRESPONDE_AL_TIPO']),
+  leer(6, 'leer con %lf un float', 'for (i = 0; i < CANTIDAD; i++) {\n  scanf("%lf", &temperaturas[i]);\n}\nfor (i = 0; i < CANTIDAD; i++) {\n  printf("%f\\n", temperaturas[i]);\n}', ['FORMATO_NO_CORRESPONDE_AL_TIPO']),
+  leer(6, 'sin mostrar', 'for (i = 0; i < CANTIDAD; i++) {\n  scanf("%f", &temperaturas[i]);\n}', ['MUESTRA_FALTA']),
+  {
+    ...leer(6, 'el formato dice cual corresponde', 'for (i = 0; i < CANTIDAD; i++) {\n  scanf("%d", &temperaturas[i]);\n}\nfor (i = 0; i < CANTIDAD; i++) {\n  printf("%f\\n", temperaturas[i]);\n}', ['FORMATO_NO_CORRESPONDE_AL_TIPO']),
+    dice: ['`%d`', '`temperaturas[i]`', '`float`', '`%f`'],
+  },
+
+  // 7: de atras
+  leer(7, 'leer y mostrar al reves', 'for (i = 0; i < CANTIDAD; i++) {\n  scanf("%d", &ventas[i]);\n}\nfor (i = CANTIDAD - 1; i >= 0; i--) {\n  printf("%d\\n", ventas[i]);\n}'),
+  leer(7, 'mostrar en el mismo orden', 'for (i = 0; i < CANTIDAD; i++) {\n  scanf("%d", &ventas[i]);\n}\nfor (i = 0; i < CANTIDAD; i++) {\n  printf("%d\\n", ventas[i]);\n}', ['MUESTRA_DISTINTA']),
+  leer(7, 'leer al reves tambien', 'for (i = CANTIDAD - 1; i >= 0; i--) {\n  scanf("%d", &ventas[i]);\n}\nfor (i = CANTIDAD - 1; i >= 0; i--) {\n  printf("%d\\n", ventas[i]);\n}', ['RESULTADO_VALOR_DISTINTO']),
+
+  // 8: con mensaje
+  leer(8, 'el mensaje con el numero', 'for (i = 0; i < CANTIDAD; i++) {\n  printf("Ingrese la nota %d: ", i + 1);\n  scanf("%d", &notas[i]);\n}'),
+  leer(8, 'con salto de linea', 'for (i = 0; i < CANTIDAD; i++) {\n  printf("Ingrese la nota %d:\\n", i + 1);\n  scanf("%d", &notas[i]);\n}'),
+  leer(8, 'sin mensaje', 'for (i = 0; i < CANTIDAD; i++) {\n  scanf("%d", &notas[i]);\n}', ['TEXTO_DISTINTO']),
+  leer(8, 'otro mensaje', 'for (i = 0; i < CANTIDAD; i++) {\n  printf("Nota %d: ", i + 1);\n  scanf("%d", &notas[i]);\n}', ['TEXTO_DISTINTO']),
+  leer(8, 'siempre la nota 1', 'for (i = 0; i < CANTIDAD; i++) {\n  printf("Ingrese la nota 1: ");\n  scanf("%d", &notas[i]);\n}', ['TEXTO_DISTINTO']),
+  leer(8, 'numerado desde cero', 'for (i = 0; i < CANTIDAD; i++) {\n  printf("Ingrese la nota %d: ", i);\n  scanf("%d", &notas[i]);\n}', ['TEXTO_DISTINTO']),
+];
+
 // Arreglos definidos con sus valores: los del dibujo, 3 6 0 7 1 5.
 const valores = (paso, nombre, respuesta, espera, mejoras = []) => ({
   serie: 'arreglos-valores',
@@ -575,6 +675,7 @@ export const CASOS = [
   ...CASOS_DE_ARREGLOS,
   ...CASOS_DE_POSICIONES,
   ...CASOS_DE_RECORRER,
+  ...CASOS_DE_LEER,
   ...CASOS_DE_CADENAS,
   ...CASOS_DE_CADENAS_NUEVAS,
   // ---- 1: declarar la estructura ----
