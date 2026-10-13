@@ -219,7 +219,8 @@ export function corregir(
       : diagnosticos.filter((d) => d.nivel !== 'mejora' && d.nivel !== 'nota');
     // Una condicion que no se pudo comprobar deja la respuesta como correcta,
     // pero no como excelente: excelente es "lo verifique y no hay nada que mejorar".
-    const sinVerificar = correcto && diagnosticos.some((d) => d.codigo === 'CICLO_NO_VERIFICADO');
+    const sinVerificar =
+      correcto && diagnosticos.some((d) => ['CICLO_NO_VERIFICADO', 'INTERCAMBIO_NO_VERIFICADO'].includes(d.codigo));
     return {
       correcto,
       mejorable: correcto && (sinVerificar || diagnosticos.some((d) => d.nivel === 'mejora')),
@@ -296,6 +297,8 @@ export function corregir(
     if (regla.incluye) return reglaIncluye(regla.incluye, modelo);
     if (regla.lee) return reglaLee(regla.lee, modelo);
     if (regla.asigna) return reglaAsigna(regla.asigna, modelo);
+    if (regla.suma) return reglaSuma(regla.suma, modelo);
+    if (regla.intercambia) return reglaIntercambia(regla.intercambia, modelo);
     if (regla.muestra) return reglaMuestra(regla.muestra, modelo);
     if (regla.limpiaEntrada) return reglaLimpiaEntrada(regla.limpiaEntrada, modelo);
     throw new Error(`La consigna "${consigna.id}" tiene una regla que no conozco.`);
@@ -1442,7 +1445,15 @@ export function corregir(
         a.izquierda.nombre === nombre &&
         a.izquierda.indices.length === 1
     );
-    if (!propias.length) {
+    // La consigna puede pedir varias posiciones (una regla por cada una): una
+    // asignacion que es de otra de ellas no cuenta como "la posicion equivocada".
+    const posicionDe = (a) => valorDeDimension(a.izquierda.indices[0], modelo);
+    const deLasOtras = consigna.requiere
+      .filter((r) => r.asigna && r.asigna !== regla && valorDe(r.asigna.variable) === nombre)
+      .map((r) => r.asigna.indice);
+    const exacta = propias.find((x) => posicionDe(x) === regla.indice);
+    const libres = propias.filter((x) => !deLasOtras.includes(posicionDe(x)));
+    if (!exacta && !libres.length) {
       // "==" pregunta si son iguales: no guarda nada.
       const igual = modelo.comparaciones.find(
         (c) => c.nuevo && !c.enIf && c.izquierda.clase === 'indice' && c.izquierda.nombre === nombre
@@ -1453,6 +1464,8 @@ export function corregir(
           `\`==\` pregunta si dos valores son iguales y no guarda nada: para guardar un valor en \`${igual.izquierda.texto}\` se usa un solo \`=\`.`,
           igual.fila
         );
+      } else if (propias.length) {
+        error('ASIGNACION_FALTA_POSICION', 'Falta guardar un valor en una de las posiciones que pide la consigna.');
       } else {
         error(
           'ASIGNACION_FALTA',
@@ -1479,8 +1492,7 @@ export function corregir(
       }
     }
 
-    const posicionDe = (a) => valorDeDimension(a.izquierda.indices[0], modelo);
-    const a = propias.find((x) => posicionDe(x) === regla.indice) || propias[0];
+    const a = exacta || libres[0];
     const posicion = posicionDe(a);
     const tamano = variable ? valorDeDimension(variable.arreglo[0] ?? '', modelo) : null;
 
@@ -1531,6 +1543,231 @@ export function corregir(
         a.fila
       );
     }
+  }
+
+  // ---- una suma de posiciones, y el intercambio de dos ---------------------------
+
+  // "notas[ 0 + 1 ]" -> "notas[1]": la posicion con su indice calculado, para
+  // comparar sin que importe como este escrito. Null si no es una posicion
+  // con un indice que se pueda calcular.
+  function posicionNormal(texto, modelo) {
+    const m = /^([A-Za-z_]\w*)\[(.+)\]$/.exec(texto.replace(/\s+/g, ''));
+    if (!m) return null;
+    const n = valorDeDimension(m[2], modelo);
+    return n == null ? null : `${m[1]}[${n}]`;
+  }
+
+  // Los terminos de una cuenta, separados por el operador, sin mirar lo que
+  // esta entre corchetes o parentesis: "a[0] + a[1]" -> ["a[0]", "a[1]"].
+  // "operadores" son los que separan a ese nivel.
+  function terminosDe(texto) {
+    const terminos = [];
+    const operadores = [];
+    let actual = '';
+    let profundidad = 0;
+    for (const c of texto.replace(/\s+/g, '')) {
+      if (c === '[' || c === '(') profundidad++;
+      if (c === ']' || c === ')') profundidad--;
+      if (profundidad === 0 && '+-*/%'.includes(c) && actual) {
+        terminos.push(actual);
+        operadores.push(c);
+        actual = '';
+      } else {
+        actual += c;
+      }
+    }
+    terminos.push(actual);
+    return { terminos, operadores };
+  }
+
+  // "total = notas[0] + notas[19];" (o con el tipo): la suma de esas posiciones,
+  // guardada en una variable. "de" son las posiciones, "capturar" el nombre.
+  function reglaSuma(regla, modelo) {
+    const esperadas = regla.de.map((p) => posicionNormal(valorDe(p), modelo));
+    const candidatos = [
+      ...modelo.asignaciones
+        .filter((a) => a.nuevo && a.operador === '=' && a.izquierda.clase === 'nombre')
+        .map((a) => ({ nombre: a.izquierda.nombre, texto: a.derecha.texto, fila: a.fila })),
+      ...modelo.variables
+        .filter((v) => v.nuevo && v.inicial && !v.arreglo.length)
+        .map((v) => ({ nombre: v.nombre, texto: v.inicial.texto, fila: v.fila })),
+    ].filter((c) => c.texto.includes('['));
+
+    if (!candidatos.length) {
+      const enPosicion = modelo.asignaciones.find(
+        (a) => a.nuevo && a.operador === '=' && a.izquierda.clase === 'indice' && a.derecha.texto.includes('+')
+      );
+      if (enPosicion) {
+        error(
+          'SUMA_EN_UNA_POSICION',
+          'El resultado de la suma va en una variable aparte, no en una posición del arreglo.',
+          enPosicion.fila
+        );
+      } else {
+        error(
+          'SUMA_FALTA',
+          'No encontré la suma guardada en una variable: se escribe la variable, `=` y la suma de las posiciones.'
+        );
+      }
+      return;
+    }
+
+    const parecido = (c) => {
+      const { terminos, operadores } = terminosDe(c.texto);
+      const normales = terminos.map((t) => posicionNormal(t, modelo)).sort();
+      return operadores.every((o) => o === '+') && normales.join() === [...esperadas].sort().join();
+    };
+    const c = candidatos.find(parecido) || candidatos[0];
+    const { terminos, operadores } = terminosDe(c.texto);
+
+    if (!parecido(c)) {
+      const normales = terminos.map((t) => posicionNormal(t, modelo));
+      if (operadores.length && operadores.some((o) => o !== '+')) {
+        error(
+          'SUMA_OPERADOR',
+          `La consigna pide una suma, y acá se usa \`${operadores.find((o) => o !== '+')}\`: el operador de la suma es \`+\`.`,
+          c.fila
+        );
+      } else if (normales.some((n) => n == null)) {
+        error(
+          'SUMA_OTRAS_POSICIONES',
+          'La suma tiene que usar posiciones concretas del arreglo, con su índice entre corchetes.',
+          c.fila
+        );
+      } else {
+        error('SUMA_OTRAS_POSICIONES', 'La suma no usa las posiciones que pide la consigna.', c.fila);
+      }
+      return;
+    }
+    if (regla.capturar) nuevas[regla.capturar] = c.nombre;
+  }
+
+  // El valor de una expresion de enteros ("notas[0] + 1", "aux", "7") con los
+  // valores que tienen ahora las posiciones y las variables; null si usa algo
+  // que no esta (una variable sin valor, una llamada).
+  function valorConEntorno(texto, entorno, modelo) {
+    const partes = texto.replace(/\s+/g, '').match(/[A-Za-z_]\w*\[[^\]]*\]|[A-Za-z_]\w*|\d+|[()+\-*/%]/g);
+    if (!partes || partes.join('') !== texto.replace(/\s+/g, '')) return null;
+    let i = 0;
+    const falla = () => {
+      throw new Error('no se puede calcular');
+    };
+    function primario() {
+      const t = partes[i++];
+      if (t === undefined) falla();
+      if (t === '(') {
+        const v = suma();
+        if (partes[i++] !== ')') falla();
+        return v;
+      }
+      if (t === '-') return -primario();
+      if (/^\d+$/.test(t)) return Number(t);
+      const clave = posicionNormal(t, modelo) ?? t;
+      if (!entorno.has(clave)) falla();
+      return entorno.get(clave);
+    }
+    function producto() {
+      let v = primario();
+      while (partes[i] === '*' || partes[i] === '/' || partes[i] === '%') {
+        const op = partes[i++];
+        const w = primario();
+        if (op !== '*' && w === 0) falla();
+        v = op === '*' ? v * w : op === '/' ? Math.trunc(v / w) : v % w;
+      }
+      return v;
+    }
+    function suma() {
+      let v = producto();
+      while (partes[i] === '+' || partes[i] === '-') {
+        v = partes[i++] === '+' ? v + producto() : v - producto();
+      }
+      return v;
+    }
+    try {
+      const v = suma();
+      return i === partes.length ? v : null;
+    } catch {
+      return null;
+    }
+  }
+
+  // Intercambiar dos posiciones. Se sigue lo que escribio, sentencia por
+  // sentencia, con dos valores cualquiera (7 y 3): al final cada posicion tiene
+  // que tener el de la otra. Asi vale cualquier orden o forma que funcione
+  // (con una auxiliar, o con sumas y restas), y se dice por que no, si no anda.
+  function reglaIntercambia(regla, modelo) {
+    const nombre = valorDe(regla.variable);
+    const A = `${nombre}[${regla.posiciones[0]}]`;
+    const B = `${nombre}[${regla.posiciones[1]}]`;
+    const normal = (t) => posicionNormal(t, modelo) ?? t.replace(/\s+/g, '');
+    const pasos = [
+      ...modelo.asignaciones
+        .filter((a) => a.nuevo && a.operador === '=')
+        .map((a) => ({ destino: normal(a.izquierda.texto), origen: a.derecha.texto, posicion: a.posicion, fila: a.fila })),
+      ...modelo.variables
+        .filter((v) => v.nuevo && v.inicial && !v.arreglo.length)
+        .map((v) => ({ destino: v.nombre, origen: v.inicial.texto, posicion: v.indice, fila: v.fila })),
+    ].sort((x, y) => x.posicion - y.posicion);
+
+    const toca = pasos.filter((p) => p.destino === A || p.destino === B);
+    if (!toca.length) {
+      error(
+        'INTERCAMBIO_FALTA',
+        'No encontré el intercambio: cada una de las dos posiciones tiene que terminar con el valor que tenía la otra.'
+      );
+      return;
+    }
+
+    const entorno = new Map([
+      [A, 7],
+      [B, 3],
+    ]);
+    let seguro = modelo.ciclos.every((c) => !c.nuevo) && modelo.ifs.every((s) => !s.nuevo);
+    for (const p of seguro ? pasos : []) {
+      const v = valorConEntorno(p.origen, entorno, modelo);
+      if (v == null) {
+        seguro = false;
+        break;
+      }
+      entorno.set(p.destino, v);
+    }
+    if (!seguro) {
+      aviso(
+        'INTERCAMBIO_NO_VERIFICADO',
+        'No pude comprobar este intercambio. Verifique que cada posición termine con el valor que tenía la otra.',
+        toca[0].fila
+      );
+      return;
+    }
+
+    const a = entorno.get(A);
+    const b = entorno.get(B);
+    if (a === 3 && b === 7) return;
+    if (a === b) {
+      // El valor que se perdio: si una variable lo tiene guardado, lo que falta es
+      // devolverlo; si no, nunca se guardo.
+      const perdido = a === 7 ? 3 : 7;
+      const guardado = [...entorno.entries()].some(([clave, valor]) => !clave.includes('[') && valor === perdido);
+      if (guardado) {
+        error(
+          'INTERCAMBIO_INCOMPLETO',
+          'Falta completar el intercambio: el valor que se guardó en la variable auxiliar tiene que volver a la otra posición.',
+          toca[toca.length - 1].fila
+        );
+      } else {
+        error(
+          'INTERCAMBIO_SIN_AUXILIAR',
+          'Las dos posiciones terminan con el mismo valor: cuando se copia una sobre la otra, el valor que tenía se pierde. Antes de copiarlo hay que guardarlo en otra variable.',
+          toca[0].fila
+        );
+      }
+      return;
+    }
+    error(
+      'INTERCAMBIO_INCOMPLETO',
+      'Falta completar el intercambio: cada una de las dos posiciones tiene que terminar con el valor que tenía la otra.',
+      toca[toca.length - 1].fila
+    );
   }
 
   // ---- leer y mostrar ---------------------------------------------------------

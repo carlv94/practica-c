@@ -131,7 +131,7 @@
               // El codigo se ve como un programa completo, con su main y su return.
               const programa = programaDeOpciones(s, i, previo);
               anotar(
-                !consigna.codigo || (/int main\(\) \{/.test(programa) && /return 0;/.test(programa)),
+                consigna.codigo == null || (/int main\(\) \{/.test(programa) && /return 0;/.test(programa)),
                 `programa de ${consigna.id}`,
                 programa
               );

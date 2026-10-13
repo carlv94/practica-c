@@ -142,9 +142,11 @@ function marco(serie, indice, avance) {
 // El programa que se le muestra en una consigna de opciones: el "archivo" y
 // el "codigo" de la consigna (con lo que dejaron las anteriores, si continua),
 // dentro de un main. Es para leer: no lleva el lugar de la respuesta.
+// Un cuestionario puede no traer codigo propio ("codigo": ""): muestra lo que
+// dejaron las consignas anteriores, si continua.
 export function programaDeOpciones(serie, indice, avance) {
   const consigna = serie.consignas[indice];
-  if (!consigna.codigo) return '';
+  if (consigna.codigo == null) return '';
   const capturas = capturasPrevias(serie, indice, avance);
   const archivo = unir(
     serie.cabecera,

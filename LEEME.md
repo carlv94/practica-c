@@ -396,6 +396,37 @@ Arreglos, serie "Elementos e índices"):
 | `notas = 8;` | `ASIGNACION_DE_ARREGLO` | Un arreglo no se asigna completo. |
 | `notas[0] = notas[1];` copiando al revés | `ASIGNACION_AL_REVES` | Qué va a cada lado del `=`. |
 | otro valor | `ASIGNACION_VALOR_DISTINTO` | No es el valor de la consigna. |
+| falta una de varias posiciones pedidas | `ASIGNACION_FALTA_POSICION` | Falta una de las posiciones de la consigna. |
+
+Una consigna que pide varias posiciones lleva una regla `asigna` por cada una:
+una asignación que es de otra de ellas no se cuenta como "la posición
+equivocada".
+
+Otras dos reglas de la misma serie:
+
+- `{ "suma": { "de": ["notas[0]", "notas[MAX_ALUMNOS - 1]"] } }`: la suma de
+  esas posiciones, guardada en una variable (con su tipo, o con una
+  asignación). Los términos pueden ir en cualquier orden, y cada posición con
+  la constante o con el número. Con `"capturar"` guarda el nombre que eligió
+  el alumno. `SUMA_OTRAS_POSICIONES`, `SUMA_OPERADOR` (`-`, `*`),
+  `SUMA_EN_UNA_POSICION` (el resultado en el arreglo) y `SUMA_FALTA`.
+- `{ "intercambia": { "variable": "notas", "posiciones": [0, 1] } }`: no mira
+  la forma sino lo que hace: sigue las sentencias con dos valores cualquiera y
+  pide que al final cada posición tenga el de la otra. Vale con una variable
+  auxiliar en cualquier orden, o con sumas y restas. Si no anda, dice por qué:
+  `INTERCAMBIO_SIN_AUXILIAR` (las dos quedan iguales: el valor se perdió),
+  `INTERCAMBIO_INCOMPLETO` (se guardó pero no volvió) e `INTERCAMBIO_FALTA`.
+  Con un ciclo o un `if` no se puede seguir: `INTERCAMBIO_NO_VERIFICADO`
+  (correcto, pero no excelente).
+
+Los nombres de variable de una sola letra se dejan para los índices (`i`, `j`),
+los tamaños (`n`) y algún uso particular: en el resto, un nombre que diga qué
+guarda (`dato`, `valores`, `resultado`) hace más fácil seguir el código.
+
+Una opción de un cuestionario puede no llevar `valor` (solo `texto`: "No se
+puede saber"); no se escribe `"valor": "undefined"`, que no es un valor de C. Un cuestionario
+que continúa puede llevar `"codigo": ""`: muestra solo el programa que dejaron
+las consignas anteriores, con las respuestas del alumno, y pregunta por él.
 
 Para leer y mostrar una cadena hay tres reglas propias (grupo Cadenas, serie "Leer y mostrar una cadena"):
 

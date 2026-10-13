@@ -154,18 +154,19 @@ const posiciones = (paso, nombre, respuesta, espera = 'ok', mejoras = []) => ({
 });
 
 const CASOS_DE_POSICIONES = [
-  // 1: la primera posicion
-  posiciones(1, 'la primera', 'notas[0] = 8;', 'ok'),
-  posiciones(1, 'con espacios', 'notas[ 0 ]=8;', 'ok'),
-  posiciones(1, 'contando desde uno', 'notas[1] = 8;', ['ARGUMENTO_OTRA_POSICION']),
-  posiciones(1, 'otra posicion', 'notas[5] = 8;', ['ARGUMENTO_OTRA_POSICION']),
-  posiciones(1, 'otro valor', 'notas[0] = 9;', ['ASIGNACION_VALOR_DISTINTO']),
-  posiciones(1, 'una posicion que no existe', 'notas[20] = 8;', ['INDICE_FUERA_DE_RANGO']),
+  // 1: las dos primeras posiciones
+  posiciones(1, 'las dos notas', 'notas[0] = 8;\nnotas[1] = 5;', 'ok'),
+  posiciones(1, 'en otro orden', 'notas[1] = 5;\nnotas[0] = 8;', 'ok'),
+  posiciones(1, 'con espacios', 'notas[ 0 ]=8;\nnotas[ 1 ]=5;', 'ok'),
+  posiciones(1, 'solo la primera', 'notas[0] = 8;', ['ASIGNACION_FALTA_POSICION']),
+  posiciones(1, 'solo la segunda', 'notas[1] = 5;', ['ASIGNACION_FALTA_POSICION']),
+  posiciones(1, 'las notas intercambiadas', 'notas[0] = 5;\nnotas[1] = 8;', ['ASIGNACION_VALOR_DISTINTO']),
+  posiciones(1, 'contando desde uno', 'notas[1] = 8;\nnotas[2] = 5;', ['ARGUMENTO_OTRA_POSICION', 'ASIGNACION_VALOR_DISTINTO']),
+  posiciones(1, 'una posicion que no existe', 'notas[0] = 8;\nnotas[20] = 5;', ['INDICE_FUERA_DE_RANGO']),
   posiciones(1, 'el arreglo completo', 'notas = 8;', ['ASIGNACION_DE_ARREGLO']),
-  posiciones(1, 'con dos signos igual', 'notas[0] == 8;', ['ASIGNACION_CON_IGUAL_DOBLE']),
-  posiciones(1, 'con una variable de indice', 'int i = 0;\nnotas[i] = 8;', ['ARGUMENTO_POSICION_CON_VARIABLE']),
+  posiciones(1, 'con dos signos igual', 'notas[0] == 8;\nnotas[1] = 5;', ['ASIGNACION_CON_IGUAL_DOBLE']),
+  posiciones(1, 'con una variable de indice', 'int i = 0;\nnotas[i] = 8;\nnotas[1] = 5;', ['ARGUMENTO_POSICION_CON_VARIABLE']),
   posiciones(1, 'sin asignar', 'int x;', ['ASIGNACION_FALTA']),
-  posiciones(1, 'de otra variable', 'x[0] = 8;', ['ASIGNACION_FALTA']),
 
   // 2: la ultima posicion (sigue de la anterior)
   posiciones(2, 'con la constante', 'notas[MAX_ALUMNOS - 1] = 10;', 'ok'),
@@ -176,29 +177,60 @@ const CASOS_DE_POSICIONES = [
   posiciones(2, 'la anteultima', 'notas[18] = 10;', ['ARGUMENTO_OTRA_POSICION']),
   posiciones(2, 'la primera', 'notas[0] = 10;', ['ARGUMENTO_OTRA_POSICION']),
 
-  // 4: copiar de una posicion a otra
-  posiciones(4, 'la segunda recibe la primera', 'notas[1] = notas[0];', 'ok'),
-  posiciones(4, 'al reves', 'notas[0] = notas[1];', ['ASIGNACION_AL_REVES']),
-  posiciones(4, 'otra posicion de origen', 'notas[1] = notas[2];', ['ASIGNACION_VALOR_DISTINTO']),
-  posiciones(4, 'un numero en lugar de la posicion', 'notas[1] = 8;', ['ASIGNACION_VALOR_DISTINTO']),
-  posiciones(4, 'a otra posicion', 'notas[2] = notas[0];', ['ARGUMENTO_OTRA_POSICION']),
-
-  // cuestionarios (la respuesta es el lugar de la opcion)
+  // 3: cuestionario, que hay en una posicion
   posiciones(3, 'posicion: el tercer valor', '2'),
   posiciones(3, 'posicion: contando desde uno', '0', ['OPCION_POSICION_DESDE_UNO']),
   posiciones(3, 'posicion: el indice', '1', ['OPCION_EL_INDICE_ES_EL_VALOR']),
-  posiciones(5, 'suma: la suma', '2'),
-  posiciones(5, 'suma: el valor que tenia', '0', ['OPCION_VALOR_ANTERIOR']),
-  posiciones(5, 'suma: un solo termino', '1', ['OPCION_SOLO_UN_ELEMENTO']),
-  posiciones(6, 'sin valor: no se puede saber', '2'),
-  posiciones(6, 'sin valor: cero', '0', ['OPCION_SIN_VALOR_ES_CERO']),
-  posiciones(6, 'sin valor: copia el anterior', '1', ['OPCION_COPIA_EL_ANTERIOR']),
-  posiciones(7, 'fuera: no se puede saber', '2'),
-  posiciones(7, 'fuera: la sexta posicion', '0', ['OPCION_LA_SEXTA_POSICION']),
-  posiciones(7, 'fuera: el compilador avisa', '1', ['OPCION_EL_COMPILADOR_AVISA']),
-  posiciones(8, 'variable: el 20', '2'),
-  posiciones(8, 'variable: ignora la cuenta', '0', ['OPCION_IGNORA_LA_CUENTA']),
-  posiciones(8, 'variable: resta de mas', '1', ['OPCION_RESTA_DE_MAS']),
+
+  // 4: la suma de dos posiciones, en una variable
+  posiciones(4, 'con el tipo', 'int total = notas[0] + notas[MAX_ALUMNOS - 1];', 'ok'),
+  posiciones(4, 'con una asignacion', 'int total;\ntotal = notas[0] + notas[19];', 'ok'),
+  posiciones(4, 'en otro orden', 'int total = notas[MAX_ALUMNOS - 1] + notas[0];', 'ok'),
+  posiciones(4, 'con otro nombre', 'int suma = notas[0] + notas[19];', 'ok'),
+  posiciones(4, 'otras posiciones', 'int total = notas[0] + notas[1];', ['SUMA_OTRAS_POSICIONES']),
+  posiciones(4, 'una sola posicion', 'int total = notas[0];', ['SUMA_OTRAS_POSICIONES']),
+  posiciones(4, 'una resta', 'int total = notas[0] - notas[MAX_ALUMNOS - 1];', ['SUMA_OPERADOR']),
+  posiciones(4, 'una multiplicacion', 'int total = notas[0] * notas[MAX_ALUMNOS - 1];', ['SUMA_OPERADOR']),
+  posiciones(4, 'los numeros en lugar de las posiciones', 'int total = 8 + 10;', ['SUMA_FALTA']),
+  posiciones(4, 'sin guardar', 'notas[0] + notas[MAX_ALUMNOS - 1];', ['SUMA_FALTA']),
+  posiciones(4, 'en una posicion del arreglo', 'notas[2] = notas[0] + notas[19];', ['SUMA_EN_UNA_POSICION']),
+
+  // 5: copiar de una posicion a otra
+  posiciones(5, 'la segunda recibe la primera', 'notas[1] = notas[0];', 'ok'),
+  posiciones(5, 'al reves', 'notas[0] = notas[1];', ['ASIGNACION_AL_REVES']),
+  posiciones(5, 'otra posicion de origen', 'notas[1] = notas[2];', ['ASIGNACION_VALOR_DISTINTO']),
+  posiciones(5, 'un numero en lugar de la posicion', 'notas[1] = 8;', ['ASIGNACION_VALOR_DISTINTO']),
+  posiciones(5, 'a otra posicion', 'notas[2] = notas[0];', ['ARGUMENTO_OTRA_POSICION']),
+
+  // 6: cuestionario, que paso con el valor anterior
+  posiciones(6, 'anterior: el valor copiado', '2'),
+  posiciones(6, 'anterior: el que tenia', '0', ['OPCION_SIGUE_EL_ANTERIOR']),
+  posiciones(6, 'anterior: los dos juntos', '1', ['OPCION_SE_SUMAN']),
+
+  // 7: intercambiar (un programa nuevo, con {8, 5})
+  posiciones(7, 'con una auxiliar', 'int auxiliar = notas[0];\nnotas[0] = notas[1];\nnotas[1] = auxiliar;', 'ok'),
+  posiciones(7, 'con la auxiliar declarada antes', 'int auxiliar;\nauxiliar = notas[0];\nnotas[0] = notas[1];\nnotas[1] = auxiliar;', 'ok'),
+  posiciones(7, 'guardando la otra', 'int auxiliar = notas[1];\nnotas[1] = notas[0];\nnotas[0] = auxiliar;', 'ok'),
+  posiciones(7, 'con sumas y restas', 'notas[0] = notas[0] + notas[1];\nnotas[1] = notas[0] - notas[1];\nnotas[0] = notas[0] - notas[1];', 'ok'),
+  posiciones(7, 'sin auxiliar', 'notas[0] = notas[1];\nnotas[1] = notas[0];', ['INTERCAMBIO_SIN_AUXILIAR']),
+  posiciones(7, 'la auxiliar guardada tarde', 'int auxiliar = notas[0];\nnotas[1] = auxiliar;\nnotas[0] = notas[1];', ['INTERCAMBIO_SIN_AUXILIAR']),
+  posiciones(7, 'sin devolver lo guardado', 'int auxiliar = notas[0];\nnotas[0] = notas[1];', ['INTERCAMBIO_INCOMPLETO']),
+  posiciones(7, 'sin hacer nada', 'int auxiliar;', ['INTERCAMBIO_FALTA']),
+  {
+    ...posiciones(7, 'dentro de un ciclo: sin comprobar', 'int auxiliar;\nint i;\nfor (i = 0; i < 1; i++) {\n  auxiliar = notas[0];\n  notas[0] = notas[1];\n  notas[1] = auxiliar;\n}', 'ok'),
+    sinVerificar: true,
+  },
+
+  // 8, 9 y 10: cuestionarios (la respuesta es el lugar de la opcion)
+  posiciones(8, 'sin valor: no se puede saber', '2'),
+  posiciones(8, 'sin valor: cero', '0', ['OPCION_SIN_VALOR_ES_CERO']),
+  posiciones(8, 'sin valor: copia el anterior', '1', ['OPCION_COPIA_EL_ANTERIOR']),
+  posiciones(9, 'fuera: no se puede saber', '2'),
+  posiciones(9, 'fuera: la sexta posicion', '0', ['OPCION_LA_SEXTA_POSICION']),
+  posiciones(9, 'fuera: el compilador avisa', '1', ['OPCION_EL_COMPILADOR_AVISA']),
+  posiciones(10, 'variable: el 20', '2'),
+  posiciones(10, 'variable: ignora la cuenta', '0', ['OPCION_IGNORA_LA_CUENTA']),
+  posiciones(10, 'variable: resta de mas', '1', ['OPCION_RESTA_DE_MAS']),
 ];
 
 // Arreglos definidos con sus valores: los del dibujo, 3 6 0 7 1 5.
