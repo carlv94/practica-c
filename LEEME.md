@@ -422,8 +422,8 @@ Otras dos reglas de la misma serie:
 **Un ciclo se corrige siguiendo lo que hace** (`js/simulador.js`), no mirando
 cómo está escrito. Es un intérprete mínimo de C: enteros y decimales, arreglos
 de cualquier dimensión, asignaciones, `++` y `--`, la aritmética, las
-comparaciones, `if`, `for`, `while` y `do while`, y la función `pow`; sin
-entrada ni salida ni otras llamadas. Lo usa la regla:
+comparaciones, `if`, `for`, `while` y `do while`, y las funciones `pow`,
+`scanf` y `printf`; sin otras llamadas. Lo usa la regla:
 
 - `{ "resultado": { "variable": "notas", "valores": "i * i", "conCiclo": true } }`:
   después de ejecutar todo (lo que la consigna da y lo que escribió el
@@ -448,6 +448,39 @@ respuesta: sin él, `pow` es el error `INCLUDE_FALTA_PARA_FUNCION` (la tabla
 solo la mira esta regla). Con
 algo que no sabe seguir (una llamada, un `scanf`) es `EJECUCION_NO_VERIFICADA`:
 correcto, pero no excelente.
+
+**Leer y mostrar números** (serie "Leer y mostrar un arreglo"): el intérprete
+también sigue `scanf` y `printf` con `%d`, `%i`, `%f` y `%lf`, dándole al
+programa los datos que "escribe el usuario". La regla es:
+
+- `{ "ejecuta": { "entrada": [8, 5], "queda": { "notas": "entrada" }, "muestra": "entrada", "deArreglo": "notas", "pregunta": "Ingrese la nota %d:", "conCiclo": true, "limite": true } }`.
+  `"entrada"` son los datos que se escriben; `"queda"` dice qué tiene que haber
+  al final en cada arreglo (una lista, o `"entrada"` para lo escrito, en
+  orden); `"muestra"` es la secuencia de números que tiene que mostrar (una
+  lista, `"entrada"` o `"alReves"`); con `"deArreglo"` cuentan solo los que
+  salen de una posición de ese arreglo, y lo que el alumno agregue (el número
+  de alumno, un texto) no importa; `"pregunta"` es el mensaje que tiene que ir
+  antes de cada lectura, con `%d` por el número de la que sigue (se compara sin
+  mirar los espacios).
+
+| Respuesta | Código | Mensaje |
+|---|---|---|
+| `scanf("%d", notas[0])` | `AMPERSAND_FALTA` | "A `notas[0]` le falta el `&` adelante": no explica por qué (los punteros vienen después). |
+| `printf("%d", &notas[0])` | `AMPERSAND_DE_MAS` | `printf` muestra el valor, no el lugar. |
+| `scanf("%d", &notas)`, `printf("%d", notas)` | `ARREGLO_SIN_POSICION` | Hay que decir cuál posición. |
+| `%d` con un `float`, `%f` con un `int`, `%lf` con un `float` | `FORMATO_NO_CORRESPONDE_AL_TIPO` | Dice cuál es el formato del tipo. |
+| más (o menos) conversiones que valores | `FORMATO_CANTIDAD_DISTINTA` | Tiene que haber uno por cada `%`. |
+| no lee, o no muestra | `LECTURA_FALTA`, `MUESTRA_FALTA` | Pide usar `scanf` o `printf`. |
+| lee más datos de los que se escriben | `LECTURA_DE_MAS` | Dice cuántos son. |
+| muestra otros números, o en otro orden | `MUESTRA_DISTINTA` | Dice lo que muestra y lo que se pide; si es un solo valor, de qué posición salió ("lo que hay en la posición 3 de `notas`"). |
+| `notas[6]` en 5 posiciones | `INDICE_FUERA_DE_RANGO` | "`notas` tiene 5 posiciones, numeradas de 0 a 4: la posición 6 no existe." En un ciclo: "se llega a la posición 6, que no existe". |
+| el número escrito en el programa | `MUESTRA_SIN_EL_ARREGLO` | Tiene que salir del arreglo. |
+| otro mensaje | `TEXTO_DISTINTO` | Dice el mensaje que se pide. |
+
+Los errores de posición que ya existen (`INDICE_FUERA_DE_RANGO`,
+`RESULTADO_POSICION_SIN_VALOR`, `RESULTADO_VALOR_DISTINTO`) valen también acá. La
+`cabecera` de esa serie trae el `#include <stdio.h>`: no se ve en las consignas
+de sentencias, pero sí en los programas de los cuestionarios.
 
 Los nombres de variable de una sola letra se dejan para los índices (`i`, `j`),
 los tamaños (`n`) y algún uso particular: en el resto, un nombre que diga qué

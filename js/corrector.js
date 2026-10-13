@@ -44,7 +44,19 @@ import {
   textoDeTipo,
   enPalabras,
 } from './modelo.js';
-import { ejecutar, FueraDeRango, SinValor, NoTermina, SinVerificar } from './simulador.js';
+import {
+  ejecutar,
+  FueraDeRango,
+  SinValor,
+  NoTermina,
+  SinVerificar,
+  SinEntrada,
+  AmpersandFalta,
+  AmpersandDeMas,
+  ArregloSinPosicion,
+  FormatoDistinto,
+  ConversionesDistintas,
+} from './simulador.js';
 
 // Las palabras de un tipo entero van en cualquier orden: "unsigned int", "int unsigned".
 const DE_ENTERO = ['unsigned', 'signed', 'short', 'int', 'long'];
@@ -304,6 +316,7 @@ export function corregir(
     if (regla.asigna) return reglaAsigna(regla.asigna, modelo);
     if (regla.suma) return reglaSuma(regla.suma, modelo);
     if (regla.resultado) return reglaResultado(regla.resultado, modelo);
+    if (regla.ejecuta) return reglaEjecuta(regla.ejecuta, modelo);
     if (regla.intercambia) return reglaIntercambia(regla.intercambia, modelo);
     if (regla.muestra) return reglaMuestra(regla.muestra, modelo);
     if (regla.limpiaEntrada) return reglaLimpiaEntrada(regla.limpiaEntrada, modelo);
@@ -1507,7 +1520,7 @@ export function corregir(
       if (!diagnosticos.some((d) => d.codigo === 'INDICE_FUERA_DE_RANGO')) {
         error(
           'INDICE_FUERA_DE_RANGO',
-          `\`${nombre}\` tiene ${tamano} posiciones, numeradas de 0 a ${tamano - 1}: la ${posicion} no existe.`,
+          `\`${nombre}\` tiene ${tamano} posiciones, numeradas de 0 a ${tamano - 1}: la posición ${posicion} no existe.`,
           a.fila
         );
       }
@@ -1566,58 +1579,9 @@ export function corregir(
       return;
     }
 
-    // Una funcion de una biblioteca que no se agrego: no compilaria.
-    for (const llamada of modelo.llamadas.filter((l) => l.nuevo && l.funcion in BIBLIOTECA_DE)) {
-      const archivo = BIBLIOTECA_DE[llamada.funcion];
-      if (!modelo.includes.some((i) => i.sistema && i.ruta === archivo)) {
-        error(
-          'INCLUDE_FALTA_PARA_FUNCION',
-          `\`${llamada.funcion}\` es una función de la biblioteca \`${archivo}\`: para usarla hay que agregar \`#include <${archivo}>\`.`,
-          llamada.fila
-        );
-        return;
-      }
-    }
-
-    const constante = (n) => {
-      const c = modelo.constantes.find((x) => x.nombre === n);
-      return c ? valorDeDimension(c.valor, modelo) : null;
-    };
-    let corrida;
-    try {
-      corrida = ejecutar(arbol, constante);
-    } catch (e) {
-      if (e instanceof FueraDeRango) {
-        // Con el numero escrito ya lo dijo la revision general.
-        if (!diagnosticos.some((d) => d.codigo === 'INDICE_FUERA_DE_RANGO')) {
-          error(
-            'INDICE_FUERA_DE_RANGO',
-            `\`${e.nombre}\` tiene ${e.tamano} posiciones, numeradas de 0 a ${e.tamano - 1}: se llega a la ${e.indice}, que no existe.`,
-            e.fila
-          );
-        }
-      } else if (e instanceof SinValor) {
-        error(
-          'VARIABLE_SIN_VALOR',
-          `\`${e.nombre}\` todavía no tiene un valor cuando se usa: hay que dárselo antes.`,
-          e.fila
-        );
-      } else if (e instanceof NoTermina) {
-        error(
-          'CICLO_NO_TERMINA',
-          'El ciclo no termina: la condición siempre se cumple. Revise que el índice avance hacia el final.',
-          e.fila
-        );
-      } else if (e instanceof SinVerificar) {
-        aviso(
-          'EJECUCION_NO_VERIFICADA',
-          'No pude seguir este código para comprobarlo. Verifique que el arreglo termine con los valores que pide la consigna.'
-        );
-      } else {
-        throw e;
-      }
-      return;
-    }
+    if (bibliotecaFalta(modelo)) return;
+    const corrida = correrCodigo(modelo, null);
+    if (!corrida) return;
 
     const variable = corrida.variables.get(nombre);
     if (!variable || !variable.dims) {
@@ -1662,6 +1626,117 @@ export function corregir(
       }
     }
 
+    notasYMejoras(regla, modelo);
+  }
+
+  // Una funcion de una biblioteca que no se agrego: no compilaria.
+  function bibliotecaFalta(modelo) {
+    for (const llamada of modelo.llamadas.filter((l) => l.nuevo && l.funcion in BIBLIOTECA_DE)) {
+      const archivo = BIBLIOTECA_DE[llamada.funcion];
+      if (!modelo.includes.some((i) => i.sistema && i.ruta === archivo)) {
+        error(
+          'INCLUDE_FALTA_PARA_FUNCION',
+          `\`${llamada.funcion}\` es una función de la biblioteca \`${archivo}\`: para usarla hay que agregar \`#include <${archivo}>\`.`,
+          llamada.fila
+        );
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // Sigue el codigo con la entrada dada (los datos que "escribe el usuario").
+  // Si algo impide seguirlo lo dice y devuelve null.
+  function correrCodigo(modelo, entrada) {
+    const constante = (n) => {
+      const c = modelo.constantes.find((x) => x.nombre === n);
+      return c ? valorDeDimension(c.valor, modelo) : null;
+    };
+    try {
+      return ejecutar(arbol, constante, entrada);
+    } catch (e) {
+      if (e instanceof FueraDeRango) {
+        // Con el numero escrito ya lo dijo la revision general.
+        if (!diagnosticos.some((d) => d.codigo === 'INDICE_FUERA_DE_RANGO')) {
+          error(
+            'INDICE_FUERA_DE_RANGO',
+            `\`${e.nombre}\` tiene ${e.tamano} posiciones, numeradas de 0 a ${e.tamano - 1}: ${e.escrito ? `la posición ${e.indice} no existe.` : `se llega a la posición ${e.indice}, que no existe.`}`,
+            e.fila
+          );
+        }
+      } else if (e instanceof SinValor) {
+        error(
+          'VARIABLE_SIN_VALOR',
+          `\`${e.nombre}\` todavía no tiene un valor cuando se usa: hay que dárselo antes.`,
+          e.fila
+        );
+      } else if (e instanceof NoTermina) {
+        error(
+          'CICLO_NO_TERMINA',
+          'El ciclo no termina: la condición siempre se cumple. Revise que el índice avance hacia el final.',
+          e.fila
+        );
+      } else if (e instanceof SinEntrada) {
+        error(
+          'LECTURA_DE_MAS',
+          `El programa intenta leer más datos de los que se escriben: la consigna dice que son ${entrada.length}.`,
+          e.fila
+        );
+      } else if (e instanceof AmpersandFalta) {
+        error(
+          'AMPERSAND_FALTA',
+          `A \`${e.texto}\` le falta el \`&\` adelante.`,
+          e.fila
+        );
+      } else if (e instanceof AmpersandDeMas) {
+        error(
+          'AMPERSAND_DE_MAS',
+          `\`printf\` muestra el valor que tiene la variable, no el lugar donde está: a \`${e.texto.replace(/^&\s*/, '')}\` le sobra el \`&\`.`,
+          e.fila
+        );
+      } else if (e instanceof ArregloSinPosicion) {
+        error(
+          'ARREGLO_SIN_POSICION',
+          `\`${e.nombre}\` es un arreglo: hay que decir cuál de sus posiciones se usa, por ejemplo \`${e.nombre}[i]\`.`,
+          e.fila
+        );
+      } else if (e instanceof FormatoDistinto) {
+        error('FORMATO_NO_CORRESPONDE_AL_TIPO', mensajeDeFormato(e), e.fila);
+      } else if (e instanceof ConversionesDistintas) {
+        error(
+          'FORMATO_CANTIDAD_DISTINTA',
+          `El formato de \`${e.funcion}\` tiene ${e.conversiones} ${e.conversiones === 1 ? 'conversión' : 'conversiones'} (lo que empieza con \`%\`) y se le pasa${e.valores === 1 ? '' : 'n'} ${e.valores} ${e.valores === 1 ? 'valor' : 'valores'}: tiene que haber uno por cada una.`,
+          e.fila
+        );
+      } else if (e instanceof SinVerificar) {
+        aviso(
+          'EJECUCION_NO_VERIFICADA',
+          'No pude seguir este código para comprobarlo. Verifique que haga lo que pide la consigna.'
+        );
+      } else {
+        throw e;
+      }
+      return null;
+    }
+  }
+
+  // "%d" con un decimal, "%f" con un entero: dice cual es el que corresponde.
+  function mensajeDeFormato(e) {
+    const queEs = { '%d': 'un entero (`int`)', '%i': 'un entero (`int`)', '%f': 'un decimal (`float`)', '%lf': 'un decimal (`double`)' };
+    const deTipo = { int: 'un `int`', float: 'un `float`', double: 'un `double`', decimal: 'un valor decimal' };
+    const correcto =
+      e.funcion === 'scanf'
+        ? { int: '%d', float: '%f', double: '%lf' }[e.tipo]
+        : e.tipo === 'int'
+          ? '%d'
+          : '%f';
+    const que = e.funcion === 'printf' && e.formato === '%lf' ? 'un decimal' : queEs[e.formato];
+    return `\`${e.formato}\` es el formato de ${que}, y \`${e.texto}\` es ${deTipo[e.tipo]}: el formato que le corresponde es \`${correcto}\`.`;
+  }
+
+  // Lo que se avisa de una respuesta que esta bien: pow, y el limite con el
+  // numero suelto habiendo una constante que vale eso.
+  function notasYMejoras(regla, modelo) {
     // pow da lo mismo que el producto, y es una forma valida: se avisa una vez.
     const conPow = modelo.llamadas.find((l) => l.nuevo && l.funcion === 'pow');
     if (conPow && !avisados.includes('USO_DE_POW')) {
@@ -1672,7 +1747,6 @@ export function corregir(
       );
     }
 
-    // El limite del ciclo con el numero suelto, habiendo una constante que vale eso.
     if (regla.limite && practicas.includes('constantes')) {
       for (const ciclo of modelo.ciclos.filter((c) => c.nuevo)) {
         const m = /^\s*[A-Za-z_]\w*\s*(?:<=|<|!=)\s*(\d+)\s*$/.exec(ciclo.condicion);
@@ -1687,6 +1761,108 @@ export function corregir(
         }
       }
     }
+  }
+
+  // ---- leer del teclado y mostrar: se sigue con datos de prueba ------------------
+
+  // Se ejecuta el codigo con los datos que "escribe el usuario" y se compara lo
+  // que queda en los arreglos y lo que se muestra. Vale cualquier forma de
+  // leer o de mostrar que llegue a lo mismo.
+  //   { "ejecuta": {
+  //       "entrada": [8, 5, 9],             // lo que escribe el usuario
+  //       "queda": { "notas": "entrada" },  // o una lista; "entrada" = lo escrito, en orden
+  //       "muestra": "entrada",             // o una lista; "alReves": lo escrito, de atras
+  //       "deArreglo": "notas",             // lo mostrado tiene que salir de ese arreglo
+  //       "pregunta": "Ingrese la nota %d: ",   // el mensaje antes de cada lectura
+  //       "conCiclo": true, "limite": true } }
+  function reglaEjecuta(regla, modelo) {
+    if (regla.conCiclo && !modelo.ciclos.some((c) => c.nuevo)) {
+      error('CICLO_FALTA', 'La consigna pide un ciclo: una sentencia que se repite, como `for` o `while`.');
+      return;
+    }
+    if (bibliotecaFalta(modelo)) return;
+    const entrada = regla.entrada || [];
+    const corrida = correrCodigo(modelo, entrada);
+    if (!corrida) return;
+
+    if (entrada.length && corrida.lecturas === 0) {
+      error('LECTURA_FALTA', 'La consigna pide leer los datos del teclado, con `scanf`: el programa no lee nada.');
+      return;
+    }
+
+    // Lo que tiene que quedar guardado.
+    for (const [nombre, pedido] of Object.entries(regla.queda || {})) {
+      const variable = corrida.variables.get(nombre);
+      if (!variable || !variable.dims) {
+        error('RESULTADO_FALTA', `No encontré el arreglo \`${nombre}\`.`);
+        return;
+      }
+      const debe = pedido === 'entrada' ? entrada : pedido;
+      for (let k = 0; k < debe.length; k++) {
+        const tiene = variable.datos[k];
+        if (tiene === undefined) {
+          error(
+            'RESULTADO_POSICION_SIN_VALOR',
+            `\`${nombre}[${k}]\` no llega a recibir un valor: no se lee ningún dato en esa posición.`
+          );
+          return;
+        }
+        if (Math.abs(tiene - debe[k]) > 1e-9) {
+          error(
+            'RESULTADO_VALOR_DISTINTO',
+            `\`${nombre}[${k}]\` termina valiendo ${tiene}, y con los datos de la consigna tendría que guardar ${debe[k]}.`
+          );
+          return;
+        }
+      }
+    }
+
+    // Lo que tiene que mostrar: la secuencia de numeros.
+    if (regla.muestra != null) {
+      const debe = regla.muestra === 'entrada' ? entrada : regla.muestra === 'alReves' ? [...entrada].reverse() : regla.muestra;
+      if (!corrida.mostrados.length) {
+        error('MUESTRA_FALTA', 'La consigna pide mostrar en pantalla, con `printf`: el programa no muestra ningún número.');
+        return;
+      }
+      // Con el arreglo nombrado, cuentan los valores que salen de sus posiciones:
+      // el resto (el numero de alumno, por ejemplo) es lo que el alumno quiera agregar.
+      const arreglo = regla.deArreglo ? valorDe(regla.deArreglo) : null;
+      if (arreglo && (!corrida.delArreglo.length || !corrida.leidos.has(arreglo))) {
+        error(
+          'MUESTRA_SIN_EL_ARREGLO',
+          `Lo que se muestra no sale de las posiciones de \`${arreglo}\`: la consigna pide mostrar lo que hay en el arreglo.`
+        );
+        return;
+      }
+      const sale = arreglo ? corrida.delArreglo : corrida.mostrados;
+      const iguales = sale.length === debe.length && sale.every((v, k) => Math.abs(v - debe[k]) < 1e-9);
+      if (!iguales) {
+        // Un solo valor, de una posicion conocida: se dice de cual.
+        const origen = arreglo && sale.length === 1 && debe.length === 1 ? corrida.origenes[0] : null;
+        error(
+          'MUESTRA_DISTINTA',
+          origen && origen.indices.length === 1
+            ? `Con los datos de la consigna el programa muestra ${sale[0]}, que es lo que hay en la posición ${origen.indices[0]} de \`${origen.nombre}\`.`
+            : `Con los datos de la consigna el programa muestra ${sale.join(', ')}, y se piden ${debe.join(', ')}, en ese orden.`
+        );
+        return;
+      }
+    }
+
+    // El mensaje antes de cada lectura, con el numero de la que sigue.
+    if (regla.pregunta) {
+      const sinEspacios = (t) => t.replace(/\s+/g, '');
+      const debe = entrada.map((_, k) => regla.pregunta.replace('%d', String(k + 1))).join('');
+      if (sinEspacios(corrida.salida) !== sinEspacios(debe)) {
+        error(
+          'TEXTO_DISTINTO',
+          `El programa ${corrida.salida.trim() ? `muestra \`${corrida.salida.trim()}\`` : 'no muestra nada'}, y la consigna pide un mensaje antes de cada dato: \`${regla.pregunta.replace('%d', '1').trim()}\`, \`${regla.pregunta.replace('%d', '2').trim()}\`, y así. Tiene que ser justo ese texto (los espacios no importan).`
+        );
+        return;
+      }
+    }
+
+    notasYMejoras(regla, modelo);
   }
 
   // ---- una suma de posiciones, y el intercambio de dos ---------------------------
@@ -4167,7 +4343,7 @@ function revisarIndices(modelo, error) {
       const que = largo === 1 || (esChar && (largo === 2 || k === largo - 1)) ? 'posiciones' : k === 0 ? 'filas' : 'columnas';
       error(
         'INDICE_FUERA_DE_RANGO',
-        `\`${variable.nombre}\` tiene ${lugar} ${que}, numeradas de 0 a ${lugar - 1}: la ${Number(indice)} no existe.`,
+        `\`${variable.nombre}\` tiene ${lugar} ${que}, numeradas de 0 a ${lugar - 1}: la ${que === 'posiciones' ? 'posición' : que === 'filas' ? 'fila' : 'columna'} ${Number(indice)} no existe.`,
         fila
       );
     }

@@ -263,7 +263,7 @@ const CASOS_DE_RECORRER = [
   recorrer(1, 'sin ciclo', 'notas[0] = 0;', ['CICLO_FALTA']),
   recorrer(1, 'con un solo corchete de mas', 'for (i = 0; i < MAX_ALUMNOS; i++) {\n  notas = 0;\n}', ['ASIGNACION_DE_ARREGLO']),
   {
-    ...recorrer(1, 'algo que no se sabe seguir: queda sin comprobar', 'for (i = 0; i < MAX_ALUMNOS; i++) {\n  notas[i] = 0;\n  printf("%d", notas[i]);\n}'),
+    ...recorrer(1, 'algo que no se sabe seguir: queda sin comprobar', 'for (i = 0; i < MAX_ALUMNOS; i++) {\n  notas[i] = 0;\n  putchar(notas[i]);\n}'),
     sinVerificar: true,
   },
 

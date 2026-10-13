@@ -4,12 +4,14 @@
 // Sabe seguir una funcion con enteros y decimales, arreglos de cualquier
 // dimension, asignaciones (=, +=, -=, *=, /=, %=), ++ y --, la aritmetica, las
 // comparaciones, && y ||, if / else, for, while, do while, break y continue, y
-// la funcion pow.
-// No tiene entrada, salida, otras llamadas a funciones ni punteros: si encuentra algo
+// las funciones pow, scanf (con datos de entrada que se le dan) y printf (que
+// anota lo que muestra).
+// No tiene otras llamadas a funciones ni punteros: si encuentra algo
 // que no sabe seguir, dice "SinVerificar" y la respuesta se deja como correcta
 // pero sin comprobar.
 //
-//   ejecutar(arbol, constante) -> { variables, escrituras }
+//   ejecutar(arbol, constante, entrada) -> { variables, escrituras, mostrados,
+//                                            delArreglo, salida, lecturas, leidos }
 //
 //   variables:  Map nombre -> { flotante, valor }                (una variable)
 //                           | { flotante, dims, datos }          (un arreglo)
@@ -24,9 +26,10 @@ export class SinVerificar extends Error {}
 
 // Un indice que no existe: v[5] en un arreglo de 5.
 export class FueraDeRango extends Error {
-  constructor(nombre, indice, tamano, fila) {
+  // "escrito" es si el indice es un numero escrito: notas[6].
+  constructor(nombre, indice, tamano, fila, escrito = false) {
     super(`${nombre}[${indice}] fuera de rango`);
-    Object.assign(this, { nombre, indice, tamano, fila });
+    Object.assign(this, { nombre, indice, tamano, fila, escrito });
   }
 }
 
@@ -46,17 +49,76 @@ export class NoTermina extends Error {
   }
 }
 
+// scanf pide un dato y no hay mas para darle.
+export class SinEntrada extends Error {
+  constructor(fila) {
+    super('no hay mas datos para leer');
+    this.fila = fila;
+  }
+}
+
+// scanf recibe el valor de una variable en lugar de su direccion: "notas[0]".
+export class AmpersandFalta extends Error {
+  constructor(texto, fila) {
+    super('falta el &');
+    Object.assign(this, { texto, fila });
+  }
+}
+
+// printf recibe la direccion de una variable: "&notas[0]".
+export class AmpersandDeMas extends Error {
+  constructor(texto, fila) {
+    super('sobra el &');
+    Object.assign(this, { texto, fila });
+  }
+}
+
+// Un arreglo nombrado sin decir cual de sus posiciones: printf("%d", notas).
+export class ArregloSinPosicion extends Error {
+  constructor(nombre, fila) {
+    super(`${nombre} es un arreglo`);
+    Object.assign(this, { nombre, fila });
+  }
+}
+
+// El formato no es el del tipo de lo que se lee o se muestra: %d con un float.
+//   funcion: "scanf" | "printf"; formato: "%d"; texto: lo que esta escrito;
+//   tipo: "int" | "float" | "double" | "decimal" (un valor decimal sin variable).
+export class FormatoDistinto extends Error {
+  constructor(funcion, formato, texto, tipo, fila) {
+    super(`${formato} no corresponde a ${texto}`);
+    Object.assign(this, { funcion, formato, texto, tipo, fila });
+  }
+}
+
+// Hay mas (o menos) conversiones en el formato que valores para ellas.
+export class ConversionesDistintas extends Error {
+  constructor(funcion, conversiones, valores, fila) {
+    super('conversiones y valores distintos');
+    Object.assign(this, { funcion, conversiones, valores, fila });
+  }
+}
+
 const PASOS_MAXIMOS = 100000;
 
 const ESCAPES = { n: 10, t: 9, r: 13, '0': 0, "'": 39, '"': 34, '\\': 92 };
 
-export function ejecutar(arbol, constante) {
+// "entrada" es lo que el usuario escribe, un numero por cada dato que se lee;
+// sin ella, cualquier scanf queda sin verificar.
+export function ejecutar(arbol, constante, entrada = null) {
   const funcion = arbol.rootNode.namedChildren.find((n) => n.type === 'function_definition');
   const cuerpo = funcion && funcion.childForFieldName('body');
   if (!cuerpo) throw new SinVerificar('no hay una funcion que seguir');
 
   const variables = new Map();
   const escrituras = [];
+  const mostrados = []; // los numeros que muestra printf, en orden
+  const delArreglo = []; // de esos, los que salen de una posicion de un arreglo
+  const origenes = []; // de cada uno de esos, { nombre, indices } o null
+  const leidos = new Set(); // los arreglos de los que se leyo alguna posicion
+  let salida = '';
+  let lecturas = 0;
+  let siguiente = 0;
   let pasos = 0;
 
   const fila = (n) => n.startPosition.row;
@@ -98,12 +160,13 @@ export function ejecutar(arbol, constante) {
     if (n.type === 'subscript_expression') {
       const base = posicion(n.childForFieldName('argument'));
       if (!base.variable || !base.variable.dims) sinVerificar(n);
-      const indice = evaluar(n.childForFieldName('index') || n.childForFieldName('indices'));
+      const nodoIndice = n.childForFieldName('index') || n.childForFieldName('indices');
+      const indice = evaluar(nodoIndice);
       const k = base.indices.length;
       if (k >= base.variable.dims.length) sinVerificar(n);
       const tamano = base.variable.dims[k];
       if (!Number.isInteger(indice.v) || indice.v < 0 || indice.v >= tamano) {
-        throw new FueraDeRango(base.nombre, indice.v, tamano, fila(n));
+        throw new FueraDeRango(base.nombre, indice.v, tamano, fila(n), nodoIndice.type === 'number_literal');
       }
       return { ...base, indices: [...base.indices, indice.v] };
     }
@@ -120,6 +183,7 @@ export function ejecutar(arbol, constante) {
       return { v: variable.valor, f: variable.flotante };
     }
     if (indices.length !== variable.dims.length) sinVerificar(n, `el arreglo ${nombre} entero`);
+    leidos.add(nombre);
     let dato = variable.datos;
     for (const i of indices) dato = dato[i];
     if (dato === undefined) {
@@ -129,7 +193,10 @@ export function ejecutar(arbol, constante) {
   }
 
   function escribir(n, valor) {
-    const p = posicion(n);
+    guardar(posicion(n), valor, n);
+  }
+
+  function guardar(p, valor, n) {
     if (p.constante != null) sinVerificar(n, 'una constante');
     const { variable, nombre, indices } = p;
     const v = variable.flotante ? valor.v : Math.trunc(valor.v);
@@ -176,6 +243,128 @@ export function ejecutar(arbol, constante) {
     }
   }
 
+  // ---- printf y scanf --------------------------------------------------------
+
+  const DESESCAPE = { n: '\n', t: '\t', r: '\r', '"': '"', '\\': '\\', "'": "'", '0': '\0' };
+
+  // El texto de un formato, sin las comillas y con sus escapes.
+  function textoDe(n) {
+    if (n.type !== 'string_literal') sinVerificar(n, 'un formato que no es un texto escrito');
+    const crudo = n.text.slice(1, -1);
+    return crudo.replace(/\\(.)/g, (todo, c) => (c in DESESCAPE ? DESESCAPE[c] : sinVerificar(n)));
+  }
+
+  // Las partes de un formato: texto fijo y conversiones (%d, %i, %f, %lf).
+  function partes(texto, n) {
+    const lista = [];
+    const re = /%([-0]*)(\d*)(?:\.(\d+))?(l?)([a-zA-Z%])/g;
+    let desde = 0;
+    let m;
+    while ((m = re.exec(texto))) {
+      if (m.index > desde) lista.push({ texto: texto.slice(desde, m.index) });
+      desde = m.index + m[0].length;
+      if (m[5] === '%' && !m[1] && !m[2] && !m[3] && !m[4]) {
+        lista.push({ texto: '%' });
+        continue;
+      }
+      const formato = `%${m[4]}${m[5]}`;
+      if (!['%d', '%i', '%f', '%lf'].includes(formato)) sinVerificar(n, `la conversion ${m[0]}`);
+      if (m[4] && m[5] !== 'f') sinVerificar(n, `la conversion ${m[0]}`);
+      lista.push({ formato, relleno: m[1], ancho: Number(m[2] || 0), decimales: m[3] === undefined ? null : Number(m[3]) });
+    }
+    if (desde < texto.length) lista.push({ texto: texto.slice(desde) });
+    if (lista.some((p) => p.texto != null && p.texto.includes('%'))) sinVerificar(n, 'un formato que no se sabe seguir');
+    return lista;
+  }
+
+  const conversiones = (lista) => lista.filter((p) => p.formato);
+
+  // Un nombre, y el tipo con que se declaro: lo unico que importa para el formato.
+  function tipoDe(n) {
+    if (n.type === 'identifier' || n.type === 'subscript_expression') {
+      const p = posicion(n);
+      if (p.variable) return p.variable.tipo;
+    }
+    return null;
+  }
+
+  function imprimir(n, lista) {
+    const partesDelFormato = partes(textoDe(lista[0]), n);
+    const convs = conversiones(partesDelFormato);
+    const valores = lista.slice(1);
+    if (convs.length !== valores.length) {
+      throw new ConversionesDistintas('printf', convs.length, valores.length, fila(n));
+    }
+    const mostrado = [];
+    const calculados = valores.map((a) => {
+      if (/^&/.test(a.text) && a.type !== 'binary_expression') throw new AmpersandDeMas(a.text, fila(a));
+      if (a.type === 'identifier') {
+        const variable = variables.get(a.text);
+        if (variable && variable.dims) throw new ArregloSinPosicion(a.text, fila(a));
+      }
+      return { valor: evaluar(a), tipo: tipoDe(a), nodo: a };
+    });
+    let k = 0;
+    for (const p of partesDelFormato) {
+      if (p.texto != null) {
+        mostrado.push(p.texto);
+        continue;
+      }
+      const { valor, tipo, nodo } = calculados[k++];
+      const decimal = valor.f;
+      const esDecimal = p.formato === '%f' || p.formato === '%lf';
+      if (decimal !== esDecimal) {
+        throw new FormatoDistinto('printf', p.formato, nodo.text, tipo || (decimal ? 'decimal' : 'int'), fila(nodo));
+      }
+      mostrados.push(valor.v);
+      if (/[A-Za-z_]\w*\s*\[/.test(nodo.text)) {
+        delArreglo.push(valor.v);
+        const p = nodo.type === 'subscript_expression' ? posicion(nodo) : null;
+        origenes.push(p && p.variable ? { nombre: p.nombre, indices: p.indices } : null);
+      }
+      let texto = esDecimal ? valor.v.toFixed(p.decimales ?? 6) : String(Math.trunc(valor.v));
+      if (texto.length < p.ancho) {
+        if (p.relleno.includes('-')) texto = texto.padEnd(p.ancho);
+        else texto = texto.padStart(p.ancho, p.relleno.includes('0') ? '0' : ' ');
+      }
+      mostrado.push(texto);
+    }
+    const texto = mostrado.join('');
+    salida += texto;
+    return { v: texto.length, f: false };
+  }
+
+  function leerDelTeclado(n, lista) {
+    if (entrada === null) sinVerificar(n, 'scanf sin datos para darle');
+    const convs = conversiones(partes(textoDe(lista[0]), n));
+    const destinos = lista.slice(1);
+    if (convs.length !== destinos.length) {
+      throw new ConversionesDistintas('scanf', convs.length, destinos.length, fila(n));
+    }
+    let leidosAhora = 0;
+    convs.forEach((conv, k) => {
+      const a = destinos[k];
+      if (a.type === 'identifier' && variables.get(a.text)?.dims) throw new ArregloSinPosicion(a.text, fila(a));
+      if (!/^&/.test(a.text) || a.type === 'binary_expression') throw new AmpersandFalta(a.text, fila(a));
+      const destino = a.childForFieldName('argument') || a.namedChildren[a.namedChildren.length - 1];
+      if (destino.type === 'identifier' && variables.get(destino.text)?.dims) {
+        throw new ArregloSinPosicion(destino.text, fila(destino));
+      }
+      const p = posicion(destino);
+      if (p.constante != null || !p.variable) sinVerificar(a);
+      if (p.variable.dims && p.indices.length !== p.variable.dims.length) sinVerificar(a);
+      const tipo = p.variable.tipo;
+      const correcto = tipo === 'int' ? '%d' : tipo === 'float' ? '%f' : '%lf';
+      const igual = conv.formato === correcto || (conv.formato === '%i' && tipo === 'int');
+      if (!igual) throw new FormatoDistinto('scanf', conv.formato, destino.text, tipo, fila(a));
+      if (siguiente >= entrada.length) throw new SinEntrada(fila(n));
+      guardar(p, { v: entrada[siguiente++], f: tipo !== 'int' }, a);
+      lecturas++;
+      leidosAhora++;
+    });
+    return { v: leidosAhora, f: false };
+  }
+
   function evaluar(n) {
     contar(n);
     switch (n.type) {
@@ -213,10 +402,12 @@ export function ejecutar(arbol, constante) {
         return evaluar(n.childForFieldName(condicion.v !== 0 ? 'consequence' : 'alternative'));
       }
       case 'call_expression': {
-        // Solo pow, de la biblioteca matematica: una funcion pura, que da un decimal.
+        // pow (una funcion pura, que da un decimal), printf y scanf.
         const funcion = n.childForFieldName('function');
         const argumentos = n.childForFieldName('arguments');
         const lista = argumentos ? argumentos.namedChildren.filter((a) => a.type !== 'comment') : [];
+        if (funcion && funcion.text === 'printf' && lista.length >= 1) return imprimir(n, lista);
+        if (funcion && funcion.text === 'scanf' && lista.length >= 2) return leerDelTeclado(n, lista);
         if (!funcion || funcion.text !== 'pow' || lista.length !== 2) return sinVerificar(n);
         const base = evaluar(lista[0]);
         const exponente = evaluar(lista[1]);
@@ -271,6 +462,7 @@ export function ejecutar(arbol, constante) {
     const tipo = n.childForFieldName('type');
     if (!tipo || !['primitive_type', 'sized_type_specifier'].includes(tipo.type)) sinVerificar(n, 'un tipo que no se sabe seguir');
     const flotante = /float|double/.test(tipo.text);
+    const nombreDeTipo = /double/.test(tipo.text) ? 'double' : flotante ? 'float' : 'int';
     for (const d of n.namedChildren) {
       if (!['identifier', 'init_declarator', 'array_declarator', 'pointer_declarator'].includes(d.type)) continue;
       let declarador = d;
@@ -291,6 +483,7 @@ export function ejecutar(arbol, constante) {
         const valor = inicial ? evaluar(inicial) : null;
         variables.set(nombre.text, {
           flotante,
+          tipo: nombreDeTipo,
           valor: valor ? (flotante ? valor.v : Math.trunc(valor.v)) : undefined,
         });
         continue;
@@ -304,7 +497,7 @@ export function ejecutar(arbol, constante) {
       const datos =
         inicial && inicial.type === 'initializer_list' ? llenar(dims, inicial, flotante) : sinLista(dims);
       if (inicial && inicial.type !== 'initializer_list') sinVerificar(inicial);
-      variables.set(nombre.text, { flotante, dims, datos });
+      variables.set(nombre.text, { flotante, tipo: nombreDeTipo, dims, datos });
     }
   }
 
@@ -387,5 +580,5 @@ export function ejecutar(arbol, constante) {
   }
 
   bloque(cuerpo);
-  return { variables, escrituras };
+  return { variables, escrituras, mostrados, delArreglo, origenes, salida, lecturas, leidos };
 }
