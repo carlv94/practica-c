@@ -377,6 +377,26 @@ La regla `llamada` suma, para estas series:
   `"en": [0, 1]`, para un elemento de un arreglo o una celda de una tabla.
 - `strncpy` con un límite que no deja lugar para el fin es error.
 
+Para guardar un valor en una posición de un arreglo de números (grupo
+Arreglos, serie "Elementos e índices"):
+
+- `{ "asigna": { "variable": "notas", "indice": 0, "valor": 8 } }`:
+  `notas[0] = 8;`. `"indice"` es un número, y vale una cuenta con constantes
+  (`MAX - 1`); `"valor"`, un número o el texto de otra posición (`"notas[0]"`,
+  para copiar). Con `"ultimo": true`, el número suelto (`notas[19]`, `notas[10 +
+  9]`) vale con la mejora `ULTIMO_CON_NUMERO_SUELTO` (con `constantes`): sugiere
+  `MAX - 1`, que sigue siendo el último si cambia la cantidad.
+
+| Respuesta | Código | Mensaje |
+|---|---|---|
+| `notas[1] = 8;` pidiendo la primera | `ARGUMENTO_OTRA_POSICION` | La posición que sigue: dice que se numeran desde 0. |
+| `notas[i] = 8;` | `ARGUMENTO_POSICION_CON_VARIABLE` | `i` no es un número. |
+| `notas[20] = 10;`, `notas[MAX_ALUMNOS] = 10;` | `INDICE_FUERA_DE_RANGO` | Dice de qué posición a qué posición va. |
+| `notas[0] == 8;` | `ASIGNACION_CON_IGUAL_DOBLE` | `==` pregunta y no guarda. |
+| `notas = 8;` | `ASIGNACION_DE_ARREGLO` | Un arreglo no se asigna completo. |
+| `notas[0] = notas[1];` copiando al revés | `ASIGNACION_AL_REVES` | Qué va a cada lado del `=`. |
+| otro valor | `ASIGNACION_VALOR_DISTINTO` | No es el valor de la consigna. |
+
 Para leer y mostrar una cadena hay tres reglas propias (grupo Cadenas, serie "Leer y mostrar una cadena"):
 
 - `{ "lee": { "destino": "$N", "formato": "palabra" } }`: leer del teclado

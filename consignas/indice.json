@@ -15,7 +15,8 @@
       "descripcion": "Declarar arreglos con una constante y definirlos con sus valores.",
       "series": [
         "arreglos-declarar.json",
-        "arreglos-valores.json"
+        "arreglos-valores.json",
+        "arreglos-elementos.json"
       ]
     },
     {

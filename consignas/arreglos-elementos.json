@@ -1,0 +1,163 @@
+{
+  "id": "arreglos-elementos",
+  "titulo": "Elementos e índices",
+  "descripcion": "Guardar y leer valores en las posiciones de un arreglo, y qué pasa con las que no tienen valor o no existen.",
+  "dentroDeMain": true,
+  "buenasPracticas": ["constantes"],
+  "consignas": [
+    {
+      "id": "elementos-primera",
+      "titulo": "Guardar en la primera posición",
+      "dado": "#define MAX_ALUMNOS 20\n\nint notas[MAX_ALUMNOS];",
+      "enunciado": "Guarde la nota `8` del primer alumno en el arreglo `notas`.",
+      "requiere": [{ "asigna": { "variable": "notas", "indice": 0, "valor": 8 } }],
+      "referencia": "notas[0] = 8;"
+    },
+    {
+      "id": "elementos-ultima",
+      "titulo": "Guardar en la última posición",
+      "continua": true,
+      "enunciado": "Guarde la nota `10` del último alumno en `notas`.",
+      "requiere": [{ "asigna": { "variable": "notas", "indice": 19, "valor": 10, "ultimo": true } }],
+      "referencia": "notas[MAX_ALUMNOS - 1] = 10;"
+    },
+    {
+      "id": "elementos-q-posicion",
+      "titulo": "Qué hay en una posición",
+      "enunciado": "Después de ejecutar el código de abajo, ¿qué valor tendría `numeros[2]`?",
+      "codigo": "int numeros[5] = {4, 9, 6, 7, 5};\nint x = numeros[2];",
+      "opciones": [
+        {
+          "valor": "9",
+          "texto": "el segundo valor",
+          "codigo": "OPCION_POSICION_DESDE_UNO",
+          "explicacion": "Las posiciones se numeran desde 0: `numeros[0]` es el primer valor, `numeros[1]` el segundo (el `9`) y `numeros[2]` el tercero."
+        },
+        {
+          "valor": "2",
+          "texto": "el número del índice",
+          "codigo": "OPCION_EL_INDICE_ES_EL_VALOR",
+          "explicacion": "El `2` es la posición, no lo que hay en ella: `numeros[2]` es el valor que está guardado en esa posición."
+        },
+        {
+          "valor": "6",
+          "texto": "el tercer valor",
+          "correcta": true,
+          "explicacion": "`numeros[2]` es la tercera posición, porque se numeran desde 0: `numeros[0]` es el `4`, `numeros[1]` el `9` y `numeros[2]` el `6`."
+        }
+      ]
+    },
+    {
+      "id": "elementos-copiar",
+      "titulo": "Copiar de una posición a otra",
+      "continua": true,
+      "enunciado": "Copie la nota del primer alumno en la posición del segundo.",
+      "requiere": [{ "asigna": { "variable": "notas", "indice": 1, "valor": "notas[0]" } }],
+      "referencia": "notas[1] = notas[0];"
+    },
+    {
+      "id": "elementos-q-suma",
+      "titulo": "Una suma entre posiciones",
+      "enunciado": "Después de ejecutar el código de abajo, ¿qué valor tendría `v[2]`?",
+      "codigo": "int v[3] = {5, 8, 0};\nv[2] = v[0] + v[1];",
+      "opciones": [
+        {
+          "valor": "0",
+          "texto": "el valor que tenía",
+          "codigo": "OPCION_VALOR_ANTERIOR",
+          "explicacion": "La asignación reemplaza lo que había: `v[2]` valía `0`, pero después de `v[2] = v[0] + v[1];` guarda el resultado de la suma."
+        },
+        {
+          "valor": "8",
+          "texto": "el valor de `v[1]`",
+          "codigo": "OPCION_SOLO_UN_ELEMENTO",
+          "explicacion": "La suma usa los dos valores, `v[0]` y `v[1]`: `v[2]` no se queda con uno solo."
+        },
+        {
+          "valor": "13",
+          "texto": "la suma de los dos primeros",
+          "correcta": true,
+          "explicacion": "La asignación calcula primero lo de la derecha, `5 + 8`, y guarda el resultado en `v[2]`, que pasa a valer `13`. Lo que tenía antes se pierde."
+        }
+      ]
+    },
+    {
+      "id": "elementos-q-sin-valor",
+      "titulo": "Una posición sin valor",
+      "enunciado": "Después de ejecutar el código de abajo, ¿qué valor tendría `x`?",
+      "codigo": "int v[5];\nv[0] = 3;\nint x = v[1];",
+      "opciones": [
+        {
+          "valor": "0",
+          "texto": "porque todavía no se guardó nada",
+          "codigo": "OPCION_SIN_VALOR_ES_CERO",
+          "explicacion": "Una posición sin asignar no vale `0`: tiene lo que hubiera antes en esa memoria. Declarar el arreglo no le pone valores."
+        },
+        {
+          "valor": "3",
+          "texto": "el valor de la posición anterior",
+          "codigo": "OPCION_COPIA_EL_ANTERIOR",
+          "explicacion": "Cada posición es independiente: guardar un valor en `v[0]` no cambia lo que hay en `v[1]`."
+        },
+        {
+          "valor": "undefined",
+          "texto": "No se puede saber",
+          "correcta": true,
+          "explicacion": "`v[1]` nunca se asignó: tiene lo que hubiera antes en esa memoria, así que no se puede saber. Declarar el arreglo no pone valores en sus posiciones."
+        }
+      ]
+    },
+    {
+      "id": "elementos-q-fuera",
+      "titulo": "Una posición que no existe",
+      "enunciado": "Después de ejecutar el código de abajo, ¿qué valor tendría `x`?",
+      "codigo": "int v[5] = {1, 2, 3, 4, 5};\nv[5] = 10;\nint x = v[5];",
+      "opciones": [
+        {
+          "valor": "10",
+          "texto": "el valor que se guardó",
+          "codigo": "OPCION_LA_SEXTA_POSICION",
+          "explicacion": "El arreglo no crece: tiene 5 posiciones, de 0 a 4. `v[5]` no es una sexta posición, no existe."
+        },
+        {
+          "valor": "un error de compilación",
+          "texto": "el programa no compila",
+          "codigo": "OPCION_EL_COMPILADOR_AVISA",
+          "explicacion": "El compilador no avisa: C no controla que el índice esté dentro del arreglo, y el programa compila igual."
+        },
+        {
+          "valor": "undefined",
+          "texto": "No se puede saber",
+          "correcta": true,
+          "explicacion": "`v` tiene 5 posiciones, de 0 a 4: `v[5]` no existe. C no lo avisa ni lo detiene: el valor se guarda en memoria que no es del arreglo, y no se puede saber qué pasa."
+        }
+      ]
+    },
+    {
+      "id": "elementos-q-variable",
+      "titulo": "Una posición con una variable",
+      "enunciado": "Después de ejecutar el código de abajo, ¿qué valor tendría `x`?",
+      "codigo": "int v[4] = {10, 20, 30, 40};\nint i = 2;\nint x = v[i - 1];",
+      "opciones": [
+        {
+          "valor": "30",
+          "texto": "el valor de `v[i]`",
+          "codigo": "OPCION_IGNORA_LA_CUENTA",
+          "explicacion": "El índice es la cuenta completa: `i - 1` vale `1`, así que se lee `v[1]`, no `v[2]`."
+        },
+        {
+          "valor": "10",
+          "texto": "el primer valor",
+          "codigo": "OPCION_RESTA_DE_MAS",
+          "explicacion": "`i` vale `2`, no `1`: `i - 1` da `1`, y `v[1]` es el segundo valor, porque las posiciones se numeran desde 0."
+        },
+        {
+          "valor": "20",
+          "texto": "el valor de `v[1]`",
+          "correcta": true,
+          "explicacion": "`i` vale `2`, así que `v[i - 1]` es `v[1]`, el `20`: el índice puede ser una variable o una cuenta, y se calcula antes de elegir la posición."
+        }
+      ]
+    }
+  ]
+}

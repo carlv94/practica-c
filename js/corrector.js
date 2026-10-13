@@ -295,6 +295,7 @@ export function corregir(
     if (regla.usaAlias) return reglaUsaAlias(regla.usaAlias, modelo);
     if (regla.incluye) return reglaIncluye(regla.incluye, modelo);
     if (regla.lee) return reglaLee(regla.lee, modelo);
+    if (regla.asigna) return reglaAsigna(regla.asigna, modelo);
     if (regla.muestra) return reglaMuestra(regla.muestra, modelo);
     if (regla.limpiaEntrada) return reglaLimpiaEntrada(regla.limpiaEntrada, modelo);
     throw new Error(`La consigna "${consigna.id}" tiene una regla que no conozco.`);
@@ -1416,6 +1417,119 @@ export function corregir(
           );
         }
       }
+    }
+  }
+
+  // ---- guardar un valor en una posicion de un arreglo -------------------------------
+
+  // "notas[0] = 8;": en que posicion y que valor. "indice" es un numero (o una
+  // cuenta con constantes: MAX - 1); "valor" es un numero, o el texto de otra
+  // posicion ("notas[0]"). Con "ultimo": true, escribir el numero suelto vale
+  // con la mejora de usar la constante.
+  function reglaAsigna(regla, modelo) {
+    const nombre = valorDe(regla.variable);
+    const variable = modelo.variables.findLast((v) => v.nombre === nombre);
+    const pedida = `${nombre}[${regla.indice}]`;
+
+    // Si ya se le dijo que un arreglo no se asigna completo con "=", alcanza.
+    if (diagnosticos.some((d) => CODIGOS_DE_ASIGNACION.includes(d.codigo))) return;
+
+    const propias = modelo.asignaciones.filter(
+      (a) =>
+        a.nuevo &&
+        a.operador === '=' &&
+        a.izquierda.clase === 'indice' &&
+        a.izquierda.nombre === nombre &&
+        a.izquierda.indices.length === 1
+    );
+    if (!propias.length) {
+      // "==" pregunta si son iguales: no guarda nada.
+      const igual = modelo.comparaciones.find(
+        (c) => c.nuevo && !c.enIf && c.izquierda.clase === 'indice' && c.izquierda.nombre === nombre
+      );
+      if (igual) {
+        error(
+          'ASIGNACION_CON_IGUAL_DOBLE',
+          `\`==\` pregunta si dos valores son iguales y no guarda nada: para guardar un valor en \`${igual.izquierda.texto}\` se usa un solo \`=\`.`,
+          igual.fila
+        );
+      } else {
+        error(
+          'ASIGNACION_FALTA',
+          `No encontré la asignación de un valor a una posición de \`${nombre}\`: se escribe el nombre, el índice entre corchetes, \`=\` y el valor.`
+        );
+      }
+      return;
+    }
+
+    // Copiar al reves: la posicion de origen a la izquierda y la de destino a la
+    // derecha. Se mira antes que la posicion, porque es lo primero que esta mal.
+    if (typeof regla.valor === 'string') {
+      const origen = sinEspacios(valorDe(regla.valor));
+      const alReves = propias.find(
+        (x) => sinEspacios(x.izquierda.texto) === origen && sinEspacios(x.derecha.texto) === sinEspacios(pedida)
+      );
+      if (alReves) {
+        error(
+          'ASIGNACION_AL_REVES',
+          `Está al revés: a la izquierda del \`=\` va la posición donde se guarda (\`${pedida}\`) y a la derecha, de donde se toma el valor.`,
+          alReves.fila
+        );
+        return;
+      }
+    }
+
+    const posicionDe = (a) => valorDeDimension(a.izquierda.indices[0], modelo);
+    const a = propias.find((x) => posicionDe(x) === regla.indice) || propias[0];
+    const posicion = posicionDe(a);
+    const tamano = variable ? valorDeDimension(variable.arreglo[0] ?? '', modelo) : null;
+
+    if (posicion != null && tamano != null && posicion >= tamano) {
+      // Con el numero escrito ya lo dijo la revision general.
+      if (!diagnosticos.some((d) => d.codigo === 'INDICE_FUERA_DE_RANGO')) {
+        error(
+          'INDICE_FUERA_DE_RANGO',
+          `\`${nombre}\` tiene ${tamano} posiciones, numeradas de 0 a ${tamano - 1}: la ${posicion} no existe.`,
+          a.fila
+        );
+      }
+      return;
+    }
+    if (posicion !== regla.indice) {
+      const [codigo, mensaje] = distintaPosicion(a.izquierda, pedida, modelo);
+      error(codigo, mensaje, a.fila);
+      return;
+    }
+
+    // El valor: un numero, o lo que hay en otra posicion.
+    const derecha = a.derecha;
+    const esperado = typeof regla.valor === 'number' ? null : sinEspacios(valorDe(regla.valor));
+    const bien =
+      esperado == null
+        ? derecha.clase === 'numero' && derecha.valor === regla.valor
+        : sinEspacios(derecha.texto) === esperado;
+    if (!bien) {
+      error(
+        'ASIGNACION_VALOR_DISTINTO',
+        `El valor que se guarda en \`${a.izquierda.texto}\` no es el que pide la consigna.`,
+        a.fila
+      );
+      return;
+    }
+
+    // Con el numero suelto, el ultimo deja de serlo si cambia la cantidad.
+    const dimension = variable ? (variable.arreglo[0] ?? '').trim() : '';
+    if (
+      regla.ultimo &&
+      practicas.includes('constantes') &&
+      /^[\d\s+\-*/()]+$/.test(a.izquierda.indices[0]) &&
+      /^[A-Za-z_]\w*$/.test(dimension)
+    ) {
+      mejora(
+        'ULTIMO_CON_NUMERO_SUELTO',
+        `Está bien, pero el ${posicion} solo es la última posición mientras \`${dimension}\` valga ${tamano}: con \`${dimension} - 1\` sigue siéndolo aunque cambie la cantidad.`,
+        a.fila
+      );
     }
   }
 

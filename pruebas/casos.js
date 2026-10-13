@@ -143,6 +143,64 @@ const CASOS_DE_ARREGLOS = [
   arreglos(4, 'el nombre del arreglo anterior', '#define SEMANAS 2\nfloat temperaturas[SEMANAS * DIAS_SEMANA];', ['VARIABLE_REDEFINIDA']),
 ];
 
+// Guardar un valor en una posicion: el arreglo de notas viene dado.
+const posiciones = (paso, nombre, respuesta, espera = 'ok', mejoras = []) => ({
+  serie: 'arreglos-elementos',
+  paso,
+  nombre,
+  respuesta,
+  espera,
+  mejoras,
+});
+
+const CASOS_DE_POSICIONES = [
+  // 1: la primera posicion
+  posiciones(1, 'la primera', 'notas[0] = 8;', 'ok'),
+  posiciones(1, 'con espacios', 'notas[ 0 ]=8;', 'ok'),
+  posiciones(1, 'contando desde uno', 'notas[1] = 8;', ['ARGUMENTO_OTRA_POSICION']),
+  posiciones(1, 'otra posicion', 'notas[5] = 8;', ['ARGUMENTO_OTRA_POSICION']),
+  posiciones(1, 'otro valor', 'notas[0] = 9;', ['ASIGNACION_VALOR_DISTINTO']),
+  posiciones(1, 'una posicion que no existe', 'notas[20] = 8;', ['INDICE_FUERA_DE_RANGO']),
+  posiciones(1, 'el arreglo completo', 'notas = 8;', ['ASIGNACION_DE_ARREGLO']),
+  posiciones(1, 'con dos signos igual', 'notas[0] == 8;', ['ASIGNACION_CON_IGUAL_DOBLE']),
+  posiciones(1, 'con una variable de indice', 'int i = 0;\nnotas[i] = 8;', ['ARGUMENTO_POSICION_CON_VARIABLE']),
+  posiciones(1, 'sin asignar', 'int x;', ['ASIGNACION_FALTA']),
+  posiciones(1, 'de otra variable', 'x[0] = 8;', ['ASIGNACION_FALTA']),
+
+  // 2: la ultima posicion (sigue de la anterior)
+  posiciones(2, 'con la constante', 'notas[MAX_ALUMNOS - 1] = 10;', 'ok'),
+  posiciones(2, 'con el numero suelto: correcto y mejorable', 'notas[19] = 10;', 'ok', ['ULTIMO_CON_NUMERO_SUELTO']),
+  posiciones(2, 'con una cuenta', 'notas[10 + 9] = 10;', 'ok', ['ULTIMO_CON_NUMERO_SUELTO']),
+  posiciones(2, 'el tamano, que no es una posicion', 'notas[MAX_ALUMNOS] = 10;', ['INDICE_FUERA_DE_RANGO']),
+  posiciones(2, 'el veinte', 'notas[20] = 10;', ['INDICE_FUERA_DE_RANGO']),
+  posiciones(2, 'la anteultima', 'notas[18] = 10;', ['ARGUMENTO_OTRA_POSICION']),
+  posiciones(2, 'la primera', 'notas[0] = 10;', ['ARGUMENTO_OTRA_POSICION']),
+
+  // 4: copiar de una posicion a otra
+  posiciones(4, 'la segunda recibe la primera', 'notas[1] = notas[0];', 'ok'),
+  posiciones(4, 'al reves', 'notas[0] = notas[1];', ['ASIGNACION_AL_REVES']),
+  posiciones(4, 'otra posicion de origen', 'notas[1] = notas[2];', ['ASIGNACION_VALOR_DISTINTO']),
+  posiciones(4, 'un numero en lugar de la posicion', 'notas[1] = 8;', ['ASIGNACION_VALOR_DISTINTO']),
+  posiciones(4, 'a otra posicion', 'notas[2] = notas[0];', ['ARGUMENTO_OTRA_POSICION']),
+
+  // cuestionarios (la respuesta es el lugar de la opcion)
+  posiciones(3, 'posicion: el tercer valor', '2'),
+  posiciones(3, 'posicion: contando desde uno', '0', ['OPCION_POSICION_DESDE_UNO']),
+  posiciones(3, 'posicion: el indice', '1', ['OPCION_EL_INDICE_ES_EL_VALOR']),
+  posiciones(5, 'suma: la suma', '2'),
+  posiciones(5, 'suma: el valor que tenia', '0', ['OPCION_VALOR_ANTERIOR']),
+  posiciones(5, 'suma: un solo termino', '1', ['OPCION_SOLO_UN_ELEMENTO']),
+  posiciones(6, 'sin valor: no se puede saber', '2'),
+  posiciones(6, 'sin valor: cero', '0', ['OPCION_SIN_VALOR_ES_CERO']),
+  posiciones(6, 'sin valor: copia el anterior', '1', ['OPCION_COPIA_EL_ANTERIOR']),
+  posiciones(7, 'fuera: no se puede saber', '2'),
+  posiciones(7, 'fuera: la sexta posicion', '0', ['OPCION_LA_SEXTA_POSICION']),
+  posiciones(7, 'fuera: el compilador avisa', '1', ['OPCION_EL_COMPILADOR_AVISA']),
+  posiciones(8, 'variable: el 20', '2'),
+  posiciones(8, 'variable: ignora la cuenta', '0', ['OPCION_IGNORA_LA_CUENTA']),
+  posiciones(8, 'variable: resta de mas', '1', ['OPCION_RESTA_DE_MAS']),
+];
+
 // Arreglos definidos con sus valores: los del dibujo, 3 6 0 7 1 5.
 const valores = (paso, nombre, respuesta, espera, mejoras = []) => ({
   serie: 'arreglos-valores',
@@ -376,6 +434,7 @@ export const CASOS = [
   ...CASOS_DE_NOMBRES,
   ...CASOS_DE_VALORES,
   ...CASOS_DE_ARREGLOS,
+  ...CASOS_DE_POSICIONES,
   ...CASOS_DE_CADENAS,
   ...CASOS_DE_CADENAS_NUEVAS,
   // ---- 1: declarar la estructura ----
