@@ -1,0 +1,275 @@
+{
+  "id": "arreglos-recorrer-tablas",
+  "titulo": "Recorrer una tabla",
+  "descripcion": "Recorrer una tabla con dos ciclos: llenarla, mostrarla fila por fila y obtener totales, la diagonal y el mayor.",
+  "dentroDeMain": true,
+  "cabecera": "#include <stdio.h>",
+  "buenasPracticas": ["constantes"],
+  "consignas": [
+    {
+      "id": "recorrer-tablas-llenar",
+      "titulo": "Una tabla de multiplicar",
+      "dado": "#define MULTIPLICANDOS 4\n#define MULTIPLICADORES 5\n\nint tabla[MULTIPLICANDOS][MULTIPLICADORES];\nint i;\nint j;",
+      "enunciado": "Una escuela quiere armar una tabla de multiplicar. La fila `i` corresponde al número `i + 1` y la columna `j`, al número `j + 1`, y cada posición guarda el producto de los dos: por ejemplo, `tabla[1][2]` guarda 6, porque 2 por 3 es 6.\n\nCon dos ciclos, guarde en cada posición de `tabla` el producto que le corresponde. Use los índices `i` y `j`.",
+      "requiere": [
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "queda": {
+                  "tabla": [
+                    [1, 2, 3, 4, 5],
+                    [2, 4, 6, 8, 10],
+                    [3, 6, 9, 12, 15],
+                    [4, 8, 12, 16, 20]
+                  ]
+                }
+              }
+            ],
+            "conCiclo": true,
+            "limite": true
+          }
+        }
+      ],
+      "referencia": "for (i = 0; i < MULTIPLICANDOS; i++) {\n  for (j = 0; j < MULTIPLICADORES; j++) {\n    tabla[i][j] = (i + 1) * (j + 1);\n  }\n}"
+    },
+    {
+      "id": "recorrer-tablas-q-veces",
+      "titulo": "Cuántas veces se ejecuta",
+      "enunciado": "Después de ejecutar el código de abajo, ¿qué valor tendría `veces`?",
+      "codigo": "int veces = 0;\nint i;\nint j;\n\nfor (i = 0; i < 3; i++) {\n  for (j = 0; j < 4; j++) {\n    veces++;\n  }\n}",
+      "opciones": [
+        {
+          "valor": "7",
+          "texto": "la suma de las vueltas de los dos ciclos",
+          "codigo": "OPCION_SUMA_DE_LAS_VUELTAS",
+          "explicacion": "Los ciclos no se ejecutan uno después del otro: el de adentro está dentro del de afuera. Por cada vuelta del de afuera, el de adentro da todas las suyas, así que las vueltas se multiplican, no se suman."
+        },
+        {
+          "valor": "3",
+          "texto": "las vueltas del ciclo de afuera",
+          "codigo": "OPCION_SOLO_LAS_FILAS",
+          "explicacion": "El `3` es lo que da el ciclo de afuera, pero `veces++` está dentro del de adentro: se ejecuta en cada una de sus vueltas, y esas vueltas se repiten en cada vuelta del de afuera."
+        },
+        {
+          "valor": "12",
+          "texto": "las vueltas del de afuera por las del de adentro",
+          "correcta": true,
+          "explicacion": "El ciclo de afuera da `3` vueltas y, en cada una, el de adentro da `4`: `veces++` se ejecuta `3 * 4`, o sea, `12` veces. Es también la cantidad de posiciones de una tabla de `3` filas por `4` columnas."
+        }
+      ]
+    },
+    {
+      "id": "recorrer-tablas-mostrar",
+      "titulo": "Mostrar la tabla fila por fila",
+      "dado": "#define SUCURSALES 3\n#define DIAS 4\n\nint ventas[SUCURSALES][DIAS] = {\n  {120, 85, 240, 60},\n  {175, 90, 310, 45},\n  {50, 130, 95, 200}\n};\nint i;\nint j;",
+      "enunciado": "Una cadena de comercios guarda en la tabla `ventas` lo que vendió cada una de sus 3 sucursales (una fila cada una) en cada uno de 4 días (una columna cada uno).\n\nCon dos ciclos, muestre con `printf` la tabla `ventas`, con cada sucursal en su propio renglón y los valores de una misma sucursal separados por un espacio. Use los índices `i` y `j`.",
+      "requiere": [
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "datos": { "ventas": [[120, 85, 240, 60], [175, 90, 310, 45], [50, 130, 95, 200]] },
+                "muestraEnFilas": [[120, 85, 240, 60], [175, 90, 310, 45], [50, 130, 95, 200]]
+              },
+              {
+                "datos": { "ventas": [[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]] },
+                "muestraEnFilas": [[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]]
+              },
+              {
+                "datos": { "ventas": [[0, 0, 0, 0], [0, 0, 0, 1], [2, 0, 0, 0]] },
+                "muestraEnFilas": [[0, 0, 0, 0], [0, 0, 0, 1], [2, 0, 0, 0]]
+              }
+            ],
+            "conCiclo": true,
+            "limite": true
+          }
+        }
+      ],
+      "referencia": "for (i = 0; i < SUCURSALES; i++) {\n  for (j = 0; j < DIAS; j++) {\n    printf(\"%d \", ventas[i][j]);\n  }\n  printf(\"\\n\");\n}"
+    },
+    {
+      "id": "recorrer-tablas-total",
+      "titulo": "El total de la cadena",
+      "dado": "#define SUCURSALES 3\n#define DIAS 4\n\nint ventas[SUCURSALES][DIAS] = {\n  {120, 85, 240, 60},\n  {175, 90, 310, 45},\n  {50, 130, 95, 200}\n};\nint total;\nint i;\nint j;",
+      "enunciado": "La tabla `ventas` guarda lo que vendió cada sucursal de una cadena de comercios (una fila cada una) en cada día (una columna cada uno).\n\nCon dos ciclos, deje en `total` la suma de todo lo que vendió la cadena. Use los índices `i` y `j`.",
+      "requiere": [
+        {
+          "ejecuta": {
+            "busca": true,
+            "casos": [
+              { "datos": { "ventas": [[120, 85, 240, 60], [175, 90, 310, 45], [50, 130, 95, 200]] }, "queda": { "total": 1600 } },
+              { "datos": { "ventas": [[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]] }, "queda": { "total": 78 } },
+              { "datos": { "ventas": [[0, 0, 0, 0], [0, 0, 0, 1], [2, 0, 0, 0]] }, "queda": { "total": 3 } }
+            ],
+            "conCiclo": true,
+            "limite": true
+          }
+        }
+      ],
+      "referencia": "total = 0;\nfor (i = 0; i < SUCURSALES; i++) {\n  for (j = 0; j < DIAS; j++) {\n    total += ventas[i][j];\n  }\n}"
+    },
+    {
+      "id": "recorrer-tablas-q-acumulador",
+      "titulo": "El acumulador que no vuelve a cero",
+      "enunciado": "Después de ejecutar el código de abajo, ¿qué valor tendría `totales[1]`?",
+      "codigo": "int ventas[2][3] = {\n  {1, 2, 3},\n  {4, 5, 6}\n};\nint totales[2];\nint suma = 0;\nint i;\nint j;\n\nfor (i = 0; i < 2; i++) {\n  for (j = 0; j < 3; j++) {\n    suma += ventas[i][j];\n  }\n  totales[i] = suma;\n}",
+      "opciones": [
+        {
+          "valor": "15",
+          "texto": "la suma de los elementos de la fila 1",
+          "codigo": "OPCION_SOLO_LA_FILA",
+          "explicacion": "El `15` es la suma de la fila `1`, pero `suma` no vuelve a `0` al empezar esa fila: ya trae el `6` de la fila `0`, y a eso se le suma `4 + 5 + 6`."
+        },
+        {
+          "valor": "6",
+          "texto": "el último elemento de la fila 1",
+          "codigo": "OPCION_ULTIMO_ELEMENTO",
+          "explicacion": "El `6` es el último elemento de la fila `1`, y también lo que vale `totales[0]`. `totales[1]` es lo que tiene `suma` cuando termina la fila `1`."
+        },
+        {
+          "valor": "21",
+          "texto": "la suma de las dos filas",
+          "correcta": true,
+          "explicacion": "`suma` empieza en `0` una sola vez, antes de los dos ciclos. Al terminar la fila `0` vale `6`, y la fila `1` sigue sumando desde ahí: `6 + 4 + 5 + 6` da `21`."
+        }
+      ]
+    },
+    {
+      "id": "recorrer-tablas-total-fila",
+      "titulo": "El total de cada sucursal",
+      "dado": "#define SUCURSALES 3\n#define DIAS 4\n\nint ventas[SUCURSALES][DIAS] = {\n  {120, 85, 240, 60},\n  {175, 90, 310, 45},\n  {50, 130, 95, 200}\n};\nint totales[SUCURSALES];\nint i;\nint j;",
+      "enunciado": "La tabla `ventas` guarda lo que vendió cada sucursal de una cadena de comercios (una fila cada una) en cada día (una columna cada uno).\n\nCon dos ciclos, deje en cada posición de `totales` lo que vendió en total esa sucursal: `totales[0]` tiene la suma de la fila 0, y así. Use los índices `i` y `j`.",
+      "requiere": [
+        {
+          "ejecuta": {
+            "busca": true,
+            "casos": [
+              {
+                "datos": { "ventas": [[120, 85, 240, 60], [175, 90, 310, 45], [50, 130, 95, 200]] },
+                "queda": { "totales": [505, 620, 475] },
+                "acumulado": { "totales": [505, 1125, 1600] }
+              },
+              {
+                "datos": { "ventas": [[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]] },
+                "queda": { "totales": [10, 26, 42] },
+                "acumulado": { "totales": [10, 36, 78] }
+              },
+              {
+                "datos": { "ventas": [[0, 0, 0, 0], [0, 0, 0, 1], [2, 0, 0, 0]] },
+                "queda": { "totales": [0, 1, 2] },
+                "acumulado": { "totales": [0, 1, 3] }
+              }
+            ],
+            "conCiclo": true,
+            "limite": true
+          }
+        }
+      ],
+      "referencia": "for (i = 0; i < SUCURSALES; i++) {\n  totales[i] = 0;\n  for (j = 0; j < DIAS; j++) {\n    totales[i] += ventas[i][j];\n  }\n}"
+    },
+    {
+      "id": "recorrer-tablas-total-columna",
+      "titulo": "El total de cada día",
+      "dado": "#define SUCURSALES 3\n#define DIAS 4\n\nint ventas[SUCURSALES][DIAS] = {\n  {120, 85, 240, 60},\n  {175, 90, 310, 45},\n  {50, 130, 95, 200}\n};\nint totales[DIAS];\nint i;\nint j;",
+      "enunciado": "La tabla `ventas` guarda lo que vendió cada sucursal de una cadena de comercios (una fila cada una) en cada día (una columna cada uno).\n\nCon dos ciclos, deje en cada posición de `totales` lo que vendió la cadena en total ese día: `totales[0]` tiene la suma de la columna 0, y así. Use los índices `i` y `j`.",
+      "requiere": [
+        {
+          "ejecuta": {
+            "busca": true,
+            "casos": [
+              {
+                "datos": { "ventas": [[120, 85, 240, 60], [175, 90, 310, 45], [50, 130, 95, 200]] },
+                "queda": { "totales": [345, 305, 645, 305] },
+                "cambiadas": { "totales": [505, 620, 475] }
+              },
+              {
+                "datos": { "ventas": [[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]] },
+                "queda": { "totales": [15, 18, 21, 24] },
+                "cambiadas": { "totales": [10, 26, 42] }
+              },
+              {
+                "datos": { "ventas": [[0, 0, 0, 0], [0, 0, 0, 1], [2, 0, 0, 0]] },
+                "queda": { "totales": [2, 0, 0, 1] },
+                "cambiadas": { "totales": [0, 1, 2] }
+              }
+            ],
+            "conCiclo": true,
+            "limite": true
+          }
+        }
+      ],
+      "referencia": "for (j = 0; j < DIAS; j++) {\n  totales[j] = 0;\n  for (i = 0; i < SUCURSALES; i++) {\n    totales[j] += ventas[i][j];\n  }\n}"
+    },
+    {
+      "id": "recorrer-tablas-diagonal",
+      "titulo": "La diagonal del tablero",
+      "dado": "#define LADO 4\n\nint puntos[LADO][LADO] = {\n  {5, 1, 2, 3},\n  {4, 6, 1, 2},\n  {3, 2, 7, 1},\n  {2, 3, 4, 8}\n};\nint suma;\nint i;",
+      "enunciado": "Un juego de mesa tiene un tablero de 4 casilleros por 4, y la tabla `puntos` guarda los puntos de cada casillero. La diagonal principal está formada por los casilleros que tienen la misma fila y la misma columna: el `[0][0]`, el `[1][1]`, y así.\n\nCon un ciclo, deje en `suma` los puntos de los casilleros de la diagonal principal. Use el índice `i`.",
+      "requiere": [
+        {
+          "ejecuta": {
+            "busca": true,
+            "casos": [
+              { "datos": { "puntos": [[5, 1, 2, 3], [4, 6, 1, 2], [3, 2, 7, 1], [2, 3, 4, 8]] }, "queda": { "suma": 26 } },
+              { "datos": { "puntos": [[1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1]] }, "queda": { "suma": 4 } },
+              { "datos": { "puntos": [[0, 9, 9, 9], [9, 0, 9, 9], [9, 9, 0, 9], [9, 9, 9, 3]] }, "queda": { "suma": 3 } },
+              { "datos": { "puntos": [[9, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]] }, "queda": { "suma": 9 } }
+            ],
+            "conCiclo": true,
+            "limite": true
+          }
+        }
+      ],
+      "referencia": "suma = 0;\nfor (i = 0; i < LADO; i++) {\n  suma += puntos[i][i];\n}"
+    },
+    {
+      "id": "recorrer-tablas-mayor",
+      "titulo": "La temperatura más alta y dónde fue",
+      "dado": "#define CIUDADES 3\n#define DIAS 4\n\nint temperaturas[CIUDADES][DIAS] = {\n  {14, 22, 17, 25},\n  {19, 21, 16, 18},\n  {12, 15, 20, 23}\n};\nint mayor;\nint fila;\nint columna;\nint i;\nint j;",
+      "enunciado": "La tabla `temperaturas` guarda la temperatura de 3 ciudades (una fila cada una) en cada uno de 4 días (una columna cada uno).\n\nCon dos ciclos, deje en `mayor` la temperatura más alta, y en `fila` y `columna` el lugar de la tabla donde está. Use los índices `i` y `j`.",
+      "requiere": [
+        {
+          "ejecuta": {
+            "busca": true,
+            "extremo": "mayor",
+            "casos": [
+              { "datos": { "temperaturas": [[14, 22, 17, 25], [19, 21, 16, 18], [12, 15, 20, 23]] }, "queda": { "mayor": 25, "fila": 0, "columna": 3 } },
+              { "datos": { "temperaturas": [[-3, -8, -1, -5], [-2, -9, -4, -7], [-6, -10, -12, -11]] }, "queda": { "mayor": -1, "fila": 0, "columna": 2 } },
+              { "datos": { "temperaturas": [[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]] }, "queda": { "mayor": 12, "fila": 2, "columna": 3 } },
+              { "datos": { "temperaturas": [[9, 1, 2, 3], [4, 5, 6, 7], [8, 0, 1, 2]] }, "queda": { "mayor": 9, "fila": 0, "columna": 0 } },
+              { "datos": { "temperaturas": [[1, 2, 3, 4], [5, 20, 7, 8], [9, 10, 11, 12]] }, "queda": { "mayor": 20, "fila": 1, "columna": 1 } }
+            ],
+            "conCiclo": true,
+            "limite": true
+          }
+        }
+      ],
+      "referencia": "mayor = temperaturas[0][0];\nfila = 0;\ncolumna = 0;\nfor (i = 0; i < CIUDADES; i++) {\n  for (j = 0; j < DIAS; j++) {\n    if (temperaturas[i][j] > mayor) {\n      mayor = temperaturas[i][j];\n      fila = i;\n      columna = j;\n    }\n  }\n}"
+    },
+    {
+      "id": "recorrer-tablas-sizeof",
+      "titulo": "Cuántas filas y cuántas columnas",
+      "dado": "int temperaturas[][3] = {\n  {14, 22, 17},\n  {19, 21, 16},\n  {12, 15, 20},\n  {13, 18, 11}\n};\nint filas;\nint columnas;",
+      "enunciado": "La tabla `temperaturas` guarda la temperatura de varias ciudades (una fila cada una) en 3 días (una columna cada uno). Se definió sin escribir cuántas filas tiene.\n\nDeje en `filas` cuántas filas tiene `temperaturas` y en `columnas` cuántas columnas, sin escribir esos números.",
+      "requiere": [
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "datos": { "temperaturas": [[14, 22, 17], [19, 21, 16], [12, 15, 20], [13, 18, 11]] },
+                "queda": { "filas": 4, "columnas": 3 }
+              },
+              { "datos": { "temperaturas": [[1, 2, 3], [4, 5, 6]] }, "queda": { "filas": 2, "columnas": 3 } },
+              {
+                "datos": { "temperaturas": [[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 1, 1], [2, 2, 2]] },
+                "queda": { "filas": 5, "columnas": 3 }
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "filas = sizeof(temperaturas) / sizeof(temperaturas[0]);\ncolumnas = sizeof(temperaturas[0]) / sizeof(temperaturas[0][0]);"
+    }
+  ]
+}

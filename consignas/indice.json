@@ -22,7 +22,8 @@
         "arreglos-acumular.json",
         "arreglos-buscar.json",
         "arreglos-tamano.json",
-        "arreglos-tablas.json"
+        "arreglos-tablas.json",
+        "arreglos-recorrer-tablas.json"
       ]
     },
     {

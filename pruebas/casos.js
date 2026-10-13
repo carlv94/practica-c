@@ -957,6 +957,106 @@ const CASOS_DE_TABLAS = [
   tablas(7, 'una fila que no existe', 'suma = notas[3][0] + notas[3][2];', ['INDICE_FUERA_DE_RANGO']),
 ];
 
+// Recorrer una tabla: ciclos anidados, con valores de prueba.
+const rtablas = (paso, nombre, respuesta, espera = 'ok', mejoras = []) => ({
+  serie: 'arreglos-recorrer-tablas',
+  paso,
+  nombre,
+  respuesta,
+  espera,
+  mejoras,
+});
+
+const CASOS_DE_RECORRER_TABLAS = [
+  // 1: una tabla de multiplicar
+  rtablas(1, 'con dos for', 'for (i = 0; i < MULTIPLICANDOS; i++) {\n  for (j = 0; j < MULTIPLICADORES; j++) {\n    tabla[i][j] = (i + 1) * (j + 1);\n  }\n}'),
+  rtablas(1, 'con dos while', 'i = 0;\nwhile (i < MULTIPLICANDOS) {\n  j = 0;\n  while (j < MULTIPLICADORES) {\n    tabla[i][j] = (i + 1) * (j + 1);\n    j++;\n  }\n  i++;\n}'),
+  rtablas(1, 'con la columna afuera', 'for (j = 0; j < MULTIPLICADORES; j++) {\n  for (i = 0; i < MULTIPLICANDOS; i++) {\n    tabla[i][j] = (i + 1) * (j + 1);\n  }\n}'),
+  rtablas(1, 'con los numeros sueltos: correcto y mejorable', 'for (i = 0; i < 4; i++) {\n  for (j = 0; j < 5; j++) {\n    tabla[i][j] = (i + 1) * (j + 1);\n  }\n}', 'ok', ['LIMITE_CON_NUMERO_SUELTO']),
+  rtablas(1, 'sin sumarle uno', 'for (i = 0; i < MULTIPLICANDOS; i++) {\n  for (j = 0; j < MULTIPLICADORES; j++) {\n    tabla[i][j] = i * j;\n  }\n}', ['RESULTADO_VALOR_DISTINTO']),
+  rtablas(1, 'con los limites al reves', 'for (i = 0; i < MULTIPLICADORES; i++) {\n  for (j = 0; j < MULTIPLICANDOS; j++) {\n    tabla[i][j] = (i + 1) * (j + 1);\n  }\n}', ['INDICE_FUERA_DE_RANGO']),
+  {
+    ...rtablas(1, 'con la fila y la columna cambiadas', 'for (i = 0; i < MULTIPLICANDOS; i++) {\n  for (j = 0; j < MULTIPLICADORES; j++) {\n    tabla[j][i] = (i + 1) * (j + 1);\n  }\n}', ['INDICE_FUERA_DE_RANGO']),
+    dice: ['`tabla` tiene 4 filas, numeradas de 0 a 3', 'la fila 4'],
+  },
+  rtablas(1, 'con un solo ciclo', 'for (i = 0; i < MULTIPLICANDOS; i++) {\n  tabla[i][0] = i + 1;\n}', ['RESULTADO_POSICION_SIN_VALOR']),
+  rtablas(1, 'sin ciclos', 'tabla[0][0] = 1;', ['CICLO_FALTA']),
+
+  // 2: cuestionario, cuantas veces
+  rtablas(2, 'veces: el producto', '2'),
+  rtablas(2, 'veces: la suma', '0', ['OPCION_SUMA_DE_LAS_VUELTAS']),
+  rtablas(2, 'veces: las filas', '1', ['OPCION_SOLO_LAS_FILAS']),
+
+  // 3: mostrar la tabla fila por fila
+  rtablas(3, 'un renglon por fila', 'for (i = 0; i < SUCURSALES; i++) {\n  for (j = 0; j < DIAS; j++) {\n    printf("%d ", ventas[i][j]);\n  }\n  printf("\\n");\n}'),
+  rtablas(3, 'con tabuladores', 'for (i = 0; i < SUCURSALES; i++) {\n  for (j = 0; j < DIAS; j++) {\n    printf("%d\\t", ventas[i][j]);\n  }\n  printf("\\n");\n}'),
+  rtablas(3, 'una fila en un solo printf', 'for (i = 0; i < SUCURSALES; i++) {\n  printf("%d %d %d %d\\n", ventas[i][0], ventas[i][1], ventas[i][2], ventas[i][3]);\n}'),
+  rtablas(3, 'con el salto antes de cada fila', 'for (i = 0; i < SUCURSALES; i++) {\n  printf("\\n");\n  for (j = 0; j < DIAS; j++) {\n    printf("%d ", ventas[i][j]);\n  }\n}'),
+  {
+    ...rtablas(3, 'todo en un renglon', 'for (i = 0; i < SUCURSALES; i++) {\n  for (j = 0; j < DIAS; j++) {\n    printf("%d ", ventas[i][j]);\n  }\n}', ['TABLA_SIN_RENGLONES']),
+    dice: ['en 1 renglón', 'la tabla tiene 3 filas', 'cada fila tiene que ir en su propio renglón'],
+  },
+  rtablas(3, 'un valor por renglon', 'for (i = 0; i < SUCURSALES; i++) {\n  for (j = 0; j < DIAS; j++) {\n    printf("%d\\n", ventas[i][j]);\n  }\n}', ['TABLA_SIN_RENGLONES']),
+  rtablas(3, 'solo la primera fila', 'for (j = 0; j < DIAS; j++) {\n  printf("%d ", ventas[0][j]);\n}\nprintf("\\n");', ['MUESTRA_DISTINTA']),
+  rtablas(3, 'las columnas como renglones', 'for (j = 0; j < DIAS; j++) {\n  for (i = 0; i < SUCURSALES; i++) {\n    printf("%d ", ventas[i][j]);\n  }\n  printf("\\n");\n}', ['MUESTRA_DISTINTA']),
+  rtablas(3, 'con la tabla entera', 'for (i = 0; i < SUCURSALES; i++) {\n  printf("%d\\n", ventas);\n}', ['ARREGLO_SIN_POSICION']),
+
+  // 4: el total de la cadena
+  rtablas(4, 'con dos for', 'total = 0;\nfor (i = 0; i < SUCURSALES; i++) {\n  for (j = 0; j < DIAS; j++) {\n    total += ventas[i][j];\n  }\n}'),
+  rtablas(4, 'con la columna afuera', 'total = 0;\nfor (j = 0; j < DIAS; j++) {\n  for (i = 0; i < SUCURSALES; i++) {\n    total += ventas[i][j];\n  }\n}'),
+  rtablas(4, 'sin iniciar el total', 'for (i = 0; i < SUCURSALES; i++) {\n  for (j = 0; j < DIAS; j++) {\n    total += ventas[i][j];\n  }\n}', ['VARIABLE_SIN_VALOR']),
+  rtablas(4, 'el total vuelve a cero en cada fila', 'for (i = 0; i < SUCURSALES; i++) {\n  total = 0;\n  for (j = 0; j < DIAS; j++) {\n    total += ventas[i][j];\n  }\n}', ['RESULTADO_VALOR_DISTINTO']),
+  rtablas(4, 'sin llegar a la ultima columna', 'total = 0;\nfor (i = 0; i < SUCURSALES; i++) {\n  for (j = 0; j < DIAS - 1; j++) {\n    total += ventas[i][j];\n  }\n}', ['RESULTADO_VALOR_DISTINTO']),
+
+  // 5: cuestionario, el acumulador
+  rtablas(5, 'acumulador: el de las dos filas', '2'),
+  rtablas(5, 'acumulador: la fila sola', '0', ['OPCION_SOLO_LA_FILA']),
+  rtablas(5, 'acumulador: el ultimo elemento', '1', ['OPCION_ULTIMO_ELEMENTO']),
+
+  // 6: el total de cada sucursal
+  rtablas(6, 'con el total en el arreglo', 'for (i = 0; i < SUCURSALES; i++) {\n  totales[i] = 0;\n  for (j = 0; j < DIAS; j++) {\n    totales[i] += ventas[i][j];\n  }\n}'),
+  rtablas(6, 'con una variable de apoyo', 'int suma;\nfor (i = 0; i < SUCURSALES; i++) {\n  suma = 0;\n  for (j = 0; j < DIAS; j++) {\n    suma += ventas[i][j];\n  }\n  totales[i] = suma;\n}'),
+  {
+    ...rtablas(6, 'la variable de apoyo no vuelve a cero', 'int suma = 0;\nfor (i = 0; i < SUCURSALES; i++) {\n  for (j = 0; j < DIAS; j++) {\n    suma += ventas[i][j];\n  }\n  totales[i] = suma;\n}', ['ACUMULADOR_SIN_REINICIAR_POR_FILA']),
+    dice: ['`totales` termina con `505`, `1125` y `1600`', 'cada total arrastra lo de las filas anteriores', 'volver a `0`'],
+  },
+  rtablas(6, 'sin iniciar el total de cada fila', 'for (i = 0; i < SUCURSALES; i++) {\n  for (j = 0; j < DIAS; j++) {\n    totales[i] += ventas[i][j];\n  }\n}', ['VARIABLE_SIN_VALOR']),
+  rtablas(6, 'sumando por columna', 'for (j = 0; j < DIAS; j++) {\n  totales[j] = 0;\n  for (i = 0; i < SUCURSALES; i++) {\n    totales[j] += ventas[i][j];\n  }\n}', ['INDICE_FUERA_DE_RANGO']),
+
+  // 7: el total de cada dia
+  rtablas(7, 'con la columna afuera', 'for (j = 0; j < DIAS; j++) {\n  totales[j] = 0;\n  for (i = 0; i < SUCURSALES; i++) {\n    totales[j] += ventas[i][j];\n  }\n}'),
+  rtablas(7, 'con la fila afuera', 'for (j = 0; j < DIAS; j++) {\n  totales[j] = 0;\n}\nfor (i = 0; i < SUCURSALES; i++) {\n  for (j = 0; j < DIAS; j++) {\n    totales[j] += ventas[i][j];\n  }\n}'),
+  {
+    ...rtablas(7, 'sumando por fila', 'for (i = 0; i < SUCURSALES; i++) {\n  totales[i] = 0;\n  for (j = 0; j < DIAS; j++) {\n    totales[i] += ventas[i][j];\n  }\n}', ['FILAS_Y_COLUMNAS_CAMBIADAS']),
+    dice: ['`totales` termina con `505`, `620` y `475`', 'la fila y la columna cambiadas'],
+  },
+  rtablas(7, 'sin iniciar los totales', 'for (i = 0; i < SUCURSALES; i++) {\n  for (j = 0; j < DIAS; j++) {\n    totales[j] += ventas[i][j];\n  }\n}', ['VARIABLE_SIN_VALOR']),
+
+  // 8: la diagonal
+  rtablas(8, 'con un ciclo', 'suma = 0;\nfor (i = 0; i < LADO; i++) {\n  suma += puntos[i][i];\n}'),
+  rtablas(8, 'con dos ciclos y un if', 'int j;\nsuma = 0;\nfor (i = 0; i < LADO; i++) {\n  for (j = 0; j < LADO; j++) {\n    if (i == j) {\n      suma += puntos[i][j];\n    }\n  }\n}'),
+  rtablas(8, 'la otra diagonal', 'suma = 0;\nfor (i = 0; i < LADO; i++) {\n  suma += puntos[i][LADO - 1 - i];\n}', ['RESULTADO_VALOR_DISTINTO']),
+  rtablas(8, 'una columna', 'suma = 0;\nfor (i = 0; i < LADO; i++) {\n  suma += puntos[i][0];\n}', ['RESULTADO_VALOR_DISTINTO']),
+  rtablas(8, 'una posicion que no existe', 'suma = 0;\nfor (i = 0; i <= LADO; i++) {\n  suma += puntos[i][i];\n}', ['INDICE_FUERA_DE_RANGO']),
+
+  // 9: la temperatura mas alta y donde
+  rtablas(9, 'con la posicion', 'mayor = temperaturas[0][0];\nfila = 0;\ncolumna = 0;\nfor (i = 0; i < CIUDADES; i++) {\n  for (j = 0; j < DIAS; j++) {\n    if (temperaturas[i][j] > mayor) {\n      mayor = temperaturas[i][j];\n      fila = i;\n      columna = j;\n    }\n  }\n}'),
+  {
+    ...rtablas(9, 'empezando en cero con negativas', 'mayor = 0;\nfila = 0;\ncolumna = 0;\nfor (i = 0; i < CIUDADES; i++) {\n  for (j = 0; j < DIAS; j++) {\n    if (temperaturas[i][j] > mayor) {\n      mayor = temperaturas[i][j];\n      fila = i;\n      columna = j;\n    }\n  }\n}', ['EXTREMO_FUERA_DEL_ARREGLO']),
+    dice: ['ese valor no es ninguno de los de `temperaturas`'],
+  },
+  rtablas(9, 'la fila y la columna cambiadas', 'mayor = temperaturas[0][0];\nfila = 0;\ncolumna = 0;\nfor (i = 0; i < CIUDADES; i++) {\n  for (j = 0; j < DIAS; j++) {\n    if (temperaturas[i][j] > mayor) {\n      mayor = temperaturas[i][j];\n      fila = j;\n      columna = i;\n    }\n  }\n}', ['RESULTADO_VALOR_DISTINTO']),
+  rtablas(9, 'sin guardar la posicion', 'mayor = temperaturas[0][0];\nfor (i = 0; i < CIUDADES; i++) {\n  for (j = 0; j < DIAS; j++) {\n    if (temperaturas[i][j] > mayor) {\n      mayor = temperaturas[i][j];\n    }\n  }\n}', ['RESULTADO_VARIABLE_SIN_VALOR']),
+  rtablas(9, 'el menor en lugar del mayor', 'mayor = temperaturas[0][0];\nfila = 0;\ncolumna = 0;\nfor (i = 0; i < CIUDADES; i++) {\n  for (j = 0; j < DIAS; j++) {\n    if (temperaturas[i][j] < mayor) {\n      mayor = temperaturas[i][j];\n      fila = i;\n      columna = j;\n    }\n  }\n}', ['RESULTADO_VALOR_DISTINTO']),
+
+  // 10: cuantas filas y cuantas columnas
+  rtablas(10, 'con sizeof de la fila y del elemento', 'filas = sizeof(temperaturas) / sizeof(temperaturas[0]);\ncolumnas = sizeof(temperaturas[0]) / sizeof(temperaturas[0][0]);'),
+  rtablas(10, 'con sizeof del tipo', 'filas = sizeof(temperaturas) / sizeof(temperaturas[0]);\ncolumnas = sizeof(temperaturas[0]) / sizeof(int);'),
+  rtablas(10, 'las filas escritas', 'filas = 4;\ncolumnas = sizeof(temperaturas[0]) / sizeof(temperaturas[0][0]);', ['RESULTADO_VALOR_DISTINTO']),
+  rtablas(10, 'todos los elementos como filas', 'filas = sizeof(temperaturas) / sizeof(temperaturas[0][0]);\ncolumnas = sizeof(temperaturas[0]) / sizeof(temperaturas[0][0]);', ['RESULTADO_VALOR_DISTINTO']),
+  rtablas(10, 'los bytes como filas', 'filas = sizeof(temperaturas);\ncolumnas = sizeof(temperaturas[0]) / sizeof(temperaturas[0][0]);', ['RESULTADO_VALOR_DISTINTO']),
+];
+
 export const CASOS = [
   ...CASOS_DE_NOMBRES,
   ...CASOS_DE_VALORES,
@@ -968,6 +1068,7 @@ export const CASOS = [
   ...CASOS_DE_BUSCAR,
   ...CASOS_DE_TAMANO,
   ...CASOS_DE_TABLAS,
+  ...CASOS_DE_RECORRER_TABLAS,
   ...CASOS_DE_CADENAS,
   ...CASOS_DE_CADENAS_NUEVAS,
   // ---- 1: declarar la estructura ----
