@@ -500,6 +500,84 @@ const CASOS_DE_ACUMULAR = [
   acumular(8, 'mostrar un decimal con %d', 'aprobados = 0;\nfor (i = 0; i < CANTIDAD; i++) {\n  if (notas[i] >= 6) {\n    aprobados++;\n  }\n}\nporcentaje = (float) aprobados * 100 / CANTIDAD;\nprintf("%d\\n", porcentaje);', ['FORMATO_NO_CORRESPONDE_AL_TIPO']),
 ];
 
+// Buscar en un arreglo: se corre con varios conjuntos de valores.
+const buscar = (paso, nombre, respuesta, espera = 'ok', mejoras = []) => ({
+  serie: 'arreglos-buscar',
+  paso,
+  nombre,
+  respuesta,
+  espera,
+  mejoras,
+});
+
+const CASOS_DE_BUSCAR = [
+  // 1: hubo algun dia sin ventas
+  buscar(1, 'una bandera', 'encontrado = 0;\nfor (i = 0; i < DIAS; i++) {\n  if (ventas[i] == 0) {\n    encontrado = 1;\n  }\n}'),
+  buscar(1, 'un while que corta', 'i = 0;\nwhile (i < DIAS && ventas[i] != 0) {\n  i++;\n}\nif (i < DIAS) {\n  encontrado = 1;\n} else {\n  encontrado = 0;\n}'),
+  buscar(1, 'contando', 'encontrado = 0;\nfor (i = 0; i < DIAS; i++) {\n  if (ventas[i] == 0) {\n    encontrado++;\n  }\n}', ['RESULTADO_VALOR_DISTINTO']),
+  buscar(1, 'sin iniciar la bandera', 'for (i = 0; i < DIAS; i++) {\n  if (ventas[i] == 0) {\n    encontrado = 1;\n  }\n}', ['RESULTADO_VARIABLE_SIN_VALOR']),
+  buscar(1, 'la bandera vuelve a cero en cada vuelta', 'for (i = 0; i < DIAS; i++) {\n  if (ventas[i] == 0) {\n    encontrado = 1;\n  } else {\n    encontrado = 0;\n  }\n}', ['RESULTADO_VALOR_DISTINTO']),
+  buscar(1, 'solo mira el primero', 'encontrado = 0;\nif (ventas[0] == 0) {\n  encontrado = 1;\n}', ['CICLO_FALTA']),
+  buscar(1, 'el resultado escrito a mano', 'encontrado = 1;', ['CICLO_FALTA']),
+
+  // 2: cuestionario, donde queda el indice
+  buscar(2, 'indice: la primera vez', '2'),
+  buscar(2, 'indice: la ultima vez', '0', ['OPCION_ULTIMA_APARICION']),
+  buscar(2, 'indice: la cantidad', '1', ['OPCION_RECORRE_TODO']),
+
+  // 3: la primera posicion
+  buscar(3, 'con while y condicion doble', 'i = 0;\nwhile (i < CANTIDAD && notas[i] != 7) {\n  i++;\n}\nif (i < CANTIDAD) {\n  posicion = i;\n} else {\n  posicion = -1;\n}'),
+  buscar(3, 'con un for que corta', 'posicion = -1;\nfor (i = 0; i < CANTIDAD && posicion == -1; i++) {\n  if (notas[i] == 7) {\n    posicion = i;\n  }\n}'),
+  buscar(3, 'con break', 'posicion = -1;\nfor (i = 0; i < CANTIDAD; i++) {\n  if (notas[i] == 7) {\n    posicion = i;\n    break;\n  }\n}'),
+  {
+    ...buscar(3, 'sin cortar queda la ultima', 'posicion = -1;\nfor (i = 0; i < CANTIDAD; i++) {\n  if (notas[i] == 7) {\n    posicion = i;\n  }\n}', ['BUSQUEDA_SIN_CORTAR']),
+    dice: ['`posicion` termina valiendo `4`', 'es la última vez que aparece', 'dejar de buscar'],
+  },
+  buscar(3, 'sin el menos uno cuando no esta', 'posicion = 0;\nfor (i = CANTIDAD - 1; i >= 0; i--) {\n  if (notas[i] == 7) {\n    posicion = i;\n  }\n}', ['RESULTADO_VALOR_DISTINTO']),
+  buscar(3, 'la posicion de la nota y no del 7', 'posicion = -1;\nfor (i = 0; i < CANTIDAD; i++) {\n  if (notas[i] == 7) {\n    posicion = notas[i];\n  }\n}', ['RESULTADO_VALOR_DISTINTO']),
+  buscar(3, 'sin ciclo', 'posicion = 2;', ['CICLO_FALTA']),
+
+  // 4: cuestionario, el maximo que empieza en cero
+  buscar(4, 'maximo en cero: cero', '2'),
+  buscar(4, 'maximo en cero: el mayor', '0', ['OPCION_EL_MAYOR_DEL_ARREGLO']),
+  buscar(4, 'maximo en cero: la primera', '1', ['OPCION_LA_PRIMERA']),
+
+  // 5: la mayor temperatura
+  buscar(5, 'empezando con el primero', 'mayor = temperaturas[0];\nfor (i = 1; i < CANTIDAD; i++) {\n  if (temperaturas[i] > mayor) {\n    mayor = temperaturas[i];\n  }\n}'),
+  buscar(5, 'recorriendo desde el primero', 'mayor = temperaturas[0];\nfor (i = 0; i < CANTIDAD; i++) {\n  if (temperaturas[i] > mayor) {\n    mayor = temperaturas[i];\n  }\n}'),
+  buscar(5, 'con un while', 'mayor = temperaturas[0];\ni = 1;\nwhile (i < CANTIDAD) {\n  if (temperaturas[i] > mayor) {\n    mayor = temperaturas[i];\n  }\n  i++;\n}'),
+  {
+    ...buscar(5, 'empezando en cero: falla con negativas', 'mayor = 0;\nfor (i = 0; i < CANTIDAD; i++) {\n  if (temperaturas[i] > mayor) {\n    mayor = temperaturas[i];\n  }\n}', ['EXTREMO_FUERA_DEL_ARREGLO']),
+    dice: ['`temperaturas` valiendo `-3`', 'ese valor no es ninguno de los de `temperaturas`', 'uno de los del arreglo'],
+  },
+  buscar(5, 'el menor en lugar del mayor', 'mayor = temperaturas[0];\nfor (i = 1; i < CANTIDAD; i++) {\n  if (temperaturas[i] < mayor) {\n    mayor = temperaturas[i];\n  }\n}', ['RESULTADO_VALOR_DISTINTO']),
+  buscar(5, 'la ultima temperatura', 'mayor = temperaturas[CANTIDAD - 1];', ['CICLO_FALTA']),
+  buscar(5, 'sin iniciar', 'for (i = 0; i < CANTIDAD; i++) {\n  if (temperaturas[i] > mayor) {\n    mayor = temperaturas[i];\n  }\n}', ['VARIABLE_SIN_VALOR']),
+
+  // 6: la menor y la mayor
+  buscar(6, 'las dos con un ciclo', 'menor = temperaturas[0];\nmayor = temperaturas[0];\nfor (i = 1; i < CANTIDAD; i++) {\n  if (temperaturas[i] < menor) {\n    menor = temperaturas[i];\n  }\n  if (temperaturas[i] > mayor) {\n    mayor = temperaturas[i];\n  }\n}'),
+  buscar(6, 'con dos ciclos', 'menor = temperaturas[0];\nfor (i = 1; i < CANTIDAD; i++) {\n  if (temperaturas[i] < menor) {\n    menor = temperaturas[i];\n  }\n}\nmayor = temperaturas[0];\nfor (i = 1; i < CANTIDAD; i++) {\n  if (temperaturas[i] > mayor) {\n    mayor = temperaturas[i];\n  }\n}'),
+  buscar(6, 'con un else if', 'menor = temperaturas[0];\nmayor = temperaturas[0];\nfor (i = 1; i < CANTIDAD; i++) {\n  if (temperaturas[i] < menor) {\n    menor = temperaturas[i];\n  } else if (temperaturas[i] > mayor) {\n    mayor = temperaturas[i];\n  }\n}'),
+  buscar(6, 'el menor empezando en cero', 'menor = 0;\nmayor = temperaturas[0];\nfor (i = 1; i < CANTIDAD; i++) {\n  if (temperaturas[i] < menor) {\n    menor = temperaturas[i];\n  }\n  if (temperaturas[i] > mayor) {\n    mayor = temperaturas[i];\n  }\n}', ['EXTREMO_FUERA_DEL_ARREGLO']),
+  buscar(6, 'los dos al reves', 'menor = temperaturas[0];\nmayor = temperaturas[0];\nfor (i = 1; i < CANTIDAD; i++) {\n  if (temperaturas[i] > menor) {\n    menor = temperaturas[i];\n  }\n  if (temperaturas[i] < mayor) {\n    mayor = temperaturas[i];\n  }\n}', ['RESULTADO_VALOR_DISTINTO']),
+  buscar(6, 'solo el mayor', 'mayor = temperaturas[0];\nfor (i = 1; i < CANTIDAD; i++) {\n  if (temperaturas[i] > mayor) {\n    mayor = temperaturas[i];\n  }\n}', ['RESULTADO_VARIABLE_SIN_VALOR']),
+
+  // 7: en que dia se vendio mas
+  buscar(7, 'comparando con el elemento', 'dia = 0;\nfor (i = 1; i < DIAS; i++) {\n  if (ventas[i] > ventas[dia]) {\n    dia = i;\n  }\n}'),
+  buscar(7, 'con una variable para el mayor', 'int mayorVenta = ventas[0];\ndia = 0;\nfor (i = 1; i < DIAS; i++) {\n  if (ventas[i] > mayorVenta) {\n    mayorVenta = ventas[i];\n    dia = i;\n  }\n}'),
+  buscar(7, 'el valor y no la posicion', 'dia = ventas[0];\nfor (i = 1; i < DIAS; i++) {\n  if (ventas[i] > dia) {\n    dia = ventas[i];\n  }\n}', ['RESULTADO_VALOR_DISTINTO']),
+  buscar(7, 'la posicion del menor', 'dia = 0;\nfor (i = 1; i < DIAS; i++) {\n  if (ventas[i] < ventas[dia]) {\n    dia = i;\n  }\n}', ['RESULTADO_VALOR_DISTINTO']),
+  buscar(7, 'la ultima posicion', 'dia = DIAS - 1;', ['CICLO_FALTA']),
+
+  // 8: aprobaron todos
+  buscar(8, 'la bandera que baja', 'todos = 1;\nfor (i = 0; i < CANTIDAD; i++) {\n  if (notas[i] < 6) {\n    todos = 0;\n  }\n}'),
+  buscar(8, 'contando los que no aprobaron', 'int desaprobados = 0;\nfor (i = 0; i < CANTIDAD; i++) {\n  if (notas[i] < 6) {\n    desaprobados++;\n  }\n}\nif (desaprobados == 0) {\n  todos = 1;\n} else {\n  todos = 0;\n}'),
+  buscar(8, 'con while que corta', 'i = 0;\nwhile (i < CANTIDAD && notas[i] >= 6) {\n  i++;\n}\ntodos = i == CANTIDAD;'),
+  buscar(8, 'la bandera vuelve a subir', 'for (i = 0; i < CANTIDAD; i++) {\n  if (notas[i] < 6) {\n    todos = 0;\n  } else {\n    todos = 1;\n  }\n}', ['RESULTADO_VALOR_DISTINTO']),
+  buscar(8, 'solo mira el ultimo', 'todos = 1;\nif (notas[CANTIDAD - 1] < 6) {\n  todos = 0;\n}', ['CICLO_FALTA']),
+  buscar(8, 'sin iniciar', 'for (i = 0; i < CANTIDAD; i++) {\n  if (notas[i] < 6) {\n    todos = 0;\n  }\n}', ['RESULTADO_VARIABLE_SIN_VALOR']),
+];
+
 // Arreglos definidos con sus valores: los del dibujo, 3 6 0 7 1 5.
 const valores = (paso, nombre, respuesta, espera, mejoras = []) => ({
   serie: 'arreglos-valores',
@@ -763,6 +841,7 @@ export const CASOS = [
   ...CASOS_DE_RECORRER,
   ...CASOS_DE_LEER,
   ...CASOS_DE_ACUMULAR,
+  ...CASOS_DE_BUSCAR,
   ...CASOS_DE_CADENAS,
   ...CASOS_DE_CADENAS_NUEVAS,
   // ---- 1: declarar la estructura ----

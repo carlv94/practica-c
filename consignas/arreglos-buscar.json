@@ -1,0 +1,199 @@
+{
+  "id": "arreglos-buscar",
+  "titulo": "Buscar en un arreglo",
+  "descripcion": "Recorrer un arreglo para encontrar algo: si un valor está, dónde está, el mayor y el menor, y si todos cumplen una condición.",
+  "dentroDeMain": true,
+  "buenasPracticas": ["constantes"],
+  "consignas": [
+    {
+      "id": "buscar-existe",
+      "titulo": "¿Hubo algún día sin ventas?",
+      "dado": "#define DIAS 7\n\nint ventas[DIAS] = {120, 85, 0, 60, 175, 90, 310};\nint encontrado;\nint i;",
+      "enunciado": "Un comercio registró en el arreglo `ventas` lo que vendió cada día de la semana. Un día sin ventas es un día en que se vendió 0.\n\nCon un ciclo, deje en `encontrado` un 1 si hubo algún día sin ventas, o un 0 si no lo hubo. Use el índice `i`.",
+      "requiere": [
+        {
+          "ejecuta": {
+            "busca": true,
+            "casos": [
+              { "datos": { "ventas": [120, 85, 0, 60, 175, 90, 310] }, "queda": { "encontrado": 1 } },
+              { "datos": { "ventas": [120, 85, 50, 60, 175, 90, 310] }, "queda": { "encontrado": 0 } },
+              { "datos": { "ventas": [10, 20, 30, 40, 50, 60, 0] }, "queda": { "encontrado": 1 } },
+              { "datos": { "ventas": [0, 5, 5, 5, 5, 5, 5] }, "queda": { "encontrado": 1 } },
+              { "datos": { "ventas": [0, 0, 0, 0, 0, 0, 0] }, "queda": { "encontrado": 1 } }
+            ],
+            "conCiclo": true,
+            "limite": true
+          }
+        }
+      ],
+      "referencia": "encontrado = 0;\nfor (i = 0; i < DIAS; i++) {\n  if (ventas[i] == 0) {\n    encontrado = 1;\n  }\n}"
+    },
+    {
+      "id": "buscar-q-indice",
+      "titulo": "Dónde queda el índice al encontrarlo",
+      "enunciado": "Después de ejecutar el código de abajo, ¿qué valor tendría `i`?",
+      "codigo": "int notas[5] = {4, 9, 7, 6, 7};\nint i;\n\ni = 0;\nwhile (i < 5 && notas[i] != 7) {\n  i++;\n}",
+      "opciones": [
+        {
+          "valor": "4",
+          "texto": "la posición de la última vez que aparece el 7",
+          "codigo": "OPCION_ULTIMA_APARICION",
+          "explicacion": "El `7` aparece también en la posición `4`, pero el ciclo termina en cuanto encuentra el primero: la condición falla cuando `i` vale `2` y `i` ya no sigue avanzando."
+        },
+        {
+          "valor": "5",
+          "texto": "la cantidad de elementos",
+          "codigo": "OPCION_RECORRE_TODO",
+          "explicacion": "`i` llegaría a `5` solo si no hubiera ningún `7` en `notas`."
+        },
+        {
+          "valor": "2",
+          "texto": "la posición de la primera vez que aparece el 7",
+          "correcta": true,
+          "explicacion": "`i` aumenta mientras `notas[i]` no sea `7`. Cuando `i` vale `2`, `notas[2]` es `7`: la condición falla, el ciclo termina y `i` queda en `2`."
+        }
+      ]
+    },
+    {
+      "id": "buscar-posicion",
+      "titulo": "La primera posición de un valor",
+      "dado": "#define CANTIDAD 8\n\nint notas[CANTIDAD] = {4, 9, 7, 6, 7, 10, 3, 8};\nint posicion;\nint i;",
+      "enunciado": "Un docente quiere saber en qué lugar de la lista está el primer alumno que sacó un 7: la primera nota igual a 7 del arreglo `notas`.\n\nCon un ciclo, deje en `posicion` la posición de la primera nota igual a 7, o `-1` si no hay ninguna. Use el índice `i`.",
+      "requiere": [
+        {
+          "ejecuta": {
+            "busca": true,
+            "casos": [
+              { "datos": { "notas": [4, 9, 7, 6, 7, 10, 3, 8] }, "queda": { "posicion": 2 }, "sinCortar": 4 },
+              { "datos": { "notas": [1, 2, 3, 4, 5, 6, 8, 9] }, "queda": { "posicion": -1 } },
+              { "datos": { "notas": [7, 1, 2, 3, 4, 5, 6, 7] }, "queda": { "posicion": 0 }, "sinCortar": 7 },
+              { "datos": { "notas": [1, 2, 3, 4, 5, 6, 8, 7] }, "queda": { "posicion": 7 } }
+            ],
+            "conCiclo": true
+          }
+        }
+      ],
+      "referencia": "i = 0;\nwhile (i < CANTIDAD && notas[i] != 7) {\n  i++;\n}\nif (i < CANTIDAD) {\n  posicion = i;\n} else {\n  posicion = -1;\n}"
+    },
+    {
+      "id": "buscar-q-mayor-en-cero",
+      "titulo": "El máximo que empieza en cero",
+      "enunciado": "Después de ejecutar el código de abajo, ¿qué valor tendría `mayor`?",
+      "codigo": "int temperaturas[4] = {-3, -8, -1, -5};\nint mayor = 0;\nint i;\n\nfor (i = 0; i < 4; i++) {\n  if (temperaturas[i] > mayor) {\n    mayor = temperaturas[i];\n  }\n}",
+      "opciones": [
+        {
+          "valor": "-1",
+          "texto": "la mayor de las temperaturas",
+          "codigo": "OPCION_EL_MAYOR_DEL_ARREGLO",
+          "explicacion": "El `-1` es la mayor de las temperaturas, pero `mayor` empieza en `0`: `-1 > 0` es falso, así que nunca se lo guarda."
+        },
+        {
+          "valor": "-3",
+          "texto": "la primera temperatura",
+          "codigo": "OPCION_LA_PRIMERA",
+          "explicacion": "El ciclo no guarda la primera temperatura: `-3 > 0` es falso, así que `mayor` no cambia."
+        },
+        {
+          "valor": "0",
+          "texto": "el valor con que empezó",
+          "correcta": true,
+          "explicacion": "`mayor` empieza en `0` y ninguna temperatura lo supera, porque todas son negativas: la condición nunca se cumple y `mayor` queda en `0`, que ni siquiera es un valor de `temperaturas`."
+        }
+      ]
+    },
+    {
+      "id": "buscar-mayor",
+      "titulo": "La mayor temperatura",
+      "dado": "#define CANTIDAD 7\n\nint temperaturas[CANTIDAD] = {4, -2, 7, 0, -5, 3, 1};\nint mayor;\nint i;",
+      "enunciado": "Una estación meteorológica registró en el arreglo `temperaturas` la temperatura de cada día de la semana.\n\nCon un ciclo, deje en `mayor` la temperatura más alta de la semana. Use el índice `i`.",
+      "requiere": [
+        {
+          "ejecuta": {
+            "busca": true,
+            "extremo": true,
+            "casos": [
+              { "datos": { "temperaturas": [4, -2, 7, 0, -5, 3, 1] }, "queda": { "mayor": 7 } },
+              { "datos": { "temperaturas": [-3, -8, -1, -5, -2, -9, -4] }, "queda": { "mayor": -1 } },
+              { "datos": { "temperaturas": [5, 5, 5, 5, 5, 5, 5] }, "queda": { "mayor": 5 } },
+              { "datos": { "temperaturas": [1, 2, 3, 4, 5, 6, 7] }, "queda": { "mayor": 7 } },
+              { "datos": { "temperaturas": [7, 6, 5, 4, 3, 2, 1] }, "queda": { "mayor": 7 } }
+            ],
+            "conCiclo": true,
+            "limite": true
+          }
+        }
+      ],
+      "referencia": "mayor = temperaturas[0];\nfor (i = 1; i < CANTIDAD; i++) {\n  if (temperaturas[i] > mayor) {\n    mayor = temperaturas[i];\n  }\n}"
+    },
+    {
+      "id": "buscar-rango",
+      "titulo": "La menor y la mayor temperatura",
+      "dado": "#define CANTIDAD 7\n\nint temperaturas[CANTIDAD] = {14, 22, 17, 25, 19, 21, 16};\nint menor;\nint mayor;\nint i;",
+      "enunciado": "La estación meteorológica quiere el rango de temperaturas de la semana, que están en el arreglo `temperaturas`.\n\nCon un ciclo, deje en `menor` la temperatura más baja y en `mayor` la más alta. Use el índice `i`.",
+      "requiere": [
+        {
+          "ejecuta": {
+            "busca": true,
+            "extremo": true,
+            "casos": [
+              { "datos": { "temperaturas": [14, 22, 17, 25, 19, 21, 16] }, "queda": { "menor": 14, "mayor": 25 } },
+              { "datos": { "temperaturas": [-3, -8, -1, -5, -2, -9, -4] }, "queda": { "menor": -9, "mayor": -1 } },
+              { "datos": { "temperaturas": [5, 5, 5, 5, 5, 5, 5] }, "queda": { "menor": 5, "mayor": 5 } },
+              { "datos": { "temperaturas": [3, 4, 5, 6, 7, 8, 9] }, "queda": { "menor": 3, "mayor": 9 } },
+              { "datos": { "temperaturas": [9, 8, 7, 6, 5, 4, 3] }, "queda": { "menor": 3, "mayor": 9 } }
+            ],
+            "conCiclo": true,
+            "limite": true
+          }
+        }
+      ],
+      "referencia": "menor = temperaturas[0];\nmayor = temperaturas[0];\nfor (i = 1; i < CANTIDAD; i++) {\n  if (temperaturas[i] < menor) {\n    menor = temperaturas[i];\n  }\n  if (temperaturas[i] > mayor) {\n    mayor = temperaturas[i];\n  }\n}"
+    },
+    {
+      "id": "buscar-dia-mayor",
+      "titulo": "¿En qué día se vendió más?",
+      "dado": "#define DIAS 7\n\nint ventas[DIAS] = {120, 85, 240, 60, 175, 90, 310};\nint dia;\nint i;",
+      "enunciado": "El comercio quiere saber en qué día de la semana se vendió más. Los días se numeran como las posiciones de `ventas`: el primero es el 0 y el último el 6.\n\nCon un ciclo, deje en `dia` la posición del día en que más se vendió. Use el índice `i`.",
+      "requiere": [
+        {
+          "ejecuta": {
+            "busca": true,
+            "casos": [
+              { "datos": { "ventas": [120, 85, 240, 60, 175, 90, 310] }, "queda": { "dia": 6 } },
+              { "datos": { "ventas": [310, 85, 240, 60, 175, 90, 120] }, "queda": { "dia": 0 } },
+              { "datos": { "ventas": [10, 50, 20, 5, 30, 15, 25] }, "queda": { "dia": 1 } },
+              { "datos": { "ventas": [1, 2, 3, 9, 4, 5, 6] }, "queda": { "dia": 3 } }
+            ],
+            "conCiclo": true,
+            "limite": true
+          }
+        }
+      ],
+      "referencia": "dia = 0;\nfor (i = 1; i < DIAS; i++) {\n  if (ventas[i] > ventas[dia]) {\n    dia = i;\n  }\n}"
+    },
+    {
+      "id": "buscar-todos",
+      "titulo": "¿Aprobaron todos?",
+      "dado": "#define CANTIDAD 8\n\nint notas[CANTIDAD] = {7, 6, 9, 8, 6, 10, 7, 6};\nint todos;\nint i;",
+      "enunciado": "Un alumno aprueba con una nota de 6 o más. El docente quiere saber si en su comisión aprobaron todos los alumnos. Las notas están en el arreglo `notas`.\n\nCon un ciclo, deje en `todos` un 1 si todos aprobaron, o un 0 si hubo al menos un alumno que no aprobó. Use el índice `i`.",
+      "requiere": [
+        {
+          "ejecuta": {
+            "busca": true,
+            "casos": [
+              { "datos": { "notas": [7, 6, 9, 8, 6, 10, 7, 6] }, "queda": { "todos": 1 } },
+              { "datos": { "notas": [7, 6, 9, 8, 6, 10, 7, 5] }, "queda": { "todos": 0 } },
+              { "datos": { "notas": [5, 6, 9, 8, 6, 10, 7, 6] }, "queda": { "todos": 0 } },
+              { "datos": { "notas": [7, 6, 9, 4, 6, 10, 7, 6] }, "queda": { "todos": 0 } },
+              { "datos": { "notas": [6, 6, 6, 6, 6, 6, 6, 6] }, "queda": { "todos": 1 } },
+              { "datos": { "notas": [1, 2, 3, 4, 5, 1, 2, 3] }, "queda": { "todos": 0 } }
+            ],
+            "conCiclo": true,
+            "limite": true
+          }
+        }
+      ],
+      "referencia": "todos = 1;\nfor (i = 0; i < CANTIDAD; i++) {\n  if (notas[i] < 6) {\n    todos = 0;\n  }\n}"
+    }
+  ]
+}
