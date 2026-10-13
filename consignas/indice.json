@@ -16,7 +16,8 @@
       "series": [
         "arreglos-declarar.json",
         "arreglos-valores.json",
-        "arreglos-elementos.json"
+        "arreglos-elementos.json",
+        "arreglos-tablas.json"
       ]
     },
     {

@@ -1,0 +1,82 @@
+{
+  "id": "arreglos-tablas",
+  "titulo": "Tablas",
+  "descripcion": "Definir una tabla y darle sus valores en la misma sentencia.",
+  "dentroDeMain": true,
+  "buenasPracticas": ["constantes", "claridad"],
+  "consignas": [
+    {
+      "id": "arreglos-tablas-1",
+      "titulo": "Una tabla",
+      "enunciado": "En la misma sentencia, defina e inicialice la siguiente tabla:",
+      "requiere": [
+        {
+          "variable": {
+            "tipo": "entero",
+            "valores": [
+              [5, 8, 1, 4],
+              [0, 2, 9, 6],
+              [3, 7, 4, 8]
+            ]
+          }
+        }
+      ],
+      "referencia": "int tabla[][4] = {\n  {5, 8, 1, 4},\n  {0, 2, 9, 6},\n  {3, 7, 4, 8}\n};"
+    },
+    {
+      "id": "arreglos-tablas-2",
+      "titulo": "Una tabla cuadrada",
+      "enunciado": "En la misma sentencia, defina e inicialice la siguiente tabla:",
+      "requiere": [
+        {
+          "variable": {
+            "tipo": "entero",
+            "valores": [
+              [4, 7],
+              [2, 9]
+            ]
+          }
+        }
+      ],
+      "referencia": "int cuadrada[][2] = {\n  {4, 7},\n  {2, 9}\n};"
+    },
+    {
+      "id": "arreglos-tablas-3",
+      "titulo": "Una tabla en cero",
+      "enunciado": "En la misma sentencia declare e inicialice en cero todos los valores de una tabla de enteros de 3 filas y 4 columnas.",
+      "dibujo": false,
+      "requiere": [
+        {
+          "variable": {
+            "tipo": "entero",
+            "valores": [
+              [0, 0, 0, 0],
+              [0, 0, 0, 0],
+              [0, 0, 0, 0]
+            ]
+          }
+        }
+      ],
+      "referencia": "#define FILAS 3\n#define COLUMNAS 4\n\nint tablaCeros[FILAS][COLUMNAS] = {0};"
+    },
+    {
+      "id": "arreglos-tablas-4",
+      "titulo": "Ceros que no se escriben",
+      "continua": true,
+      "enunciado": "En la misma sentencia, defina e inicialice la siguiente tabla:",
+      "requiere": [
+        {
+          "variable": {
+            "tipo": "entero",
+            "valores": [
+              [5, 8, 0, 0],
+              [1, 0, 0, 0],
+              [0, 0, 0, 0]
+            ]
+          }
+        }
+      ],
+      "referencia": "int dispersa[FILAS][COLUMNAS] = {{5, 8}, {1}};"
+    }
+  ]
+}
