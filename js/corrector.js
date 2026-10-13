@@ -1806,6 +1806,12 @@ export function corregir(
   // De la regla se usan "extremo" (el resultado tiene que ser uno de los valores
   // del arreglo: el mayor, el menor) y "busca" (no es una acumulacion). Del
   // caso, "sinCortar": lo que queda si la busqueda sigue despues de encontrarlo.
+  // "extremo": true vale para todas las variables que se piden; un nombre, o una
+  // lista de nombres, solo para esas.
+  function esExtremo(pedido, nombre) {
+    return pedido === true || pedido === nombre || (Array.isArray(pedido) && pedido.includes(nombre));
+  }
+
   function revisarCaso(corrida, caso, modelo, regla) {
     const con = conLosValores(caso.datos);
     // Las veces que se le da un valor con "=" a la variable dentro de un ciclo.
@@ -1847,6 +1853,26 @@ export function corregir(
             return false;
           }
           if (Math.abs(p.que - p.debe) > 1e-9) {
+            // Un arreglo de totales que arrastra lo de la fila anterior, o que
+            // tiene lo que daria con la fila y la columna cambiadas.
+            const tieneEso = (esperado) =>
+              Array.isArray(esperado) &&
+              Array.isArray(variable.datos) &&
+              esperado.every((v, k) => variable.datos[k] !== undefined && Math.abs(variable.datos[k] - v) < 1e-9);
+            if (tieneEso(caso.acumulado && caso.acumulado[nombre])) {
+              error(
+                'ACUMULADOR_SIN_REINICIAR_POR_FILA',
+                `${con}, \`${nombre}\` termina con ${enLista(caso.acumulado[nombre])} y debería tener ${enLista(debe)}: cada total arrastra lo de las filas anteriores. El acumulador tiene que volver a \`0\` al empezar cada fila.`
+              );
+              return false;
+            }
+            if (tieneEso(caso.cambiadas && caso.cambiadas[nombre])) {
+              error(
+                'FILAS_Y_COLUMNAS_CAMBIADAS',
+                `${con}, \`${nombre}\` termina con ${enLista(caso.cambiadas[nombre])}, que es lo que da con la fila y la columna cambiadas: el primer índice es la fila y el segundo, la columna.`
+              );
+              return false;
+            }
             error(
               'RESULTADO_VALOR_DISTINTO',
               `${con}, \`${p.nombre}\` termina valiendo \`${p.que}\` y debería valer \`${p.debe}\`.`
@@ -1872,7 +1898,7 @@ export function corregir(
 
       const resumen = `${con}, \`${nombre}\` termina valiendo \`${tiene}\` y debería valer \`${debe}\``;
       const ultimos = Object.values(caso.datos || {}).map((lista) => lista[lista.length - 1]);
-      const valoresDeLosArreglos = Object.values(caso.datos || {}).flat();
+      const valoresDeLosArreglos = Object.values(caso.datos || {}).flat(Infinity);
       if (variable.flotante && !Number.isInteger(debe) && tiene === Math.trunc(debe)) {
         error(
           'DIVISION_ENTERA',
@@ -1890,7 +1916,7 @@ export function corregir(
           'BUSQUEDA_SIN_CORTAR',
           `${resumen}: es la última vez que aparece. Después de encontrarlo el ciclo sigue y lo reemplaza: hay que dejar de buscar cuando lo encuentra.`
         );
-      } else if (regla.extremo && !valoresDeLosArreglos.includes(tiene)) {
+      } else if (esExtremo(regla.extremo, nombre) && !valoresDeLosArreglos.includes(tiene)) {
         // El mayor o el menor tiene que ser uno de los del arreglo.
         error(
           'EXTREMO_FUERA_DEL_ARREGLO',
@@ -1911,6 +1937,31 @@ export function corregir(
         error('RESULTADO_VALOR_DISTINTO', `${resumen}.`);
       }
       return false;
+    }
+
+    // Una tabla: cada fila en su renglon, con sus valores.
+    if (caso.muestraEnFilas) {
+      if (!corrida.mostrados.length) {
+        error('MUESTRA_FALTA', 'La consigna pide mostrar en pantalla, con `printf`: el programa no muestra ningún número.');
+        return false;
+      }
+      const iguales = (a, b) => a.length === b.length && a.every((v, k) => Math.abs(v - b[k]) < 1e-6);
+      const filas = corrida.lineas.filter((l) => l.length);
+      const pedidas = caso.muestraEnFilas;
+      if (!(filas.length === pedidas.length && filas.every((f, k) => iguales(f, pedidas[k])))) {
+        if (iguales(corrida.mostrados, pedidas.flat())) {
+          error(
+            'TABLA_SIN_RENGLONES',
+            `${con}, el programa muestra los valores en ${filas.length} ${filas.length === 1 ? 'renglón' : 'renglones'} y la tabla tiene ${pedidas.length} filas: cada fila tiene que ir en su propio renglón.`
+          );
+        } else {
+          error(
+            'MUESTRA_DISTINTA',
+            `${con}, el programa muestra ${enLista(filas)} cuando debería mostrar ${enLista(pedidas)}.`
+          );
+        }
+        return false;
+      }
     }
 
     if (caso.muestra) {

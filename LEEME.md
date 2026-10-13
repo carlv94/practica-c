@@ -548,6 +548,29 @@ define la tabla, y `ejecuta` con `casos` corrige el acceso a un elemento:
   de 0 a 2: la fila 3 no existe" (o "columnas"), igual que la revisión de los
   números escritos.
 
+**Recorrer una tabla** (serie "Recorrer una tabla"): la misma regla `ejecuta`
+con `casos`, para ciclos anidados:
+
+- `"muestraEnFilas": [[120, 85], [175, 90]]` en un caso: lo que se muestra,
+  fila por fila. El intérprete anota los números que salen en cada renglón
+  (cada `\n` cierra uno) y se comparan renglón por renglón, sin mirar
+  separadores ni textos agregados. Si los valores son los de la tabla pero no
+  van en sus renglones, `TABLA_SIN_RENGLONES` (todo en uno, o uno por renglón);
+  si no, `MUESTRA_DISTINTA` con las filas que muestra y las que debería.
+- `"acumulado": { "totales": [505, 1125, 1600] }` en un caso: lo que queda en
+  un arreglo si el acumulador no vuelve a cero en cada fila
+  (`ACUMULADOR_SIN_REINICIAR_POR_FILA`).
+- `"cambiadas": { "totales": [505, 620, 475] }` en un caso: lo que queda si la
+  fila y la columna están cambiadas (`FILAS_Y_COLUMNAS_CAMBIADAS`). Con
+  `[j][i]` en una tabla que no es cuadrada ya es "la fila N no existe".
+- `"extremo"` ahora puede ser el nombre de la variable que tiene que ser uno de
+  los valores de la tabla (`"extremo": "mayor"`), para que `fila` y `columna`
+  no se comparen con los valores del arreglo.
+- `sizeof(t[0])` es lo que ocupa una fila y `sizeof(t[0][0])`, un elemento: con
+  eso se calculan las filas y las columnas. En `int t[][3]` la cantidad de
+  columnas es parte de la declaración, así que las pruebas solo cambian las
+  filas.
+
 Un cuestionario puede agregar una suposición al enunciado ("y suponiendo que
 cada `int` ocupa 4 bytes"), como el "si usted escribe" de los que leen.
 

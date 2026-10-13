@@ -136,6 +136,8 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null) {
   const mostrados = []; // los numeros que muestra printf, en orden
   const delArreglo = []; // de esos, los que salen de una posicion de un arreglo
   const origenes = []; // de cada uno de esos, { nombre, indices } o null
+  const lineas = []; // los numeros que salen en cada renglon, uno por renglon
+  let renglon = [];
   const leidos = new Set(); // los arreglos de los que se leyo alguna posicion
   let salida = '';
   let lecturas = 0;
@@ -364,6 +366,13 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null) {
     for (const p of partesDelFormato) {
       if (p.texto != null) {
         mostrado.push(p.texto);
+        // Cada salto de linea cierra un renglon.
+        p.texto.split('\n').forEach((parte, idx) => {
+          if (idx > 0) {
+            lineas.push(renglon);
+            renglon = [];
+          }
+        });
         continue;
       }
       const { valor, tipo, nodo } = calculados[k++];
@@ -373,6 +382,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null) {
         throw new FormatoDistinto('printf', p.formato, nodo.text, tipo || (decimal ? 'decimal' : 'int'), fila(nodo));
       }
       mostrados.push(valor.v);
+      renglon.push(valor.v);
       if (/[A-Za-z_]\w*\s*\[/.test(nodo.text)) {
         delArreglo.push(valor.v);
         const p = nodo.type === 'subscript_expression' ? posicion(nodo) : null;
@@ -678,5 +688,6 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null) {
   }
 
   bloque(cuerpo);
-  return { variables, escrituras, mostrados, delArreglo, origenes, salida, lecturas, leidos };
+  if (renglon.length) lineas.push(renglon);
+  return { variables, escrituras, mostrados, delArreglo, origenes, lineas, salida, lecturas, leidos };
 }
