@@ -571,6 +571,20 @@ con `casos`, para ciclos anidados:
   columnas es parte de la declaración, así que las pruebas solo cambian las
   filas.
 
+**Más de dos dimensiones** (serie "Más de dos dimensiones", el paso previo a las
+tablas de cadenas): los casos de `ejecuta` aceptan listas anidadas de cualquier
+profundidad en `datos`, `queda` y `muestraEnFilas`. Dos cosas propias:
+
+- `{ "variable": { "tipo": "entero", "arreglo": { "tamano": [3, 30, 4], "unidades": ["cursos", "alumnos", "parciales"] } } }`:
+  un arreglo numérico de tres dimensiones con el tamaño justo. `"unidades"`
+  nombra cada corchete: "`notas` puede guardar 20 alumnos y hay que guardar
+  30", "entre los primeros corchetes va la cantidad de cursos". Sin ella, los
+  mensajes dicen "filas" y "columnas". Con otra cantidad de dimensiones dice
+  cuáles pide: "un arreglo de tres dimensiones: una para los cursos, otra para
+  los alumnos y otra para los parciales".
+- Un índice que no existe en tres dimensiones dice "la posición N", en
+  cualquier nivel: "fila" y "columna" son de las tablas.
+
 Un cuestionario puede agregar una suposición al enunciado ("y suponiendo que
 cada `int` ocupa 4 bytes"), como el "si usted escribe" de los que leen.
 

@@ -528,14 +528,16 @@ export function corregir(
     const medidas = regla.arreglo ? [].concat(regla.arreglo.tamano ?? regla.arreglo.alMenos ?? []) : [];
     const conLetras = regla.arreglo?.letras != null;
     const deCadenas = Boolean(regla.textos) || (conLetras && medidas.length > 1);
-    const dimensiones = !quiereArreglo ? 0 : !esTabla ? 1 : conLetras ? medidas.length : 2;
+    const dimensiones = !quiereArreglo ? 0 : !esTabla ? 1 : conLetras || medidas.length > 2 ? medidas.length : 2;
     const forma = deCadenas
       ? dimensiones === 3
         ? 'una tabla de cadenas'
         : 'un arreglo de cadenas'
-      : esTabla
-        ? 'una tabla'
-        : 'un arreglo';
+      : dimensiones > 2
+        ? 'un arreglo de tres dimensiones'
+        : esTabla
+          ? 'una tabla'
+          : 'un arreglo';
 
     const delTipo = candidatas.filter(esDelTipo);
     const exacta = delTipo.find((v) => !v.punteros && v.arreglo.length === dimensiones);
@@ -643,7 +645,9 @@ export function corregir(
         'TABLA_UNA_DIMENSION',
         deCadenas
           ? `\`${v.nombre}\` tiene una sola dimensión: guarda un solo texto. La consigna pide ${forma}.`
-          : `\`${v.nombre}\` tiene una sola dimensión: es un arreglo. La consigna pide una tabla, con filas y columnas.`,
+          : dimensiones > 2
+            ? `\`${v.nombre}\` tiene una sola dimensión: es un arreglo. La consigna pide ${forma}${dimensionesDe(regla.arreglo)}.`
+            : `\`${v.nombre}\` tiene una sola dimensión: es un arreglo. La consigna pide una tabla, con filas y columnas.`,
         v.fila
       );
     } else if (esTabla) {
@@ -651,7 +655,9 @@ export function corregir(
         'TABLA_DIMENSIONES',
         deCadenas
           ? `\`${v.nombre}\` tiene ${v.arreglo.length} dimensiones. La consigna pide ${forma}, que tiene ${dimensiones === 3 ? 'tres: las filas, las columnas y el tamaño de cada texto' : 'dos: la cantidad de textos y el tamaño de cada uno'}.`
-          : `\`${v.nombre}\` tiene ${v.arreglo.length} dimensiones. Una tabla tiene dos: las filas y las columnas.`,
+          : dimensiones > 2
+            ? `\`${v.nombre}\` tiene ${v.arreglo.length} dimensiones. La consigna pide ${forma}${dimensionesDe(regla.arreglo)}.`
+            : `\`${v.nombre}\` tiene ${v.arreglo.length} dimensiones. Una tabla tiene dos: las filas y las columnas.`,
         v.fila
       );
     } else {
@@ -661,6 +667,14 @@ export function corregir(
         v.fila
       );
     }
+  }
+
+  // ": una para los cursos, otra para los alumnos y otra para los parciales".
+  function dimensionesDe(arreglo) {
+    const u = arreglo && arreglo.unidades;
+    if (!Array.isArray(u) || u.length < 2) return '';
+    const partes = u.map((nombre, k) => `${k === 0 ? 'una' : 'otra'} para los ${nombre}`);
+    return `: ${partes.slice(0, -1).join(', ')} y ${partes[partes.length - 1]}`;
   }
 
   // Una tabla definida con sus valores: los del dibujo, fila por fila.
@@ -1674,7 +1688,7 @@ export function corregir(
         if (!diagnosticos.some((d) => d.codigo === 'INDICE_FUERA_DE_RANGO')) {
           // En una tabla, el primer indice cuenta filas y el segundo columnas.
           const [singular, plural] =
-            e.dimensiones === 1 || e.dimension >= 2 ? ['posición', 'posiciones'] : e.dimension === 0 ? ['fila', 'filas'] : ['columna', 'columnas'];
+            e.dimensiones !== 2 ? ['posición', 'posiciones'] : e.dimension === 0 ? ['fila', 'filas'] : ['columna', 'columnas'];
           error(
             'INDICE_FUERA_DE_RANGO',
             `${conContexto}\`${e.nombre}\` tiene ${e.tamano} ${plural}, numeradas de 0 a ${e.tamano - 1}: ${e.escrito ? `la ${singular} ${e.indice} no existe.` : `se llega a la ${singular} ${e.indice}, que no existe.`}`,
@@ -2829,15 +2843,19 @@ export function corregir(
     const esTabla = pedidos.length > 1;
     const letras = minimo.letras;
     // Lo que cuenta cada corchete que no es el de las letras.
-    const unidad = (k) => (pedidos.length === 3 ? (k === 0 ? 'filas' : 'columnas') : esTabla ? 'textos' : 'elementos');
+    // Con "unidades" (["cursos", "alumnos", "parciales"]) cada corchete tiene su nombre.
+    const unidades = minimo.unidades;
+    const unidad = (k) =>
+      unidades?.[k] ?? (pedidos.length === 3 ? (k === 0 ? 'filas' : 'columnas') : esTabla ? 'textos' : 'elementos');
     let bien = true;
 
     // Dos numeros de una tabla, uno por otro.
     if (esTabla) {
       const escritos = pedidos.map((_, k) => valorDeDimension(declarado.arreglo[k] ?? '', modelo));
       const lugares = pedidos.length === 3 ? ['primeros', 'segundos', 'últimos'] : ['primeros', 'segundos'];
-      const que =
-        pedidos.length === 3
+      const que = unidades
+        ? unidades.map((u, k) => (k === 0 ? `la cantidad de ${u}` : `la de ${u}`))
+        : pedidos.length === 3
           ? ['la cantidad de filas', 'la de columnas', 'el tamaño de cada texto']
           : ['la cantidad de textos', 'el tamaño de cada uno'];
       for (let k = 0; k + 1 < pedidos.length; k++) {
