@@ -578,6 +578,98 @@ const CASOS_DE_BUSCAR = [
   buscar(8, 'sin iniciar', 'for (i = 0; i < CANTIDAD; i++) {\n  if (notas[i] < 6) {\n    todos = 0;\n  }\n}', ['RESULTADO_VARIABLE_SIN_VALOR']),
 ];
 
+// Tamano fisico y logico: se corre con datos y valores de prueba.
+const tamano = (paso, nombre, respuesta, espera = 'ok', mejoras = []) => ({
+  serie: 'arreglos-tamano',
+  paso,
+  nombre,
+  respuesta,
+  espera,
+  mejoras,
+});
+
+const CASOS_DE_TAMANO = [
+  // 1: cuestionario, fisico y logico
+  tamano(1, 'fisico y logico: las cargadas', '2'),
+  tamano(1, 'fisico y logico: el fisico', '0', ['OPCION_TAMANO_FISICO']),
+  tamano(1, 'fisico y logico: la ultima posicion', '1', ['OPCION_ULTIMA_POSICION']),
+
+  // 2: cargar hasta el -1
+  tamano(2, 'con una nota de arranque', 'cantidad = 0;\nnota = 0;\nwhile (cantidad < MAX_NOTAS && nota != -1) {\n  scanf("%d", &nota);\n  if (nota != -1) {\n    notas[cantidad] = nota;\n    cantidad++;\n  }\n}'),
+  tamano(2, 'leyendo antes del ciclo', 'cantidad = 0;\nscanf("%d", &nota);\nwhile (cantidad < MAX_NOTAS && nota != -1) {\n  notas[cantidad] = nota;\n  cantidad++;\n  if (cantidad < MAX_NOTAS) {\n    scanf("%d", &nota);\n  }\n}'),
+  tamano(2, 'con un for', 'cantidad = 0;\nnota = 0;\nfor (cantidad = 0; cantidad < MAX_NOTAS && nota != -1; ) {\n  scanf("%d", &nota);\n  if (nota != -1) {\n    notas[cantidad] = nota;\n    cantidad++;\n  }\n}'),
+  {
+    ...tamano(2, 'cuenta tambien el -1', 'cantidad = 0;\nnota = 0;\nwhile (cantidad < MAX_NOTAS && nota != -1) {\n  scanf("%d", &nota);\n  notas[cantidad] = nota;\n  cantidad++;\n}', ['CENTINELA_CONTADO']),
+    dice: ['`cantidad` termina valiendo `4`', 'el `-1` que marca el final'],
+  },
+  {
+    ...tamano(2, 'no corta con el -1', 'cantidad = 0;\nwhile (cantidad < MAX_NOTAS) {\n  scanf("%d", &nota);\n  if (nota != -1) {\n    notas[cantidad] = nota;\n    cantidad++;\n  }\n}', ['LECTURA_DE_MAS']),
+    dice: ['sigue pidiendo datos', 'el `-1` que marca el final'],
+  },
+  tamano(2, 'no corta cuando se llena', 'cantidad = 0;\nnota = 0;\nwhile (nota != -1) {\n  scanf("%d", &nota);\n  if (nota != -1) {\n    notas[cantidad] = nota;\n    cantidad++;\n  }\n}', ['LECTURA_DE_MAS']),
+  tamano(2, 'sin iniciar la nota', 'cantidad = 0;\nwhile (cantidad < MAX_NOTAS && nota != -1) {\n  scanf("%d", &nota);\n  if (nota != -1) {\n    notas[cantidad] = nota;\n    cantidad++;\n  }\n}', ['VARIABLE_SIN_VALOR']),
+  tamano(2, 'sin ciclo', 'cantidad = 0;\nscanf("%d", &nota);\nnotas[0] = nota;\ncantidad = 1;', ['CICLO_FALTA']),
+
+  // 3: mostrar solo las cargadas
+  tamano(3, 'hasta cantidad', 'for (i = 0; i < cantidad; i++) {\n  printf("%d\\n", notas[i]);\n}'),
+  tamano(3, 'con un while', 'i = 0;\nwhile (i < cantidad) {\n  printf("%d ", notas[i]);\n  i++;\n}'),
+  {
+    ...tamano(3, 'hasta el fisico', 'for (i = 0; i < MAX_NOTAS; i++) {\n  printf("%d\\n", notas[i]);\n}', ['MUESTRA_DISTINTA']),
+    dice: ['`7`, `4`, `9`, `6`, `0`', 'cuando debería mostrar `7`, `4`, `9` y `6`'],
+  },
+  tamano(3, 'una de menos', 'for (i = 0; i < cantidad - 1; i++) {\n  printf("%d\\n", notas[i]);\n}', ['MUESTRA_DISTINTA']),
+  tamano(3, 'una de mas', 'for (i = 0; i <= cantidad; i++) {\n  printf("%d\\n", notas[i]);\n}', ['MUESTRA_DISTINTA']),
+  tamano(3, 'sin ciclo', 'printf("%d\\n", notas[0]);', ['CICLO_FALTA']),
+
+  // 4: cuestionario, recorrer hasta el fisico
+  tamano(4, 'recorrer el fisico: no se sabe', '2'),
+  tamano(4, 'recorrer el fisico: la suma', '0', ['OPCION_SOLO_LAS_CARGADAS']),
+  tamano(4, 'recorrer el fisico: da error', '1', ['OPCION_DA_ERROR']),
+
+  // 5: el promedio de las cargadas
+  tamano(5, 'con la guarda', 'suma = 0;\nfor (i = 0; i < cantidad; i++) {\n  suma += notas[i];\n}\nif (cantidad > 0) {\n  promedio = (float) suma / cantidad;\n} else {\n  promedio = 0;\n}'),
+  tamano(5, 'con la guarda adelante', 'promedio = 0;\nif (cantidad > 0) {\n  suma = 0;\n  for (i = 0; i < cantidad; i++) {\n    suma += notas[i];\n  }\n  promedio = (float) suma / cantidad;\n}'),
+  {
+    ...tamano(5, 'sin la guarda divide por cero', 'suma = 0;\nfor (i = 0; i < cantidad; i++) {\n  suma += notas[i];\n}\npromedio = (float) suma / cantidad;', ['DIVISION_POR_CERO']),
+    dice: ['`cantidad` valiendo `0`', 'divide por `0`'],
+  },
+  tamano(5, 'la division de enteros', 'suma = 0;\nfor (i = 0; i < cantidad; i++) {\n  suma += notas[i];\n}\nif (cantidad > 0) {\n  promedio = suma / cantidad;\n} else {\n  promedio = 0;\n}', ['DIVISION_ENTERA']),
+  tamano(5, 'dividiendo por el fisico', 'suma = 0;\nfor (i = 0; i < cantidad; i++) {\n  suma += notas[i];\n}\npromedio = (float) suma / MAX_NOTAS;', ['RESULTADO_VALOR_DISTINTO']),
+  tamano(5, 'sumando hasta el fisico', 'suma = 0;\nfor (i = 0; i < MAX_NOTAS; i++) {\n  suma += notas[i];\n}\nif (cantidad > 0) {\n  promedio = (float) suma / cantidad;\n} else {\n  promedio = 0;\n}', ['RESULTADO_VALOR_DISTINTO']),
+  tamano(5, 'sin dar valor al promedio cuando no hay', 'suma = 0;\nfor (i = 0; i < cantidad; i++) {\n  suma += notas[i];\n}\nif (cantidad > 0) {\n  promedio = (float) suma / cantidad;\n}', ['RESULTADO_VARIABLE_SIN_VALOR']),
+
+  // 6: agregar al final
+  tamano(6, 'con la guarda', 'if (cantidad < MAX_NOTAS) {\n  notas[cantidad] = 8;\n  cantidad++;\n}'),
+  tamano(6, 'con la guarda y ++ adentro', 'if (cantidad < MAX_NOTAS) {\n  notas[cantidad++] = 8;\n}'),
+  tamano(6, 'sin la guarda: no hay lugar', 'notas[cantidad] = 8;\ncantidad++;', ['INDICE_FUERA_DE_RANGO']),
+  tamano(6, 'con <= en la guarda', 'if (cantidad <= MAX_NOTAS) {\n  notas[cantidad] = 8;\n  cantidad++;\n}', ['INDICE_FUERA_DE_RANGO']),
+  tamano(6, 'sin actualizar la cantidad', 'if (cantidad < MAX_NOTAS) {\n  notas[cantidad] = 8;\n}', ['RESULTADO_VALOR_DISTINTO']),
+  tamano(6, 'actualizando antes', 'if (cantidad < MAX_NOTAS) {\n  cantidad++;\n  notas[cantidad] = 8;\n}', ['RESULTADO_VALOR_DISTINTO']),
+  tamano(6, 'en la ultima posicion del fisico', 'notas[MAX_NOTAS - 1] = 8;\ncantidad++;', ['RESULTADO_VALOR_DISTINTO']),
+
+  // 7: quitar el ultimo
+  tamano(7, 'con la guarda', 'if (cantidad > 0) {\n  cantidad--;\n}'),
+  tamano(7, 'con la guarda y cantidad = cantidad - 1', 'if (cantidad != 0) {\n  cantidad = cantidad - 1;\n}'),
+  tamano(7, 'sin la guarda: queda negativa', 'cantidad--;', ['RESULTADO_VALOR_DISTINTO']),
+  tamano(7, 'borrando el valor y no la cuenta', 'if (cantidad > 0) {\n  notas[cantidad - 1] = 0;\n}', ['RESULTADO_VALOR_DISTINTO']),
+
+  // 8: cuestionario, sizeof
+  tamano(8, 'sizeof: la cantidad', '2'),
+  tamano(8, 'sizeof: los bytes', '0', ['OPCION_SON_BYTES']),
+  tamano(8, 'sizeof: un elemento', '1', ['OPCION_UN_ELEMENTO']),
+
+  // 9: recorrer sin conocer el tamano
+  tamano(9, 'con sizeof del elemento', 'cantidad = sizeof(notas) / sizeof(notas[0]);\ntotal = 0;\nfor (i = 0; i < cantidad; i++) {\n  total += notas[i];\n}'),
+  tamano(9, 'con sizeof del tipo', 'cantidad = sizeof(notas) / sizeof(int);\ntotal = 0;\nfor (i = 0; i < cantidad; i++) {\n  total += notas[i];\n}'),
+  tamano(9, 'recorriendo con la expresion', 'total = 0;\nfor (i = 0; i < sizeof(notas) / sizeof(notas[0]); i++) {\n  total += notas[i];\n}\ncantidad = sizeof(notas) / sizeof(notas[0]);'),
+  {
+    ...tamano(9, 'el numero escrito', 'cantidad = 5;\ntotal = 0;\nfor (i = 0; i < cantidad; i++) {\n  total += notas[i];\n}', ['INDICE_FUERA_DE_RANGO']),
+    dice: ['Con `notas` valiendo `1`, `2` y `3`', 'tiene 3 posiciones'],
+  },
+  tamano(9, 'los bytes en lugar de la cantidad', 'cantidad = sizeof(notas);\ntotal = 0;\nfor (i = 0; i < cantidad; i++) {\n  total += notas[i];\n}', ['INDICE_FUERA_DE_RANGO']),
+  tamano(9, 'sin sumar', 'cantidad = sizeof(notas) / sizeof(notas[0]);', ['CICLO_FALTA']),
+];
+
 // Arreglos definidos con sus valores: los del dibujo, 3 6 0 7 1 5.
 const valores = (paso, nombre, respuesta, espera, mejoras = []) => ({
   serie: 'arreglos-valores',
@@ -842,6 +934,7 @@ export const CASOS = [
   ...CASOS_DE_LEER,
   ...CASOS_DE_ACUMULAR,
   ...CASOS_DE_BUSCAR,
+  ...CASOS_DE_TAMANO,
   ...CASOS_DE_CADENAS,
   ...CASOS_DE_CADENAS_NUEVAS,
   // ---- 1: declarar la estructura ----

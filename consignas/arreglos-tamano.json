@@ -1,0 +1,208 @@
+{
+  "id": "arreglos-tamano",
+  "titulo": "Tamaño físico y tamaño lógico",
+  "descripcion": "Un arreglo con lugar para más datos que los que tiene cargados: la cantidad de datos, agregar, quitar y sizeof.",
+  "dentroDeMain": true,
+  "cabecera": "#include <stdio.h>",
+  "buenasPracticas": ["constantes"],
+  "consignas": [
+    {
+      "id": "tamano-q-fisico-logico",
+      "titulo": "Físico y lógico",
+      "enunciado": "Después de ejecutar el código de abajo, si usted escribe `7`, `4` y `9`, ¿qué valor tendría `cantidad`?",
+      "codigo": "#define MAX_NOTAS 10\n\nint notas[MAX_NOTAS];\nint cantidad = 0;\n\nscanf(\"%d\", &notas[cantidad]);\ncantidad++;\nscanf(\"%d\", &notas[cantidad]);\ncantidad++;\nscanf(\"%d\", &notas[cantidad]);\ncantidad++;",
+      "opciones": [
+        {
+          "valor": "10",
+          "texto": "el tamaño con que se declaró `notas`",
+          "codigo": "OPCION_TAMANO_FISICO",
+          "explicacion": "El `10` es lo que vale `MAX_NOTAS`, o sea, cuántas notas entran en `notas`. `cantidad` cuenta otra cosa: la cantidad de notas que se cargaron hasta ahora, y arranca en `0`."
+        },
+        {
+          "valor": "2",
+          "texto": "la última posición que se usó",
+          "codigo": "OPCION_ULTIMA_POSICION",
+          "explicacion": "La última posición que se usó es la `2`, porque se empieza a contar desde `0`. Pero `cantidad` no cuenta posiciones: cuenta notas, y hay tres cargadas."
+        },
+        {
+          "valor": "3",
+          "texto": "cuántas notas se cargaron",
+          "correcta": true,
+          "explicacion": "`cantidad` arranca en `0` y sube en `1` después de cada lectura: son tres, así que termina en `3`. Es también la posición donde iría la próxima nota."
+        }
+      ]
+    },
+    {
+      "id": "tamano-cargar",
+      "titulo": "Cargar hasta el -1",
+      "dado": "#define MAX_NOTAS 5\n\nint notas[MAX_NOTAS];\nint cantidad;\nint nota;",
+      "enunciado": "Un docente carga en el programa las notas de un parcial, de una en una. Termina cuando escribe `-1`, o cuando ya cargó todas las notas que entran en `notas`.\n\nLea las notas del teclado, guárdelas en `notas` una en cada posición, en el orden en que se escriben, y deje en `cantidad` cuántas se cargaron. El `-1` no es una nota: no se guarda ni se cuenta. Use `nota` para lo que se lee.",
+      "requiere": [
+        {
+          "ejecuta": {
+            "busca": true,
+            "centinela": -1,
+            "casos": [
+              { "entrada": [7, 4, 9, -1], "queda": { "cantidad": 3, "notas": [7, 4, 9] } },
+              { "entrada": [-1], "queda": { "cantidad": 0 } },
+              { "entrada": [7, 8, 9, 6, 5], "queda": { "cantidad": 5, "notas": [7, 8, 9, 6, 5] } },
+              { "entrada": [7, 8, 9, 6, 5, 10, 4, -1], "queda": { "cantidad": 5, "notas": [7, 8, 9, 6, 5] } }
+            ],
+            "conCiclo": true
+          }
+        }
+      ],
+      "referencia": "cantidad = 0;\nnota = 0;\nwhile (cantidad < MAX_NOTAS && nota != -1) {\n  scanf(\"%d\", &nota);\n  if (nota != -1) {\n    notas[cantidad] = nota;\n    cantidad++;\n  }\n}"
+    },
+    {
+      "id": "tamano-mostrar",
+      "titulo": "Mostrar solo las cargadas",
+      "dado": "#define MAX_NOTAS 10\n\nint notas[MAX_NOTAS] = {7, 4, 9, 6};\nint cantidad = 4;\nint i;",
+      "enunciado": "En el arreglo `notas` hay cargadas `cantidad` notas de un parcial. El resto de las posiciones no tiene notas.\n\nCon un ciclo, muestre con `printf` solo las notas cargadas, de la primera a la última. Use el índice `i`.",
+      "requiere": [
+        {
+          "ejecuta": {
+            "casos": [
+              { "datos": { "notas": [7, 4, 9, 6, 0, 0, 0, 0, 0, 0], "cantidad": 4 }, "muestra": [7, 4, 9, 6] },
+              { "datos": { "notas": [8, 5, 0, 0, 0, 0, 0, 0, 0, 0], "cantidad": 2 }, "muestra": [8, 5] },
+              { "datos": { "notas": [6, 7, 8, 9, 10, 1, 2, 3, 4, 5], "cantidad": 10 }, "muestra": [6, 7, 8, 9, 10, 1, 2, 3, 4, 5] },
+              { "datos": { "notas": [10, 0, 0, 0, 0, 0, 0, 0, 0, 0], "cantidad": 1 }, "muestra": [10] }
+            ],
+            "conCiclo": true
+          }
+        }
+      ],
+      "referencia": "for (i = 0; i < cantidad; i++) {\n  printf(\"%d\\n\", notas[i]);\n}"
+    },
+    {
+      "id": "tamano-q-recorrer-fisico",
+      "titulo": "Recorrer hasta el tamaño físico",
+      "enunciado": "Después de ejecutar el código de abajo, si usted escribe `7`, `4` y `9`, ¿qué valor tendría `total`?",
+      "codigo": "#define MAX_NOTAS 10\n\nint notas[MAX_NOTAS];\nint cantidad = 0;\nint total = 0;\nint nota;\nint i;\n\nwhile (cantidad < 3) {\n  scanf(\"%d\", &nota);\n  notas[cantidad] = nota;\n  cantidad++;\n}\n\nfor (i = 0; i < MAX_NOTAS; i++) {\n  total += notas[i];\n}",
+      "opciones": [
+        {
+          "valor": "20",
+          "texto": "la suma de las tres notas que se escribieron",
+          "codigo": "OPCION_SOLO_LAS_CARGADAS",
+          "explicacion": "El ciclo que suma recorre las `10` posiciones de `notas`, no solo las tres cargadas. Las otras siete se suman también, y no tienen ningún valor asignado."
+        },
+        {
+          "texto": "el programa da un error, porque las demás posiciones no tienen notas",
+          "codigo": "OPCION_DA_ERROR",
+          "explicacion": "Las posiciones existen, porque `notas` se declaró con `10`: leerlas no es un error. Lo que pasa es que contienen lo que había anteriormente en esa memoria y no se sabe qué valores hay en esas posiciones."
+        },
+        {
+          "texto": "no se puede saber, porque las posiciones sin nota no tienen un valor asignado",
+          "correcta": true,
+          "explicacion": "Solo se cargaron las posiciones de `0` a `2`. El ciclo suma las `10`, y las otras siete no tienen un valor asignado: contienen lo que había anteriormente en esa memoria. Para recorrer lo cargado, el límite es `cantidad`, no `MAX_NOTAS`."
+        }
+      ]
+    },
+    {
+      "id": "tamano-promedio",
+      "titulo": "El promedio de las cargadas",
+      "dado": "#define MAX_NOTAS 10\n\nint notas[MAX_NOTAS] = {7, 4, 9, 6};\nint cantidad = 4;\nint suma;\nfloat promedio;\nint i;",
+      "enunciado": "En el arreglo `notas` hay cargadas `cantidad` notas de un parcial. Todavía puede no haber ninguna cargada.\n\nCon un ciclo, deje en `promedio` el promedio de las notas cargadas, con sus decimales, o `0` si no hay ninguna. Use el índice `i`.",
+      "requiere": [
+        {
+          "ejecuta": {
+            "busca": true,
+            "casos": [
+              { "datos": { "notas": [7, 4, 9, 6, 0, 0, 0, 0, 0, 0], "cantidad": 4 }, "queda": { "promedio": 6.5 } },
+              { "datos": { "notas": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "cantidad": 0 }, "queda": { "promedio": 0 } },
+              { "datos": { "notas": [8, 5, 0, 0, 0, 0, 0, 0, 0, 0], "cantidad": 2 }, "queda": { "promedio": 6.5 } },
+              { "datos": { "notas": [10, 10, 9, 9, 8, 8, 7, 7, 6, 6], "cantidad": 10 }, "queda": { "promedio": 8 } },
+              { "datos": { "notas": [9, 0, 0, 0, 0, 0, 0, 0, 0, 0], "cantidad": 1 }, "queda": { "promedio": 9 } },
+              { "datos": { "notas": [7, 4, 9, 6, 1, 1, 1, 1, 1, 1], "cantidad": 4 }, "queda": { "promedio": 6.5 } }
+            ],
+            "conCiclo": true
+          }
+        }
+      ],
+      "referencia": "suma = 0;\nfor (i = 0; i < cantidad; i++) {\n  suma += notas[i];\n}\nif (cantidad > 0) {\n  promedio = (float) suma / cantidad;\n} else {\n  promedio = 0;\n}"
+    },
+    {
+      "id": "tamano-agregar",
+      "titulo": "Agregar al final",
+      "dado": "#define MAX_NOTAS 10\n\nint notas[MAX_NOTAS] = {7, 4, 9, 6};\nint cantidad = 4;",
+      "enunciado": "En el arreglo `notas` hay cargadas `cantidad` notas de un parcial. Un alumno rindió después y hay que agregar su nota, que es un 8.\n\nAgregue el 8 a continuación de la última nota cargada y actualice `cantidad`. Si `notas` ya está llena, no tiene que hacer nada.",
+      "requiere": [
+        {
+          "ejecuta": {
+            "casos": [
+              { "datos": { "notas": [7, 4, 9, 6, 0, 0, 0, 0, 0, 0], "cantidad": 4 }, "queda": { "cantidad": 5, "notas": [7, 4, 9, 6, 8] } },
+              { "datos": { "notas": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "cantidad": 0 }, "queda": { "cantidad": 1, "notas": [8] } },
+              { "datos": { "notas": [1, 2, 3, 4, 5, 6, 7, 9, 10, 1], "cantidad": 10 }, "queda": { "cantidad": 10, "notas": [1, 2, 3, 4, 5, 6, 7, 9, 10, 1] } },
+              { "datos": { "notas": [1, 2, 3, 4, 5, 6, 7, 9, 10, 0], "cantidad": 9 }, "queda": { "cantidad": 10, "notas": [1, 2, 3, 4, 5, 6, 7, 9, 10, 8] } }
+            ]
+          }
+        }
+      ],
+      "referencia": "if (cantidad < MAX_NOTAS) {\n  notas[cantidad] = 8;\n  cantidad++;\n}"
+    },
+    {
+      "id": "tamano-quitar",
+      "titulo": "Quitar el último",
+      "dado": "#define MAX_NOTAS 10\n\nint notas[MAX_NOTAS] = {7, 4, 9, 6};\nint cantidad = 4;",
+      "enunciado": "En el arreglo `notas` hay cargadas `cantidad` notas de un parcial. La última nota se cargó por error y hay que quitarla.\n\nQuite la última nota cargada, de modo que `cantidad` deje de contarla. Si no hay ninguna nota cargada, no tiene que hacer nada.",
+      "requiere": [
+        {
+          "ejecuta": {
+            "casos": [
+              { "datos": { "notas": [7, 4, 9, 6, 0, 0, 0, 0, 0, 0], "cantidad": 4 }, "queda": { "cantidad": 3, "notas": [7, 4, 9] } },
+              { "datos": { "notas": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "cantidad": 0 }, "queda": { "cantidad": 0 } },
+              { "datos": { "notas": [5, 0, 0, 0, 0, 0, 0, 0, 0, 0], "cantidad": 1 }, "queda": { "cantidad": 0 } },
+              { "datos": { "notas": [1, 2, 3, 4, 5, 6, 7, 9, 10, 1], "cantidad": 10 }, "queda": { "cantidad": 9, "notas": [1, 2, 3, 4, 5, 6, 7, 9, 10] } }
+            ]
+          }
+        }
+      ],
+      "referencia": "if (cantidad > 0) {\n  cantidad--;\n}"
+    },
+    {
+      "id": "tamano-q-sizeof",
+      "titulo": "Cuántos elementos tiene",
+      "enunciado": "Después de ejecutar el código de abajo, y suponiendo que cada `int` ocupa 4 bytes, ¿qué valor tendría `cantidad`?",
+      "codigo": "int valores[10];\nint cantidad;\n\ncantidad = sizeof(valores) / sizeof(valores[0]);",
+      "opciones": [
+        {
+          "valor": "40",
+          "texto": "lo que ocupa el arreglo completo, en bytes",
+          "codigo": "OPCION_SON_BYTES",
+          "explicacion": "El `40` es lo que vale `sizeof(valores)`, pero después se lo divide por lo que ocupa un elemento: el resultado es una cantidad de elementos, no de bytes."
+        },
+        {
+          "valor": "4",
+          "texto": "lo que ocupa un elemento, en bytes",
+          "codigo": "OPCION_UN_ELEMENTO",
+          "explicacion": "El `4` es lo que vale `sizeof(valores[0])`, el divisor. Falta lo que ocupa el arreglo completo y dividirlo por ese `4`."
+        },
+        {
+          "valor": "10",
+          "texto": "cuántos elementos tiene el arreglo",
+          "correcta": true,
+          "explicacion": "`sizeof(valores)` es lo que ocupa todo el arreglo: `40` bytes si cada `int` ocupa `4`. `sizeof(valores[0])` es lo que ocupa un elemento: `4`. `40 / 4` da `10`, la cantidad de posiciones, sin importar cuánto ocupe cada una."
+        }
+      ]
+    },
+    {
+      "id": "tamano-sizeof",
+      "titulo": "Recorrer sin conocer el tamaño",
+      "dado": "int notas[] = {7, 4, 9, 6, 8};\nint cantidad;\nint total;\nint i;",
+      "enunciado": "El arreglo `notas` se definió sin escribir su tamaño: tiene tantas posiciones como valores hay entre llaves.\n\nDeje en `cantidad` cuántas posiciones tiene `notas`, sin escribir el número, y deje en `total` la suma de sus notas, recorriéndolo con un ciclo. Use el índice `i`.",
+      "requiere": [
+        {
+          "ejecuta": {
+            "casos": [
+              { "datos": { "notas": [7, 4, 9, 6, 8] }, "queda": { "cantidad": 5, "total": 34 } },
+              { "datos": { "notas": [1, 2, 3] }, "queda": { "cantidad": 3, "total": 6 } },
+              { "datos": { "notas": [2, 2, 2, 2, 2, 2, 2, 2] }, "queda": { "cantidad": 8, "total": 16 } }
+            ],
+            "conCiclo": true
+          }
+        }
+      ],
+      "referencia": "cantidad = sizeof(notas) / sizeof(notas[0]);\ntotal = 0;\nfor (i = 0; i < cantidad; i++) {\n  total += notas[i];\n}"
+    }
+  ]
+}
