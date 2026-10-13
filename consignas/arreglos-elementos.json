@@ -63,7 +63,7 @@
     {
       "id": "elementos-copiar",
       "titulo": "Copiar de una posición a otra",
-      "continua": true,
+      "dado": "#define MAX_ALUMNOS 20\n\nint notas[MAX_ALUMNOS];\nnotas[0] = 8;\nnotas[1] = 5;",
       "enunciado": "En la segunda posición, copie la nota del primer alumno.",
       "requiere": [{ "asigna": { "variable": "notas", "indice": 1, "valor": "notas[0]" } }],
       "referencia": "notas[1] = notas[0];"
@@ -98,7 +98,7 @@
     {
       "id": "elementos-intercambiar",
       "titulo": "Intercambiar dos posiciones",
-      "dado": "#define MAX_ALUMNOS 20\n\nint notas[MAX_ALUMNOS] = {8, 5};",
+      "dado": "#define MAX_ALUMNOS 20\n\nint notas[MAX_ALUMNOS];\nnotas[0] = 8;\nnotas[1] = 5;",
       "enunciado": "Intercambie las notas del primer y del segundo alumno: el primero tiene que quedar con la nota del segundo, y el segundo con la del primero.",
       "requiere": [{ "intercambia": { "variable": "notas", "posiciones": [0, 1] } }],
       "referencia": "int auxiliar = notas[0];\nnotas[0] = notas[1];\nnotas[1] = auxiliar;"
