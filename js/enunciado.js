@@ -22,11 +22,40 @@ const MARCA = /\{(\w+)\}/g;
 //
 // Una consigna puede no llevar dibujo ("dibujo": false) cuando el enunciado
 // describe el arreglo con palabras y se quiere que el alumno lo deduzca.
+//
+// Un dibujo propio, para una consigna que no define el arreglo (lo recorre, lo
+// suma): "dibujo" es un objeto con los valores y como se ve.
+//   { "titulo": "La tabla `ventas`", "valores": [[1, 2], [3, 4]],
+//     "filas": "sucursales", "columnas": "días", "resaltar": "diagonal",
+//     "arreglo": { "nombre": "totales", "valores": [4, 6], "vertical": true } }
+// "valores" puede ser una lista de tablas (tres dimensiones): se dibuja cada una
+// con su nombre ("planos": "notas" las llama notas[0], notas[1]).
+// "arreglo" es el resultado que tiene que quedar, aparte de la tabla.
+// Y "salida" es lo que tiene que mostrar el programa, en un recuadro de consola.
 export function figuraDe(consigna) {
-  if (consigna.dibujo === false || !consigna.requiere) return null;
+  const d = consigna.dibujo;
+  if (d && typeof d === 'object') {
+    const tresDimensiones = Array.isArray(d.valores[0]) && Array.isArray(d.valores[0][0]);
+    return {
+      clase: tresDimensiones ? 'planos' : Array.isArray(d.valores[0]) ? 'tabla' : 'arreglo',
+      filas: d.valores,
+      valores: d.valores,
+      titulo: d.titulo,
+      planos: d.planos,
+      rotuloFilas: d.filas,
+      rotuloColumnas: d.columnas,
+      resaltar: d.resaltar,
+      arreglo: d.arreglo,
+      salida: consigna.salida,
+    };
+  }
+  if (consigna.dibujo === false) return null;
+  if (!consigna.requiere) return consigna.salida ? { clase: 'salida', salida: consigna.salida } : null;
   const valores = consigna.requiere.find((r) => r.variable?.valores)?.variable.valores;
-  if (!valores) return null;
-  return Array.isArray(valores[0]) ? { clase: 'tabla', filas: valores } : { clase: 'arreglo', valores };
+  if (!valores) return consigna.salida ? { clase: 'salida', salida: consigna.salida } : null;
+  return Array.isArray(valores[0])
+    ? { clase: 'tabla', filas: valores, salida: consigna.salida }
+    : { clase: 'arreglo', valores, salida: consigna.salida };
 }
 
 // El texto con los nombres puestos y nada mas: para un codigo o una opcion.

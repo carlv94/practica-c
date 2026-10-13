@@ -96,17 +96,37 @@ function conCodigo(texto) {
   return fragmento;
 }
 
-function mensaje(clase, texto, linea) {
-  const caja = document.createElement('p');
+// "bloques" es lo que va aparte del texto, como una salida de consola:
+// [{ titulo, lineas }].
+function mensaje(clase, texto, linea, bloques) {
+  const caja = document.createElement(bloques ? 'div' : 'p');
   caja.className = 'mensaje ' + clase;
+  const texto_ = bloques ? document.createElement('p') : caja;
   if (linea != null) {
     const donde = document.createElement('span');
     donde.className = 'linea';
     donde.textContent = `Línea ${linea}:`;
-    caja.appendChild(donde);
+    texto_.appendChild(donde);
   }
-  caja.appendChild(conCodigo(texto));
+  texto_.appendChild(conCodigo(texto));
+  if (bloques) {
+    caja.appendChild(texto_);
+    for (const bloque of bloques) {
+      if (bloque.titulo) caja.appendChild(elementoConCodigo('p', 'titulo-bloque', bloque.titulo));
+      const salida = document.createElement('pre');
+      salida.className = 'salida';
+      salida.textContent = bloque.lineas.join('\n');
+      caja.appendChild(salida);
+    }
+  }
   return caja;
+}
+
+function elementoConCodigo(etiqueta, clase, texto) {
+  const e = document.createElement(etiqueta);
+  e.className = clase;
+  e.appendChild(conCodigo(texto));
+  return e;
 }
 
 function elemento(etiqueta, clase, texto) {
@@ -393,8 +413,24 @@ function dibujar(figura) {
   caja.replaceChildren();
   if (!figura) return;
 
+  if (figura.titulo) caja.appendChild(elementoConCodigo('p', 'titulo-figura', figura.titulo));
+  if (figura.clase === 'salida') {
+    dibujarSalida(caja, figura.salida);
+    return;
+  }
+  if (figura.clase === 'planos') {
+    // Tres dimensiones: una tabla por cada plano, con su nombre.
+    figura.valores.forEach((plano, p) => {
+      caja.appendChild(elemento('p', 'titulo-figura', `${figura.planos || 'tabla'}[${p}]:`));
+      dibujarTabla(caja, { ...figura, filas: plano, arreglo: null });
+    });
+    dibujarResultado(caja, figura.arreglo);
+    dibujarSalida(caja, figura.salida);
+    return;
+  }
   if (figura.clase === 'tabla') {
-    dibujarTabla(caja, figura.filas);
+    dibujarTabla(caja, figura);
+    dibujarSalida(caja, figura.salida);
     return;
   }
 
@@ -410,25 +446,95 @@ function dibujar(figura) {
     fila.appendChild(casillero);
   });
   caja.appendChild(fila);
+  dibujarSalida(caja, figura.salida);
+}
+
+// Lo que tiene que mostrar el programa, en un recuadro de consola.
+function dibujarSalida(caja, salida) {
+  if (!salida) return;
+  caja.appendChild(elemento('p', 'titulo-figura', 'Así tiene que verse la salida:'));
+  caja.appendChild(elemento('pre', 'salida', salida));
 }
 
 // La tabla: los indices de las columnas arriba y los de las filas a la izquierda.
-function dibujarTabla(caja, filas) {
+// Puede llevar el nombre de las filas (en vertical, a la izquierda) y el de las
+// columnas (arriba), la diagonal resaltada y, aparte, el arreglo del resultado.
+function dibujarTabla(caja, figura) {
+  const filas = figura.filas;
   const columnas = filas[0].length;
+  const conRotuloFilas = Boolean(figura.rotuloFilas);
+  const conRotuloColumnas = Boolean(figura.rotuloColumnas);
+  const resultado = figura.arreglo;
+  const alLado = Boolean(resultado && resultado.vertical);
   caja.setAttribute(
     'aria-label',
-    `Tabla de ${filas.length} filas y ${columnas} columnas. ` +
-      filas.map((fila, i) => `Fila ${i}: ${fila.join(', ')}`).join('. ')
+    `Tabla de ${filas.length} filas y ${columnas} columnas` +
+      (conRotuloFilas ? `: las filas son ${figura.rotuloFilas}` : '') +
+      (conRotuloColumnas ? `, las columnas son ${figura.rotuloColumnas}` : '') +
+      (figura.resaltar === 'diagonal' ? ', con la diagonal principal resaltada' : '') +
+      '. ' +
+      filas.map((fila, i) => `Fila ${i}: ${fila.join(', ')}`).join('. ') +
+      (resultado ? `. Arreglo ${resultado.nombre}: ${resultado.valores.join(', ')}` : '')
   );
   const tabla = elemento('div', 'tabla');
-  tabla.style.gridTemplateColumns = `auto repeat(${columnas}, auto)`;
-  tabla.appendChild(elemento('span', 'indice'));
-  for (let j = 0; j < columnas; j++) tabla.appendChild(elemento('span', 'indice', j));
+  // Lineas de la grilla (desde 1): [rotulo de filas] indice, valores y, si el
+  // resultado va al lado, un espacio, sus indices y sus valores.
+  const desfase = conRotuloFilas ? 1 : 0;
+  const colIndice = desfase + 1;
+  const colEspacio = colIndice + columnas + 1;
+  const colIndiceResultado = colEspacio + 1;
+  const colResultado = colEspacio + 2;
+  const ancho = (conRotuloFilas ? ['auto'] : []).concat(['auto'], Array(columnas).fill('auto'));
+  if (alLado) ancho.push('28px', 'auto', 'auto');
+  tabla.style.gridTemplateColumns = ancho.join(' ');
+  const poner = (e, fila, columna, largo = 1, alto = 1) => {
+    e.style.gridRow = `${fila} / span ${alto}`;
+    e.style.gridColumn = `${columna} / span ${largo}`;
+    tabla.appendChild(e);
+  };
+
+  let r = 1;
+  if (conRotuloColumnas) {
+    poner(elemento('span', 'rotulo rotulo-columnas', figura.rotuloColumnas), r, colIndice + 1, columnas);
+    if (alLado) poner(elemento('span', 'rotulo rotulo-columnas', resultado.nombre), r, colIndiceResultado, 2);
+    r++;
+  } else if (alLado) {
+    poner(elemento('span', 'rotulo rotulo-columnas', resultado.nombre), r, colIndiceResultado, 2);
+    r++;
+  }
+  // Los indices de las columnas.
+  for (let j = 0; j < columnas; j++) poner(elemento('span', 'indice', j), r, colIndice + 1 + j);
+  const primeraFila = r + 1;
+  if (conRotuloFilas) {
+    poner(elemento('span', 'rotulo rotulo-filas', figura.rotuloFilas), primeraFila, 1, 1, filas.length);
+  }
   filas.forEach((fila, i) => {
-    tabla.appendChild(elemento('span', 'indice de-fila', i));
-    for (const valor of fila) tabla.appendChild(elemento('span', 'valor', valor));
+    poner(elemento('span', 'indice de-fila', i), primeraFila + i, colIndice);
+    fila.forEach((valor, j) => {
+      const resaltado = figura.resaltar === 'diagonal' && i === j ? ' resaltado' : '';
+      poner(elemento('span', 'valor' + resaltado, valor), primeraFila + i, colIndice + 1 + j);
+    });
+    if (alLado) {
+      poner(elemento('span', 'indice de-fila', i), primeraFila + i, colIndiceResultado);
+      poner(elemento('span', 'valor', resultado.valores[i]), primeraFila + i, colResultado);
+    }
   });
   caja.appendChild(tabla);
+  if (resultado && !alLado) dibujarResultado(caja, resultado);
+}
+
+// El arreglo con el resultado que tiene que quedar, aparte de la tabla, como
+// cualquier arreglo: sus indices arriba y los bordes enteros.
+function dibujarResultado(caja, resultado) {
+  if (!resultado || resultado.vertical) return;
+  caja.appendChild(elementoConCodigo('p', 'titulo-figura separado', `Así tiene que quedar \`${resultado.nombre}\`:`));
+  const fila = elemento('div', 'arreglo');
+  resultado.valores.forEach((valor, i) => {
+    const casillero = elemento('div', 'casillero');
+    casillero.append(elemento('span', 'indice', i), elemento('span', 'valor', valor));
+    fila.appendChild(casillero);
+  });
+  caja.appendChild(fila);
 }
 
 function comprobar() {
@@ -459,7 +565,7 @@ function comprobar() {
   registrarIntento(consigna, r);
   if (!esCuestionario) editor.marcar(r.diagnosticos);
 
-  const cajas = r.diagnosticos.map((d) => mensaje(d.nivel, d.mensaje, d.linea));
+  const cajas = r.diagnosticos.map((d) => mensaje(d.nivel, d.mensaje, d.linea, d.bloques));
   $('siguiente').hidden = !r.correcto;
   if (r.correcto) {
     pendiente = {

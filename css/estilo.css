@@ -263,6 +263,61 @@ section[hidden] {
   margin-top: -1px;
 }
 
+/* El nombre de las filas (vertical, a la izquierda) y de las columnas (arriba). */
+.tabla .rotulo {
+  color: var(--suave);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.tabla .rotulo-filas {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  text-align: center;
+  padding: 0 6px;
+  align-self: stretch;
+  display: grid;
+  place-items: center;
+}
+
+.tabla .rotulo-columnas {
+  justify-self: stretch;
+  text-align: center;
+  padding-bottom: 2px;
+}
+
+/* La diagonal resaltada: fondo y borde mas grueso (el color solo no alcanza). */
+#figura .valor.resaltado {
+  background: var(--mejora-fondo);
+  border-color: var(--mejora);
+  border-width: 2px;
+}
+
+.titulo-figura {
+  margin: 16px 0 6px;
+  font-size: 0.9rem;
+  color: var(--suave);
+}
+
+/* El primero de la figura va pegado arriba; los que siguen, separados. */
+#figura > .titulo-figura:first-child {
+  margin-top: 0;
+}
+
+#figura .salida,
+.mensaje .salida {
+  margin: 6px 0 10px;
+  display: inline-block;
+  min-width: 14em;
+  background: var(--codigo);
+}
+
+.mensaje .titulo-bloque {
+  margin: 6px 0 0;
+  font-weight: 600;
+}
+
 #figura .indice {
   font-size: 0.75rem;
   color: var(--suave);
