@@ -103,6 +103,7 @@
       "requiere": [
         {
           "ejecuta": {
+            "recorre": { "notas": ["el curso", "el alumno", "el parcial"] },
             "casos": [
               {
                 "queda": {
@@ -128,9 +129,11 @@
       "requiere": [
         {
           "ejecuta": {
+            "recorre": { "notas": ["el curso", "el alumno", "el parcial"] },
             "busca": true,
             "casos": [
               {
+                "visible": true,
                 "datos": {
                   "notas": [
                     [[5, 8, 1, 4], [0, 2, 9, 6], [3, 7, 4, 8]],
@@ -170,12 +173,33 @@
       "titulo": "La suma de cada curso",
       "dado": "#define CURSOS 2\n#define ALUMNOS 3\n#define PARCIALES 4\n\nint notas[CURSOS][ALUMNOS][PARCIALES] = {\n  {\n    {5, 8, 1, 4},\n    {0, 2, 9, 6},\n    {3, 7, 4, 8}\n  },\n  {\n    {6, 2, 7, 1},\n    {9, 5, 0, 3},\n    {4, 8, 2, 6}\n  }\n};\nint totales[CURSOS];\nint i;\nint j;\nint k;",
       "enunciado": "La tabla `notas` guarda las notas de 2 cursos de 3 alumnos, con 4 parciales cada alumno.\n\nCon tres ciclos, deje en cada posición de `totales` la suma de todas las notas de ese curso: `totales[0]` tiene la suma del curso 0, y así. Use los índices `i`, `j` y `k`.",
+      "dibujo": {
+        "titulo": "La tabla `notas`, un curso por vez:",
+        "planos": "notas",
+        "valores": [
+          [
+            [5, 8, 1, 4],
+            [0, 2, 9, 6],
+            [3, 7, 4, 8]
+          ],
+          [
+            [6, 2, 7, 1],
+            [9, 5, 0, 3],
+            [4, 8, 2, 6]
+          ]
+        ],
+        "filas": "alumnos",
+        "columnas": "parciales",
+        "arreglo": { "nombre": "totales", "valores": [57, 53] }
+      },
       "requiere": [
         {
           "ejecuta": {
+            "recorre": { "notas": ["el curso", "el alumno", "el parcial"] },
             "busca": true,
             "casos": [
               {
+                "visible": true,
                 "datos": {
                   "notas": [
                     [[5, 8, 1, 4], [0, 2, 9, 6], [3, 7, 4, 8]],
@@ -218,11 +242,23 @@
       "titulo": "Mostrar un curso como tabla",
       "dado": "#define CURSOS 2\n#define ALUMNOS 3\n#define PARCIALES 4\n\nint notas[CURSOS][ALUMNOS][PARCIALES] = {\n  {\n    {5, 8, 1, 4},\n    {0, 2, 9, 6},\n    {3, 7, 4, 8}\n  },\n  {\n    {6, 2, 7, 1},\n    {9, 5, 0, 3},\n    {4, 8, 2, 6}\n  }\n};\nint j;\nint k;",
       "enunciado": "La tabla `notas` guarda las notas de 2 cursos de 3 alumnos, con 4 parciales cada alumno. Hay que mostrar las notas del segundo curso, que es `notas[1]`.\n\nCon dos ciclos, muestre con `printf` las notas del segundo curso, con cada alumno en su propio renglón y sus parciales separados por un espacio. Use los índices `j` y `k`.",
+      "dibujo": {
+        "titulo": "Las notas del segundo curso, `notas[1]`:",
+        "valores": [
+          [6, 2, 7, 1],
+          [9, 5, 0, 3],
+          [4, 8, 2, 6]
+        ],
+        "filas": "alumnos",
+        "columnas": "parciales"
+      },
+      "salida": "6 2 7 1\n9 5 0 3\n4 8 2 6",
       "requiere": [
         {
           "ejecuta": {
             "casos": [
               {
+                "visible": true,
                 "datos": {
                   "notas": [
                     [[5, 8, 1, 4], [0, 2, 9, 6], [3, 7, 4, 8]],

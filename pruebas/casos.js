@@ -951,7 +951,7 @@ const CASOS_DE_TABLAS = [
   tablas(7, 'la fila equivocada', 'suma = notas[1][0] + notas[1][2];', ['RESULTADO_VALOR_DISTINTO']),
   {
     ...tablas(7, 'la fila y la columna cambiadas', 'suma = notas[0][2] + notas[2][2];', ['RESULTADO_VALOR_DISTINTO']),
-    dice: ['Con `notas` valiendo `{5, 8, 1, 4}`, `{0, 2, 9, 6}` y `{3, 7, 4, 8}`', '`suma` termina valiendo `5` y debería valer `7`'],
+    dice: ['`suma` termina valiendo `5` y debería valer `7`'],
   },
   tablas(7, 'el resultado escrito a mano', 'suma = 7;', ['RESULTADO_VALOR_DISTINTO']),
   tablas(7, 'una fila que no existe', 'suma = notas[3][0] + notas[3][2];', ['INDICE_FUERA_DE_RANGO']),
@@ -979,7 +979,7 @@ const CASOS_DE_RECORRER_TABLAS = [
     ...rtablas(1, 'con la fila y la columna cambiadas', 'for (i = 0; i < MULTIPLICANDOS; i++) {\n  for (j = 0; j < MULTIPLICADORES; j++) {\n    tabla[j][i] = (i + 1) * (j + 1);\n  }\n}', ['INDICE_FUERA_DE_RANGO']),
     dice: ['`tabla` tiene 4 filas, numeradas de 0 a 3', 'la fila 4'],
   },
-  rtablas(1, 'con un solo ciclo', 'for (i = 0; i < MULTIPLICANDOS; i++) {\n  tabla[i][0] = i + 1;\n}', ['RESULTADO_POSICION_SIN_VALOR']),
+  rtablas(1, 'con un solo ciclo', 'for (i = 0; i < MULTIPLICANDOS; i++) {\n  tabla[i][0] = i + 1;\n}', ['RECORRIDO_INCOMPLETO']),
   rtablas(1, 'sin ciclos', 'tabla[0][0] = 1;', ['CICLO_FALTA']),
 
   // 2: cuestionario, cuantas veces
@@ -997,7 +997,7 @@ const CASOS_DE_RECORRER_TABLAS = [
     dice: ['en 1 renglón', 'la tabla tiene 3 filas', 'cada fila tiene que ir en su propio renglón'],
   },
   rtablas(3, 'un valor por renglon', 'for (i = 0; i < SUCURSALES; i++) {\n  for (j = 0; j < DIAS; j++) {\n    printf("%d\\n", ventas[i][j]);\n  }\n}', ['TABLA_SIN_RENGLONES']),
-  rtablas(3, 'solo la primera fila', 'for (j = 0; j < DIAS; j++) {\n  printf("%d ", ventas[0][j]);\n}\nprintf("\\n");', ['MUESTRA_DISTINTA']),
+  rtablas(3, 'solo la primera fila', 'for (j = 0; j < DIAS; j++) {\n  printf("%d ", ventas[0][j]);\n}\nprintf("\\n");', ['RECORRIDO_INCOMPLETO']),
   rtablas(3, 'las columnas como renglones', 'for (j = 0; j < DIAS; j++) {\n  for (i = 0; i < SUCURSALES; i++) {\n    printf("%d ", ventas[i][j]);\n  }\n  printf("\\n");\n}', ['MUESTRA_DISTINTA']),
   rtablas(3, 'con la tabla entera', 'for (i = 0; i < SUCURSALES; i++) {\n  printf("%d\\n", ventas);\n}', ['ARREGLO_SIN_POSICION']),
 
@@ -1006,7 +1006,7 @@ const CASOS_DE_RECORRER_TABLAS = [
   rtablas(4, 'con la columna afuera', 'total = 0;\nfor (j = 0; j < DIAS; j++) {\n  for (i = 0; i < SUCURSALES; i++) {\n    total += ventas[i][j];\n  }\n}'),
   rtablas(4, 'sin iniciar el total', 'for (i = 0; i < SUCURSALES; i++) {\n  for (j = 0; j < DIAS; j++) {\n    total += ventas[i][j];\n  }\n}', ['VARIABLE_SIN_VALOR']),
   rtablas(4, 'el total vuelve a cero en cada fila', 'for (i = 0; i < SUCURSALES; i++) {\n  total = 0;\n  for (j = 0; j < DIAS; j++) {\n    total += ventas[i][j];\n  }\n}', ['RESULTADO_VALOR_DISTINTO']),
-  rtablas(4, 'sin llegar a la ultima columna', 'total = 0;\nfor (i = 0; i < SUCURSALES; i++) {\n  for (j = 0; j < DIAS - 1; j++) {\n    total += ventas[i][j];\n  }\n}', ['RESULTADO_VALOR_DISTINTO']),
+  rtablas(4, 'sin llegar a la ultima columna', 'total = 0;\nfor (i = 0; i < SUCURSALES; i++) {\n  for (j = 0; j < DIAS - 1; j++) {\n    total += ventas[i][j];\n  }\n}', ['RECORRIDO_INCOMPLETO']),
 
   // 5: cuestionario, el acumulador
   rtablas(5, 'acumulador: el de las dos filas', '2'),
@@ -1055,6 +1055,36 @@ const CASOS_DE_RECORRER_TABLAS = [
   rtablas(10, 'las filas escritas', 'filas = 4;\ncolumnas = sizeof(temperaturas[0]) / sizeof(temperaturas[0][0]);', ['RESULTADO_VALOR_DISTINTO']),
   rtablas(10, 'todos los elementos como filas', 'filas = sizeof(temperaturas) / sizeof(temperaturas[0][0]);\ncolumnas = sizeof(temperaturas[0]) / sizeof(temperaturas[0][0]);', ['RESULTADO_VALOR_DISTINTO']),
   rtablas(10, 'los bytes como filas', 'filas = sizeof(temperaturas);\ncolumnas = sizeof(temperaturas[0]) / sizeof(temperaturas[0][0]);', ['RESULTADO_VALOR_DISTINTO']),
+  // los nombres, y el recorrido
+  {
+    ...rtablas(1, 'un nombre mal escrito', 'for (i = 0; i < MULTIPLICADOS; i++) {\n  for (j = 0; j < MULTIPLICADORES; j++) {\n    tabla[i][j] = (i + 1) * (j + 1);\n  }\n}', ['NOMBRE_NO_DECLARADO']),
+    dice: ['`MULTIPLICADOS` no está declarado', '¿Quiso decir `MULTIPLICANDOS`?'],
+  },
+  {
+    ...rtablas(1, 'un nombre que no existe', 'for (i = 0; i < LIMITE; i++) {\n  for (j = 0; j < MULTIPLICADORES; j++) {\n    tabla[i][j] = (i + 1) * (j + 1);\n  }\n}', ['NOMBRE_NO_DECLARADO']),
+    dice: ['`LIMITE` no está declarado: hay que declararlo antes de usarlo'],
+  },
+  {
+    ...rtablas(1, 'un limite que se queda corto', 'for (i = 0; i < MULTIPLICANDOS - 1; i++) {\n  for (j = 0; j < MULTIPLICADORES; j++) {\n    tabla[i][j] = (i + 1) * (j + 1);\n  }\n}', ['RECORRIDO_INCOMPLETO']),
+    dice: ['`tabla` tiene 4 filas y el ciclo no llega a recorrerlas todas.'],
+  },
+  {
+    ...rtablas(1, 'un limite que se pasa', 'for (i = 0; i <= MULTIPLICANDOS; i++) {\n  for (j = 0; j < MULTIPLICADORES; j++) {\n    tabla[i][j] = (i + 1) * (j + 1);\n  }\n}', ['INDICE_FUERA_DE_RANGO']),
+    dice: ['`tabla` tiene 4 filas, numeradas de 0 a 3, y el ciclo llega hasta la fila 4, que no existe'],
+  },
+  {
+    ...rtablas(4, 'sin tocar la tabla', 'total = 0;\nfor (i = 0; i < SUCURSALES; i++) {\n  total += i;\n}', ['RECORRIDO_INCOMPLETO']),
+    dice: ['`ventas` tiene 3 filas y el programa no las recorre'],
+  },
+  {
+    ...rtablas(3, 'todo en un renglon: muestra lo que sale', 'for (i = 0; i < SUCURSALES; i++) {\n  for (j = 0; j < DIAS; j++) {\n    printf("%d ", ventas[i][j]);\n  }\n}', ['TABLA_SIN_RENGLONES']),
+    bloques: ['120 85 240 60 175 90 310 45 50 130 95 200'],
+  },
+  {
+    ...rtablas(3, 'las columnas: muestra lo que sale', 'for (j = 0; j < DIAS; j++) {\n  for (i = 0; i < SUCURSALES; i++) {\n    printf("%d ", ventas[i][j]);\n  }\n  printf("\\n");\n}', ['MUESTRA_DISTINTA']),
+    dice: ['El programa muestra:'],
+    bloques: ['120 175 50\n85 90 130\n240 310 95\n60 45 200'],
+  },
 ];
 
 // Mas de dos dimensiones: tres indices, tres ciclos.
@@ -1116,7 +1146,7 @@ const CASOS_DE_DIMENSIONES = [
   dimensiones(5, 'con tres for', 'for (i = 0; i < CURSOS; i++) {\n  for (j = 0; j < ALUMNOS; j++) {\n    for (k = 0; k < PARCIALES; k++) {\n      notas[i][j][k] = 0;\n    }\n  }\n}'),
   dimensiones(5, 'con otro orden', 'for (k = 0; k < PARCIALES; k++) {\n  for (j = 0; j < ALUMNOS; j++) {\n    for (i = 0; i < CURSOS; i++) {\n      notas[i][j][k] = 0;\n    }\n  }\n}'),
   dimensiones(5, 'con los numeros sueltos: correcto y mejorable', 'for (i = 0; i < 2; i++) {\n  for (j = 0; j < 3; j++) {\n    for (k = 0; k < 4; k++) {\n      notas[i][j][k] = 0;\n    }\n  }\n}', 'ok', ['LIMITE_CON_NUMERO_SUELTO']),
-  dimensiones(5, 'sin el ultimo parcial', 'for (i = 0; i < CURSOS; i++) {\n  for (j = 0; j < ALUMNOS; j++) {\n    for (k = 0; k < PARCIALES - 1; k++) {\n      notas[i][j][k] = 0;\n    }\n  }\n}', ['RESULTADO_POSICION_SIN_VALOR']),
+  dimensiones(5, 'sin el ultimo parcial', 'for (i = 0; i < CURSOS; i++) {\n  for (j = 0; j < ALUMNOS; j++) {\n    for (k = 0; k < PARCIALES - 1; k++) {\n      notas[i][j][k] = 0;\n    }\n  }\n}', ['RECORRIDO_INCOMPLETO']),
   dimensiones(5, 'con los limites cambiados', 'for (i = 0; i < PARCIALES; i++) {\n  for (j = 0; j < ALUMNOS; j++) {\n    for (k = 0; k < CURSOS; k++) {\n      notas[i][j][k] = 0;\n    }\n  }\n}', ['INDICE_FUERA_DE_RANGO']),
   dimensiones(5, 'con un cero que no es de cada posicion', 'for (i = 0; i < CURSOS; i++) {\n  for (j = 0; j < ALUMNOS; j++) {\n    for (k = 0; k < PARCIALES; k++) {\n      notas[i][j][k] = 1;\n    }\n  }\n}', ['RESULTADO_VALOR_DISTINTO']),
 
@@ -1124,7 +1154,7 @@ const CASOS_DE_DIMENSIONES = [
   dimensiones(6, 'con tres for', 'total = 0;\nfor (i = 0; i < CURSOS; i++) {\n  for (j = 0; j < ALUMNOS; j++) {\n    for (k = 0; k < PARCIALES; k++) {\n      total += notas[i][j][k];\n    }\n  }\n}'),
   dimensiones(6, 'con el curso adentro', 'total = 0;\nfor (k = 0; k < PARCIALES; k++) {\n  for (j = 0; j < ALUMNOS; j++) {\n    for (i = 0; i < CURSOS; i++) {\n      total += notas[i][j][k];\n    }\n  }\n}'),
   dimensiones(6, 'sin iniciar el total', 'for (i = 0; i < CURSOS; i++) {\n  for (j = 0; j < ALUMNOS; j++) {\n    for (k = 0; k < PARCIALES; k++) {\n      total += notas[i][j][k];\n    }\n  }\n}', ['VARIABLE_SIN_VALOR']),
-  dimensiones(6, 'sin recorrer el ultimo curso', 'total = 0;\nfor (i = 0; i < CURSOS - 1; i++) {\n  for (j = 0; j < ALUMNOS; j++) {\n    for (k = 0; k < PARCIALES; k++) {\n      total += notas[i][j][k];\n    }\n  }\n}', ['RESULTADO_VALOR_DISTINTO']),
+  dimensiones(6, 'sin recorrer el ultimo curso', 'total = 0;\nfor (i = 0; i < CURSOS - 1; i++) {\n  for (j = 0; j < ALUMNOS; j++) {\n    for (k = 0; k < PARCIALES; k++) {\n      total += notas[i][j][k];\n    }\n  }\n}', ['RECORRIDO_INCOMPLETO']),
 
   // 7: la suma de cada curso
   dimensiones(7, 'con el total en el arreglo', 'for (i = 0; i < CURSOS; i++) {\n  totales[i] = 0;\n  for (j = 0; j < ALUMNOS; j++) {\n    for (k = 0; k < PARCIALES; k++) {\n      totales[i] += notas[i][j][k];\n    }\n  }\n}'),

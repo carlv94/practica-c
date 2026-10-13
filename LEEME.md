@@ -585,6 +585,51 @@ profundidad en `datos`, `queda` y `muestraEnFilas`. Dos cosas propias:
 - Un índice que no existe en tres dimensiones dice "la posición N", en
   cualquier nivel: "fila" y "columna" son de las tablas.
 
+**El dibujo y la salida, en las consignas que recorren una tabla.** Una consigna
+que no define el arreglo (lo recorre, lo suma) puede llevar su propio dibujo:
+
+```json
+"dibujo": {
+  "titulo": "La tabla `ventas`:",
+  "valores": [[120, 85, 240, 60], [175, 90, 310, 45]],
+  "filas": "sucursales", "columnas": "días",
+  "resaltar": "diagonal",
+  "arreglo": { "nombre": "totales", "valores": [505, 620, 475], "vertical": true }
+},
+"salida": "120 85 240 60\n175 90 310 45"
+```
+
+`filas` es el nombre de las filas, en vertical a la izquierda, y `columnas` el de
+las columnas, arriba; `resaltar: "diagonal"` pinta de fondo la diagonal
+principal; `arreglo` es el resultado que tiene que quedar, aparte de la tabla
+y como cualquier arreglo (índices propios, bordes enteros): vertical, a la
+altura de cada fila y con un espacio, con `"vertical": true`, o debajo con su
+título. Si `valores` es una lista de tablas (tres dimensiones) se dibuja cada
+una como `notas[0]`, `notas[1]`, con `"planos": "notas"`. `salida` es lo que tiene que mostrar el
+programa, en un recuadro de consola, con su título "Así tiene que verse la
+salida".
+
+**Recorrer toda la tabla** (`"recorre": "tabla"` en la regla `ejecuta`, o
+`{ "notas": ["el curso", "el alumno", "el parcial"] }` en tres dimensiones): el
+intérprete anota qué filas y columnas se tocaron, y si el ciclo no llega a
+todas es `RECORRIDO_INCOMPLETO`: "`tabla` tiene 4 filas y el ciclo no llega a
+recorrerlas todas" (sin decir dónde se detiene: con `i = 1` y con `i < 2` el
+"dónde" confunde). Se revisa antes que el valor.
+Si el ciclo se pasa, "`tabla` tiene 4 filas, numeradas de 0 a 3, y el ciclo
+llega hasta la fila 4, que no existe".
+
+**Un nombre que no está declarado** (`MULTIPLICADOS` por `MULTIPLICANDOS`) es
+el error `NOMBRE_NO_DECLARADO`, con "¿Quiso decir…?" si hay uno parecido, en
+todas las series que se corrigen siguiendo el código. Los nombres de la
+biblioteca (`NULL`, `EOF`, `stdin`…) no lo son.
+
+**Los mensajes con salida de consola**: una tabla que no va en sus renglones o
+con otros valores muestra lo que sacó el programa en un recuadro (campo
+`bloques` del diagnóstico). Con los valores que el alumno ve en la consigna
+(`"visible": true` en el primer caso) no se repite "Con `ventas` valiendo…" ni
+lo que debería mostrar, que ya tiene arriba; con otros valores se muestran los
+dos recuadros, "El programa muestra" y "Debería mostrar".
+
 Un cuestionario puede agregar una suposición al enunciado ("y suponiendo que
 cada `int` ocupa 4 bytes"), como el "si usted escribe" de los que leen.
 
