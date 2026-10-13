@@ -1,0 +1,186 @@
+{
+  "id": "arreglos-acumular",
+  "titulo": "Acumular y contar",
+  "descripcion": "Recorrer un arreglo para obtener un solo dato: una suma, una cantidad o un promedio.",
+  "dentroDeMain": true,
+  "cabecera": "#include <stdio.h>",
+  "buenasPracticas": ["constantes"],
+  "consignas": [
+    {
+      "id": "acumular-suma",
+      "titulo": "Sumar las ventas de la semana",
+      "dado": "#define DIAS 7\n\nint ventas[DIAS] = {120, 85, 240, 60, 175, 90, 310};\nint total;\nint i;",
+      "enunciado": "Un comercio registró en el arreglo `ventas` lo que vendió cada día de la semana.\n\nCon un ciclo, deje en `total` la suma de las ventas de la semana. Use el índice `i`.",
+      "requiere": [
+        {
+          "ejecuta": {
+            "casos": [
+              { "datos": { "ventas": [120, 85, 240, 60, 175, 90, 310] }, "queda": { "total": 1080 } },
+              { "datos": { "ventas": [5, 3, 8, 1, 9, 2, 7] }, "queda": { "total": 35 } },
+              { "datos": { "ventas": [200, 0, 0, 0, 0, 0, 50] }, "queda": { "total": 250 } }
+            ],
+            "conCiclo": true,
+            "limite": true
+          }
+        }
+      ],
+      "referencia": "total = 0;\nfor (i = 0; i < DIAS; i++) {\n  total += ventas[i];\n}"
+    },
+    {
+      "id": "acumular-q-reiniciado",
+      "titulo": "El acumulador que vuelve a empezar",
+      "enunciado": "Después de ejecutar el código de abajo, ¿qué valor tendría `total`?",
+      "codigo": "int ventas[4] = {10, 20, 30, 40};\nint total;\nint i;\n\nfor (i = 0; i < 4; i++) {\n  total = 0;\n  total += ventas[i];\n}",
+      "opciones": [
+        {
+          "valor": "100",
+          "texto": "la suma de las cuatro ventas",
+          "codigo": "OPCION_SUMA_COMPLETA",
+          "explicacion": "Para llegar a `100` el valor tendría que conservarse de una vuelta a la otra, pero en cada vuelta `total` vuelve a valer `0` antes de sumar: lo que se había sumado se pierde."
+        },
+        {
+          "valor": "0",
+          "texto": "cero, el valor con que se inicia",
+          "codigo": "OPCION_QUEDA_EN_CERO",
+          "explicacion": "El `0` es lo que vale `total` al comienzo de cada vuelta, pero después se le suma `ventas[i]`: en la última vuelta termina valiendo `0 + 40`."
+        },
+        {
+          "valor": "40",
+          "texto": "el último elemento de `ventas`",
+          "correcta": true,
+          "explicacion": "En cada vuelta `total` vuelve a valer `0` y se le suma `ventas[i]`, así que termina valiendo lo de esa vuelta. Lo que queda es el resultado de la última: `0 + 40`."
+        }
+      ]
+    },
+    {
+      "id": "acumular-contar",
+      "titulo": "Contar los aprobados",
+      "dado": "#define CANTIDAD 10\n\nint notas[CANTIDAD] = {7, 4, 9, 6, 8, 5, 10, 3, 7, 6};\nint aprobados;\nint i;",
+      "enunciado": "Un alumno aprueba con una nota de 6 o más. El arreglo `notas` tiene las notas de una comisión.\n\nCon un ciclo, deje en `aprobados` la cantidad de alumnos que aprobaron. Use el índice `i`.",
+      "requiere": [
+        {
+          "ejecuta": {
+            "casos": [
+              { "datos": { "notas": [7, 4, 9, 6, 8, 5, 10, 3, 7, 6] }, "queda": { "aprobados": 7 } },
+              { "datos": { "notas": [1, 2, 3, 4, 5, 1, 2, 3, 4, 5] }, "queda": { "aprobados": 0 } },
+              { "datos": { "notas": [6, 6, 6, 6, 6, 6, 6, 6, 6, 6] }, "queda": { "aprobados": 10 } },
+              { "datos": { "notas": [5, 6, 5, 6, 5, 6, 5, 6, 5, 6] }, "queda": { "aprobados": 5 } }
+            ],
+            "conCiclo": true,
+            "limite": true
+          }
+        }
+      ],
+      "referencia": "aprobados = 0;\nfor (i = 0; i < CANTIDAD; i++) {\n  if (notas[i] >= 6) {\n    aprobados++;\n  }\n}"
+    },
+    {
+      "id": "acumular-condicionada",
+      "titulo": "Sumar solo los días fuertes",
+      "dado": "#define DIAS 7\n\nint ventas[DIAS] = {80, 130, 95, 210, 150, 60, 105};\nint total;\nint i;",
+      "enunciado": "Un comercio llama \"día fuerte\" a un día en que vendió más de 100. El arreglo `ventas` tiene lo que vendió cada día de la semana.\n\nCon un ciclo, deje en `total` la suma de las ventas de los días fuertes. Use el índice `i`.",
+      "requiere": [
+        {
+          "ejecuta": {
+            "casos": [
+              { "datos": { "ventas": [80, 130, 95, 210, 150, 60, 105] }, "queda": { "total": 595 } },
+              { "datos": { "ventas": [100, 101, 99, 150, 0, 100, 200] }, "queda": { "total": 451 } },
+              { "datos": { "ventas": [500, 0, 0, 0, 0, 0, 0] }, "queda": { "total": 500 } }
+            ],
+            "conCiclo": true,
+            "limite": true
+          }
+        }
+      ],
+      "referencia": "total = 0;\nfor (i = 0; i < DIAS; i++) {\n  if (ventas[i] > 100) {\n    total += ventas[i];\n  }\n}"
+    },
+    {
+      "id": "acumular-q-division",
+      "titulo": "La división de enteros",
+      "enunciado": "Después de ejecutar el código de abajo, ¿qué valor tendría `promedio`?",
+      "codigo": "int suma = 17;\nint cantidad = 4;\nfloat promedio;\n\npromedio = suma / cantidad;",
+      "opciones": [
+        {
+          "valor": "4.25",
+          "texto": "el promedio con sus decimales",
+          "codigo": "OPCION_DIVISION_CON_DECIMALES",
+          "explicacion": "El `4.25` es el resultado de dividir `17` por `4` con decimales, pero acá los dos son enteros: la división da un entero, `4`, y la parte decimal se pierde antes de guardarse en `promedio`."
+        },
+        {
+          "valor": "5",
+          "texto": "el resultado redondeado hacia arriba",
+          "codigo": "OPCION_REDONDEA_HACIA_ARRIBA",
+          "explicacion": "La división entre enteros no redondea: descarta la parte decimal. `17 / 4` da `4`, no `5`."
+        },
+        {
+          "valor": "4.0",
+          "texto": "el resultado entero, guardado como decimal",
+          "correcta": true,
+          "explicacion": "`suma` y `cantidad` son enteros, así que `17 / 4` da el entero `4`. Recién después se guarda en `promedio`, que es `float`: queda `4.0`. La parte decimal se perdió antes de guardarse."
+        }
+      ]
+    },
+    {
+      "id": "acumular-promedio",
+      "titulo": "El promedio de las notas",
+      "dado": "#define CANTIDAD 8\n\nint notas[CANTIDAD] = {7, 4, 9, 6, 8, 5, 10, 3};\nint suma;\nfloat promedio;\nint i;",
+      "enunciado": "El docente quiere el promedio de las notas de su comisión, que están en el arreglo `notas`.\n\nCon un ciclo, calcule el promedio y déjelo en `promedio`, con sus decimales. Puede usar `suma` para ir acumulando. Use el índice `i`.",
+      "requiere": [
+        {
+          "ejecuta": {
+            "casos": [
+              { "datos": { "notas": [7, 4, 9, 6, 8, 5, 10, 3] }, "queda": { "promedio": 6.5 } },
+              { "datos": { "notas": [7, 7, 7, 7, 7, 7, 7, 7] }, "queda": { "promedio": 7 } },
+              { "datos": { "notas": [1, 2, 3, 4, 5, 6, 7, 9] }, "queda": { "promedio": 4.625 } },
+              { "datos": { "notas": [10, 10, 9, 9, 8, 8, 7, 7] }, "queda": { "promedio": 8.5 } }
+            ],
+            "conCiclo": true,
+            "limite": true
+          }
+        }
+      ],
+      "referencia": "suma = 0;\nfor (i = 0; i < CANTIDAD; i++) {\n  suma += notas[i];\n}\npromedio = (float) suma / CANTIDAD;"
+    },
+    {
+      "id": "acumular-dos-datos",
+      "titulo": "Contar y sumar a la vez",
+      "dado": "#define CANTIDAD 8\n\nint edades[CANTIDAD] = {15, 22, 17, 30, 18, 12, 45, 19};\nint mayores;\nint suma;\nint i;",
+      "enunciado": "Un club registró en el arreglo `edades` la edad de sus socios. Es mayor de edad quien tiene 18 años o más.\n\nCon un ciclo, deje en `mayores` cuántos socios son mayores de edad, y en `suma` la suma de las edades de esos socios. Use el índice `i`.",
+      "requiere": [
+        {
+          "ejecuta": {
+            "casos": [
+              { "datos": { "edades": [15, 22, 17, 30, 18, 12, 45, 19] }, "queda": { "mayores": 5, "suma": 134 } },
+              { "datos": { "edades": [17, 17, 17, 17, 17, 17, 17, 17] }, "queda": { "mayores": 0, "suma": 0 } },
+              { "datos": { "edades": [18, 18, 18, 18, 18, 18, 18, 18] }, "queda": { "mayores": 8, "suma": 144 } },
+              { "datos": { "edades": [10, 20, 30, 40, 5, 60, 70, 80] }, "queda": { "mayores": 6, "suma": 300 } }
+            ],
+            "conCiclo": true,
+            "limite": true
+          }
+        }
+      ],
+      "referencia": "mayores = 0;\nsuma = 0;\nfor (i = 0; i < CANTIDAD; i++) {\n  if (edades[i] >= 18) {\n    mayores++;\n    suma += edades[i];\n  }\n}"
+    },
+    {
+      "id": "acumular-porcentaje",
+      "titulo": "El porcentaje de aprobados",
+      "dado": "#define CANTIDAD 10\n\nint notas[CANTIDAD] = {7, 4, 9, 6, 8, 5, 10, 3, 7, 6};\nint aprobados;\nfloat porcentaje;\nint i;",
+      "enunciado": "Un alumno aprueba con una nota de 6 o más. El docente quiere saber qué porcentaje de su comisión aprobó.\n\nCon un ciclo, cuente los aprobados de `notas`, y muestre con `printf` el porcentaje de aprobados sobre el total de alumnos. Use el índice `i`.",
+      "requiere": [
+        {
+          "ejecuta": {
+            "casos": [
+              { "datos": { "notas": [7, 4, 9, 6, 8, 5, 10, 3, 7, 6] }, "muestra": [70] },
+              { "datos": { "notas": [5, 5, 5, 5, 5, 5, 5, 5, 5, 5] }, "muestra": [0] },
+              { "datos": { "notas": [6, 6, 6, 6, 6, 6, 6, 6, 6, 6] }, "muestra": [100] },
+              { "datos": { "notas": [6, 6, 6, 1, 1, 1, 1, 1, 1, 1] }, "muestra": [30] }
+            ],
+            "conCiclo": true,
+            "limite": true
+          }
+        }
+      ],
+      "referencia": "aprobados = 0;\nfor (i = 0; i < CANTIDAD; i++) {\n  if (notas[i] >= 6) {\n    aprobados++;\n  }\n}\nporcentaje = (float) aprobados * 100 / CANTIDAD;\nprintf(\"%f\\n\", porcentaje);"
+    }
+  ]
+}

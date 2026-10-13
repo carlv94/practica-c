@@ -414,6 +414,92 @@ const CASOS_DE_LEER = [
   leer(8, 'numerado desde cero', 'for (i = 0; i < CANTIDAD; i++) {\n  printf("Ingrese la nota %d: ", i);\n  scanf("%d", &notas[i]);\n}', ['TEXTO_DISTINTO']),
 ];
 
+// Acumular y contar: se corre con varios conjuntos de valores.
+const acumular = (paso, nombre, respuesta, espera = 'ok', mejoras = []) => ({
+  serie: 'arreglos-acumular',
+  paso,
+  nombre,
+  respuesta,
+  espera,
+  mejoras,
+});
+
+const CASOS_DE_ACUMULAR = [
+  // 1: sumar las ventas
+  acumular(1, 'un for con +=', 'total = 0;\nfor (i = 0; i < DIAS; i++) {\n  total += ventas[i];\n}'),
+  acumular(1, 'total = total + ...', 'total = 0;\nfor (i = 0; i < DIAS; i++) {\n  total = total + ventas[i];\n}'),
+  acumular(1, 'un while', 'total = 0;\ni = 0;\nwhile (i < DIAS) {\n  total += ventas[i];\n  i++;\n}'),
+  acumular(1, 'de atras', 'total = 0;\nfor (i = DIAS - 1; i >= 0; i--) {\n  total += ventas[i];\n}'),
+  acumular(1, 'con el numero suelto: correcto y mejorable', 'total = 0;\nfor (i = 0; i < 7; i++) {\n  total += ventas[i];\n}', 'ok', ['LIMITE_CON_NUMERO_SUELTO']),
+  acumular(1, 'sin iniciar el acumulador', 'for (i = 0; i < DIAS; i++) {\n  total += ventas[i];\n}', ['VARIABLE_SIN_VALOR']),
+  {
+    ...acumular(1, 'el acumulador vuelve a empezar', 'for (i = 0; i < DIAS; i++) {\n  total = 0;\n  total += ventas[i];\n}', ['ACUMULADOR_REINICIADO']),
+    dice: ['`ventas` valiendo `120`, `85`', '`90` y `310`, `total`', 'se vuelve a poner en 0', 'antes del ciclo'],
+  },
+  {
+    ...acumular(1, 'se reemplaza en lugar de sumar', 'total = 0;\nfor (i = 0; i < DIAS; i++) {\n  total = ventas[i];\n}', ['ACUMULADOR_SE_PISA']),
+    dice: ['termina valiendo `310`', 'se reemplaza el valor anterior'],
+  },
+  acumular(1, 'el resultado escrito a mano', 'total = 1080;', ['CICLO_FALTA']),
+  acumular(1, 'el resultado escrito a mano dentro de un ciclo', 'for (i = 0; i < DIAS; i++) {\n  total = 1080;\n}', ['RESULTADO_VALOR_DISTINTO']),
+  acumular(1, 'sin llegar al ultimo dia', 'total = 0;\nfor (i = 0; i < DIAS - 1; i++) {\n  total += ventas[i];\n}', ['RESULTADO_VALOR_DISTINTO']),
+  acumular(1, 'una vuelta de mas', 'total = 0;\nfor (i = 0; i <= DIAS; i++) {\n  total += ventas[i];\n}', ['INDICE_FUERA_DE_RANGO']),
+
+  // 2: cuestionario, el acumulador reiniciado
+  acumular(2, 'reiniciado: el ultimo', '2'),
+  acumular(2, 'reiniciado: la suma', '0', ['OPCION_SUMA_COMPLETA']),
+  acumular(2, 'reiniciado: cero', '1', ['OPCION_QUEDA_EN_CERO']),
+
+  // 3: contar los aprobados
+  acumular(3, 'con if y ++', 'aprobados = 0;\nfor (i = 0; i < CANTIDAD; i++) {\n  if (notas[i] >= 6) {\n    aprobados++;\n  }\n}'),
+  acumular(3, 'con += 1', 'aprobados = 0;\nfor (i = 0; i < CANTIDAD; i++) {\n  if (notas[i] > 5) {\n    aprobados += 1;\n  }\n}'),
+  acumular(3, 'con un if sin llaves', 'aprobados = 0;\nfor (i = 0; i < CANTIDAD; i++)\n  if (notas[i] >= 6)\n    aprobados++;'),
+  acumular(3, 'con > en lugar de >=', 'aprobados = 0;\nfor (i = 0; i < CANTIDAD; i++) {\n  if (notas[i] > 6) {\n    aprobados++;\n  }\n}', ['RESULTADO_VALOR_DISTINTO']),
+  acumular(3, 'cuenta a todos', 'aprobados = 0;\nfor (i = 0; i < CANTIDAD; i++) {\n  aprobados++;\n}', ['RESULTADO_VALOR_DISTINTO']),
+  acumular(3, 'suma las notas en lugar de contar', 'aprobados = 0;\nfor (i = 0; i < CANTIDAD; i++) {\n  if (notas[i] >= 6) {\n    aprobados += notas[i];\n  }\n}', ['RESULTADO_VALOR_DISTINTO']),
+  acumular(3, 'sin iniciar el contador', 'for (i = 0; i < CANTIDAD; i++) {\n  if (notas[i] >= 6) {\n    aprobados++;\n  }\n}', ['VARIABLE_SIN_VALOR']),
+  acumular(3, 'el contador no cuenta si no hay aprobados', 'aprobados = 7;', ['CICLO_FALTA']),
+
+  // 4: sumar solo los dias fuertes
+  acumular(4, 'con if', 'total = 0;\nfor (i = 0; i < DIAS; i++) {\n  if (ventas[i] > 100) {\n    total += ventas[i];\n  }\n}'),
+  acumular(4, 'con >= en lugar de >', 'total = 0;\nfor (i = 0; i < DIAS; i++) {\n  if (ventas[i] >= 100) {\n    total += ventas[i];\n  }\n}', ['RESULTADO_VALOR_DISTINTO']),
+  acumular(4, 'suma todos', 'total = 0;\nfor (i = 0; i < DIAS; i++) {\n  total += ventas[i];\n}', ['RESULTADO_VALOR_DISTINTO']),
+  acumular(4, 'cuenta en lugar de sumar', 'total = 0;\nfor (i = 0; i < DIAS; i++) {\n  if (ventas[i] > 100) {\n    total++;\n  }\n}', ['RESULTADO_VALOR_DISTINTO']),
+
+  // 5: cuestionario, la division de enteros
+  acumular(5, 'division: la correcta', '2'),
+  acumular(5, 'division: con decimales', '0', ['OPCION_DIVISION_CON_DECIMALES']),
+  acumular(5, 'division: redondeada', '1', ['OPCION_REDONDEA_HACIA_ARRIBA']),
+
+  // 6: el promedio
+  acumular(6, 'con la conversion de tipo', 'suma = 0;\nfor (i = 0; i < CANTIDAD; i++) {\n  suma += notas[i];\n}\npromedio = (float) suma / CANTIDAD;'),
+  acumular(6, 'con la conversion en el otro lado', 'suma = 0;\nfor (i = 0; i < CANTIDAD; i++) {\n  suma += notas[i];\n}\npromedio = suma / (float) CANTIDAD;'),
+  acumular(6, 'multiplicando por 1.0', 'suma = 0;\nfor (i = 0; i < CANTIDAD; i++) {\n  suma += notas[i];\n}\npromedio = 1.0 * suma / CANTIDAD;'),
+  acumular(6, 'acumulando en el promedio', 'promedio = 0;\nfor (i = 0; i < CANTIDAD; i++) {\n  promedio += notas[i];\n}\npromedio = promedio / CANTIDAD;'),
+  {
+    ...acumular(6, 'la division de enteros', 'suma = 0;\nfor (i = 0; i < CANTIDAD; i++) {\n  suma += notas[i];\n}\npromedio = suma / CANTIDAD;', ['DIVISION_ENTERA']),
+    dice: ['termina valiendo `6` y tendría que valer `6.5`', 'dividir dos enteros da un entero'],
+  },
+  acumular(6, 'sin dividir', 'suma = 0;\nfor (i = 0; i < CANTIDAD; i++) {\n  suma += notas[i];\n}\npromedio = suma;', ['RESULTADO_VALOR_DISTINTO']),
+  acumular(6, 'dividiendo por uno menos', 'suma = 0;\nfor (i = 0; i < CANTIDAD; i++) {\n  suma += notas[i];\n}\npromedio = (float) suma / (CANTIDAD - 1);', ['RESULTADO_VALOR_DISTINTO']),
+
+  // 7: contar y sumar a la vez
+  acumular(7, 'las dos cosas con un if', 'mayores = 0;\nsuma = 0;\nfor (i = 0; i < CANTIDAD; i++) {\n  if (edades[i] >= 18) {\n    mayores++;\n    suma += edades[i];\n  }\n}'),
+  acumular(7, 'en dos ciclos', 'mayores = 0;\nsuma = 0;\nfor (i = 0; i < CANTIDAD; i++) {\n  if (edades[i] >= 18) {\n    mayores++;\n  }\n}\nfor (i = 0; i < CANTIDAD; i++) {\n  if (edades[i] >= 18) {\n    suma += edades[i];\n  }\n}'),
+  acumular(7, 'suma a todos', 'mayores = 0;\nsuma = 0;\nfor (i = 0; i < CANTIDAD; i++) {\n  suma += edades[i];\n  if (edades[i] >= 18) {\n    mayores++;\n  }\n}', ['RESULTADO_VALOR_DISTINTO']),
+  acumular(7, 'sin iniciar la suma', 'mayores = 0;\nfor (i = 0; i < CANTIDAD; i++) {\n  if (edades[i] >= 18) {\n    mayores++;\n    suma += edades[i];\n  }\n}', ['VARIABLE_SIN_VALOR']),
+  acumular(7, 'sin tocar la suma', 'mayores = 0;\nfor (i = 0; i < CANTIDAD; i++) {\n  if (edades[i] >= 18) {\n    mayores++;\n  }\n}', ['RESULTADO_VARIABLE_SIN_VALOR']),
+
+  // 8: el porcentaje
+  acumular(8, 'con la conversion', 'aprobados = 0;\nfor (i = 0; i < CANTIDAD; i++) {\n  if (notas[i] >= 6) {\n    aprobados++;\n  }\n}\nporcentaje = (float) aprobados * 100 / CANTIDAD;\nprintf("%f\\n", porcentaje);'),
+  acumular(8, 'con un formato corto', 'aprobados = 0;\nfor (i = 0; i < CANTIDAD; i++) {\n  if (notas[i] >= 6) {\n    aprobados++;\n  }\n}\nporcentaje = aprobados * 100.0 / CANTIDAD;\nprintf("%.1f%%\\n", porcentaje);'),
+  acumular(8, 'directo en el printf, entero', 'aprobados = 0;\nfor (i = 0; i < CANTIDAD; i++) {\n  if (notas[i] >= 6) {\n    aprobados++;\n  }\n}\nprintf("%d\\n", aprobados * 100 / CANTIDAD);'),
+  acumular(8, 'sin multiplicar por 100', 'aprobados = 0;\nfor (i = 0; i < CANTIDAD; i++) {\n  if (notas[i] >= 6) {\n    aprobados++;\n  }\n}\nporcentaje = (float) aprobados / CANTIDAD;\nprintf("%f\\n", porcentaje);', ['MUESTRA_DISTINTA']),
+  acumular(8, 'la division de enteros da cero', 'aprobados = 0;\nfor (i = 0; i < CANTIDAD; i++) {\n  if (notas[i] >= 6) {\n    aprobados++;\n  }\n}\nporcentaje = aprobados / CANTIDAD * 100;\nprintf("%f\\n", porcentaje);', ['MUESTRA_DISTINTA']),
+  acumular(8, 'sin mostrar', 'aprobados = 0;\nfor (i = 0; i < CANTIDAD; i++) {\n  if (notas[i] >= 6) {\n    aprobados++;\n  }\n}\nporcentaje = (float) aprobados * 100 / CANTIDAD;', ['MUESTRA_FALTA']),
+  acumular(8, 'mostrar un decimal con %d', 'aprobados = 0;\nfor (i = 0; i < CANTIDAD; i++) {\n  if (notas[i] >= 6) {\n    aprobados++;\n  }\n}\nporcentaje = (float) aprobados * 100 / CANTIDAD;\nprintf("%d\\n", porcentaje);', ['FORMATO_NO_CORRESPONDE_AL_TIPO']),
+];
+
 // Arreglos definidos con sus valores: los del dibujo, 3 6 0 7 1 5.
 const valores = (paso, nombre, respuesta, espera, mejoras = []) => ({
   serie: 'arreglos-valores',
@@ -676,6 +762,7 @@ export const CASOS = [
   ...CASOS_DE_POSICIONES,
   ...CASOS_DE_RECORRER,
   ...CASOS_DE_LEER,
+  ...CASOS_DE_ACUMULAR,
   ...CASOS_DE_CADENAS,
   ...CASOS_DE_CADENAS_NUEVAS,
   // ---- 1: declarar la estructura ----
