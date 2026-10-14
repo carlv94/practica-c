@@ -230,10 +230,14 @@ section[hidden] {
    iria). Los valores empiezan todos en la misma columna. */
 #ficha {
   margin: 12px 0;
+  overflow-x: auto;
+}
+
+/* Una ficha suelta ocupa lo que necesita; las de un arreglo se reparten el ancho. */
+#ficha > .ficha {
   width: fit-content;
   min-width: min(100%, 18rem);
   max-width: 100%;
-  overflow-x: auto;
 }
 
 #enunciado-cierre {
@@ -246,6 +250,36 @@ section[hidden] {
   border-radius: 5px;
   background: var(--panel);
   overflow: hidden;
+}
+
+/* Las fichas de un arreglo de estructuras: una al lado de la otra. */
+.fichas-en-fila {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 10px;
+  align-items: start;
+}
+
+.fichas-en-fila .ficha {
+  min-width: 0;
+}
+
+.fichas-en-fila .ficha-linea {
+  min-width: 4rem;
+}
+
+.fichas-en-fila .ficha + .ficha {
+  margin-top: 0;
+}
+
+/* El elemento que se marca: el que cumple, el mayor. */
+.ficha-destacada {
+  border: 2px solid var(--acento);
+}
+
+.ficha-destacada .ficha-titulo {
+  color: var(--acento);
+  background: var(--mejora-fondo);
 }
 
 .ficha + .ficha {

@@ -24,7 +24,7 @@
         respuestaDeReferencia,
         programaDeOpciones,
       } from '../js/serie.js';
-      import { marcasDe, partesDeEnunciado } from '../js/enunciado.js';
+      import { marcasDe, partesDeEnunciado, fichasDe } from '../js/enunciado.js';
       import { CASOS } from './casos.js';
       import { ejecutar } from '../js/simulador.js';
       import { CASOS_DEL_SIMULADOR, resultadoDelSimulador } from './casos-simulador.js';
@@ -165,7 +165,7 @@
             // Una ficha (o varias): sus campos son los de la estructura que se
             // corrige (lo que se ve es lo que se corrige), y los valores que la
             // consigna pide cargar estan en el enunciado.
-            const fichas = [].concat(consigna.ficha || []);
+            const fichas = fichasDe(consigna);
             if (fichas.length) {
               const pedidos = (consigna.requiere || [])
                 .flatMap((r) => (r.struct ? r.struct.campos.map((c) => c.nombre) : []))
@@ -228,6 +228,31 @@
         }
 
         // El simulador, sin pasar por una consigna.
+        // Una ficha de arreglo se abre en una por elemento.
+        {
+          const abiertas = fichasDe({
+            ficha: {
+              arreglo: 'alumnos',
+              campos: ['legajo', 'promedio'],
+              elementos: [[1, '8.50'], null],
+              destacar: [1],
+              resaltar: ['promedio'],
+              leyenda: 'Asi:',
+            },
+          });
+          const bien =
+            abiertas.length === 2 &&
+            abiertas[0].titulo === 'alumnos[0]' &&
+            abiertas[0].leyenda === 'Asi:' &&
+            abiertas[0].disposicion === 'fila' &&
+            abiertas[0].campos[1].ejemplo === '8.50' &&
+            abiertas[1].titulo === 'alumnos[1]' &&
+            abiertas[1].campos[0].ejemplo === undefined &&
+            abiertas[1].destacar === true &&
+            abiertas[0].destacar === false;
+          anotar(bien, 'ficha de un arreglo: una por elemento', JSON.stringify(abiertas));
+        }
+
         for (const caso of CASOS_DEL_SIMULADOR) {
           const r = resultadoDelSimulador(analizador, ejecutar, caso);
           anotar(r.bien, `simulador: ${caso.nombre}`, r.detalle);

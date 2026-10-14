@@ -442,9 +442,16 @@ function dibujarFicha(fichas) {
   const lista = fichasDe({ ficha: fichas });
   caja.hidden = !lista.length;
   caja.replaceChildren();
+  // Un arreglo de estructuras: las fichas una al lado de la otra (o apiladas si no entran).
+  const enFila = lista.length > 1 && lista[0].disposicion === 'fila';
+  let destino = caja;
   for (const ficha of lista) {
     if (ficha.leyenda) caja.appendChild(elemento('p', 'titulo-figura', ficha.leyenda));
-    const tarjeta = elemento('div', 'ficha');
+    if (enFila && destino === caja) {
+      destino = elemento('div', 'fichas-en-fila');
+      caja.appendChild(destino);
+    }
+    const tarjeta = elemento('div', ficha.destacar ? 'ficha ficha-destacada' : 'ficha');
     if (ficha.titulo) tarjeta.appendChild(elemento('p', 'ficha-titulo', ficha.titulo));
     const cuerpo = elemento('dl', 'ficha-cuerpo');
     for (const campo of ficha.campos) {
@@ -460,7 +467,7 @@ function dibujarFicha(fichas) {
       cuerpo.append(nombre, valor);
     }
     tarjeta.appendChild(cuerpo);
-    caja.appendChild(tarjeta);
+    destino.appendChild(tarjeta);
   }
 }
 

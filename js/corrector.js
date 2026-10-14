@@ -41,6 +41,7 @@
 //   { "ciclo":    { "indice": "i", "hastaElFinDe": "nombre" } }
 //   { "usaAlias": { "alias": "$T", "arreglo": { "alMenos": 30 } } }
 
+import { fichasDe } from './enunciado.js';
 import {
   construirModelo,
   erroresDeSintaxis,
@@ -1777,7 +1778,10 @@ export function corregir(
       }
 
       const derecha = a.derecha;
-      const ejemplo = [].concat(consigna.ficha || [])
+      // El valor sale de la ficha de esa variable (alumnos[1]) o, si no hay, de cualquiera.
+      const fichas = fichasDe(consigna);
+      const deEsaVariable = fichas.filter((f) => f.titulo && sinEspacios(f.titulo) === sinEspacios(nombre));
+      const ejemplo = (deEsaVariable.length ? deEsaVariable : fichas)
         .flatMap((f) => f.campos)
         .find((c) => c.nombre === pedido.nombre && c.ejemplo != null)?.ejemplo;
       if (pedido.tipo === 'letra') {

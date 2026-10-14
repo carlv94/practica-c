@@ -34,7 +34,31 @@ const MARCA = /\{(\w+)\}/g;
 export const MARCA_DE_FICHA = '\n[ficha]\n';
 
 // Las fichas de una consigna, siempre como lista (puede llevar una o varias).
-export const fichasDe = (consigna) => [].concat(consigna.ficha || []);
+// Un arreglo de estructuras se escribe en una sola vez, y aca se abre en una
+// ficha por elemento, con el titulo "alumnos[0]", "alumnos[1]"...:
+//   "ficha": { "arreglo": "alumnos",
+//              "campos": ["legajo", "promedio"],
+//              "elementos": [[20431, 8.45], null, [18560, 7.2]],
+//              "destacar": [0], "resaltar": ["promedio"],
+//              "leyenda": "Asi tiene que quedar el arreglo:" }
+// Un elemento null es uno todavia sin cargar (sus campos llevan la linea).
+// "destacar" son las posiciones que se marcan (el que cumple, el mayor) y
+// "resaltar", los campos que se marcan en todas.
+export function fichasDe(consigna) {
+  const f = consigna.ficha;
+  if (!f) return [];
+  if (Array.isArray(f) || !f.arreglo) return [].concat(f);
+  return f.elementos.map((fila, i) => ({
+    leyenda: i === 0 ? f.leyenda : undefined,
+    disposicion: i === 0 ? 'fila' : undefined,
+    titulo: `${f.arreglo}[${i}]`,
+    destacar: (f.destacar || []).includes(i),
+    resaltar: f.resaltar,
+    campos: f.campos.map((nombre, k) =>
+      fila && fila[k] != null ? { nombre, ejemplo: String(fila[k]) } : { nombre }
+    ),
+  }));
+}
 
 // El enunciado partido en lo que va antes de la ficha y lo que va despues.
 // Sin ficha, todo va antes.

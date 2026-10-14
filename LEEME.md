@@ -116,6 +116,27 @@ pide cargar, igual que "Así tiene que quedar la tabla" en Arreglos:
   resaltado con ejemplo tenga su valor en el enunciado.
 - **`ficha` puede ser una lista**, para mostrar más de una variable (`alumno` y
   `copia`), cada una con su título.
+- **Un arreglo de estructuras** se escribe de una vez y se abre en una ficha
+  por elemento, con el título `alumnos[0]`, `alumnos[1]`…, una al lado de la
+  otra (apiladas si no entran). Un elemento `null` es uno todavía sin cargar:
+  sus campos llevan la línea. `destacar` marca los elementos (borde y título:
+  el que cumple, el mayor) y `resaltar`, los campos que se marcan en todas.
+  Los valores van como texto cuando importa cómo se ven (`"9.10"`):
+
+  ```json
+  "ficha": {
+    "arreglo": "alumnos",
+    "leyenda": "Así tiene que quedar el arreglo:",
+    "campos": ["legajo", "apellidoNombre", "promedio", "turno"],
+    "elementos": [
+      [20431, "Perez, Ana", "8.45", "T"],
+      [30872, "Lopez, Juan", "9.10", "M"],
+      null
+    ],
+    "destacar": [1],
+    "resaltar": ["promedio"]
+  }
+  ```
 - **La descripción de cada dato** la dice el enunciado, en prosa y en el orden
   de la ficha, cuando hace falta (en "Declarar la estructura"). Si el enunciado
   tiene una línea que solo dice `[ficha]`, la ficha va ahí; si no, después de
