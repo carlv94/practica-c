@@ -159,9 +159,9 @@ export const CASOS_DE_COPIAR = [
   copiar(2, 'despues de copiar: el legajo copiado', '0'),
   copiar(2, 'despues de copiar: el nuevo', '1', ['OPCION_COPIA_SIGUE_AL_ORIGINAL']),
   copiar(2, 'despues de copiar: no se puede saber', '2', ['OPCION_NO_SE_SABE_COPIA']),
-  copiar(3, 'comparar estructuras: no compila', '2'),
-  copiar(3, 'comparar estructuras: compara todo', '0', ['OPCION_IGUAL_COMPARA_TODO']),
-  copiar(3, 'comparar estructuras: el primero', '1', ['OPCION_IGUAL_COMPARA_EL_PRIMERO']),
+  copiar(3, 'comparar estructuras: no compila', '0'),
+  copiar(3, 'comparar estructuras: muestra Iguales', '1', ['OPCION_IGUAL_COMPARA_TODO']),
+  copiar(3, 'comparar estructuras: muestra No son iguales', '2', ['OPCION_IGUAL_DA_FALSO']),
   // 4: los legajos
   copiar(4, 'legajos', 'if (alumno.legajo == copia.legajo) {\n  iguales = 1;\n}'),
   copiar(4, 'legajos, al reves', 'if (copia.legajo == alumno.legajo) {\n  iguales = 1;\n}'),

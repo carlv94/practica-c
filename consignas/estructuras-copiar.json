@@ -68,22 +68,22 @@
       "titulo": "Comparar dos estructuras",
       "continua": false,
       "enunciado": "¿Qué ocurre con el código de abajo?",
-      "codigo": "TAlumno alumno;\nTAlumno copia;\n\ncopia = alumno;\nif (copia == alumno) {\n  printf(\"Iguales\\n\");\n}",
+      "codigo": "TAlumno alumno;\nTAlumno copia;\n\ncopia = alumno;\nif (copia == alumno) {\n  printf(\"Iguales\\n\");\n} else {\n  printf(\"No son iguales\\n\");\n}",
       "opciones": [
-        {
-          "texto": "Compila y muestra `Iguales`, porque todos los datos son iguales",
-          "codigo": "OPCION_IGUAL_COMPARA_TODO",
-          "explicacion": "En C el operador `==` no sirve para estructuras: el compilador da un error. Para saber si dos estructuras tienen los mismos datos hay que comparar sus campos de a uno."
-        },
-        {
-          "texto": "Compila y compara solo el primer campo",
-          "codigo": "OPCION_IGUAL_COMPARA_EL_PRIMERO",
-          "explicacion": "`==` no se puede usar con estructuras, ni siquiera para mirar un campo: el compilador da un error. Cada campo se compara indicándolo, como `copia.legajo == alumno.legajo`."
-        },
         {
           "texto": "No compila: las estructuras no se comparan con `==`",
           "correcta": true,
           "explicacion": "Una estructura se copia entera con `=`, pero no se compara entera con `==`. Se comparan sus campos de a uno: los números con `==` y las cadenas con `strcmp`."
+        },
+        {
+          "texto": "Muestra `Iguales`",
+          "codigo": "OPCION_IGUAL_COMPARA_TODO",
+          "explicacion": "En C el operador `==` no sirve para estructuras: el compilador da un error, aunque los datos sean idénticos. Para saber si dos estructuras tienen los mismos datos hay que comparar sus campos de a uno."
+        },
+        {
+          "texto": "Muestra `No son iguales`",
+          "codigo": "OPCION_IGUAL_DA_FALSO",
+          "explicacion": "Tampoco: con estructuras `==` no da falso, es un error de compilación y el programa no llega a ejecutarse. Cada campo se compara indicándolo, como `copia.legajo == alumno.legajo`."
         }
       ]
     },
