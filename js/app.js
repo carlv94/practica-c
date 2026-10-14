@@ -418,6 +418,15 @@ function dibujar(figura) {
     dibujarSalida(caja, figura.salida);
     return;
   }
+  if (figura.clase === 'varias') {
+    figura.figuras.forEach((f) => {
+      if (f.titulo) caja.appendChild(elementoConCodigo('p', 'titulo-figura', f.titulo));
+      dibujarArreglo(caja, f);
+    });
+    caja.setAttribute('aria-label', figura.figuras.map(descripcionDe).join('. '));
+    dibujarSalida(caja, figura.salida);
+    return;
+  }
   if (figura.clase === 'planos') {
     // Tres dimensiones: una tabla por cada plano, con su nombre.
     figura.valores.forEach((plano, p) => {
@@ -434,19 +443,34 @@ function dibujar(figura) {
     return;
   }
 
-  // Para quien no ve el dibujo, lo mismo dicho en una frase.
-  caja.setAttribute(
-    'aria-label',
-    `Arreglo de ${figura.valores.length} elementos: ${figura.valores.join(', ')}`
+  dibujarArreglo(caja, figura);
+  dibujarSalida(caja, figura.salida);
+}
+
+// Lo mismo que el dibujo, dicho en una frase, para quien no lo ve.
+function descripcionDe(figura) {
+  const resaltadas = Array.isArray(figura.resaltar) ? figura.resaltar : [];
+  return (
+    (figura.titulo ? figura.titulo.replace(/`/g, '') + ' ' : '') +
+    `Arreglo de ${figura.valores.length} elementos: ${figura.valores.map((v) => (v == null ? 'vacío' : v)).join(', ')}` +
+    (resaltadas.length ? `. Resaltadas las posiciones ${resaltadas.join(', ')}` : '')
   );
+}
+
+// Un arreglo en una fila de casilleros, con las posiciones resaltadas y las
+// vacias (null) en blanco.
+function dibujarArreglo(caja, figura) {
+  caja.setAttribute('aria-label', descripcionDe(figura));
+  const resaltadas = Array.isArray(figura.resaltar) ? figura.resaltar : [];
   const fila = elemento('div', 'arreglo');
   figura.valores.forEach((valor, i) => {
     const casillero = elemento('div', 'casillero');
-    casillero.append(elemento('span', 'indice', i), elemento('span', 'valor', valor));
+    const vacio = valor == null;
+    const clase = 'valor' + (vacio ? ' vacio' : '') + (resaltadas.includes(i) ? ' resaltado' : '');
+    casillero.append(elemento('span', 'indice', i), elemento('span', clase, vacio ? '\u00A0' : valor));
     fila.appendChild(casillero);
   });
   caja.appendChild(fila);
-  dibujarSalida(caja, figura.salida);
 }
 
 // Lo que tiene que mostrar el programa, en un recuadro de consola.

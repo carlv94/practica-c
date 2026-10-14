@@ -1892,6 +1892,26 @@ export function corregir(
     }
   }
 
+  // "separadas": los valores van en una sola linea, con un espacio entre cada
+  // uno y nada mas (un espacio o un salto al final se perdona).
+  function salidaSeparada(corrida, esperados, comoLetras, antes, elPrograma) {
+    const texto = (v) => (comoLetras ? String.fromCodePoint(v) : String(v));
+    const debe = esperados.map(texto).join(' ');
+    const sale = corrida.salida.replace(/\s+$/, '');
+    if (sale === debe) return true;
+    const cosas = comoLetras ? 'las letras' : 'los valores';
+    error(
+      'MUESTRA_SIN_SEPARAR',
+      `${antes}${elPrograma} muestra ${cosas} que corresponden, pero la consigna las pide separadas por un espacio y nada más.`,
+      undefined,
+      [
+        { lineas: sale.split('\n').map((l) => l.replace(/\s+$/, '')) },
+        { titulo: 'Tiene que mostrar:', lineas: [debe] },
+      ]
+    );
+    return false;
+  }
+
   // Lo que muestra el programa, renglon por renglon, y con valores de prueba
   // tambien lo que deberia mostrar (el alumno solo ve la salida esperada de los
   // valores de la consigna).
@@ -2131,7 +2151,10 @@ export function corregir(
 
     if (caso.muestra) {
       if (!corrida.mostrados.length) {
-        error('MUESTRA_FALTA', 'La consigna pide mostrar en pantalla, con `printf`: el programa no muestra ningún número.');
+        error(
+          'MUESTRA_FALTA',
+          `La consigna pide mostrar en pantalla, con \`printf\`: el programa no muestra ningún ${caso.letrasMuestra ? 'valor' : 'número'}.`
+        );
         return false;
       }
       const sale = corrida.mostrados;
@@ -2142,6 +2165,9 @@ export function corregir(
           'MUESTRA_DISTINTA',
           `${antes}${elPrograma} muestra ${enLista(sale.map(vistaMuestra))} cuando debería mostrar ${enLista(caso.muestra.map(vistaMuestra))}.`
         );
+        return false;
+      }
+      if (regla.separadas && !salidaSeparada(corrida, caso.muestra, Boolean(caso.letrasMuestra), antes, elPrograma)) {
         return false;
       }
     }
@@ -2221,9 +2247,16 @@ export function corregir(
 
     // Lo que tiene que mostrar: la secuencia de numeros.
     if (regla.muestra != null) {
-      const debe = regla.muestra === 'entrada' ? entrada : regla.muestra === 'alReves' ? [...entrada].reverse() : regla.muestra;
+      const pedido = regla.muestra === 'entrada' ? entrada : regla.muestra === 'alReves' ? [...entrada].reverse() : regla.muestra;
+      // Las letras llegan como su numero, y se dicen como letras.
+      const comoLetras = tieneLetras(pedido);
+      const debe = enCodigos(pedido);
+      const ver = (v) => (comoLetras ? deLetra(v) : v);
       if (!corrida.mostrados.length) {
-        error('MUESTRA_FALTA', 'La consigna pide mostrar en pantalla, con `printf`: el programa no muestra ningún número.');
+        error(
+          'MUESTRA_FALTA',
+          `La consigna pide mostrar en pantalla, con \`printf\`: el programa no muestra ningún ${comoLetras ? 'valor' : 'número'}.`
+        );
         return;
       }
       // Con el arreglo nombrado, cuentan los valores que salen de sus posiciones:
@@ -2244,11 +2277,12 @@ export function corregir(
         error(
           'MUESTRA_DISTINTA',
           origen && origen.indices.length === 1
-            ? `Con los datos de la consigna el programa muestra \`${sale[0]}\`, que es lo que hay en la posición ${origen.indices[0]} de \`${origen.nombre}\`.`
-            : `Con los datos de la consigna el programa muestra ${enLista(sale)} cuando debería mostrar ${enLista(debe)}.`
+            ? `Con los datos de la consigna el programa muestra \`${ver(sale[0])}\`, que es lo que hay en la posición ${origen.indices[0]} de \`${origen.nombre}\`.`
+            : `Con los datos de la consigna el programa muestra ${enLista(sale.map(ver))} cuando debería mostrar ${enLista(debe.map(ver))}.`
         );
         return;
       }
+      if (regla.separadas && !salidaSeparada(corrida, debe, comoLetras, '', 'El programa')) return;
     }
 
     // El mensaje antes de cada lectura, con el numero de la que sigue.
@@ -2261,6 +2295,23 @@ export function corregir(
           `El programa ${corrida.salida.trim() ? `muestra \`${corrida.salida.trim()}\`` : 'no muestra nada'}, y la consigna pide un mensaje antes de cada dato: \`${regla.pregunta.replace('%d', '1').trim()}\`, \`${regla.pregunta.replace('%d', '2').trim()}\`, y así. Tiene que ser justo ese texto (los espacios no importan).`
         );
         return;
+      }
+    }
+
+    // "cuenta": la variable que dice cuantos datos hay cargados. Un ciclo hasta
+    // ese mismo numero escrito suelto anda hoy, pero no si se carga otra cantidad.
+    if (regla.cuenta && practicas.includes('constantes')) {
+      const cuenta = corrida.variables.get(regla.cuenta);
+      for (const ciclo of modelo.ciclos.filter((c) => c.nuevo)) {
+        const m = /^\s*[A-Za-z_]\w*\s*<\s*(\d+)\s*$/.exec(ciclo.condicion);
+        if (cuenta && cuenta.valor !== undefined && m && Number(m[1]) === cuenta.valor) {
+          mejora(
+            'LIMITE_SIN_LA_CANTIDAD',
+            `Está bien, pero el ${m[1]} es lo que vale \`${regla.cuenta}\`: con \`${regla.cuenta}\`, el ciclo sigue siendo correcto si se cargan más o menos datos.`,
+            ciclo.fila
+          );
+          break;
+        }
       }
     }
 

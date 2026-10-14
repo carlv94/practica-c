@@ -210,8 +210,9 @@ export function despuesDe(serie, indice, avance, respuesta, resultado) {
     const capturas = capturasPrevias(serie, indice, avance);
     return {
       ...avance,
-      contexto: unirEnMain(avance.contexto, sustituir(consigna.codigo || '', capturas)),
-      archivo: unir(avance.archivo, sustituir(consigna.archivo || '', capturas)),
+      // Si el cuestionario no continua, lo que queda arranca de su codigo.
+      contexto: unirEnMain(contextoPrevio(serie, indice, avance), sustituir(consigna.codigo || '', capturas)),
+      archivo: unir(archivoPrevio(serie, indice, avance), sustituir(consigna.archivo || '', capturas)),
     };
   }
   // Lo que persiste pasa a ser de todas las que siguen, y no toca la cadena de

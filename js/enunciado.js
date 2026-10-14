@@ -32,11 +32,14 @@ const MARCA = /\{(\w+)\}/g;
 // con su nombre ("planos": "notas" las llama notas[0], notas[1]).
 // "arreglo" es el resultado que tiene que quedar, aparte de la tabla.
 // Y "salida" es lo que tiene que mostrar el programa, en un recuadro de consola.
+// En un arreglo, "resaltar" es la lista de posiciones que se marcan, y un valor
+// null es una posicion vacia (todavia sin nada). "dibujo" puede ser una lista de
+// estos objetos: se dibujan uno debajo del otro.
 export function figuraDe(consigna) {
   // Una letra se dibuja entre comillas simples, como se escribe en el codigo.
   const comoSeEscribe = (v) => (Array.isArray(v) ? v.map(comoSeEscribe) : typeof v === 'string' ? `'${v}'` : v);
   const d = consigna.dibujo;
-  if (d && typeof d === 'object') {
+  const propia = (d) => {
     const tresDimensiones = Array.isArray(d.valores[0]) && Array.isArray(d.valores[0][0]);
     return {
       clase: tresDimensiones ? 'planos' : Array.isArray(d.valores[0]) ? 'tabla' : 'arreglo',
@@ -50,7 +53,10 @@ export function figuraDe(consigna) {
       arreglo: d.arreglo,
       salida: consigna.salida,
     };
-  }
+  };
+  // Una lista de dibujos (el arreglo antes y despues): cada uno con su titulo.
+  if (Array.isArray(d)) return { clase: 'varias', figuras: d.map(propia), salida: consigna.salida };
+  if (d && typeof d === 'object') return propia(d);
   if (consigna.dibujo === false) return null;
   if (!consigna.requiere) return consigna.salida ? { clase: 'salida', salida: consigna.salida } : null;
   const valores = consigna.requiere.find((r) => r.variable?.valores)?.variable.valores;
