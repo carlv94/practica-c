@@ -26,6 +26,8 @@
       } from '../js/serie.js';
       import { marcasDe, partesDeEnunciado } from '../js/enunciado.js';
       import { CASOS } from './casos.js';
+      import { ejecutar } from '../js/simulador.js';
+      import { CASOS_DEL_SIMULADOR, resultadoDelSimulador } from './casos-simulador.js';
 
       const salida = document.getElementById('salida');
       const lineas = [];
@@ -223,6 +225,12 @@
         for (const [enunciado, capturas, esperado] of ENUNCIADOS) {
           const salio = armado(enunciado, capturas);
           anotar(salio === esperado, `enunciado: "${enunciado}"`, `esperaba "${esperado}"\nsalió   "${salio}"`);
+        }
+
+        // El simulador, sin pasar por una consigna.
+        for (const caso of CASOS_DEL_SIMULADOR) {
+          const r = resultadoDelSimulador(analizador, ejecutar, caso);
+          anotar(r.bien, `simulador: ${caso.nombre}`, r.detalle);
         }
 
         for (const caso of CASOS) {

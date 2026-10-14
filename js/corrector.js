@@ -1732,8 +1732,10 @@ export function corregir(
   // (strcpy(alumno.apellidoNombre, "...")).
   function reglaCampo(regla, modelo) {
     const nombre = valorDe(regla.variable);
-    const variable = modelo.variables.findLast((v) => v.nombre === nombre);
-    const def = variable ? estructuraDeVariable(variable, modelo) : null;
+    // Un elemento de un arreglo de estructuras: "alumnos[0]".
+    const deElemento = /^([A-Za-z_]\w*)\s*((?:\[[^\]]*\]\s*)+)$/.exec(nombre);
+    const variable = modelo.variables.findLast((v) => v.nombre === (deElemento ? deElemento[1] : nombre));
+    const def = variable ? estructuraDeVariable(variable, modelo, Boolean(deElemento)) : null;
     if (!def) {
       error('VARIABLE_FALTA', `No encontré la variable \`${nombre}\`.`);
       return;
@@ -1749,7 +1751,8 @@ export function corregir(
       }
     }
 
-    const deLaVariable = (v, campo) => v.clase === 'campo' && v.variable === nombre && v.campo === campo;
+    const deLaVariable = (v, campo) =>
+      v.clase === 'campo' && sinEspacios(v.variable) === sinEspacios(nombre) && v.campo === campo;
     for (const pedido of regla.campos) {
       const guardadas = asignaciones.filter((a) => deLaVariable(a.izquierda, pedido.nombre));
       const a = guardadas[guardadas.length - 1];
@@ -4915,7 +4918,7 @@ export function corregir(
 // Lo que vale para cualquier consigna: tipos que no existen y cosas que se
 // vuelven a declarar.
 // La estructura de una variable ("struct Alumno alumno;", o con un alias), o null.
-function estructuraDeVariable(variable, modelo) {
+function estructuraDeVariable(variable, modelo, indexada = false) {
   const deTipo = (tipo, vistos = 0) => {
     if (vistos > 5) return null;
     if (tipo.clase === 'struct') {
@@ -4929,7 +4932,7 @@ function estructuraDeVariable(variable, modelo) {
     }
     return null;
   };
-  return variable.punteros || variable.arreglo.length ? null : deTipo(variable.tipo);
+  return variable.punteros || (variable.arreglo.length && !indexada) ? null : deTipo(variable.tipo);
 }
 
 // Lo que esta mal en la forma de llegar a un campo ("alumno.legajo"), o null si
@@ -4953,7 +4956,33 @@ function problemaDeCampo(valor, nombre, def, modelo) {
       `\`${valor.variable}\` es el nombre de la estructura, no el de una variable: los datos se guardan en la variable \`${nombre}\`, así que va \`${nombre}.${valor.campo}\`.`,
     ];
   }
-  if (valor.variable !== nombre) {
+  const sinEsp = (x) => x.replace(/\s+/g, '');
+  const elemento = /^([A-Za-z_]\w*)((?:\[[^\]]*\])+)$/.exec(sinEsp(nombre));
+  const dado = /^([A-Za-z_]\w*)((?:\[[^\]]*\])*)$/.exec(sinEsp(valor.variable));
+  if (elemento && dado && dado[1] === elemento[1]) {
+    const arreglo = modelo.variables.findLast((v) => v.nombre === elemento[1]);
+    if (!dado[2]) {
+      return [
+        'ARREGLO_SIN_INDICE',
+        `\`${elemento[1]}\` es un arreglo de estructuras: hay que indicar cuál con un índice, como \`${nombre}.${valor.campo}\`.`,
+      ];
+    }
+    const posicion = valorDeDimension(dado[2].slice(1, -1), modelo);
+    const tamano = arreglo ? valorDeDimension(arreglo.arreglo[0] ?? '', modelo) : null;
+    if (posicion != null && tamano != null && posicion >= tamano) {
+      return [
+        'INDICE_FUERA_DE_RANGO',
+        `\`${elemento[1]}\` tiene ${tamano} posiciones, numeradas de 0 a ${tamano - 1}: la posición ${posicion} no existe.`,
+      ];
+    }
+    if (sinEsp(valor.variable) !== sinEsp(nombre)) {
+      return [
+        'ARGUMENTO_OTRA_POSICION',
+        `\`${valor.variable}\` no es la posición que pide la consigna: acá hay que usar \`${nombre}\`.`,
+      ];
+    }
+  }
+  if (sinEsp(valor.variable) !== sinEsp(nombre)) {
     return [
       'VARIABLE_DESCONOCIDA',
       `No hay ninguna variable llamada \`${valor.variable}\`.` +

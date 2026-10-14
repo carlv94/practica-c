@@ -142,6 +142,55 @@ export class ConversionesDistintas extends Error {
 
 const PASOS_MAXIMOS = 100000;
 
+// Las estructuras definidas en el programa, por su etiqueta y por su alias:
+//   Map { 'Alumno' => [{ nombre, texto, soportado }], 'TAlumno' => [...] }
+// Un campo es "soportado" si es un numero o una letra suelta. Las cadenas y lo
+// demas no se siguen: tocarlos deja la verificacion sin hacer.
+function recogerEstructuras(arbol) {
+  const porNombre = new Map();
+  const camposDe = (cuerpo) => {
+    const lista = [];
+    for (const f of cuerpo.namedChildren) {
+      if (f.type !== 'field_declaration') continue;
+      const tipo = f.childForFieldName('type');
+      if (!tipo) continue;
+      for (const d of f.namedChildren) {
+        if (d === tipo || !['field_identifier', 'array_declarator', 'pointer_declarator'].includes(d.type)) continue;
+        let nombre = d;
+        let simple = true;
+        while (nombre && nombre.type !== 'field_identifier') {
+          simple = false;
+          nombre = nombre.childForFieldName('declarator');
+        }
+        if (!nombre) continue;
+        const numerico = ['primitive_type', 'sized_type_specifier'].includes(tipo.type);
+        lista.push({ nombre: nombre.text, texto: tipo.text, soportado: simple && numerico });
+      }
+    }
+    return lista;
+  };
+  const visitar = (n) => {
+    if (n.type === 'struct_specifier') {
+      const cuerpo = n.childForFieldName('body');
+      const nombre = n.childForFieldName('name');
+      if (cuerpo && nombre) porNombre.set(nombre.text, camposDe(cuerpo));
+    }
+    if (n.type === 'type_definition') {
+      const tipo = n.childForFieldName('type');
+      const alias = n.childForFieldName('declarator');
+      if (tipo && alias && tipo.type === 'struct_specifier' && alias.type === 'type_identifier') {
+        const cuerpo = tipo.childForFieldName('body');
+        const nombre = tipo.childForFieldName('name');
+        const lista = cuerpo ? camposDe(cuerpo) : nombre ? porNombre.get(nombre.text) : null;
+        if (lista) porNombre.set(alias.text, lista);
+      }
+    }
+    for (const h of n.namedChildren) visitar(h);
+  };
+  visitar(arbol.rootNode);
+  return porNombre;
+}
+
 const ESCAPES = { n: 10, t: 9, r: 13, '0': 0, "'": 39, '"': 34, '\\': 92 };
 
 // "entrada" es lo que el usuario escribe, un numero por cada dato que se lee;
@@ -154,6 +203,10 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null) {
   if (!cuerpo) throw new SinVerificar('no hay una funcion que seguir');
 
   const variables = new Map();
+  // Una variable de estructura se sigue "aplanada": cada campo numerico es una
+  // variable con el nombre "alumno.promedio" (o un arreglo, si la variable lo es).
+  const definiciones = recogerEstructuras(arbol);
+  const estructurasVivas = new Map(); // nombre de la variable -> sus campos
   const escrituras = [];
   const mostrados = []; // los numeros que muestra printf, en orden
   const delArreglo = []; // de esos, los que salen de una posicion de un arreglo
@@ -197,6 +250,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null) {
   function posicion(n) {
     if (n.type === 'identifier') {
       const variable = variables.get(n.text);
+      if (!variable && estructurasVivas.has(n.text)) sinVerificar(n, `la estructura ${n.text} entera`);
       if (!variable) {
         const valor = constante(n.text);
         if (valor == null) {
@@ -229,7 +283,52 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null) {
       return { ...base, indices: [...base.indices, indice.v] };
     }
     if (n.type === 'parenthesized_expression') return posicion(n.namedChildren[0]);
+    if (n.type === 'field_expression') return posicionDeCampo(n);
     return sinVerificar(n);
+  }
+
+  // Un campo de una variable de estructura: "alumno.promedio" es esa variable
+  // aplanada, y "alumnos[i].promedio" una de las posiciones de "alumnos.promedio".
+  function posicionDeCampo(n) {
+    const de = n.childForFieldName('argument');
+    const campo = n.childForFieldName('field');
+    if (!de || !campo || n.text.includes('->')) return sinVerificar(n);
+    let base = de;
+    const indices = [];
+    while (base.type === 'subscript_expression') {
+      indices.unshift(base);
+      base = base.childForFieldName('argument');
+    }
+    if (base.type !== 'identifier') return sinVerificar(n);
+    if (!estructurasVivas.has(base.text)) {
+      if (variables.has(base.text) || constante(base.text) != null) return sinVerificar(n);
+      throw new NombreDesconocido(base.text, fila(n));
+    }
+    const clave = `${base.text}.${campo.text}`;
+    const variable = variables.get(clave);
+    if (!variable) return sinVerificar(n, `el campo ${clave}`);
+    const posiciones = [];
+    indices.forEach((sub, k) => {
+      const nodoIndice = sub.childForFieldName('index') || sub.childForFieldName('indices');
+      const indice = evaluar(nodoIndice);
+      const tamano = variable.dims ? variable.dims[k] : undefined;
+      if (tamano === undefined) sinVerificar(n);
+      if (!Number.isInteger(indice.v) || indice.v < 0 || indice.v >= tamano) {
+        throw new FueraDeRango(
+          base.text,
+          indice.v,
+          tamano,
+          fila(n),
+          nodoIndice.type === 'number_literal',
+          k,
+          variable.dims.length
+        );
+      }
+      posiciones.push(indice.v);
+    });
+    if (variable.dims && posiciones.length !== variable.dims.length) sinVerificar(n, `${base.text} sin todos sus indices`);
+    if (!variable.dims && posiciones.length) sinVerificar(n);
+    return { variable, nombre: clave, indices: posiciones };
   }
 
   function leer(n) {
@@ -373,7 +472,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null) {
 
   // Un nombre, y el tipo con que se declaro: lo unico que importa para el formato.
   function tipoDe(n) {
-    if (n.type === 'identifier' || n.type === 'subscript_expression') {
+    if (['identifier', 'subscript_expression', 'field_expression'].includes(n.type)) {
       const p = posicion(n);
       if (p.variable) return p.variable.tipo;
     }
@@ -422,7 +521,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null) {
       renglon.push(valor.v);
       if (/[A-Za-z_]\w*\s*\[/.test(nodo.text)) {
         delArreglo.push(valor.v);
-        const p = nodo.type === 'subscript_expression' ? posicion(nodo) : null;
+        const p = ['subscript_expression', 'field_expression'].includes(nodo.type) ? posicion(nodo) : null;
         origenes.push(p && p.variable ? { nombre: p.nombre, indices: p.indices } : null);
       }
       let texto = esDecimal
@@ -482,6 +581,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null) {
         return { v: caracter(n.text, n), f: false };
       case 'identifier':
       case 'subscript_expression':
+      case 'field_expression':
         return leer(n);
       case 'parenthesized_expression':
         return evaluar(n.namedChildren[0]);
@@ -556,7 +656,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null) {
         const izquierda = n.childForFieldName('left');
         const operador = n.childForFieldName('operator').text;
         const nodoDerecha = n.childForFieldName('right');
-        if (nodoDerecha.type === 'string_literal' && izquierda.type === 'subscript_expression') {
+        if (nodoDerecha.type === 'string_literal' && ['subscript_expression', 'field_expression'].includes(izquierda.type)) {
           throw new TextoComoLetra(nodoDerecha.text, fila(nodoDerecha));
         }
         const derecha = evaluar(nodoDerecha);
@@ -599,8 +699,61 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null) {
     return Array.from({ length: k }, () => (resto.length ? sinLista(resto) : undefined));
   }
 
+  // "struct Alumno alumno;", "TAlumno alumnos[MAX];": cada campo numerico pasa
+  // a ser una variable (o un arreglo) con el nombre "variable.campo".
+  function declararEstructura(n, campos) {
+    for (const d of n.namedChildren) {
+      if (!['identifier', 'init_declarator', 'array_declarator', 'pointer_declarator'].includes(d.type)) continue;
+      if (d.type === 'init_declarator') sinVerificar(d, 'una estructura con valores iniciales');
+      const dims = [];
+      let nombre = d;
+      while (nombre.type === 'array_declarator') {
+        const tamano = nombre.childForFieldName('size');
+        if (!tamano) sinVerificar(d);
+        dims.unshift(evaluar(tamano).v);
+        nombre = nombre.childForFieldName('declarator');
+      }
+      if (nombre.type !== 'identifier') sinVerificar(d, 'un puntero');
+      if (dims.some((k) => !Number.isInteger(k) || k < 0)) sinVerificar(d);
+      estructurasVivas.set(nombre.text, campos);
+      for (const campo of campos) {
+        if (!campo.soportado) continue;
+        const clave = `${nombre.text}.${campo.nombre}`;
+        const flotante = /float|double/.test(campo.texto);
+        const tipoCampo = /double/.test(campo.texto) ? 'double' : flotante ? 'float' : /char/.test(campo.texto) ? 'char' : 'int';
+        const bytes = bytesDe(campo.texto);
+        if (!dims.length) {
+          const dado = prueba && typeof prueba[clave] === 'number' ? prueba[clave] : undefined;
+          variables.set(clave, {
+            flotante,
+            tipo: tipoCampo,
+            bytes,
+            valor: dado === undefined ? undefined : flotante ? dado : Math.trunc(dado),
+          });
+          continue;
+        }
+        let datos = sinLista(dims);
+        if (prueba && Array.isArray(prueba[clave])) {
+          const forma = (x) => (Array.isArray(x) ? [x.length, ...forma(x[0])] : []);
+          const otraForma = forma(prueba[clave]);
+          if (otraForma.length !== dims.length || otraForma.some((k, i) => k !== dims[i])) {
+            sinVerificar(d, 'valores de otro tamano');
+          }
+          const copia = (x) => (Array.isArray(x) ? x.map(copia) : flotante ? x : Math.trunc(x));
+          datos = copia(prueba[clave]);
+        }
+        variables.set(clave, { flotante, tipo: tipoCampo, bytes, dims: [...dims], datos });
+      }
+    }
+  }
+
   function declarar(n) {
     const tipo = n.childForFieldName('type');
+    const campos =
+      tipo && ['struct_specifier', 'type_identifier'].includes(tipo.type)
+        ? definiciones.get(tipo.type === 'type_identifier' ? tipo.text : tipo.childForFieldName('name')?.text)
+        : null;
+    if (campos) return declararEstructura(n, campos);
     if (!tipo || !['primitive_type', 'sized_type_specifier'].includes(tipo.type)) sinVerificar(n, 'un tipo que no se sabe seguir');
     const flotante = /float|double/.test(tipo.text);
     const nombreDeTipo = /double/.test(tipo.text) ? 'double' : flotante ? 'float' : /char/.test(tipo.text) ? 'char' : 'int';

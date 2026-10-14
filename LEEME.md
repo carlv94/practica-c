@@ -512,7 +512,11 @@ Estructuras, serie "Usar los campos"):
   regla: es el `ejemplo` de la **ficha** de la consigna, así que lo que se ve
   es lo que se corrige. `"tipo"` es `entero`, `real` o `letra`. Un texto
   se guarda con una `llamada` a `strcpy` cuyo primer argumento es
-  `"alumno.apellidoNombre"` (y `aMano` con la misma variable).
+  `"alumno.apellidoNombre"` (y `aMano` con la misma variable). La `variable`
+  puede ser un elemento de un arreglo de estructuras (`"alumnos[0]"`): un
+  índice de otra posición es `ARGUMENTO_OTRA_POSICION`, uno que no existe
+  `INDICE_FUERA_DE_RANGO`, y el arreglo sin índice (`alumnos.legajo`)
+  `ARREGLO_SIN_INDICE`.
 
 | Respuesta | Código | Mensaje |
 |---|---|---|
@@ -589,7 +593,14 @@ Otras dos reglas de la misma serie:
 cómo está escrito. Es un intérprete mínimo de C: enteros y decimales, arreglos
 de cualquier dimensión, asignaciones, `++` y `--`, la aritmética, las
 comparaciones, `if`, `for`, `while` y `do while`, y las funciones `pow`,
-`scanf` y `printf`; sin otras llamadas. Lo usa la regla:
+`scanf` y `printf`; sin otras llamadas. También sigue **variables de
+estructura**, aplanadas: `alumno.legajo` es una variable con ese nombre, y un
+arreglo de estructuras (`TAlumno alumnos[MAX];`) es un arreglo por cada campo
+numérico (`alumnos.legajo`, `alumnos.promedio`), así que `alumnos[i].promedio`
+es la posición `i` de `alumnos.promedio`. Los datos de prueba de una consigna
+usan esos nombres (`{ "alumnos.promedio": [7, 9, 5] }`). Un campo cadena, una
+estructura entera (`copia = alumno;`) o una estructura con valores iniciales
+entre llaves no se siguen: la verificación queda sin hacer. Lo usa la regla:
 
 - `{ "resultado": { "variable": "notas", "valores": "i * i", "conCiclo": true } }`:
   después de ejecutar todo (lo que la consigna da y lo que escribió el
