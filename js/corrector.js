@@ -58,6 +58,7 @@ import {
   ConversionesDistintas,
   DivisionPorCero,
   NombreDesconocido,
+  TextoComoLetra,
 } from './simulador.js';
 
 // Las palabras de un tipo entero van en cualquier orden: "unsigned int", "int unsigned".
@@ -145,9 +146,38 @@ const enPlural = (s) => (/[aeiou]$/i.test(s) ? `${s}s` : `${s}es`);
 
 // Los valores de una variable en un mensaje, cada uno como esta en el codigo y
 // con "y" antes del ultimo: `120`, `85` y `310`.
+// Una letra de una consigna ('a') llega al interprete como su numero, y se
+// vuelve a mostrar como letra en los mensajes.
+const esLetra = (x) => typeof x === 'string' && [...x].length === 1;
+const tieneLetras = (x) => (Array.isArray(x) ? x.some(tieneLetras) : esLetra(x));
+const enCodigos = (x) => (Array.isArray(x) ? x.map(enCodigos) : esLetra(x) ? x.codePointAt(0) : x);
+const deLetra = (v) => `'${String.fromCodePoint(v)}'`;
+
+// El caso con sus letras pasadas a numeros, y anotado cuales eran letras.
+function conCodigos(caso) {
+  const letrasQueda = new Set(
+    Object.entries(caso.queda || {})
+      .filter(([, v]) => tieneLetras(v))
+      .map(([nombre]) => nombre)
+  );
+  const letrasMuestra = tieneLetras(caso.muestra);
+  const letrasDatos = Object.values(caso.datos || {}).some(tieneLetras);
+  if (!letrasQueda.size && !letrasMuestra && !letrasDatos) return caso;
+  const codigos = (o) => o && Object.fromEntries(Object.entries(o).map(([k, v]) => [k, enCodigos(v)]));
+  return {
+    ...caso,
+    datos: codigos(caso.datos),
+    queda: codigos(caso.queda),
+    muestra: enCodigos(caso.muestra),
+    letrasQueda,
+    letrasMuestra,
+    vistos: caso.datos,
+  };
+}
+
 const enLista = (valores) => {
   // Una fila de una tabla se escribe como en el codigo: {5, 8, 1, 4}.
-  const comoEsta = (v) => (Array.isArray(v) ? `{${v.map(comoEsta).join(', ')}}` : String(v));
+  const comoEsta = (v) => (Array.isArray(v) ? `{${v.map(comoEsta).join(', ')}}` : esLetra(v) ? `'${v}'` : String(v));
   const cada = valores.map((v) => `\`${comoEsta(v)}\``);
   return cada.length < 2 ? cada.join('') : `${cada.slice(0, -1).join(', ')} y ${cada[cada.length - 1]}`;
 };
@@ -963,7 +993,10 @@ export function corregir(
 
     const cuantos = (c) => (c === 1 ? '1 valor' : `${c} valores`);
     const elementos = (c) => (c === 1 ? '1 elemento' : `${c} elementos`);
-    const coincide = (e, valor) => e.clase === 'numero' && e.valor === valor;
+    // Con letras ('a'), cada una vale su numero y tiene que ir entre comillas simples.
+    const deLetras = valores.some(esLetra);
+    const esperados = valores.map((x) => (esLetra(x) ? x.codePointAt(0) : x));
+    const coincide = (e, valor) => e.clase === (deLetras ? 'caracter' : 'numero') && e.valor === valor;
 
     // Lo que el arreglo termina teniendo es la lista completada con ceros hasta
     // la cantidad de los corchetes: C pone en cero lo que la lista no nombra.
@@ -987,7 +1020,7 @@ export function corregir(
     const errorDeCantidad = () => {
       // Con coma decimal, 12,5 se lee como dos valores. El ejemplo sale del
       // primer decimal del dibujo, escrito como no hay que escribirlo.
-      const decimal = valores.find((x) => !Number.isInteger(x));
+      const decimal = deLetras ? undefined : valores.find((x) => !Number.isInteger(x));
       const [entera, fraccion] = decimal == null ? [] : String(decimal).split('.');
       error(
         escritos.length < valores.length ? 'VALORES_DE_MENOS' : 'VALORES_DE_MAS',
@@ -1012,7 +1045,7 @@ export function corregir(
 
     // El contenido, elemento por elemento. Un elemento que la lista no nombra
     // vale cero.
-    const distinto = valores.findIndex((valor, i) =>
+    const distinto = esperados.findIndex((valor, i) =>
       i < escritos.length ? !coincide(escritos[i], valor) : valor !== 0
     );
     if (distinto >= 0) {
@@ -1027,9 +1060,30 @@ export function corregir(
         return;
       }
       const e = escritos[distinto];
-      const numeros = escritos.map((x) => (x.clase === 'numero' ? x.valor : NaN));
+      const numeros = escritos.map((x) => (x.clase === (deLetras ? 'caracter' : 'numero') ? x.valor : NaN));
       const ordenar = (lista) => [...lista].sort((a, b) => a - b).join();
-      if (e.clase === 'caracter' || e.clase === 'cadena') {
+      if (deLetras && e.clase !== 'caracter') {
+        const letra = `'${valores[distinto]}'`;
+        if (e.clase === 'cadena') {
+          error(
+            'LETRA_ENTRE_COMILLAS_DOBLES',
+            `\`${e.texto.trim()}\` entre comillas dobles es un texto, no una letra: una sola letra va entre comillas simples, como \`${letra}\`.`,
+            v.fila
+          );
+        } else if (e.clase === 'numero') {
+          error(
+            'LETRA_ES_NUMERO',
+            `\`${e.texto.trim()}\` es un número, no una letra: cada letra va entre comillas simples, como \`${letra}\`.`,
+            v.fila
+          );
+        } else {
+          error(
+            'LETRA_SIN_COMILLAS',
+            `\`${e.texto.trim()}\` sin comillas se lee como el nombre de una variable: cada letra va entre comillas simples, como \`${letra}\`.`,
+            v.fila
+          );
+        }
+      } else if (!deLetras && (e.clase === 'caracter' || e.clase === 'cadena')) {
         error(
           'VALOR_ENTRE_COMILLAS',
           `\`${e.texto}\` con comillas no es un número: los números van sin comillas.`,
@@ -1038,7 +1092,7 @@ export function corregir(
       } else if (
         escritos.length === valores.length &&
         !numeros.some(Number.isNaN) &&
-        ordenar(numeros) === ordenar(valores)
+        ordenar(numeros) === ordenar(esperados)
       ) {
         error('VALORES_EN_OTRO_ORDEN', 'Los valores son los del dibujo, pero están en otro orden.', v.fila);
       } else {
@@ -1732,6 +1786,15 @@ export function corregir(
             e.fila
           );
         }
+      } else if (e instanceof TextoComoLetra) {
+        const contenido = e.texto.slice(1, -1);
+        // Si la revision general ya lo dijo, no se repite.
+        if (!diagnosticos.some((d) => d.codigo === 'ELEMENTO_ENTRE_COMILLAS_DOBLES')) error(
+          'LETRA_ENTRE_COMILLAS_DOBLES',
+          `${conContexto}\`${e.texto}\` entre comillas dobles es un texto, no una letra: una sola letra va entre comillas simples` +
+            ([...contenido].length === 1 ? `, como \`'${contenido}'\`.` : '.'),
+          e.fila
+        );
       } else if (e instanceof DivisionPorCero) {
         error(
           'DIVISION_POR_CERO',
@@ -1786,14 +1849,16 @@ export function corregir(
 
   // "%d" con un decimal, "%f" con un entero: dice cual es el que corresponde.
   function mensajeDeFormato(e) {
-    const queEs = { '%d': 'un entero (`int`)', '%i': 'un entero (`int`)', '%f': 'un decimal (`float`)', '%lf': 'un decimal (`double`)' };
-    const deTipo = { int: 'un `int`', float: 'un `float`', double: 'un `double`', decimal: 'un valor decimal' };
+    const queEs = { '%d': 'un entero (`int`)', '%i': 'un entero (`int`)', '%f': 'un decimal (`float`)', '%lf': 'un decimal (`double`)', '%c': 'una letra (`char`)' };
+    const deTipo = { int: 'un `int`', float: 'un `float`', double: 'un `double`', char: 'un `char`', decimal: 'un valor decimal' };
     const correcto =
       e.funcion === 'scanf'
-        ? { int: '%d', float: '%f', double: '%lf' }[e.tipo]
+        ? { int: '%d', float: '%f', double: '%lf', char: '%c' }[e.tipo]
         : e.tipo === 'int'
           ? '%d'
-          : '%f';
+          : e.tipo === 'char'
+            ? '%c'
+            : '%f';
     const que = e.funcion === 'printf' && e.formato === '%lf' ? 'un decimal' : queEs[e.formato];
     return `\`${e.formato}\` es el formato de ${que}, y \`${e.texto}\` es ${deTipo[e.tipo]}: el formato que le corresponde es \`${correcto}\`.`;
   }
@@ -1901,8 +1966,11 @@ export function corregir(
 
   function revisarCaso(corrida, caso, modelo, regla) {
     // Con los valores que el alumno ve en la consigna no hace falta decirlos.
-    const con = caso.visible || !caso.datos ? '' : conLosValores(caso.datos);
+    const con = caso.visible || !caso.datos ? '' : conLosValores(caso.vistos || caso.datos);
     const antes = con ? `${con}, ` : '';
+    // Los valores de una variable que tiene letras se dicen como letras.
+    const vista = (nombre, v) => (caso.letrasQueda && caso.letrasQueda.has(nombre) ? deLetra(v) : v);
+    const vistaMuestra = (v) => (caso.letrasMuestra ? deLetra(v) : v);
     const elPrograma = con ? 'el programa' : 'El programa';
     // Cada arreglo que se tiene que recorrer entero, primero: si el ciclo no
     // llega a todas las filas o columnas, lo demas no importa.
@@ -1941,7 +2009,7 @@ export function corregir(
           if (p.que === undefined) {
             error(
               'RESULTADO_POSICION_SIN_VALOR',
-              `${antes}\`${p.nombre}\` no llega a recibir un valor: debería valer \`${p.debe}\`.`
+              `${antes}\`${p.nombre}\` no llega a recibir un valor: debería valer \`${vista(nombre, p.debe)}\`.`
             );
             return false;
           }
@@ -1968,7 +2036,7 @@ export function corregir(
             }
             error(
               'RESULTADO_VALOR_DISTINTO',
-              `${antes}\`${p.nombre}\` termina valiendo \`${p.que}\` y debería valer \`${p.debe}\`.`
+              `${antes}\`${p.nombre}\` termina valiendo \`${vista(nombre, p.que)}\` y debería valer \`${vista(nombre, p.debe)}\`.`
             );
             return false;
           }
@@ -2072,7 +2140,7 @@ export function corregir(
       if (!iguales) {
         error(
           'MUESTRA_DISTINTA',
-          `${antes}${elPrograma} muestra ${enLista(sale)} cuando debería mostrar ${enLista(caso.muestra)}.`
+          `${antes}${elPrograma} muestra ${enLista(sale.map(vistaMuestra))} cuando debería mostrar ${enLista(caso.muestra.map(vistaMuestra))}.`
         );
         return false;
       }
@@ -2103,9 +2171,10 @@ export function corregir(
     // Varios conjuntos de valores para los arreglos, cada uno con lo que tiene
     // que dar: asi no vale escribir el resultado a mano.
     if (regla.casos) {
-      for (const caso of regla.casos) {
+      for (const original of regla.casos) {
+        const caso = conCodigos(original);
         const hecha = correrCodigo(modelo, caso.entrada || entrada, caso.datos, {
-          contexto: caso.visible || !caso.datos ? '' : conLosValores(caso.datos),
+          contexto: caso.visible || !caso.datos ? '' : conLosValores(caso.vistos || caso.datos),
           centinela: regla.centinela,
         });
         if (!hecha) return;

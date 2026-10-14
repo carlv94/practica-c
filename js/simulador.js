@@ -65,6 +65,15 @@ export class NoTermina extends Error {
 }
 
 // Una division (o un resto) por cero.
+// Un texto entre comillas dobles ("A") donde va una letra ('A'): al compararlo o
+// asignarlo se usa el lugar donde esta el texto, no la letra.
+export class TextoComoLetra extends Error {
+  constructor(texto, fila) {
+    super('un texto donde va una letra');
+    Object.assign(this, { texto, fila });
+  }
+}
+
 export class DivisionPorCero extends Error {
   constructor(fila) {
     super('division por cero');
@@ -337,7 +346,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null) {
     return crudo.replace(/\\(.)/g, (todo, c) => (c in DESESCAPE ? DESESCAPE[c] : sinVerificar(n)));
   }
 
-  // Las partes de un formato: texto fijo y conversiones (%d, %i, %f, %lf).
+  // Las partes de un formato: texto fijo y conversiones (%d, %i, %f, %lf, %c).
   function partes(texto, n) {
     const lista = [];
     const re = /%([-0]*)(\d*)(?:\.(\d+))?(l?)([a-zA-Z%])/g;
@@ -351,7 +360,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null) {
         continue;
       }
       const formato = `%${m[4]}${m[5]}`;
-      if (!['%d', '%i', '%f', '%lf'].includes(formato)) sinVerificar(n, `la conversion ${m[0]}`);
+      if (!['%d', '%i', '%f', '%lf', '%c'].includes(formato)) sinVerificar(n, `la conversion ${m[0]}`);
       if (m[4] && m[5] !== 'f') sinVerificar(n, `la conversion ${m[0]}`);
       lista.push({ formato, relleno: m[1], ancho: Number(m[2] || 0), decimales: m[3] === undefined ? null : Number(m[3]) });
     }
@@ -403,7 +412,10 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null) {
       const { valor, tipo, nodo } = calculados[k++];
       const decimal = valor.f;
       const esDecimal = p.formato === '%f' || p.formato === '%lf';
-      if (decimal !== esDecimal) {
+      const esLetra = p.formato === '%c';
+      // Una letra se muestra con %c: con %d saldria su numero.
+      const letraComoEntero = (p.formato === '%d' || p.formato === '%i') && tipo === 'char';
+      if (decimal !== esDecimal || letraComoEntero) {
         throw new FormatoDistinto('printf', p.formato, nodo.text, tipo || (decimal ? 'decimal' : 'int'), fila(nodo));
       }
       mostrados.push(valor.v);
@@ -413,7 +425,11 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null) {
         const p = nodo.type === 'subscript_expression' ? posicion(nodo) : null;
         origenes.push(p && p.variable ? { nombre: p.nombre, indices: p.indices } : null);
       }
-      let texto = esDecimal ? valor.v.toFixed(p.decimales ?? 6) : String(Math.trunc(valor.v));
+      let texto = esDecimal
+        ? valor.v.toFixed(p.decimales ?? 6)
+        : esLetra
+          ? String.fromCodePoint(Math.trunc(valor.v))
+          : String(Math.trunc(valor.v));
       if (texto.length < p.ancho) {
         if (p.relleno.includes('-')) texto = texto.padEnd(p.ancho);
         else texto = texto.padStart(p.ancho, p.relleno.includes('0') ? '0' : ' ');
@@ -445,6 +461,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null) {
       if (p.constante != null || !p.variable) sinVerificar(a);
       if (p.variable.dims && p.indices.length !== p.variable.dims.length) sinVerificar(a);
       const tipo = p.variable.tipo;
+      if (tipo === 'char') sinVerificar(a, 'leer una letra');
       const correcto = tipo === 'int' ? '%d' : tipo === 'float' ? '%f' : '%lf';
       const igual = conv.formato === correcto || (conv.formato === '%i' && tipo === 'int');
       if (!igual) throw new FormatoDistinto('scanf', conv.formato, destino.text, tipo, fila(a));
@@ -503,6 +520,10 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null) {
       }
       case 'binary_expression': {
         const operador = n.childForFieldName('operator').text;
+        for (const lado of ['left', 'right']) {
+          const hijo = n.childForFieldName(lado);
+          if (hijo && hijo.type === 'string_literal') throw new TextoComoLetra(hijo.text, fila(hijo));
+        }
         const izquierda = evaluar(n.childForFieldName('left'));
         // && y || no evaluan el segundo lado si no hace falta
         if (operador === '&&') {
@@ -534,7 +555,11 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null) {
       case 'assignment_expression': {
         const izquierda = n.childForFieldName('left');
         const operador = n.childForFieldName('operator').text;
-        const derecha = evaluar(n.childForFieldName('right'));
+        const nodoDerecha = n.childForFieldName('right');
+        if (nodoDerecha.type === 'string_literal' && izquierda.type === 'subscript_expression') {
+          throw new TextoComoLetra(nodoDerecha.text, fila(nodoDerecha));
+        }
+        const derecha = evaluar(nodoDerecha);
         const nuevo = operador === '=' ? derecha : aplicar(operador.slice(0, -1), leer(izquierda), derecha, n);
         escribir(izquierda, nuevo);
         return nuevo;
@@ -578,7 +603,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null) {
     const tipo = n.childForFieldName('type');
     if (!tipo || !['primitive_type', 'sized_type_specifier'].includes(tipo.type)) sinVerificar(n, 'un tipo que no se sabe seguir');
     const flotante = /float|double/.test(tipo.text);
-    const nombreDeTipo = /double/.test(tipo.text) ? 'double' : flotante ? 'float' : 'int';
+    const nombreDeTipo = /double/.test(tipo.text) ? 'double' : flotante ? 'float' : /char/.test(tipo.text) ? 'char' : 'int';
     for (const d of n.namedChildren) {
       if (!['identifier', 'init_declarator', 'array_declarator', 'pointer_declarator'].includes(d.type)) continue;
       let declarador = d;

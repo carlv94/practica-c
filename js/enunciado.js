@@ -33,13 +33,15 @@ const MARCA = /\{(\w+)\}/g;
 // "arreglo" es el resultado que tiene que quedar, aparte de la tabla.
 // Y "salida" es lo que tiene que mostrar el programa, en un recuadro de consola.
 export function figuraDe(consigna) {
+  // Una letra se dibuja entre comillas simples, como se escribe en el codigo.
+  const comoSeEscribe = (v) => (Array.isArray(v) ? v.map(comoSeEscribe) : typeof v === 'string' ? `'${v}'` : v);
   const d = consigna.dibujo;
   if (d && typeof d === 'object') {
     const tresDimensiones = Array.isArray(d.valores[0]) && Array.isArray(d.valores[0][0]);
     return {
       clase: tresDimensiones ? 'planos' : Array.isArray(d.valores[0]) ? 'tabla' : 'arreglo',
-      filas: d.valores,
-      valores: d.valores,
+      filas: comoSeEscribe(d.valores),
+      valores: comoSeEscribe(d.valores),
       titulo: d.titulo,
       planos: d.planos,
       rotuloFilas: d.filas,
@@ -53,9 +55,10 @@ export function figuraDe(consigna) {
   if (!consigna.requiere) return consigna.salida ? { clase: 'salida', salida: consigna.salida } : null;
   const valores = consigna.requiere.find((r) => r.variable?.valores)?.variable.valores;
   if (!valores) return consigna.salida ? { clase: 'salida', salida: consigna.salida } : null;
+  const escritos = comoSeEscribe(valores);
   return Array.isArray(valores[0])
-    ? { clase: 'tabla', filas: valores, salida: consigna.salida }
-    : { clase: 'arreglo', valores, salida: consigna.salida };
+    ? { clase: 'tabla', filas: escritos, salida: consigna.salida }
+    : { clase: 'arreglo', valores: escritos, salida: consigna.salida };
 }
 
 // El texto con los nombres puestos y nada mas: para un codigo o una opcion.
