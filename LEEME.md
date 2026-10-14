@@ -256,6 +256,36 @@ arreglo:
 Una fila o unas filas que no se escriben valen si en el dibujo son de ceros;
 si no, es un error que dice que lo que no se nombra queda en cero.
 
+### Arreglos de letras
+
+Un arreglo de `char` que **no es una cadena**: cada posición guarda una letra y
+no hay `'\0'` al final. Los `valores` de la regla pueden ser letras, escritas
+como textos de un solo carácter, y el dibujo las muestra entre comillas simples:
+
+```json
+"requiere": [{ "variable": { "tipo": "caracter", "valores": ["B", "A", "C", "A", "E", "B"] } }]
+```
+
+| Respuesta | Resultado |
+|---|---|
+| `{'B', 'A', …}` | Correcta. |
+| `{B, A, …}` | Error: sin comillas se lee como un nombre de variable (`LETRA_SIN_COMILLAS`). |
+| `{"B", "A", …}` | Error: comillas dobles son un texto (`LETRA_ENTRE_COMILLAS_DOBLES`). |
+| `{66, 65, …}` | Error: es un número, no una letra (`LETRA_ES_NUMERO`). |
+| Otra letra, de más, de menos o en otro orden | Los mismos errores que con números (`VALOR_DISTINTO`, `VALORES_DE_MAS`, …). |
+
+Con `"tipo": "caracter"` y `"arreglo": 5` se pide declararlo con 5 posiciones
+(una más, para el fin, es `ARREGLO_GRANDE`: acá no hay cadena).
+
+En la regla `ejecuta`, los `casos` pueden traer letras en `datos`, `queda` y
+`muestra`. Para el intérprete cada letra vale su número, y los mensajes las
+dicen como letras (`calificaciones[0]` termina valiendo `'D'` y debería valer
+`'B'`). `printf` usa `%c`; `%d` con una letra es `FORMATO_NO_CORRESPONDE_AL_TIPO`
+(el formato que le corresponde es `%c`). Comparar o asignar una letra con
+comillas dobles (`== "A"`) es `LETRA_ENTRE_COMILLAS_DOBLES`. Leer una letra con
+`scanf` no se sigue (`EJECUCION_NO_VERIFICADA`): corresponde a las series de
+tipos simples.
+
 ### Cadenas de caracteres
 
 Las series `cadenas-*` (el fin de la cadena, la cadena vacía, la biblioteca,

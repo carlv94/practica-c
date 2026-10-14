@@ -24,7 +24,8 @@
         "arreglos-tamano.json",
         "arreglos-tablas.json",
         "arreglos-recorrer-tablas.json",
-        "arreglos-dimensiones.json"
+        "arreglos-dimensiones.json",
+        "arreglos-caracteres.json"
       ]
     },
     {
