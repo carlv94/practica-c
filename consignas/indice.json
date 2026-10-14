@@ -31,11 +31,12 @@
     {
       "id": "cadenas",
       "titulo": "Cadenas",
-      "descripcion": "Textos en C: el carácter de fin, la biblioteca, recorrerlos, guardarlos en arreglos y tablas, y leerlos y mostrarlos.",
+      "descripcion": "Textos en C: el carácter de fin, la biblioteca, cuánto miden, recorrerlos, guardarlos en arreglos y tablas, y leerlos y mostrarlos.",
       "series": [
         "cadenas-fin.json",
         "cadenas-vacia.json",
         "cadenas-biblioteca.json",
+        "cadenas-largo.json",
         "cadenas-recorrer.json",
         "cadenas-arreglos.json",
         "cadenas-tablas.json",

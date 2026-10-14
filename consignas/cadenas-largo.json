@@ -1,0 +1,117 @@
+{
+  "id": "cadenas-largo-y-tamano",
+  "titulo": "Largo y tamaño de una cadena",
+  "descripcion": "Cuántas letras tiene una cadena y cuánto lugar ocupa: el largo, el tamaño y lo que pasa cuando no hay un `'\\0'` que marque el final.",
+  "dentroDeMain": true,
+  "cabecera": "#include <string.h>",
+  "consignas": [
+    {
+      "id": "cadenas-q-largo-y-tamano",
+      "titulo": "Largo frente a tamaño",
+      "enunciado": "Después de ejecutar el código de abajo, ¿qué valores tendrían `longitud` y `tamanio`?",
+      "codigo": "char nombre[21] = \"Maria\";\nint longitud = strlen(nombre);\nint tamanio = sizeof(nombre);",
+      "opciones": [
+        {
+          "valor": "5 y 5",
+          "texto": "las dos cuentan las letras",
+          "codigo": "OPCION_AMBOS_CUENTAN_LETRAS",
+          "explicacion": "`strlen` cuenta las letras, pero `sizeof` no: dice el tamaño de la cadena en memoria, esté llena o no."
+        },
+        {
+          "valor": "5 y 21",
+          "texto": "`strlen` cuenta las letras y `sizeof` dice el tamaño",
+          "correcta": true,
+          "explicacion": "`strlen` cuenta las letras hasta el primer `'\\0'`: `Maria` tiene 5. `sizeof` dice cuánto ocupa la cadena en memoria, o sea, el tamaño con que se declaró (21), sin importar qué texto tenga."
+        },
+        {
+          "valor": "21 y 21",
+          "texto": "las dos dicen el tamaño de la cadena",
+          "codigo": "OPCION_AMBOS_DICEN_EL_TAMANO",
+          "explicacion": "`strlen` no mira el tamaño con el que se declaró la cadena, sino cuántas letras tiene guardadas hasta el primer `'\\0'`."
+        },
+        {
+          "valor": "6 y 21",
+          "texto": "`strlen` también cuenta el `'\\0'`",
+          "codigo": "OPCION_STRLEN_CUENTA_EL_FIN",
+          "explicacion": "`strlen` cuenta las letras hasta el primer `'\\0'`, pero no cuenta el `'\\0'`."
+        }
+      ]
+    },
+    {
+      "id": "cadenas-q-vaciar-largo",
+      "titulo": "Cuántas letras tiene una cadena vaciada",
+      "enunciado": "Después de ejecutar el código de abajo, ¿qué valor tendría `largo`?",
+      "codigo": "char nombre[21] = \"Maria\";\nnombre[0] = '\\0';\nint largo = strlen(nombre);",
+      "opciones": [
+        {
+          "valor": "5",
+          "texto": "las letras que tenía",
+          "codigo": "OPCION_VACIAR_NO_CAMBIA",
+          "explicacion": "La cadena ya no tiene letras: `strlen` cuenta hasta el primer `'\\0'`, y ahora está en la primera posición."
+        },
+        {
+          "valor": "21",
+          "texto": "el tamaño de la cadena",
+          "codigo": "OPCION_TAMANO_DECLARADO",
+          "explicacion": "`strlen` no mira el tamaño con el que se declaró la cadena, sino cuántas letras tiene guardadas hasta el primer `'\\0'`."
+        },
+        {
+          "valor": "0",
+          "texto": "la cadena ya no tiene letras",
+          "correcta": true,
+          "explicacion": "`strlen` cuenta hasta el primer `'\\0'`. Con el `'\\0'` en la primera posición, la cadena termina ahí y tiene 0 letras, aunque las demás posiciones sigan guardando lo que tenían anteriormente."
+        }
+      ]
+    },
+    {
+      "id": "cadenas-q-sin-iniciar-largo",
+      "titulo": "Una cadena sin inicializar",
+      "enunciado": "Después de ejecutar el código de abajo, ¿qué valor tendría `largo`?",
+      "codigo": "char texto[10];\nint largo = strlen(texto);",
+      "opciones": [
+        {
+          "valor": "0",
+          "texto": "porque la cadena está vacía",
+          "codigo": "OPCION_SIN_INICIAR_ES_VACIA",
+          "explicacion": "Una cadena recién declarada no está vacía: no tiene nada asignado, así que contiene lo que hubiera anteriormente en esa memoria."
+        },
+        {
+          "valor": "10",
+          "texto": "el tamaño de la cadena",
+          "codigo": "OPCION_TAMANO_DECLARADO",
+          "explicacion": "`strlen` no mira el tamaño con el que se declaró la cadena, sino cuántas letras tiene guardadas hasta el primer `'\\0'`."
+        },
+        {
+          "texto": "No se puede saber",
+          "correcta": true,
+          "explicacion": "Una cadena que se declara sin valor tiene lo que hubiera antes en esa memoria. `strlen` cuenta hasta el primer `'\\0'` que encuentre, y como la cadena no se inicializó no se puede saber dónde está."
+        }
+      ]
+    },
+    {
+      "id": "cadenas-q-strlen-sin-fin",
+      "titulo": "Cuántas letras tiene un arreglo sin fin",
+      "enunciado": "Después de ejecutar el código de abajo, ¿qué valor tendría `largo`?",
+      "codigo": "char letras[4] = {'h', 'o', 'l', 'a'};\nint largo = strlen(letras);",
+      "opciones": [
+        {
+          "valor": "4",
+          "texto": "la cantidad de letras",
+          "codigo": "OPCION_STRLEN_CUENTA_LAS_LETRAS",
+          "explicacion": "`strlen` no sabe cuántas letras hay guardadas: cuenta hasta encontrar un `'\\0'`. `letras` tiene cuatro letras, pero ningún `'\\0'` después."
+        },
+        {
+          "valor": "0",
+          "texto": "porque no es una cadena",
+          "codigo": "OPCION_STRLEN_DA_CERO",
+          "explicacion": "`strlen` no avisa que no es una cadena ni da cero: sigue contando mientras no encuentre un `'\\0'`, y puede pasar el final del arreglo."
+        },
+        {
+          "texto": "No se puede saber",
+          "correcta": true,
+          "explicacion": "`strlen` cuenta hasta el primer `'\\0'`, y `letras` no lo tiene: sigue contando por la memoria que viene después del arreglo, hasta encontrar uno por casualidad. Las funciones de la biblioteca de cadenas solo valen para cadenas; para un arreglo de caracteres sin fin, la cantidad de letras hay que llevarla en una variable aparte."
+        }
+      ]
+    }
+  ]
+}

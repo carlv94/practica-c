@@ -306,15 +306,15 @@ de su propio código.
 ### Cadenas de caracteres
 
 Las series `cadenas-*` (el fin de la cadena, la cadena vacía, la biblioteca,
-recorrer, arreglos de cadenas, tablas de cadenas y typedef) usan estas reglas.
+largo y tamaño, recorrer, arreglos de cadenas, tablas de cadenas y typedef) usan estas reglas.
 
 **Vocabulario**: en Cadenas, "cadena" es un arreglo de `char` que termina en
 `'\0'`, y es la palabra para un texto. "Arreglo de caracteres" queda para
 cuando se contrasta con la cadena (el de la serie *Arreglos de caracteres*, que
 no tiene fin y lleva su cantidad aparte). Las diferencias se tratan en cuatro
 cuestionarios, cada uno donde importa: `cadenas-q-es-cadena` (el fin: cierra la
-serie *El carácter de fin*; `strlen` y `sizeof` se ven en la biblioteca),
-`cadenas-q-strlen-sin-fin` (la biblioteca), `cadenas-q-dos-formas` (recorrer
+serie *El carácter de fin*; `strlen` y `sizeof` se ven en la biblioteca y en
+*Largo y tamaño de una cadena*), `cadenas-q-strlen-sin-fin` (largo y tamaño), `cadenas-q-dos-formas` (recorrer
 hasta `cantidad` o hasta `'\0'`) y `lectura-q-cuantas-letras` (`%s` frente a
 `%c`).
 
@@ -432,6 +432,9 @@ La regla `llamada` suma, para estas series:
 - `"aMano": { "variable": "nombre", "texto": "Juan" }`: guardar el texto
   carácter por carácter también llega, pero con mejora. Con `"en": [0]` o
   `"en": [0, 1]`, para un elemento de un arreglo o una celda de una tabla.
+  Con `"prohibida": true` es error (`A_MANO`): en la serie de la biblioteca la
+  consigna pide la función, y su enunciado dice "usando una función de la
+  biblioteca de cadenas" sin nombrarla.
 - `strncpy` con un límite que no deja lugar para el fin es error.
 
 Para guardar un valor en una posición de un arreglo de números (grupo
