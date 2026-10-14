@@ -18,6 +18,16 @@ struct Curso {
   int cantidad;
   float nota;
 };
+typedef struct {
+  int dia;
+  int mes;
+  int anio;
+} TFecha;
+typedef struct {
+  int legajo;
+  TFecha nacimiento;
+  TFecha ingreso;
+} TPersona;
 `;
 
 const con = (cuerpo) => `${CABECERA}int main() {\n${cuerpo}\nreturn 0;\n}`;
@@ -82,6 +92,46 @@ export const CASOS_DEL_SIMULADOR = [
   {
     nombre: 'estructuras: la estructura entera no se sigue',
     codigo: con('TAlumno alumno;\nTAlumno copia;\ncopia = alumno;'),
+    espera: { error: 'SinVerificar' },
+  },
+  {
+    nombre: 'estructuras anidadas: un campo de adentro',
+    codigo: con('TPersona p;\np.nacimiento.anio = 2004;\np.ingreso.anio = 2022;\nint edad = p.ingreso.anio - p.nacimiento.anio;'),
+    espera: { variables: { 'p.nacimiento.anio': 2004, 'p.ingreso.anio': 2022, edad: 18 } },
+  },
+  {
+    nombre: 'estructuras anidadas: con datos de prueba',
+    codigo: con('TPersona p;\nint edad = p.ingreso.anio - p.nacimiento.anio;'),
+    prueba: { 'p.nacimiento.anio': 1985, 'p.ingreso.anio': 2005 },
+    espera: { variables: { edad: 20 } },
+  },
+  {
+    nombre: 'estructuras anidadas: en un arreglo',
+    codigo: con(
+      'TPersona gente[MAX];\nint i;\nint antes = 0;\nfor (i = 0; i < MAX; i++) {\n  if (gente[i].nacimiento.anio < 2000) {\n    antes++;\n  }\n}'
+    ),
+    prueba: { 'gente.nacimiento.anio': [2004, 1998, 1990] },
+    espera: { variables: { antes: 2 } },
+  },
+  {
+    nombre: 'estructuras anidadas: leer con scanf',
+    codigo: con('TPersona gente[MAX];\nint i;\nfor (i = 0; i < MAX; i++) {\n  scanf("%d", &gente[i].ingreso.anio);\n}'),
+    entrada: [2010, 2015, 2020],
+    espera: { variables: { 'gente.ingreso.anio': [2010, 2015, 2020] } },
+  },
+  {
+    nombre: 'estructuras anidadas: una posicion que no existe',
+    codigo: con('TPersona gente[MAX];\ngente[3].nacimiento.anio = 1;'),
+    espera: { error: 'FueraDeRango' },
+  },
+  {
+    nombre: 'estructuras anidadas: la fecha entera en una cuenta',
+    codigo: con('TPersona p;\nint x;\nx = 3 + p.ingreso;'),
+    espera: { error: 'EstructuraEntera' },
+  },
+  {
+    nombre: 'estructuras anidadas: copiar la fecha no se sigue',
+    codigo: con('TPersona p;\nTFecha otra;\notra = p.ingreso;'),
     espera: { error: 'SinVerificar' },
   },
   {

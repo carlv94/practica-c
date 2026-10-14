@@ -55,9 +55,13 @@ export function continuaLaAnterior(serie, indice) {
 }
 
 // Lo que veia la consigna de la que esta parte ("parteDe"), si lo dice.
+// "parteDe": lo que veia esa consigna antes de responderla. "sigueDe": lo que
+// quedo despues de su respuesta (el codigo que dejo, con lo que escribio el alumno).
 const visto = (serie, indice, avance) => {
-  const id = serie.consignas[indice].parteDe;
-  return id ? avance.vistos?.[id] || null : null;
+  const consigna = serie.consignas[indice];
+  if (consigna.parteDe) return avance.vistos?.[consigna.parteDe] || null;
+  if (consigna.sigueDe) return avance.vistos?.[consigna.sigueDe]?.quedo || null;
+  return null;
 };
 
 // Lo que se hereda de las consignas anteriores, o nada si esta no continua.
@@ -231,6 +235,26 @@ export const pidePracticas = (serie) =>
 // El avance despues de aceptar una respuesta correcta. Si la consigna no
 // continuaba, el codigo y las capturas arrancan de ella.
 export function despuesDe(serie, indice, avance, respuesta, resultado) {
+  const siguiente = despuesDeBase(serie, indice, avance, respuesta, resultado);
+  const id = serie.consignas[indice].id;
+  // Ademas de lo que veia, lo que quedo despues (para "sigueDe").
+  return {
+    ...siguiente,
+    vistos: {
+      ...siguiente.vistos,
+      [id]: {
+        ...siguiente.vistos[id],
+        quedo: {
+          archivo: siguiente.archivo || '',
+          contexto: siguiente.contexto || '',
+          capturas: siguiente.capturas || {},
+        },
+      },
+    },
+  };
+}
+
+function despuesDeBase(serie, indice, avance, respuesta, resultado) {
   // Elegir una opcion no agrega codigo, salvo que la consigna diga que el suyo
   // "queda": lo que sigue lo ve entre lo ya escrito.
   const consigna = serie.consignas[indice];

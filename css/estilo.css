@@ -319,6 +319,24 @@ section[hidden] {
   background: var(--aviso-fondo);
 }
 
+/* Una estructura de adentro: su ficha, un poco mas baja, a la derecha del nombre. */
+.subficha {
+  padding: 8px 12px;
+  border: 1px solid var(--borde);
+  border-radius: 5px;
+  background: var(--codigo);
+}
+
+.subficha .ficha-cuerpo {
+  padding: 0;
+  gap: 7px 12px;
+}
+
+.ficha-nombre-de-sub {
+  align-self: start;
+  padding-top: 8px;
+}
+
 .ficha-linea {
   min-width: 9rem;
   min-height: 1.4em;

@@ -180,7 +180,12 @@
                 );
               }
               // Una regla "campo" corrige contra el ejemplo de la ficha.
-              const conEjemplo = fichas.flatMap((f) => f.campos).filter((c) => c.ejemplo != null);
+              // Los campos de adentro de otra estructura se miran con su camino.
+              const hojas = (campos, prefijo = '') =>
+                campos.flatMap((c) =>
+                  c.campos ? hojas(c.campos, `${prefijo}${c.nombre}.`) : [{ ...c, ruta: `${prefijo}${c.nombre}` }]
+                );
+              const conEjemplo = fichas.flatMap((f) => hojas(f.campos)).filter((c) => c.ejemplo != null);
               const guardados = (consigna.requiere || []).flatMap((r) =>
                 r.campo ? r.campo.campos.map((c) => c.nombre) : []
               );
@@ -194,10 +199,10 @@
               const sinDecir = [];
               for (const f of fichas) {
                 if (!Array.isArray(f.resaltar)) continue;
-                for (const campo of f.campos) {
-                  if (f.resaltar.includes(campo.nombre) && campo.ejemplo != null) {
+                for (const campo of hojas(f.campos)) {
+                  if (f.resaltar.includes(campo.ruta) && campo.ejemplo != null) {
                     const escrito = consigna.enunciado.replace(/[`'"]/g, '');
-                    if (!escrito.includes(String(campo.ejemplo))) sinDecir.push(campo.nombre);
+                    if (!escrito.includes(String(campo.ejemplo))) sinDecir.push(campo.ruta);
                   }
                 }
               }

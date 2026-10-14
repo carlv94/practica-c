@@ -453,20 +453,35 @@ function dibujarFicha(fichas) {
     }
     const tarjeta = elemento('div', ficha.destacar ? 'ficha ficha-destacada' : 'ficha');
     if (ficha.titulo) tarjeta.appendChild(elemento('p', 'ficha-titulo', ficha.titulo));
+    // Un campo que es otra estructura lleva su propia subficha, por dentro, y
+    // sus campos se nombran con el camino (nacimiento.anio).
+    const llenar = (cuerpo, campos, prefijo) => {
+      for (const campo of campos) {
+        const camino = prefijo + campo.nombre;
+        const nombre = elemento('dt');
+        nombre.appendChild(elemento('code', null, campo.nombre));
+        if (campo.campos) {
+          const sub = elemento('dl', 'ficha-cuerpo');
+          llenar(sub, campo.campos, camino + '.');
+          const caja = elemento('dd', 'subficha');
+          caja.appendChild(sub);
+          nombre.classList.add('ficha-nombre-de-sub');
+          cuerpo.append(nombre, caja);
+          continue;
+        }
+        const sinValor = campo.ejemplo == null;
+        const marcado = (lista) => lista === 'todos' || (Array.isArray(lista) && lista.includes(camino));
+        const nuevo = marcado(ficha.resaltar) || marcado(ficha.marcar);
+        const valor = elemento(
+          'dd',
+          sinValor ? 'ficha-linea' : nuevo ? 'ficha-nuevo' : null,
+          sinValor ? '' : String(campo.ejemplo)
+        );
+        cuerpo.append(nombre, valor);
+      }
+    };
     const cuerpo = elemento('dl', 'ficha-cuerpo');
-    for (const campo of ficha.campos) {
-      const nombre = elemento('dt');
-      nombre.appendChild(elemento('code', null, campo.nombre));
-      const sinValor = campo.ejemplo == null;
-      const marcado = (lista) => lista === 'todos' || (Array.isArray(lista) && lista.includes(campo.nombre));
-      const nuevo = marcado(ficha.resaltar) || marcado(ficha.marcar);
-      const valor = elemento(
-        'dd',
-        sinValor ? 'ficha-linea' : nuevo ? 'ficha-nuevo' : null,
-        sinValor ? '' : String(campo.ejemplo)
-      );
-      cuerpo.append(nombre, valor);
-    }
+    llenar(cuerpo, ficha.campos, '');
     tarjeta.appendChild(cuerpo);
     destino.appendChild(tarjeta);
   }

@@ -74,6 +74,15 @@ export class TextoComoLetra extends Error {
   }
 }
 
+// Una estructura entera (alumno.ingreso) donde va un numero: tiene que ser uno
+// de sus campos.
+export class EstructuraEntera extends Error {
+  constructor(texto, fila) {
+    super('una estructura donde va un numero');
+    Object.assign(this, { texto, fila });
+  }
+}
+
 export class DivisionPorCero extends Error {
   constructor(fila) {
     super('division por cero');
@@ -164,7 +173,19 @@ function recogerEstructuras(arbol) {
         }
         if (!nombre) continue;
         const numerico = ['primitive_type', 'sized_type_specifier'].includes(tipo.type);
-        lista.push({ nombre: nombre.text, texto: tipo.text, soportado: simple && numerico });
+        // Un campo que es otra estructura (TFecha nacimiento;): se sigue por dentro.
+        const deEstructura =
+          simple && tipo.type === 'type_identifier'
+            ? tipo.text
+            : simple && tipo.type === 'struct_specifier'
+              ? tipo.childForFieldName('name')?.text
+              : null;
+        lista.push({
+          nombre: nombre.text,
+          texto: tipo.text,
+          soportado: simple && numerico,
+          estructura: deEstructura || null,
+        });
       }
     }
     return lista;
@@ -290,42 +311,56 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null) {
   // Un campo de una variable de estructura: "alumno.promedio" es esa variable
   // aplanada, y "alumnos[i].promedio" una de las posiciones de "alumnos.promedio".
   function posicionDeCampo(n) {
-    const de = n.childForFieldName('argument');
-    const campo = n.childForFieldName('field');
-    if (!de || !campo || n.text.includes('->')) return sinVerificar(n);
-    let base = de;
-    const indices = [];
-    while (base.type === 'subscript_expression') {
-      indices.unshift(base);
-      base = base.childForFieldName('argument');
+    if (n.text.includes('->')) return sinVerificar(n);
+    // El camino de afuera hacia adentro: campos e indices, hasta la variable.
+    const partes = [];
+    let actual = n;
+    while (['field_expression', 'subscript_expression', 'parenthesized_expression'].includes(actual.type)) {
+      if (actual.type === 'field_expression') {
+        const campo = actual.childForFieldName('field');
+        if (!campo) return sinVerificar(n);
+        partes.unshift({ campo: campo.text });
+        actual = actual.childForFieldName('argument');
+      } else if (actual.type === 'subscript_expression') {
+        partes.unshift({ indice: actual.childForFieldName('index') || actual.childForFieldName('indices') });
+        actual = actual.childForFieldName('argument');
+      } else {
+        actual = actual.namedChildren[0];
+      }
     }
+    const base = actual;
     if (base.type !== 'identifier') return sinVerificar(n);
     if (!estructurasVivas.has(base.text)) {
       if (variables.has(base.text) || constante(base.text) != null) return sinVerificar(n);
       throw new NombreDesconocido(base.text, fila(n));
     }
-    const clave = `${base.text}.${campo.text}`;
+    const clave = [base.text, ...partes.filter((p) => p.campo).map((p) => p.campo)].join('.');
     const variable = variables.get(clave);
-    if (!variable) return sinVerificar(n, `el campo ${clave}`);
+    if (!variable) {
+      const esEstructura = [...variables.keys()].some((k) => k.startsWith(clave + '.'));
+      if (esEstructura) throw new EstructuraEntera(n.text, fila(n));
+      return sinVerificar(n, `el campo ${clave}`);
+    }
     const posiciones = [];
-    indices.forEach((sub, k) => {
-      const nodoIndice = sub.childForFieldName('index') || sub.childForFieldName('indices');
-      const indice = evaluar(nodoIndice);
-      const tamano = variable.dims ? variable.dims[k] : undefined;
-      if (tamano === undefined) sinVerificar(n);
-      if (!Number.isInteger(indice.v) || indice.v < 0 || indice.v >= tamano) {
-        throw new FueraDeRango(
-          base.text,
-          indice.v,
-          tamano,
-          fila(n),
-          nodoIndice.type === 'number_literal',
-          k,
-          variable.dims.length
-        );
-      }
-      posiciones.push(indice.v);
-    });
+    partes
+      .filter((p) => p.indice)
+      .forEach((p, k) => {
+        const indice = evaluar(p.indice);
+        const tamano = variable.dims ? variable.dims[k] : undefined;
+        if (tamano === undefined) sinVerificar(n);
+        if (!Number.isInteger(indice.v) || indice.v < 0 || indice.v >= tamano) {
+          throw new FueraDeRango(
+            base.text,
+            indice.v,
+            tamano,
+            fila(n),
+            p.indice.type === 'number_literal',
+            k,
+            variable.dims.length
+          );
+        }
+        posiciones.push(indice.v);
+      });
     if (variable.dims && posiciones.length !== variable.dims.length) sinVerificar(n, `${base.text} sin todos sus indices`);
     if (!variable.dims && posiciones.length) sinVerificar(n);
     return { variable, nombre: clave, indices: posiciones };
@@ -659,7 +694,17 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null) {
         if (nodoDerecha.type === 'string_literal' && ['subscript_expression', 'field_expression'].includes(izquierda.type)) {
           throw new TextoComoLetra(nodoDerecha.text, fila(nodoDerecha));
         }
-        const derecha = evaluar(nodoDerecha);
+        let derecha;
+        try {
+          derecha = evaluar(nodoDerecha);
+        } catch (e) {
+          // Copiar una estructura entera en otra es valido: solo no se sigue.
+          const esCopia = ['field_expression', 'identifier'].includes(nodoDerecha.type);
+          if (e instanceof EstructuraEntera && operador === '=' && esCopia) {
+            sinVerificar(n, 'la copia de una estructura');
+          }
+          throw e;
+        }
         const nuevo = operador === '=' ? derecha : aplicar(operador.slice(0, -1), leer(izquierda), derecha, n);
         escribir(izquierda, nuevo);
         return nuevo;
@@ -716,34 +761,46 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null) {
       if (nombre.type !== 'identifier') sinVerificar(d, 'un puntero');
       if (dims.some((k) => !Number.isInteger(k) || k < 0)) sinVerificar(d);
       estructurasVivas.set(nombre.text, campos);
-      for (const campo of campos) {
-        if (!campo.soportado) continue;
-        const clave = `${nombre.text}.${campo.nombre}`;
-        const flotante = /float|double/.test(campo.texto);
-        const tipoCampo = /double/.test(campo.texto) ? 'double' : flotante ? 'float' : /char/.test(campo.texto) ? 'char' : 'int';
-        const bytes = bytesDe(campo.texto);
-        if (!dims.length) {
-          const dado = prueba && typeof prueba[clave] === 'number' ? prueba[clave] : undefined;
-          variables.set(clave, {
-            flotante,
-            tipo: tipoCampo,
-            bytes,
-            valor: dado === undefined ? undefined : flotante ? dado : Math.trunc(dado),
-          });
-          continue;
-        }
-        let datos = sinLista(dims);
-        if (prueba && Array.isArray(prueba[clave])) {
-          const forma = (x) => (Array.isArray(x) ? [x.length, ...forma(x[0])] : []);
-          const otraForma = forma(prueba[clave]);
-          if (otraForma.length !== dims.length || otraForma.some((k, i) => k !== dims[i])) {
-            sinVerificar(d, 'valores de otro tamano');
-          }
-          const copia = (x) => (Array.isArray(x) ? x.map(copia) : flotante ? x : Math.trunc(x));
-          datos = copia(prueba[clave]);
-        }
-        variables.set(clave, { flotante, tipo: tipoCampo, bytes, dims: [...dims], datos });
+      crearCampos(nombre.text, campos, dims, d, 0);
+    }
+  }
+
+  // Los campos de una variable de estructura, con el nombre que lleva el camino
+  // ("alumno.nacimiento.anio"): cada uno numerico es una variable (o un
+  // arreglo, si la variable lo es) y cada uno que es otra estructura se sigue por dentro.
+  function crearCampos(prefijo, campos, dims, d, nivel) {
+    if (nivel > 5) sinVerificar(d, 'estructuras muy anidadas');
+    for (const campo of campos) {
+      const clave = `${prefijo}.${campo.nombre}`;
+      if (!campo.soportado) {
+        const dentro = campo.estructura ? definiciones.get(campo.estructura) : null;
+        if (dentro) crearCampos(clave, dentro, dims, d, nivel + 1);
+        continue;
       }
+      const flotante = /float|double/.test(campo.texto);
+      const tipoCampo = /double/.test(campo.texto) ? 'double' : flotante ? 'float' : /char/.test(campo.texto) ? 'char' : 'int';
+      const bytes = bytesDe(campo.texto);
+      if (!dims.length) {
+        const dado = prueba && typeof prueba[clave] === 'number' ? prueba[clave] : undefined;
+        variables.set(clave, {
+          flotante,
+          tipo: tipoCampo,
+          bytes,
+          valor: dado === undefined ? undefined : flotante ? dado : Math.trunc(dado),
+        });
+        continue;
+      }
+      let datos = sinLista(dims);
+      if (prueba && Array.isArray(prueba[clave])) {
+        const forma = (x) => (Array.isArray(x) ? [x.length, ...forma(x[0])] : []);
+        const otraForma = forma(prueba[clave]);
+        if (otraForma.length !== dims.length || otraForma.some((k, i) => k !== dims[i])) {
+          sinVerificar(d, 'valores de otro tamano');
+        }
+        const copia = (x) => (Array.isArray(x) ? x.map(copia) : flotante ? x : Math.trunc(x));
+        datos = copia(prueba[clave]);
+      }
+      variables.set(clave, { flotante, tipo: tipoCampo, bytes, dims: [...dims], datos });
     }
   }
 

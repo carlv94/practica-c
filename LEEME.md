@@ -114,6 +114,10 @@ pide cargar, igual que "Así tiene que quedar la tabla" en Arreglos:
 - **La consigna dice los valores** que hay que cargar, tal como se escriben en
   el código (`'T'`, `"Perez, Ana"`). Las pruebas verifican que cada campo
   resaltado con ejemplo tenga su valor en el enunciado.
+- **Una estructura de adentro** (un campo que es otra estructura) lleva sus
+  campos: `{ "nombre": "nacimiento", "campos": [{ "nombre": "dia" }, …] }`. Se
+  ve como una subficha, a la derecha del nombre. `resaltar` y `marcar` nombran
+  sus campos con el camino (`"nacimiento.anio"`).
 - **`ficha` puede ser una lista**, para mostrar más de una variable (`alumno` y
   `copia`), cada una con su título.
 - **Un arreglo de estructuras** se escribe de una vez y se abre en una ficha
@@ -541,6 +545,30 @@ Estructuras, serie "Usar los campos"):
   índice de otra posición es `ARGUMENTO_OTRA_POSICION`, uno que no existe
   `INDICE_FUERA_DE_RANGO`, y el arreglo sin índice (`alumnos.legajo`)
   `ARREGLO_SIN_INDICE`.
+
+**Estructuras dentro de estructuras** (serie "Estructuras dentro de estructuras"):
+
+- `{ "struct": { "campos": [{ "nombre": "nacimiento", "tipo": "estructura", "de":
+  "TFecha" }] } }`: un campo que es otra estructura (por su alias o su
+  etiqueta). `CAMPO_TIPO` si es un entero, un arreglo o un puntero. El alias
+  puede pedirse por nombre, `{ "alias": { "de": "$S", "nombre": "TAlumno" } }`
+  (`ALIAS_NOMBRE`), para que las consignas que siguen lo usen.
+- La regla `campo` acepta un camino en `variable`: `"alumno.nacimiento"`,
+  `"alumnos[0].nacimiento"`. `copia` y `compara` también.
+- **El simulador aplana** también lo anidado: `alumno.nacimiento.anio` es una
+  variable con ese nombre y `alumnos[i].nacimiento.anio` un arreglo
+  (`"alumnos.nacimiento.anio": [2004, 1998]` en los datos de prueba). Una
+  estructura entera donde va un número es `CAMPO_ES_UNA_ESTRUCTURA`.
+- **`"sigueDe": "id"`** en una consigna: arranca con lo que **quedó después**
+  de esa consigna, con la respuesta del alumno (como `parteDe`, pero después).
+  Sirve cuando las que siguen necesitan lo que declaró el alumno y no pueden
+  continuar una de la otra (cada una prueba con sus propios datos).
+
+| Respuesta | Código | Mensaje |
+|---|---|---|
+| `alumno.anio = 2004;` (el año está en `nacimiento`) | `CAMPO_DE_OTRO_NIVEL` | Dice en qué campo está y cómo se llega. |
+| `alumno.ingreso.anio = …` pidiendo el de nacimiento | `CAMPO_OTRA_ESTRUCTURA` | Dice cuál se pide. |
+| `alumno.nacimiento = 2004;` | `CAMPO_ES_UNA_ESTRUCTURA` | Es una estructura: se guarda en cada campo. |
 
 | Respuesta | Código | Mensaje |
 |---|---|---|

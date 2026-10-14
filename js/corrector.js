@@ -65,6 +65,7 @@ import {
   DivisionPorCero,
   NombreDesconocido,
   TextoComoLetra,
+  EstructuraEntera,
 } from './simulador.js';
 
 // Las palabras de un tipo entero van en cualquier orden: "unsigned int", "int unsigned".
@@ -502,6 +503,25 @@ export function corregir(
         error(
           'CAMPO_CADENA_CORTA',
           `En \`${n}\` no entra ningún texto: una cadena necesita un espacio más que sus letras, para el carácter \`'\\0'\` del final.`,
+          campo.fila
+        );
+      }
+      return;
+    }
+
+    // Un campo que es otra estructura: "tipo": "estructura", "de": "TFecha".
+    if (esperado.tipo === 'estructura') {
+      const pedido = valorDe(esperado.de);
+      if (campo.punteros || campo.arreglo.length) {
+        error(
+          'CAMPO_TIPO',
+          `\`${n}\` tiene que ser una sola variable de tipo \`${pedido}\`, no ${campo.punteros ? 'un puntero' : 'un arreglo'}. ${declarado}`,
+          campo.fila
+        );
+      } else if (!mismoTipo(real, resolver(tipoDesdeTexto(pedido), modelo))) {
+        error(
+          'CAMPO_TIPO',
+          `\`${n}\` tiene que ser de tipo \`${pedido}\`: es una estructura dentro de otra. ${declarado}`,
           campo.fila
         );
       }
@@ -1737,10 +1757,9 @@ export function corregir(
   // (strcpy(alumno.apellidoNombre, "...")).
   function reglaCampo(regla, modelo) {
     const nombre = valorDe(regla.variable);
-    // Un elemento de un arreglo de estructuras: "alumnos[0]".
-    const deElemento = /^([A-Za-z_]\w*)\s*((?:\[[^\]]*\]\s*)+)$/.exec(nombre);
-    const variable = modelo.variables.findLast((v) => v.nombre === (deElemento ? deElemento[1] : nombre));
-    const def = variable ? estructuraDeVariable(variable, modelo, Boolean(deElemento)) : null;
+    // Una variable, un elemento de un arreglo ("alumnos[0]") o una estructura
+    // de adentro ("alumno.nacimiento").
+    const def = estructuraDeCamino(nombre, modelo);
     if (!def) {
       error('VARIABLE_FALTA', `No encontré la variable \`${nombre}\`.`);
       return;
@@ -1786,9 +1805,18 @@ export function corregir(
       // El valor sale de la ficha de esa variable (alumnos[1]) o, si no hay, de cualquiera.
       const fichas = fichasDe(consigna);
       const deEsaVariable = fichas.filter((f) => f.titulo && sinEspacios(f.titulo) === sinEspacios(nombre));
-      const ejemplo = (deEsaVariable.length ? deEsaVariable : fichas)
-        .flatMap((f) => f.campos)
-        .find((c) => c.nombre === pedido.nombre && c.ejemplo != null)?.ejemplo;
+      // Los campos de adentro de otra estructura llevan su camino: nacimiento.anio.
+      const aplanados = (campos, prefijo = '') =>
+        campos.flatMap((c) =>
+          c.campos ? aplanados(c.campos, `${prefijo}${c.nombre}.`) : [{ ruta: `${prefijo}${c.nombre}`, nombre: c.nombre, ejemplo: c.ejemplo }]
+        );
+      const dentro = sinEspacios(nombre).replace(/^[A-Za-z_]\w*(?:\[[^\]]*\])*\.?/, '');
+      const ruta = dentro ? `${dentro}.${pedido.nombre}` : pedido.nombre;
+      const candidatos = (deEsaVariable.length ? deEsaVariable : fichas).flatMap((f) => aplanados(f.campos));
+      const ejemplo = (
+        candidatos.find((c) => c.ruta === ruta && c.ejemplo != null) ||
+        candidatos.find((c) => c.nombre === pedido.nombre && c.ejemplo != null)
+      )?.ejemplo;
       if (pedido.tipo === 'letra') {
         const letra = [...String(ejemplo)][0];
         if (derecha.clase === 'caracter' && derecha.valor === letra.codePointAt(0)) continue;
@@ -2112,7 +2140,8 @@ export function corregir(
     const origen = valorDe(regla.de);
     const destino = valorDe(regla.en);
     const asignaciones = modelo.asignaciones.filter((a) => a.nuevo && a.operador === '=');
-    const esNombre = (v, n) => v.clase === 'nombre' && v.nombre === n;
+    // Una variable o un camino (alumno.ingreso): por como esta escrito.
+    const esNombre = (v, n) => ['nombre', 'campo'].includes(v.clase) && sinEspacios(v.texto) === sinEspacios(n);
 
     if (asignaciones.some((a) => esNombre(a.izquierda, destino) && esNombre(a.derecha, origen))) return;
 
@@ -2141,8 +2170,7 @@ export function corregir(
     if (hay) {
       // Una cadena asignada con "=" ya recibio su explicacion.
       if (diagnosticos.some((d) => CODIGOS_DE_ASIGNACION.includes(d.codigo))) return;
-      const variable = modelo.variables.findLast((v) => v.nombre === origen);
-      const def = variable ? estructuraDeVariable(variable, modelo) : null;
+      const def = estructuraDeCamino(origen, modelo);
       const faltan = def ? def.campos.filter((c) => !copiado(c.nombre)) : [];
       if (faltan.length) {
         error(
@@ -2384,6 +2412,12 @@ export function corregir(
             e.fila
           );
         }
+      } else if (e instanceof EstructuraEntera) {
+        error(
+          'CAMPO_ES_UNA_ESTRUCTURA',
+          `\`${e.texto}\` es una estructura entera, con varios campos adentro: no es un número. Para usarla en una cuenta hay que elegir uno de sus campos.`,
+          e.fila
+        );
       } else if (e instanceof TextoComoLetra) {
         const contenido = e.texto.slice(1, -1);
         // Si la revision general ya lo dijo, no se repite.
@@ -2565,10 +2599,12 @@ export function corregir(
       ([, a], [, b]) => Number(Array.isArray(a)) - Number(Array.isArray(b))
     );
     // Un campo de un arreglo de estructuras ("alumnos.promedio") se dice como se escribe: alumnos[i].promedio.
-    const comoSeEscribe = (nombre) => nombre.replace(/^([A-Za-z_]\w*)\.(\w+)$/, '$1[i].$2');
+    // (con estructuras de adentro: alumnos.nacimiento.anio -> alumnos[i].nacimiento.anio)
+    const comoSeEscribe = (nombre, esArreglo) =>
+      esArreglo ? nombre.replace(/^([A-Za-z_]\w*)\.(\w+)/, '$1[i].$2') : nombre;
     const partes = ordenados.map(
       ([nombre, lista]) =>
-        `\`${comoSeEscribe(nombre)}\` valiendo ${enLista(Array.isArray(lista) ? lista : [lista])}`
+        `\`${comoSeEscribe(nombre, Array.isArray(lista))}\` valiendo ${enLista(Array.isArray(lista) ? lista : [lista])}`
     );
     return partes.length ? `Con ${partes.join(' y ')}` : 'Con los datos de la consigna';
   }
@@ -4917,6 +4953,14 @@ export function corregir(
     const exacto = delTipo.find((a) => !a.punteros && !a.arreglo.length);
     if (exacto) {
       if (regla.capturar) nuevas[regla.capturar] = exacto.nombre;
+      // Con "nombre", el alias tiene que llamarse asi (las que siguen lo usan).
+      if (regla.nombre && exacto.nombre !== regla.nombre) {
+        error(
+          'ALIAS_NOMBRE',
+          `La consigna pide que el alias se llame \`${regla.nombre}\`, y acá se llama \`${exacto.nombre}\`.`,
+          exacto.fila
+        );
+      }
       return;
     }
 
@@ -4946,21 +4990,39 @@ export function corregir(
 // Lo que vale para cualquier consigna: tipos que no existen y cosas que se
 // vuelven a declarar.
 // La estructura de una variable ("struct Alumno alumno;", o con un alias), o null.
+// La estructura a la que corresponde un tipo (con etiqueta, con alias o sin nombre).
+function estructuraDeTipo(tipo, modelo, vistos = 0) {
+  if (vistos > 5) return null;
+  if (tipo.clase === 'struct') {
+    return tipo.defId != null
+      ? modelo.structs.find((s) => s.id === tipo.defId) || null
+      : modelo.structs.findLast((s) => s.etiqueta === tipo.etiqueta) || null;
+  }
+  if (tipo.clase === 'nombre') {
+    const alias = modelo.aliases.findLast((a) => a.nombre === tipo.nombre);
+    return alias && !alias.arreglo.length && !alias.punteros ? estructuraDeTipo(alias.tipo, modelo, vistos + 1) : null;
+  }
+  return null;
+}
+
 function estructuraDeVariable(variable, modelo, indexada = false) {
-  const deTipo = (tipo, vistos = 0) => {
-    if (vistos > 5) return null;
-    if (tipo.clase === 'struct') {
-      return tipo.defId != null
-        ? modelo.structs.find((s) => s.id === tipo.defId) || null
-        : modelo.structs.findLast((s) => s.etiqueta === tipo.etiqueta) || null;
-    }
-    if (tipo.clase === 'nombre') {
-      const alias = modelo.aliases.findLast((a) => a.nombre === tipo.nombre);
-      return alias && !alias.arreglo.length && !alias.punteros ? deTipo(alias.tipo, vistos + 1) : null;
-    }
-    return null;
-  };
-  return variable.punteros || (variable.arreglo.length && !indexada) ? null : deTipo(variable.tipo);
+  return variable.punteros || (variable.arreglo.length && !indexada) ? null : estructuraDeTipo(variable.tipo, modelo);
+}
+
+// La estructura de un camino ("alumno", "alumnos[0]", "alumno.nacimiento"),
+// bajando un nivel por cada campo, o null.
+function estructuraDeCamino(texto, modelo) {
+  const m = /^([A-Za-z_]\w*)((?:\[[^\]]*\])*)((?:\.[A-Za-z_]\w*)*)$/.exec(texto.replace(/\s+/g, ''));
+  if (!m) return null;
+  const variable = modelo.variables.findLast((v) => v.nombre === m[1]);
+  if (!variable) return null;
+  let def = estructuraDeVariable(variable, modelo, Boolean(m[2]));
+  for (const nombre of m[3].split('.').filter(Boolean)) {
+    const campo = def && def.campos.find((c) => c.nombre === nombre);
+    if (!campo || campo.punteros || campo.arreglo.length) return null;
+    def = estructuraDeTipo(campo.tipo, modelo);
+  }
+  return def;
 }
 
 // Lo que esta mal en la forma de llegar a un campo ("alumno.legajo"), o null si
@@ -5009,6 +5071,36 @@ function problemaDeCampo(valor, nombre, def, modelo) {
         `\`${valor.variable}\` no es la posición que pide la consigna: acá hay que usar \`${nombre}\`.`,
       ];
     }
+  }
+  // Un campo de una estructura de adentro, dicho un nivel mas arriba (alumno.anio).
+  const dicho = sinEsp(valor.variable);
+  const pedido = sinEsp(nombre);
+  if (dicho !== pedido && pedido.startsWith(dicho + '.')) {
+    const resto = pedido.slice(dicho.length + 1);
+    // Se le guarda un numero a la estructura entera (alumno.nacimiento = 2004).
+    if (pedido === dicho + '.' + valor.campo) {
+      return [
+        'CAMPO_ES_UNA_ESTRUCTURA',
+        `\`${pedido}\` es una estructura entera, con varios campos adentro: no se le guarda un número. Hay que guardar en cada uno de sus campos, como \`${pedido}.${campos[0] || 'campo'}\`.`,
+      ];
+    }
+    return campos.includes(valor.campo)
+      ? [
+          'CAMPO_DE_OTRO_NIVEL',
+          `\`${valor.campo}\` es un campo de \`${resto}\`, no de \`${valor.variable}\`: hay que bajar un nivel, \`${nombre}.${valor.campo}\`.`,
+        ]
+      : [
+          'CAMPO_NO_EXISTE',
+          `\`${nombre}\` no tiene ningún campo llamado \`${valor.campo}\`.${campos.length ? ` Sus campos son ${campos.map((c) => '\`' + c + '\`').join(', ')}.` : ''}`,
+        ];
+  }
+  // Otra estructura de adentro del mismo lugar (alumno.ingreso en vez de alumno.nacimiento).
+  const raiz = (x) => x.split('.')[0].replace(/\[[\s\S]*$/, '');
+  if (dicho !== pedido && dicho.includes('.') && pedido.includes('.') && raiz(dicho) === raiz(pedido)) {
+    return [
+      'CAMPO_OTRA_ESTRUCTURA',
+      `La consigna pide \`${nombre}.${valor.campo}\`, y acá se usa \`${valor.variable}.${valor.campo}\`: es otra estructura de adentro.`,
+    ];
   }
   if (sinEsp(valor.variable) !== sinEsp(nombre)) {
     return [
@@ -5538,8 +5630,33 @@ function revisarCampos(modelo, error) {
     );
   };
   // Cada acceso a un campo, en una condicion, una cuenta o un argumento.
+  const sinEncontrar = new Set();
   for (const c of modelo.camposUsados) {
-    if (c.nuevo) revisar({ clase: 'campo', variable: c.variable, campo: c.campo, texto: `${c.variable}.${c.campo}` }, c.fila);
+    if (!c.nuevo) continue;
+    revisar({ clase: 'campo', variable: c.variable, campo: c.campo, texto: `${c.variable}.${c.campo}` }, c.fila);
+    // Un campo que la estructura no tiene (o que esta un nivel mas adentro).
+    const def = estructuraDeCamino(c.variable, modelo);
+    const clave = `${c.variable}.${c.campo}`;
+    if (!def || sinEncontrar.has(clave) || def.campos.some((campo) => campo.nombre === c.campo)) continue;
+    sinEncontrar.add(clave);
+    const donde = def.campos.filter((campo) => {
+      const dentro = estructuraDeTipo(campo.tipo, modelo);
+      return dentro && !campo.punteros && !campo.arreglo.length && dentro.campos.some((x) => x.nombre === c.campo);
+    });
+    if (donde.length) {
+      const lista = donde.map((x) => '\`' + x.nombre + '\`').join(' y ');
+      error(
+        'CAMPO_DE_OTRO_NIVEL',
+        `\`${c.campo}\` no es un campo de \`${c.variable}\`: está adentro de ${lista}, así que hay que bajar un nivel, como \`${c.variable}.${donde[0].nombre}.${c.campo}\`.`,
+        c.fila
+      );
+    } else {
+      error(
+        'CAMPO_NO_EXISTE',
+        `La estructura no tiene ningún campo llamado \`${c.campo}\`. Sus campos son ${def.campos.map((x) => '\`' + x.nombre + '\`').join(', ')}.`,
+        c.fila
+      );
+    }
   }
   for (const l of modelo.llamadas) {
     if (!l.nuevo) continue;
