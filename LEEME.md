@@ -831,8 +831,11 @@ el ciclo?".
   `texto`.
 - Las opciones se muestran **mezcladas, con un orden fijo para cada alumno**.
 - No agrega código a lo que sigue, salvo que la consigna diga `"queda": true`:
-  entonces su `codigo` aparece en "El código hasta acá" de las siguientes (la 3
-  deja `int longitud = strlen(frase);` para que la 5 lo use).
+  entonces su `codigo` aparece en "El código hasta acá" de las siguientes (la
+  de `strlen` deja `int longitud = strlen(frase);` para que otra lo use). Un
+  cuestionario puede tener `"codigo": ""` y `"continua": true`: no agrega
+  nada y muestra el código del alumno, para preguntar sobre lo que ya declaró
+  (`cadenas-q-vacia-cero`).
 - El resumen final muestra la opción elegida con los nombres que tenía en esa
   consigna.
 - Una consigna de opciones no tiene "Ver una solución".

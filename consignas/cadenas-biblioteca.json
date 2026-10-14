@@ -125,6 +125,32 @@
       ]
     },
     {
+      "id": "cadenas-q-vaciar-largo",
+      "titulo": "Cuántas letras tiene una cadena vaciada",
+      "enunciado": "Después de ejecutar el código de abajo, ¿qué valor tendría `largo`?",
+      "codigo": "char nombre[21] = \"Maria\";\nnombre[0] = '\\0';\nint largo = strlen(nombre);",
+      "opciones": [
+        {
+          "valor": "5",
+          "texto": "las letras que tenía",
+          "codigo": "OPCION_VACIAR_NO_CAMBIA",
+          "explicacion": "La cadena ya no tiene letras: `strlen` cuenta hasta el primer `'\\0'`, y ahora está en la primera posición."
+        },
+        {
+          "valor": "21",
+          "texto": "el tamaño de la cadena",
+          "codigo": "OPCION_TAMANO_DECLARADO",
+          "explicacion": "`strlen` no mira el tamaño con el que se declaró la cadena, sino cuántas letras tiene guardadas hasta el primer `'\\0'`."
+        },
+        {
+          "valor": "0",
+          "texto": "la cadena ya no tiene letras",
+          "correcta": true,
+          "explicacion": "`strlen` cuenta hasta el primer `'\\0'`. Con el `'\\0'` en la primera posición, la cadena termina ahí y tiene 0 letras, aunque las demás posiciones sigan guardando lo que tenían anteriormente."
+        }
+      ]
+    },
+    {
       "id": "cadenas-q-strlen-sin-fin",
       "titulo": "Cuántas letras tiene un arreglo sin fin",
       "enunciado": "Después de ejecutar el código de abajo, ¿qué valor tendría `largo`?",

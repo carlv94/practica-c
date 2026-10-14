@@ -14,11 +14,37 @@
           "variable": {
             "tipo": "caracter",
             "arreglo": { "tamano": 21, "letras": 20 },
-            "vacia": true
+            "vacia": true, "capturar": "C"
           }
         }
       ],
       "referencia": "char nombre[21] = \"\";"
+    },
+    {
+      "id": "cadenas-q-vacia-cero",
+      "titulo": "Qué hay en la primera posición",
+      "continua": true,
+      "enunciado": "Después de ejecutar el código de abajo, ¿qué contendría `{C}[0]`?",
+      "codigo": "",
+      "opciones": [
+        {
+          "valor": "' '",
+          "texto": "un espacio",
+          "codigo": "OPCION_VACIA_ES_UN_ESPACIO",
+          "explicacion": "Un espacio es un carácter como cualquier otro, con su propio código: una cadena vacía no tiene letras ni espacios. Lo que hay en la primera posición es el `'\\0'`."
+        },
+        {
+          "valor": "'\\0'",
+          "texto": "el carácter de fin",
+          "correcta": true,
+          "explicacion": "Una cadena vacía es una cadena cuyo primer carácter ya es el de fin: `{C}[0]` guarda el `'\\0'`, y por eso el texto termina antes de empezar."
+        },
+        {
+          "texto": "Lo que hubiera antes en esa memoria",
+          "codigo": "OPCION_LO_QUE_HUBIERA",
+          "explicacion": "Eso pasaría si la cadena no se inicializara. Al declararla con un valor, el `'\\0'` queda escrito en la primera posición."
+        }
+      ]
     },
     {
       "id": "cadenas-vaciar",
@@ -27,32 +53,6 @@
       "enunciado": "La cadena `nombre` guarda el texto `\"Maria\"`. Escriba el código que la deje vacía.",
       "requiere": [{ "vaciar": "nombre" }],
       "referencia": "nombre[0] = '\\0';"
-    },
-    {
-      "id": "cadenas-q-vaciar-largo",
-      "titulo": "Cuántas letras tiene una cadena vaciada",
-      "enunciado": "Después de ejecutar el código de abajo, ¿qué valor tendría `largo`?",
-      "codigo": "char nombre[21] = \"Maria\";\nnombre[0] = '\\0';\nint largo = strlen(nombre);",
-      "opciones": [
-        {
-          "valor": "5",
-          "texto": "las letras que tenía",
-          "codigo": "OPCION_VACIAR_NO_CAMBIA",
-          "explicacion": "La cadena ya no tiene letras: `strlen` cuenta hasta el primer `'\\0'`, y ahora está en la primera posición."
-        },
-        {
-          "valor": "21",
-          "texto": "el tamaño de la cadena",
-          "codigo": "OPCION_TAMANO_DECLARADO",
-          "explicacion": "`strlen` no mira el tamaño con el que se declaró la cadena, sino cuántas letras tiene guardadas hasta el primer `'\\0'`."
-        },
-        {
-          "valor": "0",
-          "texto": "la cadena ya no tiene letras",
-          "correcta": true,
-          "explicacion": "`strlen` cuenta hasta el primer `'\\0'`. Con el `'\\0'` en la primera posición, la cadena termina ahí y tiene 0 letras, aunque las demás posiciones sigan guardando lo que tenían anteriormente."
-        }
-      ]
     },
     {
       "id": "cadenas-q-vaciar-resto",
@@ -83,25 +83,25 @@
     {
       "id": "cadenas-q-sin-iniciar",
       "titulo": "Una cadena recién declarada",
-      "enunciado": "Después de ejecutar el código de abajo, ¿qué valor tendría `largo`?",
-      "codigo": "char texto[10];\nint largo = strlen(texto);",
+      "enunciado": "Después de ejecutar el código de abajo, ¿qué contendría `texto[0]`?",
+      "codigo": "char texto[10];",
       "opciones": [
         {
-          "valor": "0",
-          "texto": "porque la cadena está vacía",
+          "valor": "'\\0'",
+          "texto": "el carácter de fin, porque la cadena está vacía",
           "codigo": "OPCION_SIN_INICIAR_ES_VACIA",
           "explicacion": "Una cadena recién declarada no está vacía: no tiene nada asignado, así que contiene lo que hubiera anteriormente en esa memoria."
         },
         {
-          "valor": "10",
-          "texto": "el tamaño de la cadena",
-          "codigo": "OPCION_TAMANO_DECLARADO",
-          "explicacion": "`strlen` no mira el tamaño con el que se declaró la cadena, sino cuántas letras tiene guardadas hasta el primer `'\\0'`."
+          "valor": "' '",
+          "texto": "un espacio",
+          "codigo": "OPCION_SIN_INICIAR_ES_ESPACIO",
+          "explicacion": "Una cadena recién declarada no se llena de espacios: no tiene nada asignado, así que contiene lo que hubiera anteriormente en esa memoria."
         },
         {
           "texto": "No se puede saber",
           "correcta": true,
-          "explicacion": "Una cadena que se declara sin valor tiene lo que hubiera antes en esa memoria. `strlen` cuenta hasta el primer `'\\0'` que encuentre, y si la cadena no se inicializó no se puede saber dónde está."
+          "explicacion": "Una cadena que se declara sin valor tiene lo que hubiera antes en esa memoria: puede ser un `'\\0'` o cualquier otro carácter, y no hay forma de saber cuál. Para tener una cadena vacía hay que inicializarla."
         }
       ]
     }
