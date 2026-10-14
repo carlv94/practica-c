@@ -87,29 +87,41 @@ que ya no vale.
 
 ## La ficha de datos
 
-Una consigna puede llevar una ficha: una tarjeta con el nombre de cada campo
-que se pide, como una ficha en papel. El enunciado dice dónde va con una línea
-que solo dice `[ficha]`; lo que está antes queda arriba y lo que está después,
-abajo. **La descripción de cada dato la dice el enunciado, en prosa**, en el
-mismo orden que la ficha:
+Una consigna puede llevar una ficha: una tarjeta con el nombre de cada campo,
+como una ficha en papel. **Muestra cómo tiene que quedar** lo que la consigna
+pide cargar, igual que "Así tiene que quedar la tabla" en Arreglos:
 
 ```json
-"enunciado": "De cada alumno se guarda, en este orden, el número de legajo y el promedio general. Los campos se llaman así:\n[ficha]\nDeclare la estructura.",
+"enunciado": "Escriba el código que guarde en `alumno` el número de legajo `20431`.",
 "ficha": {
+  "leyenda": "Así tiene que quedar la ficha:",
   "titulo": "Ficha de alumno",
+  "resaltar": ["legajo"],
   "campos": [
-    { "nombre": "legajo" },
-    { "nombre": "promedio", "ejemplo": "8.45" }
+    { "nombre": "legajo", "ejemplo": "20431" },
+    { "nombre": "promedio" }
   ]
 }
 ```
 
-Los nombres se ven resaltados, en una columna, y los valores (o las líneas)
-empiezan todos en el mismo lugar. `ejemplo` es opcional y va en todos los campos
-o en ninguno: sin él, cada campo lleva una línea donde iría el dato. Donde se
-pide **declarar** la estructura no se pone, porque un valor de ejemplo insinúa
-el tipo; en las consignas que la usan, sí. Las pruebas verifican que los
-nombres de la ficha sean los de la regla `struct`.
+- **Cada campo** lleva su `nombre` (resaltado, en una columna) y, si ya tiene
+  valor, un `ejemplo`. Sin `ejemplo` lleva una línea donde iría el dato: todavía
+  no está cargado. Donde se pide **declarar** la estructura no hay ejemplos,
+  porque un valor insinúa el tipo.
+- **`resaltar`** es la lista de campos que se cargan en esta consigna (o
+  `"todos"`): se ven con un fondo suave, y lo ya cargado se ve sin resaltar.
+- **`leyenda`** va arriba de la ficha. `titulo` lo escribe el docente.
+- **La consigna dice los valores** que hay que cargar, tal como se escriben en
+  el código (`'T'`, `"Perez, Ana"`). Las pruebas verifican que cada campo
+  resaltado con ejemplo tenga su valor en el enunciado.
+- **`ficha` puede ser una lista**, para mostrar más de una variable (`alumno` y
+  `copia`), cada una con su título.
+- **La descripción de cada dato** la dice el enunciado, en prosa y en el orden
+  de la ficha, cuando hace falta (en "Declarar la estructura"). Si el enunciado
+  tiene una línea que solo dice `[ficha]`, la ficha va ahí; si no, después de
+  todo el texto.
+- Las pruebas verifican que los nombres de la ficha sean los de la regla
+  `struct`, y que una regla `campo` corrija valores que la ficha muestra.
 
 ## Qué código ve cada consigna
 

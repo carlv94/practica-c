@@ -24,15 +24,23 @@ const MARCA = /\{(\w+)\}/g;
 //              "campos": [{ "nombre": "promedio", "ejemplo": "8.45" }] }
 // "ejemplo" es opcional (todos los campos o ninguno): un valor cargado, para las
 // consignas que usan la estructura. Sin ejemplo, cada campo lleva una linea donde
-// iria el dato. Donde se pide declararla no se pone ejemplo, porque un valor ya
-// insinua el tipo.
+// iria el dato (todavia sin cargar). Donde se pide declararla no se pone ejemplo,
+// porque un valor ya insinua el tipo.
+// Para mostrar como tiene que quedar, la ficha puede llevar una "leyenda"
+// ("Asi tiene que quedar la ficha:") y "resaltar" los campos que se cargan en
+// esa consigna (una lista de nombres, o "todos"). Si el enunciado no trae la linea
+// [ficha], la ficha va despues de todo el texto. "ficha" puede ser una lista, para
+// mostrar mas de una (alumno y copia).
 export const MARCA_DE_FICHA = '\n[ficha]\n';
+
+// Las fichas de una consigna, siempre como lista (puede llevar una o varias).
+export const fichasDe = (consigna) => [].concat(consigna.ficha || []);
 
 // El enunciado partido en lo que va antes de la ficha y lo que va despues.
 // Sin ficha, todo va antes.
 export function enunciadoEnDos(consigna) {
   const enunciado = consigna.enunciado;
-  const donde = consigna.ficha ? enunciado.indexOf(MARCA_DE_FICHA) : -1;
+  const donde = fichasDe(consigna).length ? enunciado.indexOf(MARCA_DE_FICHA) : -1;
   if (donde < 0) return { antes: enunciado, despues: '' };
   return { antes: enunciado.slice(0, donde), despues: enunciado.slice(donde + MARCA_DE_FICHA.length) };
 }

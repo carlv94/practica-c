@@ -160,42 +160,48 @@
                 `usa ${sueltas.map((m) => `{${m}}`).join(', ')}, que ninguna consigna anterior captura`
               );
             }
-            // Una ficha: el enunciado dice donde va, y sus campos son los de la
-            // estructura que se corrige (lo que se ve es lo que se corrige).
-            if (consigna.ficha) {
-              const nombres = consigna.ficha.campos.map((c) => c.nombre).sort();
+            // Una ficha (o varias): sus campos son los de la estructura que se
+            // corrige (lo que se ve es lo que se corrige), y los valores que la
+            // consigna pide cargar estan en el enunciado.
+            const fichas = [].concat(consigna.ficha || []);
+            if (fichas.length) {
               const pedidos = (consigna.requiere || [])
                 .flatMap((r) => (r.struct ? r.struct.campos.map((c) => c.nombre) : []))
                 .sort();
-              anotar(
-                consigna.enunciado.includes('\n[ficha]\n'),
-                `ficha de ${consigna.id}: lugar en el enunciado`,
-                'el enunciado tiene que llevar una linea que diga [ficha]'
-              );
               if (pedidos.length) {
+                const nombres = fichas[0].campos.map((c) => c.nombre).sort();
                 anotar(
                   nombres.join() === pedidos.join(),
                   `ficha de ${consigna.id}: campos`,
                   `la ficha muestra ${nombres.join(', ')} y la regla pide ${pedidos.join(', ')}`
                 );
               }
-              const conEjemplo = consigna.ficha.campos.filter((c) => c.ejemplo != null).length;
-              anotar(
-                conEjemplo === 0 || conEjemplo === consigna.ficha.campos.length,
-                `ficha de ${consigna.id}: ejemplos`,
-                'o todos los campos llevan ejemplo o ninguno'
-              );
               // Una regla "campo" corrige contra el ejemplo de la ficha.
+              const conEjemplo = fichas.flatMap((f) => f.campos).filter((c) => c.ejemplo != null);
               const guardados = (consigna.requiere || []).flatMap((r) =>
                 r.campo ? r.campo.campos.map((c) => c.nombre) : []
               );
-              const sinEjemplo = guardados.filter(
-                (n) => consigna.ficha.campos.find((c) => c.nombre === n)?.ejemplo == null
-              );
+              const sinEjemplo = guardados.filter((n) => !conEjemplo.some((c) => c.nombre === n));
               anotar(
                 !sinEjemplo.length,
                 `ficha de ${consigna.id}: valores que se corrigen`,
                 `la regla "campo" pide ${sinEjemplo.join(', ')}, que la ficha no muestra con ejemplo`
+              );
+              // Lo que la consigna pide cargar (los campos resaltados) tiene su valor escrito.
+              const sinDecir = [];
+              for (const f of fichas) {
+                if (!Array.isArray(f.resaltar)) continue;
+                for (const campo of f.campos) {
+                  if (f.resaltar.includes(campo.nombre) && campo.ejemplo != null) {
+                    const escrito = consigna.enunciado.replace(/[`'"]/g, '');
+                    if (!escrito.includes(String(campo.ejemplo))) sinDecir.push(campo.nombre);
+                  }
+                }
+              }
+              anotar(
+                !sinDecir.length,
+                `ficha de ${consigna.id}: valores en el enunciado`,
+                `el enunciado no dice el valor de ${sinDecir.join(', ')}, que la ficha resalta`
               );
             }
           } catch (e) {

@@ -10,14 +10,16 @@
       "id": "campos-legajo",
       "titulo": "Guardar el legajo",
       "dado": "struct Alumno alumno;",
-      "enunciado": "La secretaría de una facultad registra los datos de sus alumnos. La estructura `Alumno` y la variable `alumno` ya están declaradas, y `alumno` tiene que guardar el número de legajo, el apellido y nombre, el promedio general y el turno en el que cursa (M, T o N) de esta ficha:\n[ficha]\nEscriba el código que guarde en `alumno` el número de legajo.",
+      "enunciado": "La secretaría de una facultad registra los datos de sus alumnos. La estructura `Alumno` y la variable `alumno` ya están declaradas. Escriba el código que guarde en `alumno` el número de legajo `20431`.",
       "ficha": {
+        "leyenda": "Así tiene que quedar la ficha:",
         "titulo": "Ficha de alumno",
+        "resaltar": ["legajo"],
         "campos": [
           { "nombre": "legajo", "ejemplo": "20431" },
-          { "nombre": "apellidoNombre", "ejemplo": "Perez, Ana" },
-          { "nombre": "promedio", "ejemplo": "8.45" },
-          { "nombre": "turno", "ejemplo": "T" }
+          { "nombre": "apellidoNombre" },
+          { "nombre": "promedio" },
+          { "nombre": "turno" }
         ]
       },
       "requiere": [
@@ -31,11 +33,45 @@
       "referencia": "alumno.legajo = 20431;"
     },
     {
+      "id": "campos-apellido-nombre",
+      "titulo": "Guardar el apellido y nombre",
+      "enunciado": "Escriba el código que guarde en `alumno` el apellido y nombre `\"Perez, Ana\"`, usando una función de la biblioteca de cadenas.",
+      "ficha": {
+        "leyenda": "Así tiene que quedar la ficha:",
+        "titulo": "Ficha de alumno",
+        "resaltar": ["apellidoNombre"],
+        "campos": [
+          { "nombre": "legajo", "ejemplo": "20431" },
+          { "nombre": "apellidoNombre", "ejemplo": "Perez, Ana" },
+          { "nombre": "promedio" },
+          { "nombre": "turno" }
+        ]
+      },
+      "requiere": [
+        {
+          "llamada": {
+            "funcion": "strcpy",
+            "alternativas": ["strncpy"],
+            "argumentos": ["alumno.apellidoNombre", "\"Perez, Ana\""],
+            "orden": "primero va el campo donde se guarda y después el texto",
+            "aMano": {
+              "variable": "alumno.apellidoNombre",
+              "texto": "Perez, Ana",
+              "prohibida": true
+            }
+          }
+        }
+      ],
+      "referencia": "strcpy(alumno.apellidoNombre, \"Perez, Ana\");"
+    },
+    {
       "id": "campos-promedio-turno",
       "titulo": "Guardar el promedio y el turno",
-      "enunciado": "Con la misma ficha:\n[ficha]\nEscriba el código que guarde en `alumno` el promedio general y el turno.",
+      "enunciado": "Escriba el código que guarde en `alumno` el promedio general `8.45` y el turno `'T'`.",
       "ficha": {
+        "leyenda": "Así tiene que quedar la ficha:",
         "titulo": "Ficha de alumno",
+        "resaltar": ["promedio", "turno"],
         "campos": [
           { "nombre": "legajo", "ejemplo": "20431" },
           { "nombre": "apellidoNombre", "ejemplo": "Perez, Ana" },
@@ -55,36 +91,6 @@
         }
       ],
       "referencia": "alumno.promedio = 8.45;\nalumno.turno = 'T';"
-    },
-    {
-      "id": "campos-apellido-nombre",
-      "titulo": "Guardar el apellido y nombre",
-      "enunciado": "Con la misma ficha:\n[ficha]\nEscriba el código que guarde en `alumno` el apellido y nombre, usando una función de la biblioteca de cadenas.",
-      "ficha": {
-        "titulo": "Ficha de alumno",
-        "campos": [
-          { "nombre": "legajo", "ejemplo": "20431" },
-          { "nombre": "apellidoNombre", "ejemplo": "Perez, Ana" },
-          { "nombre": "promedio", "ejemplo": "8.45" },
-          { "nombre": "turno", "ejemplo": "T" }
-        ]
-      },
-      "requiere": [
-        {
-          "llamada": {
-            "funcion": "strcpy",
-            "alternativas": ["strncpy"],
-            "argumentos": ["alumno.apellidoNombre", "\"Perez, Ana\""],
-            "orden": "primero va el campo donde se guarda y después el texto",
-            "aMano": {
-              "variable": "alumno.apellidoNombre",
-              "texto": "Perez, Ana",
-              "prohibida": true
-            }
-          }
-        }
-      ],
-      "referencia": "strcpy(alumno.apellidoNombre, \"Perez, Ana\");"
     },
     {
       "id": "campos-q-sin-cargar",

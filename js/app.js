@@ -26,7 +26,7 @@ import {
   pidePracticas,
 } from './serie.js';
 import { crearEditor, pintar } from './editor.js';
-import { partesDeEnunciado, enunciadoEnDos, figuraDe, sustituir } from './enunciado.js';
+import { partesDeEnunciado, enunciadoEnDos, fichasDe, figuraDe, sustituir } from './enunciado.js';
 
 const CARPETA = 'consignas/';
 const INDICE = CARPETA + 'indice.json';
@@ -434,23 +434,34 @@ function mostrarConsigna() {
 // La ficha de datos: una tarjeta con el nombre de cada campo y, a su lado, el
 // valor de ejemplo, o una linea donde iria cuando no lo lleva (como una ficha
 // en papel). Los nombres van en una columna y los valores empiezan todos
-// en el mismo lugar.
-function dibujarFicha(ficha) {
+// en el mismo lugar. Puede ser una ficha o una lista (alumno y copia); cada una
+// puede llevar su "leyenda" arriba y "resaltar" los campos que se cargan en
+// esta consigna.
+function dibujarFicha(fichas) {
   const caja = $('ficha');
-  caja.hidden = !ficha;
+  const lista = fichasDe({ ficha: fichas });
+  caja.hidden = !lista.length;
   caja.replaceChildren();
-  if (!ficha) return;
-  const tarjeta = elemento('div', 'ficha');
-  if (ficha.titulo) tarjeta.appendChild(elemento('p', 'ficha-titulo', ficha.titulo));
-  const lista = elemento('dl', 'ficha-cuerpo');
-  for (const campo of ficha.campos) {
-    const nombre = elemento('dt');
-    nombre.appendChild(elemento('code', null, campo.nombre));
-    const valor = elemento('dd', campo.ejemplo == null ? 'ficha-linea' : null, campo.ejemplo == null ? '' : String(campo.ejemplo));
-    lista.append(nombre, valor);
+  for (const ficha of lista) {
+    if (ficha.leyenda) caja.appendChild(elemento('p', 'titulo-figura', ficha.leyenda));
+    const tarjeta = elemento('div', 'ficha');
+    if (ficha.titulo) tarjeta.appendChild(elemento('p', 'ficha-titulo', ficha.titulo));
+    const cuerpo = elemento('dl', 'ficha-cuerpo');
+    for (const campo of ficha.campos) {
+      const nombre = elemento('dt');
+      nombre.appendChild(elemento('code', null, campo.nombre));
+      const sinValor = campo.ejemplo == null;
+      const nuevo = ficha.resaltar === 'todos' || (Array.isArray(ficha.resaltar) && ficha.resaltar.includes(campo.nombre));
+      const valor = elemento(
+        'dd',
+        sinValor ? 'ficha-linea' : nuevo ? 'ficha-nuevo' : null,
+        sinValor ? '' : String(campo.ejemplo)
+      );
+      cuerpo.append(nombre, valor);
+    }
+    tarjeta.appendChild(cuerpo);
+    caja.appendChild(tarjeta);
   }
-  tarjeta.appendChild(lista);
-  caja.appendChild(tarjeta);
 }
 
 // El arreglo del enunciado, como una fila de casilleros con su indice arriba.

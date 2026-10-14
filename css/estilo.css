@@ -248,6 +248,10 @@ section[hidden] {
   overflow: hidden;
 }
 
+.ficha + .ficha {
+  margin-top: 10px;
+}
+
 .ficha-titulo {
   margin: 0;
   padding: 7px 14px;
@@ -270,6 +274,15 @@ section[hidden] {
 .ficha-cuerpo dt,
 .ficha-cuerpo dd {
   margin: 0;
+}
+
+/* Lo que se carga en esta consigna. */
+.ficha-nuevo {
+  justify-self: start;
+  margin-left: -6px;
+  padding: 0 6px;
+  border-radius: 3px;
+  background: var(--aviso-fondo);
 }
 
 .ficha-linea {

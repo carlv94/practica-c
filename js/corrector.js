@@ -1774,7 +1774,9 @@ export function corregir(
       }
 
       const derecha = a.derecha;
-      const ejemplo = consigna.ficha?.campos.find((c) => c.nombre === pedido.nombre)?.ejemplo;
+      const ejemplo = [].concat(consigna.ficha || [])
+        .flatMap((f) => f.campos)
+        .find((c) => c.nombre === pedido.nombre && c.ejemplo != null)?.ejemplo;
       if (pedido.tipo === 'letra') {
         const letra = [...String(ejemplo)][0];
         if (derecha.clase === 'caracter' && derecha.valor === letra.codePointAt(0)) continue;

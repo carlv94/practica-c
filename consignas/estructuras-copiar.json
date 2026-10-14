@@ -11,16 +11,29 @@
       "titulo": "Copiar los datos de un alumno",
       "buenasPracticas": ["claridad"],
       "dado": "TAlumno alumno;\nTAlumno copia;\n\nalumno.legajo = 20431;\nstrcpy(alumno.apellidoNombre, \"Perez, Ana\");\nalumno.promedio = 8.45;\nalumno.turno = 'T';",
-      "enunciado": "La variable `alumno` ya guarda el número de legajo, el apellido y nombre, el promedio general y el turno de esta ficha:\n[ficha]\nEscriba el código que copie todos los datos de `alumno` en la variable `copia`.",
-      "ficha": {
-        "titulo": "Ficha de alumno",
-        "campos": [
-          { "nombre": "legajo", "ejemplo": "20431" },
-          { "nombre": "apellidoNombre", "ejemplo": "Perez, Ana" },
-          { "nombre": "promedio", "ejemplo": "8.45" },
-          { "nombre": "turno", "ejemplo": "T" }
-        ]
-      },
+      "enunciado": "La variable `alumno` ya guarda el número de legajo, el apellido y nombre, el promedio general y el turno de un alumno. Escriba el código que copie todos los datos de `alumno` en la variable `copia`.",
+      "ficha": [
+        {
+          "leyenda": "Así tienen que quedar las fichas:",
+          "titulo": "alumno",
+          "campos": [
+            { "nombre": "legajo", "ejemplo": "20431" },
+            { "nombre": "apellidoNombre", "ejemplo": "Perez, Ana" },
+            { "nombre": "promedio", "ejemplo": "8.45" },
+            { "nombre": "turno", "ejemplo": "T" }
+          ]
+        },
+        {
+          "titulo": "copia",
+          "resaltar": "todos",
+          "campos": [
+            { "nombre": "legajo", "ejemplo": "20431" },
+            { "nombre": "apellidoNombre", "ejemplo": "Perez, Ana" },
+            { "nombre": "promedio", "ejemplo": "8.45" },
+            { "nombre": "turno", "ejemplo": "T" }
+          ]
+        }
+      ],
       "requiere": [{ "copia": { "de": "alumno", "en": "copia" } }],
       "referencia": "copia = alumno;"
     },
