@@ -73,6 +73,58 @@
       "referencia": "largo = strlen(nombre);"
     },
     {
+      "id": "cadenas-q-strlen",
+      "titulo": "Cuántas letras cuenta strlen",
+      "enunciado": "Después de ejecutar el código de abajo, ¿qué valor tendría `longitud`?",
+      "codigo": "char nombre[21] = \"Maria\";\nint longitud = strlen(nombre);",
+      "opciones": [
+        {
+          "valor": "21",
+          "texto": "el tamaño con que se declaró la cadena",
+          "codigo": "OPCION_TAMANO_DECLARADO",
+          "explicacion": "`strlen` no mira el tamaño con el que se declaró la cadena, sino cuántas letras tiene guardadas hasta el primer `'\\0'`."
+        },
+        {
+          "valor": "6",
+          "texto": "la cantidad de letras más el `'\\0'`",
+          "codigo": "OPCION_CUENTA_EL_FIN",
+          "explicacion": "`strlen` cuenta las letras hasta el primer `'\\0'`, pero no cuenta el `'\\0'`."
+        },
+        {
+          "valor": "5",
+          "texto": "la cantidad de letras",
+          "correcta": true,
+          "explicacion": "`strlen` cuenta las letras desde el principio hasta el primer `'\\0'`, sin contarlo: `Maria` tiene 5. El tamaño con que se declaró la cadena no influye."
+        }
+      ]
+    },
+    {
+      "id": "cadenas-q-sizeof",
+      "titulo": "Qué tamaño tiene la cadena",
+      "enunciado": "Después de ejecutar el código de abajo, ¿qué valor tendría `tamanio`?",
+      "codigo": "char nombre[21] = \"Maria\";\nint tamanio = sizeof(nombre);",
+      "opciones": [
+        {
+          "valor": "5",
+          "texto": "la cantidad de letras",
+          "codigo": "OPCION_SIZEOF_CUENTA_LETRAS",
+          "explicacion": "`sizeof` no cuenta las letras guardadas: dice el tamaño de la cadena en memoria, esté llena o no."
+        },
+        {
+          "valor": "6",
+          "texto": "la cantidad de letras más el `'\\0'`",
+          "codigo": "OPCION_SIZEOF_CUENTA_FIN",
+          "explicacion": "`sizeof` no cuenta las letras guardadas, ni siquiera con el `'\\0'`: dice el tamaño de la cadena en memoria, esté llena o no."
+        },
+        {
+          "valor": "21",
+          "texto": "el tamaño con que se declaró la cadena",
+          "correcta": true,
+          "explicacion": "`sizeof` dice cuánto ocupa la cadena en memoria, o sea, el tamaño con que se declaró (21). Es siempre el mismo valor, tenga el texto que tenga. Recuerde que una cadena necesita una posición más que sus letras, la del `'\\0'`: un arreglo de caracteres sin fin ocuparía solo lugar para las letras."
+        }
+      ]
+    },
+    {
       "id": "cadenas-q-strlen-sin-fin",
       "titulo": "Cuántas letras tiene un arreglo sin fin",
       "enunciado": "Después de ejecutar el código de abajo, ¿qué valor tendría `largo`?",
