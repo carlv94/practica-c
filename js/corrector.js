@@ -1965,10 +1965,13 @@ export function corregir(
         .filter((x) => LECTURAS.includes(x.funcion) && x.fin <= l.posicion)
         .pop();
       if (anterior && anterior.funcion === 'scanf') {
-        error(
-          'LECTURA_LETRA_TOMA_EL_ENTER',
-          'Después de leer con `scanf` queda el Enter sin leer, y `%c` lo toma como si fuera la letra escrita. Para saltear los espacios y los saltos de línea, el formato lleva un espacio antes: `" %c"`.',
-          l.fila
+        // Vale descartarlo antes (el ciclo de siempre) o con el espacio en el formato.
+        verificarLimpieza(l, anterior, modelo, () =>
+          error(
+            'LECTURA_LETRA_TOMA_EL_ENTER',
+            'Después de leer con `scanf` queda el Enter sin leer, y `%c` lo toma como si fuera la letra escrita. Antes hay que descartarlo: con un espacio delante del `%c`, o con lo que descarta lo que quedó en la línea.',
+            l.fila
+          )
         );
       }
     }
@@ -3373,7 +3376,18 @@ export function corregir(
     if (!lectura) return; // lo dice la regla de la lectura
     const anterior = modelo.llamadas.filter((l) => l.funcion === 'scanf' && l.fin <= lectura.posicion).pop();
     if (!anterior) return;
+    verificarLimpieza(lectura, anterior, modelo, () =>
+      error(
+        'FALTA_LIMPIAR_ENTRADA',
+        `Después de leer con \`scanf\` queda el Enter sin leer, y \`${lectura.funcion}\` lo toma como si fuera lo escrito: el texto queda vacío. Antes de leer hay que descartarlo.`,
+        lectura.fila
+      )
+    );
+  }
 
+  // Lo que hay entre un scanf y la lectura que sigue para descartar el Enter que
+  // quedo sin leer. "faltante" dice el error si no hay nada.
+  function verificarLimpieza(lectura, anterior, modelo, faltante) {
     const entre = (x) => x.nuevo && x.posicion >= anterior.fin && x.fin <= lectura.posicion;
     const sinEsp = (t) => t.replace(/\s+/g, '');
     const limpiadores = modelo.ciclos.filter((c) => entre(c) && /getchar\(\)/.test(sinEsp(c.texto)));
@@ -3441,11 +3455,7 @@ export function corregir(
       );
       return;
     }
-    error(
-      'FALTA_LIMPIAR_ENTRADA',
-      `Después de leer con \`scanf\` queda el Enter sin leer, y \`${lectura.funcion}\` lo toma como si fuera lo escrito: el texto queda vacío. Antes de leer hay que descartarlo.`,
-      lectura.fila
-    );
+    faltante();
   }
 
   // ---- cadenas --------------------------------------------------------------

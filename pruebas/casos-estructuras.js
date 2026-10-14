@@ -57,7 +57,16 @@ export const CASOS_DE_LEER_CAMPOS = [
   leer(4, 'el Enter: la letra', '0', ['OPCION_LETRA_ESCRITA']),
   leer(4, 'el Enter: no se puede saber', '2', ['OPCION_NO_SE_SABE_LETRA']),
   leer(5, 'turno con el espacio', 'scanf(" %c", &alumno.turno);'),
-  leer(5, 'turno sin el espacio', 'scanf("%c", &alumno.turno);', ['LECTURA_LETRA_TOMA_EL_ENTER']),
+  leer(5, 'turno limpiando el Enter antes', LIMPIAR + '\nscanf("%c", &alumno.turno);'),
+  leer(5, 'turno sin el espacio ni la limpieza', 'scanf("%c", &alumno.turno);', ['LECTURA_LETRA_TOMA_EL_ENTER']),
+  leer(5, 'turno limpiando despues de leer', 'scanf("%c", &alumno.turno);\n' + LIMPIAR, ['LIMPIEZA_DESPUES']),
+  leer(
+    5,
+    'turno con un ciclo al reves',
+    "while (getchar() == '\\n');\nscanf(\"%c\", &alumno.turno);",
+    ['LIMPIEZA_AL_REVES']
+  ),
+  leer(5, 'turno con un ciclo que no se detiene', 'while (getchar());\nscanf("%c", &alumno.turno);', ['LIMPIEZA_SIN_ENTER']),
   leer(5, 'turno sin el &', 'scanf(" %c", alumno.turno);', ['AMPERSAND_FALTA']),
   leer(5, 'turno con el formato de un entero', 'scanf(" %d", &alumno.turno);', ['FORMATO_NO_CORRESPONDE_AL_TIPO']),
   leer(5, 'turno con el formato de un texto', 'scanf("%s", &alumno.turno);', ['FORMATO_NO_CORRESPONDE_AL_TIPO']),

@@ -71,7 +71,7 @@
       "titulo": "Leer el turno",
       "enunciado": "Escriba el código que lea desde el teclado el turno en el que cursa el alumno y lo guarde en `alumno`. Tenga en cuenta que el promedio se acaba de leer con `scanf`.",
       "requiere": [{ "leeCampo": { "variable": "alumno", "campo": "turno" } }],
-      "referencia": "scanf(\" %c\", &alumno.turno);"
+      "referencia": "while (getchar() != '\\n');\nscanf(\"%c\", &alumno.turno);"
     },
     {
       "id": "campos-q-scanf-espacio",
