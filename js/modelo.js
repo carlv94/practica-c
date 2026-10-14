@@ -22,6 +22,7 @@
 //   si:         { condicion, posicion, fin, nuevo, fila }             un if
 //   include:    { ruta, sistema, nuevo, fila }       #include <string.h>: sistema es < >
 //   comparacion: { operador, izquierda, derecha, enIf, nuevo, fila }  a == b, a != b
+//   campoUsado: { variable, campo, nuevo, fila }       alumno.legajo, alumnos[i].legajo (variable: "alumnos[i]")
 //   sizeof:     { argumento, nuevo, fila }
 // Un argumento (o un lado de una asignacion) es:
 //   { clase: 'nombre', nombre }               cadena1
@@ -178,6 +179,7 @@ export function construirModelo(arbol, desde) {
     constantes: [],
     llamadas: [],
     asignaciones: [],
+    camposUsados: [],
     ciclos: [],
     ifs: [],
     includes: [],
@@ -439,6 +441,21 @@ export function construirModelo(arbol, desde) {
           modelo.includes.push({
             ruta: camino.text.slice(1, -1),
             sistema: camino.text.startsWith('<'),
+            nuevo: n.startIndex >= desde,
+            fila: n.startPosition.row,
+          });
+        }
+        break;
+      }
+      case 'field_expression': {
+        // Cada acceso a un campo, donde sea que este (en una condicion, una
+        // cuenta, un argumento): la variable tal como esta escrita y el campo.
+        const de = n.childForFieldName('argument');
+        const campo = n.childForFieldName('field');
+        if (de && campo) {
+          modelo.camposUsados.push({
+            variable: de.text,
+            campo: campo.text,
             nuevo: n.startIndex >= desde,
             fila: n.startPosition.row,
           });

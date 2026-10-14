@@ -655,6 +655,11 @@ solo la mira esta regla). Con
 algo que no sabe seguir (una llamada, un `scanf`) es `EJECUCION_NO_VERIFICADA`:
 correcto, pero no excelente.
 
+**Si la respuesta ya tiene un error** (uno de los que se ven sin ejecutar: un
+arreglo de estructuras sin índice, una posición que no existe escrita, un campo
+que no existe…), el código no se sigue: se dice ese error y nada más. Seguirlo
+sería agregar un "no pude verificarlo" que no ayuda.
+
 **Leer y mostrar números** (serie "Leer y mostrar un arreglo"): el intérprete
 también sigue `scanf` y `printf` con `%d`, `%i`, `%f` y `%lf`, dándole al
 programa los datos que "escribe el usuario". La regla es:

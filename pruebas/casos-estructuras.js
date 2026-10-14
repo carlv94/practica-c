@@ -344,6 +344,69 @@ export const CASOS_DE_RECORRER_ESTRUCTURAS = [
   ),
 ];
 
+// El arreglo de estructuras sin decir cual elemento, donde sea que este: se dice
+// una vez y no se sigue el codigo (nada de "no pude verificarlo" encima).
+const sinIndice = (serie, paso, nombre, respuesta, espera) => ({
+  serie,
+  paso,
+  nombre,
+  respuesta,
+  espera,
+  sinAvisos: true,
+});
+
+export const CASOS_DE_ARREGLO_SIN_INDICE = [
+  sinIndice(
+    'estructuras-recorrer',
+    2,
+    'sin indice en la condicion de un if',
+    "for (i = 0; i < MAX_ALUMNOS; i++) {\n  if (alumnos.turno == 'T') {\n    cantidad++;\n  }\n}",
+    ['ARREGLO_SIN_INDICE']
+  ),
+  sinIndice(
+    'estructuras-recorrer',
+    3,
+    'sin indice en una comparacion con >',
+    'mayorPromedio = alumnos[0].promedio;\nlegajoMayor = alumnos[0].legajo;\nfor (i = 1; i < MAX_ALUMNOS; i++) {\n  if (alumnos.promedio > mayorPromedio) {\n    mayorPromedio = alumnos[i].promedio;\n    legajoMayor = alumnos[i].legajo;\n  }\n}',
+    ['ARREGLO_SIN_INDICE']
+  ),
+  sinIndice(
+    'estructuras-recorrer',
+    4,
+    'sin indice en la comparacion de la busqueda',
+    'for (i = 0; i < MAX_ALUMNOS; i++) {\n  if (alumnos.legajo == legajoBuscado) {\n    promedioBuscado = alumnos[i].promedio;\n  }\n}',
+    ['ARREGLO_SIN_INDICE']
+  ),
+  sinIndice(
+    'estructuras-recorrer',
+    4,
+    'sin indice afuera y el ciclo bien escrito',
+    'promedioBuscado = alumnos.promedio;\nfor (i = 0; i < MAX_ALUMNOS; i++) {\n  if (alumnos[i].legajo == legajoBuscado) {\n    promedioBuscado = alumnos[i].promedio;\n  }\n}',
+    ['ARREGLO_SIN_INDICE']
+  ),
+  sinIndice(
+    'estructuras-recorrer',
+    1,
+    'una posicion que no existe afuera y el ciclo bien escrito',
+    'total = alumnos[3].promedio;\nfor (i = 0; i < MAX_ALUMNOS; i++) {\n  total += alumnos[i].promedio;\n}',
+    ['INDICE_FUERA_DE_RANGO']
+  ),
+  sinIndice(
+    'estructuras-arreglo',
+    5,
+    'sin indice afuera y la lectura bien escrita',
+    'alumnos.legajo = 20431;\nfor (i = 0; i < MAX_ALUMNOS; i++) {\n  scanf("%d", &alumnos[i].legajo);\n}',
+    ['ARREGLO_SIN_INDICE']
+  ),
+  sinIndice(
+    'estructuras-arreglo',
+    6,
+    'sin indice en la condicion y el printf bien escrito',
+    'for (i = 0; i < MAX_ALUMNOS; i++) {\n  if (alumnos.legajo != 0) {\n    printf("%d %.2f\\n", alumnos[i].legajo, alumnos[i].promedio);\n  }\n}',
+    ['ARREGLO_SIN_INDICE']
+  ),
+];
+
 // Copiar y comparar variables de estructura.
 const copiar =(paso, nombre, respuesta, espera = 'ok', extra = {}) => ({
   serie: 'estructuras-copiar',

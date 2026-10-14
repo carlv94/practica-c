@@ -5,6 +5,8 @@
 //   respuesta: lo que escribe el alumno
 //   espera:    'ok', o la lista de codigos de error que tienen que salir
 //   avisos:    codigos de aviso que tienen que salir (no hacen fallar la respuesta)
+//   sinAvisos: true si no tiene que salir ningun aviso (por ejemplo, "no pude
+//              seguir este codigo" cuando ya hay un error)
 //   mejoras:   si esta, los codigos de mejora que tienen que salir, justo esos
 //              ([] = la respuesta es excelente)
 //   previas:   respuestas a las consignas anteriores, si no son las de referencia
@@ -17,6 +19,7 @@ import {
   CASOS_DE_COPIAR,
   CASOS_DE_ARREGLO_DE_ESTRUCTURAS,
   CASOS_DE_RECORRER_ESTRUCTURAS,
+  CASOS_DE_ARREGLO_SIN_INDICE,
 } from './casos-estructuras.js';
 
 const TYPEDEF_SIN_ETIQUETA = `typedef struct {
@@ -1404,6 +1407,7 @@ export const CASOS = [
   ...CASOS_DE_COPIAR,
   ...CASOS_DE_ARREGLO_DE_ESTRUCTURAS,
   ...CASOS_DE_RECORRER_ESTRUCTURAS,
+  ...CASOS_DE_ARREGLO_SIN_INDICE,
   // ---- 1: declarar la estructura ----
   {
     nombre: 'otro nombre, otras dimensiones, otro orden, double y unsigned',

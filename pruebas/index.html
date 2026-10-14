@@ -307,6 +307,7 @@
               mensajesBien &&
               errores.join() === esperados.join() &&
               (caso.avisos || []).every((a) => avisos.includes(a)) &&
+              (!caso.sinAvisos || avisos.length === 0) &&
               (!caso.mejoras || mejoras.join() === [...caso.mejoras].sort().join()) &&
               (caso.notas == null || notas.join() === [...caso.notas].sort().join()) &&
               (caso.sinVerificar == null || Boolean(r.sinVerificar) === caso.sinVerificar) &&

@@ -2336,6 +2336,9 @@ export function corregir(
     };
     // Con valores de prueba, los mensajes dicen con cuales fallo.
     const conContexto = opciones.contexto ? `${opciones.contexto}, ` : '';
+    // Si ya hay un error en lo escrito, no se sigue el codigo: el alumno
+    // arregla eso primero, y un "no pude verificarlo" encima seria ruido.
+    if (diagnosticos.some((d) => d.nivel === 'error')) return null;
     try {
       return ejecutar(arbol, constante, entrada, prueba);
     } catch (e) {
@@ -5534,6 +5537,10 @@ function revisarCampos(modelo, error) {
       fila
     );
   };
+  // Cada acceso a un campo, en una condicion, una cuenta o un argumento.
+  for (const c of modelo.camposUsados) {
+    if (c.nuevo) revisar({ clase: 'campo', variable: c.variable, campo: c.campo, texto: `${c.variable}.${c.campo}` }, c.fila);
+  }
   for (const l of modelo.llamadas) {
     if (!l.nuevo) continue;
     for (const a of l.argumentos) revisar(a, l.fila);
