@@ -14,96 +14,86 @@ const caso = (serie, paso, nombre, respuesta, espera = 'ok', mejoras = []) => ({
 
 // Una cadena de hasta 10 letras: con el lugar del fin son 11.
 const fin = (paso, nombre, respuesta, espera, mejoras) => caso('cadenas-fin', paso, nombre, respuesta, espera, mejoras);
-const HOLA = "frase[0] = 'H';\nfrase[1] = 'o';\nfrase[2] = 'l';\nfrase[3] = 'a';\n";
+const HOLA = "saludo[0] = 'H';\nsaludo[1] = 'o';\nsaludo[2] = 'l';\nsaludo[3] = 'a';\n";
 
 const CASOS_DE_FIN = [
-  // 1: declarar
-  fin(1, 'justo para el fin', 'char frase[11];'),
-  fin(1, 'con la cuenta escrita', 'char frase[10 + 1];'),
-  fin(1, 'con una constante y la cuenta', '#define MAX 10\nchar frase[MAX + 1];'),
+  // 1: declarar, para el texto "Hola"
+  fin(1, 'justo para el fin', 'char saludo[5];'),
+  fin(1, 'con la cuenta escrita', 'char saludo[4 + 1];'),
+  fin(1, 'con una constante y la cuenta', '#define LETRAS 4\nchar saludo[LETRAS + 1];'),
   // Con el tamano justo, un numero cualquiera no alcanza: hay que haber pensado en el fin.
-  fin(1, 'de mas', 'char frase[20];', ['ARREGLO_GRANDE']),
-  fin(1, 'mucho de mas', 'char frase[100];', ['ARREGLO_GRANDE']),
-  fin(1, 'sin el lugar del fin', 'char frase[10];', ['CADENA_SIN_FIN']),
-  fin(1, 'sin el lugar del fin, con constante', '#define MAX 10\nchar frase[MAX];', ['CADENA_SIN_FIN']),
-  fin(1, 'no alcanza', 'char frase[5];', ['ARREGLO_CHICO']),
-  fin(1, 'un solo caracter', 'char frase;', ['VARIABLE_NO_ES_ARREGLO']),
-  fin(1, 'otro tipo', 'int frase[11];', ['VARIABLE_TIPO']),
-  fin(1, 'con * en vez de corchetes', 'char *frase;', ['VARIABLE_PUNTERO']),
-  fin(1, 'sin la cantidad', 'char frase[];', ['ARREGLO_SIN_DIMENSION']),
+  fin(1, 'de mas', 'char saludo[20];', ['ARREGLO_GRANDE']),
+  fin(1, 'mucho de mas', 'char saludo[100];', ['ARREGLO_GRANDE']),
+  fin(1, 'sin el lugar del fin', 'char saludo[4];', ['CADENA_SIN_FIN']),
+  fin(1, 'sin el lugar del fin, con constante', '#define LETRAS 4\nchar saludo[LETRAS];', ['CADENA_SIN_FIN']),
+  fin(1, 'no alcanza', 'char saludo[3];', ['ARREGLO_CHICO']),
+  fin(1, 'un solo caracter', 'char saludo;', ['VARIABLE_NO_ES_ARREGLO']),
+  fin(1, 'otro tipo', 'int saludo[5];', ['VARIABLE_TIPO']),
+  fin(1, 'con * en vez de corchetes', 'char *saludo;', ['VARIABLE_PUNTERO']),
+  fin(1, 'sin la cantidad', 'char saludo[];', ['ARREGLO_SIN_DIMENSION']),
 
   // 2: caracter por caracter
-  fin(2, 'las cinco posiciones', HOLA + "frase[4] = '\\0';"),
-  fin(2, 'en otro orden', "frase[4] = '\\0';\nfrase[3] = 'a';\nfrase[2] = 'l';\nfrase[1] = 'o';\nfrase[0] = 'H';"),
-  fin(2, 'el fin como 0: correcto y mejorable', HOLA + 'frase[4] = 0;', 'ok', ['FIN_CON_CERO']),
+  fin(2, 'las cinco posiciones', HOLA + "saludo[4] = '\\0';"),
+  fin(2, 'en otro orden', "saludo[4] = '\\0';\nsaludo[3] = 'a';\nsaludo[2] = 'l';\nsaludo[1] = 'o';\nsaludo[0] = 'H';"),
+  fin(2, 'el fin como 0: correcto y mejorable', HOLA + 'saludo[4] = 0;', 'ok', ['FIN_CON_CERO']),
   fin(2, 'sin el fin', HOLA, ['CADENA_SIN_FIN']),
-  fin(2, 'el fin como el caracter 0', HOLA + "frase[4] = '0';", ['FIN_CON_DIGITO']),
-  fin(2, 'el fin como espacio', HOLA + "frase[4] = ' ';", ['FIN_CON_ESPACIO']),
-  fin(2, 'una letra con comillas dobles', "frase[0] = \"H\";\nfrase[1] = 'o';\nfrase[2] = 'l';\nfrase[3] = 'a';\nfrase[4] = '\\0';", [
+  fin(2, 'el fin como el caracter 0', HOLA + "saludo[4] = '0';", ['FIN_CON_DIGITO']),
+  fin(2, 'el fin como espacio', HOLA + "saludo[4] = ' ';", ['FIN_CON_ESPACIO']),
+  fin(2, 'una letra con comillas dobles', "saludo[0] = \"H\";\nsaludo[1] = 'o';\nsaludo[2] = 'l';\nsaludo[3] = 'a';\nsaludo[4] = '\\0';", [
     'ELEMENTO_ENTRE_COMILLAS_DOBLES',
   ]),
-  fin(2, 'una minuscula por una mayuscula', "frase[0] = 'h';\nfrase[1] = 'o';\nfrase[2] = 'l';\nfrase[3] = 'a';\nfrase[4] = '\\0';", [
+  fin(2, 'una minuscula por una mayuscula', "saludo[0] = 'h';\nsaludo[1] = 'o';\nsaludo[2] = 'l';\nsaludo[3] = 'a';\nsaludo[4] = '\\0';", [
     'ELEMENTO_MAYUSCULA',
   ]),
-  fin(2, 'una letra distinta', "frase[0] = 'H';\nfrase[1] = 'o';\nfrase[2] = 'l';\nfrase[3] = 'b';\nfrase[4] = '\\0';", [
+  fin(2, 'una letra distinta', "saludo[0] = 'H';\nsaludo[1] = 'o';\nsaludo[2] = 'l';\nsaludo[3] = 'b';\nsaludo[4] = '\\0';", [
     'ELEMENTO_DISTINTO',
   ]),
-  fin(2, 'una posicion salteada', "frase[0] = 'H';\nfrase[1] = 'o';\nfrase[3] = 'a';\nfrase[4] = '\\0';", ['ELEMENTO_FALTA']),
-  fin(2, 'todo corrido un lugar', "frase[1] = 'H';\nfrase[2] = 'o';\nfrase[3] = 'l';\nfrase[4] = 'a';\nfrase[5] = '\\0';", [
+  fin(2, 'una posicion salteada', "saludo[0] = 'H';\nsaludo[1] = 'o';\nsaludo[3] = 'a';\nsaludo[4] = '\\0';", ['ELEMENTO_FALTA']),
+  fin(2, 'todo corrido un lugar', "saludo[1] = 'H';\nsaludo[2] = 'o';\nsaludo[3] = 'l';\nsaludo[4] = 'a';", [
     'ELEMENTOS_CORRIDOS',
   ]),
-  fin(2, 'asignar el texto entero', 'frase = "Hola";', ['ASIGNACION_DE_ARREGLO']),
-  fin(2, 'con strcpy', 'strcpy(frase, "Hola");', ['ELEMENTOS_CON_FUNCION']),
-  fin(2, 'una posicion que no existe', HOLA + "frase[4] = '\\0';\nfrase[11] = 'x';", ['INDICE_FUERA_DE_RANGO']),
-  fin(2, 'con un ciclo', "int i;\nfor (i = 0; i < 4; i++) {\n  frase[i] = 'a';\n}", ['ELEMENTO_POSICION']),
+  fin(2, 'asignar el texto entero', 'saludo = "Hola";', ['ASIGNACION_DE_ARREGLO']),
+  fin(2, 'con strcpy', 'strcpy(saludo, "Hola");', ['ELEMENTOS_CON_FUNCION']),
+  fin(2, 'una posicion que no existe', HOLA + "saludo[4] = '\\0';\nsaludo[11] = 'x';", ['INDICE_FUERA_DE_RANGO']),
+  fin(2, 'con un ciclo', "int i;\nfor (i = 0; i < 4; i++) {\n  saludo[i] = 'a';\n}", ['ELEMENTO_POSICION']),
   fin(2, 'sin asignaciones', 'int x;', ['ELEMENTOS_FALTAN']),
 
-  // 3 a 5: cuestionarios (la respuesta es el lugar de la opcion)
-  { ...fin(4, 'strlen: la correcta', '2'), dice: ['`Hola` tiene 4'] },
-  fin(4, 'strlen: el lugar declarado', '0', ['OPCION_TAMANO_DECLARADO']),
-  fin(4, 'strlen: cuenta el fin', '1', ['OPCION_CUENTA_EL_FIN']),
-  fin(4, 'sin elegir', '', ['OPCION_FALTA']),
-  fin(5, 'sizeof: la correcta', '2'),
-  fin(5, 'sizeof: las letras', '0', ['OPCION_SIZEOF_CUENTA_LETRAS']),
-  fin(6, 'que contiene la variable: la correcta', '1'),
-  fin(6, 'que contiene la variable: la ultima letra', '0', ['OPCION_ULTIMA_LETRA']),
-  fin(6, 'que contiene la variable: no se sabe', '2', ['OPCION_NO_SE_SABE_FIN']),
 
   // 10: una letra (al final: se aprende en la 9)
-  fin(11, 'una letra', 'char letra[2];'),
-  fin(11, 'sin el lugar del fin', 'char letra[1];', ['CADENA_SIN_FIN']),
-  fin(11, 'de mas', 'char letra[10];', ['ARREGLO_GRANDE']),
-  fin(11, 'un solo caracter', 'char letra;', ['VARIABLE_NO_ES_ARREGLO']),
+  fin(8, 'una letra', 'char letra[2];'),
+  fin(8, 'sin el lugar del fin', 'char letra[1];', ['CADENA_SIN_FIN']),
+  fin(8, 'de mas', 'char letra[10];', ['ARREGLO_GRANDE']),
+  fin(8, 'un solo caracter', 'char letra;', ['VARIABLE_NO_ES_ARREGLO']),
 
   // 6: con su texto
-  fin(7, 'corchetes vacios', 'char saludo[] = "Hola";'),
-  fin(7, 'con el lugar justo: correcto y mejorable', 'char saludo[5] = "Hola";', 'ok', ['CADENA_DIMENSION_INNECESARIA']),
-  fin(7, 'con lugar de mas: correcto y mejorable', 'char saludo[20] = "Hola";', 'ok', ['CADENA_DIMENSION_INNECESARIA']),
-  fin(7, 'justo para las letras: C lo deja, pero no es una cadena', 'char saludo[4] = "Hola";', ['CADENA_SIN_FIN']),
-  fin(7, 'no entra', 'char saludo[3] = "Hola";', ['ARREGLO_CHICO']),
-  fin(7, 'otro texto', 'char saludo[] = "hola";', ['TEXTO_DISTINTO']),
-  fin(7, 'entre comillas simples', "char saludo[] = 'Hola';", ['CADENA_CON_COMILLAS_SIMPLES']),
-  fin(7, 'una letra entre comillas simples', "char saludo[] = 'H';", ['CADENA_CON_COMILLAS_SIMPLES']),
+  fin(3, 'corchetes vacios', 'char saludo[] = "Hola";'),
+  fin(3, 'con el lugar justo: correcto y mejorable', 'char saludo[5] = "Hola";', 'ok', ['CADENA_DIMENSION_INNECESARIA']),
+  fin(3, 'con lugar de mas: correcto y mejorable', 'char saludo[20] = "Hola";', 'ok', ['CADENA_DIMENSION_INNECESARIA']),
+  fin(3, 'justo para las letras: C lo deja, pero no es una cadena', 'char saludo[4] = "Hola";', ['CADENA_SIN_FIN']),
+  fin(3, 'no entra', 'char saludo[3] = "Hola";', ['ARREGLO_CHICO']),
+  fin(3, 'otro texto', 'char saludo[] = "hola";', ['TEXTO_DISTINTO']),
+  fin(3, 'entre comillas simples', "char saludo[] = 'Hola';", ['CADENA_CON_COMILLAS_SIMPLES']),
+  fin(3, 'una letra entre comillas simples', "char saludo[] = 'H';", ['CADENA_CON_COMILLAS_SIMPLES']),
   // Es el mismo texto: el fin escrito de mas es una mejora.
-  fin(7, 'con el fin escrito de mas: correcta y mejorable', 'char saludo[] = "Hola\\0";', 'ok', ['FIN_EN_EL_TEXTO']),
-  fin(7, 'con el fin escrito y el lugar justo', 'char saludo[5] = "Hola\\0";', 'ok', [
+  fin(3, 'con el fin escrito de mas: correcta y mejorable', 'char saludo[] = "Hola\\0";', 'ok', ['FIN_EN_EL_TEXTO']),
+  fin(3, 'con el fin escrito y el lugar justo', 'char saludo[5] = "Hola\\0";', 'ok', [
     'FIN_EN_EL_TEXTO',
     'CADENA_DIMENSION_INNECESARIA',
   ]),
-  fin(7, 'con el fin escrito y sin lugar', 'char saludo[4] = "Hola\\0";', ['ARREGLO_CHICO']),
-  fin(7, 'el texto despues', 'char saludo[10];\nstrcpy(saludo, "Hola");', ['CADENA_SIN_TEXTO']),
-  fin(7, 'con una lista de caracteres: correcta y mejorable', "char saludo[] = {'H', 'o', 'l', 'a', '\\0'};", 'ok', [
+  fin(3, 'con el fin escrito y sin lugar', 'char saludo[4] = "Hola\\0";', ['ARREGLO_CHICO']),
+  fin(3, 'el texto despues', 'char saludo[10];\nstrcpy(saludo, "Hola");', ['CADENA_SIN_TEXTO']),
+  fin(3, 'con una lista de caracteres: correcta y mejorable', "char saludo[] = {'H', 'o', 'l', 'a', '\\0'};", 'ok', [
     'CADENA_COMO_TEXTO',
   ]),
-  fin(7, 'con una lista sin el fin', "char saludo[] = {'H', 'o', 'l', 'a'};", ['CADENA_SIN_FIN']),
+  fin(3, 'con una lista sin el fin', "char saludo[] = {'H', 'o', 'l', 'a'};", ['CADENA_SIN_FIN']),
 
   // 7: letra por letra
-  fin(8, 'la lista con su fin', "char saludo[] = {'H', 'o', 'l', 'a', '\\0'};"),
-  fin(8, 'la lista sin el fin pero con lugar', "char saludo[5] = {'H', 'o', 'l', 'a'};"),
-  fin(8, 'la lista sin el fin ni lugar', "char saludo[] = {'H', 'o', 'l', 'a'};", ['CADENA_SIN_FIN']),
-  fin(8, 'con comillas dobles', 'char saludo[] = "Hola";', ['CADENA_NO_ES_LISTA']),
-  fin(8, 'letras con comillas dobles', 'char saludo[] = {"H", "o", "l", "a"};', ['LISTA_DE_CARACTERES']),
-  fin(8, 'una letra distinta', "char saludo[] = {'H', 'o', 'l', 'b', '\\0'};", ['VALOR_DISTINTO']),
+  fin(5, 'la lista con su fin', "char saludo[] = {'H', 'o', 'l', 'a', '\\0'};"),
+  fin(5, 'la lista sin el fin pero con lugar', "char saludo[5] = {'H', 'o', 'l', 'a'};"),
+  fin(5, 'la lista sin el fin ni lugar', "char saludo[] = {'H', 'o', 'l', 'a'};", ['CADENA_SIN_FIN']),
+  fin(5, 'con comillas dobles', 'char saludo[] = "Hola";', ['CADENA_NO_ES_LISTA']),
+  fin(5, 'letras con comillas dobles', 'char saludo[] = {"H", "o", "l", "a"};', ['LISTA_DE_CARACTERES']),
+  fin(5, 'una letra distinta', "char saludo[] = {'H', 'o', 'l', 'b', '\\0'};", ['VALOR_DISTINTO']),
 ];
 
 const vacia = (paso, nombre, respuesta, espera, mejoras) =>
@@ -139,7 +129,6 @@ const CASOS_DE_VACIA = [
   vacia(2, 'otro caracter en la primera', "nombre[0] = 'x';", ['FIN_DISTINTO']),
   vacia(2, 'nada que la vacie', 'int x;', ['VACIAR_FALTA']),
 
-  // 3 a 5: cuestionarios
   vacia(3, 'largo de una cadena vaciada: la correcta', '2'),
   vacia(3, 'largo de una cadena vaciada: lo que tenia', '0', ['OPCION_VACIAR_NO_CAMBIA']),
   vacia(4, 'el resto de la cadena: la correcta', '1'),
@@ -167,16 +156,16 @@ const CASOS_DE_BIBLIOTECA = [
   biblioteca(1, 'con define y entre comillas', '#define "string.h"', ['INCLUDE_ES_DEFINE']),
   biblioteca(1, 'nada', 'int x;', ['INCLUDE_FALTA']),
   // 1: una letra
-  fin(9, 'la letra entre comillas simples', "char letra = 'A';"),
-  fin(9, 'la letra como numero: correcta y mejorable', 'char letra = 65;', 'ok', ['CARACTER_COMO_NUMERO']),
-  fin(9, 'con comillas dobles', 'char letra = "A";', ['CARACTER_CON_COMILLAS_DOBLES']),
-  fin(9, 'una minuscula', "char letra = 'a';", ['CARACTER_DISTINTO']),
-  fin(9, 'otra letra', "char letra = 'B';", ['CARACTER_DISTINTO']),
-  fin(9, 'sin valor', 'char letra;', ['CARACTER_SIN_VALOR']),
-  fin(9, 'como arreglo', 'char letra[2] = "A";', ['VARIABLE_ARREGLO']),
-  fin(9, 'otro tipo', "int letra = 'A';", ['VARIABLE_TIPO']),
-  fin(10, 'sizeof de un texto de una letra: la correcta', '1'),
-  fin(10, 'sizeof de un texto de una letra: lo mismo que la letra', '0', ['OPCION_TEXTO_COMO_LETRA']),
+  fin(6, 'la letra entre comillas simples', "char letra = 'A';"),
+  fin(6, 'la letra como numero: correcta y mejorable', 'char letra = 65;', 'ok', ['CARACTER_COMO_NUMERO']),
+  fin(6, 'con comillas dobles', 'char letra = "A";', ['CARACTER_CON_COMILLAS_DOBLES']),
+  fin(6, 'una minuscula', "char letra = 'a';", ['CARACTER_DISTINTO']),
+  fin(6, 'otra letra', "char letra = 'B';", ['CARACTER_DISTINTO']),
+  fin(6, 'sin valor', 'char letra;', ['CARACTER_SIN_VALOR']),
+  fin(6, 'como arreglo', 'char letra[2] = "A";', ['VARIABLE_ARREGLO']),
+  fin(6, 'otro tipo', "int letra = 'A';", ['VARIABLE_TIPO']),
+  fin(7, 'sizeof de un texto de una letra: la correcta', '1'),
+  fin(7, 'sizeof de un texto de una letra: lo mismo que la letra', '0', ['OPCION_TEXTO_COMO_LETRA']),
 
   // 3: guardar un texto
   biblioteca(2, 'strcpy', 'strcpy(nombre, "Juan");'),
@@ -761,10 +750,10 @@ const CASOS_DE_LECTURA = [
 
 // Arreglo de caracteres y cadena: lo que las distingue.
 const CASOS_DE_DIFERENCIAS = [
-  fin(3, 'es cadena: la que termina en fin', '1'),
-  fin(3, 'es cadena: la de las mismas letras sin fin', '0', ['OPCION_ARREGLO_SIN_FIN']),
-  fin(3, 'es cadena: las dos', '2', ['OPCION_MISMAS_LETRAS']),
-  // los cuestionarios de strlen y sizeof, ahora tambien en la biblioteca
+  fin(9, 'no es cadena: la lista sin fin', '2'),
+  fin(9, 'no es cadena: el texto entre comillas', '0', ['OPCION_COMILLAS_SON_CADENA']),
+  fin(9, 'no es cadena: la lista con fin', '1', ['OPCION_LISTA_CON_FIN_ES_CADENA']),
+  // los cuestionarios que vienen de Cadenas 1
   { ...biblioteca(6, 'strlen: la correcta', '2'), dice: ['`Maria` tiene 5'] },
   biblioteca(6, 'strlen: el lugar declarado', '0', ['OPCION_TAMANO_DECLARADO']),
   biblioteca(6, 'strlen: cuenta el fin', '1', ['OPCION_CUENTA_EL_FIN']),
@@ -772,6 +761,9 @@ const CASOS_DE_DIFERENCIAS = [
   biblioteca(7, 'sizeof: la correcta', '2'),
   biblioteca(7, 'sizeof: las letras', '0', ['OPCION_SIZEOF_CUENTA_LETRAS']),
   biblioteca(7, 'sizeof: las letras y el fin', '1', ['OPCION_SIZEOF_CUENTA_FIN']),
+  fin(4, 'que contiene la variable: la correcta', '2'),
+  fin(4, 'que contiene la variable: la ultima letra', '0', ['OPCION_ULTIMA_LETRA']),
+  fin(4, 'que contiene la variable: no existe', '1', ['OPCION_POSICION_NO_EXISTE']),
   biblioteca(8, 'strlen sin fin: no se puede saber', '2'),
   biblioteca(8, 'strlen sin fin: las letras', '0', ['OPCION_STRLEN_CUENTA_LAS_LETRAS']),
   biblioteca(8, 'strlen sin fin: cero', '1', ['OPCION_STRLEN_DA_CERO']),

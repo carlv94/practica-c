@@ -312,7 +312,8 @@ recorrer, arreglos de cadenas, tablas de cadenas y typedef) usan estas reglas.
 `'\0'`, y es la palabra para un texto. "Arreglo de caracteres" queda para
 cuando se contrasta con la cadena (el de la serie *Arreglos de caracteres*, que
 no tiene fin y lleva su cantidad aparte). Las diferencias se tratan en cuatro
-cuestionarios, cada uno donde importa: `cadenas-q-es-cadena` (el fin),
+cuestionarios, cada uno donde importa: `cadenas-q-es-cadena` (el fin: cierra la
+serie *El carácter de fin*; `strlen` y `sizeof` se ven en la biblioteca),
 `cadenas-q-strlen-sin-fin` (la biblioteca), `cadenas-q-dos-formas` (recorrer
 hasta `cantidad` o hasta `'\0'`) y `lectura-q-cuantas-letras` (`%s` frente a
 `%c`).
@@ -322,14 +323,14 @@ tamaño justo. Con un "al menos" un número cualquiera (20) pasaría sin que el
 alumno haya pensado en el `\0`, y eso es justo lo que se quiere comprobar:
 
 ```json
-{ "variable": { "tipo": "caracter", "arreglo": { "tamano": 11, "letras": 10 }, "capturar": "C", "capturarDimension": "N" } }
+{ "variable": { "tipo": "caracter", "arreglo": { "tamano": 5, "letras": 4 }, "capturar": "C" } }
 ```
 
 | Respuesta | Resultado |
 |---|---|
-| `char s[11];`, `char s[10 + 1];`, `char s[MAX + 1];` | Correcta. |
-| `char s[10];` | Error `CADENA_SIN_FIN`: no queda espacio para el `\0`. |
-| `char s[5];` | Error `ARREGLO_CHICO`. |
+| `char s[5];`, `char s[4 + 1];`, `char s[LETRAS + 1];` | Correcta. |
+| `char s[4];` | Error `CADENA_SIN_FIN`: no queda espacio para el `\0`. |
+| `char s[3];` | Error `ARREGLO_CHICO`. |
 | `char s[20];` | Error `ARREGLO_GRANDE`: es más de lo que hace falta. |
 
 `"alMenos"` en lugar de `"tamano"` acepta ese tamaño o más, para una consigna
@@ -893,6 +894,13 @@ anterior capturó.
 
 La `referencia` tiene que pasar su propia consigna, encadenada con las
 referencias anteriores: las pruebas lo verifican.
+
+**La `referencia` también puede nombrar una captura con `{S}`**: "Ver una
+solución" la muestra con los nombres que el alumno eligió antes
+(`{C}[0] = 'H';` queda `nombre[0] = 'H';` si así llamó a su cadena). Sirve
+donde el nombre viene de una consigna anterior; lo que el alumno nombra en la
+misma consigna, o lo que fija un `dado`, queda escrito tal cual. Las pruebas
+sustituyen igual que la pantalla.
 
 ## Buenas prácticas
 
