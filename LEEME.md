@@ -144,6 +144,10 @@ pide cargar, igual que "Así tiene que quedar la tabla" en Arreglos:
     "resaltar": ["promedio"]
   }
   ```
+- **`"marcarDestacado": ["legajo", "promedio"]`** marca esos campos solo en los
+  elementos de `destacar` (en "el mayor promedio" y "buscar un legajo": lo que
+  se compara y lo que se guarda, y no los de todos), con el mismo aspecto que
+  `marcar`.
 - **La descripción de cada dato** la dice el enunciado, en prosa y en el orden
   de la ficha, cuando hace falta (en "Declarar la estructura"). Si el enunciado
   tiene una línea que solo dice `[ficha]`, la ficha va ahí; si no, después de

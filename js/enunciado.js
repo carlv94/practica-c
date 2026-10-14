@@ -46,6 +46,8 @@ export const MARCA_DE_FICHA = '\n[ficha]\n';
 // "resaltar", los campos que se marcan en todas porque la consigna los carga.
 // "marcar" se ve igual, para señalar un campo sobre el que se trabaja (el que
 // se suma); no hace falta que el enunciado diga sus valores.
+// "marcarDestacado" son los campos que se marcan solo en los destacados (el
+// legajo y el promedio del que se busca, y no los de todos).
 export function fichasDe(consigna) {
   const f = consigna.ficha;
   if (!f) return [];
@@ -56,7 +58,7 @@ export function fichasDe(consigna) {
     titulo: `${f.arreglo}[${i}]`,
     destacar: (f.destacar || []).includes(i),
     resaltar: f.resaltar,
-    marcar: f.marcar,
+    marcar: (f.destacar || []).includes(i) ? [...(f.marcar || []), ...(f.marcarDestacado || [])] : f.marcar,
     campos: f.campos.map((nombre, k) =>
       fila && fila[k] != null ? { nombre, ejemplo: String(fila[k]) } : { nombre }
     ),

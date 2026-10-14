@@ -102,14 +102,15 @@
       "enunciado": "La facultad quiere conocer al alumno de mayor promedio. El arreglo `alumnos` ya tiene cargados los datos de esta ficha. Con un ciclo, guarde en `legajoMayor` el legajo del alumno de mayor promedio. Use `mayorPromedio` para el mayor promedio que va encontrando, y el índice `i`.",
       "ficha": {
         "arreglo": "alumnos",
-        "leyenda": "Con estos datos, el de mayor promedio es el de la posición 1:",
+        "leyenda": "Con estos datos, el de mayor promedio es el de la posición 1: su legajo es `30872` y su promedio, `9.10`.",
         "campos": ["legajo", "apellidoNombre", "promedio", "turno"],
         "elementos": [
           [20431, "Perez, Ana", "8.45", "T"],
           [30872, "Lopez, Juan", "9.10", "M"],
           [18560, "Diaz, Marta", "7.20", "N"]
         ],
-        "destacar": [1]
+        "destacar": [1],
+        "marcarDestacado": ["legajo", "promedio"]
       },
       "requiere": [
         {
@@ -155,7 +156,8 @@
           [30872, "Lopez, Juan", "9.10", "M"],
           [18560, "Diaz, Marta", "7.20", "N"]
         ],
-        "destacar": [1]
+        "destacar": [1],
+        "marcarDestacado": ["legajo", "promedio"]
       },
       "requiere": [
         {
