@@ -24,7 +24,7 @@
       },
       "enunciado": "Declare de nuevo la variable `nombre`, pero esta vez del tipo {T}.",
       "requiere": [{ "usaAlias": { "alias": "$T", "nombre": "nombre" } }],
-      "referencia": "Texto nombre;"
+      "referencia": "{T} nombre;"
     },
     {
       "id": "cadenas-arreglo-con-tipo",
@@ -32,7 +32,7 @@
       "continua": true,
       "enunciado": "Un curso tiene hasta 30 estudiantes. Declare la variable donde se guarden sus nombres, con el tamaño justo y usando el tipo {T}.",
       "requiere": [{ "usaAlias": { "alias": "$T", "arreglo": { "tamano": 30 } } }],
-      "referencia": "#define MAX_ESTUDIANTES 30\n\nTexto curso[MAX_ESTUDIANTES];"
+      "referencia": "#define MAX_ESTUDIANTES 30\n\n{T} curso[MAX_ESTUDIANTES];"
     },
     {
       "id": "cadenas-q-alias-letra",
@@ -67,7 +67,7 @@
       "continua": true,
       "enunciado": "Un curso tiene hasta 30 estudiantes. De cada uno se guardan su nombre, su apellido y su carrera, y cada texto tiene hasta 25 letras. Declare la variable donde se guarden estos datos de todo el curso, con una fila por estudiante, con el tamaño justo y usando el tipo {T}.",
       "requiere": [{ "usaAlias": { "alias": "$T", "arreglo": { "tamano": [30, 3] }, "capturar": "D" } }],
-      "referencia": "#define CAMPOS 3\n\nTexto datos[MAX_ESTUDIANTES][CAMPOS];"
+      "referencia": "#define CAMPOS 3\n\n{T} datos[MAX_ESTUDIANTES][CAMPOS];"
     },
     {
       "id": "cadenas-q-alias-fila",
@@ -145,7 +145,7 @@
           }
         }
       ],
-      "referencia": "strcpy(datos[0][1], \"Perez\");"
+      "referencia": "strcpy({D}[0][1], \"Perez\");"
     }
   ]
 }

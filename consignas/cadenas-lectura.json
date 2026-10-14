@@ -27,7 +27,7 @@
       "continua": true,
       "enunciado": "Lea desde el teclado una palabra y guárdela en {N}.",
       "requiere": [{ "lee": { "destino": "$N", "formato": "palabra" } }],
-      "referencia": "scanf(\"%25s\", nombre);"
+      "referencia": "scanf(\"%25s\", {N});"
     },
     {
       "id": "lectura-mostrar",
@@ -35,7 +35,7 @@
       "continua": true,
       "enunciado": "Muestre en pantalla el contenido de {N}.",
       "requiere": [{ "muestra": { "destino": "$N", "despuesDeLeer": true } }],
-      "referencia": "printf(\"%s\", nombre);"
+      "referencia": "printf(\"%s\", {N});"
     },
     {
       "id": "lectura-q-cuantas-letras",
@@ -101,7 +101,7 @@
       "continua": true,
       "enunciado": "Ahora el nombre puede tener varias palabras, como `Ana Maria`. Lea desde el teclado el nombre completo, hasta que se presione Enter, y guárdelo en {N}.",
       "requiere": [{ "lee": { "destino": "$N", "formato": "linea" } }],
-      "referencia": "gets(nombre);"
+      "referencia": "gets({N});"
     },
     {
       "id": "lectura-saludo",

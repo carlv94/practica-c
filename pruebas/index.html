@@ -56,7 +56,8 @@
         function llegarHasta(serie, paso, previas = []) {
           let avance = inicio();
           for (let i = 0; i < paso - 1; i++) {
-            const respuesta = previas[i] || respuestaDeReferencia(serie.consignas[i]);
+            const respuesta =
+              previas[i] || respuestaDeReferencia(serie.consignas[i], capturasPrevias(serie, i, avance));
             const r = corregirPaso(analizador, serie, i, avance, respuesta);
             if (!r.correcto) {
               throw new Error(`la respuesta previa ${i + 1} no pasa: ${codigos(r, 'error')}`);
@@ -140,7 +141,7 @@
               return;
             }
 
-            const r = corregirPaso(analizador, s, i, previo, consigna.referencia);
+            const r = corregirPaso(analizador, s, i, previo, respuestaDeReferencia(consigna, recibidas));
             // La referencia es la respuesta modelo: correcta y sin nada que mejorar.
             anotar(
               r.correcto && !r.mejorable,

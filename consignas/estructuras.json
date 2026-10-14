@@ -45,7 +45,7 @@
       "titulo": "Declarar una variable con el alias",
       "enunciado": "Declare una variable usando el alias {A}.",
       "requiere": [{ "variable": { "tipo": "$S", "conAlias": true } }],
-      "referencia": "TPuesto otroPuesto;"
+      "referencia": "{A} otroPuesto;"
     }
   ]
 }

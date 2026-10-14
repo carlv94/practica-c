@@ -37,7 +37,7 @@
           }
         }
       ],
-      "referencia": "strcpy(nombres[0], \"Ana\");"
+      "referencia": "strcpy({N}[0], \"Ana\");"
     },
     {
       "id": "cadenas-q-tabla",
@@ -123,7 +123,7 @@
       "continua": true,
       "enunciado": "Guarde el texto `\"Luis\"` en la segunda posición del arreglo {N}, asignando cada carácter en su posición: una asignación por cada posición, indicando sus índices.",
       "requiere": [{ "elementos": { "de": "$N", "en": [1], "texto": "Luis" } }],
-      "referencia": "nombres[1][0] = 'L';\nnombres[1][1] = 'u';\nnombres[1][2] = 'i';\nnombres[1][3] = 's';\nnombres[1][4] = '\\0';"
+      "referencia": "{N}[1][0] = 'L';\n{N}[1][1] = 'u';\n{N}[1][2] = 'i';\n{N}[1][3] = 's';\n{N}[1][4] = '\\0';"
     },
     {
       "id": "cadenas-vaciar-tabla",
@@ -132,7 +132,7 @@
       "dado": "int i;",
       "enunciado": "Con un ciclo, deje vacías todas las cadenas del arreglo {N}. Use el índice `i`.",
       "requiere": [{ "ciclo": { "indice": "i", "filasDe": "$N" } }],
-      "referencia": "for (i = 0; i < MAX_ESTUDIANTES; i++) {\n  nombres[i][0] = '\\0';\n}"
+      "referencia": "for (i = 0; i < MAX_ESTUDIANTES; i++) {\n  {N}[i][0] = '\\0';\n}"
     },
     {
       "id": "cadenas-tabla-dias",

@@ -192,8 +192,12 @@ export function corregirPaso(analizador, serie, indice, avance, respuesta) {
 
 // La respuesta modelo de una consigna: lo que escribiria quien la resuelve
 // bien. En una de opciones es el lugar de la correcta.
-export const respuestaDeReferencia = (consigna) =>
-  consigna.opciones ? String(consigna.opciones.findIndex((o) => o.correcta)) : consigna.referencia;
+// La referencia puede nombrar con {C} lo que el alumno nombro en una consigna
+// anterior (igual que el enunciado): con las capturas, queda con sus nombres.
+export const respuestaDeReferencia = (consigna, capturas = {}) =>
+  consigna.opciones
+    ? String(consigna.opciones.findIndex((o) => o.correcta))
+    : sustituir(consigna.referencia, capturas);
 
 // Si la serie pide buenas practicas, una respuesta puede ser excelente.
 export const pidePracticas = (serie) =>

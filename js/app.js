@@ -20,6 +20,7 @@ import {
   esMixta,
   programaDeOpciones,
   capturasPrevias,
+  respuestaDeReferencia,
   corregirPaso,
   despuesDe,
   pidePracticas,
@@ -663,12 +664,14 @@ function verSolucion() {
   // tal cual si el alumno viene siguiendo las referencias. Si no, se le
   // muestra como ejemplo y la adapta a sus nombres.
   pidioSolucion = true;
-  const r = corregirPaso(analizador, serie, hechas.length, avance, consigna.referencia);
+  // Con los nombres que el alumno uso antes, cuando la referencia los nombra.
+  const referencia = respuestaDeReferencia(consigna, capturasPrevias(serie, hechas.length, avance));
+  const r = corregirPaso(analizador, serie, hechas.length, avance, referencia);
   const nota = r.correcto
     ? 'Esta es una solución posible. Puede escribirla o copiarla, y comprobar.'
     : 'Esta es una solución posible, escrita con otros nombres: hay que adaptarla a los que usó usted.';
   const ejemplo = document.createElement('pre');
-  pintar(ejemplo, consigna.referencia);
+  pintar(ejemplo, referencia);
   $('respuesta').focus({ preventScroll: true });
   mostrarResultado([mensaje('aviso', nota), ejemplo]);
 }

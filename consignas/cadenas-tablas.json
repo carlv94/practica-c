@@ -37,7 +37,7 @@
           }
         }
       ],
-      "referencia": "strcpy(datos[0][1], \"Perez\");"
+      "referencia": "strcpy({D}[0][1], \"Perez\");"
     },
     {
       "id": "cadenas-q-celda",
@@ -155,7 +155,7 @@
       "continua": true,
       "enunciado": "En la tabla {D}, la columna `0` de cada fila es el nombre. Guarde el nombre `\"Ana\"` del segundo estudiante, asignando cada carácter en su posición: una asignación por cada posición, indicando sus índices.",
       "requiere": [{ "elementos": { "de": "$D", "en": [1, 0], "texto": "Ana" } }],
-      "referencia": "datos[1][0][0] = 'A';\ndatos[1][0][1] = 'n';\ndatos[1][0][2] = 'a';\ndatos[1][0][3] = '\\0';"
+      "referencia": "{D}[1][0][0] = 'A';\n{D}[1][0][1] = 'n';\n{D}[1][0][2] = 'a';\n{D}[1][0][3] = '\\0';"
     },
     {
       "id": "cadenas-vaciar-datos",
@@ -164,7 +164,7 @@
       "dado": "int i;\nint j;",
       "enunciado": "Con ciclos, deje vacíos todos los textos de la tabla {D}. Use los índices `i` y `j`.",
       "requiere": [{ "ciclo": { "indice": "i", "filasDe": "$D", "columnas": { "indice": "j" } } }],
-      "referencia": "for (i = 0; i < MAX_ESTUDIANTES; i++) {\n  for (j = 0; j < CAMPOS; j++) {\n    datos[i][j][0] = '\\0';\n  }\n}"
+      "referencia": "for (i = 0; i < MAX_ESTUDIANTES; i++) {\n  for (j = 0; j < CAMPOS; j++) {\n    {D}[i][j][0] = '\\0';\n  }\n}"
     }
   ]
 }
