@@ -1,15 +1,6 @@
 {
   "grupos": [
     {
-      "id": "estructuras",
-      "titulo": "Estructuras",
-      "descripcion": "Declarar estructuras, darles un alias y usarlas.",
-      "series": [
-        "estructuras.json",
-        "estructuras-alumno.json"
-      ]
-    },
-    {
       "id": "arreglos",
       "agrupar": true,
       "titulo": "Arreglos",
@@ -44,6 +35,15 @@
         "cadenas-tablas.json",
         "cadenas-typedef.json",
         "cadenas-lectura.json"
+      ]
+    },
+    {
+      "id": "estructuras",
+      "titulo": "Estructuras",
+      "descripcion": "Declarar estructuras, darles un alias y usarlas.",
+      "series": [
+        "estructuras.json",
+        "estructuras-alumno.json"
       ]
     }
   ]

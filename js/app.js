@@ -26,7 +26,7 @@ import {
   pidePracticas,
 } from './serie.js';
 import { crearEditor, pintar } from './editor.js';
-import { partesDeEnunciado, figuraDe, sustituir } from './enunciado.js';
+import { partesDeEnunciado, enunciadoEnDos, figuraDe, sustituir } from './enunciado.js';
 
 const CARPETA = 'consignas/';
 const INDICE = CARPETA + 'indice.json';
@@ -388,13 +388,17 @@ function mostrarConsigna() {
   }
 
   $('titulo-consigna').textContent = `${actual + 1}. ${consigna.titulo}`;
-  $('enunciado').replaceChildren(
-    // Lo que va entre acentos graves (y lo que capturo el alumno) en estilo de
-    // codigo: que "nombre" no se lea como una palabra mas del enunciado.
-    ...partesDeEnunciado(consigna.enunciado, capturas).map((parte) =>
+  // Lo que va entre acentos graves (y lo que capturo el alumno) en estilo de
+  // codigo: que "nombre" no se lea como una palabra mas del enunciado.
+  const enParrafo = (texto) =>
+    partesDeEnunciado(texto, capturas).map((parte) =>
       parte.nombre ? elemento('code', null, parte.nombre) : conCodigo(parte.texto)
-    )
-  );
+    );
+  const { antes, despues } = enunciadoEnDos(consigna);
+  $('enunciado').replaceChildren(...enParrafo(antes));
+  dibujarFicha(consigna.ficha);
+  $('enunciado-cierre').replaceChildren(...enParrafo(despues));
+  $('enunciado-cierre').hidden = !despues;
   // Un ejemplo antes del enunciado: lo que se hacia hasta ahora, para compararlo.
   const ejemplo = consigna.ejemplo;
   $('bloque-ejemplo').hidden = !ejemplo;
@@ -425,6 +429,30 @@ function mostrarConsigna() {
   $('respuesta').readOnly = false;
   $('ver-solucion').hidden = false;
   $('respuesta').focus();
+}
+
+// La ficha de datos: una tabla con la descripcion de cada campo, su nombre (en
+// una columna alineada a la derecha) y, si lo lleva, un valor de ejemplo.
+function dibujarFicha(ficha) {
+  const caja = $('ficha');
+  caja.hidden = !ficha;
+  caja.replaceChildren();
+  if (!ficha) return;
+  const conEjemplo = ficha.campos.some((c) => c.ejemplo != null);
+  const tabla = elemento('table', 'ficha');
+  if (ficha.titulo) tabla.appendChild(elemento('caption', null, ficha.titulo));
+  const cuerpo = elemento('tbody');
+  for (const campo of ficha.campos) {
+    const fila = elemento('tr');
+    fila.appendChild(elemento('td', 'ficha-texto', campo.texto));
+    const nombre = elemento('td', 'ficha-nombre');
+    nombre.appendChild(elemento('code', null, campo.nombre));
+    fila.appendChild(nombre);
+    if (conEjemplo) fila.appendChild(elemento('td', 'ficha-ejemplo', String(campo.ejemplo ?? '')));
+    cuerpo.appendChild(fila);
+  }
+  tabla.appendChild(cuerpo);
+  caja.appendChild(tabla);
 }
 
 // El arreglo del enunciado, como una fila de casilleros con su indice arriba.

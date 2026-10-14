@@ -16,6 +16,26 @@
 
 const MARCA = /\{(\w+)\}/g;
 
+// Y puede llevar una ficha de datos: lo que se registra de cada cosa, con la
+// descripcion de cada campo y el nombre que se le pide. Es un recuadro, y el
+// enunciado dice donde va con una linea que solo dice [ficha]:
+//   "ficha": { "titulo": "Ficha de alumno",
+//              "campos": [{ "texto": "Promedio general", "nombre": "promedio",
+//                           "ejemplo": "8.45" }] }
+// "ejemplo" es opcional (todos los campos o ninguno): un valor cargado, para las
+// consignas que usan la estructura. Donde se pide declararla no se pone, porque
+// un valor de ejemplo ya insinua el tipo.
+export const MARCA_DE_FICHA = '\n[ficha]\n';
+
+// El enunciado partido en lo que va antes de la ficha y lo que va despues.
+// Sin ficha, todo va antes.
+export function enunciadoEnDos(consigna) {
+  const enunciado = consigna.enunciado;
+  const donde = consigna.ficha ? enunciado.indexOf(MARCA_DE_FICHA) : -1;
+  if (donde < 0) return { antes: enunciado, despues: '' };
+  return { antes: enunciado.slice(0, donde), despues: enunciado.slice(donde + MARCA_DE_FICHA.length) };
+}
+
 // El dibujo de una consigna, o null si no lleva:
 //   { clase: 'arreglo', valores: [3, 6, 0, 7, 1, 5] }
 //   { clase: 'tabla', filas: [[5, 8, 1, 4], [0, 2, 9, 6]] }

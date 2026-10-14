@@ -226,6 +226,60 @@ section[hidden] {
   white-space: pre-line;
 }
 
+/* La ficha de datos: la descripcion de cada campo, su nombre alineado a la
+   derecha y, si lo lleva, un valor de ejemplo. */
+#ficha {
+  margin: 12px 0;
+  width: fit-content;
+  max-width: 100%;
+  overflow-x: auto;
+  /* El borde y las esquinas redondeadas son de la caja: la tabla va adentro. */
+  border: 1px solid var(--borde);
+  border-radius: 10px;
+  background: var(--panel);
+}
+
+#enunciado-cierre {
+  margin: 0;
+  white-space: pre-line;
+}
+
+.ficha {
+  border-collapse: collapse;
+}
+
+.ficha caption {
+  caption-side: top;
+  text-align: left;
+  padding: 8px 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--suave);
+  background: var(--codigo);
+  border-bottom: 1px solid var(--borde);
+}
+
+.ficha td {
+  padding: 8px 14px;
+  border-top: 1px solid var(--borde);
+}
+
+.ficha tr:first-child td {
+  border-top: 0;
+}
+
+.ficha-nombre {
+  text-align: right;
+  border-left: 1px solid var(--borde);
+  white-space: nowrap;
+}
+
+.ficha-ejemplo {
+  border-left: 1px solid var(--borde);
+  color: var(--suave);
+  min-width: 5.5rem;
+}
+
 /* El arreglo del enunciado: una fila de casilleros con el indice arriba. Si no
    entra a lo ancho se desplaza la fila, no la pagina. */
 #figura {

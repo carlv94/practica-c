@@ -85,6 +85,30 @@ Cambiar las reglas de una consigna no rompe el avance: al abrir, las
 respuestas guardadas se corrigen de nuevo, y el alumno retoma desde la primera
 que ya no vale.
 
+## La ficha de datos
+
+Una consigna puede llevar una ficha: el recuadro con lo que se registra de cada
+cosa, en lugar de una lista con viñetas. El enunciado dice dónde va con una
+línea que solo dice `[ficha]`; lo que está antes queda arriba y lo que está
+después, abajo:
+
+```json
+"enunciado": "De cada alumno se guarda:\n[ficha]\nDeclare la estructura.",
+"ficha": {
+  "titulo": "Ficha de alumno",
+  "campos": [
+    { "texto": "Número de legajo", "nombre": "legajo" },
+    { "texto": "Promedio general", "nombre": "promedio", "ejemplo": "8.45" }
+  ]
+}
+```
+
+Cada campo lleva su descripción y el nombre que se le pide, que se ve resaltado
+y alineado a la derecha. `ejemplo` es opcional y va en todos los campos o en
+ninguno. Donde se pide **declarar** la estructura no se pone, porque un valor
+de ejemplo insinúa el tipo; en las consignas que la usan, sí. Las pruebas
+verifican que los nombres de la ficha sean los de la regla `struct`.
+
 ## Qué código ve cada consigna
 
 **Por defecto, cada consigna es un programa nuevo**: no ve el código de las

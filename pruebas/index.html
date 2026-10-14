@@ -160,6 +160,32 @@
                 `usa ${sueltas.map((m) => `{${m}}`).join(', ')}, que ninguna consigna anterior captura`
               );
             }
+            // Una ficha: el enunciado dice donde va, y sus campos son los de la
+            // estructura que se corrige (lo que se ve es lo que se corrige).
+            if (consigna.ficha) {
+              const nombres = consigna.ficha.campos.map((c) => c.nombre).sort();
+              const pedidos = (consigna.requiere || [])
+                .flatMap((r) => (r.struct ? r.struct.campos.map((c) => c.nombre) : []))
+                .sort();
+              anotar(
+                consigna.enunciado.includes('\n[ficha]\n'),
+                `ficha de ${consigna.id}: lugar en el enunciado`,
+                'el enunciado tiene que llevar una linea que diga [ficha]'
+              );
+              if (pedidos.length) {
+                anotar(
+                  nombres.join() === pedidos.join(),
+                  `ficha de ${consigna.id}: campos`,
+                  `la ficha muestra ${nombres.join(', ')} y la regla pide ${pedidos.join(', ')}`
+                );
+              }
+              const conEjemplo = consigna.ficha.campos.filter((c) => c.ejemplo != null).length;
+              anotar(
+                conEjemplo === 0 || conEjemplo === consigna.ficha.campos.length,
+                `ficha de ${consigna.id}: ejemplos`,
+                'o todos los campos llevan ejemplo o ninguno'
+              );
+            }
           } catch (e) {
             anotar(false, `referencia de ${consigna.id}`, e.message);
           }
