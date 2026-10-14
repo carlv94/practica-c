@@ -22,7 +22,7 @@
           "valor": "2",
           "texto": "la última posición que se usó",
           "codigo": "OPCION_ULTIMA_POSICION",
-          "explicacion": "La última posición que se usó es la `2`, porque se empieza a contar desde `0`. Pero `cantidad` no cuenta posiciones: cuenta notas, y hay tres cargadas."
+          "explicacion": "La última posición que se usó es la `2`, porque se empieza a contar desde `0`. Pero `cantidad` no cuenta posiciones: cuenta notas."
         },
         {
           "valor": "3",

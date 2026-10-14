@@ -1,18 +1,11 @@
 {
   "id": "arreglos-caracteres",
   "titulo": "Arreglos de caracteres",
-  "descripcion": "Un arreglo cuyos elementos son letras: declararlo, definirlo, mostrarlo, contar, buscar y reemplazar, y cómo se sabe cuántas letras hay.",
+  "descripcion": "Un arreglo cuyos elementos son letras: definirlo, mostrarlo, contar, buscar y reemplazar, y cómo se sabe cuántas letras hay cargadas.",
   "dentroDeMain": true,
   "cabecera": "#include <stdio.h>",
   "buenasPracticas": ["constantes"],
   "consignas": [
-    {
-      "id": "caracteres-declarar",
-      "titulo": "Un arreglo de letras",
-      "enunciado": "Se necesita guardar las 5 vocales del alfabeto, una letra en cada posición. Declare el arreglo necesario, con el tamaño justo.",
-      "requiere": [{ "variable": { "tipo": "caracter", "arreglo": 5 } }],
-      "referencia": "#define CANTIDAD_VOCALES 5\n\nchar vocales[CANTIDAD_VOCALES];"
-    },
     {
       "id": "caracteres-valores",
       "titulo": "Un arreglo de letras con sus valores",
@@ -21,39 +14,19 @@
       "referencia": "char calificaciones[] = {'B', 'A', 'C', 'A', 'E', 'B'};"
     },
     {
-      "id": "caracteres-q-cambiar",
-      "titulo": "La letra de una posición",
-      "enunciado": "Después de ejecutar el código de abajo, ¿qué contendría `calificaciones[2]`?",
-      "codigo": "char calificaciones[5] = {'B', 'A', 'C', 'A', 'E'};\n\ncalificaciones[2] = 'D';",
-      "opciones": [
-        {
-          "valor": "'C'",
-          "texto": "la letra que había antes de la asignación",
-          "codigo": "OPCION_VALOR_ANTERIOR",
-          "explicacion": "El `'C'` es lo que había en `calificaciones[2]` antes. La asignación lo reemplaza: en una posición se guarda una sola letra, la última que se le asignó."
-        },
-        {
-          "valor": "'A'",
-          "texto": "la letra de la segunda posición",
-          "codigo": "OPCION_POSICION_DESDE_UNO",
-          "explicacion": "Las posiciones se numeran desde 0: la segunda posición es `calificaciones[1]`. La asignación es a `calificaciones[2]`, la tercera."
-        },
-        {
-          "valor": "'D'",
-          "texto": "la letra que se asignó",
-          "correcta": true,
-          "explicacion": "`calificaciones[2]` es la tercera posición, y la asignación guarda en ella una `'D'`: la `'C'` que había se pierde. Las demás posiciones no cambian."
-        }
-      ]
-    },
-    {
       "id": "caracteres-mostrar",
       "titulo": "Mostrar las letras",
       "dado": "#define CANTIDAD 6\n\nchar calificaciones[CANTIDAD] = {'B', 'A', 'C', 'A', 'E', 'B'};\nint i;",
-      "enunciado": "En el arreglo `calificaciones` están las calificaciones de 6 alumnos, cada una con una letra de la A a la E.\n\nCon un ciclo, muestre con `printf` cada calificación, de la primera a la última. El formato para mostrar una letra es `%c`. Use el índice `i`.",
+      "enunciado": "En el arreglo `calificaciones` están las calificaciones de 6 alumnos, cada una con una letra de la A a la E.\n\nCon un ciclo, muestre con `printf` cada calificación, de la primera a la última y separadas por un espacio. El formato para mostrar una letra es `%c`. Use el índice `i`.",
+      "dibujo": {
+        "titulo": "El arreglo `calificaciones`:",
+        "valores": ["B", "A", "C", "A", "E", "B"]
+      },
+      "salida": "B A C A E B",
       "requiere": [
         {
           "ejecuta": {
+            "separadas": true,
             "casos": [
               {
                 "datos": { "calificaciones": ["B", "A", "C", "A", "E", "B"] },
@@ -81,6 +54,11 @@
       "titulo": "Cuántas veces aparece una letra",
       "dado": "#define CANTIDAD 8\n\nchar calificaciones[CANTIDAD] = {'B', 'A', 'C', 'A', 'E', 'B', 'A', 'D'};\nint cantidad;\nint i;",
       "enunciado": "En el arreglo `calificaciones` están las calificaciones de 8 alumnos, cada una con una letra de la A a la E. Se quiere saber cuántos alumnos sacaron una `'A'`.\n\nCon un ciclo, deje en `cantidad` cuántas veces aparece la letra `'A'` en `calificaciones`. Use el índice `i`.",
+      "dibujo": {
+        "titulo": "El arreglo `calificaciones`, con las `'A'` resaltadas:",
+        "valores": ["B", "A", "C", "A", "E", "B", "A", "D"],
+        "resaltar": [1, 3, 6]
+      },
       "requiere": [
         {
           "ejecuta": {
@@ -103,6 +81,11 @@
       "titulo": "La primera posición de una letra",
       "dado": "#define CANTIDAD 8\n\nchar calificaciones[CANTIDAD] = {'B', 'A', 'C', 'E', 'D', 'E', 'A', 'B'};\nint posicion;\nint i;",
       "enunciado": "En el arreglo `calificaciones` están las calificaciones de 8 alumnos, cada una con una letra de la A a la E. Se quiere saber en qué lugar de la lista está el primer alumno que sacó una `'E'`.\n\nCon un ciclo, deje en `posicion` la posición de la primera `'E'` de `calificaciones`, o `-1` si no hay ninguna. Use el índice `i`.",
+      "dibujo": {
+        "titulo": "El arreglo `calificaciones`, con la primera `'E'` resaltada:",
+        "valores": ["B", "A", "C", "E", "D", "E", "A", "B"],
+        "resaltar": [3]
+      },
       "requiere": [
         {
           "ejecuta": {
@@ -129,6 +112,18 @@
       "titulo": "Reemplazar una letra por otra",
       "dado": "#define CANTIDAD 6\n\nchar calificaciones[CANTIDAD] = {'B', 'E', 'C', 'E', 'A', 'B'};\nint i;",
       "enunciado": "En el arreglo `calificaciones` están las calificaciones de 6 alumnos, cada una con una letra de la A a la E. El docente decide que todas las `'E'` pasen a ser `'D'`.\n\nCon un ciclo, reemplace en `calificaciones` cada `'E'` por una `'D'`. Las demás letras tienen que quedar como están. Use el índice `i`.",
+      "dibujo": [
+        {
+          "titulo": "`calificaciones` antes:",
+          "valores": ["B", "E", "C", "E", "A", "B"],
+          "resaltar": [1, 3]
+        },
+        {
+          "titulo": "`calificaciones` después:",
+          "valores": ["B", "D", "C", "D", "A", "B"],
+          "resaltar": [1, 3]
+        }
+      ],
       "requiere": [
         {
           "ejecuta": {
@@ -161,6 +156,7 @@
     {
       "id": "caracteres-q-cuantas",
       "titulo": "Cuántas letras hay cargadas",
+      "queda": true,
       "enunciado": "Después de ejecutar el código de abajo, ¿qué valor tendría `cantidad`?",
       "codigo": "#define MAX_LETRAS 8\n\nchar letras[MAX_LETRAS];\nint cantidad = 0;\n\nletras[cantidad] = 'h';\ncantidad++;\nletras[cantidad] = 'o';\ncantidad++;\nletras[cantidad] = 'l';\ncantidad++;\nletras[cantidad] = 'a';\ncantidad++;",
       "opciones": [
@@ -174,7 +170,7 @@
           "valor": "3",
           "texto": "la última posición que se usó",
           "codigo": "OPCION_ULTIMA_POSICION",
-          "explicacion": "La última posición que se usó es la `3`, porque se empieza a contar desde `0`. Pero `cantidad` no cuenta posiciones: cuenta letras, y hay cuatro cargadas."
+          "explicacion": "La última posición que se usó es la `3`, porque se empieza a contar desde `0`. Pero `cantidad` no cuenta posiciones: cuenta letras."
         },
         {
           "valor": "4",
@@ -183,6 +179,30 @@
           "explicacion": "`cantidad` arranca en `0` y sube en `1` después de cada letra guardada: son cuatro, así que termina en `4`. El arreglo en sí no sabe cuántas letras tiene cargadas: esa cuenta la lleva el programa, en una variable aparte. Es también la posición donde iría la próxima letra."
         }
       ]
+    },
+    {
+      "id": "caracteres-mostrar-cargadas",
+      "titulo": "Mostrar solo las letras cargadas",
+      "continua": true,
+      "dado": "int i;",
+      "enunciado": "En el arreglo `letras` hay cargadas `cantidad` letras: el resto de las posiciones todavía no tiene nada.\n\nCon un ciclo, muestre con `printf` las letras cargadas, de la primera a la última y separadas por un espacio. Use el índice `i`.",
+      "dibujo": {
+        "titulo": "El arreglo `letras`, con 4 letras cargadas:",
+        "valores": ["h", "o", "l", "a", null, null, null, null]
+      },
+      "salida": "h o l a",
+      "requiere": [
+        {
+          "ejecuta": {
+            "muestra": ["h", "o", "l", "a"],
+            "deArreglo": "letras",
+            "separadas": true,
+            "cuenta": "cantidad",
+            "conCiclo": true
+          }
+        }
+      ],
+      "referencia": "for (i = 0; i < cantidad; i++) {\n  printf(\"%c \", letras[i]);\n}"
     }
   ]
 }

@@ -286,6 +286,23 @@ comillas dobles (`== "A"`) es `LETRA_ENTRE_COMILLAS_DOBLES`. Leer una letra con
 `scanf` no se sigue (`EJECUCION_NO_VERIFICADA`): corresponde a las series de
 tipos simples.
 
+**Dibujos de un arreglo**: `"dibujo"` puede resaltar posiciones
+(`"resaltar": [1, 3, 6]`), dejar posiciones vacías (un `null` en `valores`, para
+un arreglo cargado a medias) y ser una lista de dibujos con su título cada uno
+(el arreglo antes y después). Con `"salida"` se dibuja debajo lo que tiene que
+mostrar el programa.
+
+En la regla `ejecuta`, `"separadas": true` pide lo mostrado en una sola línea,
+con un espacio entre cada valor y nada más (un espacio o un salto al final se
+perdonan); si no, `MUESTRA_SIN_SEPARAR`, con lo que muestra y lo que tiene que
+mostrar en bloques de consola. `"cuenta": "cantidad"` agrega la mejora
+`LIMITE_SIN_LA_CANTIDAD` si un ciclo llega hasta ese mismo número escrito suelto
+(con la práctica `constantes`).
+
+Un cuestionario con `"queda": true` deja su código para la consigna que sigue
+(con `"continua": true`); si él no continúa a la anterior, lo que queda arranca
+de su propio código.
+
 ### Cadenas de caracteres
 
 Las series `cadenas-*` (el fin de la cadena, la cadena vacía, la biblioteca,

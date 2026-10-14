@@ -1186,120 +1186,130 @@ const caracteres = (paso, nombre, respuesta, espera = 'ok', mejoras = []) => ({
 const CICLO_DE_LETRAS = (cuerpo) => `for (i = 0; i < CANTIDAD; i++) {\n${cuerpo}\n}`;
 
 const CASOS_DE_CARACTERES = [
-  // 1: declarar
-  caracteres(1, 'con #define es excelente', '#define CANTIDAD_VOCALES 5\nchar vocales[CANTIDAD_VOCALES];', 'ok'),
-  caracteres(1, 'numero suelto: correcto y mejorable', 'char vocales[5];', 'ok', ['NUMERO_MAGICO']),
-  caracteres(1, 'de menos', '#define CANTIDAD_VOCALES 4\nchar vocales[CANTIDAD_VOCALES];', ['ARREGLO_CHICO']),
-  caracteres(1, 'con lugar para el fin, que no hace falta', 'char vocales[6];', ['ARREGLO_GRANDE']),
-  caracteres(1, 'de enteros', '#define CANTIDAD_VOCALES 5\nint vocales[CANTIDAD_VOCALES];', ['VARIABLE_TIPO']),
-  caracteres(1, 'una sola letra', 'char vocal;', ['VARIABLE_NO_ES_ARREGLO']),
 
-  // 2: definir con valores
-  caracteres(2, "letras entre comillas simples", "char calificaciones[] = {'B', 'A', 'C', 'A', 'E', 'B'};", 'ok'),
-  caracteres(2, 'con la cantidad justa: correcto y mejorable', "char calificaciones[6] = {'B', 'A', 'C', 'A', 'E', 'B'};", 'ok', [
+  // 1: definir con valores
+  caracteres(1, "letras entre comillas simples", "char calificaciones[] = {'B', 'A', 'C', 'A', 'E', 'B'};", 'ok'),
+  caracteres(1, 'con la cantidad justa: correcto y mejorable', "char calificaciones[6] = {'B', 'A', 'C', 'A', 'E', 'B'};", 'ok', [
     'DIMENSION_REPETIDA',
   ]),
-  caracteres(2, 'una letra de menos', "char calificaciones[] = {'B', 'A', 'C', 'A', 'E'};", ['VALORES_DE_MENOS']),
-  caracteres(2, 'una letra de mas', "char calificaciones[] = {'B', 'A', 'C', 'A', 'E', 'B', 'D'};", ['VALORES_DE_MAS']),
+  caracteres(1, 'una letra de menos', "char calificaciones[] = {'B', 'A', 'C', 'A', 'E'};", ['VALORES_DE_MENOS']),
+  caracteres(1, 'una letra de mas', "char calificaciones[] = {'B', 'A', 'C', 'A', 'E', 'B', 'D'};", ['VALORES_DE_MAS']),
   {
-    ...caracteres(2, 'una letra distinta', "char calificaciones[] = {'B', 'A', 'C', 'A', 'D', 'B'};", ['VALOR_DISTINTO']),
+    ...caracteres(1, 'una letra distinta', "char calificaciones[] = {'B', 'A', 'C', 'A', 'D', 'B'};", ['VALOR_DISTINTO']),
     dice: ["El quinto valor de la lista (`'D'`) no coincide con el del dibujo."],
   },
-  caracteres(2, 'las mismas en otro orden', "char calificaciones[] = {'A', 'B', 'A', 'C', 'B', 'E'};", ['VALORES_EN_OTRO_ORDEN']),
+  caracteres(1, 'las mismas en otro orden', "char calificaciones[] = {'A', 'B', 'A', 'C', 'B', 'E'};", ['VALORES_EN_OTRO_ORDEN']),
   {
-    ...caracteres(2, 'sin comillas', 'char calificaciones[] = {B, A, C, A, E, B};', ['LETRA_SIN_COMILLAS']),
+    ...caracteres(1, 'sin comillas', 'char calificaciones[] = {B, A, C, A, E, B};', ['LETRA_SIN_COMILLAS']),
     dice: ["`B` sin comillas se lee como el nombre de una variable: cada letra va entre comillas simples, como `'B'`."],
   },
   {
-    ...caracteres(2, 'con comillas dobles', 'char calificaciones[] = {"B", "A", "C", "A", "E", "B"};', ['LETRA_ENTRE_COMILLAS_DOBLES']),
+    ...caracteres(1, 'con comillas dobles', 'char calificaciones[] = {"B", "A", "C", "A", "E", "B"};', ['LETRA_ENTRE_COMILLAS_DOBLES']),
     dice: ['`"B"` entre comillas dobles es un texto, no una letra'],
   },
-  caracteres(2, 'con numeros', 'char calificaciones[] = {66, 65, 67, 65, 69, 66};', ['LETRA_ES_NUMERO']),
-  caracteres(2, 'un texto entre comillas dobles', 'char calificaciones[] = "BACAEB";', ['VALORES_SIN_LISTA']),
-  caracteres(2, 'sin valores', 'char calificaciones[6];', ['VALORES_FALTAN']),
-  caracteres(2, 'de a una, despues', "char calificaciones[6];\ncalificaciones[0] = 'B';", ['VALORES_APARTE']),
-  caracteres(2, 'de enteros', "int calificaciones[] = {'B', 'A', 'C', 'A', 'E', 'B'};", ['VARIABLE_TIPO']),
+  caracteres(1, 'con numeros', 'char calificaciones[] = {66, 65, 67, 65, 69, 66};', ['LETRA_ES_NUMERO']),
+  caracteres(1, 'un texto entre comillas dobles', 'char calificaciones[] = "BACAEB";', ['VALORES_SIN_LISTA']),
+  caracteres(1, 'sin valores', 'char calificaciones[6];', ['VALORES_FALTAN']),
+  caracteres(1, 'de a una, despues', "char calificaciones[6];\ncalificaciones[0] = 'B';", ['VALORES_APARTE']),
+  caracteres(1, 'de enteros', "int calificaciones[] = {'B', 'A', 'C', 'A', 'E', 'B'};", ['VARIABLE_TIPO']),
 
-  // 3: cuestionario, la letra de una posicion
-  caracteres(3, 'letra: la que se asigno', '2'),
-  caracteres(3, 'letra: la que habia antes', '0', ['OPCION_VALOR_ANTERIOR']),
-  caracteres(3, 'letra: la segunda posicion', '1', ['OPCION_POSICION_DESDE_UNO']),
 
-  // 4: mostrar las letras
-  caracteres(4, 'con for', CICLO_DE_LETRAS('  printf("%c", calificaciones[i]);')),
-  caracteres(4, 'con un espacio', CICLO_DE_LETRAS('  printf("%c ", calificaciones[i]);')),
-  caracteres(4, 'un renglon por letra', CICLO_DE_LETRAS('  printf("%c\\n", calificaciones[i]);')),
-  caracteres(4, 'con while', 'i = 0;\nwhile (i < CANTIDAD) {\n  printf("%c ", calificaciones[i]);\n  i++;\n}'),
-  caracteres(4, 'con el numero suelto: correcto y mejorable', 'for (i = 0; i < 6; i++) {\n  printf("%c ", calificaciones[i]);\n}', 'ok', [
+  // 2: mostrar las letras
+  caracteres(2, 'con for', CICLO_DE_LETRAS('  printf("%c ", calificaciones[i]);')),
+  {
+    ...caracteres(2, 'sin separar', CICLO_DE_LETRAS('  printf("%c", calificaciones[i]);'), ['MUESTRA_SIN_SEPARAR']),
+    dice: ['las letras que corresponden, pero la consigna las pide separadas por un espacio y nada más'],
+    bloques: ['BACAEB|B A C A E B'],
+  },
+  caracteres(2, 'con un espacio', CICLO_DE_LETRAS('  printf("%c ", calificaciones[i]);')),
+  caracteres(2, 'un renglon por letra', CICLO_DE_LETRAS('  printf("%c\\n", calificaciones[i]);'), ['MUESTRA_SIN_SEPARAR']),
+  caracteres(2, 'con un salto al final: se perdona', CICLO_DE_LETRAS('  printf("%c ", calificaciones[i]);') + '\nprintf("\\n");'),
+  caracteres(2, 'con while', 'i = 0;\nwhile (i < CANTIDAD) {\n  printf("%c ", calificaciones[i]);\n  i++;\n}'),
+  caracteres(2, 'con el numero suelto: correcto y mejorable', 'for (i = 0; i < 6; i++) {\n  printf("%c ", calificaciones[i]);\n}', 'ok', [
     'LIMITE_CON_NUMERO_SUELTO',
   ]),
   {
-    ...caracteres(4, 'de atras', 'for (i = CANTIDAD - 1; i >= 0; i--) {\n  printf("%c ", calificaciones[i]);\n}', ['MUESTRA_DISTINTA']),
+    ...caracteres(2, 'de atras', 'for (i = CANTIDAD - 1; i >= 0; i--) {\n  printf("%c ", calificaciones[i]);\n}', ['MUESTRA_DISTINTA']),
     dice: ["El programa muestra `'B'`, `'E'`, `'A'`, `'C'`, `'A'` y `'B'` cuando debería mostrar"],
   },
-  caracteres(4, 'sin la ultima', 'for (i = 0; i < CANTIDAD - 1; i++) {\n  printf("%c ", calificaciones[i]);\n}', ['MUESTRA_DISTINTA']),
-  caracteres(4, 'una sola letra', 'printf("%c ", calificaciones[0]);', ['CICLO_FALTA']),
+  caracteres(2, 'sin la ultima', 'for (i = 0; i < CANTIDAD - 1; i++) {\n  printf("%c ", calificaciones[i]);\n}', ['MUESTRA_DISTINTA']),
+  caracteres(2, 'una sola letra', 'printf("%c ", calificaciones[0]);', ['CICLO_FALTA']),
   {
-    ...caracteres(4, 'con el formato de un entero', CICLO_DE_LETRAS('  printf("%d ", calificaciones[i]);'), [
+    ...caracteres(2, 'con el formato de un entero', CICLO_DE_LETRAS('  printf("%d ", calificaciones[i]);'), [
       'FORMATO_NO_CORRESPONDE_AL_TIPO',
     ]),
     dice: ['`%d` es el formato de un entero (`int`), y `calificaciones[i]` es un `char`: el formato que le corresponde es `%c`.'],
   },
-  caracteres(4, 'el arreglo entero', CICLO_DE_LETRAS('  printf("%c ", calificaciones);'), ['ARREGLO_SIN_POSICION']),
-  caracteres(4, 'un indice de mas', 'for (i = 0; i <= CANTIDAD; i++) {\n  printf("%c ", calificaciones[i]);\n}', ['INDICE_FUERA_DE_RANGO']),
-  caracteres(4, 'sin mostrar', CICLO_DE_LETRAS('  i = i;'), ['MUESTRA_FALTA']),
+  caracteres(2, 'el arreglo entero', CICLO_DE_LETRAS('  printf("%c ", calificaciones);'), ['ARREGLO_SIN_POSICION']),
+  caracteres(2, 'un indice de mas', 'for (i = 0; i <= CANTIDAD; i++) {\n  printf("%c ", calificaciones[i]);\n}', ['INDICE_FUERA_DE_RANGO']),
+  caracteres(2, 'sin mostrar', CICLO_DE_LETRAS('  i = i;'), ['MUESTRA_FALTA']),
 
-  // 5: contar una letra
-  caracteres(5, 'con if', 'cantidad = 0;\n' + CICLO_DE_LETRAS("  if (calificaciones[i] == 'A') {\n    cantidad++;\n  }")),
-  caracteres(5, 'con la suma', 'cantidad = 0;\n' + CICLO_DE_LETRAS("  if (calificaciones[i] == 'A') {\n    cantidad = cantidad + 1;\n  }")),
-  caracteres(5, 'con while', "cantidad = 0;\ni = 0;\nwhile (i < CANTIDAD) {\n  if (calificaciones[i] == 'A') {\n    cantidad++;\n  }\n  i++;\n}"),
-  caracteres(5, 'sin iniciar la cuenta', CICLO_DE_LETRAS("  if (calificaciones[i] == 'A') {\n    cantidad++;\n  }"), ['VARIABLE_SIN_VALOR']),
-  caracteres(5, 'cuenta todas', 'cantidad = 0;\n' + CICLO_DE_LETRAS('  cantidad++;'), ['RESULTADO_VALOR_DISTINTO']),
+  // 3: contar una letra
+  caracteres(3, 'con if', 'cantidad = 0;\n' + CICLO_DE_LETRAS("  if (calificaciones[i] == 'A') {\n    cantidad++;\n  }")),
+  caracteres(3, 'con la suma', 'cantidad = 0;\n' + CICLO_DE_LETRAS("  if (calificaciones[i] == 'A') {\n    cantidad = cantidad + 1;\n  }")),
+  caracteres(3, 'con while', "cantidad = 0;\ni = 0;\nwhile (i < CANTIDAD) {\n  if (calificaciones[i] == 'A') {\n    cantidad++;\n  }\n  i++;\n}"),
+  caracteres(3, 'sin iniciar la cuenta', CICLO_DE_LETRAS("  if (calificaciones[i] == 'A') {\n    cantidad++;\n  }"), ['VARIABLE_SIN_VALOR']),
+  caracteres(3, 'cuenta todas', 'cantidad = 0;\n' + CICLO_DE_LETRAS('  cantidad++;'), ['RESULTADO_VALOR_DISTINTO']),
   {
-    ...caracteres(5, 'otra letra', 'cantidad = 0;\n' + CICLO_DE_LETRAS("  if (calificaciones[i] == 'B') {\n    cantidad++;\n  }"), [
+    ...caracteres(3, 'otra letra', 'cantidad = 0;\n' + CICLO_DE_LETRAS("  if (calificaciones[i] == 'B') {\n    cantidad++;\n  }"), [
       'RESULTADO_VALOR_DISTINTO',
     ]),
     dice: ['`cantidad` termina valiendo `2` y debería valer `3`'],
   },
-  caracteres(5, 'sin llegar al final', "cantidad = 0;\nfor (i = 0; i < CANTIDAD - 1; i++) {\n  if (calificaciones[i] == 'A') {\n    cantidad++;\n  }\n}", [
+  caracteres(3, 'sin llegar al final', "cantidad = 0;\nfor (i = 0; i < CANTIDAD - 1; i++) {\n  if (calificaciones[i] == 'A') {\n    cantidad++;\n  }\n}", [
     'RESULTADO_VALOR_DISTINTO',
   ]),
   {
-    ...caracteres(5, 'con comillas dobles', 'cantidad = 0;\n' + CICLO_DE_LETRAS('  if (calificaciones[i] == "A") {\n    cantidad++;\n  }'), [
+    ...caracteres(3, 'con comillas dobles', 'cantidad = 0;\n' + CICLO_DE_LETRAS('  if (calificaciones[i] == "A") {\n    cantidad++;\n  }'), [
       'LETRA_ENTRE_COMILLAS_DOBLES',
     ]),
     dice: ['`"A"` entre comillas dobles es un texto, no una letra: una sola letra va entre comillas simples, como `\'A\'`.'],
   },
-  caracteres(5, 'sin ciclo', "cantidad = 0;\nif (calificaciones[0] == 'A') {\n  cantidad++;\n}", ['CICLO_FALTA']),
-  caracteres(5, 'con el numero suelto: correcto y mejorable', "cantidad = 0;\nfor (i = 0; i < 8; i++) {\n  if (calificaciones[i] == 'A') {\n    cantidad++;\n  }\n}", 'ok', [
+  caracteres(3, 'sin ciclo', "cantidad = 0;\nif (calificaciones[0] == 'A') {\n  cantidad++;\n}", ['CICLO_FALTA']),
+  caracteres(3, 'con el numero suelto: correcto y mejorable', "cantidad = 0;\nfor (i = 0; i < 8; i++) {\n  if (calificaciones[i] == 'A') {\n    cantidad++;\n  }\n}", 'ok', [
     'LIMITE_CON_NUMERO_SUELTO',
   ]),
 
-  // 6: la primera posicion de una letra
-  caracteres(6, 'con while', "i = 0;\nwhile (i < CANTIDAD && calificaciones[i] != 'E') {\n  i++;\n}\nif (i < CANTIDAD) {\n  posicion = i;\n} else {\n  posicion = -1;\n}"),
-  caracteres(6, 'con for y break', "posicion = -1;\nfor (i = 0; i < CANTIDAD; i++) {\n  if (calificaciones[i] == 'E') {\n    posicion = i;\n    break;\n  }\n}"),
-  caracteres(6, 'con for y la marca', "posicion = -1;\nfor (i = 0; i < CANTIDAD; i++) {\n  if (calificaciones[i] == 'E' && posicion == -1) {\n    posicion = i;\n  }\n}"),
-  caracteres(6, 'sin cortar', "posicion = -1;\nfor (i = 0; i < CANTIDAD; i++) {\n  if (calificaciones[i] == 'E') {\n    posicion = i;\n  }\n}", ['BUSQUEDA_SIN_CORTAR']),
-  caracteres(6, 'sin el -1', "for (i = 0; i < CANTIDAD; i++) {\n  if (calificaciones[i] == 'E') {\n    posicion = i;\n    break;\n  }\n}", ['RESULTADO_VARIABLE_SIN_VALOR']),
-  caracteres(6, 'contando desde uno', "posicion = -1;\nfor (i = 0; i < CANTIDAD; i++) {\n  if (calificaciones[i] == 'E') {\n    posicion = i + 1;\n    break;\n  }\n}", ['RESULTADO_VALOR_DISTINTO']),
-  caracteres(6, 'con cero cuando no esta', "posicion = 0;\nfor (i = 0; i < CANTIDAD; i++) {\n  if (calificaciones[i] == 'E') {\n    posicion = i;\n    break;\n  }\n}", ['RESULTADO_VALOR_DISTINTO']),
+  // 4: la primera posicion de una letra
+  caracteres(4, 'con while', "i = 0;\nwhile (i < CANTIDAD && calificaciones[i] != 'E') {\n  i++;\n}\nif (i < CANTIDAD) {\n  posicion = i;\n} else {\n  posicion = -1;\n}"),
+  caracteres(4, 'con for y break', "posicion = -1;\nfor (i = 0; i < CANTIDAD; i++) {\n  if (calificaciones[i] == 'E') {\n    posicion = i;\n    break;\n  }\n}"),
+  caracteres(4, 'con for y la marca', "posicion = -1;\nfor (i = 0; i < CANTIDAD; i++) {\n  if (calificaciones[i] == 'E' && posicion == -1) {\n    posicion = i;\n  }\n}"),
+  caracteres(4, 'sin cortar', "posicion = -1;\nfor (i = 0; i < CANTIDAD; i++) {\n  if (calificaciones[i] == 'E') {\n    posicion = i;\n  }\n}", ['BUSQUEDA_SIN_CORTAR']),
+  caracteres(4, 'sin el -1', "for (i = 0; i < CANTIDAD; i++) {\n  if (calificaciones[i] == 'E') {\n    posicion = i;\n    break;\n  }\n}", ['RESULTADO_VARIABLE_SIN_VALOR']),
+  caracteres(4, 'contando desde uno', "posicion = -1;\nfor (i = 0; i < CANTIDAD; i++) {\n  if (calificaciones[i] == 'E') {\n    posicion = i + 1;\n    break;\n  }\n}", ['RESULTADO_VALOR_DISTINTO']),
+  caracteres(4, 'con cero cuando no esta', "posicion = 0;\nfor (i = 0; i < CANTIDAD; i++) {\n  if (calificaciones[i] == 'E') {\n    posicion = i;\n    break;\n  }\n}", ['RESULTADO_VALOR_DISTINTO']),
 
-  // 7: reemplazar una letra por otra
-  caracteres(7, 'con if', CICLO_DE_LETRAS("  if (calificaciones[i] == 'E') {\n    calificaciones[i] = 'D';\n  }")),
-  caracteres(7, 'con while', "i = 0;\nwhile (i < CANTIDAD) {\n  if (calificaciones[i] == 'E') {\n    calificaciones[i] = 'D';\n  }\n  i++;\n}"),
+  // 5: reemplazar una letra por otra
+  caracteres(5, 'con if', CICLO_DE_LETRAS("  if (calificaciones[i] == 'E') {\n    calificaciones[i] = 'D';\n  }")),
+  caracteres(5, 'con while', "i = 0;\nwhile (i < CANTIDAD) {\n  if (calificaciones[i] == 'E') {\n    calificaciones[i] = 'D';\n  }\n  i++;\n}"),
   {
-    ...caracteres(7, 'todas pasan a D', CICLO_DE_LETRAS("  calificaciones[i] = 'D';"), ['RESULTADO_VALOR_DISTINTO']),
+    ...caracteres(5, 'todas pasan a D', CICLO_DE_LETRAS("  calificaciones[i] = 'D';"), ['RESULTADO_VALOR_DISTINTO']),
     dice: ["`calificaciones[0]` termina valiendo `'D'` y debería valer `'B'`"],
   },
-  caracteres(7, 'otra letra', CICLO_DE_LETRAS("  if (calificaciones[i] == 'E') {\n    calificaciones[i] = 'C';\n  }"), ['RESULTADO_VALOR_DISTINTO']),
-  caracteres(7, 'sin llegar al final', "for (i = 0; i < CANTIDAD - 1; i++) {\n  if (calificaciones[i] == 'E') {\n    calificaciones[i] = 'D';\n  }\n}", ['RESULTADO_VALOR_DISTINTO']),
-  caracteres(7, 'con comillas dobles', CICLO_DE_LETRAS("  if (calificaciones[i] == 'E') {\n    calificaciones[i] = \"D\";\n  }"), ['ELEMENTO_ENTRE_COMILLAS_DOBLES']),
-  caracteres(7, 'sin ciclo', "calificaciones[1] = 'D';\ncalificaciones[3] = 'D';", ['CICLO_FALTA']),
+  caracteres(5, 'otra letra', CICLO_DE_LETRAS("  if (calificaciones[i] == 'E') {\n    calificaciones[i] = 'C';\n  }"), ['RESULTADO_VALOR_DISTINTO']),
+  caracteres(5, 'sin llegar al final', "for (i = 0; i < CANTIDAD - 1; i++) {\n  if (calificaciones[i] == 'E') {\n    calificaciones[i] = 'D';\n  }\n}", ['RESULTADO_VALOR_DISTINTO']),
+  caracteres(5, 'con comillas dobles', CICLO_DE_LETRAS("  if (calificaciones[i] == 'E') {\n    calificaciones[i] = \"D\";\n  }"), ['ELEMENTO_ENTRE_COMILLAS_DOBLES']),
+  caracteres(5, 'sin ciclo', "calificaciones[1] = 'D';\ncalificaciones[3] = 'D';", ['CICLO_FALTA']),
 
-  // 8: cuestionario, cuantas letras hay cargadas
-  caracteres(8, 'cantidad: las cargadas', '2'),
-  caracteres(8, 'cantidad: el tamano del arreglo', '0', ['OPCION_TAMANO_FISICO']),
-  caracteres(8, 'cantidad: la ultima posicion', '1', ['OPCION_ULTIMA_POSICION']),
+  // 6: cuestionario, cuantas letras hay cargadas
+  caracteres(6, 'cantidad: las cargadas', '2'),
+  caracteres(6, 'cantidad: el tamano del arreglo', '0', ['OPCION_TAMANO_FISICO']),
+  caracteres(6, 'cantidad: la ultima posicion', '1', ['OPCION_ULTIMA_POSICION']),
+  // 7: mostrar solo las cargadas (sigue de la anterior)
+  caracteres(7, 'hasta cantidad', 'for (i = 0; i < cantidad; i++) {\n  printf("%c ", letras[i]);\n}'),
+  caracteres(7, 'con while', 'i = 0;\nwhile (i < cantidad) {\n  printf("%c ", letras[i]);\n  i++;\n}'),
+  caracteres(7, 'con el cuatro suelto: correcto y mejorable', 'for (i = 0; i < 4; i++) {\n  printf("%c ", letras[i]);\n}', 'ok', ['LIMITE_SIN_LA_CANTIDAD']),
+  {
+    ...caracteres(7, 'hasta el tamano del arreglo', 'for (i = 0; i < MAX_LETRAS; i++) {\n  printf("%c ", letras[i]);\n}', ['VARIABLE_SIN_VALOR']),
+    dice: ['\`letras[4]\` todavía no tiene un valor cuando se usa'],
+  },
+  caracteres(7, 'el texto escrito a mano', 'printf("h o l a ");\nfor (i = 0; i < 0; i++) {\n  i++;\n}', ['MUESTRA_FALTA']),
+  caracteres(7, 'las letras escritas a mano', 'printf("%c %c %c %c ", \'h\', \'o\', \'l\', \'a\');\nfor (i = 0; i < 0; i++) {\n  i++;\n}', ['MUESTRA_SIN_EL_ARREGLO']),
+  caracteres(7, 'sin separar', 'for (i = 0; i < cantidad; i++) {\n  printf("%c", letras[i]);\n}', ['MUESTRA_SIN_SEPARAR']),
+  caracteres(7, 'una letra de menos', 'for (i = 0; i < cantidad - 1; i++) {\n  printf("%c ", letras[i]);\n}', ['MUESTRA_DISTINTA']),
+  caracteres(7, 'con el formato de un entero', 'for (i = 0; i < cantidad; i++) {\n  printf("%d ", letras[i]);\n}', ['FORMATO_NO_CORRESPONDE_AL_TIPO']),
+  caracteres(7, 'sin mostrar nada', 'for (i = 0; i < cantidad; i++) {\n  i = i;\n}', ['MUESTRA_FALTA']),
+  caracteres(7, 'sin ciclo', 'printf("%c ", letras[0]);', ['CICLO_FALTA']),
 ];
 
 export const CASOS = [
