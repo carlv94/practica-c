@@ -35,6 +35,8 @@
 //   { "campo":    { "variable": "alumno", "campos": [{ "nombre": "legajo", "tipo": "entero" }] } }
 //   { "leeCampo": { "variable": "alumno", "campo": "legajo" } }
 //   { "muestraCampos": { "variable": "alumno", "campos": ["legajo", "promedio"] } }
+//   { "copia": { "de": "alumno", "en": "copia" } }
+//   { "compara": { "izquierda": "alumno.legajo", "derecha": "copia.legajo" } }
 //   { "vaciar":   "nombre" }
 //   { "ciclo":    { "indice": "i", "hastaElFinDe": "nombre" } }
 //   { "usaAlias": { "alias": "$T", "arreglo": { "alMenos": 30 } } }
@@ -375,6 +377,8 @@ export function corregir(
     if (regla.asigna) return reglaAsigna(regla.asigna, modelo);
     if (regla.campo) return reglaCampo(regla.campo, modelo);
     if (regla.leeCampo) return reglaLeeCampo(regla.leeCampo, modelo);
+    if (regla.copia) return reglaCopia(regla.copia, modelo);
+    if (regla.compara) return reglaCompara(regla.compara, modelo);
     if (regla.muestraCampos) return reglaMuestraCampos(regla.muestraCampos, modelo);
     if (regla.suma) return reglaSuma(regla.suma, modelo);
     if (regla.resultado) return reglaResultado(regla.resultado, modelo);
@@ -1385,6 +1389,7 @@ export function corregir(
       if (regla.comparar) {
         const esDeTexto = (v) =>
           v.clase === 'cadena' ||
+          (v.clase === 'campo' && (campoDeEstructura(`${v.variable}.${v.campo}`, modelo)?.arreglo.length ?? 0) > 0) ||
           (v.clase === 'nombre' &&
             modelo.variables.some((x) => x.nombre === v.nombre && x.arreglo.length > 0));
         const igual = modelo.comparaciones.find(
@@ -2070,6 +2075,148 @@ export function corregir(
         formatoNoCorresponde(x.formato, lugar, campo, clase, x.fila);
       }
     }
+  }
+
+  // ---- copiar y comparar variables de estructura -------------------------------
+
+  // "copia = alumno;": una estructura se copia entera con una asignacion, y se
+  // lleva tambien las cadenas de adentro. Copiarla campo por campo es valido (con
+  // strcpy en las cadenas) y, con la practica de claridad, tiene su mejora.
+  //   { "copia": { "de": "alumno", "en": "copia" } }
+  function reglaCopia(regla, modelo) {
+    const origen = valorDe(regla.de);
+    const destino = valorDe(regla.en);
+    const asignaciones = modelo.asignaciones.filter((a) => a.nuevo && a.operador === '=');
+    const esNombre = (v, n) => v.clase === 'nombre' && v.nombre === n;
+
+    if (asignaciones.some((a) => esNombre(a.izquierda, destino) && esNombre(a.derecha, origen))) return;
+
+    const alReves = asignaciones.find((a) => esNombre(a.izquierda, origen) && esNombre(a.derecha, destino));
+    if (alReves) {
+      error(
+        'ASIGNACION_AL_REVES',
+        `Está al revés: a la izquierda del \`=\` va la variable donde se guarda (\`${destino}\`) y a la derecha, de donde se toma el valor (\`${origen}\`).`,
+        alReves.fila
+      );
+      return;
+    }
+
+    // Campo por campo: "copia.legajo = alumno.legajo;" o strcpy en una cadena.
+    const deCampo = (v, variable, campo) => v && v.clase === 'campo' && v.variable === variable && v.campo === campo;
+    const copiado = (campo) =>
+      asignaciones.some((a) => deCampo(a.izquierda, destino, campo) && deCampo(a.derecha, origen, campo)) ||
+      modelo.llamadas.some(
+        (l) =>
+          l.nuevo &&
+          ['strcpy', 'strncpy'].includes(l.funcion) &&
+          deCampo(l.argumentos[0], destino, campo) &&
+          deCampo(l.argumentos[1], origen, campo)
+      );
+    const hay = asignaciones.some((a) => a.izquierda.clase === 'campo' && a.izquierda.variable === destino);
+    if (hay) {
+      // Una cadena asignada con "=" ya recibio su explicacion.
+      if (diagnosticos.some((d) => CODIGOS_DE_ASIGNACION.includes(d.codigo))) return;
+      const variable = modelo.variables.findLast((v) => v.nombre === origen);
+      const def = variable ? estructuraDeVariable(variable, modelo) : null;
+      const faltan = def ? def.campos.filter((c) => !copiado(c.nombre)) : [];
+      if (faltan.length) {
+        error(
+          'COPIA_INCOMPLETA',
+          `Falta copiar ${faltan.map((c) => '\`' + c.nombre + '\`').join(', ').replace(/, ([^,]*)$/, ' y $1')}: la copia tiene que quedar con todos los datos de \`${origen}\`.`,
+          asignaciones.find((a) => a.izquierda.clase === 'campo' && a.izquierda.variable === destino).fila
+        );
+      } else if (practicas.includes('claridad')) {
+        mejora(
+          'COPIA_CAMPO_POR_CAMPO',
+          `Está bien, pero una estructura se copia entera con una sola asignación: \`${destino} = ${origen};\`, que lleva también la cadena de adentro.`,
+          asignaciones.find((a) => a.izquierda.clase === 'campo' && a.izquierda.variable === destino).fila
+        );
+      }
+      return;
+    }
+
+    const funcion = modelo.llamadas.find((l) => l.nuevo && ['strcpy', 'strncpy', 'memcpy'].includes(l.funcion));
+    if (funcion) {
+      error(
+        'FUNCION_EQUIVOCADA',
+        `\`${funcion.funcion}\` copia el texto de una cadena: una estructura completa se copia con \`=\`.`,
+        funcion.fila
+      );
+      return;
+    }
+    const igual = modelo.comparaciones.find(
+      (c) => c.nuevo && !c.enIf && (esNombre(c.izquierda, destino) || esNombre(c.izquierda, origen))
+    );
+    if (igual) {
+      error(
+        'ASIGNACION_CON_IGUAL_DOBLE',
+        '`==` pregunta si dos valores son iguales y no guarda nada: para copiar una variable en otra se usa un solo `=`.',
+        igual.fila
+      );
+      return;
+    }
+    error(
+      'COPIA_FALTA',
+      `No encontré la asignación que copia \`${origen}\` en \`${destino}\`: a la izquierda del \`=\` va donde se guarda y a la derecha, de donde se toma.`
+    );
+  }
+
+  // "if (alumno.legajo == copia.legajo)": la comparacion de dos campos, dentro
+  // de un if. Las estructuras enteras no se comparan.
+  //   { "compara": { "izquierda": "alumno.legajo", "derecha": "copia.legajo" } }
+  function reglaCompara(regla, modelo) {
+    const a = valorDe(regla.izquierda);
+    const b = valorDe(regla.derecha);
+    const es = (v, esperado) => v.clase === 'campo' && sinEspacios(v.texto) === sinEspacios(esperado);
+    const comparaciones = modelo.comparaciones.filter((c) => c.nuevo && c.operador === '==');
+    const dePedidos = (c) => (es(c.izquierda, a) && es(c.derecha, b)) || (es(c.izquierda, b) && es(c.derecha, a));
+
+    const buena = comparaciones.find((c) => dePedidos(c));
+    if (buena) {
+      if (!buena.enIf) {
+        error('COMPARACION_FUERA_DEL_IF', 'La comparación tiene que estar en la condición de un `if`.', buena.fila);
+      }
+      return;
+    }
+
+    const base = (e) => e.split('.')[0];
+    const enteras = comparaciones.find(
+      (c) =>
+        c.izquierda.clase === 'nombre' &&
+        c.derecha.clase === 'nombre' &&
+        [base(a), base(b)].includes(c.izquierda.nombre) &&
+        [base(a), base(b)].includes(c.derecha.nombre)
+    );
+    if (enteras) {
+      error(
+        'COMPARA_ESTRUCTURAS',
+        'Las estructuras no se comparan enteras con `==`: se comparan los datos de a uno, indicando el campo de cada variable.',
+        enteras.fila
+      );
+      return;
+    }
+    const conUno = modelo.ifs.find((i) => i.nuevo && /[^=!<>]=[^=]/.test(i.condicion));
+    if (conUno) {
+      error(
+        'ASIGNACION_EN_CONDICION',
+        'En la condición de un `if`, un solo `=` guarda un valor y no compara: para preguntar si son iguales se usa `==`.',
+        conUno.fila
+      );
+      return;
+    }
+    const otros = comparaciones.find((c) => c.izquierda.clase === 'campo' || c.derecha.clase === 'campo');
+    if (otros) {
+      error(
+        'COMPARA_OTRO_CAMPO',
+        `La consigna pide comparar \`${a}\` con \`${b}\`, y acá se compara \`${otros.izquierda.texto}\` con \`${otros.derecha.texto}\`.`,
+        otros.fila
+      );
+      return;
+    }
+    error(
+      'COMPARACION_FALTA',
+      `No encontré la comparación de \`${a}\` con \`${b}\`: se escribe dentro de un \`if\`, con \`==\` entre los dos.`
+    );
   }
 
   // ---- el resultado de un ciclo: se sigue lo que hace -------------------------------

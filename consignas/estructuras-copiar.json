@@ -1,0 +1,102 @@
+{
+  "id": "estructuras-copiar",
+  "titulo": "Copiar y comparar",
+  "continua": true,
+  "dentroDeMain": true,
+  "descripcion": "Copiar una variable de estructura en otra con una asignación y comparar sus datos de a uno.",
+  "cabecera": "#include <stdio.h>\n#include <string.h>\n\ntypedef struct {\n  int legajo;\n  char apellidoNombre[50];\n  float promedio;\n  char turno;\n} TAlumno;",
+  "consignas": [
+    {
+      "id": "copiar-todo",
+      "titulo": "Copiar los datos de un alumno",
+      "buenasPracticas": ["claridad"],
+      "dado": "TAlumno alumno;\nTAlumno copia;\n\nalumno.legajo = 20431;\nstrcpy(alumno.apellidoNombre, \"Perez, Ana\");\nalumno.promedio = 8.45;\nalumno.turno = 'T';",
+      "enunciado": "La variable `alumno` ya guarda los datos de esta ficha:\n[ficha]\nEscriba el código que copie todos los datos de `alumno` en la variable `copia`.",
+      "ficha": {
+        "titulo": "Ficha de alumno",
+        "campos": [
+          { "texto": "Número de legajo", "nombre": "legajo", "ejemplo": "20431" },
+          { "texto": "Apellido y nombre", "nombre": "apellidoNombre", "ejemplo": "Perez, Ana" },
+          { "texto": "Promedio general", "nombre": "promedio", "ejemplo": "8.45" },
+          { "texto": "Turno en el que cursa: M, T o N", "nombre": "turno", "ejemplo": "T" }
+        ]
+      },
+      "requiere": [{ "copia": { "de": "alumno", "en": "copia" } }],
+      "referencia": "copia = alumno;"
+    },
+    {
+      "id": "copiar-q-independiente",
+      "titulo": "Después de copiar",
+      "continua": false,
+      "enunciado": "Después de ejecutar el código de abajo, ¿qué valor tendría `copia.legajo`?",
+      "codigo": "TAlumno alumno;\nTAlumno copia;\n\nalumno.legajo = 20431;\ncopia = alumno;\nalumno.legajo = 30872;",
+      "opciones": [
+        {
+          "valor": "20431",
+          "texto": "el legajo que tenía `alumno` al copiarlo",
+          "correcta": true,
+          "explicacion": "La asignación copia los datos que `alumno` tiene en ese momento. Después, `copia` y `alumno` son dos variables independientes: cambiar una no cambia la otra."
+        },
+        {
+          "valor": "30872",
+          "texto": "el legajo que se le asignó a `alumno` después",
+          "codigo": "OPCION_COPIA_SIGUE_AL_ORIGINAL",
+          "explicacion": "La copia no queda ligada al original: guarda los datos del momento en que se copió. Para que `copia` tuviera `30872`, habría que copiar de nuevo o asignárselo a `copia.legajo`."
+        },
+        {
+          "texto": "No se puede saber",
+          "codigo": "OPCION_NO_SE_SABE_COPIA",
+          "explicacion": "Sí se puede saber: `copia = alumno;` copió el `20431` que `alumno.legajo` tenía en ese momento, y nada en `copia` cambió después."
+        }
+      ]
+    },
+    {
+      "id": "copiar-q-comparar",
+      "titulo": "Comparar dos estructuras",
+      "continua": false,
+      "enunciado": "¿Qué ocurre con el código de abajo?",
+      "codigo": "TAlumno alumno;\nTAlumno copia;\n\ncopia = alumno;\nif (copia == alumno) {\n  printf(\"Iguales\\n\");\n}",
+      "opciones": [
+        {
+          "texto": "Compila y muestra `Iguales`, porque todos los datos son iguales",
+          "codigo": "OPCION_IGUAL_COMPARA_TODO",
+          "explicacion": "En C el operador `==` no sirve para estructuras: el compilador da un error. Para saber si dos estructuras tienen los mismos datos hay que comparar sus campos de a uno."
+        },
+        {
+          "texto": "Compila y compara solo el primer campo",
+          "codigo": "OPCION_IGUAL_COMPARA_EL_PRIMERO",
+          "explicacion": "`==` no se puede usar con estructuras, ni siquiera para mirar un campo: el compilador da un error. Cada campo se compara indicándolo, como `copia.legajo == alumno.legajo`."
+        },
+        {
+          "texto": "No compila: las estructuras no se comparan con `==`",
+          "correcta": true,
+          "explicacion": "Una estructura se copia entera con `=`, pero no se compara entera con `==`. Se comparan sus campos de a uno: los números con `==` y las cadenas con `strcmp`."
+        }
+      ]
+    },
+    {
+      "id": "copiar-comparar-legajos",
+      "titulo": "Comparar los legajos",
+      "dado": "int iguales = 0;",
+      "enunciado": "Escriba un `if` que asigne `1` a la variable `iguales` cuando `alumno` y `copia` tengan el mismo número de legajo.",
+      "requiere": [{ "compara": { "izquierda": "alumno.legajo", "derecha": "copia.legajo" } }],
+      "referencia": "if (alumno.legajo == copia.legajo) {\n  iguales = 1;\n}"
+    },
+    {
+      "id": "copiar-comparar-nombres",
+      "titulo": "Comparar los apellidos y nombres",
+      "buenasPracticas": ["claridad"],
+      "enunciado": "Escriba un `if` que asigne `1` a la variable `iguales` cuando el apellido y nombre de `alumno` sea igual al de `copia`.",
+      "requiere": [
+        {
+          "llamada": {
+            "funcion": "strcmp",
+            "argumentos": ["alumno.apellidoNombre", "copia.apellidoNombre"],
+            "comparar": true
+          }
+        }
+      ],
+      "referencia": "if (strcmp(alumno.apellidoNombre, copia.apellidoNombre) == 0) {\n  iguales = 1;\n}"
+    }
+  ]
+}

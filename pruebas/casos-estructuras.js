@@ -116,3 +116,79 @@ export const CASOS_DE_LEER_CAMPOS = [
   ),
   leer(6, 'sin mostrar nada', 'int i;', ['MUESTRA_FALTA']),
 ];
+
+// Copiar y comparar variables de estructura.
+const copiar = (paso, nombre, respuesta, espera = 'ok', extra = {}) => ({
+  serie: 'estructuras-copiar',
+  paso,
+  nombre,
+  respuesta,
+  espera,
+  ...extra,
+});
+
+export const CASOS_DE_COPIAR = [
+  // 1: copiar todo
+  copiar(1, 'copia entera', 'copia = alumno;', 'ok', { mejoras: [] }),
+  copiar(1, 'copia entera, sin espacios', 'copia=alumno;', 'ok', { mejoras: [] }),
+  copiar(1, 'al reves', 'alumno = copia;', ['ASIGNACION_AL_REVES']),
+  copiar(1, 'con igual doble', 'copia == alumno;', ['ASIGNACION_CON_IGUAL_DOBLE']),
+  copiar(1, 'con strcpy', 'strcpy(copia, alumno);', ['FUNCION_EQUIVOCADA']),
+  copiar(1, 'con memcpy', 'memcpy(&copia, &alumno, sizeof(copia));', ['FUNCION_EQUIVOCADA']),
+  copiar(1, 'sin copiar nada', 'int i;', ['COPIA_FALTA']),
+  copiar(
+    1,
+    'campo por campo, valido con mejora',
+    'copia.legajo = alumno.legajo;\nstrcpy(copia.apellidoNombre, alumno.apellidoNombre);\ncopia.promedio = alumno.promedio;\ncopia.turno = alumno.turno;',
+    'ok',
+    { mejoras: ['COPIA_CAMPO_POR_CAMPO'] }
+  ),
+  copiar(
+    1,
+    'campo por campo, falta uno',
+    'copia.legajo = alumno.legajo;\nstrcpy(copia.apellidoNombre, alumno.apellidoNombre);\ncopia.promedio = alumno.promedio;',
+    ['COPIA_INCOMPLETA']
+  ),
+  copiar(
+    1,
+    'campo por campo, la cadena con =',
+    'copia.legajo = alumno.legajo;\ncopia.apellidoNombre = alumno.apellidoNombre;\ncopia.promedio = alumno.promedio;\ncopia.turno = alumno.turno;',
+    ['ASIGNACION_DE_ARREGLO']
+  ),
+  // 2 y 3: los cuestionarios
+  copiar(2, 'despues de copiar: el legajo copiado', '0'),
+  copiar(2, 'despues de copiar: el nuevo', '1', ['OPCION_COPIA_SIGUE_AL_ORIGINAL']),
+  copiar(2, 'despues de copiar: no se puede saber', '2', ['OPCION_NO_SE_SABE_COPIA']),
+  copiar(3, 'comparar estructuras: no compila', '2'),
+  copiar(3, 'comparar estructuras: compara todo', '0', ['OPCION_IGUAL_COMPARA_TODO']),
+  copiar(3, 'comparar estructuras: el primero', '1', ['OPCION_IGUAL_COMPARA_EL_PRIMERO']),
+  // 4: los legajos
+  copiar(4, 'legajos', 'if (alumno.legajo == copia.legajo) {\n  iguales = 1;\n}'),
+  copiar(4, 'legajos, al reves', 'if (copia.legajo == alumno.legajo) {\n  iguales = 1;\n}'),
+  copiar(4, 'las estructuras enteras', 'if (alumno == copia) {\n  iguales = 1;\n}', ['COMPARA_ESTRUCTURAS']),
+  copiar(4, 'con un solo igual', 'if (alumno.legajo = copia.legajo) {\n  iguales = 1;\n}', ['ASIGNACION_EN_CONDICION']),
+  copiar(4, 'otro campo', 'if (alumno.promedio == copia.promedio) {\n  iguales = 1;\n}', ['COMPARA_OTRO_CAMPO']),
+  copiar(4, 'sin comparar', 'iguales = 1;', ['COMPARACION_FALTA']),
+  // 5: los apellidos y nombres
+  copiar(5, 'strcmp de los campos', 'if (strcmp(alumno.apellidoNombre, copia.apellidoNombre) == 0) {\n  iguales = 1;\n}', 'ok', {
+    mejoras: [],
+  }),
+  copiar(
+    5,
+    'con igual doble',
+    'if (alumno.apellidoNombre == copia.apellidoNombre) {\n  iguales = 1;\n}',
+    ['COMPARAR_CON_IGUAL']
+  ),
+  copiar(
+    5,
+    'otro campo',
+    'if (strcmp(alumno.apellidoNombre, copia.turno) == 0) {\n  iguales = 1;\n}',
+    ['ARGUMENTO_OTRO_CAMPO']
+  ),
+  copiar(
+    5,
+    'el campo sin la variable',
+    'if (strcmp(apellidoNombre, copia.apellidoNombre) == 0) {\n  iguales = 1;\n}',
+    ['CAMPO_SIN_VARIABLE']
+  ),
+];

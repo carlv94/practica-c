@@ -540,6 +540,20 @@ mostrar los campos"):
 | un campo sin mostrar | `MUESTRA_CAMPO_FALTA` | Dice cuál y su formato. |
 | `printf("%d", alumno);` | `ARGUMENTO_SIN_CAMPO` | Falta indicar el campo. |
 
+Para copiar y comparar variables de estructura (serie "Copiar y comparar"):
+
+- `{ "copia": { "de": "alumno", "en": "copia" } }`: `copia = alumno;`. Copiar
+  campo por campo también vale (con `strcpy` en las cadenas) y, con la práctica
+  de `claridad`, tiene la mejora `COPIA_CAMPO_POR_CAMPO`; si falta alguno,
+  `COPIA_INCOMPLETA`. Al revés es `ASIGNACION_AL_REVES`, y `strcpy` o
+  `memcpy` entre las dos variables, `FUNCION_EQUIVOCADA`.
+- `{ "compara": { "izquierda": "alumno.legajo", "derecha": "copia.legajo" } }`:
+  la comparación de dos campos con `==` dentro de un `if`, en cualquier orden.
+  Comparar las estructuras enteras es `COMPARA_ESTRUCTURAS`; un solo `=` en la
+  condición, `ASIGNACION_EN_CONDICION`; otro par de campos, `COMPARA_OTRO_CAMPO`.
+  Las cadenas se comparan con la regla `llamada` a `strcmp` y `"comparar":
+  true`, con los campos como argumentos (`alumno.apellidoNombre`).
+
 Otras dos reglas de la misma serie:
 
 - `{ "suma": { "de": ["notas[0]", "notas[MAX_ALUMNOS - 1]"] } }`: la suma de
