@@ -16,15 +16,16 @@
 
 const MARCA = /\{(\w+)\}/g;
 
-// Y puede llevar una ficha de datos: lo que se registra de cada cosa, con la
-// descripcion de cada campo y el nombre que se le pide. Es un recuadro, y el
-// enunciado dice donde va con una linea que solo dice [ficha]:
+// Y puede llevar una ficha de datos: el nombre de cada campo que se pide, como
+// en una ficha en papel. Es una tarjeta, y el enunciado dice donde va con una
+// linea que solo dice [ficha]; la descripcion de cada dato la dice el propio
+// enunciado, en prosa:
 //   "ficha": { "titulo": "Ficha de alumno",
-//              "campos": [{ "texto": "Promedio general", "nombre": "promedio",
-//                           "ejemplo": "8.45" }] }
+//              "campos": [{ "nombre": "promedio", "ejemplo": "8.45" }] }
 // "ejemplo" es opcional (todos los campos o ninguno): un valor cargado, para las
-// consignas que usan la estructura. Donde se pide declararla no se pone, porque
-// un valor de ejemplo ya insinua el tipo.
+// consignas que usan la estructura. Sin ejemplo, cada campo lleva una linea donde
+// iria el dato. Donde se pide declararla no se pone ejemplo, porque un valor ya
+// insinua el tipo.
 export const MARCA_DE_FICHA = '\n[ficha]\n';
 
 // El enunciado partido en lo que va antes de la ficha y lo que va despues.

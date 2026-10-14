@@ -226,17 +226,14 @@ section[hidden] {
   white-space: pre-line;
 }
 
-/* La ficha de datos: la descripcion de cada campo, su nombre alineado a la
-   derecha y, si lo lleva, un valor de ejemplo. */
+/* La ficha de datos: el nombre de cada campo y su valor (o una linea, donde
+   iria). Los valores empiezan todos en la misma columna. */
 #ficha {
   margin: 12px 0;
   width: fit-content;
+  min-width: min(100%, 18rem);
   max-width: 100%;
   overflow-x: auto;
-  /* El borde y las esquinas redondeadas son de la caja: la tabla va adentro. */
-  border: 1px solid var(--borde);
-  border-radius: 10px;
-  background: var(--panel);
 }
 
 #enunciado-cierre {
@@ -245,13 +242,15 @@ section[hidden] {
 }
 
 .ficha {
-  border-collapse: collapse;
+  border: 1px solid var(--borde);
+  border-radius: 5px;
+  background: var(--panel);
+  overflow: hidden;
 }
 
-.ficha caption {
-  caption-side: top;
-  text-align: left;
-  padding: 8px 14px;
+.ficha-titulo {
+  margin: 0;
+  padding: 7px 14px;
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--suave);
@@ -259,25 +258,24 @@ section[hidden] {
   border-bottom: 1px solid var(--borde);
 }
 
-.ficha td {
-  padding: 8px 14px;
-  border-top: 1px solid var(--borde);
+.ficha-cuerpo {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: end;
+  gap: 9px 14px;
+  margin: 0;
+  padding: 12px 14px;
 }
 
-.ficha tr:first-child td {
-  border-top: 0;
+.ficha-cuerpo dt,
+.ficha-cuerpo dd {
+  margin: 0;
 }
 
-.ficha-nombre {
-  text-align: right;
-  border-left: 1px solid var(--borde);
-  white-space: nowrap;
-}
-
-.ficha-ejemplo {
-  border-left: 1px solid var(--borde);
-  color: var(--suave);
-  min-width: 5.5rem;
+.ficha-linea {
+  min-width: 9rem;
+  min-height: 1.4em;
+  border-bottom: 1px solid var(--suave);
 }
 
 /* El arreglo del enunciado: una fila de casilleros con el indice arriba. Si no

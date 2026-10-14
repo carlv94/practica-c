@@ -10,14 +10,14 @@
       "id": "leer-legajo",
       "titulo": "Leer el legajo",
       "dado": "struct Alumno alumno;",
-      "enunciado": "La secretaría de una facultad carga en el programa los datos de cada alumno que se inscribe. La estructura `Alumno` y la variable `alumno` ya están declaradas, y estos son los datos que hay que guardar en ella:\n[ficha]\nEscriba el código que lea desde el teclado el número de legajo y lo guarde en `alumno`.",
+      "enunciado": "La secretaría de una facultad carga en el programa los datos de cada alumno que se inscribe. La estructura `Alumno` y la variable `alumno` ya están declaradas, y hay que guardar en ella el número de legajo, el apellido y nombre, el promedio general y el turno en el que cursa (M, T o N), como muestra esta ficha:\n[ficha]\nEscriba el código que lea desde el teclado el número de legajo y lo guarde en `alumno`.",
       "ficha": {
         "titulo": "Ficha de alumno",
         "campos": [
-          { "texto": "Número de legajo", "nombre": "legajo", "ejemplo": "20431" },
-          { "texto": "Apellido y nombre", "nombre": "apellidoNombre", "ejemplo": "Perez, Ana" },
-          { "texto": "Promedio general", "nombre": "promedio", "ejemplo": "8.45" },
-          { "texto": "Turno en el que cursa: M, T o N", "nombre": "turno", "ejemplo": "T" }
+          { "nombre": "legajo", "ejemplo": "20431" },
+          { "nombre": "apellidoNombre", "ejemplo": "Perez, Ana" },
+          { "nombre": "promedio", "ejemplo": "8.45" },
+          { "nombre": "turno", "ejemplo": "T" }
         ]
       },
       "requiere": [{ "leeCampo": { "variable": "alumno", "campo": "legajo" } }],

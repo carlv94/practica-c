@@ -9,14 +9,14 @@
       "id": "estructuras-alumno-1",
       "en": "archivo",
       "titulo": "Declarar la estructura",
-      "enunciado": "La secretaría de una facultad registra a sus alumnos. De cada alumno se guarda la siguiente información:\n[ficha]\nDeclare la estructura necesaria para poder registrarlos.",
+      "enunciado": "La secretaría de una facultad registra a sus alumnos. De cada alumno se guarda, en este orden, el número de legajo, el apellido y nombre, el promedio general y el turno en el que cursa: M, T o N. Los campos se llaman así:\n[ficha]\nDeclare la estructura necesaria para poder registrarlos.",
       "ficha": {
         "titulo": "Ficha de alumno",
         "campos": [
-          { "texto": "Número de legajo", "nombre": "legajo" },
-          { "texto": "Apellido y nombre", "nombre": "apellidoNombre" },
-          { "texto": "Promedio general", "nombre": "promedio" },
-          { "texto": "Turno en el que cursa: M, T o N", "nombre": "turno" }
+          { "nombre": "legajo" },
+          { "nombre": "apellidoNombre" },
+          { "nombre": "promedio" },
+          { "nombre": "turno" }
         ]
       },
       "requiere": [

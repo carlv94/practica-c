@@ -431,28 +431,26 @@ function mostrarConsigna() {
   $('respuesta').focus();
 }
 
-// La ficha de datos: una tabla con la descripcion de cada campo, su nombre (en
-// una columna alineada a la derecha) y, si lo lleva, un valor de ejemplo.
+// La ficha de datos: una tarjeta con el nombre de cada campo y, a su lado, el
+// valor de ejemplo, o una linea donde iria cuando no lo lleva (como una ficha
+// en papel). Los nombres van en una columna y los valores empiezan todos
+// en el mismo lugar.
 function dibujarFicha(ficha) {
   const caja = $('ficha');
   caja.hidden = !ficha;
   caja.replaceChildren();
   if (!ficha) return;
-  const conEjemplo = ficha.campos.some((c) => c.ejemplo != null);
-  const tabla = elemento('table', 'ficha');
-  if (ficha.titulo) tabla.appendChild(elemento('caption', null, ficha.titulo));
-  const cuerpo = elemento('tbody');
+  const tarjeta = elemento('div', 'ficha');
+  if (ficha.titulo) tarjeta.appendChild(elemento('p', 'ficha-titulo', ficha.titulo));
+  const lista = elemento('dl', 'ficha-cuerpo');
   for (const campo of ficha.campos) {
-    const fila = elemento('tr');
-    fila.appendChild(elemento('td', 'ficha-texto', campo.texto));
-    const nombre = elemento('td', 'ficha-nombre');
+    const nombre = elemento('dt');
     nombre.appendChild(elemento('code', null, campo.nombre));
-    fila.appendChild(nombre);
-    if (conEjemplo) fila.appendChild(elemento('td', 'ficha-ejemplo', String(campo.ejemplo ?? '')));
-    cuerpo.appendChild(fila);
+    const valor = elemento('dd', campo.ejemplo == null ? 'ficha-linea' : null, campo.ejemplo == null ? '' : String(campo.ejemplo));
+    lista.append(nombre, valor);
   }
-  tabla.appendChild(cuerpo);
-  caja.appendChild(tabla);
+  tarjeta.appendChild(lista);
+  caja.appendChild(tarjeta);
 }
 
 // El arreglo del enunciado, como una fila de casilleros con su indice arriba.
