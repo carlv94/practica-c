@@ -263,6 +263,9 @@ export const CASOS_DE_RECORRER_ESTRUCTURAS = [
   // 2: contar el turno
   recorrer(2, 'cuenta', BUCLE("  if (alumnos[i].turno == 'T') {\n    cantidad++;\n  }"), 'ok', { mejoras: [] }),
   recorrer(2, 'cuenta con += 1', BUCLE("  if (alumnos[i].turno == 'T') {\n    cantidad += 1;\n  }")),
+  recorrer(2, 'un = en el if', BUCLE("  if (alumnos[i].turno = 'T') {\n    cantidad++;\n  }"), ['ASIGNACION_EN_CONDICION']),
+  recorrer(2, 'un += en el if', BUCLE("  if (cantidad += 1) {\n    cantidad++;\n  }"), ['ASIGNACION_EN_CONDICION']),
+  recorrer(2, 'un = en la condicion del for', BUCLE("  if (alumnos[i].turno == 'T') {\n    cantidad++;\n  }", '0', 'i = MAX_ALUMNOS'), ['ASIGNACION_EN_CONDICION']),
   recorrer(2, 'sin el ultimo', BUCLE("  if (alumnos[i].turno == 'T') {\n    cantidad++;\n  }", '0', 'i < MAX_ALUMNOS - 1'), ['RECORRIDO_INCOMPLETO']),
   recorrer(2, 'cuenta todos',BUCLE('  cantidad++;'), ['RESULTADO_VALOR_DISTINTO']),
   recorrer(2, 'cuenta otro turno', BUCLE("  if (alumnos[i].turno == 'M') {\n    cantidad++;\n  }"), ['RESULTADO_VALOR_DISTINTO']),

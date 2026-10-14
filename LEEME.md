@@ -683,6 +683,12 @@ solo la mira esta regla). Con
 algo que no sabe seguir (una llamada, un `scanf`) es `EJECUCION_NO_VERIFICADA`:
 correcto, pero no excelente.
 
+**Un `=` en una condición** (`if (x = 1)`, `while (n = 0)`, `for (...; i = MAX; ...)`,
+también `+=` y similares): en todas las series, sin configurar nada, es el error
+`ASIGNACION_EN_CONDICION` con "se usa `==`". Se deja pasar el idioma
+`while ((c = getchar()) != '\n')`: una asignación simple, entre paréntesis y
+comparada con algo (`revisarCondiciones` en `js/corrector.js`).
+
 **Si la respuesta ya tiene un error** (uno de los que se ven sin ejecutar: un
 arreglo de estructuras sin índice, una posición que no existe escrita, un campo
 que no existe…), el código no se sigue: se dice ese error y nada más. Seguirlo

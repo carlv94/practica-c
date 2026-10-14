@@ -346,6 +346,7 @@ export function corregir(
     revisarAsignaciones(modelo, error, !sinFuncion);
     revisarIndices(modelo, error);
     revisarCampos(modelo, error);
+    revisarCondiciones(modelo, error);
     revisarDimensiones(modelo, error, practicas.includes('constantes') ? mejora : null);
     for (const regla of consigna.requiere) aplicarRegla(regla, modelo);
     return terminar();
@@ -2248,6 +2249,8 @@ export function corregir(
       );
       return;
     }
+    // (ya dicho por la revision de condiciones)
+    if (diagnosticos.some((x) => x.codigo === 'ASIGNACION_EN_CONDICION')) return;
     const conUno = modelo.ifs.find((i) => i.nuevo && /[^=!<>]=[^=]/.test(i.condicion));
     if (conUno) {
       error(
@@ -5715,6 +5718,52 @@ function revisarCampos(modelo, error) {
     revisar(a.izquierda, a.fila);
     revisar(a.derecha, a.fila);
   }
+}
+
+// Un "=" (o "+=", "-="...) en la condicion de un if o de un ciclo: guarda un
+// valor en vez de comparar. Se deja pasar el idioma "(c = getchar()) != '\n'":
+// una asignacion simple, entre parentesis y comparada con algo.
+function asignacionEnCondicion(condicion) {
+  // Sin lo que va entre comillas, que puede tener cualquier signo.
+  const t = condicion.replace(/"(\\.|[^"\\])*"|'(\\.|[^'\\])*'/g, '""');
+  const pila = [];
+  for (let i = 0; i < t.length; i++) {
+    const c = t[i];
+    if (c === '(') pila.push(i);
+    else if (c === ')') pila.pop();
+    if (c !== '=') continue;
+    const antes = t[i - 1] || '';
+    const despues = t[i + 1] || '';
+    if (despues === '=' || '=!<>'.includes(antes)) continue; // ==, !=, <=, >=
+    const compuesta = /[-+*/%&|^]/.test(antes);
+    if (!compuesta && pila.length) {
+      // El parentesis que abre mas cerca: si lo que viene despues de cerrarlo
+      // es una comparacion, es el idioma de siempre.
+      let nivel = 0;
+      let cierre = -1;
+      for (let j = pila[pila.length - 1]; j < t.length; j++) {
+        if (t[j] === '(') nivel++;
+        else if (t[j] === ')' && --nivel === 0) {
+          cierre = j;
+          break;
+        }
+      }
+      if (cierre >= 0 && /^\s*(==|!=|<=|>=|<|>)/.test(t.slice(cierre + 1))) continue;
+    }
+    return true;
+  }
+  return false;
+}
+
+function revisarCondiciones(modelo, error) {
+  const condiciones = [...modelo.ifs, ...modelo.ciclos].filter((x) => x.nuevo && x.condicion);
+  const conUna = condiciones.find((x) => asignacionEnCondicion(x.condicion));
+  if (!conUna) return;
+  error(
+    'ASIGNACION_EN_CONDICION',
+    'En una condición, un solo `=` guarda un valor y no compara: para preguntar si son iguales se usa `==`.',
+    conUna.fila
+  );
 }
 
 // Una posicion que no existe: con 30 filas van de 0 a 29. Solo cuando el
