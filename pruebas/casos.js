@@ -16,6 +16,7 @@ import {
   CASOS_DE_LEER_CAMPOS,
   CASOS_DE_COPIAR,
   CASOS_DE_ARREGLO_DE_ESTRUCTURAS,
+  CASOS_DE_RECORRER_ESTRUCTURAS,
 } from './casos-estructuras.js';
 
 const TYPEDEF_SIN_ETIQUETA = `typedef struct {
@@ -1402,6 +1403,7 @@ export const CASOS = [
   ...CASOS_DE_LEER_CAMPOS,
   ...CASOS_DE_COPIAR,
   ...CASOS_DE_ARREGLO_DE_ESTRUCTURAS,
+  ...CASOS_DE_RECORRER_ESTRUCTURAS,
   // ---- 1: declarar la estructura ----
   {
     nombre: 'otro nombre, otras dimensiones, otro orden, double y unsigned',

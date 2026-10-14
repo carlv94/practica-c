@@ -120,7 +120,10 @@ pide cargar, igual que "Así tiene que quedar la tabla" en Arreglos:
   por elemento, con el título `alumnos[0]`, `alumnos[1]`…, una al lado de la
   otra (apiladas si no entran). Un elemento `null` es uno todavía sin cargar:
   sus campos llevan la línea. `destacar` marca los elementos (borde y título:
-  el que cumple, el mayor) y `resaltar`, los campos que se marcan en todas.
+  el que cumple, el mayor) y `resaltar`, los campos que se marcan en todas
+  porque la consigna los carga (las pruebas piden que su valor esté en el
+  enunciado). `marcar` se ve igual, para señalar el campo sobre el que se
+  trabaja (el que se suma), sin esa exigencia.
   Los valores van como texto cuando importa cómo se ven (`"9.10"`):
 
   ```json

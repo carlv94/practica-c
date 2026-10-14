@@ -232,6 +232,118 @@ export const CASOS_DE_ARREGLO_DE_ESTRUCTURAS = [
   ),
 ];
 
+// Recorrer un arreglo de estructuras.
+const recorrer = (paso, nombre, respuesta, espera = 'ok', extra = {}) => ({
+  serie: 'estructuras-recorrer',
+  paso,
+  nombre,
+  respuesta,
+  espera,
+  ...extra,
+});
+
+const BUCLE = (cuerpo, desde = '0', hasta = 'i < MAX_ALUMNOS') =>
+  `for (i = ${desde}; ${hasta}; i++) {\n${cuerpo}\n}`;
+
+export const CASOS_DE_RECORRER_ESTRUCTURAS = [
+  // 1: sumar los promedios
+  recorrer(1, 'suma', BUCLE('  total += alumnos[i].promedio;'), 'ok', { mejoras: [] }),
+  recorrer(1, 'suma con el numero suelto', BUCLE('  total += alumnos[i].promedio;', '0', 'i < 3'), 'ok', {
+    mejoras: ['LIMITE_CON_NUMERO_SUELTO'],
+  }),
+  recorrer(1, 'suma con total = total + ...', BUCLE('  total = total + alumnos[i].promedio;')),
+  recorrer(1, 'se pisa el total', BUCLE('  total = alumnos[i].promedio;'), ['ACUMULADOR_SE_PISA']),
+  recorrer(1, 'el total se reinicia', BUCLE('  total = 0;\n  total += alumnos[i].promedio;'), ['ACUMULADOR_REINICIADO']),
+  recorrer(1, 'suma el legajo', BUCLE('  total += alumnos[i].legajo;'), ['RESULTADO_VALOR_DISTINTO']),
+  recorrer(1, 'sin el ultimo', BUCLE('  total += alumnos[i].promedio;', '0', 'i < MAX_ALUMNOS - 1'), ['RESULTADO_VALOR_DISTINTO']),
+  recorrer(1, 'una posicion de mas', BUCLE('  total += alumnos[i].promedio;', '0', 'i <= MAX_ALUMNOS'), ['INDICE_FUERA_DE_RANGO']),
+  recorrer(1, 'el arreglo sin indice', BUCLE('  total += alumnos.promedio;'), ['ARREGLO_SIN_INDICE']),
+  recorrer(1, 'sin ciclo', 'total = alumnos[0].promedio + alumnos[1].promedio + alumnos[2].promedio;', ['CICLO_FALTA']),
+  // 2: contar el turno
+  recorrer(2, 'cuenta', BUCLE("  if (alumnos[i].turno == 'T') {\n    cantidad++;\n  }"), 'ok', { mejoras: [] }),
+  recorrer(2, 'cuenta con += 1', BUCLE("  if (alumnos[i].turno == 'T') {\n    cantidad += 1;\n  }")),
+  recorrer(2, 'cuenta todos', BUCLE('  cantidad++;'), ['RESULTADO_VALOR_DISTINTO']),
+  recorrer(2, 'cuenta otro turno', BUCLE("  if (alumnos[i].turno == 'M') {\n    cantidad++;\n  }"), ['RESULTADO_VALOR_DISTINTO']),
+  recorrer(2, 'la letra entre comillas dobles', BUCLE('  if (alumnos[i].turno == "T") {\n    cantidad++;\n  }'), ['LETRA_ENTRE_COMILLAS_DOBLES']),
+  recorrer(2, 'sin la letra entre comillas', BUCLE('  if (alumnos[i].turno == T) {\n    cantidad++;\n  }'), ['NOMBRE_NO_DECLARADO']),
+  recorrer(2, 'solo la primera posicion', "if (alumnos[0].turno == 'T') {\n  cantidad++;\n}", ['CICLO_FALTA']),
+  // 3: el legajo del mayor promedio
+  recorrer(
+    3,
+    'el mayor',
+    'mayorPromedio = alumnos[0].promedio;\nlegajoMayor = alumnos[0].legajo;\nfor (i = 1; i < MAX_ALUMNOS; i++) {\n  if (alumnos[i].promedio > mayorPromedio) {\n    mayorPromedio = alumnos[i].promedio;\n    legajoMayor = alumnos[i].legajo;\n  }\n}'
+  ),
+  recorrer(
+    3,
+    'empezando en cero',
+    'mayorPromedio = 0;\nlegajoMayor = 0;\nfor (i = 0; i < MAX_ALUMNOS; i++) {\n  if (alumnos[i].promedio > mayorPromedio) {\n    mayorPromedio = alumnos[i].promedio;\n    legajoMayor = alumnos[i].legajo;\n  }\n}'
+  ),
+  recorrer(
+    3,
+    'el menor en vez del mayor',
+    'mayorPromedio = alumnos[0].promedio;\nlegajoMayor = alumnos[0].legajo;\nfor (i = 1; i < MAX_ALUMNOS; i++) {\n  if (alumnos[i].promedio < mayorPromedio) {\n    mayorPromedio = alumnos[i].promedio;\n    legajoMayor = alumnos[i].legajo;\n  }\n}',
+    ['RESULTADO_VALOR_DISTINTO']
+  ),
+  recorrer(
+    3,
+    'el legajo no se actualiza',
+    'mayorPromedio = alumnos[0].promedio;\nlegajoMayor = alumnos[0].legajo;\nfor (i = 1; i < MAX_ALUMNOS; i++) {\n  if (alumnos[i].promedio > mayorPromedio) {\n    mayorPromedio = alumnos[i].promedio;\n  }\n}',
+    ['RESULTADO_VALOR_DISTINTO']
+  ),
+  recorrer(
+    3,
+    'guarda el promedio en lugar del legajo',
+    'mayorPromedio = alumnos[0].promedio;\nlegajoMayor = alumnos[0].promedio;\nfor (i = 1; i < MAX_ALUMNOS; i++) {\n  if (alumnos[i].promedio > mayorPromedio) {\n    mayorPromedio = alumnos[i].promedio;\n    legajoMayor = alumnos[i].promedio;\n  }\n}',
+    ['RESULTADO_VALOR_DISTINTO']
+  ),
+  recorrer(
+    3,
+    'sin el mayor inicial',
+    'for (i = 0; i < MAX_ALUMNOS; i++) {\n  if (alumnos[i].promedio > mayorPromedio) {\n    mayorPromedio = alumnos[i].promedio;\n    legajoMayor = alumnos[i].legajo;\n  }\n}',
+    ['VARIABLE_SIN_VALOR']
+  ),
+  // 4: buscar un legajo
+  recorrer(4, 'busca', BUCLE('  if (alumnos[i].legajo == legajoBuscado) {\n    promedioBuscado = alumnos[i].promedio;\n  }'), 'ok', {
+    mejoras: [],
+  }),
+  recorrer(
+    4,
+    'busca y corta',
+    BUCLE('  if (alumnos[i].legajo == legajoBuscado) {\n    promedioBuscado = alumnos[i].promedio;\n    break;\n  }')
+  ),
+  recorrer(
+    4,
+    'devuelve el legajo',
+    BUCLE('  if (alumnos[i].legajo == legajoBuscado) {\n    promedioBuscado = alumnos[i].legajo;\n  }'),
+    ['RESULTADO_VALOR_DISTINTO']
+  ),
+  recorrer(
+    4,
+    'compara con la posicion',
+    BUCLE('  if (i == legajoBuscado) {\n    promedioBuscado = alumnos[i].promedio;\n  }'),
+    ['RESULTADO_VALOR_DISTINTO']
+  ),
+  recorrer(
+    4,
+    'busca por un campo equivocado',
+    BUCLE('  if (alumnos[i].promedio == legajoBuscado) {\n    promedioBuscado = alumnos[i].promedio;\n  }'),
+    ['RESULTADO_VALOR_DISTINTO']
+  ),
+  recorrer(
+    4,
+    'cero si no esta',
+    'promedioBuscado = 0;\n' +
+      BUCLE('  if (alumnos[i].legajo == legajoBuscado) {\n    promedioBuscado = alumnos[i].promedio;\n  }'),
+    ['RESULTADO_VALOR_DISTINTO']
+  ),
+  recorrer(
+    4,
+    'solo mira el primero',
+    'if (alumnos[0].legajo == legajoBuscado) {\n  promedioBuscado = alumnos[0].promedio;\n}',
+    ['CICLO_FALTA']
+  ),
+];
+
 // Copiar y comparar variables de estructura.
 const copiar =(paso, nombre, respuesta, espera = 'ok', extra = {}) => ({
   serie: 'estructuras-copiar',

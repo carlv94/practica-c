@@ -43,7 +43,9 @@ export const MARCA_DE_FICHA = '\n[ficha]\n';
 //              "leyenda": "Asi tiene que quedar el arreglo:" }
 // Un elemento null es uno todavia sin cargar (sus campos llevan la linea).
 // "destacar" son las posiciones que se marcan (el que cumple, el mayor) y
-// "resaltar", los campos que se marcan en todas.
+// "resaltar", los campos que se marcan en todas porque la consigna los carga.
+// "marcar" se ve igual, para señalar un campo sobre el que se trabaja (el que
+// se suma); no hace falta que el enunciado diga sus valores.
 export function fichasDe(consigna) {
   const f = consigna.ficha;
   if (!f) return [];
@@ -54,6 +56,7 @@ export function fichasDe(consigna) {
     titulo: `${f.arreglo}[${i}]`,
     destacar: (f.destacar || []).includes(i),
     resaltar: f.resaltar,
+    marcar: f.marcar,
     campos: f.campos.map((nombre, k) =>
       fila && fila[k] != null ? { nombre, ejemplo: String(fila[k]) } : { nombre }
     ),

@@ -2561,8 +2561,11 @@ export function corregir(
     const ordenados = Object.entries(datos || {}).sort(
       ([, a], [, b]) => Number(Array.isArray(a)) - Number(Array.isArray(b))
     );
+    // Un campo de un arreglo de estructuras ("alumnos.promedio") se dice como se escribe: alumnos[i].promedio.
+    const comoSeEscribe = (nombre) => nombre.replace(/^([A-Za-z_]\w*)\.(\w+)$/, '$1[i].$2');
     const partes = ordenados.map(
-      ([nombre, lista]) => `\`${nombre}\` valiendo ${enLista(Array.isArray(lista) ? lista : [lista])}`
+      ([nombre, lista]) =>
+        `\`${comoSeEscribe(nombre)}\` valiendo ${enLista(Array.isArray(lista) ? lista : [lista])}`
     );
     return partes.length ? `Con ${partes.join(' y ')}` : 'Con los datos de la consigna';
   }
@@ -2672,7 +2675,9 @@ export function corregir(
       }
       if (Math.abs(tiene - debe) < 1e-9) continue;
 
-      const resumen = `${antes}\`${nombre}\` termina valiendo \`${tiene}\` y debería valer \`${debe}\``;
+      // Sin el ruido de las cuentas con decimales (17.549999999999997).
+      const redondeo = (v) => (typeof v === 'number' && !Number.isInteger(v) ? Number(v.toFixed(6)) : v);
+      const resumen = `${antes}\`${nombre}\` termina valiendo \`${redondeo(tiene)}\` y debería valer \`${redondeo(debe)}\``;
       const ultimos = Object.values(caso.datos || {}).map((lista) => lista[lista.length - 1]);
       const valoresDeLosArreglos = Object.values(caso.datos || {}).flat(Infinity);
       if (variable.flotante && !Number.isInteger(debe) && tiene === Math.trunc(debe)) {

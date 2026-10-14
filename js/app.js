@@ -458,7 +458,8 @@ function dibujarFicha(fichas) {
       const nombre = elemento('dt');
       nombre.appendChild(elemento('code', null, campo.nombre));
       const sinValor = campo.ejemplo == null;
-      const nuevo = ficha.resaltar === 'todos' || (Array.isArray(ficha.resaltar) && ficha.resaltar.includes(campo.nombre));
+      const marcado = (lista) => lista === 'todos' || (Array.isArray(lista) && lista.includes(campo.nombre));
+      const nuevo = marcado(ficha.resaltar) || marcado(ficha.marcar);
       const valor = elemento(
         'dd',
         sinValor ? 'ficha-linea' : nuevo ? 'ficha-nuevo' : null,

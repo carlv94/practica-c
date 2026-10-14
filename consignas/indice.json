@@ -48,7 +48,8 @@
         "estructuras-campos.json",
         "estructuras-leer.json",
         "estructuras-copiar.json",
-        "estructuras-arreglo.json"
+        "estructuras-arreglo.json",
+        "estructuras-recorrer.json"
       ]
     }
   ]

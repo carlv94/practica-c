@@ -1,0 +1,189 @@
+{
+  "id": "estructuras-recorrer",
+  "titulo": "Recorrer un arreglo de estructuras",
+  "continua": false,
+  "dentroDeMain": true,
+  "buenasPracticas": ["constantes"],
+  "descripcion": "Sumar, contar, buscar el mayor y buscar un legajo recorriendo un arreglo de estructuras.",
+  "cabecera": "#include <stdio.h>\n\n#define MAX_ALUMNOS 3\n\ntypedef struct {\n  int legajo;\n  char apellidoNombre[50];\n  float promedio;\n  char turno;\n} TAlumno;",
+  "dado": "TAlumno alumnos[MAX_ALUMNOS];\nint i;",
+  "consignas": [
+    {
+      "id": "recorrer-sumar",
+      "titulo": "Sumar los promedios",
+      "dado": "float total = 0;",
+      "enunciado": "Una facultad quiere conocer la suma de los promedios de los alumnos de una comisión. El arreglo `alumnos` ya tiene cargados los datos de esta ficha. Con un ciclo, calcule en `total` la suma de los promedios de todos los alumnos. Use el índice `i`.",
+      "ficha": {
+        "arreglo": "alumnos",
+        "leyenda": "Los alumnos cargados:",
+        "campos": ["legajo", "apellidoNombre", "promedio", "turno"],
+        "elementos": [
+          [20431, "Perez, Ana", "8.45", "T"],
+          [30872, "Lopez, Juan", "9.10", "M"],
+          [18560, "Diaz, Marta", "7.20", "N"]
+        ],
+        "marcar": ["promedio"]
+      },
+      "requiere": [
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "datos": { "alumnos.legajo": [20431, 30872, 18560], "alumnos.promedio": [8.45, 9.1, 7.2] },
+                "queda": { "total": 24.75 },
+                "visible": true
+              },
+              { "datos": { "alumnos.legajo": [40123, 11002, 27345], "alumnos.promedio": [6, 10, 4.5] }, "queda": { "total": 20.5 } },
+              { "datos": { "alumnos.legajo": [1010, 2020, 3030], "alumnos.promedio": [10, 10, 10] }, "queda": { "total": 30 } },
+              { "datos": { "alumnos.legajo": [1010, 2020, 3030], "alumnos.promedio": [0, 7, 0] }, "queda": { "total": 7 } }
+            ],
+            "conCiclo": true,
+            "limite": true
+          }
+        }
+      ],
+      "referencia": "for (i = 0; i < MAX_ALUMNOS; i++) {\n  total += alumnos[i].promedio;\n}"
+    },
+    {
+      "id": "recorrer-contar-turno",
+      "titulo": "Contar los alumnos de un turno",
+      "dado": "int cantidad = 0;",
+      "enunciado": "La facultad quiere saber cuántos alumnos cursan en el turno `'T'`. El arreglo `alumnos` ya tiene cargados los datos de esta ficha. Con un ciclo, cuente cuántos alumnos son del turno `'T'` y guarde la cantidad en `cantidad`. Use el índice `i`.",
+      "ficha": {
+        "arreglo": "alumnos",
+        "leyenda": "Los alumnos cargados:",
+        "campos": ["legajo", "apellidoNombre", "promedio", "turno"],
+        "elementos": [
+          [20431, "Perez, Ana", "8.45", "T"],
+          [30872, "Lopez, Juan", "9.10", "M"],
+          [18560, "Diaz, Marta", "7.20", "T"]
+        ],
+        "marcar": ["turno"]
+      },
+      "requiere": [
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "datos": { "alumnos.legajo": [20431, 30872, 18560], "alumnos.promedio": [8.45, 9.1, 7.2], "alumnos.turno": ["T", "M", "T"] },
+                "queda": { "cantidad": 2 },
+                "visible": true
+              },
+              {
+                "datos": { "alumnos.legajo": [1010, 2020, 3030], "alumnos.promedio": [6, 7, 8], "alumnos.turno": ["M", "N", "M"] },
+                "queda": { "cantidad": 0 }
+              },
+              {
+                "datos": { "alumnos.legajo": [1010, 2020, 3030], "alumnos.promedio": [6, 7, 8], "alumnos.turno": ["T", "T", "T"] },
+                "queda": { "cantidad": 3 }
+              },
+              {
+                "datos": { "alumnos.legajo": [1010, 2020, 3030], "alumnos.promedio": [6, 7, 8], "alumnos.turno": ["T", "N", "N"] },
+                "queda": { "cantidad": 1 }
+              },
+              {
+                "datos": { "alumnos.legajo": [1010, 2020, 3030], "alumnos.promedio": [6, 7, 8], "alumnos.turno": ["N", "N", "T"] },
+                "queda": { "cantidad": 1 }
+              }
+            ],
+            "conCiclo": true,
+            "limite": true
+          }
+        }
+      ],
+      "referencia": "for (i = 0; i < MAX_ALUMNOS; i++) {\n  if (alumnos[i].turno == 'T') {\n    cantidad++;\n  }\n}"
+    },
+    {
+      "id": "recorrer-mayor",
+      "titulo": "El legajo del mejor promedio",
+      "dado": "int legajoMayor;\nfloat mayorPromedio;",
+      "enunciado": "La facultad quiere conocer al alumno de mayor promedio. El arreglo `alumnos` ya tiene cargados los datos de esta ficha. Con un ciclo, guarde en `legajoMayor` el legajo del alumno de mayor promedio. Use `mayorPromedio` para el mayor promedio que va encontrando, y el índice `i`.",
+      "ficha": {
+        "arreglo": "alumnos",
+        "leyenda": "Con estos datos, el de mayor promedio es el de la posición 1:",
+        "campos": ["legajo", "apellidoNombre", "promedio", "turno"],
+        "elementos": [
+          [20431, "Perez, Ana", "8.45", "T"],
+          [30872, "Lopez, Juan", "9.10", "M"],
+          [18560, "Diaz, Marta", "7.20", "N"]
+        ],
+        "destacar": [1]
+      },
+      "requiere": [
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "datos": { "alumnos.legajo": [20431, 30872, 18560], "alumnos.promedio": [8.45, 9.1, 7.2] },
+                "queda": { "legajoMayor": 30872 },
+                "visible": true
+              },
+              {
+                "datos": { "alumnos.legajo": [40123, 11002, 27345], "alumnos.promedio": [9.5, 6, 8] },
+                "queda": { "legajoMayor": 40123 }
+              },
+              {
+                "datos": { "alumnos.legajo": [40123, 11002, 27345], "alumnos.promedio": [6, 8, 9.5] },
+                "queda": { "legajoMayor": 27345 }
+              },
+              {
+                "datos": { "alumnos.legajo": [1010, 2020, 3030], "alumnos.promedio": [7, 7, 5] },
+                "queda": { "legajoMayor": 1010 }
+              }
+            ],
+            "conCiclo": true,
+            "limite": true,
+            "busca": true
+          }
+        }
+      ],
+      "referencia": "mayorPromedio = alumnos[0].promedio;\nlegajoMayor = alumnos[0].legajo;\nfor (i = 1; i < MAX_ALUMNOS; i++) {\n  if (alumnos[i].promedio > mayorPromedio) {\n    mayorPromedio = alumnos[i].promedio;\n    legajoMayor = alumnos[i].legajo;\n  }\n}"
+    },
+    {
+      "id": "recorrer-buscar",
+      "titulo": "Buscar el promedio de un legajo",
+      "dado": "int legajoBuscado = 30872;\nfloat promedioBuscado = -1;",
+      "enunciado": "Un alumno consulta su promedio con su número de legajo. El arreglo `alumnos` ya tiene cargados los datos de esta ficha. Con un ciclo, guarde en `promedioBuscado` el promedio del alumno cuyo legajo es `legajoBuscado`. Si ningún alumno tiene ese legajo, `promedioBuscado` tiene que quedar en `-1`. Use el índice `i`.",
+      "ficha": {
+        "arreglo": "alumnos",
+        "leyenda": "Con `legajoBuscado` en 30872, el que se busca es el de la posición 1:",
+        "campos": ["legajo", "apellidoNombre", "promedio", "turno"],
+        "elementos": [
+          [20431, "Perez, Ana", "8.45", "T"],
+          [30872, "Lopez, Juan", "9.10", "M"],
+          [18560, "Diaz, Marta", "7.20", "N"]
+        ],
+        "destacar": [1]
+      },
+      "requiere": [
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "datos": { "alumnos.legajo": [20431, 30872, 18560], "alumnos.promedio": [8.45, 9.1, 7.2] },
+                "queda": { "promedioBuscado": 9.1 },
+                "visible": true
+              },
+              {
+                "datos": { "alumnos.legajo": [10, 20, 30], "alumnos.promedio": [6, 7, 8], "legajoBuscado": 10 },
+                "queda": { "promedioBuscado": 6 }
+              },
+              {
+                "datos": { "alumnos.legajo": [10, 20, 30], "alumnos.promedio": [6, 7, 8], "legajoBuscado": 30 },
+                "queda": { "promedioBuscado": 8 }
+              },
+              {
+                "datos": { "alumnos.legajo": [10, 20, 30], "alumnos.promedio": [6, 7, 8], "legajoBuscado": 99 },
+                "queda": { "promedioBuscado": -1 }
+              }
+            ],
+            "conCiclo": true,
+            "limite": true,
+            "busca": true
+          }
+        }
+      ],
+      "referencia": "for (i = 0; i < MAX_ALUMNOS; i++) {\n  if (alumnos[i].legajo == legajoBuscado) {\n    promedioBuscado = alumnos[i].promedio;\n  }\n}"
+    }
+  ]
+}
