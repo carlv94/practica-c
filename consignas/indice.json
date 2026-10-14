@@ -43,7 +43,8 @@
       "descripcion": "Declarar estructuras, darles un alias y usarlas.",
       "series": [
         "estructuras.json",
-        "estructuras-alumno.json"
+        "estructuras-alumno.json",
+        "estructuras-campos.json"
       ]
     }
   ]

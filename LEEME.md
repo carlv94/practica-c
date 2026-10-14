@@ -490,6 +490,29 @@ Una consigna que pide varias posiciones lleva una regla `asigna` por cada una:
 una asignación que es de otra de ellas no se cuenta como "la posición
 equivocada".
 
+Para guardar un valor en un campo de una variable de estructura (grupo
+Estructuras, serie "Usar los campos"):
+
+- `{ "campo": { "variable": "alumno", "campos": [{ "nombre": "legajo", "tipo":
+  "entero" }] } }`: `alumno.legajo = 20431;`. El valor no se escribe en la
+  regla: es el `ejemplo` de la **ficha** de la consigna, así que lo que se ve
+  es lo que se corrige. `"tipo"` es `entero`, `real` o `letra`. Un texto
+  se guarda con una `llamada` a `strcpy` cuyo primer argumento es
+  `"alumno.apellidoNombre"` (y `aMano` con la misma variable).
+
+| Respuesta | Código | Mensaje |
+|---|---|---|
+| `legajo = 20431;` | `CAMPO_SIN_VARIABLE` | Es un campo: falta decir de qué variable, con un punto. |
+| `Alumno.legajo = 20431;` | `TIPO_EN_VEZ_DE_VARIABLE` | `Alumno` es la estructura; los datos van en la variable. |
+| `alumno->legajo = 20431;` | `FLECHA_CON_VARIABLE` | La flecha es para punteros; con una variable se usa el punto. |
+| `alumno.codigo = 20431;` | `CAMPO_NO_EXISTE` | Nombra los campos que sí tiene (o el parecido). |
+| `alumno.legajo == 20431;` | `ASIGNACION_CON_IGUAL_DOBLE` | `==` pregunta y no guarda. |
+| `alumno.apellidoNombre = "Ana";` | `ASIGNACION_DE_ARREGLO` | Es una cadena: se usa una función de la biblioteca. |
+| `strcpy(alumno, "Ana");` | `ARGUMENTO_SIN_CAMPO` | `alumno` es la variable completa: falta el campo. |
+| `strcpy(alumno.promedio, "Ana");` | `ARGUMENTO_OTRO_CAMPO` | Dice en qué campo va. |
+| otro valor, una letra entre comillas dobles, etc. | `ASIGNACION_VALOR_DISTINTO`, `LETRA_*`, `VALOR_ENTRE_COMILLAS` | Los de siempre. |
+| falta cargar un campo pedido | `CAMPO_SIN_CARGAR` | Dice cuál. |
+
 Otras dos reglas de la misma serie:
 
 - `{ "suma": { "de": ["notas[0]", "notas[MAX_ALUMNOS - 1]"] } }`: la suma de
@@ -906,7 +929,9 @@ variables son locales y no escriben `main` (si lo escriben, `MAIN_DE_MAS`).
 
 **`"cabecera"`** de una serie es un `#include` (`"#include <string.h>"`) que se
 ve arriba de todo, fuera de `main`, en el marco y en los programas de los
-cuestionarios. Las series que usan `strcpy` (arreglos, tablas y typedef) la
+cuestionarios. Puede traer también una definición ya hecha (la serie "Usar los
+campos" trae `struct Alumno`): como no es parte de lo que escribe el alumno,
+no cuenta como suyo, y la serie se ve con el marco de `main`. Las series que usan `strcpy` (arreglos, tablas y typedef) la
 llevan.
 
 **`"ejemplo"`** de una consigna (`{ "texto": ..., "codigo": ... }`) muestra,

@@ -32,6 +32,7 @@
 //   { "variable": { "tipo": "caracter", "arreglo": { "alMenos": 11, "letras": 10 } } }
 //   { "variable": { "tipo": "caracter", "arreglo": true, "texto": "Hola" } }
 //   { "elementos": { "de": "$C", "texto": "Hola" } }
+//   { "campo":    { "variable": "alumno", "campos": [{ "nombre": "legajo", "tipo": "entero" }] } }
 //   { "vaciar":   "nombre" }
 //   { "ciclo":    { "indice": "i", "hastaElFinDe": "nombre" } }
 //   { "usaAlias": { "alias": "$T", "arreglo": { "alMenos": 30 } } }
@@ -361,6 +362,7 @@ export function corregir(
     if (regla.incluye) return reglaIncluye(regla.incluye, modelo);
     if (regla.lee) return reglaLee(regla.lee, modelo);
     if (regla.asigna) return reglaAsigna(regla.asigna, modelo);
+    if (regla.campo) return reglaCampo(regla.campo, modelo);
     if (regla.suma) return reglaSuma(regla.suma, modelo);
     if (regla.resultado) return reglaResultado(regla.resultado, modelo);
     if (regla.ejecuta) return reglaEjecuta(regla.ejecuta, modelo);
@@ -1147,6 +1149,9 @@ export function corregir(
   function esTexto(e) {
     return e.startsWith('"');
   }
+  function esCampo(e) {
+    return /^[A-Za-z_]\w*\.[A-Za-z_]\w*$/.test(e);
+  }
   function esIndexado(e) {
     return /^[A-Za-z_]\w*\s*(\[[^\]]*\]\s*)+$/.test(e);
   }
@@ -1176,6 +1181,34 @@ export function corregir(
         error(
           'ARGUMENTO_SIN_COMILLAS',
           `\`${real.nombre}\` sin comillas es el nombre de una variable, no un texto: un texto va entre comillas dobles.`,
+          llamada.fila
+        );
+      } else {
+        error(
+          'ARGUMENTO_EQUIVOCADO',
+          `El argumento ${i + 1} de \`${llamada.funcion}\` (\`${real.texto}\`) no es el que corresponde.`,
+          llamada.fila
+        );
+      }
+      return;
+    }
+
+    if (esCampo(esperado)) {
+      const [base, campo] = esperado.split('.');
+      const variable = modelo.variables.findLast((v) => v.nombre === base);
+      const problema = problemaDeCampo(real, base, variable ? estructuraDeVariable(variable, modelo) : null, modelo);
+      if (problema) {
+        error(problema[0], problema[1], llamada.fila);
+      } else if (real.clase === 'nombre' && real.nombre === base) {
+        error(
+          'ARGUMENTO_SIN_CAMPO',
+          `\`${base}\` es la variable completa, con todos sus campos: para guardar en uno solo hay que indicar cuál, con un punto: \`${esperado}\`.`,
+          llamada.fila
+        );
+      } else if (real.clase === 'campo' && real.variable === base) {
+        error(
+          'ARGUMENTO_OTRO_CAMPO',
+          `Lo que pide la consigna va en el campo \`${campo}\`, y acá se usa \`${real.texto}\`.`,
           llamada.fila
         );
       } else {
@@ -1655,6 +1688,99 @@ export function corregir(
         `Está bien, pero el ${posicion} solo es la última posición mientras \`${dimension}\` valga ${tamano}: con \`${dimension} - 1\` sigue siéndolo aunque cambie la cantidad.`,
         a.fila
       );
+    }
+  }
+
+  // ---- guardar un valor en un campo de una variable --------------------------------
+
+  // "alumno.legajo = 20431;": los valores son los que muestra la ficha de la
+  // consigna (su "ejemplo"), asi que lo que se ve es lo que se corrige.
+  //   { "campo": { "variable": "alumno",
+  //                "campos": [{ "nombre": "legajo", "tipo": "entero" }] } }
+  // "tipo" es "entero", "real" o "letra". Un texto se guarda con una "llamada"
+  // (strcpy(alumno.apellidoNombre, "...")).
+  function reglaCampo(regla, modelo) {
+    const nombre = valorDe(regla.variable);
+    const variable = modelo.variables.findLast((v) => v.nombre === nombre);
+    const def = variable ? estructuraDeVariable(variable, modelo) : null;
+    if (!def) {
+      error('VARIABLE_FALTA', `No encontré la variable \`${nombre}\`.`);
+      return;
+    }
+
+    const asignaciones = modelo.asignaciones.filter((a) => a.nuevo && a.operador === '=');
+    // Lo primero es llegar bien al campo: la variable, el punto y el nombre.
+    for (const a of asignaciones) {
+      const problema = problemaDeCampo(a.izquierda, nombre, def, modelo);
+      if (problema) {
+        error(problema[0], problema[1], a.fila);
+        return;
+      }
+    }
+
+    const deLaVariable = (v, campo) => v.clase === 'campo' && v.variable === nombre && v.campo === campo;
+    for (const pedido of regla.campos) {
+      const guardadas = asignaciones.filter((a) => deLaVariable(a.izquierda, pedido.nombre));
+      const a = guardadas[guardadas.length - 1];
+      const lugar = `${nombre}.${pedido.nombre}`;
+      if (!a) {
+        const igual = modelo.comparaciones.find(
+          (c) => c.nuevo && !c.enIf && deLaVariable(c.izquierda, pedido.nombre)
+        );
+        if (igual) {
+          error(
+            'ASIGNACION_CON_IGUAL_DOBLE',
+            `\`==\` pregunta si dos valores son iguales y no guarda nada: para guardar un valor en \`${lugar}\` se usa un solo \`=\`.`,
+            igual.fila
+          );
+        } else {
+          error(
+            'CAMPO_SIN_CARGAR',
+            `No encontré dónde se guarda el valor de \`${pedido.nombre}\`: se escribe la variable, un punto, el nombre del campo, \`=\` y el valor.`
+          );
+        }
+        continue;
+      }
+
+      const derecha = a.derecha;
+      const ejemplo = consigna.ficha?.campos.find((c) => c.nombre === pedido.nombre)?.ejemplo;
+      if (pedido.tipo === 'letra') {
+        const letra = [...String(ejemplo)][0];
+        if (derecha.clase === 'caracter' && derecha.valor === letra.codePointAt(0)) continue;
+        const escrita = derecha.texto.trim();
+        if (derecha.clase === 'cadena') {
+          error(
+            'LETRA_ENTRE_COMILLAS_DOBLES',
+            `\`${escrita}\` entre comillas dobles es un texto, no una letra: una sola letra va entre comillas simples, como \`'${letra}'\`.`,
+            a.fila
+          );
+        } else if (derecha.clase === 'numero') {
+          error(
+            'LETRA_ES_NUMERO',
+            `\`${escrita}\` es un número, no una letra: la letra va entre comillas simples, como \`'${letra}'\`.`,
+            a.fila
+          );
+        } else if (derecha.clase === 'nombre') {
+          error(
+            'LETRA_SIN_COMILLAS',
+            `\`${escrita}\` sin comillas se lee como el nombre de una variable: la letra va entre comillas simples, como \`'${letra}'\`.`,
+            a.fila
+          );
+        } else {
+          error('ASIGNACION_VALOR_DISTINTO', `El valor que se guarda en \`${lugar}\` no es el que muestra la ficha.`, a.fila);
+        }
+        continue;
+      }
+
+      if (derecha.clase === 'caracter' || derecha.clase === 'cadena') {
+        error(
+          'VALOR_ENTRE_COMILLAS',
+          `\`${derecha.texto.trim()}\` con comillas no es un número: los números van sin comillas.`,
+          a.fila
+        );
+      } else if (derecha.clase !== 'numero' || Math.abs(parseFloat(derecha.texto) - Number(ejemplo)) > 1e-9) {
+        error('ASIGNACION_VALOR_DISTINTO', `El valor que se guarda en \`${lugar}\` no es el que muestra la ficha.`, a.fila);
+      }
     }
   }
 
@@ -2559,6 +2685,9 @@ export function corregir(
     if (!real) return false;
     if (esTexto(esperado)) {
       return real.clase === 'cadena' && sinFinEscrito(real.contenido).texto === esperado.slice(1, -1);
+    }
+    if (esCampo(esperado)) {
+      return real.clase === 'campo' && sinEspacios(real.texto) === sinEspacios(esperado);
     }
     if (esIndexado(esperado)) {
       return real.clase === 'indice' && sinEspacios(real.texto) === sinEspacios(esperado);
@@ -4336,6 +4465,75 @@ export function corregir(
 
 // Lo que vale para cualquier consigna: tipos que no existen y cosas que se
 // vuelven a declarar.
+// La estructura de una variable ("struct Alumno alumno;", o con un alias), o null.
+function estructuraDeVariable(variable, modelo) {
+  const deTipo = (tipo, vistos = 0) => {
+    if (vistos > 5) return null;
+    if (tipo.clase === 'struct') {
+      return tipo.defId != null
+        ? modelo.structs.find((s) => s.id === tipo.defId) || null
+        : modelo.structs.findLast((s) => s.etiqueta === tipo.etiqueta) || null;
+    }
+    if (tipo.clase === 'nombre') {
+      const alias = modelo.aliases.findLast((a) => a.nombre === tipo.nombre);
+      return alias && !alias.arreglo.length && !alias.punteros ? deTipo(alias.tipo, vistos + 1) : null;
+    }
+    return null;
+  };
+  return variable.punteros || variable.arreglo.length ? null : deTipo(variable.tipo);
+}
+
+// Lo que esta mal en la forma de llegar a un campo ("alumno.legajo"), o null si
+// esta bien o no es un campo. "nombre" es la variable que corresponde y "def" su
+// estructura. Devuelve [codigo, mensaje].
+function problemaDeCampo(valor, nombre, def, modelo) {
+  const campos = def ? def.campos.map((c) => c.nombre) : [];
+  if (valor.clase === 'nombre' && campos.includes(valor.nombre)) {
+    return [
+      'CAMPO_SIN_VARIABLE',
+      `\`${valor.nombre}\` es un campo de la estructura, no una variable: para llegar a él hay que decir de qué variable es, con un punto: \`${nombre}.${valor.nombre}\`.`,
+    ];
+  }
+  if (valor.clase !== 'campo') return null;
+  const esTipo =
+    modelo.structs.some((s) => s.etiqueta === valor.variable) ||
+    modelo.aliases.some((a) => a.nombre === valor.variable);
+  if (esTipo) {
+    return [
+      'TIPO_EN_VEZ_DE_VARIABLE',
+      `\`${valor.variable}\` es el nombre de la estructura, no el de una variable: los datos se guardan en la variable \`${nombre}\`, así que va \`${nombre}.${valor.campo}\`.`,
+    ];
+  }
+  if (valor.variable !== nombre) {
+    return [
+      'VARIABLE_DESCONOCIDA',
+      `No hay ninguna variable llamada \`${valor.variable}\`.` +
+        (valor.variable.toLowerCase() === nombre.toLowerCase()
+          ? ` La que está declarada es \`${nombre}\`: en C las mayúsculas y las minúsculas son letras distintas.`
+          : ''),
+    ];
+  }
+  if (valor.operador === '->') {
+    return [
+      'FLECHA_CON_VARIABLE',
+      `La flecha \`->\` se usa con punteros. \`${nombre}\` es una variable común: para llegar a un campo se usa el punto, \`${nombre}.${valor.campo}\`.`,
+    ];
+  }
+  if (def && !campos.includes(valor.campo)) {
+    const parecido = campos.find(
+      (c) => c.toLowerCase() === valor.campo.toLowerCase() || distancia(c, valor.campo) <= 2
+    );
+    return [
+      'CAMPO_NO_EXISTE',
+      `La estructura no tiene ningún campo llamado \`${valor.campo}\`.` +
+        (parecido
+          ? ` ¿Quiso escribir \`${parecido}\`? En C las mayúsculas y las minúsculas son letras distintas.`
+          : ` Sus campos son ${campos.map((c) => '\`' + c + '\`').join(', ')}.`),
+    ];
+  }
+  return null;
+}
+
 function revisarNombres(modelo, error) {
   const usos = [
     ...modelo.variables.filter((v) => v.nuevo),
@@ -4676,6 +4874,28 @@ function revisarAsignaciones(modelo, error, aconsejarFuncion = true) {
   for (const a of modelo.asignaciones) {
     if (!a.nuevo || a.operador !== '=') continue;
     const izquierda = a.izquierda;
+    // Un campo que es una cadena: alumno.apellidoNombre = "Perez";
+    if (izquierda.clase === 'campo') {
+      const dueno = modelo.variables.findLast((v) => v.nombre === izquierda.variable);
+      const def = dueno && estructuraDeVariable(dueno, modelo);
+      const campo = def && def.campos.find((c) => c.nombre === izquierda.campo);
+      if (campo && !campo.punteros && campo.arreglo.length && esChar(campo)) {
+        const clave = 'ASIGNACION_DE_ARREGLO:' + izquierda.texto;
+        if (!repetidas.has(clave)) {
+          repetidas.set(clave, {
+            codigo: 'ASIGNACION_DE_ARREGLO',
+            mensaje: aconsejarFuncion
+              ? `\`${izquierda.texto}\` es una cadena: no se puede asignar completa con \`=\`. Para guardar un texto o copiar otra cadena se usa una función de la biblioteca de cadenas.`
+              : `\`${izquierda.texto}\` es un arreglo: no se puede asignar completo con \`=\`.`,
+            fila: a.fila,
+            veces: 1,
+          });
+        } else {
+          repetidas.get(clave).veces++;
+        }
+      }
+      continue;
+    }
     if (izquierda.clase !== 'nombre' && izquierda.clase !== 'indice') continue;
     const variable = modelo.variables.findLast((v) => v.nombre === izquierda.nombre);
     if (!variable || variable.punteros) continue;

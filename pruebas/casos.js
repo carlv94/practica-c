@@ -1312,6 +1312,71 @@ const CASOS_DE_CARACTERES = [
   caracteres(7, 'sin ciclo', 'printf("%c ", letras[0]);', ['CICLO_FALTA']),
 ];
 
+// Usar los campos de una variable de estructura.
+const usar = (paso, nombre, respuesta, espera = 'ok') => ({
+  serie: 'estructuras-campos',
+  paso,
+  nombre,
+  respuesta,
+  espera,
+});
+
+const CASOS_DE_USAR_CAMPOS = [
+  // 1: el legajo
+  usar(1, 'legajo', 'alumno.legajo = 20431;', 'ok'),
+  usar(1, 'legajo, sin espacios', 'alumno.legajo=20431;', 'ok'),
+  usar(1, 'legajo, en dos pasos que dan lo mismo', 'alumno.legajo = 1;\nalumno.legajo = 20431;', 'ok'),
+  usar(1, 'el campo sin la variable', 'legajo = 20431;', ['CAMPO_SIN_VARIABLE']),
+  usar(1, 'el tipo en vez de la variable', 'Alumno.legajo = 20431;', ['TIPO_EN_VEZ_DE_VARIABLE']),
+  usar(1, 'la flecha', 'alumno->legajo = 20431;', ['FLECHA_CON_VARIABLE']),
+  usar(1, 'una variable que no existe', 'alumn.legajo = 20431;', ['VARIABLE_DESCONOCIDA']),
+  usar(1, 'la variable con mayuscula', 'Alumno1.legajo = 20431;', ['VARIABLE_DESCONOCIDA']),
+  usar(1, 'un campo que no existe', 'alumno.codigo = 20431;', ['CAMPO_NO_EXISTE']),
+  usar(1, 'el campo con mayuscula', 'alumno.Legajo = 20431;', ['CAMPO_NO_EXISTE']),
+  usar(1, 'con igual doble', 'alumno.legajo == 20431;', ['ASIGNACION_CON_IGUAL_DOBLE']),
+  usar(1, 'otro valor', 'alumno.legajo = 20341;', ['ASIGNACION_VALOR_DISTINTO']),
+  usar(1, 'el numero entre comillas', 'alumno.legajo = "20431";', ['VALOR_ENTRE_COMILLAS']),
+  usar(1, 'el campo de otra consigna', 'alumno.promedio = 8.45;', ['CAMPO_SIN_CARGAR']),
+  usar(1, 'sin el punto y coma', 'alumno.legajo = 20431', ['FALTA_PUNTO_Y_COMA']),
+  // 2: el promedio y el turno
+  usar(2, 'promedio y turno', "alumno.promedio = 8.45;\nalumno.turno = 'T';", 'ok'),
+  usar(2, 'turno y promedio', "alumno.turno = 'T';\nalumno.promedio = 8.45;", 'ok'),
+  usar(2, 'el promedio con f', "alumno.promedio = 8.45f;\nalumno.turno = 'T';", 'ok'),
+  usar(2, 'el turno entre comillas dobles', 'alumno.promedio = 8.45;\nalumno.turno = "T";', ['LETRA_ENTRE_COMILLAS_DOBLES']),
+  usar(2, 'el turno sin comillas', 'alumno.promedio = 8.45;\nalumno.turno = T;', ['LETRA_SIN_COMILLAS']),
+  usar(2, 'el turno como numero', 'alumno.promedio = 8.45;\nalumno.turno = 84;', ['LETRA_ES_NUMERO']),
+  usar(2, 'otra letra', "alumno.promedio = 8.45;\nalumno.turno = 'M';", ['ASIGNACION_VALOR_DISTINTO']),
+  usar(2, 'la minuscula', "alumno.promedio = 8.45;\nalumno.turno = 't';", ['ASIGNACION_VALOR_DISTINTO']),
+  usar(2, 'otro promedio', "alumno.promedio = 8;\nalumno.turno = 'T';", ['ASIGNACION_VALOR_DISTINTO']),
+  usar(2, 'el promedio entre comillas', "alumno.promedio = \"8.45\";\nalumno.turno = 'T';", ['VALOR_ENTRE_COMILLAS']),
+  usar(2, 'solo el promedio', 'alumno.promedio = 8.45;', ['CAMPO_SIN_CARGAR']),
+  usar(2, 'solo el turno', "alumno.turno = 'T';", ['CAMPO_SIN_CARGAR']),
+  usar(2, 'el campo sin la variable', "promedio = 8.45;\nturno = 'T';", ['CAMPO_SIN_VARIABLE']),
+  // 3: el apellido y nombre
+  usar(3, 'strcpy', 'strcpy(alumno.apellidoNombre, "Perez, Ana");', 'ok'),
+  usar(3, 'strncpy', 'strncpy(alumno.apellidoNombre, "Perez, Ana", 50);', 'ok'),
+  usar(3, 'asignacion directa', 'alumno.apellidoNombre = "Perez, Ana";', ['ASIGNACION_DE_ARREGLO']),
+  usar(3, 'la variable entera', 'strcpy(alumno, "Perez, Ana");', ['ARGUMENTO_SIN_CAMPO']),
+  usar(3, 'otro campo', 'strcpy(alumno.promedio, "Perez, Ana");', ['ARGUMENTO_OTRO_CAMPO']),
+  usar(3, 'el campo sin la variable', 'strcpy(apellidoNombre, "Perez, Ana");', ['CAMPO_SIN_VARIABLE']),
+  usar(3, 'el tipo en vez de la variable', 'strcpy(Alumno.apellidoNombre, "Perez, Ana");', ['TIPO_EN_VEZ_DE_VARIABLE']),
+  usar(3, 'la flecha', 'strcpy(alumno->apellidoNombre, "Perez, Ana");', ['FLECHA_CON_VARIABLE']),
+  usar(3, 'argumentos al reves', 'strcpy("Perez, Ana", alumno.apellidoNombre);', ['ARGUMENTOS_EN_OTRO_ORDEN']),
+  usar(3, 'otro texto', 'strcpy(alumno.apellidoNombre, "Perez Ana");', ['TEXTO_DISTINTO']),
+  usar(3, 'otra funcion', 'strcat(alumno.apellidoNombre, "Perez, Ana");', ['FUNCION_EQUIVOCADA']),
+  usar(3, 'a mano', "alumno.apellidoNombre[0] = 'P';\nalumno.apellidoNombre[1] = 'e';", ['A_MANO']),
+  // 4 a 6: los cuestionarios
+  usar(4, 'sin cargar: no se puede saber', '2'),
+  usar(4, 'sin cargar: cero', '0', ['OPCION_SIN_CARGAR_ES_CERO']),
+  usar(4, 'sin cargar: ninguno', '1', ['OPCION_SIN_CARGAR_ES_NADA']),
+  usar(5, 'dos variables: la primera', '0'),
+  usar(5, 'dos variables: la segunda', '1', ['OPCION_CAMPOS_COMPARTIDOS']),
+  usar(5, 'dos variables: no se puede saber', '2', ['OPCION_NO_SE_SABE_CAMPO']),
+  usar(6, 'primera letra: la P', '0'),
+  usar(6, 'primera letra: la e', '1', ['OPCION_CUENTA_DESDE_UNO']),
+  usar(6, 'primera letra: el campo completo', '2', ['OPCION_CAMPO_COMPLETO']),
+];
+
 export const CASOS = [
   ...CASOS_DE_NOMBRES,
   ...CASOS_DE_VALORES,
@@ -1328,6 +1393,7 @@ export const CASOS = [
   ...CASOS_DE_CARACTERES,
   ...CASOS_DE_CADENAS,
   ...CASOS_DE_CADENAS_NUEVAS,
+  ...CASOS_DE_USAR_CAMPOS,
   // ---- 1: declarar la estructura ----
   {
     nombre: 'otro nombre, otras dimensiones, otro orden, double y unsigned',

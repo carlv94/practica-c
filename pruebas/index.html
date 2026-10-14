@@ -185,6 +185,18 @@
                 `ficha de ${consigna.id}: ejemplos`,
                 'o todos los campos llevan ejemplo o ninguno'
               );
+              // Una regla "campo" corrige contra el ejemplo de la ficha.
+              const guardados = (consigna.requiere || []).flatMap((r) =>
+                r.campo ? r.campo.campos.map((c) => c.nombre) : []
+              );
+              const sinEjemplo = guardados.filter(
+                (n) => consigna.ficha.campos.find((c) => c.nombre === n)?.ejemplo == null
+              );
+              anotar(
+                !sinEjemplo.length,
+                `ficha de ${consigna.id}: valores que se corrigen`,
+                `la regla "campo" pide ${sinEjemplo.join(', ')}, que la ficha no muestra con ejemplo`
+              );
             }
           } catch (e) {
             anotar(false, `referencia de ${consigna.id}`, e.message);

@@ -30,6 +30,7 @@
 //   { clase: 'indice', nombre, indices }      cadena1[0], t[2][1] (indices: ['2', '1'])
 //   { clase: 'caracter', valor }              'a', '\0' (valor: su codigo)
 //   { clase: 'numero', valor }                0, 25
+//   { clase: 'campo', variable, campo, operador }   alumno.legajo (operador: '.' o '->')
 //   { clase: 'otro' }                         cualquier otra expresion
 // todos con "texto", que es como esta escrito.
 //
@@ -214,6 +215,21 @@ export function construirModelo(arbol, desde) {
           de = de.childForFieldName('argument');
         }
         return { clase: 'indice', nombre: de ? de.text : null, indices, texto };
+      }
+      case 'field_expression': {
+        // alumno.legajo, alumno->legajo: la variable (lo que esta a la izquierda
+        // del punto, tal como esta escrito), el campo y si se llego con . o con ->.
+        const de = n.childForFieldName('argument');
+        const campo = n.childForFieldName('field');
+        if (!de || !campo) return { clase: 'otro', texto };
+        const flecha = texto.slice(de.text.length).trimStart().startsWith('->');
+        return {
+          clase: 'campo',
+          variable: de.text,
+          campo: campo.text,
+          operador: flecha ? '->' : '.',
+          texto,
+        };
       }
       default:
         return { clase: 'otro', texto };

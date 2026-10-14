@@ -1,0 +1,168 @@
+{
+  "id": "estructuras-campos",
+  "titulo": "Usar los campos",
+  "continua": true,
+  "dentroDeMain": true,
+  "descripcion": "Guardar valores en los campos de una variable de estructura, con el punto y con la biblioteca de cadenas, y qué hay en un campo que no se cargó.",
+  "cabecera": "#include <string.h>\n\nstruct Alumno {\n  int legajo;\n  char apellidoNombre[50];\n  float promedio;\n  char turno;\n};",
+  "consignas": [
+    {
+      "id": "campos-legajo",
+      "titulo": "Guardar el legajo",
+      "dado": "struct Alumno alumno;",
+      "enunciado": "La secretaría de una facultad registra los datos de sus alumnos. La estructura `Alumno` y la variable `alumno` ya están declaradas, y `alumno` tiene que guardar los datos de esta ficha:\n[ficha]\nEscriba el código que guarde en `alumno` el número de legajo.",
+      "ficha": {
+        "titulo": "Ficha de alumno",
+        "campos": [
+          { "texto": "Número de legajo", "nombre": "legajo", "ejemplo": "20431" },
+          { "texto": "Apellido y nombre", "nombre": "apellidoNombre", "ejemplo": "Perez, Ana" },
+          { "texto": "Promedio general", "nombre": "promedio", "ejemplo": "8.45" },
+          { "texto": "Turno en el que cursa: M, T o N", "nombre": "turno", "ejemplo": "T" }
+        ]
+      },
+      "requiere": [
+        {
+          "campo": {
+            "variable": "alumno",
+            "campos": [{ "nombre": "legajo", "tipo": "entero" }]
+          }
+        }
+      ],
+      "referencia": "alumno.legajo = 20431;"
+    },
+    {
+      "id": "campos-promedio-turno",
+      "titulo": "Guardar el promedio y el turno",
+      "enunciado": "Con la misma ficha:\n[ficha]\nEscriba el código que guarde en `alumno` el promedio general y el turno.",
+      "ficha": {
+        "titulo": "Ficha de alumno",
+        "campos": [
+          { "texto": "Número de legajo", "nombre": "legajo", "ejemplo": "20431" },
+          { "texto": "Apellido y nombre", "nombre": "apellidoNombre", "ejemplo": "Perez, Ana" },
+          { "texto": "Promedio general", "nombre": "promedio", "ejemplo": "8.45" },
+          { "texto": "Turno en el que cursa: M, T o N", "nombre": "turno", "ejemplo": "T" }
+        ]
+      },
+      "requiere": [
+        {
+          "campo": {
+            "variable": "alumno",
+            "campos": [
+              { "nombre": "promedio", "tipo": "real" },
+              { "nombre": "turno", "tipo": "letra" }
+            ]
+          }
+        }
+      ],
+      "referencia": "alumno.promedio = 8.45;\nalumno.turno = 'T';"
+    },
+    {
+      "id": "campos-apellido-nombre",
+      "titulo": "Guardar el apellido y nombre",
+      "enunciado": "Con la misma ficha:\n[ficha]\nEscriba el código que guarde en `alumno` el apellido y nombre, usando una función de la biblioteca de cadenas.",
+      "ficha": {
+        "titulo": "Ficha de alumno",
+        "campos": [
+          { "texto": "Número de legajo", "nombre": "legajo", "ejemplo": "20431" },
+          { "texto": "Apellido y nombre", "nombre": "apellidoNombre", "ejemplo": "Perez, Ana" },
+          { "texto": "Promedio general", "nombre": "promedio", "ejemplo": "8.45" },
+          { "texto": "Turno en el que cursa: M, T o N", "nombre": "turno", "ejemplo": "T" }
+        ]
+      },
+      "requiere": [
+        {
+          "llamada": {
+            "funcion": "strcpy",
+            "alternativas": ["strncpy"],
+            "argumentos": ["alumno.apellidoNombre", "\"Perez, Ana\""],
+            "orden": "primero va el campo donde se guarda y después el texto",
+            "aMano": {
+              "variable": "alumno.apellidoNombre",
+              "texto": "Perez, Ana",
+              "prohibida": true
+            }
+          }
+        }
+      ],
+      "referencia": "strcpy(alumno.apellidoNombre, \"Perez, Ana\");"
+    },
+    {
+      "id": "campos-q-sin-cargar",
+      "titulo": "Un campo que no se cargó",
+      "continua": false,
+      "enunciado": "Después de ejecutar el código de abajo, ¿qué valor tendría `alumno.promedio`?",
+      "codigo": "struct Alumno alumno;\n\nalumno.legajo = 20431;",
+      "opciones": [
+        {
+          "valor": "0",
+          "texto": "cero",
+          "codigo": "OPCION_SIN_CARGAR_ES_CERO",
+          "explicacion": "Un campo que no se cargó no empieza en `0`: no tiene nada asignado, así que guarda lo que hubiera anteriormente en esa memoria."
+        },
+        {
+          "texto": "Ninguno, porque el campo no tiene valor",
+          "codigo": "OPCION_SIN_CARGAR_ES_NADA",
+          "explicacion": "Un campo siempre tiene algún valor guardado. Si no se le asignó nada, tiene lo que hubiera anteriormente en esa memoria, y C no avisa."
+        },
+        {
+          "texto": "No se puede saber",
+          "correcta": true,
+          "explicacion": "Solo se cargó el legajo. `alumno.promedio` guarda lo que hubiera antes en esa memoria, que puede ser cualquier número, y no hay forma de saber cuál. Cada campo hay que cargarlo."
+        }
+      ]
+    },
+    {
+      "id": "campos-q-dos-variables",
+      "titulo": "Dos variables de la misma estructura",
+      "continua": false,
+      "enunciado": "Después de ejecutar el código de abajo, ¿qué valor tendría `alumno.legajo`?",
+      "codigo": "struct Alumno alumno;\nstruct Alumno otroAlumno;\n\nalumno.legajo = 20431;\notroAlumno.legajo = 30872;",
+      "opciones": [
+        {
+          "valor": "20431",
+          "texto": "el legajo que se guardó en `alumno`",
+          "correcta": true,
+          "explicacion": "La estructura es el molde, y cada variable tiene su propia copia de los campos: guardar en `otroAlumno.legajo` no cambia `alumno.legajo`."
+        },
+        {
+          "valor": "30872",
+          "texto": "el legajo que se guardó en `otroAlumno`",
+          "codigo": "OPCION_CAMPOS_COMPARTIDOS",
+          "explicacion": "Los campos no se comparten entre las variables. `alumno` y `otroAlumno` son dos variables distintas, con sus propios campos: lo que se guarda en una no cambia la otra."
+        },
+        {
+          "texto": "No se puede saber",
+          "codigo": "OPCION_NO_SE_SABE_CAMPO",
+          "explicacion": "Sí se puede saber: a `alumno.legajo` se le asignó `20431`, y nada lo cambió después."
+        }
+      ]
+    },
+    {
+      "id": "campos-q-primera-letra",
+      "titulo": "Una letra de un campo",
+      "continua": false,
+      "enunciado": "Después de ejecutar el código de abajo, ¿qué valor tendría `alumno.apellidoNombre[0]`?",
+      "codigo": "struct Alumno alumno;\n\nstrcpy(alumno.apellidoNombre, \"Perez, Ana\");",
+      "opciones": [
+        {
+          "valor": "'P'",
+          "texto": "la primera letra",
+          "correcta": true,
+          "explicacion": "`alumno.apellidoNombre` es una cadena como cualquier otra, y `[0]` es su primera posición: la `'P'`."
+        },
+        {
+          "valor": "'e'",
+          "texto": "la segunda letra",
+          "codigo": "OPCION_CUENTA_DESDE_UNO",
+          "explicacion": "La `'e'` es la segunda letra, la que está en la posición 1. Las posiciones se numeran desde 0, así que la posición 0 tiene la `'P'`."
+        },
+        {
+          "valor": "\"Perez, Ana\"",
+          "texto": "el apellido y nombre completo",
+          "codigo": "OPCION_CAMPO_COMPLETO",
+          "explicacion": "Ese es el valor de `alumno.apellidoNombre`, la cadena completa. Con `[0]` se llega a una sola letra de ella."
+        }
+      ]
+    }
+  ]
+}

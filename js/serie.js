@@ -59,9 +59,12 @@ export const capturasPrevias = (serie, indice, avance) =>
 export const enArchivo = (consigna) => consigna.en === 'archivo';
 
 // Una serie mezcla las dos zonas cuando sus sentencias van dentro de main y
-// alguna de sus consignas pide una definicion fuera de ella.
+// alguna de sus consignas pide una definicion fuera de ella, o su cabecera
+// trae una (una estructura ya declarada, ademas del #include).
+const cabeceraConCodigo = (serie) =>
+  (serie.cabecera || '').split('\n').some((l) => l.trim() && !l.trim().startsWith('#'));
 export const esMixta = (serie) =>
-  Boolean(serie.dentroDeMain) && serie.consignas.some((c) => enArchivo(c));
+  Boolean(serie.dentroDeMain) && (cabeceraConCodigo(serie) || serie.consignas.some((c) => enArchivo(c)));
 
 // Lo que tiene delante la consigna "indice", separado por lugar: lo que va
 // fuera de main (con la base) y lo que va dentro.
