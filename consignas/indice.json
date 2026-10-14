@@ -47,7 +47,8 @@
         "estructuras-alumno.json",
         "estructuras-campos.json",
         "estructuras-leer.json",
-        "estructuras-copiar.json"
+        "estructuras-copiar.json",
+        "estructuras-arreglo.json"
       ]
     }
   ]

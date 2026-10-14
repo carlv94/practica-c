@@ -12,7 +12,11 @@
 // Sumar un caso cada vez que un alumno escriba algo que el corrector entienda mal.
 
 import { CASOS_DE_CADENAS_NUEVAS } from './casos-cadenas.js';
-import { CASOS_DE_LEER_CAMPOS, CASOS_DE_COPIAR } from './casos-estructuras.js';
+import {
+  CASOS_DE_LEER_CAMPOS,
+  CASOS_DE_COPIAR,
+  CASOS_DE_ARREGLO_DE_ESTRUCTURAS,
+} from './casos-estructuras.js';
 
 const TYPEDEF_SIN_ETIQUETA = `typedef struct {
   char nombreFantasia[50];
@@ -1397,6 +1401,7 @@ export const CASOS = [
   ...CASOS_DE_USAR_CAMPOS,
   ...CASOS_DE_LEER_CAMPOS,
   ...CASOS_DE_COPIAR,
+  ...CASOS_DE_ARREGLO_DE_ESTRUCTURAS,
   // ---- 1: declarar la estructura ----
   {
     nombre: 'otro nombre, otras dimensiones, otro orden, double y unsigned',

@@ -344,6 +344,7 @@ export function corregir(
     const sinFuncion = consigna.requiere.some((r) => r.elementos || r.vaciar || r.ciclo);
     revisarAsignaciones(modelo, error, !sinFuncion);
     revisarIndices(modelo, error);
+    revisarCampos(modelo, error);
     revisarDimensiones(modelo, error, practicas.includes('constantes') ? mejora : null);
     for (const regla of consigna.requiere) aplicarRegla(regla, modelo);
     return terminar();
@@ -1170,12 +1171,13 @@ export function corregir(
   // El campo ("alumno.promedio") en la definicion de su estructura, o null.
   function campoDeEstructura(esperado, modelo) {
     const [base, nombreDelCampo] = esperado.split('.');
-    const variable = modelo.variables.findLast((v) => v.nombre === base);
-    const def = variable && estructuraDeVariable(variable, modelo);
+    const sinIndice = base.replace(/\s*\[[\s\S]*$/, '');
+    const variable = modelo.variables.findLast((v) => v.nombre === sinIndice);
+    const def = variable && estructuraDeVariable(variable, modelo, sinIndice !== base);
     return (def && def.campos.find((c) => c.nombre === nombreDelCampo)) || null;
   }
   function esCampo(e) {
-    return /^[A-Za-z_]\w*\.[A-Za-z_]\w*$/.test(e);
+    return /^[A-Za-z_]\w*(?:\s*\[[^\]]*\])*\.[A-Za-z_]\w*$/.test(e);
   }
   function esIndexado(e) {
     return /^[A-Za-z_]\w*\s*(\[[^\]]*\]\s*)+$/.test(e);
@@ -1220,8 +1222,10 @@ export function corregir(
 
     if (esCampo(esperado)) {
       const [base, campo] = esperado.split('.');
-      const variable = modelo.variables.findLast((v) => v.nombre === base);
-      const problema = problemaDeCampo(real, base, variable ? estructuraDeVariable(variable, modelo) : null, modelo);
+      const sinIndice = base.replace(/\s*\[[\s\S]*$/, '');
+      const variable = modelo.variables.findLast((v) => v.nombre === sinIndice);
+      const def = variable ? estructuraDeVariable(variable, modelo, sinIndice !== base) : null;
+      const problema = problemaDeCampo(real, base, def, modelo);
       if (problema) {
         error(problema[0], problema[1], llamada.fila);
       } else if (real.clase === 'direccion' && real.nombre === esperado) {
@@ -1230,13 +1234,13 @@ export function corregir(
           `A \`${esperado}\` le sobra el \`&\`: una cadena se pasa con su nombre solo.`,
           llamada.fila
         );
-      } else if (real.clase === 'nombre' && real.nombre === base) {
+      } else if (real.clase === 'nombre' && real.nombre === sinIndice) {
         error(
           'ARGUMENTO_SIN_CAMPO',
-          `\`${base}\` es la variable completa, con todos sus campos: para guardar en uno solo hay que indicar cuál, con un punto: \`${esperado}\`.`,
+          `\`${real.nombre}\` es la variable completa, con todos sus campos: para guardar en uno solo hay que indicar cuál, con un punto: \`${esperado}\`.`,
           llamada.fila
         );
-      } else if (real.clase === 'campo' && real.variable === base) {
+      } else if (real.clase === 'campo' && sinEspacios(real.variable) === sinEspacios(base)) {
         error(
           'ARGUMENTO_OTRO_CAMPO',
           `Lo que pide la consigna va en el campo \`${campo}\`, y acá se usa \`${real.texto}\`.`,
@@ -1747,7 +1751,8 @@ export function corregir(
     for (const a of asignaciones) {
       const problema = problemaDeCampo(a.izquierda, nombre, def, modelo);
       if (problema) {
-        error(problema[0], problema[1], a.fila);
+        // La revision general ya pudo haberlo dicho.
+        if (!diagnosticos.some((d) => d.codigo === problema[0])) error(problema[0], problema[1], a.fila);
         return;
       }
     }
@@ -1862,15 +1867,24 @@ export function corregir(
   // "lee" (gets, fgets o scanf).
   //   { "leeCampo": { "variable": "alumno", "campo": "legajo" } }
   function reglaLeeCampo(regla, modelo) {
-    const nombre = valorDe(regla.variable);
-    const lugar = `${nombre}.${regla.campo}`;
+    // "alumnos[*]": un elemento cualquiera de un arreglo de estructuras (el que
+    // marque el indice del ciclo).
+    const crudo = valorDe(regla.variable);
+    const porElemento = /^([A-Za-z_]\w*)\[\*\]$/.exec(crudo);
+    const nombre = porElemento ? porElemento[1] : crudo;
+    const esLaVariable = (v) =>
+      porElemento ? new RegExp(`^${nombre}\\[[^\\]]*\\]$`).test(sinEspacios(v)) : v === nombre;
+    const lugar = porElemento ? `${nombre}[i].${regla.campo}` : `${nombre}.${regla.campo}`;
     const variable = modelo.variables.findLast((v) => v.nombre === nombre);
-    const def = variable ? estructuraDeVariable(variable, modelo) : null;
+    const def = variable ? estructuraDeVariable(variable, modelo, Boolean(porElemento)) : null;
     const campo = def && def.campos.find((c) => c.nombre === regla.campo);
     const clase = campo && claseDeCampo(campo);
     if (!clase || clase === 'cadena') {
       throw new Error(`La consigna "${consigna.id}" lee ${lugar}, que no es un número ni una letra.`);
     }
+
+    // Si ya se dijo que el arreglo va con su indice, con eso alcanza.
+    if (diagnosticos.some((d) => d.codigo === 'ARREGLO_SIN_INDICE')) return;
 
     const lecturas = modelo.llamadas.filter((l) => l.nuevo && LECTURAS.includes(l.funcion));
     if (!lecturas.length) {
@@ -1895,10 +1909,12 @@ export function corregir(
         destino && destino.clase === 'direccion' && !destino.campo
           ? { clase: 'nombre', nombre: destino.nombre, texto: destino.nombre }
           : null;
+      const delElemento = porElemento && dicho && esLaVariable(dicho.variable);
+      const verificado = delElemento ? { ...dicho, variable: nombre } : dicho;
       const problema =
-        (dicho && problemaDeCampo(dicho, nombre, def, modelo)) ||
+        (verificado && problemaDeCampo(verificado, nombre, def, modelo)) ||
         (solo && problemaDeCampo(solo, nombre, def, modelo)) ||
-        (destino && problemaDeCampo(destino, nombre, def, modelo));
+        (destino && destino.clase !== 'campo' && problemaDeCampo(destino, nombre, def, modelo));
       if (problema) {
         error(problema[0], problema[1], l.fila);
         return;
@@ -1908,14 +1924,14 @@ export function corregir(
     const apunta = (l) => {
       const destino = destinoDeLectura(l);
       const dicho = destino && comoCampo(destino);
-      return Boolean(dicho && dicho.variable === nombre && dicho.campo === regla.campo);
+      return Boolean(dicho && esLaVariable(dicho.variable) && dicho.campo === regla.campo);
     };
     const l = lecturas.find((x) => x.funcion === 'scanf' && apunta(x));
     if (!l) {
       const otra = lecturas.find((x) => {
         const d = destinoDeLectura(x);
         const dicho = d && comoCampo(d);
-        return dicho && dicho.variable === nombre;
+        return dicho && esLaVariable(dicho.variable);
       });
       if (otra) {
         error(
@@ -5358,8 +5374,10 @@ function revisarAsignaciones(modelo, error, aconsejarFuncion = true) {
     const izquierda = a.izquierda;
     // Un campo que es una cadena: alumno.apellidoNombre = "Perez";
     if (izquierda.clase === 'campo') {
-      const dueno = modelo.variables.findLast((v) => v.nombre === izquierda.variable);
-      const def = dueno && estructuraDeVariable(dueno, modelo);
+      // El elemento de un arreglo de estructuras (alumnos[1]): su variable es alumnos.
+      const sinIndice = izquierda.variable.replace(/\s*\[[\s\S]*$/, '');
+      const dueno = modelo.variables.findLast((v) => v.nombre === sinIndice);
+      const def = dueno && estructuraDeVariable(dueno, modelo, sinIndice !== izquierda.variable);
       const campo = def && def.campos.find((c) => c.nombre === izquierda.campo);
       if (campo && !campo.punteros && campo.arreglo.length && esChar(campo)) {
         const clave = 'ASIGNACION_DE_ARREGLO:' + izquierda.texto;
@@ -5483,6 +5501,43 @@ function distintaPosicion(real, esperado, modelo) {
     'ARGUMENTO_COLUMNA_DISTINTA',
     `En \`${real.texto}\` la fila es la que pide la consigna, pero la columna no.` + corrida(1, 'columna', 'columnas'),
   ];
+}
+
+// Un arreglo de estructuras usado sin decir cual de sus elementos
+// (alumnos.legajo, &alumnos.legajo): en C eso no existe.
+function revisarCampos(modelo, error) {
+  const dichos = new Set();
+  const revisar = (valor, fila) => {
+    if (!valor) return;
+    let variable = null;
+    if (valor.clase === 'campo') variable = valor.variable;
+    else if (valor.clase === 'direccion' && valor.campo) variable = valor.nombre.replace(/\s*(->|\.)[\s\S]*$/, '');
+    else {
+      // alumnos.legajo[i], &alumnos.legajo[i]: el indice va en el arreglo de estructuras.
+      const m = /^&?\s*([A-Za-z_]\w*)\s*\.\s*[A-Za-z_]\w*\s*\[/.exec(valor.texto || '');
+      if (m) variable = m[1];
+    }
+    if (!variable || !/^[A-Za-z_]\w*$/.test(variable) || dichos.has(variable)) return;
+    const declarada = modelo.variables.findLast((v) => v.nombre === variable);
+    if (!declarada || declarada.punteros || !declarada.arreglo.length) return;
+    const def = estructuraDeVariable(declarada, modelo, true);
+    if (!def) return;
+    dichos.add(variable);
+    error(
+      'ARREGLO_SIN_INDICE',
+      `\`${variable}\` es un arreglo de estructuras: hay que indicar cuál de sus elementos se usa, con un índice, como \`${variable}[0].${def.campos[0]?.nombre || 'campo'}\`.`,
+      fila
+    );
+  };
+  for (const l of modelo.llamadas) {
+    if (!l.nuevo) continue;
+    for (const a of l.argumentos) revisar(a, l.fila);
+  }
+  for (const a of modelo.asignaciones) {
+    if (!a.nuevo) continue;
+    revisar(a.izquierda, a.fila);
+    revisar(a.derecha, a.fila);
+  }
 }
 
 // Una posicion que no existe: con 30 filas van de 0 a 29. Solo cuando el

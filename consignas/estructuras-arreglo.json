@@ -1,0 +1,166 @@
+{
+  "id": "estructuras-arreglo",
+  "titulo": "Un arreglo de estructuras",
+  "continua": true,
+  "dentroDeMain": true,
+  "buenasPracticas": ["constantes"],
+  "descripcion": "Declarar un arreglo de estructuras, guardar los datos de un elemento, cargar un campo de todos con un ciclo y mostrarlos.",
+  "cabecera": "#include <stdio.h>\n#include <string.h>\n\n#define MAX_ALUMNOS 3\n\ntypedef struct {\n  int legajo;\n  char apellidoNombre[50];\n  float promedio;\n  char turno;\n} TAlumno;",
+  "consignas": [
+    {
+      "id": "arreglo-declarar",
+      "titulo": "Declarar un arreglo de estructuras",
+      "enunciado": "La secretaría de una facultad necesita guardar los datos de `MAX_ALUMNOS` alumnos. La estructura `TAlumno` y la constante `MAX_ALUMNOS` ya están definidas. Escriba la declaración de un arreglo de estructuras llamado `alumnos`, con un elemento para cada alumno.",
+      "ficha": {
+        "arreglo": "alumnos",
+        "leyenda": "Así tiene que quedar el arreglo:",
+        "campos": ["legajo", "apellidoNombre", "promedio", "turno"],
+        "elementos": [null, null, null]
+      },
+      "requiere": [{ "variable": { "nombre": "alumnos", "tipo": "TAlumno", "arreglo": 3 } }],
+      "referencia": "TAlumno alumnos[MAX_ALUMNOS];"
+    },
+    {
+      "id": "arreglo-guardar-legajo",
+      "titulo": "Guardar el legajo de un alumno",
+      "enunciado": "Escriba el código que guarde, en la primera posición de `alumnos`, el número de legajo `20431`.",
+      "ficha": {
+        "arreglo": "alumnos",
+        "leyenda": "Así tiene que quedar el arreglo:",
+        "campos": ["legajo", "apellidoNombre", "promedio", "turno"],
+        "elementos": [[20431, null, null, null], null, null],
+        "resaltar": ["legajo"]
+      },
+      "requiere": [
+        { "campo": { "variable": "alumnos[0]", "campos": [{ "nombre": "legajo", "tipo": "entero" }] } }
+      ],
+      "referencia": "alumnos[0].legajo = 20431;"
+    },
+    {
+      "id": "arreglo-guardar-alumno",
+      "titulo": "Guardar los datos de un alumno",
+      "enunciado": "Escriba el código que guarde, en la segunda posición de `alumnos`, los datos de este alumno: legajo `30872`, apellido y nombre `\"Lopez, Juan\"`, promedio `9.10` y turno `'M'`. El apellido y nombre se guarda con una función de la biblioteca de cadenas.",
+      "ficha": {
+        "arreglo": "alumnos",
+        "leyenda": "Así tiene que quedar el arreglo:",
+        "campos": ["legajo", "apellidoNombre", "promedio", "turno"],
+        "elementos": [[20431, null, null, null], [30872, "Lopez, Juan", "9.10", "M"], null],
+        "destacar": [1]
+      },
+      "requiere": [
+        {
+          "campo": {
+            "variable": "alumnos[1]",
+            "campos": [
+              { "nombre": "legajo", "tipo": "entero" },
+              { "nombre": "promedio", "tipo": "real" },
+              { "nombre": "turno", "tipo": "letra" }
+            ]
+          }
+        },
+        {
+          "llamada": {
+            "funcion": "strcpy",
+            "alternativas": ["strncpy"],
+            "argumentos": ["alumnos[1].apellidoNombre", "\"Lopez, Juan\""],
+            "orden": "primero va el campo donde se guarda y después el texto",
+            "aMano": {
+              "variable": "alumnos[1].apellidoNombre",
+              "texto": "Lopez, Juan",
+              "prohibida": true
+            }
+          }
+        }
+      ],
+      "referencia": "alumnos[1].legajo = 30872;\nstrcpy(alumnos[1].apellidoNombre, \"Lopez, Juan\");\nalumnos[1].promedio = 9.10;\nalumnos[1].turno = 'M';"
+    },
+    {
+      "id": "arreglo-q-sin-cargar",
+      "titulo": "Un elemento que no se cargó",
+      "continua": false,
+      "enunciado": "Después de ejecutar el código de abajo, ¿qué valor tendría `alumnos[1].legajo`?",
+      "codigo": "TAlumno alumnos[MAX_ALUMNOS];\n\nalumnos[0].legajo = 20431;",
+      "opciones": [
+        {
+          "valor": "0",
+          "texto": "cero",
+          "codigo": "OPCION_ELEMENTO_SIN_CARGAR_ES_CERO",
+          "explicacion": "Un campo que no se cargó no empieza en `0`: no tiene nada asignado, así que guarda lo que hubiera anteriormente en esa memoria."
+        },
+        {
+          "valor": "20431",
+          "texto": "el mismo legajo del elemento anterior",
+          "codigo": "OPCION_ELEMENTO_REPITE_EL_ANTERIOR",
+          "explicacion": "Cada elemento del arreglo tiene sus propios campos: guardar un valor en `alumnos[0].legajo` no cambia `alumnos[1].legajo`."
+        },
+        {
+          "texto": "No se puede saber",
+          "correcta": true,
+          "explicacion": "Solo se cargó el legajo de `alumnos[0]`. `alumnos[1].legajo` guarda lo que hubiera antes en esa memoria, que puede ser cualquier número, y no hay forma de saber cuál."
+        }
+      ]
+    },
+    {
+      "id": "arreglo-leer-legajos",
+      "titulo": "Leer los legajos de todos los alumnos",
+      "continua": false,
+      "dado": "TAlumno alumnos[MAX_ALUMNOS];\nint i;",
+      "enunciado": "Un docente carga en el programa los legajos de los alumnos de una comisión. Con un ciclo, lea del teclado el número de legajo de cada alumno y guárdelo en el campo `legajo` del elemento que le corresponde de `alumnos`, en el orden en que se escriben: si el usuario escribe `20431`, `30872` y `18560`, tienen que quedar en las posiciones 0, 1 y 2. Use el índice `i`.",
+      "ficha": {
+        "arreglo": "alumnos",
+        "leyenda": "Así tiene que quedar el arreglo:",
+        "campos": ["legajo", "apellidoNombre", "promedio", "turno"],
+        "elementos": [[20431, null, null, null], [30872, null, null, null], [18560, null, null, null]],
+        "resaltar": ["legajo"]
+      },
+      "requiere": [
+        { "leeCampo": { "variable": "alumnos[*]", "campo": "legajo" } },
+        {
+          "ejecuta": {
+            "entrada": [20431, 30872, 18560],
+            "queda": { "alumnos.legajo": "entrada" },
+            "conCiclo": true,
+            "limite": true
+          }
+        }
+      ],
+      "referencia": "for (i = 0; i < MAX_ALUMNOS; i++) {\n  scanf(\"%d\", &alumnos[i].legajo);\n}"
+    },
+    {
+      "id": "arreglo-mostrar",
+      "titulo": "Mostrar los datos de todos los alumnos",
+      "continua": false,
+      "dado": "TAlumno alumnos[MAX_ALUMNOS];\nint i;",
+      "enunciado": "El docente quiere ver el listado de la comisión. El arreglo `alumnos` ya tiene cargados los datos de esta ficha. Con un ciclo, muestre con `printf`, en un renglón por alumno, el legajo y el promedio de cada elemento, de la primera posición a la última. Use el índice `i`.",
+      "ficha": {
+        "arreglo": "alumnos",
+        "leyenda": "Los alumnos cargados:",
+        "campos": ["legajo", "apellidoNombre", "promedio", "turno"],
+        "elementos": [
+          [20431, "Perez, Ana", "8.45", "T"],
+          [30872, "Lopez, Juan", "9.10", "M"],
+          [18560, "Diaz, Marta", "7.20", "N"]
+        ]
+      },
+      "requiere": [
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "datos": { "alumnos.legajo": [20431, 30872, 18560], "alumnos.promedio": [8.45, 9.1, 7.2] },
+                "muestraEnFilas": [[20431, 8.45], [30872, 9.1], [18560, 7.2]]
+              },
+              {
+                "datos": { "alumnos.legajo": [40123, 11002, 27345], "alumnos.promedio": [6, 10, 4.5] },
+                "muestraEnFilas": [[40123, 6], [11002, 10], [27345, 4.5]]
+              }
+            ],
+            "conCiclo": true,
+            "limite": true
+          }
+        }
+      ],
+      "referencia": "for (i = 0; i < MAX_ALUMNOS; i++) {\n  printf(\"%d %.2f\\n\", alumnos[i].legajo, alumnos[i].promedio);\n}"
+    }
+  ]
+}

@@ -117,8 +117,123 @@ export const CASOS_DE_LEER_CAMPOS = [
   leer(6, 'sin mostrar nada', 'int i;', ['MUESTRA_FALTA']),
 ];
 
+// Un arreglo de estructuras.
+const arreglo = (paso, nombre, respuesta, espera = 'ok', extra = {}) => ({
+  serie: 'estructuras-arreglo',
+  paso,
+  nombre,
+  respuesta,
+  espera,
+  ...extra,
+});
+
+const GUARDAR_ALUMNO =
+  'alumnos[1].legajo = 30872;\nstrcpy(alumnos[1].apellidoNombre, "Lopez, Juan");\nalumnos[1].promedio = 9.10;\nalumnos[1].turno = \'M\';';
+
+export const CASOS_DE_ARREGLO_DE_ESTRUCTURAS = [
+  // 1: declarar
+  arreglo(1, 'con la constante', 'TAlumno alumnos[MAX_ALUMNOS];', 'ok', { mejoras: [] }),
+  arreglo(1, 'con el numero suelto', 'TAlumno alumnos[3];'),
+  arreglo(1, 'otro nombre', 'TAlumno curso[MAX_ALUMNOS];', ['VARIABLE_NOMBRE']),
+  arreglo(1, 'sin arreglo', 'TAlumno alumnos;', ['VARIABLE_NO_ES_ARREGLO']),
+  arreglo(1, 'de enteros', 'int alumnos[MAX_ALUMNOS];', ['VARIABLE_TIPO']),
+  arreglo(1, 'con otro tamano', 'TAlumno alumnos[5];', ['ARREGLO_GRANDE']),
+  arreglo(1, 'sin tamano', 'TAlumno alumnos[];', ['ARREGLO_SIN_DIMENSION']),
+  // 2: el legajo del primero
+  arreglo(2, 'legajo', 'alumnos[0].legajo = 20431;'),
+  arreglo(2, 'otra posicion', 'alumnos[1].legajo = 20431;', ['ARGUMENTO_OTRA_POSICION']),
+  arreglo(2, 'el arreglo sin indice', 'alumnos.legajo = 20431;', ['ARREGLO_SIN_INDICE']),
+  arreglo(2, 'una posicion que no existe', 'alumnos[3].legajo = 20431;', ['INDICE_FUERA_DE_RANGO']),
+  arreglo(2, 'el campo sin el arreglo', 'legajo = 20431;', ['CAMPO_SIN_VARIABLE']),
+  arreglo(2, 'otro valor', 'alumnos[0].legajo = 1;', ['ASIGNACION_VALOR_DISTINTO']),
+  arreglo(2, 'un campo que no existe', 'alumnos[0].codigo = 20431;', ['CAMPO_NO_EXISTE']),
+  arreglo(2, 'la flecha', 'alumnos[0]->legajo = 20431;', ['FLECHA_CON_VARIABLE']),
+  // 3: los datos de un alumno
+  arreglo(3, 'los cuatro datos', GUARDAR_ALUMNO),
+  arreglo(
+    3,
+    'con strncpy',
+    GUARDAR_ALUMNO.replace('strcpy(alumnos[1].apellidoNombre, "Lopez, Juan")', 'strncpy(alumnos[1].apellidoNombre, "Lopez, Juan", 50)')
+  ),
+  arreglo(3, 'en otra posicion', GUARDAR_ALUMNO.split('alumnos[1]').join('alumnos[0]'), ['ARGUMENTO_OTRA_POSICION']),
+  arreglo(
+    3,
+    'el apellido con =',
+    'alumnos[1].legajo = 30872;\nalumnos[1].apellidoNombre = "Lopez, Juan";\nalumnos[1].promedio = 9.10;\nalumnos[1].turno = \'M\';',
+    ['ASIGNACION_DE_ARREGLO']
+  ),
+  arreglo(3, 'otro apellido', GUARDAR_ALUMNO.replace('Lopez, Juan', 'Lopez Juan'), ['TEXTO_DISTINTO']),
+  arreglo(3, 'el turno entre comillas dobles', GUARDAR_ALUMNO.replace("'M'", '"M"'), ['LETRA_ENTRE_COMILLAS_DOBLES']),
+  arreglo(3, 'falta el promedio', GUARDAR_ALUMNO.replace('alumnos[1].promedio = 9.10;\n', ''), ['CAMPO_SIN_CARGAR']),
+  arreglo(3, 'falta el apellido', GUARDAR_ALUMNO.replace('strcpy(alumnos[1].apellidoNombre, "Lopez, Juan");\n', ''), ['LLAMADA_FALTA']),
+  arreglo(
+    3,
+    'el apellido letra por letra',
+    "alumnos[1].legajo = 30872;\nalumnos[1].apellidoNombre[0] = 'L';\nalumnos[1].promedio = 9.10;\nalumnos[1].turno = 'M';",
+    ['A_MANO']
+  ),
+  // 4: el cuestionario
+  arreglo(4, 'sin cargar: no se puede saber', '2'),
+  arreglo(4, 'sin cargar: cero', '0', ['OPCION_ELEMENTO_SIN_CARGAR_ES_CERO']),
+  arreglo(4, 'sin cargar: el anterior', '1', ['OPCION_ELEMENTO_REPITE_EL_ANTERIOR']),
+  // 5: leer los legajos
+  arreglo(5, 'con la constante', 'for (i = 0; i < MAX_ALUMNOS; i++) {\n  scanf("%d", &alumnos[i].legajo);\n}', 'ok', { mejoras: [] }),
+  arreglo(5, 'con el numero suelto', 'for (i = 0; i < 3; i++) {\n  scanf("%d", &alumnos[i].legajo);\n}', 'ok', {
+    mejoras: ['LIMITE_CON_NUMERO_SUELTO'],
+  }),
+  arreglo(5, 'con while', 'i = 0;\nwhile (i < MAX_ALUMNOS) {\n  scanf("%d", &alumnos[i].legajo);\n  i++;\n}'),
+  arreglo(5, 'sin el &', 'for (i = 0; i < MAX_ALUMNOS; i++) {\n  scanf("%d", alumnos[i].legajo);\n}', ['AMPERSAND_FALTA']),
+  arreglo(5, 'el arreglo sin indice', 'for (i = 0; i < MAX_ALUMNOS; i++) {\n  scanf("%d", &alumnos.legajo[i]);\n}', ['ARREGLO_SIN_INDICE']),
+  arreglo(5, 'el campo antes del indice', 'for (i = 0; i < MAX_ALUMNOS; i++) {\n  scanf("%d", &alumnos.legajo);\n}', ['ARREGLO_SIN_INDICE']),
+  arreglo(5, 'una posicion de mas', 'for (i = 0; i <= MAX_ALUMNOS; i++) {\n  scanf("%d", &alumnos[i].legajo);\n}', ['INDICE_FUERA_DE_RANGO']),
+  arreglo(5, 'el formato de un decimal', 'for (i = 0; i < MAX_ALUMNOS; i++) {\n  scanf("%f", &alumnos[i].legajo);\n}', ['FORMATO_NO_CORRESPONDE_AL_TIPO']),
+  arreglo(5, 'otro campo', 'for (i = 0; i < MAX_ALUMNOS; i++) {\n  scanf("%d", &alumnos[i].turno);\n}', ['LECTURA_OTRO_CAMPO']),
+  arreglo(5, 'sin ciclo', 'scanf("%d", &alumnos[0].legajo);\nscanf("%d", &alumnos[1].legajo);\nscanf("%d", &alumnos[2].legajo);', ['CICLO_FALTA']),
+  // 6: mostrar
+  arreglo(6, 'con la constante', 'for (i = 0; i < MAX_ALUMNOS; i++) {\n  printf("%d %.2f\\n", alumnos[i].legajo, alumnos[i].promedio);\n}', 'ok', {
+    mejoras: [],
+  }),
+  arreglo(6, 'con %f', 'for (i = 0; i < MAX_ALUMNOS; i++) {\n  printf("%d %f\\n", alumnos[i].legajo, alumnos[i].promedio);\n}'),
+  arreglo(
+    6,
+    'el legajo con el formato de un decimal',
+    'for (i = 0; i < MAX_ALUMNOS; i++) {\n  printf("%f %f\\n", alumnos[i].legajo, alumnos[i].promedio);\n}',
+    ['FORMATO_NO_CORRESPONDE_AL_TIPO']
+  ),
+  arreglo(
+    6,
+    'el promedio con el formato de un entero',
+    'for (i = 0; i < MAX_ALUMNOS; i++) {\n  printf("%d %d\\n", alumnos[i].legajo, alumnos[i].promedio);\n}',
+    ['FORMATO_NO_CORRESPONDE_AL_TIPO']
+  ),
+  arreglo(
+    6,
+    'el arreglo sin indice',
+    'for (i = 0; i < MAX_ALUMNOS; i++) {\n  printf("%d %.2f\\n", alumnos.legajo, alumnos.promedio);\n}',
+    ['ARREGLO_SIN_INDICE']
+  ),
+  arreglo(
+    6,
+    'falta un valor',
+    'for (i = 0; i < MAX_ALUMNOS; i++) {\n  printf("%d %.2f\\n", alumnos[i].legajo);\n}',
+    ['FORMATO_CANTIDAD_DISTINTA']
+  ),
+  arreglo(
+    6,
+    'solo el legajo',
+    'for (i = 0; i < MAX_ALUMNOS; i++) {\n  printf("%d\\n", alumnos[i].legajo);\n}',
+    ['MUESTRA_DISTINTA']
+  ),
+  arreglo(
+    6,
+    'sin ciclo',
+    'printf("%d %.2f\\n", alumnos[0].legajo, alumnos[0].promedio);',
+    ['CICLO_FALTA']
+  ),
+];
+
 // Copiar y comparar variables de estructura.
-const copiar = (paso, nombre, respuesta, espera = 'ok', extra = {}) => ({
+const copiar =(paso, nombre, respuesta, espera = 'ok', extra = {}) => ({
   serie: 'estructuras-copiar',
   paso,
   nombre,

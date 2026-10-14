@@ -561,7 +561,12 @@ mostrar los campos"):
   viene después de otro `scanf` toma el Enter que quedó sin leer, así que
   hay que descartarlo antes: con un espacio delante (`" %c"`) o con el ciclo
   `while (getchar() != '\n');`, igual que antes de `gets` (valen las mismas
-  formas y se corrigen igual).
+  formas y se corrigen igual). Con `"variable": "alumnos[*]"` el campo es el
+  de cualquier elemento de un arreglo de estructuras (el que marque el
+  índice del ciclo); sirve junto con `ejecuta`, para que leer otro campo no
+  pase por "correcto" cuando el simulador no sabe seguirlo. Usar el arreglo
+  sin índice (`&alumnos.legajo`, `alumnos.legajo[i]`) es `ARREGLO_SIN_INDICE`
+  en cualquier consigna.
 - Un campo que es una cadena se lee con la regla `lee` y `"destino":
   "alumno.apellidoNombre"` (con `gets`, `fgets` o `scanf`; `gets` vale con
   la nota `USO_DE_GETS`), y con `limpiaEntrada` si viene después de un `scanf`.
