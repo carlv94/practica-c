@@ -230,11 +230,17 @@ function dibujarOpciones(consigna, capturas) {
 
 // ---- la lista de series -------------------------------------------------------
 
-function mostrarLista() {
+// Un grupo con `agrupar` se ve en la lista como una sola tarjeta; sus series
+// estan en su propia pantalla (#/grupo/<id>).
+function mostrarLista(deGrupo) {
   serie = null;
   document.title = TITULO;
   $('titulo-serie').textContent = TITULO;
-  $('volver').hidden = true;
+  $('volver').hidden = !deGrupo;
+  if (deGrupo) {
+    $('volver').textContent = '← Todas las series';
+    $('volver').href = '#/';
+  }
   $('pasos').hidden = true;
   $('vista-serie').hidden = true;
   $('lista').hidden = false;
@@ -272,24 +278,38 @@ function mostrarLista() {
     return enlace;
   };
 
+  const resumenDe = (g) => {
+    const completas = g.series.filter((s) => estados.get(s).resueltas >= s.consignas.length).length;
+    const cuantas = g.series.length;
+    return `${completas} de ${cuantas} ${cuantas === 1 ? 'serie completa' : 'series completas'}`;
+  };
+  const cajaDe = (g) => {
+    const caja = elemento('div', 'grupo');
+    caja.id = 'grupo-' + g.id;
+    caja.appendChild(elemento('h2', null, g.titulo));
+    if (g.descripcion) caja.appendChild(elemento('p', 'grupo-descripcion', g.descripcion));
+    caja.appendChild(elemento('p', 'grupo-resumen', resumenDe(g)));
+    caja.append(...g.series.map(tarjeta));
+    return caja;
+  };
+  const tarjetaDeGrupo = (g) => {
+    const caja = elemento('div', 'grupo');
+    caja.id = 'grupo-' + g.id;
+    const enlace = elemento('a', 'tarjeta');
+    enlace.href = '#/grupo/' + encodeURIComponent(g.id);
+    enlace.appendChild(elemento('h3', null, g.titulo));
+    if (g.descripcion) enlace.appendChild(elemento('p', null, g.descripcion));
+    const completas = g.series.filter((s) => estados.get(s).resueltas >= s.consignas.length).length;
+    const empezadas = g.series.some((s) => estados.get(s).resueltas > 0);
+    const estado = completas === g.series.length ? 'completa' : empezadas ? 'en-curso' : 'sin-empezar';
+    enlace.appendChild(elemento('span', 'estado ' + estado, resumenDe(g)));
+    caja.appendChild(enlace);
+    return caja;
+  };
+
+  const aparte = deGrupo && grupos.find((g) => g.id === deGrupo);
   $('lista').replaceChildren(
-    ...grupos.map((g) => {
-      const caja = elemento('div', 'grupo');
-      caja.id = 'grupo-' + g.id;
-      caja.appendChild(elemento('h2', null, g.titulo));
-      if (g.descripcion) caja.appendChild(elemento('p', 'grupo-descripcion', g.descripcion));
-      const completas = g.series.filter((s) => estados.get(s).resueltas >= s.consignas.length).length;
-      const cuantas = g.series.length;
-      caja.appendChild(
-        elemento(
-          'p',
-          'grupo-resumen',
-          `${completas} de ${cuantas} ${cuantas === 1 ? 'serie completa' : 'series completas'}`
-        )
-      );
-      caja.append(...g.series.map(tarjeta));
-      return caja;
-    })
+    ...(aparte ? [cajaDe(aparte)] : grupos.map((g) => (g.agrupar ? tarjetaDeGrupo(g) : cajaDe(g))))
   );
   if (!series.length) {
     $('lista').replaceChildren(mensaje('aviso', 'Todavía no hay ninguna serie cargada.'));
@@ -696,10 +716,15 @@ function teclaEnRespuesta(evento) {
 function navegar() {
   const pedida = /^#\/serie\/(.+)$/.exec(location.hash);
   const s = pedida && series.find((x) => x.id === decodeURIComponent(pedida[1]));
+  let caja = null;
   if (s) abrirSerie(s);
-  else mostrarLista();
-  const deGrupo = !s && /^#\/grupo\/(.+)$/.exec(location.hash);
-  const caja = deGrupo && document.getElementById('grupo-' + decodeURIComponent(deGrupo[1]));
+  else {
+    const pedido = /^#\/grupo\/(.+)$/.exec(location.hash);
+    const idGrupo = pedido && decodeURIComponent(pedido[1]);
+    const agrupado = idGrupo && grupos.some((g) => g.id === idGrupo && g.agrupar);
+    mostrarLista(agrupado ? idGrupo : null);
+    caja = idGrupo && !agrupado && document.getElementById('grupo-' + idGrupo);
+  }
   if (caja) caja.scrollIntoView();
   else window.scrollTo(0, 0);
 }
@@ -723,7 +748,7 @@ async function cargarSeries() {
   const buenas = [];
   const delIndice = [];
   indice.grupos.forEach((g, k) => {
-    const grupo = { id: g.id, titulo: g.titulo, descripcion: g.descripcion, series: [] };
+    const grupo = { id: g.id, titulo: g.titulo, descripcion: g.descripcion, agrupar: !!g.agrupar, series: [] };
     leidas[k].forEach((leida, i) => {
       if (leida.status === 'rejected') {
         console.error(`No se pudo cargar la serie ${g.series[i]}:`, leida.reason);

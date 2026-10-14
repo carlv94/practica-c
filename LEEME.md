@@ -72,6 +72,10 @@ mover una serie renumera las demás sin tocar sus archivos. Una serie está en
 un solo grupo, y las pruebas lo verifican. Las direcciones `#/serie/<id>`
 no cambian, y `#/grupo/<id>` lleva a la lista, en ese grupo.
 
+Un grupo con `"agrupar": true` (hoy Arreglos y Cadenas) aparece en la lista como una
+sola tarjeta; al hacer clic, `#/grupo/<id>` muestra sus series. Los demás grupos
+muestran sus series directamente.
+
 **El `id` de una serie no se cambia** una vez que los alumnos la usaron: el
 avance de cada uno está guardado con ese nombre, y con otro arrancan de cero.
 Vale lo mismo para el `id` de cada consigna, que es con lo que se anotan los

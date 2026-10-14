@@ -11,6 +11,7 @@
     },
     {
       "id": "arreglos",
+      "agrupar": true,
       "titulo": "Arreglos",
       "descripcion": "Declarar arreglos con una constante y definirlos con sus valores.",
       "series": [
@@ -30,6 +31,7 @@
     },
     {
       "id": "cadenas",
+      "agrupar": true,
       "titulo": "Cadenas",
       "descripcion": "Textos en C: el carácter de fin, la biblioteca, cuánto miden, recorrerlos, guardarlos en arreglos y tablas, y leerlos y mostrarlos.",
       "series": [
