@@ -456,13 +456,13 @@ export function corregir(
       } else if (campo.punteros) {
         error(
           'CAMPO_CADENA_PUNTERO',
-          `\`${n}\` está declarado con \`*\`: así no reserva espacio para guardar el texto. Tiene que ser un arreglo de caracteres, con su dimensión.`,
+          `\`${n}\` está declarado con \`*\`: así no reserva espacio para guardar el texto. Tiene que ser una cadena: un \`char\` con su dimensión entre corchetes.`,
           campo.fila
         );
       } else if (campo.arreglo.length === 0) {
         error(
           'CAMPO_CADENA_SIN_DIMENSION',
-          `\`${n}\` así guarda un solo carácter. Para un texto hace falta un arreglo de caracteres, con su dimensión.`,
+          `\`${n}\` así guarda un solo carácter. Para un texto hace falta una cadena: un \`char\` con su dimensión entre corchetes.`,
           campo.fila
         );
       } else if (campo.arreglo.length > 1) {
@@ -4257,17 +4257,17 @@ export function corregir(
     if (regla.capturar) nuevas[regla.capturar] = a.nombre;
     const real = resolver(a.tipo, modelo);
     if (a.punteros) {
-      error('ALIAS_PUNTERO', `A \`${a.nombre}\` le sobra el \`*\`: el alias tiene que ser de un arreglo de caracteres.`, a.fila);
+      error('ALIAS_PUNTERO', `A \`${a.nombre}\` le sobra el \`*\`: el alias tiene que ser de una cadena, un \`char\` con su dimensión.`, a.fila);
     } else if (real.clase !== 'primitivo' || real.nombre !== 'char') {
       error(
         'ALIAS_TIPO',
-        `\`${a.nombre}\` es un alias de ${enPalabras(a)}. Para guardar un texto tiene que ser un alias de un arreglo de caracteres.`,
+        `\`${a.nombre}\` es un alias de ${enPalabras(a)}. Para guardar un texto tiene que ser un alias de una cadena: un \`char\` con su dimensión.`,
         a.fila
       );
     } else if (!a.arreglo.length) {
       error(
         'ALIAS_NO_ES_CADENA',
-        `\`${a.nombre}\` es un alias de un solo carácter. Para guardar un texto tiene que ser un alias de un arreglo de caracteres, con su dimensión.`,
+        `\`${a.nombre}\` es un alias de un solo carácter. Para guardar un texto tiene que ser un alias de una cadena: un \`char\` con su dimensión entre corchetes.`,
         a.fila
       );
     } else {
@@ -4364,7 +4364,7 @@ function revisarNombres(modelo, error) {
     } else if (alias) {
       mensaje += ` El alias está definido como \`${alias.nombre}\`: en C las mayúsculas y las minúsculas son letras distintas.`;
     } else if (enMinuscula === 'string') {
-      mensaje += ' En C no hay un tipo para los textos: se guardan en un arreglo de caracteres.';
+      mensaje += ' En C no hay un tipo para los textos: se guardan en una cadena, un arreglo de `char` que termina en `\\0`.';
     } else if (enMinuscula === 'boolean' || enMinuscula === 'integer' || enMinuscula === 'real') {
       mensaje += ' Ese nombre es de otro lenguaje: en C los tipos básicos se llaman distinto.';
     } else if (parecido) {

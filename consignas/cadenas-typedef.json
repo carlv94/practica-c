@@ -45,7 +45,7 @@
           "valor": "\"Ana\"",
           "texto": "el texto completo de la posición",
           "codigo": "OPCION_FILA_ES_EL_TEXTO",
-          "explicacion": "`alumnos[0]` es la cadena completa, `Ana`. Con el segundo índice se elige una letra de ella, aunque en la declaración haya un solo corchete: `Texto` ya es un arreglo de caracteres."
+          "explicacion": "`alumnos[0]` es la cadena completa, `Ana`. Con el segundo índice se elige una letra de ella, aunque en la declaración haya un solo corchete: `Texto` ya es una cadena, o sea un arreglo de `char`."
         },
         {
           "valor": "un error",
@@ -125,7 +125,7 @@
           "valor": "'L'",
           "texto": "la primera letra del texto",
           "correcta": true,
-          "explicacion": "`datos[1][1]` es el texto `Lopez`. Como cada celda es un `Texto`, un arreglo de caracteres, el tercer índice indica la posición de una letra de ese texto, por lo que `datos[1][1][0]` es la primera, `'L'`: fila `1`, columna `1`, carácter `0`."
+          "explicacion": "`datos[1][1]` es el texto `Lopez`. Como cada celda es un `Texto`, una cadena, el tercer índice indica la posición de una letra de ese texto, por lo que `datos[1][1][0]` es la primera, `'L'`: fila `1`, columna `1`, carácter `0`."
         }
       ]
     },
