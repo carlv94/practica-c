@@ -20,6 +20,7 @@ import {
   CASOS_DE_ARREGLO_DE_ESTRUCTURAS,
   CASOS_DE_RECORRER_ESTRUCTURAS,
   CASOS_DE_ARREGLO_SIN_INDICE,
+  CASOS_DE_ANIDADAS,
 } from './casos-estructuras.js';
 
 const TYPEDEF_SIN_ETIQUETA = `typedef struct {
@@ -1408,6 +1409,7 @@ export const CASOS = [
   ...CASOS_DE_ARREGLO_DE_ESTRUCTURAS,
   ...CASOS_DE_RECORRER_ESTRUCTURAS,
   ...CASOS_DE_ARREGLO_SIN_INDICE,
+  ...CASOS_DE_ANIDADAS,
   // ---- 1: declarar la estructura ----
   {
     nombre: 'otro nombre, otras dimensiones, otro orden, double y unsigned',

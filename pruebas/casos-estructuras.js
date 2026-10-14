@@ -407,6 +407,128 @@ export const CASOS_DE_ARREGLO_SIN_INDICE = [
   ),
 ];
 
+// Estructuras dentro de estructuras.
+const anidadas = (paso, nombre, respuesta, espera = 'ok', extra = {}) => ({
+  serie: 'estructuras-anidadas',
+  paso,
+  nombre,
+  respuesta,
+  espera,
+  ...extra,
+});
+
+const TIPO_ALUMNO = (campos) => `typedef struct {\n${campos}\n} TAlumno;`;
+const CAMPO_LEGAJO = '  int legajo;';
+const CAMPO_APELLIDO = '  char apellidoNombre[50];';
+const CAMPOS_FECHAS = '  TFecha nacimiento;\n  TFecha ingreso;';
+const BUCLE_ANIO = (condicion) =>
+  `for (i = 0; i < MAX_ALUMNOS; i++) {\n  if (${condicion}) {\n    cantidad++;\n  }\n}`;
+
+export const CASOS_DE_ANIDADAS = [
+  // 1: declarar
+  anidadas(1, 'las dos fechas', TIPO_ALUMNO([CAMPO_LEGAJO, CAMPO_APELLIDO, CAMPOS_FECHAS].join('\n'))),
+  anidadas(1, 'en otro orden', TIPO_ALUMNO(['  TFecha ingreso;', CAMPO_APELLIDO, '  TFecha nacimiento;', CAMPO_LEGAJO].join('\n'))),
+  anidadas(
+    1,
+    'con otro alias',
+    'typedef struct {\n  int legajo;\n  char apellidoNombre[50];\n  TFecha nacimiento;\n  TFecha ingreso;\n} Alumno;',
+    ['ALIAS_NOMBRE']
+  ),
+  anidadas(1, 'una fecha de menos', TIPO_ALUMNO([CAMPO_LEGAJO, CAMPO_APELLIDO, '  TFecha nacimiento;'].join('\n')), ['CAMPO_FALTA']),
+  anidadas(
+    1,
+    'las fechas como enteros',
+    TIPO_ALUMNO([CAMPO_LEGAJO, CAMPO_APELLIDO, '  int nacimiento;', '  int ingreso;'].join('\n')),
+    ['CAMPO_TIPO']
+  ),
+  anidadas(
+    1,
+    'las fechas como arreglos',
+    TIPO_ALUMNO([CAMPO_LEGAJO, CAMPO_APELLIDO, '  TFecha nacimiento[1];', '  TFecha ingreso;'].join('\n')),
+    ['CAMPO_TIPO']
+  ),
+  anidadas(
+    1,
+    'la fecha escrita campo por campo',
+    TIPO_ALUMNO([CAMPO_LEGAJO, CAMPO_APELLIDO, '  int dia;', '  int mes;', '  int anio;'].join('\n')),
+    ['CAMPO_FALTA']
+  ),
+  // 2: el año de nacimiento
+  anidadas(2, 'el anio', 'alumno.nacimiento.anio = 2004;'),
+  anidadas(2, 'saltando el nivel', 'alumno.anio = 2004;', ['CAMPO_DE_OTRO_NIVEL']),
+  anidadas(2, 'sin la variable', 'nacimiento.anio = 2004;', ['VARIABLE_DESCONOCIDA']),
+  anidadas(2, 'la otra fecha', 'alumno.ingreso.anio = 2004;', ['CAMPO_OTRA_ESTRUCTURA']),
+  anidadas(2, 'otro valor', 'alumno.nacimiento.anio = 2005;', ['ASIGNACION_VALOR_DISTINTO']),
+  anidadas(2, 'un campo que no existe', 'alumno.nacimiento.year = 2004;', ['CAMPO_NO_EXISTE']),
+  anidadas(2, 'la fecha entera', 'alumno.nacimiento = 2004;', ['CAMPO_ES_UNA_ESTRUCTURA']),
+  // 3: la fecha de ingreso
+  anidadas(3, 'los tres', 'alumno.ingreso.dia = 1;\nalumno.ingreso.mes = 3;\nalumno.ingreso.anio = 2022;'),
+  anidadas(3, 'en otro orden', 'alumno.ingreso.anio = 2022;\nalumno.ingreso.mes = 3;\nalumno.ingreso.dia = 1;'),
+  anidadas(3, 'falta el mes', 'alumno.ingreso.dia = 1;\nalumno.ingreso.anio = 2022;', ['CAMPO_SIN_CARGAR']),
+  anidadas(
+    3,
+    'la fecha de nacimiento',
+    'alumno.nacimiento.dia = 1;\nalumno.nacimiento.mes = 3;\nalumno.nacimiento.anio = 2022;',
+    ['CAMPO_OTRA_ESTRUCTURA']
+  ),
+  anidadas(3, 'un valor distinto', 'alumno.ingreso.dia = 1;\nalumno.ingreso.mes = 4;\nalumno.ingreso.anio = 2022;', [
+    'ASIGNACION_VALOR_DISTINTO',
+  ]),
+  // 4: cada campo en su nivel
+  anidadas(4, 'cada campo en su nivel: la correcta', '1'),
+  anidadas(4, 'cada campo en su nivel: salta el nivel', '0', ['OPCION_SALTA_EL_NIVEL']),
+  anidadas(4, 'cada campo en su nivel: sin la variable', '2', ['OPCION_SIN_LA_VARIABLE']),
+  anidadas(4, 'cada campo en su nivel: la otra fecha', '3', ['OPCION_OTRA_FECHA']),
+  // 5: la edad de ingreso
+  anidadas(5, 'la edad', 'edad = alumno.ingreso.anio - alumno.nacimiento.anio;', 'ok', { sinAvisos: true }),
+  anidadas(5, 'la edad, al reves', 'edad = alumno.nacimiento.anio - alumno.ingreso.anio;', ['RESULTADO_VALOR_DISTINTO']),
+  anidadas(5, 'el resultado escrito', 'edad = 18;', ['RESULTADO_VALOR_DISTINTO']),
+  anidadas(5, 'solo el anio de ingreso', 'edad = alumno.ingreso.anio;', ['RESULTADO_VALOR_DISTINTO']),
+  anidadas(
+    5,
+    'la fecha entera en la cuenta',
+    'edad = alumno.ingreso.anio - alumno.nacimiento;',
+    ['CAMPO_ES_UNA_ESTRUCTURA'],
+    { sinAvisos: true }
+  ),
+  anidadas(5, 'saltando el nivel', 'edad = alumno.anio - alumno.nacimiento.anio;', ['CAMPO_DE_OTRO_NIVEL'], {
+    sinAvisos: true,
+  }),
+  anidadas(5, 'sin el campo', 'edad = alumno.ingreso.year - alumno.nacimiento.anio;', ['CAMPO_NO_EXISTE'], {
+    sinAvisos: true,
+  }),
+  // 6: copiar la fecha
+  anidadas(6, 'copia entera', 'otraFecha = alumno.ingreso;', 'ok', { mejoras: [] }),
+  anidadas(
+    6,
+    'campo por campo, con mejora',
+    'otraFecha.dia = alumno.ingreso.dia;\notraFecha.mes = alumno.ingreso.mes;\notraFecha.anio = alumno.ingreso.anio;',
+    'ok',
+    { mejoras: ['COPIA_CAMPO_POR_CAMPO'] }
+  ),
+  anidadas(
+    6,
+    'campo por campo, falta uno',
+    'otraFecha.dia = alumno.ingreso.dia;\notraFecha.anio = alumno.ingreso.anio;',
+    ['COPIA_INCOMPLETA']
+  ),
+  anidadas(6, 'al reves', 'alumno.ingreso = otraFecha;', ['ASIGNACION_AL_REVES']),
+  anidadas(6, 'la otra fecha', 'otraFecha = alumno.nacimiento;', ['COPIA_FALTA']),
+  anidadas(6, 'con igual doble', 'otraFecha == alumno.ingreso;', ['ASIGNACION_CON_IGUAL_DOBLE']),
+  anidadas(6, 'con strcpy', 'strcpy(otraFecha, alumno.ingreso);', ['FUNCION_EQUIVOCADA']),
+  // 7: contar los nacidos antes del 2000
+  anidadas(7, 'contar', BUCLE_ANIO('alumnos[i].nacimiento.anio < 2000'), 'ok', { mejoras: [] }),
+  anidadas(7, 'con el numero suelto en el ciclo', 'for (i = 0; i < 3; i++) {\n  if (alumnos[i].nacimiento.anio < 2000) {\n    cantidad++;\n  }\n}', 'ok', {
+    mejoras: ['LIMITE_CON_NUMERO_SUELTO'],
+  }),
+  anidadas(7, 'con <=', BUCLE_ANIO('alumnos[i].nacimiento.anio <= 2000'), ['RESULTADO_VALOR_DISTINTO']),
+  anidadas(7, 'con >', BUCLE_ANIO('alumnos[i].nacimiento.anio > 2000'), ['RESULTADO_VALOR_DISTINTO']),
+  anidadas(7, 'la fecha de ingreso', BUCLE_ANIO('alumnos[i].ingreso.anio < 2000'), ['RESULTADO_VALOR_DISTINTO']),
+  anidadas(7, 'sin el indice', BUCLE_ANIO('alumnos.nacimiento.anio < 2000'), ['ARREGLO_SIN_INDICE'], { sinAvisos: true }),
+  anidadas(7, 'saltando el nivel', BUCLE_ANIO('alumnos[i].anio < 2000'), ['CAMPO_DE_OTRO_NIVEL'], { sinAvisos: true }),
+  anidadas(7, 'sin ciclo', "if (alumnos[0].nacimiento.anio < 2000) {\n  cantidad++;\n}", ['CICLO_FALTA']),
+];
+
 // Copiar y comparar variables de estructura.
 const copiar =(paso, nombre, respuesta, espera = 'ok', extra = {}) => ({
   serie: 'estructuras-copiar',

@@ -1,0 +1,311 @@
+{
+  "id": "estructuras-anidadas",
+  "titulo": "Estructuras dentro de estructuras",
+  "continua": true,
+  "dentroDeMain": true,
+  "buenasPracticas": ["constantes"],
+  "descripcion": "Un campo que es otra estructura: declararlo, guardar sus datos, calcular con ellos, copiarlo y recorrerlo en un arreglo.",
+  "cabecera": "#include <stdio.h>\n#include <string.h>\n\n#define MAX_ALUMNOS 3\n\ntypedef struct {\n  int dia;\n  int mes;\n  int anio;\n} TFecha;",
+  "consignas": [
+    {
+      "id": "anidadas-declarar",
+      "titulo": "Declarar una estructura con fechas",
+      "en": "archivo",
+      "buenasPracticas": [],
+      "enunciado": "Una facultad registra de cada alumno, en este orden, el número de legajo, el apellido y nombre, la fecha de nacimiento y la fecha de ingreso. La estructura `TFecha` ya está definida: úsela para las dos fechas. Declare la estructura del alumno, con el alias `TAlumno`. Los campos se llaman así:",
+      "ficha": {
+        "titulo": "Ficha de alumno",
+        "campos": [
+          { "nombre": "legajo" },
+          { "nombre": "apellidoNombre" },
+          { "nombre": "nacimiento", "campos": [{ "nombre": "dia" }, { "nombre": "mes" }, { "nombre": "anio" }] },
+          { "nombre": "ingreso", "campos": [{ "nombre": "dia" }, { "nombre": "mes" }, { "nombre": "anio" }] }
+        ]
+      },
+      "requiere": [
+        {
+          "struct": {
+            "capturar": "S",
+            "campos": [
+              { "nombre": "legajo", "tipo": "entero" },
+              { "nombre": "apellidoNombre", "tipo": "cadena" },
+              { "nombre": "nacimiento", "tipo": "estructura", "de": "TFecha" },
+              { "nombre": "ingreso", "tipo": "estructura", "de": "TFecha" }
+            ]
+          }
+        },
+        { "alias": { "de": "$S", "nombre": "TAlumno", "capturar": "A" } }
+      ],
+      "referencia": "typedef struct {\n  int legajo;\n  char apellidoNombre[50];\n  TFecha nacimiento;\n  TFecha ingreso;\n} TAlumno;"
+    },
+    {
+      "id": "anidadas-guardar-anio",
+      "titulo": "Guardar el año de nacimiento",
+      "dado": "TAlumno alumno;",
+      "enunciado": "La variable `alumno` ya está declarada. Escriba el código que guarde en `alumno` el año de nacimiento `2004`.",
+      "ficha": {
+        "leyenda": "Así tiene que quedar la ficha:",
+        "titulo": "Ficha de alumno",
+        "resaltar": ["nacimiento.anio"],
+        "campos": [
+          { "nombre": "legajo" },
+          { "nombre": "apellidoNombre" },
+          {
+            "nombre": "nacimiento",
+            "campos": [{ "nombre": "dia" }, { "nombre": "mes" }, { "nombre": "anio", "ejemplo": "2004" }]
+          },
+          { "nombre": "ingreso", "campos": [{ "nombre": "dia" }, { "nombre": "mes" }, { "nombre": "anio" }] }
+        ]
+      },
+      "requiere": [
+        { "campo": { "variable": "alumno.nacimiento", "campos": [{ "nombre": "anio", "tipo": "entero" }] } }
+      ],
+      "referencia": "alumno.nacimiento.anio = 2004;"
+    },
+    {
+      "id": "anidadas-guardar-ingreso",
+      "titulo": "Guardar la fecha de ingreso",
+      "enunciado": "Escriba el código que guarde en `alumno` la fecha de ingreso: día `1`, mes `3` y año `2022`.",
+      "ficha": {
+        "leyenda": "Así tiene que quedar la ficha:",
+        "titulo": "Ficha de alumno",
+        "resaltar": ["ingreso.dia", "ingreso.mes", "ingreso.anio"],
+        "campos": [
+          { "nombre": "legajo" },
+          { "nombre": "apellidoNombre" },
+          {
+            "nombre": "nacimiento",
+            "campos": [{ "nombre": "dia" }, { "nombre": "mes" }, { "nombre": "anio", "ejemplo": "2004" }]
+          },
+          {
+            "nombre": "ingreso",
+            "campos": [
+              { "nombre": "dia", "ejemplo": "1" },
+              { "nombre": "mes", "ejemplo": "3" },
+              { "nombre": "anio", "ejemplo": "2022" }
+            ]
+          }
+        ]
+      },
+      "requiere": [
+        {
+          "campo": {
+            "variable": "alumno.ingreso",
+            "campos": [
+              { "nombre": "dia", "tipo": "entero" },
+              { "nombre": "mes", "tipo": "entero" },
+              { "nombre": "anio", "tipo": "entero" }
+            ]
+          }
+        }
+      ],
+      "referencia": "alumno.ingreso.dia = 1;\nalumno.ingreso.mes = 3;\nalumno.ingreso.anio = 2022;"
+    },
+    {
+      "id": "anidadas-q-nivel",
+      "titulo": "Cada campo en su nivel",
+      "enunciado": "¿Cuál de estas sentencias guarda el mes de nacimiento `3` en `alumno`?",
+      "codigo": "",
+      "opciones": [
+        {
+          "texto": "`alumno.mes = 3;`",
+          "codigo": "OPCION_SALTA_EL_NIVEL",
+          "explicacion": "`mes` no es un campo de `alumno`: está adentro de `nacimiento` (y también de `ingreso`). Para llegar hay que pasar por el campo que es una fecha."
+        },
+        {
+          "texto": "`alumno.nacimiento.mes = 3;`",
+          "correcta": true,
+          "explicacion": "Se entra de a un nivel: `alumno` tiene el campo `nacimiento`, y `nacimiento` tiene el campo `mes`. Cada punto baja un nivel."
+        },
+        {
+          "texto": "`nacimiento.mes = 3;`",
+          "codigo": "OPCION_SIN_LA_VARIABLE",
+          "explicacion": "`nacimiento` no es una variable: es un campo de `alumno`. Hay que empezar por la variable, `alumno`, y recién después bajar a `nacimiento`."
+        },
+        {
+          "texto": "`alumno.ingreso.mes = 3;`",
+          "codigo": "OPCION_OTRA_FECHA",
+          "explicacion": "Ese es el mes de ingreso. `nacimiento` e `ingreso` son dos fechas del mismo tipo, pero cada una guarda sus propios datos."
+        }
+      ]
+    },
+    {
+      "id": "anidadas-edad",
+      "titulo": "La edad de ingreso",
+      "sigueDe": "anidadas-declarar",
+      "dado": "TAlumno alumno;\nint edad;",
+      "enunciado": "La facultad quiere saber qué edad tenía cada alumno cuando ingresó. La variable `alumno` ya tiene cargados los datos de esta ficha. Escriba el código que guarde en `edad` la edad que tenía `alumno` al ingresar, considerando solo los años: sin mirar el mes ni el día.",
+      "ficha": {
+        "leyenda": "Con estos datos, la edad tiene que valer 18:",
+        "titulo": "Ficha de alumno",
+        "marcar": ["nacimiento.anio", "ingreso.anio"],
+        "campos": [
+          { "nombre": "legajo", "ejemplo": "20431" },
+          { "nombre": "apellidoNombre", "ejemplo": "Perez, Ana" },
+          {
+            "nombre": "nacimiento",
+            "campos": [
+              { "nombre": "dia", "ejemplo": "15" },
+              { "nombre": "mes", "ejemplo": "3" },
+              { "nombre": "anio", "ejemplo": "2004" }
+            ]
+          },
+          {
+            "nombre": "ingreso",
+            "campos": [
+              { "nombre": "dia", "ejemplo": "1" },
+              { "nombre": "mes", "ejemplo": "3" },
+              { "nombre": "anio", "ejemplo": "2022" }
+            ]
+          }
+        ]
+      },
+      "requiere": [
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "datos": { "alumno.nacimiento.anio": 2004, "alumno.ingreso.anio": 2022 },
+                "queda": { "edad": 18 },
+                "visible": true
+              },
+              { "datos": { "alumno.nacimiento.anio": 1985, "alumno.ingreso.anio": 2005 }, "queda": { "edad": 20 } },
+              { "datos": { "alumno.nacimiento.anio": 2000, "alumno.ingreso.anio": 2000 }, "queda": { "edad": 0 } },
+              { "datos": { "alumno.nacimiento.anio": 1975, "alumno.ingreso.anio": 1998 }, "queda": { "edad": 23 } }
+            ]
+          }
+        }
+      ],
+      "referencia": "edad = alumno.ingreso.anio - alumno.nacimiento.anio;"
+    },
+    {
+      "id": "anidadas-copiar-fecha",
+      "titulo": "Copiar una fecha",
+      "sigueDe": "anidadas-declarar",
+      "buenasPracticas": ["claridad"],
+      "dado": "TAlumno alumno;\nTFecha otraFecha;\n\nalumno.ingreso.dia = 1;\nalumno.ingreso.mes = 3;\nalumno.ingreso.anio = 2022;",
+      "enunciado": "La variable `alumno` ya tiene su fecha de ingreso. Escriba el código que copie la fecha de ingreso de `alumno` en la variable `otraFecha`.",
+      "ficha": [
+        {
+          "leyenda": "Así tienen que quedar las fichas:",
+          "titulo": "alumno.ingreso",
+          "campos": [
+            { "nombre": "dia", "ejemplo": "1" },
+            { "nombre": "mes", "ejemplo": "3" },
+            { "nombre": "anio", "ejemplo": "2022" }
+          ]
+        },
+        {
+          "titulo": "otraFecha",
+          "resaltar": "todos",
+          "campos": [
+            { "nombre": "dia", "ejemplo": "1" },
+            { "nombre": "mes", "ejemplo": "3" },
+            { "nombre": "anio", "ejemplo": "2022" }
+          ]
+        }
+      ],
+      "requiere": [{ "copia": { "de": "alumno.ingreso", "en": "otraFecha" } }],
+      "referencia": "otraFecha = alumno.ingreso;"
+    },
+    {
+      "id": "anidadas-contar-antes",
+      "titulo": "Contar los nacidos antes del 2000",
+      "sigueDe": "anidadas-declarar",
+      "dado": "TAlumno alumnos[MAX_ALUMNOS];\nint cantidad = 0;\nint i;",
+      "enunciado": "La facultad quiere saber cuántos alumnos nacieron antes del año 2000. El arreglo `alumnos` ya tiene cargados los datos de estas fichas. Con un ciclo, cuente cuántos alumnos nacieron antes del año `2000` y guarde la cantidad en `cantidad`. Use el índice `i`.",
+      "ficha": [
+        {
+          "leyenda": "Los alumnos cargados:",
+          "disposicion": "fila",
+          "titulo": "alumnos[0]",
+          "marcar": ["nacimiento.anio"],
+          "campos": [
+            { "nombre": "legajo", "ejemplo": "20431" },
+            { "nombre": "apellidoNombre", "ejemplo": "Perez, Ana" },
+            {
+              "nombre": "nacimiento",
+              "campos": [
+                { "nombre": "dia", "ejemplo": "15" },
+                { "nombre": "mes", "ejemplo": "3" },
+                { "nombre": "anio", "ejemplo": "2004" }
+              ]
+            },
+            {
+              "nombre": "ingreso",
+              "campos": [
+                { "nombre": "dia", "ejemplo": "1" },
+                { "nombre": "mes", "ejemplo": "3" },
+                { "nombre": "anio", "ejemplo": "2022" }
+              ]
+            }
+          ]
+        },
+        {
+          "titulo": "alumnos[1]",
+          "marcar": ["nacimiento.anio"],
+          "campos": [
+            { "nombre": "legajo", "ejemplo": "30872" },
+            { "nombre": "apellidoNombre", "ejemplo": "Lopez, Juan" },
+            {
+              "nombre": "nacimiento",
+              "campos": [
+                { "nombre": "dia", "ejemplo": "2" },
+                { "nombre": "mes", "ejemplo": "11" },
+                { "nombre": "anio", "ejemplo": "1998" }
+              ]
+            },
+            {
+              "nombre": "ingreso",
+              "campos": [
+                { "nombre": "dia", "ejemplo": "1" },
+                { "nombre": "mes", "ejemplo": "3" },
+                { "nombre": "anio", "ejemplo": "2016" }
+              ]
+            }
+          ]
+        },
+        {
+          "titulo": "alumnos[2]",
+          "marcar": ["nacimiento.anio"],
+          "campos": [
+            { "nombre": "legajo", "ejemplo": "18560" },
+            { "nombre": "apellidoNombre", "ejemplo": "Diaz, Marta" },
+            {
+              "nombre": "nacimiento",
+              "campos": [
+                { "nombre": "dia", "ejemplo": "27" },
+                { "nombre": "mes", "ejemplo": "7" },
+                { "nombre": "anio", "ejemplo": "2001" }
+              ]
+            },
+            {
+              "nombre": "ingreso",
+              "campos": [
+                { "nombre": "dia", "ejemplo": "1" },
+                { "nombre": "mes", "ejemplo": "3" },
+                { "nombre": "anio", "ejemplo": "2019" }
+              ]
+            }
+          ]
+        }
+      ],
+      "requiere": [
+        {
+          "ejecuta": {
+            "casos": [
+              { "datos": { "alumnos.nacimiento.anio": [2004, 1998, 2001], "alumnos.ingreso.anio": [2022, 2016, 2019] }, "queda": { "cantidad": 1 }, "visible": true },
+              { "datos": { "alumnos.nacimiento.anio": [1990, 1985, 1999], "alumnos.ingreso.anio": [2010, 2005, 2018] }, "queda": { "cantidad": 3 } },
+              { "datos": { "alumnos.nacimiento.anio": [2000, 2000, 2000], "alumnos.ingreso.anio": [2020, 2020, 2020] }, "queda": { "cantidad": 0 } },
+              { "datos": { "alumnos.nacimiento.anio": [1999, 2000, 2001], "alumnos.ingreso.anio": [2017, 2018, 2019] }, "queda": { "cantidad": 1 } },
+              { "datos": { "alumnos.nacimiento.anio": [2001, 1980, 2003], "alumnos.ingreso.anio": [2019, 2000, 2021] }, "queda": { "cantidad": 1 } }
+            ],
+            "conCiclo": true,
+            "limite": true
+          }
+        }
+      ],
+      "referencia": "for (i = 0; i < MAX_ALUMNOS; i++) {\n  if (alumnos[i].nacimiento.anio < 2000) {\n    cantidad++;\n  }\n}"
+    }
+  ]
+}
