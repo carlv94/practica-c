@@ -33,6 +33,8 @@
 //   { "variable": { "tipo": "caracter", "arreglo": true, "texto": "Hola" } }
 //   { "elementos": { "de": "$C", "texto": "Hola" } }
 //   { "campo":    { "variable": "alumno", "campos": [{ "nombre": "legajo", "tipo": "entero" }] } }
+//   { "leeCampo": { "variable": "alumno", "campo": "legajo" } }
+//   { "muestraCampos": { "variable": "alumno", "campos": ["legajo", "promedio"] } }
 //   { "vaciar":   "nombre" }
 //   { "ciclo":    { "indice": "i", "hastaElFinDe": "nombre" } }
 //   { "usaAlias": { "alias": "$T", "arreglo": { "alMenos": 30 } } }
@@ -187,6 +189,15 @@ const enLista = (valores) => {
 const LECTURAS = ['scanf', 'gets', 'fgets'];
 const MUESTRAS = ['printf', 'puts'];
 const destinoDeLectura = (l) => (l.funcion === 'scanf' ? l.argumentos[1] : l.argumentos[0]);
+
+// El formato que le corresponde a cada clase de campo (leer y mostrar los campos).
+const FORMATOS = {
+  entero: { buenos: ['d', 'i'], para: '%d', que: 'un entero' },
+  real: { buenos: ['f'], para: '%f', que: 'un decimal' },
+  letra: { buenos: ['c'], para: '%c', que: 'una letra' },
+  cadena: { buenos: ['s'], para: '%s', que: 'un texto' },
+};
+const DE_QUE_FORMATO = { d: 'un entero', i: 'un entero', f: 'un decimal', c: 'una letra', s: 'un texto', u: 'un entero sin signo' };
 
 // Una consigna de opciones: elegir la respuesta en vez de escribirla. Cada
 // opcion equivocada tiene su codigo y su explicacion, asi se sabe cual es el
@@ -363,6 +374,8 @@ export function corregir(
     if (regla.lee) return reglaLee(regla.lee, modelo);
     if (regla.asigna) return reglaAsigna(regla.asigna, modelo);
     if (regla.campo) return reglaCampo(regla.campo, modelo);
+    if (regla.leeCampo) return reglaLeeCampo(regla.leeCampo, modelo);
+    if (regla.muestraCampos) return reglaMuestraCampos(regla.muestraCampos, modelo);
     if (regla.suma) return reglaSuma(regla.suma, modelo);
     if (regla.resultado) return reglaResultado(regla.resultado, modelo);
     if (regla.ejecuta) return reglaEjecuta(regla.ejecuta, modelo);
@@ -1149,6 +1162,13 @@ export function corregir(
   function esTexto(e) {
     return e.startsWith('"');
   }
+  // El campo ("alumno.promedio") en la definicion de su estructura, o null.
+  function campoDeEstructura(esperado, modelo) {
+    const [base, nombreDelCampo] = esperado.split('.');
+    const variable = modelo.variables.findLast((v) => v.nombre === base);
+    const def = variable && estructuraDeVariable(variable, modelo);
+    return (def && def.campos.find((c) => c.nombre === nombreDelCampo)) || null;
+  }
   function esCampo(e) {
     return /^[A-Za-z_]\w*\.[A-Za-z_]\w*$/.test(e);
   }
@@ -1199,6 +1219,12 @@ export function corregir(
       const problema = problemaDeCampo(real, base, variable ? estructuraDeVariable(variable, modelo) : null, modelo);
       if (problema) {
         error(problema[0], problema[1], llamada.fila);
+      } else if (real.clase === 'direccion' && real.nombre === esperado) {
+        error(
+          'ARGUMENTO_CON_AMPERSAND',
+          `A \`${esperado}\` le sobra el \`&\`: una cadena se pasa con su nombre solo.`,
+          llamada.fila
+        );
       } else if (real.clase === 'nombre' && real.nombre === base) {
         error(
           'ARGUMENTO_SIN_CAMPO',
@@ -1780,6 +1806,265 @@ export function corregir(
         );
       } else if (derecha.clase !== 'numero' || Math.abs(parseFloat(derecha.texto) - Number(ejemplo)) > 1e-9) {
         error('ASIGNACION_VALOR_DISTINTO', `El valor que se guarda en \`${lugar}\` no es el que muestra la ficha.`, a.fila);
+      }
+    }
+  }
+
+  // ---- leer y mostrar los campos de una variable de estructura ------------------
+
+  // De que clase es un campo: "entero", "real", "letra" o "cadena" (null si es
+  // otra cosa).
+  function claseDeCampo(campo) {
+    if (campo.punteros || campo.tipo.clase !== 'primitivo') return null;
+    const nombre = campo.tipo.nombre;
+    if (nombre === 'char') return campo.arreglo.length ? 'cadena' : 'letra';
+    if (campo.arreglo.length) return null;
+    if (/(^|\s)(float|double)$/.test(nombre)) return 'real';
+    return /(^|\s)(int|short|long)$/.test(nombre) || nombre === 'unsigned' ? 'entero' : null;
+  }
+
+  // El campo que nombra un argumento: "alumno.legajo" o "&alumno.legajo", como
+  // un valor de clase "campo" (o null si no lo es).
+  function comoCampo(valor) {
+    if (valor.clase === 'campo') return valor;
+    if (valor.clase === 'direccion' && valor.campo) {
+      const partes = /^([\s\S]+?)\s*(->|\.)\s*([A-Za-z_]\w*)$/.exec(valor.nombre);
+      if (!partes) return null;
+      return { clase: 'campo', variable: partes[1], campo: partes[3], operador: partes[2], texto: valor.nombre };
+    }
+    return null;
+  }
+
+  function formatoNoCorresponde(formato, lugar, campo, clase, fila) {
+    error(
+      'FORMATO_NO_CORRESPONDE_AL_TIPO',
+      `\`${formato}\` es el formato de ${DE_QUE_FORMATO[formato.slice(-1)] || 'otro tipo de dato'}, y \`${lugar}\` es ${clase === 'cadena' ? 'una cadena' : `un \`${campo.tipo.nombre}\``}: el formato que le corresponde es \`${FORMATOS[clase].para}\`.`,
+      fila
+    );
+  }
+
+  // "scanf("%d", &alumno.legajo);": lee, con el formato del tipo del campo, en
+  // un campo de la variable. El texto de un campo cadena se lee con la regla
+  // "lee" (gets, fgets o scanf).
+  //   { "leeCampo": { "variable": "alumno", "campo": "legajo" } }
+  function reglaLeeCampo(regla, modelo) {
+    const nombre = valorDe(regla.variable);
+    const lugar = `${nombre}.${regla.campo}`;
+    const variable = modelo.variables.findLast((v) => v.nombre === nombre);
+    const def = variable ? estructuraDeVariable(variable, modelo) : null;
+    const campo = def && def.campos.find((c) => c.nombre === regla.campo);
+    const clase = campo && claseDeCampo(campo);
+    if (!clase || clase === 'cadena') {
+      throw new Error(`La consigna "${consigna.id}" lee ${lugar}, que no es un número ni una letra.`);
+    }
+
+    const lecturas = modelo.llamadas.filter((l) => l.nuevo && LECTURAS.includes(l.funcion));
+    if (!lecturas.length) {
+      const otra = modelo.llamadas.find((l) => l.nuevo && !MUESTRAS.includes(l.funcion));
+      if (otra) {
+        error('FUNCION_EQUIVOCADA', `\`${otra.funcion}\` no es la función que pide esta consigna.`, otra.fila);
+      } else {
+        error(
+          'LECTURA_FALTA',
+          'No encontré la lectura desde el teclado. Una función se usa con su nombre y, entre paréntesis, sus argumentos: `funcion(a, b);`'
+        );
+      }
+      return;
+    }
+
+    // Llegar bien al campo: la variable, el punto y el nombre.
+    for (const l of lecturas) {
+      const destino = destinoDeLectura(l);
+      const dicho = destino && comoCampo(destino);
+      // &legajo: el campo solo, sin la variable.
+      const solo =
+        destino && destino.clase === 'direccion' && !destino.campo
+          ? { clase: 'nombre', nombre: destino.nombre, texto: destino.nombre }
+          : null;
+      const problema =
+        (dicho && problemaDeCampo(dicho, nombre, def, modelo)) ||
+        (solo && problemaDeCampo(solo, nombre, def, modelo)) ||
+        (destino && problemaDeCampo(destino, nombre, def, modelo));
+      if (problema) {
+        error(problema[0], problema[1], l.fila);
+        return;
+      }
+    }
+
+    const apunta = (l) => {
+      const destino = destinoDeLectura(l);
+      const dicho = destino && comoCampo(destino);
+      return Boolean(dicho && dicho.variable === nombre && dicho.campo === regla.campo);
+    };
+    const l = lecturas.find((x) => x.funcion === 'scanf' && apunta(x));
+    if (!l) {
+      const otra = lecturas.find((x) => {
+        const d = destinoDeLectura(x);
+        const dicho = d && comoCampo(d);
+        return dicho && dicho.variable === nombre;
+      });
+      if (otra) {
+        error(
+          'LECTURA_OTRO_CAMPO',
+          `Lo que pide la consigna se guarda en \`${lugar}\`, y acá se lee en \`${comoCampo(destinoDeLectura(otra)).texto}\`.`,
+          otra.fila
+        );
+      } else if (lecturas.some((x) => x.funcion !== 'scanf')) {
+        const x = lecturas.find((y) => y.funcion !== 'scanf');
+        error('FUNCION_EQUIVOCADA', `\`${x.funcion}\` lee un texto: para leer \`${lugar}\` se usa \`scanf\`.`, x.fila);
+      } else {
+        error(
+          'LECTURA_OTRO_CAMPO',
+          `No encontré la lectura de \`${lugar}\`: \`scanf\` lleva el formato y, separada con una coma, la dirección del campo donde se guarda.`,
+          lecturas[0].fila
+        );
+      }
+      return;
+    }
+
+    // El formato: uno solo, el de su tipo.
+    if (l.argumentos.length !== 2) {
+      error(
+        'ARGUMENTOS_CANTIDAD',
+        '`scanf` lleva el formato y, separada con una coma, la variable donde se guarda lo que se lee.',
+        l.fila
+      );
+      return;
+    }
+    const formatoReal = l.argumentos[0];
+    const m = formatoReal.clase === 'cadena' ? /^(\s*)%(\*?)(\d*)(l?)([a-zA-Z])\s*$/.exec(formatoReal.contenido) : null;
+    if (!m) {
+      error(
+        'FORMATO_NO_CORRESPONDE_AL_TIPO',
+        `El formato de lectura de \`${lugar}\` es \`${FORMATOS[clase].para}\`: cada tipo de dato tiene el suyo.`,
+        l.fila
+      );
+      return;
+    }
+    const letra = m[5];
+    const formato = `%${m[4]}${letra}`;
+    const esDouble = /double$/.test(campo.tipo.nombre);
+    const correcto = clase === 'real' && esDouble ? m[4] === 'l' && letra === 'f' : FORMATOS[clase].buenos.includes(letra) && !m[4];
+    if (!correcto) {
+      const para = clase === 'real' && esDouble ? '%lf' : FORMATOS[clase].para;
+      error(
+        'FORMATO_NO_CORRESPONDE_AL_TIPO',
+        `\`${formato}\` es el formato de ${DE_QUE_FORMATO[letra] || 'otro tipo de dato'}, y \`${lugar}\` es un \`${campo.tipo.nombre}\`: el formato que le corresponde es \`${para}\`.`,
+        l.fila
+      );
+      return;
+    }
+    if (l.argumentos[1].clase === 'campo') {
+      error('AMPERSAND_FALTA', `A \`${lugar}\` le falta el \`&\` adelante.`, l.fila);
+      return;
+    }
+
+    // Una letra despues de un numero: el Enter que quedo sin leer.
+    if (clase === 'letra' && m[1] === '') {
+      const anterior = modelo.llamadas
+        .filter((x) => LECTURAS.includes(x.funcion) && x.fin <= l.posicion)
+        .pop();
+      if (anterior && anterior.funcion === 'scanf') {
+        error(
+          'LECTURA_LETRA_TOMA_EL_ENTER',
+          'Después de leer con `scanf` queda el Enter sin leer, y `%c` lo toma como si fuera la letra escrita. Para saltear los espacios y los saltos de línea, el formato lleva un espacio antes: `" %c"`.',
+          l.fila
+        );
+      }
+    }
+  }
+
+  // "printf("%d %s", alumno.legajo, alumno.apellidoNombre);": mostrar cada campo
+  // con el formato de su tipo, en una o en varias llamadas.
+  //   { "muestraCampos": { "variable": "alumno", "campos": ["legajo", "apellidoNombre"] } }
+  function reglaMuestraCampos(regla, modelo) {
+    const nombre = valorDe(regla.variable);
+    const variable = modelo.variables.findLast((v) => v.nombre === nombre);
+    const def = variable ? estructuraDeVariable(variable, modelo) : null;
+    const salidas = modelo.llamadas.filter((l) => l.nuevo && MUESTRAS.includes(l.funcion));
+    if (!salidas.length) {
+      const otra = modelo.llamadas.find((l) => l.nuevo && !LECTURAS.includes(l.funcion));
+      if (otra) {
+        error('FUNCION_EQUIVOCADA', `\`${otra.funcion}\` no es la función que pide esta consigna.`, otra.fila);
+      } else {
+        error(
+          'MUESTRA_FALTA',
+          'No encontré la llamada que muestra los datos en pantalla. Una función se usa con su nombre y, entre paréntesis, sus argumentos: `funcion(a, b);`'
+        );
+      }
+      return;
+    }
+
+    // Cada valor que se muestra, con el formato que le toca.
+    const mostrados = [];
+    for (const l of salidas) {
+      if (l.funcion === 'puts') {
+        if (l.argumentos[0]) mostrados.push({ valor: l.argumentos[0], letra: 's', formato: '%s', fila: l.fila });
+        continue;
+      }
+      const formatoReal = l.argumentos[0];
+      if (!formatoReal || formatoReal.clase !== 'cadena') {
+        error(
+          'PRINTF_SIN_FORMATO',
+          'El primer argumento de `printf` es el formato: un texto entre comillas dobles, con una conversión (`%d`, `%f`, `%s`, `%c`) por cada valor que se muestra.',
+          l.fila
+        );
+        return;
+      }
+      const convs = formatoReal.contenido.replace(/%%/g, '').match(/%[-+ #0]*\d*(?:\.\d+)?l?[a-zA-Z]/g) || [];
+      if (convs.length !== l.argumentos.length - 1) {
+        error(
+          'FORMATO_CANTIDAD_DISTINTA',
+          `El formato de \`printf\` tiene ${convs.length} ${convs.length === 1 ? 'conversión' : 'conversiones'} (lo que empieza con \`%\`) y se le pasa${l.argumentos.length - 1 === 1 ? '' : 'n'} ${l.argumentos.length - 1} ${l.argumentos.length - 1 === 1 ? 'valor' : 'valores'}: tiene que haber uno por cada una.`,
+          l.fila
+        );
+        return;
+      }
+      convs.forEach((c, i) =>
+        mostrados.push({ valor: l.argumentos[i + 1], letra: c.slice(-1), formato: c, fila: l.fila })
+      );
+    }
+
+    for (const x of mostrados) {
+      const v = x.valor;
+      if (v.clase === 'direccion') {
+        error(
+          'AMPERSAND_DE_MAS',
+          `\`printf\` muestra el valor que tiene la variable, no el lugar donde está: a \`${v.texto.replace(/^&\s*/, '')}\` le sobra el \`&\`.`,
+          x.fila
+        );
+        return;
+      }
+      if (v.clase === 'nombre' && v.nombre === nombre) {
+        error(
+          'ARGUMENTO_SIN_CAMPO',
+          `\`${nombre}\` es la variable completa, con todos sus campos: para mostrar un dato hay que indicar cuál, con un punto: \`${nombre}.${def?.campos[0]?.nombre || 'campo'}\`.`,
+          x.fila
+        );
+        return;
+      }
+      const problema = problemaDeCampo(v, nombre, def, modelo);
+      if (problema) {
+        error(problema[0], problema[1], x.fila);
+        return;
+      }
+    }
+
+    for (const pedido of regla.campos) {
+      const lugar = `${nombre}.${pedido}`;
+      const campo = def && def.campos.find((c) => c.nombre === pedido);
+      const clase = campo && claseDeCampo(campo);
+      if (!clase) throw new Error(`La consigna "${consigna.id}" muestra ${lugar}, que no tiene un formato conocido.`);
+      const x = mostrados.find((m) => m.valor.clase === 'campo' && m.valor.variable === nombre && m.valor.campo === pedido);
+      if (!x) {
+        error(
+          'MUESTRA_CAMPO_FALTA',
+          `No encontré dónde se muestra \`${lugar}\`: es un valor de \`printf\`, con el formato \`${FORMATOS[clase].para}\`.`
+        );
+        continue;
+      }
+      if (!FORMATOS[clase].buenos.includes(x.letra)) {
+        formatoNoCorresponde(x.formato, lugar, campo, clase, x.fila);
       }
     }
   }
@@ -2702,7 +2987,12 @@ export function corregir(
     const base = /^[A-Za-z_]\w*/.exec(esperado)[0];
     const indices = (esperado.match(/\[/g) || []).length;
     const variable = modelo.variables.findLast((v) => v.nombre === base);
-    const lugar = variable ? valorDeDimension(variable.arreglo[indices] ?? '', modelo) : null;
+    let lugar = variable ? valorDeDimension(variable.arreglo[indices] ?? '', modelo) : null;
+    // Un campo de una estructura: el lugar es el de su arreglo.
+    if (esCampo(esperado)) {
+      const campo = campoDeEstructura(esperado, modelo);
+      lugar = campo ? valorDeDimension(campo.arreglo[0] ?? '', modelo) : null;
+    }
     const palabra = formato === 'palabra';
 
     if (l.funcion === 'gets' || l.funcion === 'fgets') {

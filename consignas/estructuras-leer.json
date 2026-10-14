@@ -1,0 +1,118 @@
+{
+  "id": "estructuras-leer",
+  "titulo": "Leer y mostrar los campos",
+  "continua": true,
+  "dentroDeMain": true,
+  "descripcion": "Leer del teclado cada dato de una variable de estructura, con el formato de su tipo, y mostrarlos en pantalla.",
+  "cabecera": "#include <stdio.h>\n\nstruct Alumno {\n  int legajo;\n  char apellidoNombre[50];\n  float promedio;\n  char turno;\n};",
+  "consignas": [
+    {
+      "id": "leer-legajo",
+      "titulo": "Leer el legajo",
+      "dado": "struct Alumno alumno;",
+      "enunciado": "La secretaría de una facultad carga en el programa los datos de cada alumno que se inscribe. La estructura `Alumno` y la variable `alumno` ya están declaradas, y estos son los datos que hay que guardar en ella:\n[ficha]\nEscriba el código que lea desde el teclado el número de legajo y lo guarde en `alumno`.",
+      "ficha": {
+        "titulo": "Ficha de alumno",
+        "campos": [
+          { "texto": "Número de legajo", "nombre": "legajo", "ejemplo": "20431" },
+          { "texto": "Apellido y nombre", "nombre": "apellidoNombre", "ejemplo": "Perez, Ana" },
+          { "texto": "Promedio general", "nombre": "promedio", "ejemplo": "8.45" },
+          { "texto": "Turno en el que cursa: M, T o N", "nombre": "turno", "ejemplo": "T" }
+        ]
+      },
+      "requiere": [{ "leeCampo": { "variable": "alumno", "campo": "legajo" } }],
+      "referencia": "scanf(\"%d\", &alumno.legajo);"
+    },
+    {
+      "id": "leer-apellido-nombre",
+      "titulo": "Leer el apellido y nombre",
+      "enunciado": "El programa ya leyó el legajo. Escriba lo que sigue para que `alumno` guarde el apellido y nombre completo, con sus espacios, que se escribe después.",
+      "requiere": [
+        { "lee": { "destino": "alumno.apellidoNombre", "formato": "linea" } },
+        { "limpiaEntrada": true }
+      ],
+      "referencia": "while (getchar() != '\\n');\ngets(alumno.apellidoNombre);"
+    },
+    {
+      "id": "leer-promedio",
+      "titulo": "Leer el promedio",
+      "enunciado": "Escriba el código que lea desde el teclado el promedio general y lo guarde en `alumno`.",
+      "requiere": [{ "leeCampo": { "variable": "alumno", "campo": "promedio" } }],
+      "referencia": "scanf(\"%f\", &alumno.promedio);"
+    },
+    {
+      "id": "campos-q-turno-enter",
+      "titulo": "El Enter antes de una letra",
+      "continua": false,
+      "enunciado": "Si el usuario escribe `20431`, presiona Enter, escribe `T` y presiona Enter, después de ejecutar el código de abajo, ¿qué valor tendría `alumno.turno`?",
+      "codigo": "struct Alumno alumno;\n\nscanf(\"%d\", &alumno.legajo);\nscanf(\"%c\", &alumno.turno);",
+      "opciones": [
+        {
+          "valor": "'T'",
+          "texto": "la letra que se escribió",
+          "codigo": "OPCION_LETRA_ESCRITA",
+          "explicacion": "Después de leer el `20431` el Enter queda sin leer, y `%c` toma un carácter cualquiera, sin saltear nada: toma ese Enter. La `'T'` queda esperando para la próxima lectura."
+        },
+        {
+          "valor": "'\\n'",
+          "texto": "el Enter",
+          "correcta": true,
+          "explicacion": "`%c` toma el primer carácter que encuentra, y ahí está el Enter que quedó sin leer después del `20431`. Para saltearlo, el formato lleva un espacio antes: `\" %c\"`."
+        },
+        {
+          "texto": "No se puede saber",
+          "codigo": "OPCION_NO_SE_SABE_LETRA",
+          "explicacion": "Sí se puede saber: con lo que se escribe, el Enter que sigue al `20431` es lo primero que encuentra `%c`."
+        }
+      ]
+    },
+    {
+      "id": "leer-turno",
+      "titulo": "Leer el turno",
+      "enunciado": "Escriba el código que lea desde el teclado el turno en el que cursa el alumno y lo guarde en `alumno`. Tenga en cuenta que el promedio se acaba de leer con `scanf`.",
+      "requiere": [{ "leeCampo": { "variable": "alumno", "campo": "turno" } }],
+      "referencia": "scanf(\" %c\", &alumno.turno);"
+    },
+    {
+      "id": "campos-q-scanf-espacio",
+      "titulo": "Una palabra o una línea",
+      "continua": false,
+      "enunciado": "Si el usuario escribe `Lopez Maria` y presiona Enter, después de ejecutar el código de abajo, ¿qué valor tendría `alumno.apellidoNombre`?",
+      "codigo": "struct Alumno alumno;\n\nscanf(\"%s\", alumno.apellidoNombre);",
+      "opciones": [
+        {
+          "valor": "\"Lopez Maria\"",
+          "texto": "el texto completo",
+          "codigo": "OPCION_SCANF_LEE_LA_LINEA",
+          "explicacion": "`%s` deja de leer al llegar a un espacio: lee una sola palabra. Para guardar la línea completa, con sus espacios, se usa `gets`."
+        },
+        {
+          "valor": "\"Lopez\"",
+          "texto": "la primera palabra",
+          "correcta": true,
+          "explicacion": "`%s` lee hasta el primer espacio: guarda `Lopez`, y `Maria` queda sin leer. Y como es una cadena, no lleva `&`."
+        },
+        {
+          "valor": "\"Maria\"",
+          "texto": "la última palabra",
+          "codigo": "OPCION_SCANF_LEE_LA_ULTIMA",
+          "explicacion": "`scanf` lee desde el principio de lo que se escribió: guarda `Lopez`. Lo que sigue (`Maria`) queda sin leer, esperando la próxima lectura."
+        }
+      ]
+    },
+    {
+      "id": "mostrar-ficha",
+      "titulo": "Mostrar los datos del alumno",
+      "enunciado": "Con los datos del alumno ya leídos, escriba el código que muestre en pantalla el legajo, el apellido y nombre, el promedio y el turno de `alumno`.",
+      "requiere": [
+        {
+          "muestraCampos": {
+            "variable": "alumno",
+            "campos": ["legajo", "apellidoNombre", "promedio", "turno"]
+          }
+        }
+      ],
+      "referencia": "printf(\"%d %s %.2f %c\\n\", alumno.legajo, alumno.apellidoNombre, alumno.promedio, alumno.turno);"
+    }
+  ]
+}

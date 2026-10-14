@@ -201,6 +201,10 @@ export function construirModelo(arbol, desde) {
       }
       case 'pointer_expression': {
         const de = n.childForFieldName('argument');
+        if (texto.startsWith('&') && de && de.type === 'field_expression') {
+          // &alumno.legajo: la direccion de un campo (nombre: "alumno.legajo")
+          return { clase: 'direccion', nombre: de.text, campo: true, texto };
+        }
         return texto.startsWith('&') && de && de.type === 'identifier'
           ? { clase: 'direccion', nombre: de.text, texto }
           : { clase: 'otro', texto };

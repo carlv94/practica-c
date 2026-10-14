@@ -513,6 +513,31 @@ Estructuras, serie "Usar los campos"):
 | otro valor, una letra entre comillas dobles, etc. | `ASIGNACION_VALOR_DISTINTO`, `LETRA_*`, `VALOR_ENTRE_COMILLAS` | Los de siempre. |
 | falta cargar un campo pedido | `CAMPO_SIN_CARGAR` | Dice cuál. |
 
+Para leer y mostrar los campos de una variable de estructura (serie "Leer y
+mostrar los campos"):
+
+- `{ "leeCampo": { "variable": "alumno", "campo": "legajo" } }`: leer un número
+  o una letra con `scanf` en un campo. El formato es el que corresponde al
+  tipo del campo en la estructura (`%d`, `%f`, `%lf`, `%c`). Un `%c` que
+  viene después de otro `scanf` tiene que llevar un espacio antes (`" %c"`),
+  porque si no toma el Enter que quedó sin leer.
+- Un campo que es una cadena se lee con la regla `lee` y `"destino":
+  "alumno.apellidoNombre"` (con `gets`, `fgets` o `scanf`; `gets` vale con
+  la nota `USO_DE_GETS`), y con `limpiaEntrada` si viene después de un `scanf`.
+- `{ "muestraCampos": { "variable": "alumno", "campos": ["legajo", "promedio"] } }`:
+  mostrar cada campo con `printf` (o `puts` para una cadena), en una o en varias
+  llamadas, con el formato de su tipo.
+
+| Respuesta | Código | Mensaje |
+|---|---|---|
+| `scanf("%d", alumno.legajo);` | `AMPERSAND_FALTA` | Falta el `&` adelante. |
+| `scanf("%f", &alumno.legajo);` | `FORMATO_NO_CORRESPONDE_AL_TIPO` | Dice cuál le corresponde. |
+| `scanf("%f", &alumno.promedio)` pidiendo el legajo | `LECTURA_OTRO_CAMPO` | Dice en qué campo va. |
+| `scanf("%c", &alumno.turno);` después de un `scanf` | `LECTURA_LETRA_TOMA_EL_ENTER` | El espacio antes de `%c`. |
+| `gets(&alumno.apellidoNombre);` | `ARGUMENTO_CON_AMPERSAND` | Una cadena va sin `&`. |
+| un campo sin mostrar | `MUESTRA_CAMPO_FALTA` | Dice cuál y su formato. |
+| `printf("%d", alumno);` | `ARGUMENTO_SIN_CAMPO` | Falta indicar el campo. |
+
 Otras dos reglas de la misma serie:
 
 - `{ "suma": { "de": ["notas[0]", "notas[MAX_ALUMNOS - 1]"] } }`: la suma de
