@@ -300,6 +300,7 @@
               { "datos": { "alumnos.nacimiento.anio": [1999, 2000, 2001], "alumnos.ingreso.anio": [2017, 2018, 2019] }, "queda": { "cantidad": 1 } },
               { "datos": { "alumnos.nacimiento.anio": [2001, 1980, 2003], "alumnos.ingreso.anio": [2019, 2000, 2021] }, "queda": { "cantidad": 1 } }
             ],
+            "recorre": { "alumnos.nacimiento.anio": ["el alumno"] },
             "conCiclo": true,
             "limite": true
           }

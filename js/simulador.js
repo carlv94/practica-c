@@ -233,6 +233,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null) {
   const delArreglo = []; // de esos, los que salen de una posicion de un arreglo
   const origenes = []; // de cada uno de esos, { nombre, indices } o null
   const visitas = new Map(); // arreglo -> un conjunto de indices tocados por cada dimension
+  const lecturasPorPosicion = new Map(); // lo mismo, solo las posiciones que se leyeron
   const lineas = []; // los numeros que salen en cada renglon, uno por renglon
   let renglon = [];
   const leidos = new Set(); // los arreglos de los que se leyo alguna posicion
@@ -377,6 +378,10 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null) {
     if (indices.length !== variable.dims.length) sinVerificar(n, `el arreglo ${nombre} entero`);
     leidos.add(nombre);
     visitar(nombre, variable.dims.length, indices);
+    if (!lecturasPorPosicion.has(nombre)) {
+      lecturasPorPosicion.set(nombre, Array.from({ length: variable.dims.length }, () => new Set()));
+    }
+    indices.forEach((i, k) => lecturasPorPosicion.get(nombre)[k].add(i));
     let dato = variable.datos;
     for (const i of indices) dato = dato[i];
     if (dato === undefined) {
@@ -949,5 +954,5 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null) {
 
   bloque(cuerpo);
   if (renglon.length) lineas.push(renglon);
-  return { variables, escrituras, mostrados, delArreglo, origenes, lineas, salida, lecturas, leidos, visitas };
+  return { variables, escrituras, mostrados, delArreglo, origenes, lineas, salida, lecturas, leidos, visitas, lecturasPorPosicion };
 }

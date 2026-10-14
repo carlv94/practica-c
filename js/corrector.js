@@ -149,7 +149,7 @@ const DE_LA_BIBLIOTECA = [
 const BIBLIOTECA_DE = { pow: 'math.h' };
 
 // El plural de un nombre de nivel: curso -> cursos, parcial -> parciales.
-const enPlural = (s) => (/[aeiou]$/i.test(s) ? `${s}s` : `${s}es`);
+const enPlural = (s) => (/[aeiou]$/i.test(s) ? `${s}s` : /ón$/i.test(s) ? `${s.slice(0, -2)}ones` : `${s}es`);
 
 // Los valores de una variable en un mensaje, cada uno como esta en el codigo y
 // con "y" antes del ultimo: `120`, `85` y `310`.
@@ -2569,7 +2569,14 @@ export function corregir(
     for (const [nombre, niveles] of pedidos) {
       const variable = corrida.variables.get(nombre);
       if (!variable || !variable.dims) continue;
-      const visitadas = corrida.visitas.get(nombre);
+      // "alumnos.promedio" es el arreglo de estructuras "alumnos": una posicion
+      // esta recorrida si el ciclo toco cualquiera de sus campos.
+      const mostrado = nombre.split('.')[0];
+      let visitadas = corrida.visitas.get(nombre);
+      if (nombre.includes('.')) {
+        const delArreglo = [...corrida.visitas].filter(([otro]) => otro.split('.')[0] === mostrado);
+        visitadas = variable.dims.map((_, k) => new Set(delArreglo.flatMap(([, v]) => [...(v[k] || [])])));
+      }
       const chico = variable.dims.length === 2 ? ['la fila', 'la columna'] : variable.dims.map(() => 'la posición');
       for (let k = 0; k < variable.dims.length; k++) {
         // Cada nivel con su articulo: "la fila", "el curso".
@@ -2580,11 +2587,49 @@ export function corregir(
         const tocadas = visitadas ? visitadas[k] : new Set();
         if (tocadas.size >= n) continue;
         const toco = tocadas.size > 0;
+        // Un arreglo de una dimension que el ciclo ni toca (no muestra nada, usa
+        // otro campo): lo dice mejor el error que sigue. Una tabla si dice que no se recorre.
+        if (!toco && variable.dims.length === 1) continue;
         error(
           'RECORRIDO_INCOMPLETO',
           !toco
-            ? `${antes}\`${nombre}\` tiene ${n} ${enPlural(unidad)} y el programa no ${femenino ? 'las' : 'los'} recorre: la consigna pide un ciclo que pase por ${femenino ? 'todas' : 'todos'}.`
-            : `${antes}\`${nombre}\` tiene ${n} ${enPlural(unidad)} y el ciclo no llega a ${femenino ? 'recorrerlas todas' : 'recorrerlos todos'}.`
+            ? `${antes}\`${mostrado}\` tiene ${n} ${enPlural(unidad)} y el programa no ${femenino ? 'las' : 'los'} recorre: la consigna pide un ciclo que pase por ${femenino ? 'todas' : 'todos'}.`
+            : `${antes}\`${mostrado}\` tiene ${n} ${enPlural(unidad)} y el ciclo no llega a ${femenino ? 'recorrerlas todas' : 'recorrerlos todos'}.`
+        );
+        return false;
+      }
+    }
+    return true;
+  }
+
+  // Un arreglo a medio cargar: el ciclo tiene que tocar las primeras `cantidad`
+  // posiciones, ni una menos ni una mas.
+  //   "recorreHasta": { "notas": "cantidad" }
+  // La cantidad sale de los datos del caso (o del valor que tiene la variable).
+  function recorreCargadas(corrida, caso, pedido, antes) {
+    for (const [nombre, cantidadDe] of Object.entries(pedido)) {
+      const variable = corrida.variables.get(nombre);
+      if (!variable || !variable.dims) continue;
+      const dato = caso && caso.datos ? caso.datos[cantidadDe] : undefined;
+      const cargadas = dato !== undefined ? dato : corrida.variables.get(cantidadDe)?.valor;
+      if (cargadas === undefined) continue;
+      const tocadas = corrida.lecturasPorPosicion.get(nombre);
+      const posiciones = tocadas ? tocadas[0] : new Set();
+      // Un ciclo que no lee el arreglo: lo dice mejor el error que sigue.
+      if (!posiciones.size) continue;
+      const faltan = [...Array(cargadas).keys()].some((p) => !posiciones.has(p));
+      if (faltan) {
+        error(
+          'RECORRIDO_INCOMPLETO',
+          `${antes}en \`${nombre}\` hay ${cargadas} posiciones cargadas, de la 0 a la ${cargadas - 1}, y el ciclo no llega a recorrerlas todas.`
+        );
+        return false;
+      }
+      const ultima = Math.max(...posiciones);
+      if (ultima >= cargadas) {
+        error(
+          'RECORRIDO_SE_PASA',
+          `${antes}el ciclo llega hasta la posición ${ultima} de \`${nombre}\`, pero solo hay ${cargadas} cargadas, de la 0 a la ${cargadas - 1}: las demás no tienen nada.`
         );
         return false;
       }
@@ -2632,6 +2677,7 @@ export function corregir(
     // Cada arreglo que se tiene que recorrer entero, primero: si el ciclo no
     // llega a todas las filas o columnas, lo demas no importa.
     if (regla.recorre && !recorreTodo(corrida, regla.recorre, antes)) return false;
+    if (regla.recorreHasta && !recorreCargadas(corrida, caso, regla.recorreHasta, antes)) return false;
     // Las veces que se le da un valor con "=" a la variable dentro de un ciclo.
     const asignacionesEnCiclo = (nombre) =>
       modelo.asignaciones.filter(
@@ -2856,6 +2902,8 @@ export function corregir(
       error('LECTURA_FALTA', 'La consigna pide leer los datos del teclado, con `scanf`: el programa no lee nada.');
       return;
     }
+    if (regla.recorre && !recorreTodo(corrida, regla.recorre, '')) return;
+    if (regla.recorreHasta && !recorreCargadas(corrida, null, regla.recorreHasta, '')) return;
 
     // Lo que tiene que quedar guardado.
     for (const [nombre, pedido] of Object.entries(regla.queda || {})) {

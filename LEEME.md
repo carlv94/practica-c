@@ -857,6 +857,22 @@ recorrerlas todas" (sin decir dónde se detiene: con `i = 1` y con `i < 2` el
 Si el ciclo se pasa, "`tabla` tiene 4 filas, numeradas de 0 a 3, y el ciclo
 llega hasta la fila 4, que no existe".
 
+`"recorre"` sirve también para un arreglo de una dimensión y para uno de
+estructuras (`{ "alumnos.promedio": ["el alumno"] }`: vale tocar cualquiera de
+sus campos, y se dice `alumnos`), y se revisa también cuando la consigna corre
+el código una sola vez (con `entrada`). Todas las consignas que recorren un
+arreglo entero lo llevan, menos las que cortan a propósito (`busca`) y las que
+muestran una parte (un solo curso). Si el ciclo ni toca un arreglo de una
+dimensión, no es `RECORRIDO_INCOMPLETO`: lo dicen mejor los errores que siguen
+(`MUESTRA_FALTA`, `MUESTRA_SIN_EL_ARREGLO`, `RESULTADO_VALOR_DISTINTO`).
+
+**Un arreglo a medio cargar** (`"recorreHasta": { "letras": "cantidad" }`): el
+ciclo tiene que leer las primeras `cantidad` posiciones, ni una menos
+(`RECORRIDO_INCOMPLETO`) ni una más (`RECORRIDO_SE_PASA`: "el ciclo llega hasta
+la posición 9 de `notas`, pero solo hay 4 cargadas"). La cantidad sale de los
+datos del caso o del valor de esa variable. Cuenta lo que el programa *lee*, no
+lo que escribió el código que da la consigna.
+
 **Un nombre que no está declarado** (`MULTIPLICADOS` por `MULTIPLICANDOS`) es
 el error `NOMBRE_NO_DECLARADO`, con "¿Quiso decir…?" si hay uno parecido, en
 todas las series que se corrigen siguiendo el código. Los nombres de la

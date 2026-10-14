@@ -58,6 +58,7 @@
           "ejecuta": {
             "entrada": [7, 4, 9, 6, 8, 5, 10, 3, 7, 6, 9, 8, 4, 6, 7, 10, 5, 8, 9, 6],
             "queda": { "notas": "entrada" },
+            "recorre": "notas",
             "conCiclo": true,
             "limite": true
           }
@@ -75,6 +76,7 @@
           "ejecuta": {
             "muestra": [7, 4, 9, 6, 8, 5, 10, 3],
             "deArreglo": "notas",
+            "recorre": "notas",
             "conCiclo": true,
             "limite": true
           }
@@ -94,6 +96,7 @@
             "queda": { "temperaturas": "entrada" },
             "muestra": "entrada",
             "deArreglo": "temperaturas",
+            "recorre": "temperaturas",
             "conCiclo": true,
             "limite": true
           }
@@ -113,6 +116,7 @@
             "queda": { "ventas": "entrada" },
             "muestra": "alReves",
             "deArreglo": "ventas",
+            "recorre": "ventas",
             "conCiclo": true,
             "limite": true
           }
@@ -131,6 +135,7 @@
             "entrada": [7, 4, 9, 6, 8],
             "queda": { "notas": "entrada" },
             "pregunta": "Ingrese la nota %d:",
+            "recorre": "notas",
             "conCiclo": true,
             "limite": true
           }

@@ -37,6 +37,7 @@
               { "datos": { "alumnos.legajo": [1010, 2020, 3030], "alumnos.promedio": [10, 10, 10] }, "queda": { "total": 30 } },
               { "datos": { "alumnos.legajo": [1010, 2020, 3030], "alumnos.promedio": [0, 7, 0] }, "queda": { "total": 7 } }
             ],
+            "recorre": { "alumnos.promedio": ["el alumno"] },
             "conCiclo": true,
             "limite": true
           }
@@ -86,6 +87,7 @@
                 "queda": { "cantidad": 1 }
               }
             ],
+            "recorre": { "alumnos.turno": ["el alumno"] },
             "conCiclo": true,
             "limite": true
           }

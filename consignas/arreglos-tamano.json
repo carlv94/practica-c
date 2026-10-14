@@ -68,6 +68,7 @@
               { "datos": { "notas": [6, 7, 8, 9, 10, 1, 2, 3, 4, 5], "cantidad": 10 }, "muestra": [6, 7, 8, 9, 10, 1, 2, 3, 4, 5] },
               { "datos": { "notas": [10, 0, 0, 0, 0, 0, 0, 0, 0, 0], "cantidad": 1 }, "muestra": [10] }
             ],
+            "recorreHasta": { "notas": "cantidad" },
             "conCiclo": true
           }
         }

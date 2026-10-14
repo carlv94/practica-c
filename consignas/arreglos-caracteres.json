@@ -42,6 +42,7 @@
                 "muestra": ["A", "A", "A", "A", "A", "A"]
               }
             ],
+            "recorre": "calificaciones",
             "conCiclo": true,
             "limite": true
           }
@@ -146,6 +147,7 @@
                 "queda": { "calificaciones": ["D", "B", "B", "B", "B", "D"] }
               }
             ],
+            "recorre": "calificaciones",
             "conCiclo": true,
             "limite": true
           }
@@ -198,6 +200,7 @@
             "deArreglo": "letras",
             "separadas": true,
             "cuenta": "cantidad",
+            "recorreHasta": { "letras": "cantidad" },
             "conCiclo": true
           }
         }

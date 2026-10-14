@@ -119,6 +119,7 @@
           "ejecuta": {
             "entrada": [20431, 30872, 18560],
             "queda": { "alumnos.legajo": "entrada" },
+            "recorre": { "alumnos.legajo": ["el alumno"] },
             "conCiclo": true,
             "limite": true
           }
@@ -155,6 +156,7 @@
                 "muestraEnFilas": [[40123, 6], [11002, 10], [27345, 4.5]]
               }
             ],
+            "recorre": { "alumnos.legajo": ["el alumno"] },
             "conCiclo": true,
             "limite": true
           }

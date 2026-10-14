@@ -382,9 +382,9 @@ const CASOS_DE_LEER = [
   leer(4, 'con el numero suelto: correcto y mejorable', 'for (i = 0; i < 20; i++) {\n  scanf("%d", &notas[i]);\n}', 'ok', ['LIMITE_CON_NUMERO_SUELTO']),
   leer(4, 'sin ciclo', 'scanf("%d", &notas[0]);', ['CICLO_FALTA']),
   leer(4, 'sin el ampersand', 'for (i = 0; i < MAX_ALUMNOS; i++) {\n  scanf("%d", notas[i]);\n}', ['AMPERSAND_FALTA']),
-  leer(4, 'siempre en la misma posicion', 'for (i = 0; i < MAX_ALUMNOS; i++) {\n  scanf("%d", &notas[0]);\n}', ['RESULTADO_VALOR_DISTINTO']),
+  leer(4, 'siempre en la misma posicion', 'for (i = 0; i < MAX_ALUMNOS; i++) {\n  scanf("%d", &notas[0]);\n}', ['RECORRIDO_INCOMPLETO']),
   leer(4, 'una vuelta de mas', 'for (i = 0; i <= MAX_ALUMNOS; i++) {\n  scanf("%d", &notas[i]);\n}', ['INDICE_FUERA_DE_RANGO']),
-  leer(4, 'sin llegar a la ultima', 'for (i = 0; i < MAX_ALUMNOS - 1; i++) {\n  scanf("%d", &notas[i]);\n}', ['RESULTADO_POSICION_SIN_VALOR']),
+  leer(4, 'sin llegar a la ultima', 'for (i = 0; i < MAX_ALUMNOS - 1; i++) {\n  scanf("%d", &notas[i]);\n}', ['RECORRIDO_INCOMPLETO']),
   leer(4, 'leyendo en el indice', 'for (i = 0; i < MAX_ALUMNOS; i++) {\n  scanf("%d", &i);\n}', ['LECTURA_DE_MAS']),
 
   // 5: mostrar todas
@@ -392,7 +392,7 @@ const CASOS_DE_LEER = [
   leer(5, 'en una linea, con espacios', 'for (i = 0; i < CANTIDAD; i++) {\n  printf("%d ", notas[i]);\n}'),
   leer(5, 'con el numero de cada una', 'for (i = 0; i < CANTIDAD; i++) {\n  printf("Alumno %d: %d\\n", i + 1, notas[i]);\n}'),
   leer(5, 'sin ciclo', 'printf("%d", notas[0]);', ['CICLO_FALTA']),
-  leer(5, 'sin llegar a la ultima', 'for (i = 0; i < CANTIDAD - 1; i++) {\n  printf("%d\\n", notas[i]);\n}', ['MUESTRA_DISTINTA']),
+  leer(5, 'sin llegar a la ultima', 'for (i = 0; i < CANTIDAD - 1; i++) {\n  printf("%d\\n", notas[i]);\n}', ['RECORRIDO_INCOMPLETO']),
   leer(5, 'de atras', 'for (i = CANTIDAD - 1; i >= 0; i--) {\n  printf("%d\\n", notas[i]);\n}', ['MUESTRA_DISTINTA']),
   leer(5, 'con el arreglo entero', 'for (i = 0; i < CANTIDAD; i++) {\n  printf("%d\\n", notas);\n}', ['ARREGLO_SIN_POSICION']),
   leer(5, 'el indice en lugar de la nota', 'for (i = 0; i < CANTIDAD; i++) {\n  printf("%d\\n", i);\n}', ['MUESTRA_SIN_EL_ARREGLO']),
@@ -624,11 +624,11 @@ const CASOS_DE_TAMANO = [
   tamano(3, 'hasta cantidad', 'for (i = 0; i < cantidad; i++) {\n  printf("%d\\n", notas[i]);\n}'),
   tamano(3, 'con un while', 'i = 0;\nwhile (i < cantidad) {\n  printf("%d ", notas[i]);\n  i++;\n}'),
   {
-    ...tamano(3, 'hasta el fisico', 'for (i = 0; i < MAX_NOTAS; i++) {\n  printf("%d\\n", notas[i]);\n}', ['MUESTRA_DISTINTA']),
-    dice: ['`7`, `4`, `9`, `6`, `0`', 'cuando debería mostrar `7`, `4`, `9` y `6`'],
+    ...tamano(3, 'hasta el fisico', 'for (i = 0; i < MAX_NOTAS; i++) {\n  printf("%d\\n", notas[i]);\n}', ['RECORRIDO_SE_PASA']),
+    dice: ['llega hasta la posición 9 de `notas`', 'solo hay 4 cargadas, de la 0 a la 3'],
   },
-  tamano(3, 'una de menos', 'for (i = 0; i < cantidad - 1; i++) {\n  printf("%d\\n", notas[i]);\n}', ['MUESTRA_DISTINTA']),
-  tamano(3, 'una de mas', 'for (i = 0; i <= cantidad; i++) {\n  printf("%d\\n", notas[i]);\n}', ['MUESTRA_DISTINTA']),
+  tamano(3, 'una de menos', 'for (i = 0; i < cantidad - 1; i++) {\n  printf("%d\\n", notas[i]);\n}', ['RECORRIDO_INCOMPLETO']),
+  tamano(3, 'una de mas', 'for (i = 0; i <= cantidad; i++) {\n  printf("%d\\n", notas[i]);\n}', ['RECORRIDO_SE_PASA']),
   tamano(3, 'sin ciclo', 'printf("%d\\n", notas[0]);', ['CICLO_FALTA']),
 
   // 4: cuestionario, recorrer hasta el fisico
@@ -1242,7 +1242,7 @@ const CASOS_DE_CARACTERES = [
     ...caracteres(2, 'de atras', 'for (i = CANTIDAD - 1; i >= 0; i--) {\n  printf("%c ", calificaciones[i]);\n}', ['MUESTRA_DISTINTA']),
     dice: ["El programa muestra `'B'`, `'E'`, `'A'`, `'C'`, `'A'` y `'B'` cuando debería mostrar"],
   },
-  caracteres(2, 'sin la ultima', 'for (i = 0; i < CANTIDAD - 1; i++) {\n  printf("%c ", calificaciones[i]);\n}', ['MUESTRA_DISTINTA']),
+  caracteres(2, 'sin la ultima', 'for (i = 0; i < CANTIDAD - 1; i++) {\n  printf("%c ", calificaciones[i]);\n}', ['RECORRIDO_INCOMPLETO']),
   caracteres(2, 'una sola letra', 'printf("%c ", calificaciones[0]);', ['CICLO_FALTA']),
   {
     ...caracteres(2, 'con el formato de un entero', CICLO_DE_LETRAS('  printf("%d ", calificaciones[i]);'), [
@@ -1297,7 +1297,7 @@ const CASOS_DE_CARACTERES = [
     dice: ["`calificaciones[0]` termina valiendo `'D'` y debería valer `'B'`"],
   },
   caracteres(5, 'otra letra', CICLO_DE_LETRAS("  if (calificaciones[i] == 'E') {\n    calificaciones[i] = 'C';\n  }"), ['RESULTADO_VALOR_DISTINTO']),
-  caracteres(5, 'sin llegar al final', "for (i = 0; i < CANTIDAD - 1; i++) {\n  if (calificaciones[i] == 'E') {\n    calificaciones[i] = 'D';\n  }\n}", ['RESULTADO_VALOR_DISTINTO']),
+  caracteres(5, 'sin llegar al final', "for (i = 0; i < CANTIDAD - 1; i++) {\n  if (calificaciones[i] == 'E') {\n    calificaciones[i] = 'D';\n  }\n}", ['RECORRIDO_INCOMPLETO']),
   caracteres(5, 'con comillas dobles', CICLO_DE_LETRAS("  if (calificaciones[i] == 'E') {\n    calificaciones[i] = \"D\";\n  }"), ['ELEMENTO_ENTRE_COMILLAS_DOBLES']),
   caracteres(5, 'sin ciclo', "calificaciones[1] = 'D';\ncalificaciones[3] = 'D';", ['CICLO_FALTA']),
 
@@ -1316,7 +1316,7 @@ const CASOS_DE_CARACTERES = [
   caracteres(7, 'el texto escrito a mano', 'printf("h o l a ");\nfor (i = 0; i < 0; i++) {\n  i++;\n}', ['MUESTRA_FALTA']),
   caracteres(7, 'las letras escritas a mano', 'printf("%c %c %c %c ", \'h\', \'o\', \'l\', \'a\');\nfor (i = 0; i < 0; i++) {\n  i++;\n}', ['MUESTRA_SIN_EL_ARREGLO']),
   caracteres(7, 'sin separar', 'for (i = 0; i < cantidad; i++) {\n  printf("%c", letras[i]);\n}', ['MUESTRA_SIN_SEPARAR']),
-  caracteres(7, 'una letra de menos', 'for (i = 0; i < cantidad - 1; i++) {\n  printf("%c ", letras[i]);\n}', ['MUESTRA_DISTINTA']),
+  caracteres(7, 'una letra de menos', 'for (i = 0; i < cantidad - 1; i++) {\n  printf("%c ", letras[i]);\n}', ['RECORRIDO_INCOMPLETO']),
   caracteres(7, 'con el formato de un entero', 'for (i = 0; i < cantidad; i++) {\n  printf("%d ", letras[i]);\n}', ['FORMATO_NO_CORRESPONDE_AL_TIPO']),
   caracteres(7, 'sin mostrar nada', 'for (i = 0; i < cantidad; i++) {\n  i = i;\n}', ['MUESTRA_FALTA']),
   caracteres(7, 'sin ciclo', 'printf("%c ", letras[0]);', ['CICLO_FALTA']),
