@@ -70,52 +70,49 @@ export const CASOS_DE_LEER_CAMPOS = [
   leer(5, 'turno sin el &', 'scanf(" %c", alumno.turno);', ['AMPERSAND_FALTA']),
   leer(5, 'turno con el formato de un entero', 'scanf(" %d", &alumno.turno);', ['FORMATO_NO_CORRESPONDE_AL_TIPO']),
   leer(5, 'turno con el formato de un texto', 'scanf("%s", &alumno.turno);', ['FORMATO_NO_CORRESPONDE_AL_TIPO']),
-  leer(6, 'una palabra: la primera', '1'),
-  leer(6, 'una palabra: el texto completo', '0', ['OPCION_SCANF_LEE_LA_LINEA']),
-  leer(6, 'una palabra: la ultima', '2', ['OPCION_SCANF_LEE_LA_ULTIMA']),
-  leer(7, 'un printf con todo', 'printf("%d %s %.2f %c\\n", alumno.legajo, alumno.apellidoNombre, alumno.promedio, alumno.turno);'),
+  leer(6, 'un printf con todo', 'printf("%d %s %.2f %c\\n", alumno.legajo, alumno.apellidoNombre, alumno.promedio, alumno.turno);'),
   leer(
-    7,
+    6,
     'un printf por campo',
     'printf("%d\\n", alumno.legajo);\nputs(alumno.apellidoNombre);\nprintf("%f\\n", alumno.promedio);\nprintf("%c\\n", alumno.turno);'
   ),
   leer(
-    7,
+    6,
     'el promedio con el formato de un entero',
     'printf("%d %s %d %c\\n", alumno.legajo, alumno.apellidoNombre, alumno.promedio, alumno.turno);',
     ['FORMATO_NO_CORRESPONDE_AL_TIPO']
   ),
   leer(
-    7,
+    6,
     'el turno con el formato de un entero',
     'printf("%d %s %.2f %d\\n", alumno.legajo, alumno.apellidoNombre, alumno.promedio, alumno.turno);',
     ['FORMATO_NO_CORRESPONDE_AL_TIPO']
   ),
   leer(
-    7,
+    6,
     'el apellido con el formato de una letra',
     'printf("%d %c %.2f %c\\n", alumno.legajo, alumno.apellidoNombre, alumno.promedio, alumno.turno);',
     ['FORMATO_NO_CORRESPONDE_AL_TIPO']
   ),
   leer(
-    7,
+    6,
     'con &',
     'printf("%d %s %.2f %c\\n", &alumno.legajo, alumno.apellidoNombre, alumno.promedio, alumno.turno);',
     ['AMPERSAND_DE_MAS']
   ),
   leer(
-    7,
+    6,
     'faltan valores',
     'printf("%d %s %.2f %c\\n", alumno.legajo, alumno.apellidoNombre);',
     ['FORMATO_CANTIDAD_DISTINTA']
   ),
-  leer(7, 'falta el turno', 'printf("%d %s %.2f\\n", alumno.legajo, alumno.apellidoNombre, alumno.promedio);', ['MUESTRA_CAMPO_FALTA']),
-  leer(7, 'la variable entera', 'printf("%d", alumno);', ['ARGUMENTO_SIN_CAMPO']),
+  leer(6, 'falta el turno', 'printf("%d %s %.2f\\n", alumno.legajo, alumno.apellidoNombre, alumno.promedio);', ['MUESTRA_CAMPO_FALTA']),
+  leer(6, 'la variable entera', 'printf("%d", alumno);', ['ARGUMENTO_SIN_CAMPO']),
   leer(
-    7,
+    6,
     'un campo sin la variable',
     'printf("%d %s %.2f %c\\n", legajo, alumno.apellidoNombre, alumno.promedio, alumno.turno);',
     ['CAMPO_SIN_VARIABLE']
   ),
-  leer(7, 'sin mostrar nada', 'int i;', ['MUESTRA_FALTA']),
+  leer(6, 'sin mostrar nada', 'int i;', ['MUESTRA_FALTA']),
 ];

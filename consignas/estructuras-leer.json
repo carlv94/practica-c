@@ -74,33 +74,6 @@
       "referencia": "while (getchar() != '\\n');\nscanf(\"%c\", &alumno.turno);"
     },
     {
-      "id": "campos-q-scanf-espacio",
-      "titulo": "Una palabra o una línea",
-      "continua": false,
-      "enunciado": "Si el usuario escribe `Lopez Maria` y presiona Enter, después de ejecutar el código de abajo, ¿qué valor tendría `alumno.apellidoNombre`?",
-      "codigo": "struct Alumno alumno;\n\nscanf(\"%s\", alumno.apellidoNombre);",
-      "opciones": [
-        {
-          "valor": "\"Lopez Maria\"",
-          "texto": "el texto completo",
-          "codigo": "OPCION_SCANF_LEE_LA_LINEA",
-          "explicacion": "`%s` deja de leer al llegar a un espacio: lee una sola palabra. Para guardar la línea completa, con sus espacios, se usa `gets`."
-        },
-        {
-          "valor": "\"Lopez\"",
-          "texto": "la primera palabra",
-          "correcta": true,
-          "explicacion": "`%s` lee hasta el primer espacio: guarda `Lopez`, y `Maria` queda sin leer. Y como es una cadena, no lleva `&`."
-        },
-        {
-          "valor": "\"Maria\"",
-          "texto": "la última palabra",
-          "codigo": "OPCION_SCANF_LEE_LA_ULTIMA",
-          "explicacion": "`scanf` lee desde el principio de lo que se escribió: guarda `Lopez`. Lo que sigue (`Maria`) queda sin leer, esperando la próxima lectura."
-        }
-      ]
-    },
-    {
       "id": "mostrar-ficha",
       "titulo": "Mostrar los datos del alumno",
       "enunciado": "Con los datos del alumno ya leídos, escriba el código que muestre en pantalla el legajo, el apellido y nombre, el promedio y el turno de `alumno`.",

@@ -519,8 +519,10 @@ mostrar los campos"):
 - `{ "leeCampo": { "variable": "alumno", "campo": "legajo" } }`: leer un número
   o una letra con `scanf` en un campo. El formato es el que corresponde al
   tipo del campo en la estructura (`%d`, `%f`, `%lf`, `%c`). Un `%c` que
-  viene después de otro `scanf` tiene que llevar un espacio antes (`" %c"`),
-  porque si no toma el Enter que quedó sin leer.
+  viene después de otro `scanf` toma el Enter que quedó sin leer, así que
+  hay que descartarlo antes: con un espacio delante (`" %c"`) o con el ciclo
+  `while (getchar() != '\n');`, igual que antes de `gets` (valen las mismas
+  formas y se corrigen igual).
 - Un campo que es una cadena se lee con la regla `lee` y `"destino":
   "alumno.apellidoNombre"` (con `gets`, `fgets` o `scanf`; `gets` vale con
   la nota `USO_DE_GETS`), y con `limpiaEntrada` si viene después de un `scanf`.
