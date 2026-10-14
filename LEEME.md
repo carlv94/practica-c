@@ -308,6 +308,15 @@ de su propio código.
 Las series `cadenas-*` (el fin de la cadena, la cadena vacía, la biblioteca,
 recorrer, arreglos de cadenas, tablas de cadenas y typedef) usan estas reglas.
 
+**Vocabulario**: en Cadenas, "cadena" es un arreglo de `char` que termina en
+`'\0'`, y es la palabra para un texto. "Arreglo de caracteres" queda para
+cuando se contrasta con la cadena (el de la serie *Arreglos de caracteres*, que
+no tiene fin y lleva su cantidad aparte). Las diferencias se tratan en cuatro
+cuestionarios, cada uno donde importa: `cadenas-q-es-cadena` (el fin),
+`cadenas-q-strlen-sin-fin` (la biblioteca), `cadenas-q-dos-formas` (recorrer
+hasta `cantidad` o hasta `'\0'`) y `lectura-q-cuantas-letras` (`%s` frente a
+`%c`).
+
 **Una cadena de hasta N letras necesita N + 1 espacios**, y la consigna pide el
 tamaño justo. Con un "al menos" un número cualquiera (20) pasaría sin que el
 alumno haya pensado en el `\0`, y eso es justo lo que se quiere comprobar:

@@ -38,6 +38,32 @@
           "explicacion": "El ciclo no termina en la primera coincidencia: sigue hasta el final de la cadena y cuenta todas las `a`."
         }
       ]
+    },
+    {
+      "id": "cadenas-q-dos-formas",
+      "titulo": "Dos formas de llegar al final",
+      "enunciado": "Después de ejecutar el código de abajo, ¿qué valor tendría `veces`?",
+      "codigo": "char letras[10] = {'c', 'a', 's', 'a'};\nint cantidad = 4;\nchar palabra[10] = \"casa\";\nint veces = 0;\nint i = 0;\n\nwhile (i < cantidad) {\n  veces++;\n  i++;\n}\n\ni = 0;\nwhile (palabra[i] != '\\0') {\n  veces++;\n  i++;\n}",
+      "opciones": [
+        {
+          "valor": "20",
+          "texto": "las posiciones de los dos arreglos",
+          "codigo": "OPCION_CUENTA_EL_TAMANO",
+          "explicacion": "Los dos arreglos tienen 10 posiciones, pero los ciclos no llegan hasta ahí: cada uno se detiene al terminar las letras."
+        },
+        {
+          "valor": "4",
+          "texto": "las letras de un solo texto",
+          "codigo": "OPCION_CUENTA_UN_SOLO_CICLO",
+          "explicacion": "`veces` no se reinicia entre los dos ciclos: cada uno recorre las cuatro letras de su texto y las suma."
+        },
+        {
+          "valor": "8",
+          "texto": "las letras de los dos textos",
+          "correcta": true,
+          "explicacion": "El primer ciclo se detiene en `cantidad`, porque `letras` no tiene fin y hay que llevar la cuenta aparte. El segundo se detiene en el `'\\0'` de `palabra`, que ya marca dónde termina. Cada uno suma 4, así que `veces` termina en `8`."
+        }
+      ]
     }
   ]
 }

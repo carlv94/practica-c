@@ -30,6 +30,29 @@
       "referencia": "frase[0] = 'H';\nfrase[1] = 'o';\nfrase[2] = 'l';\nfrase[3] = 'a';\nfrase[4] = '\\0';"
     },
     {
+      "id": "cadenas-q-es-cadena",
+      "titulo": "¿Es una cadena?",
+      "enunciado": "Después de ejecutar el código de abajo, ¿cuál de las dos variables es una cadena?",
+      "codigo": "char letras[4] = {'h', 'o', 'l', 'a'};\nchar palabra[5] = {'h', 'o', 'l', 'a', '\\0'};",
+      "opciones": [
+        {
+          "texto": "`letras`",
+          "codigo": "OPCION_ARREGLO_SIN_FIN",
+          "explicacion": "`letras` guarda las cuatro letras, pero nada marca dónde termina: es un arreglo de caracteres, no una cadena. Un programa que lo use tiene que llevar aparte cuántas letras hay."
+        },
+        {
+          "texto": "`palabra`",
+          "correcta": true,
+          "explicacion": "`palabra` termina en `'\\0'`, y eso es lo que hace de un arreglo de caracteres una cadena. Toda cadena es un arreglo de caracteres, pero no todo arreglo de caracteres es una cadena."
+        },
+        {
+          "texto": "las dos, porque tienen las mismas letras",
+          "codigo": "OPCION_MISMAS_LETRAS",
+          "explicacion": "Las letras son las mismas, pero lo que hace a una cadena es el `'\\0'` del final, y `letras` no lo tiene."
+        }
+      ]
+    },
+    {
       "id": "cadenas-q-strlen",
       "titulo": "Cuántas letras tiene",
       "continua": true,
@@ -80,7 +103,7 @@
           "valor": "{N}",
           "texto": "el tamaño que usted declaró para la cadena",
           "correcta": true,
-          "explicacion": "`sizeof` dice cuánto ocupa la cadena en memoria, o sea, el tamaño con que se declaró ({N}). Es siempre el mismo valor, tenga el texto que tenga."
+          "explicacion": "`sizeof` dice cuánto ocupa la cadena en memoria, o sea, el tamaño con que se declaró ({N}). Es siempre el mismo valor, tenga el texto que tenga. Recuerde que una cadena necesita una posición más que sus letras, la del `'\\0'`: un arreglo de caracteres sin fin ocuparía solo lugar para las letras."
         }
       ]
     },

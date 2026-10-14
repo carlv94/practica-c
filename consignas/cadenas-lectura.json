@@ -38,6 +38,32 @@
       "referencia": "printf(\"%s\", nombre);"
     },
     {
+      "id": "lectura-q-cuantas-letras",
+      "titulo": "Cuántas letras muestra una cadena",
+      "enunciado": "Después de ejecutar el código de abajo, ¿cuántas letras mostraría el programa?",
+      "codigo": "char nombre[10] = \"Ana\";\nprintf(\"%s\", nombre);",
+      "opciones": [
+        {
+          "valor": "10",
+          "texto": "las posiciones del arreglo",
+          "codigo": "OPCION_MUESTRA_EL_TAMANO",
+          "explicacion": "`nombre` tiene 10 posiciones, pero `%s` no las muestra todas: se detiene en el `'\\0'`. Las posiciones que sobran no se muestran."
+        },
+        {
+          "valor": "4",
+          "texto": "las letras y el `'\\0'`",
+          "codigo": "OPCION_MUESTRA_EL_FIN",
+          "explicacion": "El `'\\0'` marca el final del texto y no se muestra."
+        },
+        {
+          "valor": "3",
+          "texto": "las letras del texto",
+          "correcta": true,
+          "explicacion": "`%s` muestra la cadena hasta el `'\\0'`, sin importar cuántas posiciones tenga el arreglo. Con un arreglo de caracteres sin fin no se podría usar `%s`: habría que mostrar las letras de a una, con un ciclo y `%c`, hasta la cantidad que se llevó aparte."
+        }
+      ]
+    },
+    {
       "id": "lectura-q-espacio",
       "titulo": "Qué se guarda con un espacio",
       "enunciado": "Después de ejecutar el código de abajo, si usted escribe `Ana Maria`, ¿qué contendría `nombre`?",

@@ -73,6 +73,31 @@
       "referencia": "largo = strlen(nombre);"
     },
     {
+      "id": "cadenas-q-strlen-sin-fin",
+      "titulo": "Cuántas letras tiene un arreglo sin fin",
+      "enunciado": "Después de ejecutar el código de abajo, ¿qué valor tendría `largo`?",
+      "codigo": "char letras[4] = {'h', 'o', 'l', 'a'};\nint largo = strlen(letras);",
+      "opciones": [
+        {
+          "valor": "4",
+          "texto": "la cantidad de letras",
+          "codigo": "OPCION_STRLEN_CUENTA_LAS_LETRAS",
+          "explicacion": "`strlen` no sabe cuántas letras hay guardadas: cuenta hasta encontrar un `'\\0'`. `letras` tiene cuatro letras, pero ningún `'\\0'` después."
+        },
+        {
+          "valor": "0",
+          "texto": "porque no es una cadena",
+          "codigo": "OPCION_STRLEN_DA_CERO",
+          "explicacion": "`strlen` no avisa que no es una cadena ni da cero: sigue contando mientras no encuentre un `'\\0'`, y puede pasar el final del arreglo."
+        },
+        {
+          "texto": "No se puede saber",
+          "correcta": true,
+          "explicacion": "`strlen` cuenta hasta el primer `'\\0'`, y `letras` no lo tiene: sigue contando por la memoria que viene después del arreglo, hasta encontrar uno por casualidad. Las funciones de la biblioteca de cadenas solo valen para cadenas; para un arreglo de caracteres sin fin, la cantidad de letras hay que llevarla en una variable aparte."
+        }
+      ]
+    },
+    {
       "id": "cadenas-q-strcmp",
       "titulo": "Qué devuelve strcmp",
       "enunciado": "Después de ejecutar el código de abajo, ¿qué valor tendría `resultado`?",
