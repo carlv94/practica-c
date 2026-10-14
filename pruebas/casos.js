@@ -67,12 +67,12 @@ const CASOS_DE_CADENAS = [
   cadenas(1, 'parentesis sin cerrar', 'strcpy(cadena2, cadena1;', ['FALTA_PARENTESIS']),
   cadenas(1, 'con main', 'int main() {\n  strcpy(cadena2, cadena1);\n  return 0;\n}', ['MAIN_DE_MAS']),
 
-  cadenas(2, 'strcat', 'strcat(saludo, cadena1);', 'ok'),
-  cadenas(2, 'la alternativa, con su argumento de mas', 'strncat(saludo, cadena1, 20);', 'ok'),
-  cadenas(2, 'la alternativa sin argumentos suficientes', 'strncat(saludo);', ['ARGUMENTOS_CANTIDAD']),
-  cadenas(2, 'strcat al reves', 'strcat(cadena1, saludo);', ['ARGUMENTOS_EN_OTRO_ORDEN']),
-  cadenas(2, 'strcat con un argumento de mas', 'strcat(saludo, cadena1, 20);', ['ARGUMENTOS_CANTIDAD']),
-  cadenas(2, 'la funcion del paso anterior', 'strcpy(saludo, cadena1);', ['FUNCION_EQUIVOCADA']),
+  cadenas(2, 'strcat', 'strcat(cadena1, cadena2);', 'ok'),
+  cadenas(2, 'la alternativa, con su argumento de mas', 'strncat(cadena1, cadena2, 10);', 'ok'),
+  cadenas(2, 'la alternativa sin argumentos suficientes', 'strncat(cadena1);', ['ARGUMENTOS_CANTIDAD']),
+  cadenas(2, 'strcat al reves', 'strcat(cadena2, cadena1);', ['ARGUMENTOS_EN_OTRO_ORDEN']),
+  cadenas(2, 'strcat con un argumento de mas', 'strcat(cadena1, cadena2, 20);', ['ARGUMENTOS_CANTIDAD']),
+  cadenas(2, 'la funcion del paso anterior', 'strcpy(cadena1, cadena2);', ['FUNCION_EQUIVOCADA']),
 ];
 
 // Los arreglos, en una serie que pide la buena practica de las constantes:

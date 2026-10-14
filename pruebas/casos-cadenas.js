@@ -174,10 +174,6 @@ const CASOS_DE_BIBLIOTECA = [
   biblioteca(2, 'strncpy con la cantidad de la cadena', 'strncpy(nombre, "Juan", 20);'),
   biblioteca(2, 'strncpy con el lugar del fin', 'strncpy(nombre, "Juan", 5);'),
   biblioteca(2, 'strncpy sin el lugar del fin', 'strncpy(nombre, "Juan", 4);', ['COPIA_SIN_FIN']),
-  biblioteca(2, 'a mano, caracter por caracter: correcta y mejorable', "nombre[0] = 'J';\nnombre[1] = 'u';\nnombre[2] = 'a';\nnombre[3] = 'n';\nnombre[4] = '\\0';", 'ok', [
-    'COPIA_A_MANO',
-  ]),
-  biblioteca(2, 'a mano, sin el fin', "nombre[0] = 'J';\nnombre[1] = 'u';\nnombre[2] = 'a';\nnombre[3] = 'n';", ['CADENA_SIN_FIN']),
   biblioteca(2, 'a mano, con un ciclo', 'int i;\nfor (i = 0; i < 4; i++) {\n  nombre[i] = "Juan"[i];\n}', ['A_MANO']),
   biblioteca(2, 'argumentos al reves', 'strcpy("Juan", nombre);', ['ARGUMENTOS_EN_OTRO_ORDEN']),
   biblioteca(2, 'comillas simples', "strcpy(nombre, 'Juan');", ['ARGUMENTO_COMILLAS_SIMPLES']),
@@ -187,41 +183,44 @@ const CASOS_DE_BIBLIOTECA = [
     'FIN_EN_EL_TEXTO',
   ]),
   biblioteca(2, 'otras mayusculas', 'strcpy(nombre, "juan");', ['TEXTO_DISTINTO']),
-  biblioteca(2, 'asignacion directa', 'nombre = "Juan";', ['ASIGNACION_DE_ARREGLO']),
+  {
+    ...biblioteca(2, 'asignacion directa', 'nombre = "Juan";', ['ASIGNACION_DE_ARREGLO']),
+    dice: ['`nombre` es una cadena: no se puede asignar completa con `=`. Para guardar un texto o copiar otra cadena'],
+  },
   biblioteca(2, 'otra funcion', 'strcat(nombre, "Juan");', ['FUNCION_EQUIVOCADA']),
 
   // 6: cuantas letras tiene
-  biblioteca(5, 'strlen guardado en la variable', 'largo = strlen(nombre);'),
-  biblioteca(5, 'strlen sin guardar', 'strlen(nombre);', ['RESULTADO_PERDIDO']),
-  biblioteca(5, 'strlen guardado en otra variable', 'int otro;\notro = strlen(nombre);', ['RESULTADO_EN_OTRA']),
-  biblioteca(5, 'con sizeof', 'largo = sizeof(nombre);', ['SIZEOF_NO_CUENTA']),
-  biblioteca(5, 'con sizeof menos uno', 'largo = sizeof(nombre) - 1;', ['SIZEOF_NO_CUENTA']),
-  biblioteca(5, 'a mano con un ciclo', "int i;\nfor (i = 0; nombre[i] != '\\0'; i++) {\n}\nlargo = i;", ['A_MANO']),
-  biblioteca(5, 'el nombre entre comillas', 'largo = strlen("nombre");', ['ARGUMENTO_ENTRE_COMILLAS']),
-  biblioteca(5, 'con &', 'largo = strlen(&nombre);', ['ARGUMENTO_CON_AMPERSAND']),
+  biblioteca(6, 'strlen guardado en la variable', 'largo = strlen(nombre);'),
+  biblioteca(6, 'strlen sin guardar', 'strlen(nombre);', ['RESULTADO_PERDIDO']),
+  biblioteca(6, 'strlen guardado en otra variable', 'int otro;\notro = strlen(nombre);', ['RESULTADO_EN_OTRA']),
+  biblioteca(6, 'con sizeof', 'largo = sizeof(nombre);', ['SIZEOF_NO_CUENTA']),
+  biblioteca(6, 'con sizeof menos uno', 'largo = sizeof(nombre) - 1;', ['SIZEOF_NO_CUENTA']),
+  biblioteca(6, 'a mano con un ciclo', "int i;\nfor (i = 0; nombre[i] != '\\0'; i++) {\n}\nlargo = i;", ['A_MANO']),
+  biblioteca(6, 'el nombre entre comillas', 'largo = strlen("nombre");', ['ARGUMENTO_ENTRE_COMILLAS']),
+  biblioteca(6, 'con &', 'largo = strlen(&nombre);', ['ARGUMENTO_CON_AMPERSAND']),
 
   // 7: comparar
-  biblioteca(11, 'strcmp con cero', 'if (strcmp(nombre, "Ana") == 0) {\n  iguales = 1;\n}'),
-  biblioteca(11, 'con las cadenas al reves: da lo mismo', 'if (strcmp("Ana", nombre) == 0) {\n  iguales = 1;\n}'),
-  biblioteca(11, 'con la negacion: correcta y mejorable', 'if (!strcmp(nombre, "Ana")) {\n  iguales = 1;\n}', 'ok', [
+  biblioteca(9, 'strcmp con cero', 'if (strcmp(nombre, "Ana") == 0) {\n  iguales = 1;\n}'),
+  biblioteca(9, 'con las cadenas al reves: da lo mismo', 'if (strcmp("Ana", nombre) == 0) {\n  iguales = 1;\n}'),
+  biblioteca(9, 'con la negacion: correcta y mejorable', 'if (!strcmp(nombre, "Ana")) {\n  iguales = 1;\n}', 'ok', [
     'STRCMP_SIN_COMPARAR',
   ]),
-  biblioteca(11, 'strcmp solo: se cumple al reves', 'if (strcmp(nombre, "Ana")) {\n  iguales = 1;\n}', ['STRCMP_AL_REVES']),
-  biblioteca(11, 'comparado con distinto de cero', 'if (strcmp(nombre, "Ana") != 0) {\n  iguales = 1;\n}', ['STRCMP_AL_REVES']),
+  biblioteca(9, 'strcmp solo: se cumple al reves', 'if (strcmp(nombre, "Ana")) {\n  iguales = 1;\n}', ['STRCMP_AL_REVES']),
+  biblioteca(9, 'comparado con distinto de cero', 'if (strcmp(nombre, "Ana") != 0) {\n  iguales = 1;\n}', ['STRCMP_AL_REVES']),
   // El resultado guardado en una variable y comparado despues.
-  biblioteca(11, 'guardado y comparado con 0', 'int respuesta = strcmp(nombre, "Ana");\nif (respuesta == 0) {\n  iguales = 1;\n}'),
-  biblioteca(11, 'guardado en una variable ya declarada', 'int respuesta;\nrespuesta = strcmp(nombre, "Ana");\nif (respuesta == 0) {\n  iguales = 1;\n}'),
-  biblioteca(11, 'guardado y negado: correcta y mejorable', 'int respuesta = strcmp(nombre, "Ana");\nif (!respuesta) {\n  iguales = 1;\n}', 'ok', ['STRCMP_SIN_COMPARAR']),
-  biblioteca(11, 'guardado, y el if se cumple al reves', 'int respuesta = strcmp(nombre, "Ana");\nif (respuesta) {\n  iguales = 1;\n}', ['STRCMP_AL_REVES']),
-  biblioteca(11, 'guardado, y comparado con distinto de 0', 'int respuesta = strcmp(nombre, "Ana");\nif (respuesta != 0) {\n  iguales = 1;\n}', ['STRCMP_AL_REVES']),
-  biblioteca(11, 'guardado y nunca comparado', 'int respuesta = strcmp(nombre, "Ana");', ['RESULTADO_SIN_COMPARAR']),
-  biblioteca(11, 'con ==', 'if (nombre == "Ana") {\n  iguales = 1;\n}', ['COMPARAR_CON_IGUAL']),
-  biblioteca(11, 'fuera de un if', 'iguales = strcmp(nombre, "Ana") == 0;', ['COMPARACION_FUERA_DEL_IF']),
-  biblioteca(11, 'otro texto', 'if (strcmp(nombre, "ana") == 0) {\n  iguales = 1;\n}', ['TEXTO_DISTINTO']),
-  biblioteca(11, 'mayor o menor', 'if (strcmp(nombre, "Ana") < 0) {\n  iguales = 1;\n}', ['STRCMP_USO']),
-  biblioteca(10, 'que devuelve strcmp: la correcta', '1'),
-  biblioteca(10, 'que devuelve strcmp: uno', '0', ['OPCION_STRCMP_IGUALES_ES_UNO']),
-  biblioteca(10, 'que devuelve strcmp: verdadero', '2', ['OPCION_STRCMP_ES_BOOLEANO']),
+  biblioteca(9, 'guardado y comparado con 0', 'int respuesta = strcmp(nombre, "Ana");\nif (respuesta == 0) {\n  iguales = 1;\n}'),
+  biblioteca(9, 'guardado en una variable ya declarada', 'int respuesta;\nrespuesta = strcmp(nombre, "Ana");\nif (respuesta == 0) {\n  iguales = 1;\n}'),
+  biblioteca(9, 'guardado y negado: correcta y mejorable', 'int respuesta = strcmp(nombre, "Ana");\nif (!respuesta) {\n  iguales = 1;\n}', 'ok', ['STRCMP_SIN_COMPARAR']),
+  biblioteca(9, 'guardado, y el if se cumple al reves', 'int respuesta = strcmp(nombre, "Ana");\nif (respuesta) {\n  iguales = 1;\n}', ['STRCMP_AL_REVES']),
+  biblioteca(9, 'guardado, y comparado con distinto de 0', 'int respuesta = strcmp(nombre, "Ana");\nif (respuesta != 0) {\n  iguales = 1;\n}', ['STRCMP_AL_REVES']),
+  biblioteca(9, 'guardado y nunca comparado', 'int respuesta = strcmp(nombre, "Ana");', ['RESULTADO_SIN_COMPARAR']),
+  biblioteca(9, 'con ==', 'if (nombre == "Ana") {\n  iguales = 1;\n}', ['COMPARAR_CON_IGUAL']),
+  biblioteca(9, 'fuera de un if', 'iguales = strcmp(nombre, "Ana") == 0;', ['COMPARACION_FUERA_DEL_IF']),
+  biblioteca(9, 'otro texto', 'if (strcmp(nombre, "ana") == 0) {\n  iguales = 1;\n}', ['TEXTO_DISTINTO']),
+  biblioteca(9, 'mayor o menor', 'if (strcmp(nombre, "Ana") < 0) {\n  iguales = 1;\n}', ['STRCMP_USO']),
+  biblioteca(8, 'que devuelve strcmp: la correcta', '1'),
+  biblioteca(8, 'que devuelve strcmp: uno', '0', ['OPCION_STRCMP_IGUALES_ES_UNO']),
+  biblioteca(8, 'que devuelve strcmp: verdadero', '2', ['OPCION_STRCMP_ES_BOOLEANO']),
 
 ];
 
@@ -756,22 +755,9 @@ const CASOS_DE_DIFERENCIAS = [
   fin(9, 'no es cadena: el texto entre comillas', '0', ['OPCION_COMILLAS_SON_CADENA']),
   fin(9, 'no es cadena: la lista con fin', '1', ['OPCION_LISTA_CON_FIN_ES_CADENA']),
   // los cuestionarios que vienen de Cadenas 1
-  { ...biblioteca(6, 'strlen: la correcta', '2'), dice: ['`Maria` tiene 5'] },
-  biblioteca(6, 'strlen: el lugar declarado', '0', ['OPCION_TAMANO_DECLARADO']),
-  biblioteca(6, 'strlen: cuenta el fin', '1', ['OPCION_CUENTA_EL_FIN']),
-  biblioteca(6, 'strlen: sin elegir', '', ['OPCION_FALTA']),
-  biblioteca(7, 'sizeof: la correcta', '2'),
-  biblioteca(7, 'sizeof: las letras', '0', ['OPCION_SIZEOF_CUENTA_LETRAS']),
-  biblioteca(7, 'sizeof: las letras y el fin', '1', ['OPCION_SIZEOF_CUENTA_FIN']),
   fin(4, 'que contiene la variable: la correcta', '2'),
   fin(4, 'que contiene la variable: la ultima letra', '0', ['OPCION_ULTIMA_LETRA']),
   fin(4, 'que contiene la variable: no existe', '1', ['OPCION_POSICION_NO_EXISTE']),
-  biblioteca(8, 'largo de una cadena vaciada: la correcta', '2'),
-  biblioteca(8, 'largo de una cadena vaciada: lo que tenia', '0', ['OPCION_VACIAR_NO_CAMBIA']),
-  biblioteca(8, 'largo de una cadena vaciada: el tamano', '1', ['OPCION_TAMANO_DECLARADO']),
-  biblioteca(9, 'strlen sin fin: no se puede saber', '2'),
-  biblioteca(9, 'strlen sin fin: las letras', '0', ['OPCION_STRLEN_CUENTA_LAS_LETRAS']),
-  biblioteca(9, 'strlen sin fin: cero', '1', ['OPCION_STRLEN_DA_CERO']),
   recorrer(3, 'dos formas: las de los dos textos', '2'),
   recorrer(3, 'dos formas: los tamanos', '0', ['OPCION_CUENTA_EL_TAMANO']),
   recorrer(3, 'dos formas: un solo texto', '1', ['OPCION_CUENTA_UN_SOLO_CICLO']),
@@ -780,7 +766,51 @@ const CASOS_DE_DIFERENCIAS = [
   lectura(4, 'cuantas letras muestra: con el fin', '1', ['OPCION_MUESTRA_EL_FIN']),
 ];
 
+// La biblioteca: lo que cambio en agregar y en strlen.
+const CASOS_DE_BIBLIOTECA_NUEVOS = [
+  // 5: que queda despues de agregar (la respuesta es el lugar de la opcion)
+  biblioteca(5, 'strcat: las palabras pegadas', '1'),
+  biblioteca(5, 'strcat: con un espacio', '0', ['OPCION_STRCAT_AGREGA_UN_ESPACIO']),
+  biblioteca(5, 'strcat: solo la segunda', '2', ['OPCION_STRCAT_REEMPLAZA']),
+  // 7: que cuenta strlen
+  { ...biblioteca(7, 'strlen: la correcta', '1'), dice: ['`Maria` tiene 5'] },
+  biblioteca(7, 'strlen: cuenta el fin', '0', ['OPCION_CUENTA_EL_FIN']),
+  biblioteca(7, 'strlen: no se puede saber', '2', ['OPCION_NO_SE_SABE_LARGO']),
+  biblioteca(7, 'strlen: sin elegir', '', ['OPCION_FALTA']),
+  // 2: guardar a mano ya no vale, es una serie de la biblioteca
+  {
+    ...biblioteca(
+      2,
+      'a mano: no vale',
+      "nombre[0] = 'J';\nnombre[1] = 'u';\nnombre[2] = 'a';\nnombre[3] = 'n';\nnombre[4] = '\\0';",
+      ['A_MANO']
+    ),
+    dice: ['la consigna pide usar una función de la biblioteca de cadenas'],
+  },
+];
+
+// Largo y tamano de una cadena.
+const largo = (paso, nombre, respuesta, espera, mejoras) =>
+  caso('cadenas-largo-y-tamano', paso, nombre, respuesta, espera, mejoras);
+
+const CASOS_DE_LARGO = [
+  largo(1, 'largo y tamano: las letras y el tamano', '1'),
+  largo(1, 'largo y tamano: las dos las letras', '0', ['OPCION_AMBOS_CUENTAN_LETRAS']),
+  largo(1, 'largo y tamano: las dos el tamano', '2', ['OPCION_AMBOS_DICEN_EL_TAMANO']),
+  largo(1, 'largo y tamano: strlen cuenta el fin', '3', ['OPCION_STRLEN_CUENTA_EL_FIN']),
+  largo(2, 'cadena vaciada: la correcta', '2'),
+  largo(2, 'cadena vaciada: lo que tenia', '0', ['OPCION_VACIAR_NO_CAMBIA']),
+  largo(2, 'cadena vaciada: el tamano', '1', ['OPCION_TAMANO_DECLARADO']),
+  largo(3, 'sin inicializar: no se puede saber', '2'),
+  largo(3, 'sin inicializar: cero', '0', ['OPCION_SIN_INICIAR_ES_VACIA']),
+  largo(3, 'sin inicializar: el tamano', '1', ['OPCION_TAMANO_DECLARADO']),
+  largo(4, 'sin fin: no se puede saber', '2'),
+  largo(4, 'sin fin: las letras', '0', ['OPCION_STRLEN_CUENTA_LAS_LETRAS']),
+  largo(4, 'sin fin: cero', '1', ['OPCION_STRLEN_DA_CERO']),
+];
+
 export const CASOS_DE_CADENAS_NUEVAS = [
+  ...CASOS_DE_BIBLIOTECA_NUEVOS,
   ...CASOS_DE_DIFERENCIAS,
   ...CASOS_DE_FIN,
   ...CASOS_DE_VACIA,

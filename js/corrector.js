@@ -1282,6 +1282,15 @@ export function corregir(
         if (propias.length) {
           // Si ya se dijo que un texto no va en un caracter, o que esa posicion no existe, alcanza.
           if (diagnosticos.some((d) => ['INDICE_FUERA_DE_RANGO', 'ELEMENTO_ENTRE_COMILLAS_DOBLES'].includes(d.codigo))) return;
+          // En una serie de la biblioteca, la consigna pide la funcion: a mano no vale.
+          if (regla.aMano.prohibida) {
+            error(
+              'A_MANO',
+              'Guardarlo carácter por carácter puede funcionar, pero la consigna pide usar una función de la biblioteca de cadenas.',
+              propias[0].fila
+            );
+            return;
+          }
           const hallazgos = verificarElementos(nombre, regla.aMano.texto, propias, modelo, en);
           decir(hallazgos);
           if (!hallazgos.some((h) => h.nivel === 'error') && practicas.includes('claridad')) {
@@ -4676,10 +4685,9 @@ function revisarAsignaciones(modelo, error, aconsejarFuncion = true) {
       if (!variable.arreglo.length) continue;
       error(
         'ASIGNACION_DE_ARREGLO',
-        `\`${variable.nombre}\` es un arreglo: no se puede asignar completo con \`=\`.` +
-          (esCadena && aconsejarFuncion
-            ? ' Para copiar una cadena en otra se usa una función de la biblioteca de cadenas.'
-            : ''),
+        esCadena && aconsejarFuncion
+          ? `\`${variable.nombre}\` es una cadena: no se puede asignar completa con \`=\`. Para guardar un texto o copiar otra cadena se usa una función de la biblioteca de cadenas.`
+          : `\`${variable.nombre}\` es un arreglo: no se puede asignar completo con \`=\`.`,
         a.fila
       );
     } else if (esCadena && a.derecha.clase === 'cadena' && izquierda.indices.length === variable.arreglo.length) {

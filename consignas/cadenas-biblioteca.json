@@ -1,7 +1,7 @@
 {
   "id": "cadenas-biblioteca",
   "titulo": "La biblioteca de cadenas",
-  "descripcion": "Agregar la biblioteca, y guardar, copiar, agregar, medir y comparar cadenas con sus funciones.",
+  "descripcion": "Agregar la biblioteca, y guardar, copiar, agregar, contar y comparar cadenas con sus funciones.",
   "dentroDeMain": true,
   "buenasPracticas": ["claridad"],
   "consignas": [
@@ -17,7 +17,7 @@
       "id": "cadenas-copiar-literal",
       "titulo": "Guardar un texto en una cadena",
       "dado": "#define MAX_CADENA 20\nchar nombre[MAX_CADENA];",
-      "enunciado": "Escriba el código que guarde en `nombre` el texto `\"Juan\"`.",
+      "enunciado": "Escriba el código que guarde en `nombre` el texto `\"Juan\"`, usando una función de la biblioteca de cadenas.",
       "requiere": [
         {
           "llamada": {
@@ -25,7 +25,7 @@
             "alternativas": ["strncpy"],
             "argumentos": ["nombre", "\"Juan\""],
             "orden": "primero va la cadena donde se guarda y después el texto",
-            "aMano": { "variable": "nombre", "texto": "Juan" }
+            "aMano": { "variable": "nombre", "texto": "Juan", "prohibida": true }
           }
         }
       ],
@@ -50,24 +50,51 @@
     {
       "id": "cadenas-agregar",
       "titulo": "Agregar al final",
-      "dado": "char cadena1[30] = \"Hola mundo\";\nchar saludo[60] = \"Dice: \";",
-      "enunciado": "Se desea agregar el contenido de `cadena1` al final de `saludo`, para que quede `\"Dice: Hola mundo\"`.\n\nEscriba el código usando la función de biblioteca correspondiente.",
+      "dado": "char cadena1[20] = \"medio\";\nchar cadena2[10] = \"dia\";",
+      "enunciado": "Se desea agregar el contenido de `cadena2` al final de `cadena1`.\n\nEscriba el código usando la función de biblioteca correspondiente.",
       "requiere": [
         {
           "llamada": {
             "funcion": "strcat",
             "alternativas": ["strncat"],
-            "argumentos": ["saludo", "cadena1"],
+            "argumentos": ["cadena1", "cadena2"],
             "orden": "primero va la cadena a la que se le agrega y después lo que se agrega"
           }
         }
       ],
-      "referencia": "strcat(saludo, cadena1);"
+      "referencia": "strcat(cadena1, cadena2);"
+    },
+    {
+      "id": "cadenas-q-strcat",
+      "titulo": "Qué queda después de agregar",
+      "continua": true,
+      "enunciado": "Después de ejecutar el código de abajo, ¿qué contendría `cadena1`?",
+      "codigo": "",
+      "opciones": [
+        {
+          "valor": "\"medio dia\"",
+          "texto": "las dos palabras separadas por un espacio",
+          "codigo": "OPCION_STRCAT_AGREGA_UN_ESPACIO",
+          "explicacion": "`strcat` no agrega ningún espacio: pega el contenido de `cadena2` justo donde termina `cadena1`. Si se quiere un espacio, tiene que estar en una de las dos cadenas."
+        },
+        {
+          "valor": "\"mediodia\"",
+          "texto": "las dos palabras pegadas",
+          "correcta": true,
+          "explicacion": "`strcat` empieza a escribir en el `'\\0'` de `cadena1` y copia el contenido de `cadena2` a continuación, sin agregar nada entre medio. `cadena2` queda igual."
+        },
+        {
+          "valor": "\"dia\"",
+          "texto": "solo la segunda palabra",
+          "codigo": "OPCION_STRCAT_REEMPLAZA",
+          "explicacion": "`strcat` agrega al final, no reemplaza: lo que ya tenía `cadena1` se conserva. Reemplazar el contenido es lo que hace `strcpy`."
+        }
+      ]
     },
     {
       "id": "cadenas-largo",
       "titulo": "Cuántas letras tiene",
-      "dado": "char nombre[21] = \"Maria\";\nint largo;",
+      "dado": "char nombre[] = \"Maria\";\nint largo;",
       "enunciado": "Guarde en la variable `largo` la cantidad de letras que tiene la cadena `nombre`, usando una función de la biblioteca de cadenas.",
       "requiere": [{ "llamada": { "funcion": "strlen", "argumentos": ["nombre"], "resultadoEn": "largo" } }],
       "referencia": "largo = strlen(nombre);"
@@ -76,102 +103,24 @@
       "id": "cadenas-q-strlen",
       "titulo": "Cuántas letras cuenta strlen",
       "enunciado": "Después de ejecutar el código de abajo, ¿qué valor tendría `longitud`?",
-      "codigo": "char nombre[21] = \"Maria\";\nint longitud = strlen(nombre);",
+      "codigo": "char nombre[] = \"Maria\";\nint longitud = strlen(nombre);",
       "opciones": [
-        {
-          "valor": "21",
-          "texto": "el tamaño con que se declaró la cadena",
-          "codigo": "OPCION_TAMANO_DECLARADO",
-          "explicacion": "`strlen` no mira el tamaño con el que se declaró la cadena, sino cuántas letras tiene guardadas hasta el primer `'\\0'`."
-        },
         {
           "valor": "6",
           "texto": "la cantidad de letras más el `'\\0'`",
           "codigo": "OPCION_CUENTA_EL_FIN",
-          "explicacion": "`strlen` cuenta las letras hasta el primer `'\\0'`, pero no cuenta el `'\\0'`."
+          "explicacion": "6 es lo que C reservó para `nombre`: las cinco letras y el `'\\0'`. Pero `strlen` cuenta las letras hasta el primer `'\\0'`, sin contarlo."
         },
         {
           "valor": "5",
           "texto": "la cantidad de letras",
           "correcta": true,
-          "explicacion": "`strlen` cuenta las letras desde el principio hasta el primer `'\\0'`, sin contarlo: `Maria` tiene 5. El tamaño con que se declaró la cadena no influye."
-        }
-      ]
-    },
-    {
-      "id": "cadenas-q-sizeof",
-      "titulo": "Qué tamaño tiene la cadena",
-      "enunciado": "Después de ejecutar el código de abajo, ¿qué valor tendría `tamanio`?",
-      "codigo": "char nombre[21] = \"Maria\";\nint tamanio = sizeof(nombre);",
-      "opciones": [
-        {
-          "valor": "5",
-          "texto": "la cantidad de letras",
-          "codigo": "OPCION_SIZEOF_CUENTA_LETRAS",
-          "explicacion": "`sizeof` no cuenta las letras guardadas: dice el tamaño de la cadena en memoria, esté llena o no."
+          "explicacion": "`strlen` cuenta las letras desde el principio hasta el primer `'\\0'`, sin contarlo: `Maria` tiene 5."
         },
         {
-          "valor": "6",
-          "texto": "la cantidad de letras más el `'\\0'`",
-          "codigo": "OPCION_SIZEOF_CUENTA_FIN",
-          "explicacion": "`sizeof` no cuenta las letras guardadas, ni siquiera con el `'\\0'`: dice el tamaño de la cadena en memoria, esté llena o no."
-        },
-        {
-          "valor": "21",
-          "texto": "el tamaño con que se declaró la cadena",
-          "correcta": true,
-          "explicacion": "`sizeof` dice cuánto ocupa la cadena en memoria, o sea, el tamaño con que se declaró (21). Es siempre el mismo valor, tenga el texto que tenga. Recuerde que una cadena necesita una posición más que sus letras, la del `'\\0'`: un arreglo de caracteres sin fin ocuparía solo lugar para las letras."
-        }
-      ]
-    },
-    {
-      "id": "cadenas-q-vaciar-largo",
-      "titulo": "Cuántas letras tiene una cadena vaciada",
-      "enunciado": "Después de ejecutar el código de abajo, ¿qué valor tendría `largo`?",
-      "codigo": "char nombre[21] = \"Maria\";\nnombre[0] = '\\0';\nint largo = strlen(nombre);",
-      "opciones": [
-        {
-          "valor": "5",
-          "texto": "las letras que tenía",
-          "codigo": "OPCION_VACIAR_NO_CAMBIA",
-          "explicacion": "La cadena ya no tiene letras: `strlen` cuenta hasta el primer `'\\0'`, y ahora está en la primera posición."
-        },
-        {
-          "valor": "21",
-          "texto": "el tamaño de la cadena",
-          "codigo": "OPCION_TAMANO_DECLARADO",
-          "explicacion": "`strlen` no mira el tamaño con el que se declaró la cadena, sino cuántas letras tiene guardadas hasta el primer `'\\0'`."
-        },
-        {
-          "valor": "0",
-          "texto": "la cadena ya no tiene letras",
-          "correcta": true,
-          "explicacion": "`strlen` cuenta hasta el primer `'\\0'`. Con el `'\\0'` en la primera posición, la cadena termina ahí y tiene 0 letras, aunque las demás posiciones sigan guardando lo que tenían anteriormente."
-        }
-      ]
-    },
-    {
-      "id": "cadenas-q-strlen-sin-fin",
-      "titulo": "Cuántas letras tiene un arreglo sin fin",
-      "enunciado": "Después de ejecutar el código de abajo, ¿qué valor tendría `largo`?",
-      "codigo": "char letras[4] = {'h', 'o', 'l', 'a'};\nint largo = strlen(letras);",
-      "opciones": [
-        {
-          "valor": "4",
-          "texto": "la cantidad de letras",
-          "codigo": "OPCION_STRLEN_CUENTA_LAS_LETRAS",
-          "explicacion": "`strlen` no sabe cuántas letras hay guardadas: cuenta hasta encontrar un `'\\0'`. `letras` tiene cuatro letras, pero ningún `'\\0'` después."
-        },
-        {
-          "valor": "0",
-          "texto": "porque no es una cadena",
-          "codigo": "OPCION_STRLEN_DA_CERO",
-          "explicacion": "`strlen` no avisa que no es una cadena ni da cero: sigue contando mientras no encuentre un `'\\0'`, y puede pasar el final del arreglo."
-        },
-        {
-          "texto": "No se puede saber",
-          "correcta": true,
-          "explicacion": "`strlen` cuenta hasta el primer `'\\0'`, y `letras` no lo tiene: sigue contando por la memoria que viene después del arreglo, hasta encontrar uno por casualidad. Las funciones de la biblioteca de cadenas solo valen para cadenas; para un arreglo de caracteres sin fin, la cantidad de letras hay que llevarla en una variable aparte."
+          "texto": "No se puede saber, porque no se indicó el tamaño del arreglo",
+          "codigo": "OPCION_NO_SE_SABE_LARGO",
+          "explicacion": "Sí se puede saber: al inicializar la cadena con un texto, C calcula el tamaño solo, y `strlen` cuenta sus letras."
         }
       ]
     },
