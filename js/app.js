@@ -428,7 +428,7 @@ function mostrarConsigna() {
   editor.poner('');
   $('respuesta').readOnly = false;
   $('ver-solucion').hidden = false;
-  $('respuesta').focus();
+  $('respuesta').focus({ preventScroll: true });
 }
 
 // La ficha de datos: una tarjeta con el nombre de cada campo y, a su lado, el
@@ -735,6 +735,8 @@ function siguiente() {
   hechas.push(hecha);
   guardar(claveAvance(serie), hechas);
   mostrarConsigna();
+  // La consigna nueva se lee desde el principio, no desde donde quedo el editor.
+  window.scrollTo(0, 0);
 }
 
 function verSolucion() {
