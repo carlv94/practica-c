@@ -98,6 +98,7 @@
     {
       "id": "copiar-comparar-nombres",
       "titulo": "Comparar los apellidos y nombres",
+      "parteDe": "copiar-comparar-legajos",
       "buenasPracticas": ["claridad"],
       "enunciado": "Escriba un `if` que asigne `1` a la variable `iguales` cuando el apellido y nombre de `alumno` sea igual al de `copia`.",
       "requiere": [

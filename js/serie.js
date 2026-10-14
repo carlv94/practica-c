@@ -22,6 +22,13 @@
 // con main: en las demas, lo que escribe es todo del mismo lugar. Una consigna
 // de opciones, en cambio, muestra siempre un programa completo para leer.
 // La serie puede traer una "cabecera" (un #include) que se ve arriba de todo.
+//
+// Una consigna puede "partirDe" otra (parteDe: "id"): arranca con el codigo que
+// esa consigna veia antes de ser respondida (su "visto"), en lugar de seguir
+// la cadena de las anteriores. Y la serie puede traer un "dado" propio: codigo
+// de main que ven todas sus consignas, continuen o no (el arreglo sobre el que
+// trabajan todas).
+//   avance.vistos: { [id]: { archivo, contexto, capturas } }
 
 import { corregir, corregirOpcion } from './corrector.js';
 import { sustituir } from './enunciado.js';
@@ -31,7 +38,7 @@ const unir = (...partes) => partes.filter((p) => p && p.trim()).join('\n\n');
 // (las que el alumno escribio dentro de la suya se quedan).
 const unirEnMain = (...partes) => partes.filter((p) => p && p.trim()).join('\n');
 
-export const inicio = () => ({ contexto: '', archivo: '', capturas: {}, base: '', avisados: [] });
+export const inicio = () => ({ contexto: '', archivo: '', capturas: {}, base: '', avisados: [], vistos: {} });
 
 // Si la consigna "indice" ve el codigo (y los nombres capturados) de las
 // anteriores. Por defecto no: cada consigna es un programa nuevo. La que
@@ -47,13 +54,28 @@ export function continuaLaAnterior(serie, indice) {
   return serie.consignas[indice].continua ?? Boolean(serie.continua);
 }
 
+// Lo que veia la consigna de la que esta parte ("parteDe"), si lo dice.
+const visto = (serie, indice, avance) => {
+  const id = serie.consignas[indice].parteDe;
+  return id ? avance.vistos?.[id] || null : null;
+};
+
 // Lo que se hereda de las consignas anteriores, o nada si esta no continua.
-export const contextoPrevio = (serie, indice, avance) =>
-  continuaLaAnterior(serie, indice) ? avance.contexto : '';
-export const archivoPrevio = (serie, indice, avance) =>
-  continuaLaAnterior(serie, indice) ? avance.archivo || '' : '';
-export const capturasPrevias = (serie, indice, avance) =>
-  continuaLaAnterior(serie, indice) ? avance.capturas : {};
+export const contextoPrevio = (serie, indice, avance) => {
+  const origen = visto(serie, indice, avance);
+  if (origen) return origen.contexto;
+  return continuaLaAnterior(serie, indice) ? avance.contexto : '';
+};
+export const archivoPrevio = (serie, indice, avance) => {
+  const origen = visto(serie, indice, avance);
+  if (origen) return origen.archivo;
+  return continuaLaAnterior(serie, indice) ? avance.archivo || '' : '';
+};
+export const capturasPrevias = (serie, indice, avance) => {
+  const origen = visto(serie, indice, avance);
+  if (origen) return origen.capturas;
+  return continuaLaAnterior(serie, indice) ? avance.capturas : {};
+};
 
 // Si la respuesta de la consigna va fuera de main.
 export const enArchivo = (consigna) => consigna.en === 'archivo';
@@ -78,7 +100,7 @@ export function partesPrevias(serie, indice, avance) {
       archivoPrevio(serie, indice, avance),
       afuera ? consigna.dado : ''
     ),
-    main: unirEnMain(contextoPrevio(serie, indice, avance), afuera ? '' : consigna.dado),
+    main: unirEnMain(serie.dado, contextoPrevio(serie, indice, avance), afuera ? '' : consigna.dado),
   };
 }
 
@@ -164,7 +186,7 @@ export function programaDeOpciones(serie, indice, avance) {
 // El codigo que se ve arriba de la respuesta en la consigna numero "indice".
 export function codigoPrevio(serie, indice, avance) {
   if (esMixta(serie)) return marco(serie, indice, avance);
-  return unir(avance.base, contextoPrevio(serie, indice, avance), serie.consignas[indice].dado);
+  return unir(avance.base, serie.dado, contextoPrevio(serie, indice, avance), serie.consignas[indice].dado);
 }
 
 export function corregirPaso(analizador, serie, indice, avance, respuesta) {
@@ -212,11 +234,21 @@ export function despuesDe(serie, indice, avance, respuesta, resultado) {
   // Elegir una opcion no agrega codigo, salvo que la consigna diga que el suyo
   // "queda": lo que sigue lo ve entre lo ya escrito.
   const consigna = serie.consignas[indice];
+  // Lo que veia esta consigna antes de responderla, por si otra parte de ahi.
+  const vistos = {
+    ...(avance.vistos || {}),
+    [consigna.id]: {
+      archivo: unir(archivoPrevio(serie, indice, avance), enArchivo(consigna) ? consigna.dado : ''),
+      contexto: unirEnMain(contextoPrevio(serie, indice, avance), enArchivo(consigna) ? '' : consigna.dado),
+      capturas: capturasPrevias(serie, indice, avance),
+    },
+  };
   if (consigna.opciones) {
-    if (!consigna.queda) return avance;
+    if (!consigna.queda) return { ...avance, vistos };
     const capturas = capturasPrevias(serie, indice, avance);
     return {
       ...avance,
+      vistos,
       // Si el cuestionario no continua, lo que queda arranca de su codigo.
       contexto: unirEnMain(contextoPrevio(serie, indice, avance), sustituir(consigna.codigo || '', capturas)),
       archivo: unir(archivoPrevio(serie, indice, avance), sustituir(consigna.archivo || '', capturas)),
@@ -225,7 +257,7 @@ export function despuesDe(serie, indice, avance, respuesta, resultado) {
   // Lo que persiste pasa a ser de todas las que siguen, y no toca la cadena de
   // las que continuan.
   if (consigna.persiste) {
-    return { ...avance, base: unir(avance.base, respuesta.trim()) };
+    return { ...avance, vistos, base: unir(avance.base, respuesta.trim()) };
   }
   const afuera = enArchivo(consigna);
   const notas = resultado.diagnosticos.filter((d) => d.nivel === 'nota').map((d) => d.codigo);
@@ -239,5 +271,6 @@ export function despuesDe(serie, indice, avance, respuesta, resultado) {
     archivo: unir(archivoPrevio(serie, indice, avance), afuera ? consigna.dado : '', afuera ? respuesta.trim() : ''),
     capturas: resultado.capturas,
     base: avance.base,
+    vistos,
   };
 }

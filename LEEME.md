@@ -1003,6 +1003,18 @@ de la respuesta, como las variables sobre las que se trabaja.
 El `dado` de una consigna queda para las siguientes **que continúan**, así que
 no hay que repetirlo.
 
+Dos formas de no repetirlo cuando las consignas no continúan unas de otras:
+
+- **`"dado"` de la serie**: código de `main` que ven todas sus consignas,
+  continúen o no. Es el arreglo sobre el que trabajan todas (serie "Recorrer
+  un arreglo de estructuras": `TAlumno alumnos[MAX_ALUMNOS]; int i;`).
+- **`"parteDe": "id-de-una-consigna"`**: la consigna arranca con el código que
+  veía esa otra antes de ser respondida (con su `dado`, y sin las respuestas
+  que vinieron en el medio), en lugar de seguir la cadena. En "Copiar y
+  comparar", la última parte de la consigna de los legajos, así no ve su `if`.
+  Las pruebas verifican que `parteDe` nombre una consigna anterior y que no se
+  cuele ninguna respuesta del medio.
+
 **Dónde va la respuesta: `"en": "archivo"`.** En una serie de sentencias
 (`"dentroDeMain": true`) todo se analiza dentro de una función que el alumno no
 escribe. Una consigna que pide una definición de tipo (`typedef`, `struct`,

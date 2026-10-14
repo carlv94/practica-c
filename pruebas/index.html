@@ -23,6 +23,7 @@
         capturasPrevias,
         respuestaDeReferencia,
         programaDeOpciones,
+        partesPrevias,
       } from '../js/serie.js';
       import { marcasDe, partesDeEnunciado, fichasDe } from '../js/enunciado.js';
       import { CASOS } from './casos.js';
@@ -210,6 +211,36 @@
             anotar(false, `referencia de ${consigna.id}`, e.message);
           }
         });
+
+        // Una consigna que "parteDe" otra ve el codigo que esa veia, sin las
+        // respuestas que vinieron en el medio.
+        for (const s of todas) {
+          s.consignas.forEach((consigna, i) => {
+            if (!consigna.parteDe) return;
+            const origen = s.consignas.findIndex((c) => c.id === consigna.parteDe);
+            if (origen < 0 || origen >= i) {
+              anotar(false, `parteDe de ${consigna.id}`, `"${consigna.parteDe}" tiene que ser una consigna anterior`);
+              return;
+            }
+            try {
+              const delOrigen = partesPrevias(s, origen, llegarHasta(s, origen + 1)).main;
+              const propio = partesPrevias(s, i, llegarHasta(s, i + 1)).main;
+              const respuestas = s.consignas
+                .slice(origen, i)
+                .filter((c) => !c.opciones)
+                .map((c) => respuestaDeReferencia(c, {}))
+                .filter((r) => r && !delOrigen.includes(r));
+              const colada = respuestas.find((r) => propio.includes(r));
+              anotar(
+                propio.startsWith(delOrigen) && !colada,
+                `parteDe de ${consigna.id}: el código que ve es el de ${consigna.parteDe}`,
+                colada ? `se cuela la respuesta "${colada}"` : 'no empieza con el código de esa consigna'
+              );
+            } catch (e) {
+              anotar(false, `parteDe de ${consigna.id}`, e.message);
+            }
+          });
+        }
 
         // El enunciado muestra el nombre solo, venga de una etiqueta o de un alias.
         const armado = (enunciado, capturas) =>
