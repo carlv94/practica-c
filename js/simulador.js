@@ -730,7 +730,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
           desde != null &&
           n.startIndex < desde &&
           operador === '=' &&
-          izquierda.type === 'identifier' &&
+          (izquierda.type === 'identifier' || izquierda.type === 'field_expression') &&
           prueba &&
           typeof prueba[izquierda.text] === 'number'
         ) {

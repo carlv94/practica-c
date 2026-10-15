@@ -571,7 +571,7 @@ export function corregir(
 
     // Sin etiqueta y sin alias, la estructura no se puede volver a nombrar.
     const alias = modelo.aliases.find(
-      (a) => a.tipo.defId === def.id && !a.punteros && !a.arreglo.length
+      (a) => a.tipo.defId === def.id && a.tipo.clase === 'struct' && !a.punteros && !a.arreglo.length
     );
     if (!def.etiqueta && !alias) {
       error(
@@ -629,6 +629,25 @@ export function corregir(
         error(
           'CAMPO_CADENA_CORTA',
           `En \`${n}\` no entra ningún texto: una cadena necesita un espacio más que sus letras, para el carácter \`'\\0'\` del final.`,
+          campo.fila
+        );
+      }
+      return;
+    }
+
+    // Un campo que es un enumerado: "tipo": "enumerado", "de": "TTurno".
+    if (esperado.tipo === 'enumerado') {
+      const pedido = valorDe(esperado.de);
+      if (campo.punteros || campo.arreglo.length) {
+        error(
+          'CAMPO_TIPO',
+          `\`${n}\` tiene que ser una sola variable de tipo \`${pedido}\`, no ${campo.punteros ? 'un puntero' : 'un arreglo'}. ${declarado}`,
+          campo.fila
+        );
+      } else if (!mismoTipo(real, resolver(tipoDesdeTexto(pedido), modelo))) {
+        error(
+          'CAMPO_TIPO',
+          `\`${n}\` tiene que ser de tipo \`${pedido}\`: es un enumerado. ${declarado}`,
           campo.fila
         );
       }
@@ -1982,6 +2001,23 @@ export function corregir(
         candidatos.find((c) => c.ruta === ruta && c.ejemplo != null) ||
         candidatos.find((c) => c.nombre === pedido.nombre && c.ejemplo != null)
       )?.ejemplo;
+      if (pedido.tipo === 'enumerado') {
+        // Con el nombre, o con su numero (esto ultimo se avisa como mejora aparte).
+        const buscado = modelo.enums.flatMap((e) => e.enumeradores).find((x) => x.nombre === String(ejemplo));
+        const escrita = derecha.texto.trim();
+        if (derecha.clase === 'nombre' && derecha.nombre === String(ejemplo)) continue;
+        if (derecha.clase === 'numero' && buscado && buscado.valor === derecha.valor) continue;
+        if (derecha.clase === 'caracter' || derecha.clase === 'cadena') {
+          error(
+            'ENUM_COMO_TEXTO',
+            `\`${escrita}\` entre comillas es un texto o una letra: los nombres de un enumerado se escriben sin comillas, como \`${ejemplo}\`.`,
+            a.fila
+          );
+        } else {
+          error('ASIGNACION_VALOR_DISTINTO', `El valor que se guarda en \`${lugar}\` no es el que muestra la ficha.`, a.fila);
+        }
+        continue;
+      }
       if (pedido.tipo === 'letra') {
         const letra = [...String(ejemplo)][0];
         if (derecha.clase === 'caracter' && derecha.valor === letra.codePointAt(0)) continue;
@@ -3069,8 +3105,12 @@ export function corregir(
   // Los valores de la ficha de la consigna, con los nombres que usa el simulador:
   // alumnos[1].nacimiento.mes es la posicion 1 de alumnos.nacimiento.mes. Solo los
   // numericos, y un arreglo solo si la ficha trae todas sus posiciones.
-  function datosDeLaFicha() {
+  function datosDeLaFicha(modelo) {
     const datos = {};
+    const numeroDeEnumerador = (texto) => {
+      const x = modelo.enums.flatMap((e) => e.enumeradores).find((e) => e.nombre === String(texto));
+      return x && x.valor != null ? x.valor : NaN;
+    };
     const incompletos = new Set();
     const hojas = (campos, prefijo = '') =>
       campos.flatMap((c) => (c.campos ? hojas(c.campos, `${prefijo}${c.nombre}.`) : [{ ruta: `${prefijo}${c.nombre}`, ejemplo: c.ejemplo }]));
@@ -3079,7 +3119,8 @@ export function corregir(
       const elemento = /^([A-Za-z_]\w*)\[(\d+)\]$/.exec(ficha.titulo);
       for (const { ruta, ejemplo } of hojas(ficha.campos)) {
         const plano = elemento ? `${elemento[1]}.${ruta}` : `${ficha.titulo}.${ruta}`;
-        const numero = ejemplo != null && String(ejemplo).trim() !== '' ? Number(ejemplo) : NaN;
+        let numero = ejemplo != null && String(ejemplo).trim() !== '' ? Number(ejemplo) : NaN;
+        if (!Number.isFinite(numero) && ejemplo != null) numero = numeroDeEnumerador(ejemplo);
         if (!Number.isFinite(numero)) {
           incompletos.add(plano);
           continue;
@@ -3143,11 +3184,12 @@ export function corregir(
   // Un caso puede decir un valor con el nombre del enumerador ("turno": "TARDE"):
   // aca pasa a su numero, y los mensajes lo dicen con el nombre.
   function conEnumeradores(original, modelo) {
+    // "turno", "alumno.turno" o "alumnos.turno" (el arreglo de un campo, aplanado).
     const definicion = (nombre) => {
-      const v = modelo.variables.findLast((x) => x.nombre === nombre);
-      if (!v || v.punteros || v.arreglo.length) return null;
-      const real = resolver(v.tipo, modelo);
-      return real.clase === 'enum' ? real.def : null;
+      const aplanado = /^([A-Za-z_]\w*)\.([A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*)$/.exec(nombre);
+      const variable = aplanado ? modelo.variables.findLast((x) => x.nombre === aplanado[1]) : null;
+      if (variable && variable.arreglo.length) return enumDeCamino(`${aplanado[1]}[0].${aplanado[2]}`, modelo);
+      return enumDeCamino(nombre, modelo);
     };
     let cambio = false;
     const enumQueda = {};
@@ -3155,15 +3197,16 @@ export function corregir(
       if (!objeto) return objeto;
       const salida = {};
       for (const [nombre, valor] of Object.entries(objeto)) {
-        const def = typeof valor === 'string' && valor.length > 1 ? definicion(nombre) : null;
-        const x = def && def.enumeradores.find((e) => e.nombre === valor);
-        if (x && x.valor != null) {
+        const textos = Array.isArray(valor) ? valor : [valor];
+        const def = textos.some((v) => typeof v === 'string' && v.length > 1) ? definicion(nombre) : null;
+        const convertido = textos.map((v) => {
+          const x = def && typeof v === 'string' && def.enumeradores.find((e) => e.nombre === v);
+          if (!x || x.valor == null) return v;
           cambio = true;
           if (esQueda) enumQueda[nombre] = def;
-          salida[nombre] = x.valor;
-        } else {
-          salida[nombre] = valor;
-        }
+          return x.valor;
+        });
+        salida[nombre] = Array.isArray(valor) ? convertido : convertido[0];
       }
       return salida;
     };
@@ -3204,7 +3247,7 @@ export function corregir(
         // alumno que usa otro campo (el mes en vez del anio) leeria "sin valor".
         if (caso.datos) {
           caso.vistos = caso.vistos || caso.datos;
-          caso.datos = { ...datosDeLaFicha(), ...caso.datos };
+          caso.datos = { ...datosDeLaFicha(modelo), ...caso.datos };
         }
         const hecha = correrCodigo(modelo, enCodigos(caso.entrada || entrada), caso.datos, {
           contexto: caso.visible || !caso.datos ? '' : conLosValores(caso.vistos || caso.datos),
@@ -6093,18 +6136,45 @@ function revisarCondiciones(modelo, error) {
   );
 }
 
+// El enumerado que es la variable o el campo que nombra un texto
+// ("turno", "alumno.turno", "alumnos[i].turno"), o null.
+function enumDeCamino(texto, modelo) {
+  const m = /^([A-Za-z_]\w*)((?:\[[^\]]*\])*)((?:\.[A-Za-z_]\w*)*)$/.exec(String(texto).replace(/\s+/g, ''));
+  if (!m) return null;
+  const variable = modelo.variables.findLast((v) => v.nombre === m[1]);
+  if (!variable) return null;
+  const deEnum = (declarado) => {
+    if (declarado.punteros || declarado.arreglo.length) return null;
+    const real = resolver(declarado.tipo, modelo);
+    return real.clase === 'enum' ? real.def : null;
+  };
+  if (!m[3]) {
+    // Una variable suelta, o un elemento de un arreglo de enumerados.
+    if (variable.punteros) return null;
+    if (m[2] ? variable.arreglo.length !== 1 : variable.arreglo.length !== 0) return null;
+    const real = resolver(variable.tipo, modelo);
+    return real.clase === 'enum' ? real.def : null;
+  }
+  let def = estructuraDeVariable(variable, modelo, Boolean(m[2]));
+  const campos = m[3].slice(1).split('.');
+  for (let k = 0; def && k < campos.length; k++) {
+    const campo = def.campos.find((c) => c.nombre === campos[k]);
+    if (!campo) return null;
+    if (k === campos.length - 1) return deEnum(campo);
+    def = campo.punteros || campo.arreglo.length ? null : estructuraDeTipo(campo.tipo, modelo);
+  }
+  return null;
+}
+
 // Lo que vale para cualquier consigna con un enumerado o un switch:
 //  - un numero suelto donde va un nombre (mejora),
 //  - leer directo en la variable del enumerado (nota),
 //  - un caso del switch que sigue con el siguiente porque falta el break (error).
 function revisarEnumerados(modelo, error, mejora, nota, avisados) {
-  const definicion = (nombre) => {
-    const v = modelo.variables.findLast((x) => x.nombre === nombre);
-    if (!v || v.punteros || v.arreglo.length) return null;
-    const real = resolver(v.tipo, modelo);
-    return real.clase === 'enum' ? real.def : null;
-  };
-  const soloNombre = (valor) => (valor && valor.clase === 'nombre' ? valor.nombre : null);
+  const definicion = (nombre) => (nombre ? enumDeCamino(nombre, modelo) : null);
+  // Un nombre suelto o un campo (alumno.turno, alumnos[i].turno).
+  const soloNombre = (valor) =>
+    valor && valor.clase === 'nombre' ? valor.nombre : valor && valor.clase === 'campo' ? valor.texto : null;
   const conNombre = (def, numero) => def.enumeradores.find((x) => x.valor === numero);
   let dicho = false;
   const sugerir = (def, valor, fila) => {
@@ -6119,7 +6189,7 @@ function revisarEnumerados(modelo, error, mejora, nota, avisados) {
     );
   };
   for (const a of modelo.asignaciones.filter((x) => x.nuevo && x.operador === '=')) {
-    const def = a.izquierda.clase === 'nombre' ? definicion(a.izquierda.nombre) : null;
+    const def = definicion(soloNombre(a.izquierda));
     if (def) sugerir(def, a.derecha, a.fila);
   }
   for (const c of modelo.comparaciones.filter((x) => x.nuevo)) {
@@ -6137,7 +6207,7 @@ function revisarEnumerados(modelo, error, mejora, nota, avisados) {
   }
   // Un if o un ciclo que compara la variable del enumerado con un numero: t <= 2.
   for (const x of [...modelo.ifs, ...modelo.ciclos].filter((y) => y.nuevo && y.condicion)) {
-    const m = /^\s*([A-Za-z_]\w*)\s*(?:<=|<|>=|>|==|!=)\s*(-?\d+)\s*$/.exec(x.condicion);
+    const m = /^\s*([A-Za-z_][\w.\[\]]*)\s*(?:<=|<|>=|>|==|!=)\s*(-?\d+)\s*$/.exec(x.condicion);
     const def = m && definicion(m[1]);
     if (def) sugerir(def, { clase: 'numero', valor: Number(m[2]) }, x.fila);
   }

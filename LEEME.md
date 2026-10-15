@@ -760,6 +760,17 @@ coincidencia). Los nombres de los mensajes salen como los escribe el alumno
   nombre de cada posición, bajo su índice. La serie usa `#define TURNOS 3` en la
   cabecera y acepta `TURNOS`, `NOCHE + 1` y `3` (con la mejora de usar la
   constante). Una explicación de una opción equivocada no dice el valor correcto.
+- **Un enumerado como campo de una estructura** (serie "Un enumerado dentro de
+  una estructura"): en la regla `struct`, `{ "nombre": "turno", "tipo":
+  "enumerado", "de": "TTurno" }`; en `campo`, `{ "nombre": "turno", "tipo":
+  "enumerado" }` (el valor sale de la ficha, que lo muestra con su nombre:
+  `NOCHE`; con su número vale y es la mejora `ENUM_CON_NUMERO`; entre comillas,
+  `ENUM_COMO_TEXTO`). En `ejecuta`, `"datos": { "alumnos.turno": ["NOCHE",
+  "MANANA"] }` y `"queda": { "alumno.turno": "TARDE" }` aceptan los nombres, y
+  los valores de la ficha que son nombres completan los datos del caso. El
+  valor de prueba prevalece también sobre una asignación a un campo del
+  código dado (`alumno.turno = TARDE;`). `SCANF_EN_ENUM` y `ENUM_CON_NUMERO`
+  miran también los campos (`&alumno.turno`, `alumnos[i].turno == 2`).
 - Con un enumerado en el resultado (`"queda": { "mejor": "NOCHE" }`) no se
   aplica la pista del acumulador que se pisa: el valor distinto se dice tal cual.
 
