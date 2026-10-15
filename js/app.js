@@ -26,7 +26,7 @@ import {
   pidePracticas,
 } from './serie.js';
 import { crearEditor, pintar } from './editor.js';
-import { enviarIntento, enviaEstadisticas } from './estadisticas.js';
+import { enviarIntento, enviarInforme, numeroDeInforme, enviaEstadisticas } from './estadisticas.js';
 import { partesDeEnunciado, enunciadoEnDos, fichasDe, figuraDe, sustituir } from './enunciado.js';
 
 const CARPETA = 'consignas/';
@@ -45,6 +45,7 @@ let hechas = []; // [{ codigo, conAyuda }], una por consigna resuelta
 let avance = inicio(); // el codigo y las capturas que dejan las resueltas
 let pendiente = null; // la respuesta correcta que espera el "Siguiente"
 let pidioSolucion = false;
+let informable = null; // lo ultimo que se comprobo: lo que se informa si el alumno dice que esta mal
 
 const claveAvance = (s) => 'practica-c:avance:' + s.id;
 const CLAVE_INTENTOS = 'practica-c:intentos';
@@ -374,6 +375,7 @@ function mostrarConsigna() {
   $('bloque-codigo').hidden = !programa;
   $('final').hidden = !termino;
   $('resultado').replaceChildren();
+  ocultarInforme();
 
   if (termino) {
     const conAyuda = hechas.filter((h) => h.conAyuda).length;
@@ -707,6 +709,7 @@ function comprobar() {
     conAyuda: pidioSolucion,
     codigos: codigosDe(r),
   });
+  ofrecerInforme(consigna, esCuestionario, respuesta, r);
   if (!esCuestionario) editor.marcar(r.diagnosticos);
 
   const cajas = r.diagnosticos.map((d) => mensaje(d.nivel, d.mensaje, d.linea, d.bloques));
@@ -764,6 +767,91 @@ function alEscribir() {
   pendiente = null;
   $('siguiente').hidden = true;
   $('resultado').replaceChildren();
+  ocultarInforme();
+}
+
+// ---- informar un problema -------------------------------------------------------
+
+const MAX_RESPUESTA = 5000;
+const MAX_PREVIO = 15000;
+const MAX_MENSAJES = 4000;
+
+function recortar(texto, largo) {
+  return texto.length > largo ? texto.slice(0, largo) + '\n// ...(recortado)' : texto;
+}
+
+// Los mensajes tal como se le mostraron, con su codigo: el texto puede haber
+// cambiado cuando se lea el informe, y el codigo dice de que regla venian.
+function mensajesComoTexto(r) {
+  return r.diagnosticos
+    .map((d) => {
+      const donde = d.linea != null ? ` linea ${d.linea}` : '';
+      const bloques = (d.bloques || []).map((b) => (b.titulo ? b.titulo + '\n' : '') + b.lineas.join('\n'));
+      return [`[${d.nivel}${d.codigo ? ' ' + d.codigo : ''}${donde}] ${d.mensaje}`, ...bloques].join('\n');
+    })
+    .join('\n');
+}
+
+// Se ofrece despues de cada comprobacion, tambien cuando dijo "Correcto": a veces
+// el alumno cree justamente que no lo es.
+function ofrecerInforme(consigna, esCuestionario, respuesta, r) {
+  if (!enviaEstadisticas()) return;
+  const indice = hechas.length;
+  const capturas = capturasPrevias(serie, indice, avance);
+  informable = {
+    serie: serie.id,
+    consigna: consigna.id,
+    resultado: r.correcto ? (r.mejorable ? 'mejorable' : 'correcto') : 'incorrecto',
+    mensajes: recortar(mensajesComoTexto(r), MAX_MENSAJES),
+    respuesta: recortar(
+      esCuestionario ? sustituir(consigna.opciones[Number(respuesta)].texto, capturas) : respuesta,
+      MAX_RESPUESTA
+    ),
+    previo: recortar(
+      esCuestionario ? programaDeOpciones(serie, indice, avance) : codigoPrevio(serie, indice, avance),
+      MAX_PREVIO
+    ),
+  };
+  $('informar').hidden = false;
+  $('abrir-informe').hidden = false;
+  $('informe').hidden = true;
+  $('informe-enviado').hidden = true;
+}
+
+function ocultarInforme() {
+  informable = null;
+  $('informar').hidden = true;
+  $('informe').hidden = true;
+  $('informe-enviado').hidden = true;
+}
+
+function abrirInforme(abierto) {
+  $('informe').hidden = !abierto;
+  $('abrir-informe').hidden = abierto;
+  if (abierto) $('informe-texto').focus();
+}
+
+function alInformar(evento) {
+  evento.preventDefault();
+  if (!informable) return;
+  const conCodigo = $('informe-codigo').checked;
+  const numero = numeroDeInforme();
+  enviarInforme({
+    numero,
+    motivo: $('informe-tipo').value,
+    comentario: $('informe-texto').value.trim().slice(0, 1000),
+    serie: informable.serie,
+    consigna: informable.consigna,
+    resultado: informable.resultado,
+    mensajes: informable.mensajes,
+    respuesta: conCodigo ? informable.respuesta : null,
+    previo: conCodigo ? informable.previo : null,
+  });
+  $('informe').reset();
+  $('informe').hidden = true;
+  $('informe-enviado').textContent =
+    `Gracias, el informe se envió. Su número es ${numero}: si quiere, puede mencionárselo al docente en clase.`;
+  $('informe-enviado').hidden = false;
 }
 
 function siguiente() {
@@ -903,7 +991,11 @@ async function iniciar() {
     pendiente = null;
     $('siguiente').hidden = true;
     $('resultado').replaceChildren();
+    ocultarInforme();
   });
+  $('abrir-informe').addEventListener('click', () => abrirInforme(true));
+  $('cancelar-informe').addEventListener('click', () => abrirInforme(false));
+  $('informe').addEventListener('submit', alInformar);
   window.addEventListener('hashchange', navegar);
   navegar();
 }

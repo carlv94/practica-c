@@ -58,7 +58,7 @@ export function enviaEstadisticas() {
 
 // Si falla (sin conexion, direccion caida), el alumno ni se entera: no se
 // reintenta ni se guarda para despues.
-export function enviarIntento({ serie, consigna, resultado, conAyuda, codigos }) {
+function enviar(datos) {
   if (!enviaEstadisticas()) return;
   try {
     fetch(DIRECCION, {
@@ -66,17 +66,38 @@ export function enviarIntento({ serie, consigna, resultado, conAyuda, codigos })
       mode: 'no-cors',
       keepalive: true,
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({
-        version: VERSION,
-        anonimo: anonimo(),
-        serie,
-        consigna,
-        resultado,
-        conAyuda: Boolean(conAyuda),
-        codigos,
-      }),
+      body: JSON.stringify({ version: VERSION, ...datos }),
     }).catch(() => {});
   } catch {
     // sin red o sin permiso
   }
+}
+
+export function enviarIntento({ serie, consigna, resultado, conAyuda, codigos }) {
+  enviar({
+    tipo: 'intento',
+    anonimo: anonimo(),
+    serie,
+    consigna,
+    resultado,
+    conAyuda: Boolean(conAyuda),
+    codigos,
+  });
+}
+
+// Un informe del alumno: algo que le parece mal del corrector o de un mensaje.
+// Sin el identificador anonimo: lo que lo une a quien lo manda es el numero que
+// el alumno ve al enviarlo, y puede mencionarlo al docente si quiere.
+// `respuesta` y `previo` son null si no dio permiso para enviar su codigo.
+export function enviarInforme(informe) {
+  enviar({ tipo: 'informe', ...informe });
+}
+
+// Un numero corto para decir "el informe I-4K7Q2": sin letras ni cifras que se
+// confundan (0/O, 1/I).
+export function numeroDeInforme() {
+  const letras = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const a = new Uint8Array(5);
+  crypto.getRandomValues(a);
+  return 'I-' + Array.from(a, (n) => letras[n % letras.length]).join('');
 }

@@ -40,6 +40,32 @@ implementaciones > Editar > Nueva version**; la URL se mantiene.
   - por consigna: alumnos, intentos, cuantos la resolvieron y cuantos pidieron
     la solucion.
 
+## Informes de los alumnos
+
+Despues de cada comprobacion aparece "Informar un problema". El alumno elige
+un motivo (mensaje incorrecto, mensaje que no se entiende, "estaba bien y lo
+marco mal", otro) y puede escribir un comentario. Llega a la hoja **Informes**
+(el script la crea sola) con:
+
+- numero de informe (`I-4K7Q2`), motivo, comentario, serie, consigna y
+  resultado;
+- los mensajes tal como se le mostraron, cada uno con su codigo;
+- **solo si el alumno marca la casilla**: su respuesta y "el codigo hasta
+  aca" (lo que escribio en las consignas anteriores, que es sobre lo que se
+  corrige). Sin permiso, esas dos columnas quedan vacias;
+- una columna **estado** vacia, para que usted anote (nuevo, revisado, arreglado).
+
+El alumno ve el numero al enviar y puede mencionarselo en clase. No hay ningun
+otro dato de contacto, y el informe no lleva el identificador anonimo de los
+intentos.
+
+Todo se guarda como **texto plano**, aunque empiece con `=`: lo que escribe el
+alumno nunca se toma por una formula. Si el script cambio, hay que publicar una
+**Nueva version** de la implementacion (ver arriba).
+
+Para reproducirlo: con "respuesta" y "codigo previo", se arma el caso en
+`pruebas/casos.js` (ver `LEEME.md`, "Al corregir").
+
 ## Si se llena de basura
 
 La direccion es publica (esta en el codigo de GitHub) y cualquiera podria

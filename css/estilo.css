@@ -808,6 +808,54 @@ button[hidden] {
   font-weight: 600;
 }
 
+/* Informar un problema: discreto, debajo del resultado. */
+#informar {
+  margin-top: 16px;
+}
+
+#informe {
+  margin-top: 10px;
+  padding: 12px;
+  border: 1px solid var(--borde);
+  border-radius: 6px;
+  background: var(--panel);
+}
+
+#informe select,
+#informe textarea {
+  display: block;
+  width: 100%;
+  margin: 0 0 12px;
+  padding: 7px 10px;
+  font: inherit;
+  color: var(--texto);
+  background: var(--fondo);
+  border: 1px solid var(--borde);
+  border-radius: 6px;
+}
+
+#informe .casilla {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-weight: 600;
+}
+
+#informe .casilla input {
+  margin-top: 4px;
+}
+
+#informe .ayuda {
+  margin: 0;
+  color: var(--suave);
+  font-size: 0.85rem;
+}
+
+form[hidden],
+#informe-enviado[hidden] {
+  display: none;
+}
+
 #codigo-final {
   margin-bottom: 12px;
   color: var(--texto);

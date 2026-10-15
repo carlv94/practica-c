@@ -1324,6 +1324,10 @@ antes de la línea que lo usa.
   completar `DIRECCION` en `js/estadisticas.js`; los pasos y el script están en
   `estadisticas/LEEME.md`. No envía desde `localhost` ni desde `/pruebas/`, y
   cuando envía, la pantalla muestra un aviso al pie.
+- "Informar un problema": después de cada comprobación el alumno puede mandar
+  un informe (motivo, comentario, mensajes que vio y, solo con su permiso, su
+  respuesta y el código anterior). Llega a la hoja `Informes`; ver
+  `estadisticas/LEEME.md`.
 
 Cuando un alumno escriba algo que el corrector entienda mal, se suma el caso a
 `pruebas/casos.js` antes de arreglarlo.

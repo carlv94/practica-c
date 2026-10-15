@@ -2,19 +2,31 @@
 // en la hoja "Intentos" de la hoja de calculo a la que esta atado este script.
 // Pasos para ponerlo en marcha: estadisticas/LEEME.md.
 //
-// Nunca llega el codigo que escribio el alumno, y el identificador es un
-// numero al azar de cada navegador: no dice quien es.
+// Los intentos no traen el codigo que escribio el alumno, y su identificador es
+// un numero al azar de cada navegador: no dice quien es.
+//
+// Los informes ("Informar un problema") van a la hoja "Informes". Traen el
+// codigo del alumno solo si el dio permiso. Es texto libre de cualquiera: se
+// guarda siempre como texto plano, para que nada se tome por una formula.
 
 const HOJA_INTENTOS = 'Intentos';
+const HOJA_INFORMES = 'Informes';
 const HOJA_RESUMEN = 'Resumen';
 const ENCABEZADO = ['fecha', 'anonimo', 'serie', 'consigna', 'resultado', 'conAyuda', 'codigos', 'version'];
+const ENCABEZADO_INFORMES = [
+  'fecha', 'numero', 'motivo', 'serie', 'consigna', 'resultado', 'comentario',
+  'mensajes', 'respuesta', 'codigo previo', 'version', 'estado',
+];
 const RESULTADOS = ['correcto', 'mejorable', 'incorrecto'];
+const MOTIVOS = ['mensaje-equivocado', 'mensaje-confuso', 'mal-corregido', 'otro'];
 const ID = /^[a-z0-9-]{1,80}$/;
 const CODIGO = /^[A-Z0-9_]{1,60}$/;
+const NUMERO = /^I-[A-Z0-9]{5}$/;
 
 function doPost(e) {
   try {
     const d = JSON.parse(e.postData.contents);
+    if (d.tipo === 'informe') return guardarInforme(d);
     if (
       typeof d.anonimo !== 'string' || !ID.test(d.anonimo) ||
       typeof d.serie !== 'string' || !ID.test(d.serie) ||
@@ -40,6 +52,43 @@ function doPost(e) {
   } catch (err) {
     return respuesta('error');
   }
+}
+
+function texto(valor, largo) {
+  return typeof valor === 'string' ? valor.slice(0, largo) : '';
+}
+
+function guardarInforme(d) {
+  if (
+    typeof d.numero !== 'string' || !NUMERO.test(d.numero) ||
+    MOTIVOS.indexOf(d.motivo) < 0 ||
+    typeof d.serie !== 'string' || !ID.test(d.serie) ||
+    typeof d.consigna !== 'string' || !ID.test(d.consigna) ||
+    RESULTADOS.indexOf(d.resultado) < 0
+  ) {
+    return respuesta('descartado');
+  }
+  const fila = [
+    new Date(),
+    d.numero,
+    d.motivo,
+    d.serie,
+    d.consigna,
+    d.resultado,
+    texto(d.comentario, 1000),
+    texto(d.mensajes, 4000),
+    texto(d.respuesta, 5000),
+    texto(d.previo, 15000),
+    Number(d.version) || 0,
+    '',
+  ];
+  const hoja = hojaDe(HOJA_INFORMES, ENCABEZADO_INFORMES);
+  const n = hoja.getLastRow() + 1;
+  const rango = hoja.getRange(n, 1, 1, fila.length);
+  // Formato de texto antes de escribir: lo que empiece con = + - @ no es formula.
+  rango.setNumberFormat('@');
+  rango.setValues([fila.map((c) => (c instanceof Date ? c.toISOString() : String(c)))]);
+  return respuesta('ok');
 }
 
 function respuesta(texto) {

@@ -58,6 +58,34 @@
 
         <section id="resultado" aria-live="polite"></section>
 
+        <section id="informar" hidden>
+          <button id="abrir-informe" type="button">Informar un problema</button>
+          <form id="informe" hidden>
+            <label for="informe-tipo">¿Qué pasó?</label>
+            <select id="informe-tipo">
+              <option value="mensaje-equivocado">Un mensaje es incorrecto</option>
+              <option value="mensaje-confuso">Un mensaje no se entiende</option>
+              <option value="mal-corregido">Mi código estaba bien y lo marcó mal</option>
+              <option value="otro">Otra cosa</option>
+            </select>
+            <label for="informe-texto">Comentario (opcional)</label>
+            <textarea id="informe-texto" rows="3" maxlength="1000"></textarea>
+            <label class="casilla">
+              <input type="checkbox" id="informe-codigo" />
+              Enviar también mi respuesta y el código anterior
+            </label>
+            <p class="ayuda">
+              Se envía de forma anónima la consigna, los mensajes que vio y su comentario. Con la casilla marcada, se suma lo
+              que escribió. No escriba datos personales.
+            </p>
+            <div class="botones">
+              <button type="submit" class="principal">Enviar informe</button>
+              <button type="button" id="cancelar-informe">Cancelar</button>
+            </div>
+          </form>
+          <p id="informe-enviado" class="mensaje bien" hidden></p>
+        </section>
+
         <section id="final" hidden>
           <h2>Serie completa</h2>
           <p id="resumen-final"></p>
