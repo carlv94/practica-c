@@ -179,7 +179,9 @@ function recogerEstructuras(arbol) {
             ? tipo.text
             : simple && tipo.type === 'struct_specifier'
               ? tipo.childForFieldName('name')?.text
-              : null;
+              : simple && tipo.type === 'enum_specifier' && tipo.childForFieldName('name')
+                ? 'enum ' + tipo.childForFieldName('name').text
+                : null;
         lista.push({
           nombre: nombre.text,
           texto: tipo.text,
@@ -218,10 +220,37 @@ const ESCAPES = { n: 10, t: 9, r: 13, '0': 0, "'": 39, '"': 34, '\\': 92 };
 // sin ella, cualquier scanf queda sin verificar.
 // "prueba" cambia los valores con que se declaran arreglos de una dimension:
 // { ventas: [5, 3, 8] } deja a "ventas" con esos valores, aunque diga otros.
-export function ejecutar(arbol, constante, entrada = null, prueba = null) {
+// "desde" es donde empieza lo que escribio el alumno: una asignacion del codigo
+// que le dieron a una variable con valor de prueba no lo cambia (el valor de
+// prueba es el que vale en ese caso).
+export function ejecutar(arbol, constante, entrada = null, prueba = null, desde = null) {
   const funcion = arbol.rootNode.namedChildren.find((n) => n.type === 'function_definition');
   const cuerpo = funcion && funcion.childForFieldName('body');
   if (!cuerpo) throw new SinVerificar('no hay una funcion que seguir');
+
+  // Un enumerado es un entero: sus nombres de tipo ("TTurno", "enum Turno") se
+  // declaran y se convierten como un int.
+  const tiposEnum = new Set();
+  (function buscarEnums(nodo) {
+    if (nodo.type === 'enum_specifier') {
+      const nombre = nodo.childForFieldName('name');
+      if (nombre) tiposEnum.add('enum ' + nombre.text);
+    }
+    if (nodo.type === 'type_definition') {
+      const tipo = nodo.childForFieldName('type');
+      const alias = nodo.childForFieldName('declarator');
+      if (tipo && alias && tipo.type === 'enum_specifier' && alias.type === 'type_identifier') tiposEnum.add(alias.text);
+    }
+    for (const h of nodo.namedChildren) buscarEnums(h);
+  })(arbol.rootNode);
+  const esTipoEnum = (dado) => {
+    // En un cast el tipo viene envuelto en un type_descriptor.
+    const nodo = dado && dado.type === 'type_descriptor' ? dado.childForFieldName('type') : dado;
+    return (
+    Boolean(nodo) &&
+    ((nodo.type === 'type_identifier' && tiposEnum.has(nodo.text)) ||
+      (nodo.type === 'enum_specifier' && nodo.childForFieldName('name') && tiposEnum.has('enum ' + nodo.childForFieldName('name').text))));
+  };
 
   const variables = new Map();
   // Una variable de estructura se sigue "aplanada": cada campo numerico es una
@@ -600,8 +629,8 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null) {
       if (p.constante != null || !p.variable) sinVerificar(a);
       if (p.variable.dims && p.indices.length !== p.variable.dims.length) sinVerificar(a);
       const tipo = p.variable.tipo;
-      if (tipo === 'char') sinVerificar(a, 'leer una letra');
-      const correcto = tipo === 'int' ? '%d' : tipo === 'float' ? '%f' : '%lf';
+      // Una letra llega como su numero (el usuario escribe 'T' y entra 84).
+      const correcto = tipo === 'int' ? '%d' : tipo === 'char' ? '%c' : tipo === 'float' ? '%f' : '%lf';
       const igual = conv.formato === correcto || (conv.formato === '%i' && tipo === 'int');
       if (!igual) throw new FormatoDistinto('scanf', conv.formato, destino.text, tipo, fila(a));
       if (siguiente >= entrada.length) throw new SinEntrada(fila(n));
@@ -644,6 +673,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null) {
         const tipo = n.childForFieldName('type');
         const valor = evaluar(n.childForFieldName('value'));
         const texto = tipo ? tipo.text.replace(/\s+/g, ' ').trim() : '';
+        if (esTipoEnum(tipo)) return { v: Math.trunc(valor.v), f: false };
         if (/^(float|double)$/.test(texto)) return { v: valor.v, f: true };
         if (/^(int|long|short|long long|unsigned|unsigned int)$/.test(texto)) {
           return { v: Math.trunc(valor.v), f: false };
@@ -696,6 +726,16 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null) {
         const izquierda = n.childForFieldName('left');
         const operador = n.childForFieldName('operator').text;
         const nodoDerecha = n.childForFieldName('right');
+        if (
+          desde != null &&
+          n.startIndex < desde &&
+          operador === '=' &&
+          izquierda.type === 'identifier' &&
+          prueba &&
+          typeof prueba[izquierda.text] === 'number'
+        ) {
+          return leer(izquierda);
+        }
         if (nodoDerecha.type === 'string_literal' && ['subscript_expression', 'field_expression'].includes(izquierda.type)) {
           throw new TextoComoLetra(nodoDerecha.text, fila(nodoDerecha));
         }
@@ -777,14 +817,16 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null) {
     if (nivel > 5) sinVerificar(d, 'estructuras muy anidadas');
     for (const campo of campos) {
       const clave = `${prefijo}.${campo.nombre}`;
-      if (!campo.soportado) {
+      const deEnum = !campo.soportado && Boolean(campo.estructura) && tiposEnum.has(campo.estructura);
+      if (!campo.soportado && !deEnum) {
         const dentro = campo.estructura ? definiciones.get(campo.estructura) : null;
         if (dentro) crearCampos(clave, dentro, dims, d, nivel + 1);
         continue;
       }
-      const flotante = /float|double/.test(campo.texto);
-      const tipoCampo = /double/.test(campo.texto) ? 'double' : flotante ? 'float' : /char/.test(campo.texto) ? 'char' : 'int';
-      const bytes = bytesDe(campo.texto);
+      const textoCampo = deEnum ? 'int' : campo.texto;
+      const flotante = /float|double/.test(textoCampo);
+      const tipoCampo = /double/.test(textoCampo) ? 'double' : flotante ? 'float' : /char/.test(textoCampo) ? 'char' : 'int';
+      const bytes = bytesDe(textoCampo);
       if (!dims.length) {
         const dado = prueba && typeof prueba[clave] === 'number' ? prueba[clave] : undefined;
         variables.set(clave, {
@@ -816,9 +858,12 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null) {
         ? definiciones.get(tipo.type === 'type_identifier' ? tipo.text : tipo.childForFieldName('name')?.text)
         : null;
     if (campos) return declararEstructura(n, campos);
-    if (!tipo || !['primitive_type', 'sized_type_specifier'].includes(tipo.type)) sinVerificar(n, 'un tipo que no se sabe seguir');
-    const flotante = /float|double/.test(tipo.text);
-    const nombreDeTipo = /double/.test(tipo.text) ? 'double' : flotante ? 'float' : /char/.test(tipo.text) ? 'char' : 'int';
+    const deEnum = esTipoEnum(tipo);
+    if (!deEnum && (!tipo || !['primitive_type', 'sized_type_specifier'].includes(tipo.type))) sinVerificar(n, 'un tipo que no se sabe seguir');
+    // Un enumerado se sigue como un int.
+    const textoTipo = deEnum ? 'int' : tipo.text;
+    const flotante = /float|double/.test(textoTipo);
+    const nombreDeTipo = /double/.test(textoTipo) ? 'double' : flotante ? 'float' : /char/.test(textoTipo) ? 'char' : 'int';
     for (const d of n.namedChildren) {
       if (!['identifier', 'init_declarator', 'array_declarator', 'pointer_declarator'].includes(d.type)) continue;
       let declarador = d;
@@ -842,7 +887,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null) {
         variables.set(nombre.text, {
           flotante,
           tipo: nombreDeTipo,
-          bytes: bytesDe(tipo.text),
+          bytes: bytesDe(textoTipo),
           valor: valor ? (flotante ? valor.v : Math.trunc(valor.v)) : undefined,
         });
         continue;
@@ -870,7 +915,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null) {
         const copia = (x) => (Array.isArray(x) ? x.map(copia) : flotante ? x : Math.trunc(x));
         datos = copia(otros);
       }
-      variables.set(nombre.text, { flotante, tipo: nombreDeTipo, bytes: bytesDe(tipo.text), dims, datos });
+      variables.set(nombre.text, { flotante, tipo: nombreDeTipo, bytes: bytesDe(textoTipo), dims, datos });
     }
   }
 
@@ -918,6 +963,29 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null) {
           if (salida === 'break') break;
           if (salida === 'return') return 'return';
           if (avance) evaluar(avance);
+        }
+        return null;
+      }
+      case 'switch_statement': {
+        // Se busca el "case" con ese valor (o el default) y se sigue desde ahi,
+        // pasando de uno al otro hasta un break.
+        const valor = evaluar(n.childForFieldName('condition')).v;
+        const cuerpo = n.childForFieldName('body');
+        const casos = cuerpo ? cuerpo.namedChildren.filter((c) => c.type === 'case_statement') : [];
+        let desde = casos.findIndex((c) => {
+          const v = c.childForFieldName('value');
+          return v && evaluar(v).v === valor;
+        });
+        if (desde < 0) desde = casos.findIndex((c) => !c.childForFieldName('value'));
+        if (desde < 0) return null;
+        for (const c of casos.slice(desde)) {
+          const v = c.childForFieldName('value');
+          for (const hijo of c.namedChildren) {
+            if (hijo.id === v?.id) continue;
+            const salida = sentencia(hijo);
+            if (salida === 'break') return null;
+            if (salida) return salida;
+          }
         }
         return null;
       }

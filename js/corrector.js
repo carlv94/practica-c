@@ -105,6 +105,7 @@ function distancia(a, b) {
 // que el alumno tiene que saber escribir.
 function nombrarPedido(pedido) {
   const partes = pedido.trim().split(/\s+/);
+  if (partes[0] === 'enum') return `del enumerado \`${partes[1]}\``;
   return partes[0] === 'struct' ? `de la estructura \`${partes[1]}\`` : `del tipo \`${pedido}\``;
 }
 
@@ -115,7 +116,7 @@ const ordinalFemenino = (indice) => ORDINALES_FEMENINOS[indice] || `${indice + 1
 
 function mismoTipo(a, b) {
   if (a.clase !== b.clase) return false;
-  if (a.clase === 'struct') return a.def === b.def;
+  if (a.clase === 'struct' || a.clase === 'enum') return a.def === b.def;
   if (a.clase === 'primitivo') return a.nombre === b.nombre;
   return false;
 }
@@ -355,9 +356,20 @@ export function corregir(
     revisarAsignaciones(modelo, error, !sinFuncion);
     revisarIndices(modelo, error);
     revisarCampos(modelo, error);
+    revisarEnumerados(modelo, error, mejora, nota, avisados);
     revisarCondiciones(modelo, error);
     revisarDimensiones(modelo, error, practicas.includes('constantes') ? mejora : null);
-    for (const regla of consigna.requiere) aplicarRegla(regla, modelo);
+    for (const regla of consigna.requiere) {
+      try {
+        aplicarRegla(regla, modelo);
+      } catch (e) {
+        // Una regla que usa lo que otra tenia que capturar y no pudo (la
+        // estructura o el enumerado sin nombre): el error ya esta dicho.
+        const yaHayError = diagnosticos.some((d) => d.nivel === 'error');
+        if (yaHayError && /que ninguna consigna anterior capturó/.test(e.message)) break;
+        throw e;
+      }
+    }
     return terminar();
   } finally {
     arbol.delete();
@@ -378,6 +390,7 @@ export function corregir(
 
   function aplicarRegla(regla, modelo) {
     if (regla.struct) return reglaStruct(regla.struct, modelo);
+    if (regla.enum) return reglaEnum(regla.enum, modelo);
     if (regla.variable) return reglaVariable(regla.variable, modelo);
     if (regla.alias) return reglaAlias(regla.alias, modelo);
     if (regla.llamada) return reglaLlamada(regla.llamada, modelo);
@@ -400,6 +413,109 @@ export function corregir(
     if (regla.muestra) return reglaMuestra(regla.muestra, modelo);
     if (regla.limpiaEntrada) return reglaLimpiaEntrada(regla.limpiaEntrada, modelo);
     throw new Error(`La consigna "${consigna.id}" tiene una regla que no conozco.`);
+  }
+
+  // ---- enum -----------------------------------------------------------------
+
+  // Un enumerado: sus nombres, en orden, y con que valores.
+  //   { "enum": { "enumeradores": ["MANANA", "TARDE", "NOCHE"],
+  //               "valores": { "MEDIA": 5 }, "capturar": "E" } }
+  // Sin "valores", cada nombre vale su posicion (el primero 0). Con ellos, los
+  // que se nombran valen eso y los que siguen, uno mas que el anterior.
+  function reglaEnum(regla, modelo) {
+    const candidatos = modelo.enums.filter((e) => e.nuevo);
+    if (!candidatos.length) {
+      error(
+        'ENUM_FALTA',
+        'No encontré la declaración de un enumerado. Se escribe con la palabra `enum` y, entre llaves, los nombres separados por comas.'
+      );
+      return;
+    }
+    const pedidos = regla.enumeradores;
+    const aciertos = (e) => e.enumeradores.filter((x) => pedidos.includes(x.nombre)).length;
+    const def = candidatos.reduce((mejor, e) => (aciertos(e) > aciertos(mejor) ? e : mejor));
+
+    const sinUsar = new Set(def.enumeradores);
+    for (const esperado of pedidos) {
+      const hallado = def.enumeradores.find((x) => x.nombre === esperado);
+      if (hallado) {
+        sinUsar.delete(hallado);
+        continue;
+      }
+      const parecido = [...sinUsar].find(
+        (x) =>
+          !pedidos.includes(x.nombre) &&
+          (x.nombre.toLowerCase() === esperado.toLowerCase() || distancia(x.nombre, esperado) <= 2)
+      );
+      if (!parecido) {
+        error('ENUMERADOR_FALTA', `Falta el enumerador \`${esperado}\`.`, def.fila);
+        continue;
+      }
+      sinUsar.delete(parecido);
+      const soloMayusculas = parecido.nombre.toLowerCase() === esperado.toLowerCase();
+      error(
+        'ENUMERADOR_NOMBRE',
+        `El enumerador \`${parecido.nombre}\` tendría que llamarse \`${esperado}\`` +
+          (soloMayusculas ? ': en C las mayúsculas y las minúsculas son letras distintas.' : '.'),
+        parecido.fila
+      );
+    }
+    for (const x of sinUsar) {
+      aviso('ENUMERADOR_DE_MAS', `La consigna no pide el enumerador \`${x.nombre}\`.`, x.fila);
+    }
+
+    // El orden: el primero vale 0 y cada uno, uno mas que el anterior.
+    const escritos = def.enumeradores.map((x) => x.nombre).filter((n) => pedidos.includes(n));
+    const hechos = pedidos.filter((n) => escritos.includes(n));
+    if (escritos.length === hechos.length && escritos.some((n, i) => n !== hechos[i])) {
+      error(
+        'ENUMERADOR_ORDEN',
+        `Los enumeradores van en este orden: ${pedidos.map((n) => `\`${n}\``).join(', ')}. El orden importa: el primero vale 0 y cada uno vale uno más que el anterior.`,
+        def.fila
+      );
+    } else {
+      // Los valores: los que pide la consigna o, si no, la posicion de cada uno.
+      let esperado = -1;
+      for (const nombre of pedidos) {
+        const pedidoValor = regla.valores && Object.hasOwn(regla.valores, nombre) ? regla.valores[nombre] : esperado + 1;
+        esperado = pedidoValor;
+        const x = def.enumeradores.find((e) => e.nombre === nombre);
+        if (!x || x.valor == null || x.valor === pedidoValor) continue;
+        error(
+          'ENUMERADOR_VALOR',
+          x.explicito
+            ? `\`${nombre}\` vale \`${x.valor}\` y la consigna pide que valga \`${pedidoValor}\`.`
+            : `\`${nombre}\` vale \`${x.valor}\` y la consigna pide que valga \`${pedidoValor}\`: se lo escribe con \`= ${pedidoValor}\` después del nombre.`,
+          x.fila
+        );
+        break;
+      }
+    }
+
+    // Con "etiqueta", el enumerado tiene que llamarse asi (enum Turno { ... }).
+    if (regla.etiqueta && def.etiqueta !== regla.etiqueta) {
+      error(
+        'ENUM_ETIQUETA',
+        def.etiqueta
+          ? `La consigna pide que el enumerado se llame \`${regla.etiqueta}\`, y acá se llama \`${def.etiqueta}\`.`
+          : `Al enumerado le falta el nombre \`${regla.etiqueta}\`: va entre la palabra \`enum\` y la llave.`,
+        def.fila
+      );
+      return;
+    }
+    // Sin etiqueta y sin alias, el enumerado no se puede volver a nombrar.
+    const alias = modelo.aliases.find((a) => a.tipo.defId === def.id && a.tipo.clase === 'enum' && !a.punteros && !a.arreglo.length);
+    if (!def.etiqueta && !alias) {
+      error(
+        'ENUM_SIN_NOMBRE',
+        'El enumerado no tiene nombre, así que después no se lo va a poder usar como tipo. El nombre va entre `enum` y la llave, o se le da un alias con `typedef`.',
+        def.fila
+      );
+      return;
+    }
+    if (regla.capturar) {
+      nuevas[regla.capturar] = def.etiqueta ? 'enum ' + def.etiqueta : alias.nombre;
+    }
   }
 
   // ---- struct ---------------------------------------------------------------
@@ -2419,7 +2535,7 @@ export function corregir(
     // arregla eso primero, y un "no pude verificarlo" encima seria ruido.
     if (diagnosticos.some((d) => d.nivel === 'error')) return null;
     try {
-      return ejecutar(arbol, constante, entrada, prueba);
+      return ejecutar(arbol, constante, entrada, prueba, modelo.desde);
     } catch (e) {
       if (e instanceof FueraDeRango) {
         // Con el numero escrito ya lo dijo la revision general.
@@ -2722,7 +2838,12 @@ export function corregir(
     const con = caso.visible || !caso.datos ? '' : conLosValores(caso.vistos || caso.datos);
     const antes = con ? `${con}, ` : '';
     // Los valores de una variable que tiene letras se dicen como letras.
-    const vista = (nombre, v) => (caso.letrasQueda && caso.letrasQueda.has(nombre) ? deLetra(v) : v);
+    const vista = (nombre, v) =>
+      caso.letrasQueda && caso.letrasQueda.has(nombre)
+        ? deLetra(v)
+        : caso.enumQueda && caso.enumQueda[nombre]
+          ? (caso.enumQueda[nombre].enumeradores.find((e) => e.valor === v)?.nombre ?? v)
+          : v;
     const vistaMuestra = (v) => (caso.letrasMuestra ? deLetra(v) : v);
     const elPrograma = con ? 'el programa' : 'El programa';
     // Cada arreglo que se tiene que recorrer entero, primero: si el ciclo no
@@ -2813,7 +2934,7 @@ export function corregir(
 
       // Sin el ruido de las cuentas con decimales (17.549999999999997).
       const redondeo = (v) => (typeof v === 'number' && !Number.isInteger(v) ? Number(v.toFixed(6)) : v);
-      const resumen = `${antes}\`${nombre}\` termina valiendo \`${redondeo(tiene)}\` y debería valer \`${redondeo(debe)}\``;
+      const resumen = `${antes}\`${nombre}\` termina valiendo \`${vista(nombre, redondeo(tiene))}\` y debería valer \`${vista(nombre, redondeo(debe))}\``;
       const ultimos = Object.values(caso.datos || {}).map((lista) => lista[lista.length - 1]);
       const valoresDeLosArreglos = Object.values(caso.datos || {}).flat(Infinity);
       if (variable.flotante && !Number.isInteger(debe) && tiene === Math.trunc(debe)) {
@@ -2881,6 +3002,29 @@ export function corregir(
             bloquesDeSalida(corrida, pedidas, Boolean(con))
           );
         }
+        return false;
+      }
+    }
+
+    // El texto que muestra, tal cual (sin los espacios ni saltos del final).
+    if (caso.salida != null) {
+      const sale = corrida.salida.split('\n').map((l) => l.replace(/\s+$/, '')).join('\n').replace(/\s+$/, '');
+      const debe = String(caso.salida).trim();
+      if (sale !== debe) {
+        error(
+          sale ? 'MUESTRA_DISTINTA' : 'MUESTRA_FALTA',
+          !sale
+            ? `${antes}${elPrograma} no muestra nada: la consigna pide mostrar el texto con \`printf\`.`
+            : !debe
+              ? `${antes}${elPrograma} muestra un texto, y con ese valor no tiene que mostrar nada:`
+              : `${antes}${elPrograma} muestra otro texto:`,
+          undefined,
+          !sale
+            ? [{ titulo: 'Tiene que mostrar:', lineas: [debe] }]
+            : !debe
+              ? [{ lineas: sale.split('\n') }]
+              : [{ lineas: sale.split('\n') }, { titulo: 'Tiene que mostrar:', lineas: [debe] }]
+        );
         return false;
       }
     }
@@ -2975,9 +3119,56 @@ export function corregir(
     return true;
   }
 
+  // Un caso puede decir un valor con el nombre del enumerador ("turno": "TARDE"):
+  // aca pasa a su numero, y los mensajes lo dicen con el nombre.
+  function conEnumeradores(original, modelo) {
+    const definicion = (nombre) => {
+      const v = modelo.variables.findLast((x) => x.nombre === nombre);
+      if (!v || v.punteros || v.arreglo.length) return null;
+      const real = resolver(v.tipo, modelo);
+      return real.clase === 'enum' ? real.def : null;
+    };
+    let cambio = false;
+    const enumQueda = {};
+    const convertir = (objeto, esQueda) => {
+      if (!objeto) return objeto;
+      const salida = {};
+      for (const [nombre, valor] of Object.entries(objeto)) {
+        const def = typeof valor === 'string' && valor.length > 1 ? definicion(nombre) : null;
+        const x = def && def.enumeradores.find((e) => e.nombre === valor);
+        if (x && x.valor != null) {
+          cambio = true;
+          if (esQueda) enumQueda[nombre] = def;
+          salida[nombre] = x.valor;
+        } else {
+          salida[nombre] = valor;
+        }
+      }
+      return salida;
+    };
+    const datos = convertir(original.datos, false);
+    const queda = convertir(original.queda, true);
+    if (!cambio) return original;
+    return { ...original, datos, queda, vistos: original.vistos || original.datos, enumQueda };
+  }
+
   function reglaEjecuta(regla, modelo) {
     if (regla.conCiclo && !modelo.ciclos.some((c) => c.nuevo)) {
       error('CICLO_FALTA', 'La consigna pide un ciclo: una sentencia que se repite, como `for` o `while`.');
+      return;
+    }
+    // Un switch: con "conSwitch" tiene que haber uno, y con "conDefault", un default.
+    const switches = modelo.switches.filter((s) => s.nuevo);
+    if (regla.conSwitch && !switches.length) {
+      error('SWITCH_FALTA', 'La consigna pide un `switch`: elige qué hacer según el valor de una variable, con un `case` por cada valor.');
+      return;
+    }
+    if (regla.conDefault && switches.length && !switches.some((s) => s.conDefault)) {
+      error(
+        'SWITCH_SIN_DEFAULT',
+        'El `switch` no tiene `default`: si el valor no es ninguno de los casos, no hace nada. La consigna pide que en ese caso muestre un mensaje.',
+        switches[0].fila
+      );
       return;
     }
     if (bibliotecaFalta(modelo)) return;
@@ -2987,14 +3178,14 @@ export function corregir(
     // que dar: asi no vale escribir el resultado a mano.
     if (regla.casos) {
       for (const original of regla.casos) {
-        const caso = conCodigos(original);
+        const caso = conCodigos(conEnumeradores(original, modelo));
         // Lo que la ficha muestra y el caso no dice tambien tiene valor: si no, el
         // alumno que usa otro campo (el mes en vez del anio) leeria "sin valor".
         if (caso.datos) {
           caso.vistos = caso.vistos || caso.datos;
           caso.datos = { ...datosDeLaFicha(), ...caso.datos };
         }
-        const hecha = correrCodigo(modelo, caso.entrada || entrada, caso.datos, {
+        const hecha = correrCodigo(modelo, enCodigos(caso.entrada || entrada), caso.datos, {
           contexto: caso.visible || !caso.datos ? '' : conLosValores(caso.vistos || caso.datos),
           centinela: regla.centinela,
         });
@@ -5307,6 +5498,10 @@ function revisarNombres(modelo, error) {
     const enMinuscula = nombre.toLowerCase();
 
     if (real.que === 'etiqueta') {
+      if (real.de === 'enum') {
+        error('TIPO_DESCONOCIDO', `No hay ningún enumerado llamado \`${nombre}\`.`, uso.fila);
+        continue;
+      }
       let mensaje = `No hay ninguna estructura llamada \`${nombre}\`.`;
       const parecida = modelo.structs.find((s) => s.etiqueta && s.etiqueta.toLowerCase() === enMinuscula);
       if (parecida) {
@@ -5325,6 +5520,8 @@ function revisarNombres(modelo, error) {
       mensaje += ` Las palabras de C van todas en minúscula: \`${enMinuscula}\`.`;
     } else if (modelo.structs.some((s) => s.etiqueta === nombre)) {
       mensaje = `\`${nombre}\` es el nombre de una estructura, pero así solo no es un tipo: falta indicar que se trata de una estructura.`;
+    } else if (modelo.enums.some((e) => e.etiqueta === nombre)) {
+      mensaje = `\`${nombre}\` es el nombre de un enumerado, pero así solo no es un tipo: falta la palabra \`enum\`, como en \`enum ${nombre}\`.`;
     } else if (alias) {
       mensaje += ` El alias está definido como \`${alias.nombre}\`: en C las mayúsculas y las minúsculas son letras distintas.`;
     } else if (enMinuscula === 'string') {
@@ -5872,6 +6069,75 @@ function revisarCondiciones(modelo, error) {
     'En una condición, un solo `=` guarda un valor y no compara: para preguntar si son iguales se usa `==`.',
     conUna.fila
   );
+}
+
+// Lo que vale para cualquier consigna con un enumerado o un switch:
+//  - un numero suelto donde va un nombre (mejora),
+//  - leer directo en la variable del enumerado (nota),
+//  - un caso del switch que sigue con el siguiente porque falta el break (error).
+function revisarEnumerados(modelo, error, mejora, nota, avisados) {
+  const definicion = (nombre) => {
+    const v = modelo.variables.findLast((x) => x.nombre === nombre);
+    if (!v || v.punteros || v.arreglo.length) return null;
+    const real = resolver(v.tipo, modelo);
+    return real.clase === 'enum' ? real.def : null;
+  };
+  const soloNombre = (valor) => (valor && valor.clase === 'nombre' ? valor.nombre : null);
+  const conNombre = (def, numero) => def.enumeradores.find((x) => x.valor === numero);
+  let dicho = false;
+  const sugerir = (def, valor, fila) => {
+    if (dicho || valor.clase !== 'numero') return;
+    const x = conNombre(def, valor.valor);
+    if (!x) return;
+    dicho = true;
+    mejora(
+      'ENUM_CON_NUMERO',
+      `Está bien, pero \`${valor.valor}\` es el valor de \`${x.nombre}\`: con el nombre, el código se entiende sin tener que recordar los números.`,
+      fila
+    );
+  };
+  for (const a of modelo.asignaciones.filter((x) => x.nuevo && x.operador === '=')) {
+    const def = a.izquierda.clase === 'nombre' ? definicion(a.izquierda.nombre) : null;
+    if (def) sugerir(def, a.derecha, a.fila);
+  }
+  for (const c of modelo.comparaciones.filter((x) => x.nuevo)) {
+    const def = definicion(soloNombre(c.izquierda));
+    if (def) sugerir(def, c.derecha, c.fila);
+    const otra = definicion(soloNombre(c.derecha));
+    if (otra) sugerir(otra, c.izquierda, c.fila);
+  }
+  for (const s of modelo.switches.filter((x) => x.nuevo)) {
+    const def = definicion(s.condicion.trim());
+    if (!def) continue;
+    for (const c of s.casos) {
+      if (c.valor != null && /^\d+$/.test(c.valor)) sugerir(def, { clase: 'numero', valor: Number(c.valor) }, c.fila);
+    }
+  }
+  // Leer con scanf directo en una variable de enumerado: compila, pero el tipo
+  // no controla el rango.
+  if (!avisados.includes('SCANF_EN_ENUM')) {
+    for (const l of modelo.llamadas.filter((x) => x.nuevo && x.funcion === 'scanf')) {
+      const directo = l.argumentos.find((a) => a.clase === 'direccion' && definicion(a.nombre));
+      if (!directo) continue;
+      nota(
+        'SCANF_EN_ENUM',
+        `Funciona, pero \`${directo.nombre}\` no es un \`int\`: el programa no controla que el número escrito sea uno de los del enumerado. Por eso conviene leer en un \`int\` y validar antes de guardarlo.`,
+        l.fila
+      );
+      break;
+    }
+  }
+  // Un caso con sentencias que no termina en break pasa al que sigue.
+  for (const s of modelo.switches.filter((x) => x.nuevo)) {
+    s.casos.forEach((c, i) => {
+      if (c.vacio || c.cierra || i === s.casos.length - 1) return;
+      error(
+        'SWITCH_SIN_BREAK',
+        `${c.valor != null ? `El caso \`${c.valor}\`` : 'El \`default\`'} sigue con el caso que viene después, porque le falta \`break\`: se ejecutan también sus sentencias.`,
+        c.fila
+      );
+    });
+  }
 }
 
 // Una posicion que no existe: con 30 filas van de 0 a 29. Solo cuando el

@@ -713,6 +713,46 @@ consigna pide mirar". No cuenta `marcarDestacado` (se lee solo si hay una
 coincidencia). Los nombres de los mensajes salen como los escribe el alumno
 (`alumnos[0].nacimiento.mes`), no como los guarda el simulador.
 
+**Enumerados y `switch`** (grupo "Enumerados": declarar y usar, leer, mostrar):
+
+- `{ "enum": { "enumeradores": ["MANANA", "TARDE", "NOCHE"], "valores": { "BAJA": 1 },
+  "capturar": "E" } }`: los nombres, en orden, y sus valores. Sin `valores`, cada
+  uno vale su posición; con ellos, el que se nombra vale eso y los que siguen,
+  uno más que el anterior. Errores: `ENUM_FALTA`, `ENUMERADOR_FALTA`,
+  `ENUMERADOR_NOMBRE`, `ENUMERADOR_ORDEN`, `ENUMERADOR_VALOR`, `ENUM_SIN_NOMBRE`;
+  avisa `ENUMERADOR_DE_MAS`. El alias se pide con la regla `alias` de siempre
+  (`"de": "$E"`); `variable` sirve con `"tipo": "TTurno"`. Una regla que usa
+  lo que otra no pudo capturar (el enumerado sin nombre) se salta: el error ya
+  está dicho.
+- Con `"etiqueta": "Turno"` el enumerado tiene que llamarse así, `enum Turno
+  {...};` (`ENUM_ETIQUETA`), y no hace falta alias. La serie "Declarar y usar"
+  empieza así (enumerado, variable `enum Turno turno;`) y recién después da el
+  alias (`typedef enum Turno TTurno;`) y el `typedef enum {...} TEstado;` en
+  una sola sentencia. Un nombre de enumerado sin la palabra `enum`
+  (`typedef Prioridad TPrioridad;`, `Turno turno;`) dice que falta `enum`, como
+  con `struct`.
+- **El valor de prueba prevalece sobre el código dado:** en `ejecuta` con
+  `casos`, si el código que se le da a la consigna asigna una variable
+  (`turno = TARDE;`) y el caso trae un valor de prueba para ella (`"datos":
+  { "turno": "NOCHE" }`), esa asignación no la cambia. Las del alumno sí. Así la
+  consigna puede mostrar un valor y probar con cualquiera.
+- En `ejecuta`: `"conSwitch": true` pide un `switch` (`SWITCH_FALTA`) y
+  `"conDefault": true` un `default` (`SWITCH_SIN_DEFAULT`). Un caso puede decir
+  `"salida": "Tarde"`, el texto que tiene que mostrar (sin los espacios ni
+  saltos del final): `MUESTRA_DISTINTA` o `MUESTRA_FALTA`, con un recuadro de lo
+  que sale y lo que se pide. Los valores de `datos` y `queda` pueden ser el
+  nombre del enumerador (`"turno": "TARDE"`): pasan a su número y los mensajes
+  lo dicen con el nombre. Una letra en `entrada` (`"entrada": ["T"]`) llega
+  como su código, y `scanf(" %c", &letra)` la lee.
+- El simulador sigue un enumerado como un `int` (también un campo de una
+  estructura y un cast `(TTurno) opcion`) y el `switch` con `case`, `default` y
+  `break` (sin `break` pasa al caso que sigue).
+- En todas las series: un caso con sentencias y sin `break` que no es el último
+  es `SWITCH_SIN_BREAK`; un número suelto donde va el nombre del enumerado
+  (`turno = 1`, `turno == 2`, `case 0:`) es la mejora `ENUM_CON_NUMERO`; leer con
+  `scanf` directo en la variable del enumerado es la nota `SCANF_EN_ENUM` (una
+  vez por serie).
+
 **Un `=` en una condición** (`if (x = 1)`, `while (n = 0)`, `for (...; i = MAX; ...)`,
 también `+=` y similares): en todas las series, sin configurar nada, es el error
 `ASIGNACION_EN_CONDICION` con "se usa `==`". Se deja pasar el idioma

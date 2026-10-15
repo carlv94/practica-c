@@ -5,7 +5,9 @@
 //
 //   struct:   { id, etiqueta, campos, nuevo, fila }
 //   campo:    { nombre, tipo, arreglo, punteros, fila }
+//   enum:     { id, etiqueta, enumeradores: [{ nombre, valor, explicito, fila }], nuevo, fila }
 //   alias:    { nombre, tipo, arreglo, punteros, nuevo, fila }
+//   switch:   { condicion, casos: [{ valor, vacio, cierra, fila }], conDefault, posicion, fin, nuevo, fila }
 //   variable: { nombre, tipo, arreglo, punteros, local, esConst, inicializada, inicial, nuevo, fila }
 //   constante: { nombre, valor, clase: 'define' | 'enum', nuevo, fila }
 //
@@ -43,6 +45,7 @@
 // "tipo" es el tipo tal como esta escrito:
 //   { clase: 'primitivo', nombre: 'unsigned int' }
 //   { clase: 'struct', etiqueta: 'Puesto', defId }   defId si trae el cuerpo ahi mismo
+//   { clase: 'enum', etiqueta: 'Turno', defId }      igual, para un enumerado
 //   { clase: 'nombre', nombre: 'PuestoT' }           un alias, o algo que no existe
 //   { clase: 'otro', texto }
 //
@@ -173,7 +176,11 @@ function expandirAlias(lista, modelo) {
 
 export function construirModelo(arbol, desde) {
   const modelo = {
+    // Donde empieza lo que escribio el alumno (lo de antes es lo que le dieron).
+    desde,
     structs: [],
+    enums: [],
+    switches: [],
     aliases: [],
     variables: [],
     constantes: [],
@@ -318,9 +325,49 @@ export function construirModelo(arbol, desde) {
     return def;
   }
 
+  // Un enumerado: sus nombres en orden, con el valor de cada uno (el escrito, o
+  // el que sigue al anterior).
+  const enumDeNodo = new Map();
+  function registrarEnum(n) {
+    if (enumDeNodo.has(n.id)) return enumDeNodo.get(n.id);
+    const nombre = n.childForFieldName('name');
+    const def = {
+      id: modelo.enums.length,
+      etiqueta: nombre ? nombre.text : null,
+      enumeradores: [],
+      nuevo: n.startIndex >= desde,
+      fila: n.startPosition.row,
+    };
+    enumDeNodo.set(n.id, def);
+    modelo.enums.push(def);
+    let anterior = -1;
+    for (const e of n.childForFieldName('body').namedChildren) {
+      if (e.type !== 'enumerator') continue;
+      const valor = e.childForFieldName('value');
+      const escrito = valor ? valor.text.trim() : null;
+      // Un valor escrito como numero; con otra expresion no se sabe cual es.
+      const numero = escrito != null && /^-?\d+$/.test(escrito) ? Number(escrito) : escrito != null ? null : anterior + 1;
+      def.enumeradores.push({
+        nombre: e.childForFieldName('name')?.text || '',
+        valor: numero,
+        explicito: escrito != null,
+        fila: e.startPosition.row,
+      });
+      anterior = numero ?? anterior + 1;
+      valoresDeEnumerador.set(e.id, numero);
+    }
+    return def;
+  }
+  const valoresDeEnumerador = new Map();
+
   function leerTipo(n) {
     if (!n) return { clase: 'otro', texto: '' };
     switch (n.type) {
+      case 'enum_specifier': {
+        const nombre = n.childForFieldName('name');
+        const def = n.childForFieldName('body') ? registrarEnum(n) : null;
+        return { clase: 'enum', etiqueta: nombre ? nombre.text : null, defId: def ? def.id : null };
+      }
       case 'struct_specifier': {
         const nombre = n.childForFieldName('name');
         const def = n.childForFieldName('body') ? registrarStruct(n) : null;
@@ -339,6 +386,7 @@ export function construirModelo(arbol, desde) {
   (function visitar(n, local) {
     switch (n.type) {
       case 'struct_specifier':
+      case 'enum_specifier':
         leerTipo(n);
         break;
       case 'declaration':
@@ -369,7 +417,7 @@ export function construirModelo(arbol, desde) {
         if (nombre) {
           modelo.constantes.push({
             nombre: nombre.text,
-            valor: valor ? valor.text.trim() : '',
+            valor: valor ? valor.text.trim() : valoresDeEnumerador.has(n.id) && valoresDeEnumerador.get(n.id) != null ? String(valoresDeEnumerador.get(n.id)) : '',
             clase: n.type === 'preproc_def' ? 'define' : 'enum',
             nuevo: n.startIndex >= desde,
             fila: n.startPosition.row,
@@ -462,6 +510,38 @@ export function construirModelo(arbol, desde) {
         }
         break;
       }
+      case 'switch_statement': {
+        // Cada "case" con su valor, si no tiene nada adentro (queda pegado al que
+        // sigue) y si termina con break o return.
+        const cuerpo = n.childForFieldName('body');
+        const casos = [];
+        let conDefault = false;
+        for (const c of cuerpo ? cuerpo.namedChildren : []) {
+          if (c.type !== 'case_statement') continue;
+          const valor = c.childForFieldName('value');
+          if (!valor) conDefault = true;
+          const sentencias = c.namedChildren.filter((h) => h.id !== valor?.id && h.type !== 'comment');
+          const ultima = sentencias[sentencias.length - 1];
+          const cierra = Boolean(ultima) && (ultima.type === 'break_statement' || ultima.type === 'return_statement');
+          casos.push({
+            valor: valor ? valor.text.trim() : null,
+            vacio: sentencias.length === 0,
+            cierra,
+            fila: c.startPosition.row,
+          });
+        }
+        const condicion = n.childForFieldName('condition');
+        modelo.switches.push({
+          condicion: condicion ? condicion.text.replace(/^\(\s*([\s\S]*?)\s*\)$/, '$1') : '',
+          casos,
+          conDefault,
+          posicion: n.startIndex,
+          fin: n.endIndex,
+          nuevo: n.startIndex >= desde,
+          fila: n.startPosition.row,
+        });
+        break;
+      }
       case 'if_statement':
         modelo.ifs.push({
           condicion: (n.childForFieldName('condition')?.text || '').replace(/^\(\s*([\s\S]*?)\s*\)$/, '$1'),
@@ -530,6 +610,16 @@ export function resolver(tipo, modelo, vistos = new Set()) {
       : { clase: 'desconocido', que: 'etiqueta', nombre: tipo.etiqueta };
   }
 
+  if (tipo.clase === 'enum') {
+    const def =
+      tipo.defId != null
+        ? modelo.enums[tipo.defId]
+        : modelo.enums.find((e) => e.etiqueta === tipo.etiqueta);
+    return def
+      ? { clase: 'enum', def }
+      : { clase: 'desconocido', que: 'etiqueta', de: 'enum', nombre: tipo.etiqueta };
+  }
+
   if (tipo.clase === 'nombre') {
     if (DE_LA_BIBLIOTECA.has(tipo.nombre)) return { clase: 'otro' };
     const alias = modelo.aliases.find((a) => a.nombre === tipo.nombre);
@@ -552,6 +642,7 @@ const BASICOS = ['char', 'int', 'float', 'double', 'long', 'short', 'unsigned', 
 export function tipoDesdeTexto(texto) {
   const partes = texto.trim().split(/\s+/);
   if (partes[0] === 'struct') return { clase: 'struct', etiqueta: partes[1], defId: null };
+  if (partes[0] === 'enum') return { clase: 'enum', etiqueta: partes[1], defId: null };
   if (partes.every((p) => BASICOS.includes(p))) return { clase: 'primitivo', nombre: partes.join(' ') };
   return { clase: 'nombre', nombre: partes[0] };
 }
@@ -562,6 +653,8 @@ export function textoDeTipo(tipo) {
       return tipo.nombre;
     case 'struct':
       return tipo.etiqueta ? 'struct ' + tipo.etiqueta : 'struct';
+    case 'enum':
+      return tipo.etiqueta ? 'enum ' + tipo.etiqueta : 'enum';
     case 'nombre':
       return tipo.nombre;
     default:
