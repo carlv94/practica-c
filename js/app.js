@@ -727,7 +727,7 @@ function comprobar() {
       $('respuesta').readOnly = true;
       for (const radio of document.querySelectorAll('#opciones input')) radio.disabled = true;
       $('comprobar').hidden = true;
-      $('ver-solucion').hidden = true;
+      // "Ver una solucion" queda: con la respuesta bien, es otra forma de resolver lo mismo.
       $('siguiente').textContent = ultima ? 'Terminar' : 'Siguiente';
       $('siguiente').focus({ preventScroll: true });
     }
@@ -776,13 +776,22 @@ function verSolucion() {
   // Con los nombres que el alumno uso antes, cuando la referencia los nombra.
   const referencia = respuestaDeReferencia(consigna, capturasPrevias(serie, hechas.length, avance));
   const r = corregirPaso(analizador, serie, hechas.length, avance, referencia);
-  const nota = r.correcto
-    ? 'Esta es una solución posible. Puede escribirla o copiarla, y comprobar.'
-    : 'Esta es una solución posible, escrita con otros nombres: hay que adaptarla a los que usó usted.';
+  // Con la respuesta ya bien, la solucion es otra forma de resolver lo mismo y
+  // se muestra debajo del resultado, que se queda.
+  const yaResuelta = Boolean(pendiente);
+  const nota = yaResuelta
+    ? 'Esta es una solución posible: otra forma de resolver lo mismo, para que la compare con la suya.'
+    : r.correcto
+      ? 'Esta es una solución posible. Puede escribirla o copiarla, y comprobar.'
+      : 'Esta es una solución posible, escrita con otros nombres: hay que adaptarla a los que usó usted.';
   const ejemplo = document.createElement('pre');
   pintar(ejemplo, referencia);
-  $('respuesta').focus({ preventScroll: true });
-  mostrarResultado([mensaje('aviso', nota), ejemplo]);
+  if (!yaResuelta) $('respuesta').focus({ preventScroll: true });
+  const anteriores = yaResuelta ? [...$('resultado').children].filter((c) => !c.dataset.solucion) : [];
+  const caja = mensaje('aviso', nota);
+  caja.dataset.solucion = '1';
+  ejemplo.dataset.solucion = '1';
+  mostrarResultado([...anteriores, caja, ejemplo]);
 }
 
 function reiniciar() {
