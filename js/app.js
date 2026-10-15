@@ -455,18 +455,18 @@ function dibujarFicha(fichas) {
     if (ficha.titulo) tarjeta.appendChild(elemento('p', 'ficha-titulo', ficha.titulo));
     // Un campo que es otra estructura lleva su propia subficha, por dentro, y
     // sus campos se nombran con el camino (nacimiento.anio).
-    const llenar = (cuerpo, campos, prefijo) => {
+    const llenar = (cuerpo, campos, prefijo, deMarcada = false) => {
       for (const campo of campos) {
         const camino = prefijo + campo.nombre;
         const nombre = elemento('dt');
         nombre.appendChild(elemento('code', null, campo.nombre));
         const marcado = (lista) => lista === 'todos' || (Array.isArray(lista) && lista.includes(camino));
-        const nuevo = marcado(ficha.resaltar) || marcado(ficha.marcar);
+        const nuevo = deMarcada || marcado(ficha.resaltar) || marcado(ficha.marcar);
         if (campo.campos) {
           const sub = elemento('dl', 'ficha-cuerpo');
-          llenar(sub, campo.campos, camino + '.');
-          // Una estructura de adentro marcada entera ("marcar": ["ingreso"]).
-          const entera = Array.isArray(ficha.marcar) && ficha.marcar.includes(camino);
+          // Marcada entera: la tarjeta y tambien sus valores.
+          const entera = deMarcada || (Array.isArray(ficha.marcar) && ficha.marcar.includes(camino));
+          llenar(sub, campo.campos, camino + '.', entera);
           const caja = elemento('dd', entera ? 'subficha subficha-destacada' : 'subficha');
           caja.appendChild(sub);
           nombre.classList.add('ficha-nombre-de-sub');
