@@ -1,9 +1,9 @@
 {
   "id": "estructuras-alumno",
-  "titulo": "El legajo de un alumno",
+  "titulo": "Declarar estructuras y darles un alias",
   "continua": true,
   "dentroDeMain": true,
-  "descripcion": "Otro caso para repasar: una estructura con un campo de cada tipo, su alias y una variable.",
+  "descripcion": "Declarar una estructura, una variable de ese tipo, un alias y una variable con el alias, y el alias en la misma sentencia que la estructura.",
   "consignas": [
     {
       "id": "estructuras-alumno-1",
@@ -36,6 +36,13 @@
     },
     {
       "id": "estructuras-alumno-2",
+      "titulo": "Declarar una variable",
+      "enunciado": "Declare una variable usando la estructura {S}.",
+      "requiere": [{ "variable": { "tipo": "$S" } }],
+      "referencia": "struct Alumno unAlumno;"
+    },
+    {
+      "id": "estructuras-alumno-3",
       "en": "archivo",
       "titulo": "Definir un alias",
       "enunciado": "Defina un alias para la estructura {S}.",
@@ -43,11 +50,35 @@
       "referencia": "typedef struct Alumno TAlumno;"
     },
     {
-      "id": "estructuras-alumno-3",
+      "id": "estructuras-alumno-4",
       "titulo": "Declarar una variable con el alias",
       "enunciado": "Declare una variable usando el alias {A}.",
       "requiere": [{ "variable": { "tipo": "$S", "conAlias": true } }],
-      "referencia": "{A} unAlumno;"
+      "referencia": "{A} otroAlumno;"
+    },
+    {
+      "id": "estructuras-alumno-5",
+      "en": "archivo",
+      "titulo": "La estructura y su alias en una sola sentencia",
+      "enunciado": "La facultad también registra las materias. De cada materia se guarda, en este orden, el código, el nombre y el cupo. Los campos se llaman así:\n[ficha]\nDeclare la estructura y dele el alias `TMateria` en la misma sentencia: el alias se escribe después de la llave de cierre, y así la estructura no necesita nombre.",
+      "ficha": {
+        "titulo": "Ficha de materia",
+        "campos": [{ "nombre": "codigo" }, { "nombre": "nombre" }, { "nombre": "cupo" }]
+      },
+      "requiere": [
+        {
+          "struct": {
+            "capturar": "M",
+            "campos": [
+              { "nombre": "codigo", "tipo": "entero" },
+              { "nombre": "nombre", "tipo": "cadena" },
+              { "nombre": "cupo", "tipo": "entero" }
+            ]
+          }
+        },
+        { "alias": { "de": "$M", "nombre": "TMateria", "capturar": "B" } }
+      ],
+      "referencia": "typedef struct {\n  int codigo;\n  char nombre[40];\n  int cupo;\n} TMateria;"
     }
   ]
 }
