@@ -32,7 +32,7 @@
         "resaltar": ["legajo"]
       },
       "requiere": [
-        { "campo": { "variable": "alumnos[0]", "campos": [{ "nombre": "legajo", "tipo": "entero" }] } }
+        { "campo": { "soloEsos": true, "variable": "alumnos[0]", "campos": [{ "nombre": "legajo", "tipo": "entero" }] } }
       ],
       "referencia": "alumnos[0].legajo = 20431;"
     },
@@ -50,6 +50,7 @@
       "requiere": [
         {
           "campo": {
+            "soloEsos": true,
             "variable": "alumnos[1]",
             "campos": [
               { "nombre": "legajo", "tipo": "entero" },

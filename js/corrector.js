@@ -1779,6 +1779,44 @@ export function corregir(
 
     const deLaVariable = (v, campo) =>
       v.clase === 'campo' && sinEspacios(v.variable) === sinEspacios(nombre) && v.campo === campo;
+
+    // "soloEsos": la consigna es cerrada, y guardar otro campo de la estructura
+    // (de la variable, o de cualquier parte de ella si no es un elemento de un
+    // arreglo) es hacer algo que no se pidio.
+    // Con un solo campo sin guardar y uno solo de mas, de la misma estructura:
+    // seguramente es el que quiso escribir.
+    let pista = null;
+    if (regla.soloEsos) {
+      const dicha = sinEspacios(nombre);
+      const delMismo = modelo.asignaciones
+        .filter((a) => a.nuevo && a.izquierda.clase === 'campo' && sinEspacios(a.izquierda.variable) === dicha)
+        .map((a) => a.izquierda.campo);
+      const sobran = [...new Set(delMismo.filter((c) => !regla.campos.some((p) => p.nombre === c)))];
+      const faltan = regla.campos.filter((p) => !delMismo.includes(p.nombre));
+      if (faltan.length === 1 && sobran.length === 1) pista = { guardo: `${dicha}.${sobran[0]}` };
+      const ambito = dicha.includes('[') ? dicha : dicha.split('.')[0];
+      const pedidos = regla.campos.map((c) => `${dicha}.${c.nombre}`);
+      // Solo cuando lo pedido ya esta guardado: si falta un campo, eso es lo que
+      // importa, y una cadena asignada con "=" ya tiene su error.
+      const estanTodos = pedidos.every((p) =>
+        asignaciones.some((a) => a.izquierda.clase === 'campo' && `${sinEspacios(a.izquierda.variable)}.${a.izquierda.campo}` === p)
+      );
+      const deMas = !estanTodos || diagnosticos.some((d) => d.codigo === 'ASIGNACION_DE_ARREGLO') ? null : modelo.asignaciones.find((a) => {
+        if (!a.nuevo || a.izquierda.clase !== 'campo') return false;
+        const camino = `${sinEspacios(a.izquierda.variable)}.${a.izquierda.campo}`;
+        return camino.startsWith(`${ambito}.`) && !pedidos.includes(camino);
+      });
+      if (deMas) {
+        const camino = `${sinEspacios(deMas.izquierda.variable)}.${deMas.izquierda.campo}`;
+        const lista = enLista(pedidos);
+        error(
+          'CAMPO_NO_PEDIDO',
+          `La consigna pide guardar solo ${lista}, y el programa también guarda en \`${camino}\`. Quite esa asignación.`,
+          deMas.fila
+        );
+      }
+    }
+
     for (const pedido of regla.campos) {
       const guardadas = asignaciones.filter((a) => deLaVariable(a.izquierda, pedido.nombre));
       const a = guardadas[guardadas.length - 1];
@@ -1796,7 +1834,8 @@ export function corregir(
         } else {
           error(
             'CAMPO_SIN_CARGAR',
-            `No encontré dónde se guarda el valor de \`${pedido.nombre}\`: se escribe la variable, un punto, el nombre del campo, \`=\` y el valor.`
+            `No encontré dónde se guarda el valor de \`${pedido.nombre}\`: se escribe la variable, un punto, el nombre del campo, \`=\` y el valor.` +
+              (pista ? ` El programa guarda en \`${pista.guardo}\`, pero la consigna pide \`${lugar}\`.` : '')
           );
         }
         continue;

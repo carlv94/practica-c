@@ -549,6 +549,14 @@ Estructuras, serie "Usar los campos"):
   índice de otra posición es `ARGUMENTO_OTRA_POSICION`, uno que no existe
   `INDICE_FUERA_DE_RANGO`, y el arreglo sin índice (`alumnos.legajo`)
   `ARREGLO_SIN_INDICE`.
+- `"soloEsos": true` en la regla `campo`: la consigna es cerrada, y guardar
+  otro campo de la misma estructura es `CAMPO_NO_PEDIDO` ("La consigna pide
+  guardar solo `alumno.legajo`, y el programa también guarda en
+  `alumno.promedio`"). Es opcional y se pone consigna por consigna; hoy lo
+  llevan las que guardan valores con la ficha (usar los campos, un elemento del
+  arreglo, las fechas de adentro). No se dice si falta un campo pedido (eso va
+  primero), si ya se dijo `ASIGNACION_DE_ARREGLO`, ni cuando el campo de más
+  es de otra estructura de adentro (`CAMPO_OTRA_ESTRUCTURA`).
 
 **Estructuras dentro de estructuras** (serie "Estructuras dentro de estructuras"):
 

@@ -1336,6 +1336,8 @@ const CASOS_DE_USAR_CAMPOS = [
   usar(1, 'legajo', 'alumno.legajo = 20431;', 'ok'),
   usar(1, 'legajo, sin espacios', 'alumno.legajo=20431;', 'ok'),
   usar(1, 'legajo, en dos pasos que dan lo mismo', 'alumno.legajo = 1;\nalumno.legajo = 20431;', 'ok'),
+  usar(1, 'guarda tambien el promedio', 'alumno.legajo = 20431;\nalumno.promedio = 8.45;', ['CAMPO_NO_PEDIDO']),
+  usar(1, 'guarda tambien el promedio antes', 'alumno.promedio = 8.45;\nalumno.legajo = 20431;', ['CAMPO_NO_PEDIDO']),
   usar(1, 'el campo sin la variable', 'legajo = 20431;', ['CAMPO_SIN_VARIABLE']),
   usar(1, 'el tipo en vez de la variable', 'Alumno.legajo = 20431;', ['TIPO_EN_VEZ_DE_VARIABLE']),
   usar(1, 'la flecha', 'alumno->legajo = 20431;', ['FLECHA_CON_VARIABLE']),

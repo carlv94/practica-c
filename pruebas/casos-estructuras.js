@@ -141,6 +141,7 @@ export const CASOS_DE_ARREGLO_DE_ESTRUCTURAS = [
   arreglo(1, 'sin tamano', 'TAlumno alumnos[];', ['ARREGLO_SIN_DIMENSION']),
   // 2: el legajo del primero
   arreglo(2, 'legajo', 'alumnos[0].legajo = 20431;'),
+  arreglo(2, 'guarda tambien el promedio', 'alumnos[0].legajo = 20431;\nalumnos[0].promedio = 8.45;', ['CAMPO_NO_PEDIDO']),
   arreglo(2, 'otra posicion', 'alumnos[1].legajo = 20431;', ['ARGUMENTO_OTRA_POSICION']),
   arreglo(2, 'el arreglo sin indice', 'alumnos.legajo = 20431;', ['ARREGLO_SIN_INDICE']),
   arreglo(2, 'una posicion que no existe', 'alumnos[3].legajo = 20431;', ['INDICE_FUERA_DE_RANGO']),
@@ -460,6 +461,11 @@ export const CASOS_DE_ANIDADAS = [
   ),
   // 2: el año de nacimiento
   anidadas(2, 'el anio', 'alumno.nacimiento.anio = 2004;'),
+  anidadas(2, 'guarda el dia en vez del anio', 'alumno.nacimiento.dia = 2004;', ['CAMPO_SIN_CARGAR'], {
+    dice: ['El programa guarda en `alumno.nacimiento.dia`, pero la consigna pide `alumno.nacimiento.anio`.'],
+  }),
+  anidadas(2, 'guarda tambien el mes', 'alumno.nacimiento.anio = 2004;\nalumno.nacimiento.mes = 3;', ['CAMPO_NO_PEDIDO']),
+  anidadas(2, 'guarda tambien la otra fecha', 'alumno.nacimiento.anio = 2004;\nalumno.ingreso.anio = 2022;', ['CAMPO_OTRA_ESTRUCTURA']),
   anidadas(2, 'saltando el nivel', 'alumno.anio = 2004;', ['CAMPO_DE_OTRO_NIVEL']),
   anidadas(2, 'sin la variable', 'nacimiento.anio = 2004;', ['VARIABLE_DESCONOCIDA']),
   anidadas(2, 'la otra fecha', 'alumno.ingreso.anio = 2004;', ['CAMPO_OTRA_ESTRUCTURA']),
@@ -468,6 +474,7 @@ export const CASOS_DE_ANIDADAS = [
   anidadas(2, 'la fecha entera', 'alumno.nacimiento = 2004;', ['CAMPO_ES_UNA_ESTRUCTURA']),
   // 3: la fecha de ingreso
   anidadas(3, 'los tres', 'alumno.ingreso.dia = 1;\nalumno.ingreso.mes = 3;\nalumno.ingreso.anio = 2022;'),
+  anidadas(3, 'guarda tambien el nacimiento', 'alumno.ingreso.dia = 1;\nalumno.ingreso.mes = 3;\nalumno.ingreso.anio = 2022;\nalumno.nacimiento.anio = 2004;', ['CAMPO_OTRA_ESTRUCTURA']),
   anidadas(3, 'en otro orden', 'alumno.ingreso.anio = 2022;\nalumno.ingreso.mes = 3;\nalumno.ingreso.dia = 1;'),
   anidadas(3, 'falta el mes', 'alumno.ingreso.dia = 1;\nalumno.ingreso.anio = 2022;', ['CAMPO_SIN_CARGAR']),
   anidadas(

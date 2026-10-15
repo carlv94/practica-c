@@ -58,7 +58,7 @@
         ]
       },
       "requiere": [
-        { "campo": { "variable": "alumno.nacimiento", "campos": [{ "nombre": "anio", "tipo": "entero" }] } }
+        { "campo": { "soloEsos": true, "variable": "alumno.nacimiento", "campos": [{ "nombre": "anio", "tipo": "entero" }] } }
       ],
       "referencia": "alumno.nacimiento.anio = 2004;"
     },
@@ -90,6 +90,7 @@
       "requiere": [
         {
           "campo": {
+            "soloEsos": true,
             "variable": "alumno.ingreso",
             "campos": [
               { "nombre": "dia", "tipo": "entero" },

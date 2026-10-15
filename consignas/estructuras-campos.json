@@ -25,6 +25,7 @@
       "requiere": [
         {
           "campo": {
+            "soloEsos": true,
             "variable": "alumno",
             "campos": [{ "nombre": "legajo", "tipo": "entero" }]
           }
@@ -82,6 +83,7 @@
       "requiere": [
         {
           "campo": {
+            "soloEsos": true,
             "variable": "alumno",
             "campos": [
               { "nombre": "promedio", "tipo": "real" },
