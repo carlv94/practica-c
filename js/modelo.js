@@ -188,6 +188,8 @@ export function construirModelo(arbol, desde) {
     asignaciones: [],
     camposUsados: [],
     ciclos: [],
+    // Cada acceso a una posicion (ventas[MARTES][t]): el nombre y cada indice.
+    indexaciones: [],
     ifs: [],
     includes: [],
     comparaciones: [],
@@ -473,6 +475,24 @@ export function construirModelo(arbol, desde) {
             nuevo: n.startIndex >= desde,
             fila: n.startPosition.row,
           });
+        }
+        break;
+      }
+      case 'subscript_expression': {
+        // Solo el acceso entero: los de adentro (ventas[a] de ventas[a][b]) son parte de el.
+        const padre = n.parent;
+        const esParte =
+          padre && padre.type === 'subscript_expression' && padre.childForFieldName('argument')?.id === n.id;
+        if (!esParte) {
+          const v = leerValor(n);
+          if (v.nombre) {
+            modelo.indexaciones.push({
+              nombre: v.nombre,
+              indices: v.indices,
+              nuevo: n.startIndex >= desde,
+              fila: n.startPosition.row,
+            });
+          }
         }
         break;
       }

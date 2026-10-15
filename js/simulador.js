@@ -773,6 +773,18 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
     const [k, ...resto] = dims;
     const datos = new Array(k).fill(resto.length ? undefined : 0);
     const elementos = lista ? lista.namedChildren.filter((h) => h.type !== 'comment') : [];
+    // Una tabla con menos llaves ({0}): los valores la llenan en orden, fila por
+    // fila, y lo que falta queda en cero.
+    if (resto.length && elementos.length && elementos.every((e) => e.type !== 'initializer_list')) {
+      const valores = elementos.map((e) => (flotante ? evaluar(e).v : Math.trunc(evaluar(e).v)));
+      if (valores.length > dims.reduce((x, y) => x * y, 1)) sinVerificar(lista, 'mas valores que posiciones');
+      let p = 0;
+      const armar = (d) => {
+        const [m, ...r] = d;
+        return Array.from({ length: m }, () => (r.length ? armar(r) : (valores[p++] ?? 0)));
+      };
+      return armar(dims);
+    }
     elementos.forEach((e, i) => {
       if (i >= k) sinVerificar(lista, 'mas valores que posiciones');
       if (resto.length) datos[i] = e.type === 'initializer_list' ? llenar(resto, e, flotante) : sinVerificar(e);

@@ -459,6 +459,20 @@ section[hidden] {
   min-width: 78px;
 }
 
+/* En una tabla, el nombre de cada fila (a la izquierda) y de cada columna (arriba). */
+#figura .tabla .nombre-de-indice {
+  padding-bottom: 0;
+}
+
+#figura .tabla .nombre-de-indice.de-fila {
+  justify-self: end;
+  padding-right: 6px;
+}
+
+#figura .tabla .valor {
+  min-width: 78px;
+}
+
 #figura .valor {
   display: grid;
   place-items: center;

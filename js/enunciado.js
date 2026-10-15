@@ -92,6 +92,8 @@ export function enunciadoEnDos(consigna) {
 // con su nombre ("planos": "notas" las llama notas[0], notas[1]).
 // "arreglo" es el resultado que tiene que quedar, aparte de la tabla.
 // Y "salida" es lo que tiene que mostrar el programa, en un recuadro de consola.
+// En una tabla, "nombresFilas" y "nombresColumnas" son los nombres de dos
+// enumerados, uno por fila y uno por columna, junto a los indices.
 // En un arreglo, "nombres" son los nombres de un enumerado, uno por posicion, que
 // se ven bajo cada indice (MANANA, TARDE, NOCHE).
 // En un arreglo, "resaltar" es la lista de posiciones que se marcan, y un valor
@@ -113,6 +115,8 @@ export function figuraDe(consigna) {
       rotuloColumnas: d.columnas,
       resaltar: d.resaltar,
       nombres: d.nombres,
+      nombresFilas: d.nombresFilas,
+      nombresColumnas: d.nombresColumnas,
       arreglo: d.arreglo,
       salida: consigna.salida,
     };

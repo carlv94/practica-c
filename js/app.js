@@ -580,6 +580,9 @@ function dibujarTabla(caja, figura) {
   const columnas = filas[0].length;
   const conRotuloFilas = Boolean(figura.rotuloFilas);
   const conRotuloColumnas = Boolean(figura.rotuloColumnas);
+  // Los nombres de un enumerado: uno junto al indice de cada fila y de cada columna.
+  const conNombresFilas = Array.isArray(figura.nombresFilas);
+  const conNombresColumnas = Array.isArray(figura.nombresColumnas);
   const resultado = figura.arreglo;
   const alLado = Boolean(resultado && resultado.vertical);
   caja.setAttribute(
@@ -587,6 +590,8 @@ function dibujarTabla(caja, figura) {
     `Tabla de ${filas.length} filas y ${columnas} columnas` +
       (conRotuloFilas ? `: las filas son ${figura.rotuloFilas}` : '') +
       (conRotuloColumnas ? `, las columnas son ${figura.rotuloColumnas}` : '') +
+      (conNombresFilas ? `. Filas: ${figura.nombresFilas.join(', ')}` : '') +
+      (conNombresColumnas ? `. Columnas: ${figura.nombresColumnas.join(', ')}` : '') +
       (figura.resaltar === 'diagonal' ? ', con la diagonal principal resaltada' : '') +
       '. ' +
       filas.map((fila, i) => `Fila ${i}: ${fila.join(', ')}`).join('. ') +
@@ -595,12 +600,12 @@ function dibujarTabla(caja, figura) {
   const tabla = elemento('div', 'tabla');
   // Lineas de la grilla (desde 1): [rotulo de filas] indice, valores y, si el
   // resultado va al lado, un espacio, sus indices y sus valores.
-  const desfase = conRotuloFilas ? 1 : 0;
+  const desfase = (conRotuloFilas ? 1 : 0) + (conNombresFilas ? 1 : 0);
   const colIndice = desfase + 1;
   const colEspacio = colIndice + columnas + 1;
   const colIndiceResultado = colEspacio + 1;
   const colResultado = colEspacio + 2;
-  const ancho = (conRotuloFilas ? ['auto'] : []).concat(['auto'], Array(columnas).fill('auto'));
+  const ancho = Array(desfase).fill('auto').concat(['auto'], Array(columnas).fill('auto'));
   if (alLado) ancho.push('28px', 'auto', 'auto');
   tabla.style.gridTemplateColumns = ancho.join(' ');
   const poner = (e, fila, columna, largo = 1, alto = 1) => {
@@ -618,13 +623,22 @@ function dibujarTabla(caja, figura) {
     poner(elemento('span', 'rotulo rotulo-columnas', resultado.nombre), r, colIndiceResultado, 2);
     r++;
   }
-  // Los indices de las columnas.
+  // Los nombres de las columnas, y debajo sus indices.
+  if (conNombresColumnas) {
+    figura.nombresColumnas.forEach((nombre, j) =>
+      poner(elemento('span', 'nombre-de-indice', nombre), r, colIndice + 1 + j)
+    );
+    r++;
+  }
   for (let j = 0; j < columnas; j++) poner(elemento('span', 'indice', j), r, colIndice + 1 + j);
   const primeraFila = r + 1;
   if (conRotuloFilas) {
     poner(elemento('span', 'rotulo rotulo-filas', figura.rotuloFilas), primeraFila, 1, 1, filas.length);
   }
   filas.forEach((fila, i) => {
+    if (conNombresFilas) {
+      poner(elemento('span', 'nombre-de-indice de-fila', figura.nombresFilas[i]), primeraFila + i, colIndice - 1);
+    }
     poner(elemento('span', 'indice de-fila', i), primeraFila + i, colIndice);
     fila.forEach((valor, j) => {
       const resaltado = figura.resaltar === 'diagonal' && i === j ? ' resaltado' : '';

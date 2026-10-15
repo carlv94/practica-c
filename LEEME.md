@@ -760,6 +760,16 @@ coincidencia). Los nombres de los mensajes salen como los escribe el alumno
   nombre de cada posición, bajo su índice. La serie usa `#define TURNOS 3` en la
   cabecera y acepta `TURNOS`, `NOCHE + 1` y `3` (con la mejora de usar la
   constante). Una explicación de una opción equivocada no dice el valor correcto.
+- **Una tabla indexada con dos enumerados** (serie "Una tabla con enumerados"):
+  `"indicesDe": { "ventas": [{ "tipo": "TDia", "uno": "un día", "varios": "los
+  días" }, { "tipo": "TTurno", "uno": "un turno", "varios": "los turnos" }] }`
+  en `ejecuta`: si un índice escrito es el nombre de otro enumerado (el turno
+  donde va el día), es `INDICE_DE_OTRO_ENUMERADO`: "`TARDE` es un turno, pero
+  el primer índice de `ventas` elige los días". Solo mira nombres escritos; con
+  variables, el ciclo que se pasa da `INDICE_FUERA_DE_RANGO`. `indicesConNombre`
+  también mira cada índice de una tabla (`ventas[2][1]`). El dibujo de una tabla
+  lleva `"nombresFilas"` y `"nombresColumnas"` junto a los índices. El
+  simulador llena una tabla con menos llaves (`= {0}`) en orden, como C.
 - **Un enumerado como campo de una estructura** (serie "Un enumerado dentro de
   una estructura"): en la regla `struct`, `{ "nombre": "turno", "tipo":
   "enumerado", "de": "TTurno" }`; en `campo`, `{ "nombre": "turno", "tipo":

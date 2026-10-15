@@ -3163,21 +3163,29 @@ export function corregir(
   // "indicesConNombre": un arreglo con un lugar por cada nombre de un enumerado
   // se indexa con el nombre (ventas[TARDE]); con el numero (ventas[1]) esta bien,
   // pero es una mejora.
-  function sugerirIndices(modelo) {
+  function sugerirIndices(modelo, regla) {
     const valores = [];
     for (const a of modelo.asignaciones.filter((x) => x.nuevo)) valores.push([a.izquierda, a.fila], [a.derecha, a.fila]);
     for (const l of modelo.llamadas.filter((x) => x.nuevo)) for (const arg of l.argumentos) valores.push([arg, l.fila]);
     for (const [v, fila] of valores) {
-      if (v.clase !== 'indice' || v.indices.length !== 1 || !/^\d+$/.test(v.indices[0].trim())) continue;
-      const numero = Number(v.indices[0]);
-      const e = modelo.enums.flatMap((d) => d.enumeradores).find((x) => x.valor === numero);
-      if (!e) continue;
-      mejora(
-        'ENUM_CON_NUMERO',
-        `Está bien, pero \`${numero}\` es el valor de \`${e.nombre}\`: con el nombre, se entiende de qué lugar se trata sin tener que recordar los números.`,
-        fila
-      );
-      return;
+      if (v.clase !== 'indice') continue;
+      for (let k = 0; k < v.indices.length; k++) {
+        const escrito = v.indices[k].trim();
+        if (!/^\d+$/.test(escrito)) continue;
+        const numero = Number(escrito);
+        // Con "indicesDe", el enumerado de cada indice es el que dice la consigna.
+        const tipo = regla.indicesDe?.[v.nombre]?.[k]?.tipo;
+        const real = tipo ? resolver(tipoDesdeTexto(tipo), modelo) : null;
+        const candidatos = real && real.clase === 'enum' ? real.def.enumeradores : modelo.enums.flatMap((d) => d.enumeradores);
+        const e = candidatos.find((x) => x.valor === numero);
+        if (!e) continue;
+        mejora(
+          'ENUM_CON_NUMERO',
+          `Está bien, pero \`${numero}\` es el valor de \`${e.nombre}\`: con el nombre, se entiende de qué lugar se trata sin tener que recordar los números.`,
+          fila
+        );
+        return;
+      }
     }
   }
 
@@ -3221,6 +3229,35 @@ export function corregir(
       error('CICLO_FALTA', 'La consigna pide un ciclo: una sentencia que se repite, como `for` o `while`.');
       return;
     }
+    // "indicesDe": una tabla indexada con dos enumerados, cada indice con el suyo
+    // (ventas[MARTES][TARDE]). Un nombre de un enumerado en el lugar de otro es
+    // un error aunque compile y quede dentro de la tabla.
+    //   "indicesDe": { "ventas": [ { "tipo": "TDia", "uno": "un día", "varios": "los días" },
+    //                              { "tipo": "TTurno", "uno": "un turno", "varios": "los turnos" } ] }
+    if (regla.indicesDe) {
+      for (const [tabla, pedidos] of Object.entries(regla.indicesDe)) {
+        const defs = pedidos.map((p) => {
+          const real = resolver(tipoDesdeTexto(p.tipo), modelo);
+          return real.clase === 'enum' ? real.def : null;
+        });
+        for (const x of modelo.indexaciones.filter((y) => y.nuevo && y.nombre === tabla)) {
+          for (let k = 0; k < Math.min(x.indices.length, pedidos.length); k++) {
+            const escrito = x.indices[k].trim();
+            const def = modelo.enums.find((e) => e.enumeradores.some((en) => en.nombre === escrito));
+            if (!def || def === defs[k]) continue;
+            const deQuien = pedidos.find((_, j) => defs[j] === def);
+            error(
+              'INDICE_DE_OTRO_ENUMERADO',
+              deQuien
+                ? `\`${escrito}\` es ${deQuien.uno}, pero el ${ordinal(k)} índice de \`${tabla}\` elige ${pedidos[k].varios}: los índices están al revés.`
+                : `\`${escrito}\` no es ${pedidos[k].uno}: el ${ordinal(k)} índice de \`${tabla}\` elige ${pedidos[k].varios}.`,
+              x.fila
+            );
+            return;
+          }
+        }
+      }
+    }
     // Un switch: con "conSwitch" tiene que haber uno, y con "conDefault", un default.
     const switches = modelo.switches.filter((s) => s.nuevo);
     if (regla.conSwitch && !switches.length) {
@@ -3257,7 +3294,7 @@ export function corregir(
         if (!usaLosCamposMarcados(hecha)) return;
         if (!revisarCaso(hecha, caso, modelo, regla)) return;
       }
-      if (regla.indicesConNombre) sugerirIndices(modelo);
+      if (regla.indicesConNombre) sugerirIndices(modelo, regla);
       notasYMejoras(regla, modelo);
       return;
     }
