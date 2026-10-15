@@ -1,0 +1,176 @@
+{
+  "id": "arreglos-de-enumerados",
+  "titulo": "Un arreglo de enumerados",
+  "continua": false,
+  "dentroDeMain": true,
+  "buenasPracticas": ["constantes"],
+  "descripcion": "Un arreglo que guarda enumerados: definirlo con los nombres, cambiar un elemento, leerlo, contar y mostrar sus nombres.",
+  "cabecera": "#include <stdio.h>\n\n#define DIAS 5\n\ntypedef enum {\n  LUNES,\n  MARTES,\n  MIERCOLES,\n  JUEVES,\n  VIERNES\n} TDia;\n\ntypedef enum {\n  MANANA,\n  TARDE,\n  NOCHE\n} TTurno;",
+  "consignas": [
+    {
+      "id": "arr-de-enum-definir",
+      "titulo": "Un arreglo de turnos con sus valores",
+      "enunciado": "Una empresa guarda el turno en que trabaja un empleado cada día de la semana laboral. Los tipos `TDia` y `TTurno` ya están declarados. Declare el arreglo `turnoDelDia`, de tipo `TTurno`, y deles en la misma sentencia los valores del dibujo, escritos con los nombres de los turnos.",
+      "dibujo": {
+        "titulo": "Así tiene que quedar `turnoDelDia`:",
+        "valores": ["MANANA", "MANANA", "TARDE", "NOCHE", "NOCHE"],
+        "nombres": ["LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES"],
+        "enumerados": true
+      },
+      "requiere": [
+        {
+          "variable": {
+            "tipo": "TTurno",
+            "nombre": "turnoDelDia",
+            "valores": ["MANANA", "MANANA", "TARDE", "NOCHE", "NOCHE"]
+          }
+        }
+      ],
+      "referencia": "TTurno turnoDelDia[] = {MANANA, MANANA, TARDE, NOCHE, NOCHE};"
+    },
+    {
+      "id": "arr-de-enum-q-numero",
+      "titulo": "Qué muestra printf",
+      "enunciado": "¿Qué muestra este programa?",
+      "codigo": "TTurno turnoDelDia[DIAS] = {MANANA, MANANA, TARDE, NOCHE, NOCHE};\n\nprintf(\"%d\", turnoDelDia[2]);",
+      "opciones": [
+        {
+          "texto": "`TARDE`",
+          "codigo": "OPCION_MUESTRA_EL_NOMBRE",
+          "explicacion": "Los nombres del enumerado solo existen en el código que se escribe: el arreglo guarda números, y `printf` con `%d` muestra el número que hay guardado."
+        },
+        {
+          "texto": "`2`",
+          "codigo": "OPCION_LA_POSICION",
+          "explicacion": "El `2` es la posición del elemento, no lo que hay guardado en ella. `printf` muestra el contenido de la posición."
+        },
+        {
+          "texto": "`1`",
+          "correcta": true,
+          "explicacion": "En la posición `2` está `TARDE`, y un enumerado es un número: `TARDE` vale `1` (el segundo nombre, contando desde `0`). Eso es lo que muestra `%d`."
+        },
+        {
+          "texto": "`0`",
+          "codigo": "OPCION_EL_PRIMER_ELEMENTO",
+          "explicacion": "El `0` es el valor de `MANANA`, que está en las posiciones `0` y `1`. La posición `2` guarda otro turno."
+        }
+      ]
+    },
+    {
+      "id": "arr-de-enum-cambiar",
+      "titulo": "Cambiar el turno de un día",
+      "dado": "TTurno turnoDelDia[DIAS] = {MANANA, MANANA, TARDE, NOCHE, NOCHE};",
+      "enunciado": "El arreglo `turnoDelDia` ya tiene los turnos de la semana. El jueves el empleado pasa a trabajar a la tarde: cambie el turno de ese día.",
+      "dibujo": {
+        "titulo": "Así tiene que quedar `turnoDelDia`:",
+        "valores": ["MANANA", "MANANA", "TARDE", "TARDE", "NOCHE"],
+        "nombres": ["LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES"],
+        "enumerados": true,
+        "resaltar": [3]
+      },
+      "requiere": [
+        {
+          "ejecuta": {
+            "indicesConNombre": true,
+            "indicesDe": { "turnoDelDia": [{ "tipo": "TDia", "uno": "un día", "varios": "los días" }] },
+            "casos": [
+              {
+                "queda": { "turnoDelDia": ["MANANA", "MANANA", "TARDE", "TARDE", "NOCHE"] },
+                "visible": true
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "turnoDelDia[JUEVES] = TARDE;"
+    },
+    {
+      "id": "arr-de-enum-leer",
+      "titulo": "Leer los turnos de la semana",
+      "dado": "TTurno turnoDelDia[DIAS];\nTDia dia;\nint opcion;",
+      "enunciado": "El usuario escribe, uno por día y de lunes a viernes, el turno como un número: `0` para mañana, `1` para tarde y `2` para noche. Con un ciclo, lea cada número con `scanf` en `opcion` y guarde en `turnoDelDia` el turno que corresponde a cada día. Use la variable `dia`, de tipo `TDia`, como índice.",
+      "requiere": [
+        {
+          "ejecuta": {
+            "conCiclo": true,
+            "recorre": "turnoDelDia",
+            "casos": [
+              {
+                "entrada": [1, 0, 2, 2, 1],
+                "queda": { "turnoDelDia": ["TARDE", "MANANA", "NOCHE", "NOCHE", "TARDE"] },
+                "visible": true
+              },
+              { "entrada": [0, 0, 0, 0, 0], "queda": { "turnoDelDia": ["MANANA", "MANANA", "MANANA", "MANANA", "MANANA"] } },
+              { "entrada": [2, 1, 0, 1, 2], "queda": { "turnoDelDia": ["NOCHE", "TARDE", "MANANA", "TARDE", "NOCHE"] } }
+            ]
+          }
+        }
+      ],
+      "referencia": "for (dia = LUNES; dia <= VIERNES; dia++) {\n  scanf(\"%d\", &opcion);\n  turnoDelDia[dia] = (TTurno) opcion;\n}"
+    },
+    {
+      "id": "arr-de-enum-contar",
+      "titulo": "Contar los días de noche",
+      "dado": "TTurno turnoDelDia[DIAS];\nTDia dia;\nint cantidad = 0;",
+      "enunciado": "El arreglo `turnoDelDia` ya tiene el turno de cada día de la semana. Con un ciclo, cuente en cuántos días el empleado trabaja de noche y guarde la cantidad en `cantidad`. Use la variable `dia`, de tipo `TDia`, como índice.",
+      "dibujo": {
+        "titulo": "Con estos valores en `turnoDelDia`, `cantidad` tiene que quedar en `2`:",
+        "valores": ["MANANA", "MANANA", "TARDE", "NOCHE", "NOCHE"],
+        "nombres": ["LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES"],
+        "enumerados": true
+      },
+      "requiere": [
+        {
+          "ejecuta": {
+            "conCiclo": true,
+            "recorre": "turnoDelDia",
+            "casos": [
+              {
+                "datos": { "turnoDelDia": ["MANANA", "MANANA", "TARDE", "NOCHE", "NOCHE"] },
+                "queda": { "cantidad": 2 },
+                "visible": true
+              },
+              { "datos": { "turnoDelDia": ["MANANA", "TARDE", "MANANA", "TARDE", "MANANA"] }, "queda": { "cantidad": 0 } },
+              { "datos": { "turnoDelDia": ["NOCHE", "NOCHE", "NOCHE", "NOCHE", "NOCHE"] }, "queda": { "cantidad": 5 } },
+              { "datos": { "turnoDelDia": ["TARDE", "TARDE", "TARDE", "TARDE", "NOCHE"] }, "queda": { "cantidad": 1 } }
+            ]
+          }
+        }
+      ],
+      "referencia": "for (dia = LUNES; dia <= VIERNES; dia++) {\n  if (turnoDelDia[dia] == NOCHE) {\n    cantidad++;\n  }\n}"
+    },
+    {
+      "id": "arr-de-enum-mostrar",
+      "titulo": "Mostrar el turno de cada día",
+      "dado": "TTurno turnoDelDia[DIAS];\nTDia dia;",
+      "enunciado": "El arreglo `turnoDelDia` ya tiene el turno de cada día de la semana. Con un ciclo, muestre con `printf` el nombre del turno de cada día, uno por línea y de lunes a viernes. Los nombres son `Manana`, `Tarde` y `Noche`.",
+      "dibujo": {
+        "titulo": "Con estos valores en `turnoDelDia`:",
+        "valores": ["MANANA", "MANANA", "TARDE", "NOCHE", "NOCHE"],
+        "nombres": ["LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES"],
+        "enumerados": true
+      },
+      "salida": "Manana\nManana\nTarde\nNoche\nNoche",
+      "requiere": [
+        {
+          "ejecuta": {
+            "conCiclo": true,
+            "recorre": "turnoDelDia",
+            "casos": [
+              {
+                "datos": { "turnoDelDia": ["MANANA", "MANANA", "TARDE", "NOCHE", "NOCHE"] },
+                "salida": "Manana\nManana\nTarde\nNoche\nNoche",
+                "visible": true
+              },
+              {
+                "datos": { "turnoDelDia": ["NOCHE", "TARDE", "MANANA", "TARDE", "NOCHE"] },
+                "salida": "Noche\nTarde\nManana\nTarde\nNoche"
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "for (dia = LUNES; dia <= VIERNES; dia++) {\n  switch (turnoDelDia[dia]) {\n    case MANANA:\n      printf(\"Manana\\n\");\n      break;\n    case TARDE:\n      printf(\"Tarde\\n\");\n      break;\n    case NOCHE:\n      printf(\"Noche\\n\");\n      break;\n  }\n}"
+    }
+  ]
+}

@@ -16,10 +16,14 @@ const mostrar = serie('enumerados-mostrar');
 const arreglo = serie('arreglos-enumerados');
 const estructura = serie('estructuras-enumerado');
 const tabla = serie('arreglos-enumerados-tabla');
+const elementos = serie('arreglos-de-enumerados');
+const celdas = serie('arreglos-tabla-de-enumerados');
 
 const ENUM = (cuerpo, nombre = 'TTurno') => `typedef enum {\n${cuerpo}\n} ${nombre};`;
 const BUCLE = (cuerpo, hasta = 'i < MAX_ALUMNOS') => `for (i = 0; ${hasta}; i++) {\n${cuerpo}\n}`;
 const ENUM_TURNO = (cuerpo) => `enum Turno {\n${cuerpo}\n};`;
+const MOSTRAR = (casos, salto) =>
+  `for (empleado = 0; empleado < EMPLEADOS; empleado++) {\n  for (dia = LUNES; dia <= VIERNES; dia++) {\n    switch (agenda[empleado][dia]) {\n${casos}\n    }\n  }\n${salto}}`;
 const ENUM_ESTADO = (cuerpo) => `typedef enum {\n${cuerpo}\n} TEstado;`;
 const SWITCH_TURNO = (casos) => `switch (turno) {\n${casos}\n}`;
 const CASO = (nombre, texto, conBreak = true) =>
@@ -379,5 +383,145 @@ export const CASOS_DE_ENUMERADOS = [
     'sin llegar al ultimo turno',
     'for (dia = LUNES; dia <= VIERNES; dia++) {\n  totalDia[dia] = 0;\n  for (turno = MANANA; turno < NOCHE; turno++) {\n    totalDia[dia] += ventas[dia][turno];\n  }\n}',
     ['RECORRIDO_INCOMPLETO']
+  ),
+
+  // ---- un arreglo de enumerados ----
+  // 1: definirlo con los nombres
+  elementos(1, 'con los nombres', 'TTurno turnoDelDia[] = {MANANA, MANANA, TARDE, NOCHE, NOCHE};', 'ok', { mejoras: [] }),
+  elementos(1, 'con la constante', 'TTurno turnoDelDia[DIAS] = {MANANA, MANANA, TARDE, NOCHE, NOCHE};', 'ok', {
+    mejoras: ['DIMENSION_REPETIDA'],
+  }),
+  elementos(1, 'con los numeros', 'TTurno turnoDelDia[] = {0, 0, 1, 2, 2};', 'ok', { mejoras: ['ENUM_CON_NUMERO'] }),
+  elementos(1, 'con un valor de menos', 'TTurno turnoDelDia[] = {MANANA, MANANA, TARDE, NOCHE};', ['VALORES_DE_MENOS']),
+  elementos(1, 'con otro turno', 'TTurno turnoDelDia[] = {MANANA, MANANA, TARDE, NOCHE, TARDE};', ['VALOR_DISTINTO']),
+  elementos(1, 'con dias en lugar de turnos', 'TTurno turnoDelDia[] = {LUNES, LUNES, MARTES, JUEVES, JUEVES};', [
+    'ENUMERADOR_DE_OTRO_ENUMERADO',
+    'VALOR_DISTINTO',
+  ]),
+  elementos(1, 'de tipo int', 'int turnoDelDia[] = {MANANA, MANANA, TARDE, NOCHE, NOCHE};', ['VARIABLE_TIPO']),
+  elementos(1, 'los valores de a uno', 'TTurno turnoDelDia[5];\nturnoDelDia[0] = MANANA;', ['VALORES_APARTE']),
+  // 2: cuestionario, que muestra printf
+  elementos(2, 'printf: el nombre', '0', ['OPCION_MUESTRA_EL_NOMBRE']),
+  elementos(2, 'printf: la posicion', '1', ['OPCION_LA_POSICION']),
+  elementos(2, 'printf: la correcta', '2'),
+  elementos(2, 'printf: el primero', '3', ['OPCION_EL_PRIMER_ELEMENTO']),
+  // 3: cambiar un elemento
+  elementos(3, 'con los nombres', 'turnoDelDia[JUEVES] = TARDE;', 'ok', { mejoras: [] }),
+  elementos(3, 'con el numero de la posicion', 'turnoDelDia[3] = TARDE;', 'ok', { mejoras: ['ENUM_CON_NUMERO'] }),
+  elementos(3, 'con el numero del turno', 'turnoDelDia[JUEVES] = 1;', 'ok', { mejoras: ['ENUM_CON_NUMERO'] }),
+  elementos(3, 'con el turno y el dia al reves', 'turnoDelDia[TARDE] = JUEVES;', [
+    'ENUMERADOR_DE_OTRO_ENUMERADO',
+    'INDICE_DE_OTRO_ENUMERADO',
+  ]),
+  elementos(3, 'con un dia donde va un turno', 'turnoDelDia[JUEVES] = LUNES;', ['ENUMERADOR_DE_OTRO_ENUMERADO']),
+  elementos(3, 'con otro turno', 'turnoDelDia[JUEVES] = NOCHE;', ['RESULTADO_VALOR_DISTINTO']),
+  elementos(3, 'con otro dia', 'turnoDelDia[VIERNES] = TARDE;', ['RESULTADO_VALOR_DISTINTO']),
+  // 4: leer los turnos
+  elementos(4, 'con la conversion', 'for (dia = LUNES; dia <= VIERNES; dia++) {\n  scanf("%d", &opcion);\n  turnoDelDia[dia] = (TTurno) opcion;\n}', 'ok', {
+    mejoras: [],
+  }),
+  elementos(4, 'sin la conversion', 'for (dia = LUNES; dia <= VIERNES; dia++) {\n  scanf("%d", &opcion);\n  turnoDelDia[dia] = opcion;\n}'),
+  elementos(4, 'directo en el elemento', 'for (dia = LUNES; dia <= VIERNES; dia++) {\n  scanf("%d", &turnoDelDia[dia]);\n}', 'ok', {
+    notas: ['SCANF_EN_ENUM'],
+  }),
+  elementos(4, 'sin el ultimo dia', 'for (dia = LUNES; dia < VIERNES; dia++) {\n  scanf("%d", &opcion);\n  turnoDelDia[dia] = (TTurno) opcion;\n}', [
+    'RECORRIDO_INCOMPLETO',
+  ]),
+  elementos(4, 'siempre en el primer dia', 'for (dia = LUNES; dia <= VIERNES; dia++) {\n  scanf("%d", &opcion);\n  turnoDelDia[LUNES] = (TTurno) opcion;\n}', [
+    'RECORRIDO_INCOMPLETO',
+  ]),
+  // 5: contar los dias de noche
+  elementos(5, 'con el nombre', 'for (dia = LUNES; dia <= VIERNES; dia++) {\n  if (turnoDelDia[dia] == NOCHE) {\n    cantidad++;\n  }\n}', 'ok', {
+    mejoras: [],
+  }),
+  elementos(5, 'con el numero', 'for (dia = LUNES; dia <= VIERNES; dia++) {\n  if (turnoDelDia[dia] == 2) {\n    cantidad++;\n  }\n}', 'ok', {
+    mejoras: ['ENUM_CON_NUMERO'],
+  }),
+  elementos(5, 'con el nombre de un dia', 'for (dia = LUNES; dia <= VIERNES; dia++) {\n  if (turnoDelDia[dia] == LUNES) {\n    cantidad++;\n  }\n}', [
+    'RESULTADO_VALOR_DISTINTO',
+  ]),
+  elementos(5, 'sin el ultimo dia', 'for (dia = LUNES; dia < VIERNES; dia++) {\n  if (turnoDelDia[dia] == NOCHE) {\n    cantidad++;\n  }\n}', [
+    'RECORRIDO_INCOMPLETO',
+  ]),
+  // 6: mostrar el turno de cada dia
+  elementos(
+    6,
+    'con un switch',
+    'for (dia = LUNES; dia <= VIERNES; dia++) {\n  switch (turnoDelDia[dia]) {\n    case MANANA:\n      printf("Manana\\n");\n      break;\n    case TARDE:\n      printf("Tarde\\n");\n      break;\n    case NOCHE:\n      printf("Noche\\n");\n      break;\n  }\n}',
+    'ok',
+    { mejoras: [] }
+  ),
+  elementos(6, 'mostrando el numero', 'for (dia = LUNES; dia <= VIERNES; dia++) {\n  printf("%d\\n", turnoDelDia[dia]);\n}', ['MUESTRA_DISTINTA']),
+
+  // ---- una tabla de enumerados ----
+  // 1: definirla con los nombres
+  celdas(1, 'con los nombres', 'TTurno agenda[][DIAS] = {\n  {MANANA, MANANA, TARDE, NOCHE, NOCHE},\n  {TARDE, TARDE, TARDE, MANANA, MANANA},\n  {NOCHE, MANANA, NOCHE, NOCHE, TARDE}\n};', 'ok', { mejoras: [] }),
+  celdas(1, 'con las dos constantes', 'TTurno agenda[EMPLEADOS][DIAS] = {\n  {MANANA, MANANA, TARDE, NOCHE, NOCHE},\n  {TARDE, TARDE, TARDE, MANANA, MANANA},\n  {NOCHE, MANANA, NOCHE, NOCHE, TARDE}\n};', 'ok', { mejoras: ['FILAS_REPETIDAS'] }),
+  celdas(1, 'con una celda distinta', 'TTurno agenda[][DIAS] = {\n  {MANANA, MANANA, TARDE, NOCHE, NOCHE},\n  {TARDE, TARDE, TARDE, MANANA, MANANA},\n  {NOCHE, MANANA, NOCHE, NOCHE, NOCHE}\n};', [
+    'VALOR_DISTINTO',
+  ]),
+  celdas(1, 'con un dia donde va un turno', 'TTurno agenda[][DIAS] = {\n  {MANANA, MANANA, TARDE, NOCHE, NOCHE},\n  {TARDE, TARDE, TARDE, MANANA, MANANA},\n  {NOCHE, MANANA, NOCHE, NOCHE, LUNES}\n};', [
+    'ENUMERADOR_DE_OTRO_ENUMERADO',
+    'VALOR_DISTINTO',
+  ]),
+  // 2: cambiar una celda
+  celdas(2, 'con el nombre del dia', 'agenda[1][MIERCOLES] = NOCHE;', 'ok', { mejoras: [] }),
+  celdas(2, 'con el numero del dia', 'agenda[1][2] = NOCHE;', 'ok', { mejoras: ['ENUM_CON_NUMERO'] }),
+  celdas(2, 'con un turno donde va el dia', 'agenda[1][NOCHE] = NOCHE;', ['INDICE_DE_OTRO_ENUMERADO']),
+  celdas(2, 'con la fila y la columna al reves', 'agenda[MIERCOLES][1] = NOCHE;', ['RESULTADO_VALOR_DISTINTO']),
+  celdas(2, 'en otra fila', 'agenda[2][MIERCOLES] = NOCHE;', ['RESULTADO_VALOR_DISTINTO']),
+  // 3: cuantos trabajan de noche un dia
+  celdas(
+    3,
+    'el viernes',
+    'for (empleado = 0; empleado < EMPLEADOS; empleado++) {\n  if (agenda[empleado][VIERNES] == NOCHE) {\n    cantidad++;\n  }\n}',
+    'ok',
+    { mejoras: [] }
+  ),
+  celdas(
+    3,
+    'otro dia',
+    'for (empleado = 0; empleado < EMPLEADOS; empleado++) {\n  if (agenda[empleado][JUEVES] == NOCHE) {\n    cantidad++;\n  }\n}',
+    ['RESULTADO_VALOR_DISTINTO']
+  ),
+  celdas(
+    3,
+    'con los indices al reves',
+    'for (empleado = 0; empleado < EMPLEADOS; empleado++) {\n  if (agenda[VIERNES][empleado] == NOCHE) {\n    cantidad++;\n  }\n}',
+    ['INDICE_FUERA_DE_RANGO']
+  ),
+  // 4: cuantos dias trabaja de noche un empleado
+  celdas(
+    4,
+    'la fila 2',
+    'for (dia = LUNES; dia <= VIERNES; dia++) {\n  if (agenda[2][dia] == NOCHE) {\n    cantidad++;\n  }\n}',
+    'ok',
+    { mejoras: [] }
+  ),
+  celdas(
+    4,
+    'otra fila',
+    'for (dia = LUNES; dia <= VIERNES; dia++) {\n  if (agenda[1][dia] == NOCHE) {\n    cantidad++;\n  }\n}',
+    ['RESULTADO_VALOR_DISTINTO']
+  ),
+  // 5: mostrar la agenda
+  celdas(
+    5,
+    'con un switch',
+    MOSTRAR(
+      '      case MANANA:\n        printf("Manana ");\n        break;\n      case TARDE:\n        printf("Tarde ");\n        break;\n      case NOCHE:\n        printf("Noche ");\n        break;',
+      '  printf("\\n");\n'
+    ),
+    'ok',
+    { mejoras: [] }
+  ),
+  celdas(
+    5,
+    'sin el salto de renglon',
+    MOSTRAR(
+      '      case MANANA:\n        printf("Manana ");\n        break;\n      case TARDE:\n        printf("Tarde ");\n        break;\n      case NOCHE:\n        printf("Noche ");\n        break;',
+      ''
+    ),
+    ['MUESTRA_DISTINTA']
   ),
 ];

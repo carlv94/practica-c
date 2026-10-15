@@ -1,0 +1,255 @@
+{
+  "id": "arreglos-tabla-de-enumerados",
+  "titulo": "Una tabla de enumerados",
+  "continua": false,
+  "dentroDeMain": true,
+  "buenasPracticas": ["constantes"],
+  "descripcion": "Una tabla que guarda enumerados: definirla con los nombres, cambiar una celda, contar por día y por empleado, y mostrarla.",
+  "cabecera": "#include <stdio.h>\n\n#define EMPLEADOS 3\n#define DIAS 5\n\ntypedef enum {\n  LUNES,\n  MARTES,\n  MIERCOLES,\n  JUEVES,\n  VIERNES\n} TDia;\n\ntypedef enum {\n  MANANA,\n  TARDE,\n  NOCHE\n} TTurno;",
+  "consignas": [
+    {
+      "id": "tabla-de-enum-definir",
+      "titulo": "Una tabla de turnos con sus valores",
+      "enunciado": "Una empresa guarda el turno en que trabaja cada uno de sus 3 empleados (una fila cada uno) en cada día de la semana laboral (una columna cada uno). Los tipos `TDia` y `TTurno` ya están declarados. Declare la tabla `agenda`, de tipo `TTurno`, y deles en la misma sentencia los valores del dibujo, escritos con los nombres de los turnos.",
+      "dibujo": {
+        "titulo": "Así tiene que quedar `agenda`:",
+        "valores": [
+          ["MANANA", "MANANA", "TARDE", "NOCHE", "NOCHE"],
+          ["TARDE", "TARDE", "TARDE", "MANANA", "MANANA"],
+          ["NOCHE", "MANANA", "NOCHE", "NOCHE", "TARDE"]
+        ],
+        "nombresColumnas": ["LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES"],
+        "filas": "empleados",
+        "enumerados": true
+      },
+      "requiere": [
+        {
+          "variable": {
+            "tipo": "TTurno",
+            "nombre": "agenda",
+            "valores": [
+              ["MANANA", "MANANA", "TARDE", "NOCHE", "NOCHE"],
+              ["TARDE", "TARDE", "TARDE", "MANANA", "MANANA"],
+              ["NOCHE", "MANANA", "NOCHE", "NOCHE", "TARDE"]
+            ]
+          }
+        }
+      ],
+      "referencia": "TTurno agenda[][DIAS] = {\n  {MANANA, MANANA, TARDE, NOCHE, NOCHE},\n  {TARDE, TARDE, TARDE, MANANA, MANANA},\n  {NOCHE, MANANA, NOCHE, NOCHE, TARDE}\n};"
+    },
+    {
+      "id": "tabla-de-enum-cambiar",
+      "titulo": "Cambiar el turno de un empleado un día",
+      "dado": "TTurno agenda[EMPLEADOS][DIAS] = {\n  {MANANA, MANANA, TARDE, NOCHE, NOCHE},\n  {TARDE, TARDE, TARDE, MANANA, MANANA},\n  {NOCHE, MANANA, NOCHE, NOCHE, TARDE}\n};",
+      "enunciado": "La tabla `agenda` ya tiene los turnos. El empleado de la fila `1` pasa a trabajar de noche el miércoles: cambie esa celda.",
+      "dibujo": {
+        "titulo": "Así tiene que quedar `agenda`:",
+        "valores": [
+          ["MANANA", "MANANA", "TARDE", "NOCHE", "NOCHE"],
+          ["TARDE", "TARDE", "NOCHE", "MANANA", "MANANA"],
+          ["NOCHE", "MANANA", "NOCHE", "NOCHE", "TARDE"]
+        ],
+        "nombresColumnas": ["LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES"],
+        "filas": "empleados",
+        "enumerados": true
+      },
+      "requiere": [
+        {
+          "ejecuta": {
+            "indicesConNombre": true,
+            "indicesDe": {
+              "agenda": [null, { "tipo": "TDia", "uno": "un día", "varios": "los días" }]
+            },
+            "casos": [
+              {
+                "queda": {
+                  "agenda": [
+                    ["MANANA", "MANANA", "TARDE", "NOCHE", "NOCHE"],
+                    ["TARDE", "TARDE", "NOCHE", "MANANA", "MANANA"],
+                    ["NOCHE", "MANANA", "NOCHE", "NOCHE", "TARDE"]
+                  ]
+                },
+                "visible": true
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "agenda[1][MIERCOLES] = NOCHE;"
+    },
+    {
+      "id": "tabla-de-enum-por-dia",
+      "titulo": "Cuántos trabajan de noche un día",
+      "dado": "TTurno agenda[EMPLEADOS][DIAS];\nint empleado;\nint cantidad = 0;",
+      "enunciado": "La tabla `agenda` ya tiene el turno de cada empleado (una fila cada uno) en cada día (una columna cada uno). Con un ciclo, cuente cuántos empleados trabajan de noche el viernes y guarde la cantidad en `cantidad`. Use el índice `empleado`.",
+      "dibujo": {
+        "titulo": "Con estos valores en `agenda`, `cantidad` tiene que quedar en `1`:",
+        "valores": [
+          ["MANANA", "MANANA", "TARDE", "NOCHE", "NOCHE"],
+          ["TARDE", "TARDE", "TARDE", "MANANA", "MANANA"],
+          ["NOCHE", "MANANA", "NOCHE", "NOCHE", "TARDE"]
+        ],
+        "nombresColumnas": ["LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES"],
+        "filas": "empleados",
+        "enumerados": true
+      },
+      "requiere": [
+        {
+          "ejecuta": {
+            "conCiclo": true,
+            "indicesConNombre": true,
+            "indicesDe": {
+              "agenda": [null, { "tipo": "TDia", "uno": "un día", "varios": "los días" }]
+            },
+            "casos": [
+              {
+                "datos": {
+                  "agenda": [
+                    ["MANANA", "MANANA", "TARDE", "NOCHE", "NOCHE"],
+                    ["TARDE", "TARDE", "TARDE", "MANANA", "MANANA"],
+                    ["NOCHE", "MANANA", "NOCHE", "NOCHE", "TARDE"]
+                  ]
+                },
+                "queda": { "cantidad": 1 },
+                "visible": true
+              },
+              {
+                "datos": {
+                  "agenda": [
+                    ["MANANA", "MANANA", "MANANA", "MANANA", "NOCHE"],
+                    ["TARDE", "TARDE", "TARDE", "TARDE", "NOCHE"],
+                    ["NOCHE", "NOCHE", "NOCHE", "NOCHE", "NOCHE"]
+                  ]
+                },
+                "queda": { "cantidad": 3 }
+              },
+              {
+                "datos": {
+                  "agenda": [
+                    ["NOCHE", "NOCHE", "NOCHE", "NOCHE", "MANANA"],
+                    ["NOCHE", "NOCHE", "NOCHE", "NOCHE", "TARDE"],
+                    ["NOCHE", "NOCHE", "NOCHE", "NOCHE", "MANANA"]
+                  ]
+                },
+                "queda": { "cantidad": 0 }
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "for (empleado = 0; empleado < EMPLEADOS; empleado++) {\n  if (agenda[empleado][VIERNES] == NOCHE) {\n    cantidad++;\n  }\n}"
+    },
+    {
+      "id": "tabla-de-enum-por-empleado",
+      "titulo": "Cuántos días trabaja de noche un empleado",
+      "dado": "TTurno agenda[EMPLEADOS][DIAS];\nTDia dia;\nint cantidad = 0;",
+      "enunciado": "La tabla `agenda` ya tiene el turno de cada empleado (una fila cada uno) en cada día (una columna cada uno). Con un ciclo, cuente en cuántos días trabaja de noche el empleado de la fila `2` y guarde la cantidad en `cantidad`. Use la variable `dia`, de tipo `TDia`, como índice.",
+      "dibujo": {
+        "titulo": "Con estos valores en `agenda`, `cantidad` tiene que quedar en `3`:",
+        "valores": [
+          ["MANANA", "MANANA", "TARDE", "NOCHE", "NOCHE"],
+          ["TARDE", "TARDE", "TARDE", "MANANA", "MANANA"],
+          ["NOCHE", "MANANA", "NOCHE", "NOCHE", "TARDE"]
+        ],
+        "nombresColumnas": ["LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES"],
+        "filas": "empleados",
+        "enumerados": true
+      },
+      "requiere": [
+        {
+          "ejecuta": {
+            "conCiclo": true,
+            "indicesConNombre": true,
+            "indicesDe": {
+              "agenda": [null, { "tipo": "TDia", "uno": "un día", "varios": "los días" }]
+            },
+            "casos": [
+              {
+                "datos": {
+                  "agenda": [
+                    ["MANANA", "MANANA", "TARDE", "NOCHE", "NOCHE"],
+                    ["TARDE", "TARDE", "TARDE", "MANANA", "MANANA"],
+                    ["NOCHE", "MANANA", "NOCHE", "NOCHE", "TARDE"]
+                  ]
+                },
+                "queda": { "cantidad": 3 },
+                "visible": true
+              },
+              {
+                "datos": {
+                  "agenda": [
+                    ["NOCHE", "NOCHE", "NOCHE", "NOCHE", "NOCHE"],
+                    ["NOCHE", "NOCHE", "NOCHE", "NOCHE", "NOCHE"],
+                    ["MANANA", "TARDE", "MANANA", "TARDE", "MANANA"]
+                  ]
+                },
+                "queda": { "cantidad": 0 }
+              },
+              {
+                "datos": {
+                  "agenda": [
+                    ["MANANA", "MANANA", "MANANA", "MANANA", "MANANA"],
+                    ["MANANA", "MANANA", "MANANA", "MANANA", "MANANA"],
+                    ["NOCHE", "NOCHE", "NOCHE", "NOCHE", "NOCHE"]
+                  ]
+                },
+                "queda": { "cantidad": 5 }
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "for (dia = LUNES; dia <= VIERNES; dia++) {\n  if (agenda[2][dia] == NOCHE) {\n    cantidad++;\n  }\n}"
+    },
+    {
+      "id": "tabla-de-enum-mostrar",
+      "titulo": "Mostrar la agenda completa",
+      "dado": "TTurno agenda[EMPLEADOS][DIAS];\nint empleado;\nTDia dia;",
+      "enunciado": "La tabla `agenda` ya tiene el turno de cada empleado en cada día. Con dos ciclos, muestre con `printf` la agenda con el nombre de cada turno: un renglón por empleado y los cinco turnos de un mismo empleado separados por un espacio. Los nombres son `Manana`, `Tarde` y `Noche`.",
+      "dibujo": {
+        "titulo": "Con estos valores en `agenda`:",
+        "valores": [
+          ["MANANA", "MANANA", "TARDE", "NOCHE", "NOCHE"],
+          ["TARDE", "TARDE", "TARDE", "MANANA", "MANANA"],
+          ["NOCHE", "MANANA", "NOCHE", "NOCHE", "TARDE"]
+        ],
+        "nombresColumnas": ["LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES"],
+        "filas": "empleados",
+        "enumerados": true
+      },
+      "salida": "Manana Manana Tarde Noche Noche\nTarde Tarde Tarde Manana Manana\nNoche Manana Noche Noche Tarde",
+      "requiere": [
+        {
+          "ejecuta": {
+            "conCiclo": true,
+            "recorre": "agenda",
+            "casos": [
+              {
+                "datos": {
+                  "agenda": [
+                    ["MANANA", "MANANA", "TARDE", "NOCHE", "NOCHE"],
+                    ["TARDE", "TARDE", "TARDE", "MANANA", "MANANA"],
+                    ["NOCHE", "MANANA", "NOCHE", "NOCHE", "TARDE"]
+                  ]
+                },
+                "salida": "Manana Manana Tarde Noche Noche\nTarde Tarde Tarde Manana Manana\nNoche Manana Noche Noche Tarde",
+                "visible": true
+              },
+              {
+                "datos": {
+                  "agenda": [
+                    ["NOCHE", "NOCHE", "NOCHE", "NOCHE", "NOCHE"],
+                    ["MANANA", "MANANA", "MANANA", "MANANA", "MANANA"],
+                    ["TARDE", "NOCHE", "TARDE", "NOCHE", "TARDE"]
+                  ]
+                },
+                "salida": "Noche Noche Noche Noche Noche\nManana Manana Manana Manana Manana\nTarde Noche Tarde Noche Tarde"
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "for (empleado = 0; empleado < EMPLEADOS; empleado++) {\n  for (dia = LUNES; dia <= VIERNES; dia++) {\n    switch (agenda[empleado][dia]) {\n      case MANANA:\n        printf(\"Manana \");\n        break;\n      case TARDE:\n        printf(\"Tarde \");\n        break;\n      case NOCHE:\n        printf(\"Noche \");\n        break;\n    }\n  }\n  printf(\"\\n\");\n}"
+    }
+  ]
+}
