@@ -65,10 +65,20 @@ body {
 }
 
 header,
-main {
+main,
+footer {
   max-width: 820px;
   margin: 0 auto;
   padding: 16px;
+}
+
+footer {
+  color: var(--suave);
+  font-size: 0.85rem;
+}
+
+footer[hidden] {
+  display: none;
 }
 
 h1 {

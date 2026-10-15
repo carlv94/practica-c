@@ -1,0 +1,82 @@
+// Envio anonimo de los errores de cada intento, para saber cuales son los mas
+// comunes. Solo salen datos que no identifican a nadie: la consigna, los
+// codigos de diagnostico y un numero al azar propio de este navegador. El
+// codigo que escribio el alumno nunca se envia.
+//
+// DIRECCION es la direccion de la aplicacion web de Google Apps Script que
+// recibe los datos (ver estadisticas/LEEME.md). Vacia, no se envia nada. Es
+// publica a proposito: la practica es una pagina estatica, no hay donde ocultarla.
+//
+// Tampoco se envia desde localhost ni desde la pagina de pruebas, para que las
+// pruebas del docente no ensucien la estadistica.
+
+const DIRECCION =
+  'https://script.google.com/macros/s/AKfycbxuUYWGXihrFaEXiGv_o4ljbAJMXC_-bdApYH5RzI-5gyOaRlxMnZmhL0bT7wyPkyQWdA/exec';
+const VERSION = 1;
+const CLAVE_ANONIMO = 'practica-c:anonimo';
+
+let anonimoDeSesion = null;
+
+function esLocal() {
+  const { hostname, protocol, pathname } = location;
+  return (
+    protocol === 'file:' ||
+    hostname === 'localhost' ||
+    hostname === '127.0.0.1' ||
+    hostname === '[::1]' ||
+    hostname.endsWith('.localhost') ||
+    pathname.includes('/pruebas/')
+  );
+}
+
+// Un numero al azar que se genera una vez y queda en el navegador. No dice
+// quien es el alumno: solo permite contar alumnos distintos y no intentos.
+function anonimo() {
+  try {
+    let id = localStorage.getItem(CLAVE_ANONIMO);
+    if (!id) {
+      id = azar();
+      localStorage.setItem(CLAVE_ANONIMO, id);
+    }
+    return id;
+  } catch {
+    anonimoDeSesion ??= azar();
+    return anonimoDeSesion;
+  }
+}
+
+function azar() {
+  const a = new Uint32Array(3);
+  crypto.getRandomValues(a);
+  return Array.from(a, (n) => n.toString(36)).join('');
+}
+
+// Si esta pagina manda datos: es lo que decide si se muestra el aviso.
+export function enviaEstadisticas() {
+  return Boolean(DIRECCION) && !esLocal();
+}
+
+// Si falla (sin conexion, direccion caida), el alumno ni se entera: no se
+// reintenta ni se guarda para despues.
+export function enviarIntento({ serie, consigna, resultado, conAyuda, codigos }) {
+  if (!enviaEstadisticas()) return;
+  try {
+    fetch(DIRECCION, {
+      method: 'POST',
+      mode: 'no-cors',
+      keepalive: true,
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        version: VERSION,
+        anonimo: anonimo(),
+        serie,
+        consigna,
+        resultado,
+        conAyuda: Boolean(conAyuda),
+        codigos,
+      }),
+    }).catch(() => {});
+  } catch {
+    // sin red o sin permiso
+  }
+}

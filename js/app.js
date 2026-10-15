@@ -26,6 +26,7 @@ import {
   pidePracticas,
 } from './serie.js';
 import { crearEditor, pintar } from './editor.js';
+import { enviarIntento, enviaEstadisticas } from './estadisticas.js';
 import { partesDeEnunciado, enunciadoEnDos, fichasDe, figuraDe, sustituir } from './enunciado.js';
 
 const CARPETA = 'consignas/';
@@ -76,9 +77,13 @@ function registrarIntento(consigna, resultado) {
     correcto: resultado.correcto,
     mejorable: resultado.mejorable,
     conAyuda: pidioSolucion,
-    codigos: resultado.diagnosticos.filter((d) => d.nivel !== 'explicacion').map((d) => d.codigo),
+    codigos: codigosDe(resultado),
   });
   guardar(CLAVE_INTENTOS, intentos.slice(-MAX_INTENTOS));
+}
+
+function codigosDe(resultado) {
+  return resultado.diagnosticos.filter((d) => d.nivel !== 'explicacion').map((d) => d.codigo);
 }
 
 // Texto con `codigo` entre acentos graves, a nodos: nunca como HTML.
@@ -695,6 +700,13 @@ function comprobar() {
     return;
   }
   registrarIntento(consigna, r);
+  enviarIntento({
+    serie: serie.id,
+    consigna: consigna.id,
+    resultado: r.correcto ? (r.mejorable ? 'mejorable' : 'correcto') : 'incorrecto',
+    conAyuda: pidioSolucion,
+    codigos: codigosDe(r),
+  });
   if (!esCuestionario) editor.marcar(r.diagnosticos);
 
   const cajas = r.diagnosticos.map((d) => mensaje(d.nivel, d.mensaje, d.linea, d.bloques));
@@ -865,6 +877,7 @@ async function cargarSeries() {
   return { series: buenas, grupos: delIndice };
 }
 async function iniciar() {
+  $('aviso-estadisticas').hidden = !enviaEstadisticas();
   try {
     let cargadas;
     [analizador, cargadas] = await Promise.all([cargarAnalizador(), cargarSeries()]);

@@ -1317,7 +1317,13 @@ antes de la línea que lo usa.
 - Cada mensaje lleva un **código fijo** (`CAMPO_FALTA`, `FALTA_PUNTO_Y_COMA`).
   El texto se puede reescribir; el código es lo que sirve para contar errores.
 - Cada intento queda anotado en el navegador (`practica-c:intentos`) con sus
-  códigos. Hoy no sale de ahí.
+  códigos.
+- Además, cada intento se puede enviar de forma anónima (serie, consigna,
+  resultado, códigos, si pidió la solución y un número al azar por navegador;
+  nunca el código escrito) a una hoja de cálculo de Google. Está apagado hasta
+  completar `DIRECCION` en `js/estadisticas.js`; los pasos y el script están en
+  `estadisticas/LEEME.md`. No envía desde `localhost` ni desde `/pruebas/`, y
+  cuando envía, la pantalla muestra un aviso al pie.
 
 Cuando un alumno escriba algo que el corrector entienda mal, se suma el caso a
 `pruebas/casos.js` antes de arreglarlo.
