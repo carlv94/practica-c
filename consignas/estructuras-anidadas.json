@@ -189,11 +189,20 @@
       "ficha": [
         {
           "leyenda": "Así tienen que quedar las fichas:",
-          "titulo": "alumno.ingreso",
+          "titulo": "alumno",
+          "marcar": ["ingreso"],
           "campos": [
-            { "nombre": "dia", "ejemplo": "1" },
-            { "nombre": "mes", "ejemplo": "3" },
-            { "nombre": "anio", "ejemplo": "2022" }
+            { "nombre": "legajo" },
+            { "nombre": "apellidoNombre" },
+            { "nombre": "nacimiento", "campos": [{ "nombre": "dia" }, { "nombre": "mes" }, { "nombre": "anio" }] },
+            {
+              "nombre": "ingreso",
+              "campos": [
+                { "nombre": "dia", "ejemplo": "1" },
+                { "nombre": "mes", "ejemplo": "3" },
+                { "nombre": "anio", "ejemplo": "2022" }
+              ]
+            }
           ]
         },
         {

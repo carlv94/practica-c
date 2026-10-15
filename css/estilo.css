@@ -327,6 +327,12 @@ section[hidden] {
   background: var(--codigo);
 }
 
+/* Una estructura de adentro marcada entera: la que se copia, la que se pide. */
+.subficha-destacada {
+  border: 2px solid var(--acento);
+  background: var(--mejora-fondo);
+}
+
 .subficha .ficha-cuerpo {
   padding: 0;
   gap: 7px 12px;

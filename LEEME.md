@@ -117,7 +117,9 @@ pide cargar, igual que "Así tiene que quedar la tabla" en Arreglos:
 - **Una estructura de adentro** (un campo que es otra estructura) lleva sus
   campos: `{ "nombre": "nacimiento", "campos": [{ "nombre": "dia" }, …] }`. Se
   ve como una subficha, a la derecha del nombre. `resaltar` y `marcar` nombran
-  sus campos con el camino (`"nacimiento.anio"`).
+  sus campos con el camino (`"nacimiento.anio"`). Con `"marcar": ["ingreso"]`
+  (el nombre de la estructura de adentro) se marca la subficha entera, con
+  borde y fondo, y no sus valores: para la fecha que se copia o se pide.
 - **`ficha` puede ser una lista**, para mostrar más de una variable (`alumno` y
   `copia`), cada una con su título.
 - **Un arreglo de estructuras** se escribe de una vez y se abre en una ficha

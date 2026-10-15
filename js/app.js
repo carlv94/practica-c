@@ -460,18 +460,20 @@ function dibujarFicha(fichas) {
         const camino = prefijo + campo.nombre;
         const nombre = elemento('dt');
         nombre.appendChild(elemento('code', null, campo.nombre));
+        const marcado = (lista) => lista === 'todos' || (Array.isArray(lista) && lista.includes(camino));
+        const nuevo = marcado(ficha.resaltar) || marcado(ficha.marcar);
         if (campo.campos) {
           const sub = elemento('dl', 'ficha-cuerpo');
           llenar(sub, campo.campos, camino + '.');
-          const caja = elemento('dd', 'subficha');
+          // Una estructura de adentro marcada entera ("marcar": ["ingreso"]).
+          const entera = Array.isArray(ficha.marcar) && ficha.marcar.includes(camino);
+          const caja = elemento('dd', entera ? 'subficha subficha-destacada' : 'subficha');
           caja.appendChild(sub);
           nombre.classList.add('ficha-nombre-de-sub');
           cuerpo.append(nombre, caja);
           continue;
         }
         const sinValor = campo.ejemplo == null;
-        const marcado = (lista) => lista === 'todos' || (Array.isArray(lista) && lista.includes(camino));
-        const nuevo = marcado(ficha.resaltar) || marcado(ficha.marcar);
         const valor = elemento(
           'dd',
           sinValor ? 'ficha-linea' : nuevo ? 'ficha-nuevo' : null,
