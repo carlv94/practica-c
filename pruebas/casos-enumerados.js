@@ -14,8 +14,10 @@ const declarar = serie('enumerados-declarar');
 const leer = serie('enumerados-leer');
 const mostrar = serie('enumerados-mostrar');
 const arreglo = serie('arreglos-enumerados');
+const estructura = serie('estructuras-enumerado');
 
 const ENUM = (cuerpo, nombre = 'TTurno') => `typedef enum {\n${cuerpo}\n} ${nombre};`;
+const BUCLE = (cuerpo, hasta = 'i < MAX_ALUMNOS') => `for (i = 0; ${hasta}; i++) {\n${cuerpo}\n}`;
 const ENUM_TURNO = (cuerpo) => `enum Turno {\n${cuerpo}\n};`;
 const ENUM_ESTADO = (cuerpo) => `typedef enum {\n${cuerpo}\n} TEstado;`;
 const SWITCH_TURNO = (casos) => `switch (turno) {\n${casos}\n}`;
@@ -230,4 +232,77 @@ export const CASOS_DE_ENUMERADOS = [
     ['RESULTADO_VALOR_DISTINTO'],
     { dice: ['`mejor` termina valiendo'] }
   ),
+
+  // ---- estructuras con un enumerado ----
+  // 1: declarar la estructura
+  estructura(1, 'con TTurno', 'typedef struct {\n  int legajo;\n  char apellidoNombre[50];\n  float promedio;\n  TTurno turno;\n} TAlumno;', 'ok', { mejoras: [] }),
+  estructura(1, 'con etiqueta y alias', 'typedef struct Alumno {\n  int legajo;\n  char apellidoNombre[50];\n  float promedio;\n  TTurno turno;\n} TAlumno;'),
+  estructura(1, 'con enum Turno', 'struct Alumno {\n  int legajo;\n  char apellidoNombre[50];\n  float promedio;\n  enum Turno turno;\n};', ['ALIAS_FALTA', 'TIPO_DESCONOCIDO']),
+  estructura(1, 'el turno como char', 'typedef struct {\n  int legajo;\n  char apellidoNombre[50];\n  float promedio;\n  char turno;\n} TAlumno;', ['CAMPO_TIPO']),
+  estructura(1, 'el turno como int', 'typedef struct {\n  int legajo;\n  char apellidoNombre[50];\n  float promedio;\n  int turno;\n} TAlumno;', ['CAMPO_TIPO']),
+  estructura(1, 'el turno como arreglo', 'typedef struct {\n  int legajo;\n  char apellidoNombre[50];\n  float promedio;\n  TTurno turno[3];\n} TAlumno;', ['CAMPO_TIPO']),
+  estructura(1, 'el turno con puntero', 'typedef struct {\n  int legajo;\n  char apellidoNombre[50];\n  float promedio;\n  TTurno *turno;\n} TAlumno;', ['CAMPO_TIPO']),
+  estructura(1, 'otro alias', 'typedef struct {\n  int legajo;\n  char apellidoNombre[50];\n  float promedio;\n  TTurno turno;\n} Alumno;', ['ALIAS_NOMBRE']),
+  estructura(1, 'sin un campo', 'typedef struct {\n  int legajo;\n  float promedio;\n  TTurno turno;\n} TAlumno;', ['CAMPO_FALTA']),
+  // 2: guardar el turno
+  estructura(2, 'con el nombre', 'alumno.legajo = 20431;\nalumno.promedio = 8.45;\nalumno.turno = NOCHE;', 'ok', { mejoras: [] }),
+  estructura(2, 'con el numero', 'alumno.legajo = 20431;\nalumno.promedio = 8.45;\nalumno.turno = 2;', 'ok', { mejoras: ['ENUM_CON_NUMERO'] }),
+  estructura(2, 'con otro turno', 'alumno.legajo = 20431;\nalumno.promedio = 8.45;\nalumno.turno = TARDE;', ['ASIGNACION_VALOR_DISTINTO']),
+  estructura(2, 'con una letra', "alumno.legajo = 20431;\nalumno.promedio = 8.45;\nalumno.turno = 'N';", ['ENUM_COMO_TEXTO']),
+  estructura(2, 'con un texto', 'alumno.legajo = 20431;\nalumno.promedio = 8.45;\nalumno.turno = "NOCHE";', ['ENUM_COMO_TEXTO']),
+  estructura(2, 'sin el turno', 'alumno.legajo = 20431;\nalumno.promedio = 8.45;', ['CAMPO_SIN_CARGAR']),
+  estructura(2, 'vuelve a guardar el legajo con otro valor', 'alumno.legajo = 20431;\nalumno.promedio = 8.45;\nalumno.turno = NOCHE;\nalumno.legajo = 1;', ['ASIGNACION_VALOR_DISTINTO']),
+  // 3: leer el turno
+  estructura(3, 'con la conversion', 'scanf("%d", &opcion);\nalumno.turno = (TTurno) opcion;', 'ok', { mejoras: [] }),
+  estructura(3, 'sin la conversion', 'scanf("%d", &opcion);\nalumno.turno = opcion;'),
+  estructura(3, 'directo en el campo', 'scanf("%d", &alumno.turno);', 'ok', { notas: ['SCANF_EN_ENUM'] }),
+  estructura(3, 'con if', 'scanf("%d", &opcion);\nif (opcion == 0) {\n  alumno.turno = MANANA;\n} else if (opcion == 1) {\n  alumno.turno = TARDE;\n} else {\n  alumno.turno = NOCHE;\n}'),
+  estructura(3, 'sin guardar', 'scanf("%d", &opcion);', ['RESULTADO_VARIABLE_SIN_VALOR']),
+  // 4: mostrar el nombre
+  estructura(
+    4,
+    'con un switch',
+    'switch (alumno.turno) {\n  case MANANA:\n    printf("Manana");\n    break;\n  case TARDE:\n    printf("Tarde");\n    break;\n  case NOCHE:\n    printf("Noche");\n    break;\n}',
+    'ok',
+    { mejoras: [] }
+  ),
+  estructura(
+    4,
+    'con if',
+    'if (alumno.turno == MANANA) {\n  printf("Manana");\n} else if (alumno.turno == TARDE) {\n  printf("Tarde");\n} else {\n  printf("Noche");\n}',
+    ['SWITCH_FALTA']
+  ),
+  estructura(
+    4,
+    'sin un caso',
+    'switch (alumno.turno) {\n  case MANANA:\n    printf("Manana");\n    break;\n  case TARDE:\n    printf("Tarde");\n    break;\n}',
+    ['MUESTRA_FALTA']
+  ),
+  estructura(
+    4,
+    'sin un break',
+    'switch (alumno.turno) {\n  case MANANA:\n    printf("Manana");\n  case TARDE:\n    printf("Tarde");\n    break;\n  case NOCHE:\n    printf("Noche");\n    break;\n}',
+    ['SWITCH_SIN_BREAK']
+  ),
+  // 5: contar los de un turno
+  estructura(5, 'con el nombre', BUCLE('  if (alumnos[i].turno == NOCHE) {\n    cantidad++;\n  }'), 'ok', { mejoras: [] }),
+  estructura(5, 'con el numero', BUCLE('  if (alumnos[i].turno == 2) {\n    cantidad++;\n  }'), 'ok', { mejoras: ['ENUM_CON_NUMERO'] }),
+  estructura(5, 'con un solo =', BUCLE('  if (alumnos[i].turno = NOCHE) {\n    cantidad++;\n  }'), ['ASIGNACION_EN_CONDICION']),
+  estructura(5, 'cuenta otro turno', BUCLE('  if (alumnos[i].turno == TARDE) {\n    cantidad++;\n  }'), ['RESULTADO_VALOR_DISTINTO'], {
+    dice: ['`cantidad` termina valiendo `0` y debería valer `2`'],
+  }),
+  estructura(5, 'sin el ultimo', BUCLE('  if (alumnos[i].turno == NOCHE) {\n    cantidad++;\n  }', 'i < MAX_ALUMNOS - 1'), ['RECORRIDO_INCOMPLETO']),
+  estructura(5, 'mira otro campo', BUCLE('  if (alumnos[i].legajo == NOCHE) {\n    cantidad++;\n  }'), ['CAMPO_MARCADO_SIN_USAR']),
+  estructura(5, 'el arreglo sin indice', BUCLE('  if (alumnos.turno == NOCHE) {\n    cantidad++;\n  }'), ['ARREGLO_SIN_INDICE']),
+  // 6: contar los de cada turno
+  estructura(6, 'con el enumerado como indice', BUCLE('  porTurno[alumnos[i].turno]++;'), 'ok', { mejoras: [] }),
+  estructura(
+    6,
+    'con un if por turno',
+    BUCLE('  if (alumnos[i].turno == MANANA) {\n    porTurno[MANANA]++;\n  } else if (alumnos[i].turno == TARDE) {\n    porTurno[TARDE]++;\n  } else {\n    porTurno[NOCHE]++;\n  }')
+  ),
+  estructura(6, 'con un switch', BUCLE('  switch (alumnos[i].turno) {\n    case MANANA:\n      porTurno[MANANA]++;\n      break;\n    case TARDE:\n      porTurno[TARDE]++;\n      break;\n    case NOCHE:\n      porTurno[NOCHE]++;\n      break;\n  }')),
+  estructura(6, 'con el indice del ciclo', BUCLE('  porTurno[i]++;'), ['CAMPO_MARCADO_SIN_USAR']),
+  estructura(6, 'se pisa en lugar de sumar', BUCLE('  porTurno[alumnos[i].turno] = 1;'), ['RESULTADO_VALOR_DISTINTO']),
+  estructura(6, 'indexa con otro campo', BUCLE('  porTurno[alumnos[i].legajo]++;'), ['INDICE_FUERA_DE_RANGO']),
 ];

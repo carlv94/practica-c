@@ -1,0 +1,185 @@
+{
+  "id": "estructuras-enumerado",
+  "titulo": "Un enumerado dentro de una estructura",
+  "continua": true,
+  "dentroDeMain": true,
+  "buenasPracticas": ["constantes"],
+  "descripcion": "El turno de un alumno como un enumerado: declararlo como campo, guardarlo, leerlo, mostrarlo, contar con él y llevar la cuenta de cada turno.",
+  "cabecera": "#include <stdio.h>\n\n#define MAX_ALUMNOS 3\n#define TURNOS 3\n\ntypedef enum {\n  MANANA,\n  TARDE,\n  NOCHE\n} TTurno;",
+  "consignas": [
+    {
+      "id": "estructuras-enum-declarar",
+      "titulo": "Declarar la estructura con un enumerado",
+      "en": "archivo",
+      "buenasPracticas": [],
+      "enunciado": "La secretaría de una facultad registra a sus alumnos. De cada alumno se guarda, en este orden, el número de legajo, el apellido y nombre, el promedio general y el turno en el que cursa. Esta vez el turno no se guarda con una letra: se usa el enumerado `TTurno`, que ya está declarado. Los campos se llaman así:\n[ficha]\nDeclare la estructura con el alias `TAlumno`.",
+      "ficha": {
+        "titulo": "Ficha de alumno",
+        "campos": [
+          { "nombre": "legajo" },
+          { "nombre": "apellidoNombre" },
+          { "nombre": "promedio" },
+          { "nombre": "turno" }
+        ]
+      },
+      "requiere": [
+        {
+          "struct": {
+            "capturar": "S",
+            "campos": [
+              { "nombre": "legajo", "tipo": "entero" },
+              { "nombre": "apellidoNombre", "tipo": "cadena" },
+              { "nombre": "promedio", "tipo": "real" },
+              { "nombre": "turno", "tipo": "enumerado", "de": "TTurno" }
+            ]
+          }
+        },
+        { "alias": { "de": "$S", "nombre": "TAlumno", "capturar": "A" } }
+      ],
+      "referencia": "typedef struct {\n  int legajo;\n  char apellidoNombre[50];\n  float promedio;\n  TTurno turno;\n} TAlumno;"
+    },
+    {
+      "id": "estructuras-enum-guardar",
+      "titulo": "Guardar el turno",
+      "sigueDe": "estructuras-enum-declarar",
+      "dado": "TAlumno alumno;",
+      "enunciado": "La variable `alumno` ya está declarada. Escriba el código que guarde en `alumno` el legajo `20431`, el promedio `8.45` y el turno `NOCHE`.",
+      "ficha": {
+        "leyenda": "Así tiene que quedar la ficha:",
+        "titulo": "Ficha de alumno",
+        "resaltar": ["legajo", "promedio", "turno"],
+        "campos": [
+          { "nombre": "legajo", "ejemplo": "20431" },
+          { "nombre": "apellidoNombre" },
+          { "nombre": "promedio", "ejemplo": "8.45" },
+          { "nombre": "turno", "ejemplo": "NOCHE" }
+        ]
+      },
+      "requiere": [
+        {
+          "campo": {
+            "soloEsos": true,
+            "variable": "alumno",
+            "campos": [
+              { "nombre": "legajo", "tipo": "entero" },
+              { "nombre": "promedio", "tipo": "real" },
+              { "nombre": "turno", "tipo": "enumerado" }
+            ]
+          }
+        }
+      ],
+      "referencia": "alumno.legajo = 20431;\nalumno.promedio = 8.45;\nalumno.turno = NOCHE;"
+    },
+    {
+      "id": "estructuras-enum-leer",
+      "titulo": "Leer el turno",
+      "sigueDe": "estructuras-enum-declarar",
+      "dado": "TAlumno alumno;\nint opcion;",
+      "enunciado": "El usuario escribe el turno como un número: `0` para mañana, `1` para tarde y `2` para noche. Lea el número con `scanf` en `opcion` y guarde en el campo `turno` de `alumno` el valor del enumerado que le corresponde.",
+      "requiere": [
+        {
+          "ejecuta": {
+            "casos": [
+              { "entrada": [1], "queda": { "alumno.turno": "TARDE" }, "visible": true },
+              { "entrada": [0], "queda": { "alumno.turno": "MANANA" } },
+              { "entrada": [2], "queda": { "alumno.turno": "NOCHE" } }
+            ]
+          }
+        }
+      ],
+      "referencia": "scanf(\"%d\", &opcion);\nalumno.turno = (TTurno) opcion;"
+    },
+    {
+      "id": "estructuras-enum-mostrar",
+      "titulo": "Mostrar el nombre del turno",
+      "sigueDe": "estructuras-enum-declarar",
+      "dado": "TAlumno alumno;\nalumno.turno = TARDE;",
+      "enunciado": "El campo `turno` de `alumno` ya tiene un valor: en este programa vale `TARDE`, pero el programa tiene que funcionar con cualquier turno. Con un `switch`, muestre con `printf` el nombre del turno: `Manana`, `Tarde` o `Noche`.",
+      "requiere": [
+        {
+          "ejecuta": {
+            "conSwitch": true,
+            "casos": [
+              { "datos": { "alumno.turno": "TARDE" }, "salida": "Tarde", "visible": true },
+              { "datos": { "alumno.turno": "MANANA" }, "salida": "Manana" },
+              { "datos": { "alumno.turno": "NOCHE" }, "salida": "Noche" }
+            ]
+          }
+        }
+      ],
+      "referencia": "switch (alumno.turno) {\n  case MANANA:\n    printf(\"Manana\");\n    break;\n  case TARDE:\n    printf(\"Tarde\");\n    break;\n  case NOCHE:\n    printf(\"Noche\");\n    break;\n}"
+    },
+    {
+      "id": "estructuras-enum-contar",
+      "titulo": "Contar los alumnos de un turno",
+      "sigueDe": "estructuras-enum-declarar",
+      "dado": "TAlumno alumnos[MAX_ALUMNOS];\nint cantidad = 0;\nint i;",
+      "enunciado": "La facultad quiere saber cuántos alumnos cursan en el turno `NOCHE`. El arreglo `alumnos` ya tiene cargados los datos de esta ficha. Con un ciclo, cuente cuántos alumnos son del turno `NOCHE` y guarde la cantidad en `cantidad`. Use el índice `i`.",
+      "ficha": {
+        "arreglo": "alumnos",
+        "leyenda": "Los alumnos cargados:",
+        "campos": ["legajo", "apellidoNombre", "promedio", "turno"],
+        "elementos": [
+          [20431, "Perez, Ana", "8.45", "NOCHE"],
+          [30872, "Lopez, Juan", "9.10", "MANANA"],
+          [18560, "Diaz, Marta", "7.20", "NOCHE"]
+        ],
+        "marcar": ["turno"]
+      },
+      "requiere": [
+        {
+          "ejecuta": {
+            "conCiclo": true,
+            "limite": true,
+            "recorre": { "alumnos.turno": ["el alumno"] },
+            "casos": [
+              { "datos": { "alumnos.turno": ["NOCHE", "MANANA", "NOCHE"] }, "queda": { "cantidad": 2 }, "visible": true },
+              { "datos": { "alumnos.turno": ["MANANA", "TARDE", "MANANA"] }, "queda": { "cantidad": 0 } },
+              { "datos": { "alumnos.turno": ["NOCHE", "NOCHE", "NOCHE"] }, "queda": { "cantidad": 3 } },
+              { "datos": { "alumnos.turno": ["TARDE", "NOCHE", "MANANA"] }, "queda": { "cantidad": 1 } }
+            ]
+          }
+        }
+      ],
+      "referencia": "for (i = 0; i < MAX_ALUMNOS; i++) {\n  if (alumnos[i].turno == NOCHE) {\n    cantidad++;\n  }\n}"
+    },
+    {
+      "id": "estructuras-enum-por-turno",
+      "titulo": "Contar los alumnos de cada turno",
+      "sigueDe": "estructuras-enum-declarar",
+      "dado": "TAlumno alumnos[MAX_ALUMNOS];\nint porTurno[TURNOS] = {0};\nint i;",
+      "enunciado": "La facultad quiere saber cuántos alumnos cursan en cada turno. El arreglo `alumnos` ya tiene cargados los datos de esta ficha, y el arreglo `porTurno` tiene un lugar para cada turno, en cero. Con un ciclo, cuente en `porTurno` cuántos alumnos hay de cada turno: en el lugar de cada turno va su cantidad. Use el índice `i`.",
+      "ficha": {
+        "arreglo": "alumnos",
+        "leyenda": "Los alumnos cargados:",
+        "campos": ["legajo", "apellidoNombre", "promedio", "turno"],
+        "elementos": [
+          [20431, "Perez, Ana", "8.45", "NOCHE"],
+          [30872, "Lopez, Juan", "9.10", "MANANA"],
+          [18560, "Diaz, Marta", "7.20", "NOCHE"]
+        ],
+        "marcar": ["turno"]
+      },
+      "dibujo": {
+        "titulo": "Con estos alumnos, `porTurno` tiene que quedar así:",
+        "valores": [1, 0, 2],
+        "nombres": ["MANANA", "TARDE", "NOCHE"]
+      },
+      "requiere": [
+        {
+          "ejecuta": {
+            "conCiclo": true,
+            "limite": true,
+            "recorre": { "alumnos.turno": ["el alumno"] },
+            "casos": [
+              { "datos": { "alumnos.turno": ["NOCHE", "MANANA", "NOCHE"] }, "queda": { "porTurno": [1, 0, 2] }, "visible": true },
+              { "datos": { "alumnos.turno": ["TARDE", "TARDE", "TARDE"] }, "queda": { "porTurno": [0, 3, 0] } },
+              { "datos": { "alumnos.turno": ["MANANA", "TARDE", "NOCHE"] }, "queda": { "porTurno": [1, 1, 1] } }
+            ]
+          }
+        }
+      ],
+      "referencia": "for (i = 0; i < MAX_ALUMNOS; i++) {\n  porTurno[alumnos[i].turno]++;\n}"
+    }
+  ]
+}

@@ -61,7 +61,8 @@
         "estructuras-copiar.json",
         "estructuras-arreglo.json",
         "estructuras-recorrer.json",
-        "estructuras-anidadas.json"
+        "estructuras-anidadas.json",
+        "estructuras-enumerado.json"
       ]
     }
   ]
