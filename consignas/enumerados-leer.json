@@ -1,0 +1,94 @@
+{
+  "id": "enumerados-leer",
+  "titulo": "Leer un enumerado",
+  "continua": false,
+  "dentroDeMain": true,
+  "buenasPracticas": [],
+  "descripcion": "Un enumerado no se escribe en el teclado: se lee un número o una letra y se convierte en el nombre que corresponde.",
+  "cabecera": "#include <stdio.h>\n\ntypedef enum {\n  MANANA,\n  TARDE,\n  NOCHE\n} TTurno;",
+  "consignas": [
+    {
+      "id": "leer-enum-entero",
+      "titulo": "Leer un número y convertirlo",
+      "dado": "int opcion;\nTTurno turno;",
+      "enunciado": "El usuario escribe el turno como un número: `0` para mañana, `1` para tarde y `2` para noche. Lea el número con `scanf` en `opcion` y guarde en `turno` el valor del enumerado que le corresponde.",
+      "requiere": [
+        {
+          "ejecuta": {
+            "casos": [
+              { "entrada": [1], "queda": { "turno": "TARDE" }, "visible": true },
+              { "entrada": [0], "queda": { "turno": "MANANA" } },
+              { "entrada": [2], "queda": { "turno": "NOCHE" } }
+            ]
+          }
+        }
+      ],
+      "referencia": "scanf(\"%d\", &opcion);\nturno = (TTurno) opcion;"
+    },
+    {
+      "id": "leer-enum-q-rango",
+      "titulo": "Un número que no es ninguno",
+      "enunciado": "El usuario escribe `7`, que no es ningún turno. ¿Qué pasa con este código?",
+      "codigo": "int opcion;\nTTurno turno;\n\nscanf(\"%d\", &opcion);\nturno = (TTurno) opcion;",
+      "opciones": [
+        {
+          "texto": "El compilador avisa del error y el programa no corre",
+          "codigo": "OPCION_AVISA_EL_COMPILADOR",
+          "explicacion": "El valor se escribe cuando el programa ya corre: el compilador no puede saberlo. Y aunque pudiera, en C un enumerado no controla qué número se guarda."
+        },
+        {
+          "texto": "El programa se detiene con un error",
+          "codigo": "OPCION_SE_DETIENE",
+          "explicacion": "C no revisa eso: guardar un `7` en una variable de un enumerado de tres valores es válido, y el programa sigue como si nada."
+        },
+        {
+          "texto": "`turno` guarda `7`, aunque ningún nombre valga `7`",
+          "correcta": true,
+          "explicacion": "Un enumerado es un entero con nombres, y cualquier entero entra. Por eso, antes de guardarlo, conviene comprobar que el número esté entre los valores del enumerado."
+        },
+        {
+          "texto": "`turno` queda en `0`",
+          "codigo": "OPCION_QUEDA_EN_CERO",
+          "explicacion": "Nada lo vuelve a `0`: se guarda el número que se escribió, sea o no uno de los nombres."
+        }
+      ]
+    },
+    {
+      "id": "leer-enum-validar",
+      "titulo": "Validar antes de guardar",
+      "dado": "int opcion;\nTTurno turno = MANANA;",
+      "enunciado": "Lea el número con `scanf` en `opcion`. Si está entre `0` y `2`, guárdelo en `turno` como el valor del enumerado. Si no, muestre con `printf` el texto `Opcion invalida` y deje `turno` como estaba.",
+      "requiere": [
+        {
+          "ejecuta": {
+            "casos": [
+              { "entrada": [2], "queda": { "turno": "NOCHE" }, "salida": "", "visible": true },
+              { "entrada": [7], "queda": { "turno": "MANANA" }, "salida": "Opcion invalida" },
+              { "entrada": [-1], "queda": { "turno": "MANANA" }, "salida": "Opcion invalida" },
+              { "entrada": [1], "queda": { "turno": "TARDE" }, "salida": "" }
+            ]
+          }
+        }
+      ],
+      "referencia": "scanf(\"%d\", &opcion);\nif (opcion >= 0 && opcion <= 2) {\n  turno = (TTurno) opcion;\n} else {\n  printf(\"Opcion invalida\");\n}"
+    },
+    {
+      "id": "leer-enum-letra",
+      "titulo": "Leer una letra y convertirla",
+      "dado": "char letra;\nTTurno turno;",
+      "enunciado": "El usuario escribe el turno con una letra: `'M'` para mañana, `'T'` para tarde y `'N'` para noche. Lea la letra con `scanf` en `letra` y guarde en `turno` el valor del enumerado que le corresponde.",
+      "requiere": [
+        {
+          "ejecuta": {
+            "casos": [
+              { "entrada": ["T"], "queda": { "turno": "TARDE" }, "visible": true },
+              { "entrada": ["M"], "queda": { "turno": "MANANA" } },
+              { "entrada": ["N"], "queda": { "turno": "NOCHE" } }
+            ]
+          }
+        }
+      ],
+      "referencia": "scanf(\" %c\", &letra);\nif (letra == 'M') {\n  turno = MANANA;\n} else if (letra == 'T') {\n  turno = TARDE;\n} else {\n  turno = NOCHE;\n}"
+    }
+  ]
+}

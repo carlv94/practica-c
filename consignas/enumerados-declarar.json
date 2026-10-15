@@ -1,0 +1,192 @@
+{
+  "id": "enumerados-declarar",
+  "titulo": "Declarar y usar un enumerado",
+  "continua": false,
+  "dentroDeMain": true,
+  "buenasPracticas": [],
+  "descripcion": "Un tipo con nombres para un conjunto cerrado de valores: declararlo, declarar variables, ver qué número tiene cada nombre, guardarlo, compararlo y darle un alias.",
+  "cabecera": "#include <stdio.h>",
+  "consignas": [
+    {
+      "id": "enum-declarar",
+      "titulo": "Declarar un enumerado",
+      "en": "archivo",
+      "enunciado": "Una facultad cursa en tres turnos: mañana, tarde y noche. En lugar de guardar el turno con una letra o con un número, quiere un tipo propio que tenga solo esos tres valores: un enumerado. Declare un enumerado llamado `Turno` con los nombres `MANANA`, `TARDE` y `NOCHE`, en ese orden.",
+      "requiere": [
+        {
+          "enum": {
+            "etiqueta": "Turno",
+            "enumeradores": ["MANANA", "TARDE", "NOCHE"],
+            "capturar": "E"
+          }
+        }
+      ],
+      "referencia": "enum Turno {\n  MANANA,\n  TARDE,\n  NOCHE\n};"
+    },
+    {
+      "id": "enum-variable",
+      "titulo": "Declarar una variable del enumerado",
+      "sigueDe": "enum-declarar",
+      "enunciado": "El enumerado `Turno` ya está declarado. Declare la variable `turno` de ese tipo.",
+      "requiere": [{ "variable": { "tipo": "enum Turno", "nombre": "turno" } }],
+      "referencia": "enum Turno turno;"
+    },
+    {
+      "id": "enum-q-valor",
+      "titulo": "Qué número tiene cada nombre",
+      "sigueDe": "enum-declarar",
+      "enunciado": "Con el enumerado `Turno` que declaró, ¿cuánto vale `TARDE`?",
+      "codigo": "",
+      "opciones": [
+        {
+          "texto": "`0`",
+          "codigo": "OPCION_ES_EL_PRIMERO",
+          "explicacion": "El `0` es el valor del primer nombre, `MANANA`. Cada nombre vale uno más que el anterior: `TARDE` es el segundo."
+        },
+        {
+          "texto": "`1`",
+          "correcta": true,
+          "explicacion": "Los nombres se numeran solos, empezando en `0`: `MANANA` vale `0`, `TARDE` vale `1` y `NOCHE` vale `2`. Por eso el orden en que se escriben importa."
+        },
+        {
+          "texto": "`2`",
+          "codigo": "OPCION_ES_EL_ULTIMO",
+          "explicacion": "El `2` es el valor de `NOCHE`, el tercero. Se empieza a contar desde `0`, así que `TARDE`, que es el segundo, vale `1`."
+        },
+        {
+          "texto": "Ninguno: `TARDE` es solo un nombre y no tiene valor",
+          "codigo": "OPCION_SOLO_UN_NOMBRE",
+          "explicacion": "Un enumerado es un tipo de enteros con nombres: cada nombre es una constante con un valor. Si se muestra con `%d`, sale su número."
+        }
+      ]
+    },
+    {
+      "id": "enum-guardar",
+      "titulo": "Guardar un valor del enumerado",
+      "sigueDe": "enum-declarar",
+      "dado": "enum Turno turno;",
+      "enunciado": "La variable `turno` ya está declarada. Guárdele el valor `TARDE`.",
+      "requiere": [{ "ejecuta": { "casos": [{ "queda": { "turno": "TARDE" }, "visible": true }] } }],
+      "referencia": "turno = TARDE;"
+    },
+    {
+      "id": "enum-comparar",
+      "titulo": "Comparar con un nombre",
+      "sigueDe": "enum-declarar",
+      "dado": "enum Turno turno;\nturno = TARDE;",
+      "enunciado": "La variable `turno` ya tiene un valor: en este programa vale `TARDE`, pero el programa tiene que funcionar con cualquier turno. Con un `if`, muestre con `printf` el texto `Turno noche` si `turno` es `NOCHE`. Si es otro turno, no tiene que mostrar nada.",
+      "requiere": [
+        {
+          "ejecuta": {
+            "casos": [
+              { "datos": { "turno": "TARDE" }, "salida": "", "visible": true },
+              { "datos": { "turno": "NOCHE" }, "salida": "Turno noche" },
+              { "datos": { "turno": "MANANA" }, "salida": "" }
+            ]
+          }
+        }
+      ],
+      "referencia": "if (turno == NOCHE) {\n  printf(\"Turno noche\");\n}"
+    },
+    {
+      "id": "enum-q-mostrar",
+      "titulo": "Qué muestra printf",
+      "archivo": "enum Turno {\n  MANANA,\n  TARDE,\n  NOCHE\n};",
+      "enunciado": "¿Qué muestra este programa?",
+      "codigo": "enum Turno turno;\n\nturno = NOCHE;\nprintf(\"%d\", turno);",
+      "opciones": [
+        {
+          "texto": "`NOCHE`",
+          "codigo": "OPCION_MUESTRA_EL_NOMBRE",
+          "explicacion": "Los nombres del enumerado solo existen en el código que se escribe: el programa guarda y muestra el número. Para mostrar la palabra hay que decidirlo con un `if` o un `switch`."
+        },
+        {
+          "texto": "`2`",
+          "correcta": true,
+          "explicacion": "`NOCHE` vale `2` (es el tercero y se cuenta desde `0`), y `%d` muestra el número entero que hay guardado."
+        },
+        {
+          "texto": "`Noche`",
+          "codigo": "OPCION_MUESTRA_UN_TEXTO",
+          "explicacion": "`printf` no puede convertir un enumerado en un texto: el programa solo tiene el número. Para mostrar `Noche` hay que escribirlo en el código."
+        },
+        {
+          "texto": "`0`",
+          "codigo": "OPCION_ES_EL_PRIMERO",
+          "explicacion": "El `0` es el valor de `MANANA`. `NOCHE` es el tercero, así que vale `2`."
+        }
+      ]
+    },
+    {
+      "id": "enum-alias",
+      "titulo": "Darle un alias al enumerado",
+      "en": "archivo",
+      "sigueDe": "enum-declarar",
+      "enunciado": "Escribir `enum Turno` cada vez es largo. Con `typedef` se le puede dar un nombre más corto, igual que a las estructuras. Dele al tipo `enum Turno` el alias `TTurno`.",
+      "requiere": [{ "alias": { "de": "enum Turno", "nombre": "TTurno" } }],
+      "referencia": "typedef enum Turno TTurno;"
+    },
+    {
+      "id": "enum-typedef",
+      "titulo": "El enumerado y su alias en una sola sentencia",
+      "en": "archivo",
+      "enunciado": "Un sistema de tareas guarda el estado de cada una: `PENDIENTE`, `EN_CURSO` o `TERMINADA`. Declare un enumerado con esos nombres, en ese orden, y dele el alias `TEstado` en la misma sentencia: el alias se escribe después de la llave de cierre, y así el enumerado no necesita nombre.",
+      "requiere": [
+        {
+          "enum": {
+            "enumeradores": ["PENDIENTE", "EN_CURSO", "TERMINADA"],
+            "capturar": "E"
+          }
+        },
+        { "alias": { "de": "$E", "nombre": "TEstado", "capturar": "A" } }
+      ],
+      "referencia": "typedef enum {\n  PENDIENTE,\n  EN_CURSO,\n  TERMINADA\n} TEstado;"
+    },
+    {
+      "id": "enum-valores",
+      "titulo": "Valores propios",
+      "en": "archivo",
+      "enunciado": "Un sistema de tareas usa tres prioridades, y cada una tiene un valor que lo decide la facultad: `BAJA` vale `1`, `MEDIA` vale `5` y `ALTA` vale `10`. Declare un enumerado con esos nombres, en ese orden, y esos valores, con el alias `TPrioridad`.",
+      "requiere": [
+        {
+          "enum": {
+            "enumeradores": ["BAJA", "MEDIA", "ALTA"],
+            "valores": { "BAJA": 1, "MEDIA": 5, "ALTA": 10 },
+            "capturar": "E"
+          }
+        },
+        { "alias": { "de": "$E", "nombre": "TPrioridad", "capturar": "A" } }
+      ],
+      "referencia": "typedef enum {\n  BAJA = 1,\n  MEDIA = 5,\n  ALTA = 10\n} TPrioridad;"
+    },
+    {
+      "id": "enum-q-siguiente",
+      "titulo": "El nombre que sigue",
+      "archivo": "enum Letras {\n  A = 5,\n  B,\n  C\n};",
+      "enunciado": "En este enumerado solo el primer nombre tiene un valor escrito. ¿Cuánto vale `C`?",
+      "codigo": "",
+      "opciones": [
+        {
+          "texto": "`5`",
+          "codigo": "OPCION_REPITE_EL_ULTIMO",
+          "explicacion": "Ese es el valor de `A`, que está escrito. Un nombre sin valor toma el del anterior más uno, así que no repite."
+        },
+        {
+          "texto": "`6`",
+          "codigo": "OPCION_ES_EL_SEGUNDO",
+          "explicacion": "El `6` es el valor de `B`. `C` es el siguiente, uno más que `B`."
+        },
+        {
+          "texto": "`7`",
+          "correcta": true,
+          "explicacion": "`A` vale `5` porque está escrito. `B` no tiene valor y toma el siguiente, `6`. `C` toma el siguiente de `B`: `7`."
+        },
+        {
+          "texto": "`2`",
+          "codigo": "OPCION_CUENTA_DESDE_CERO",
+          "explicacion": "El `2` sería la posición de `C` si no hubiera ningún valor escrito. Pero `A` vale `5`, y a partir de ahí se sigue contando."
+        }
+      ]
+    }
+  ]
+}

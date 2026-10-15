@@ -1,0 +1,79 @@
+{
+  "id": "enumerados-mostrar",
+  "titulo": "Mostrar un enumerado",
+  "continua": false,
+  "dentroDeMain": true,
+  "buenasPracticas": [],
+  "descripcion": "Un enumerado se muestra como número: para mostrar el nombre hay que decidirlo con un switch.",
+  "cabecera": "#include <stdio.h>\n\ntypedef enum {\n  MANANA,\n  TARDE,\n  NOCHE\n} TTurno;",
+  "consignas": [
+    {
+      "id": "mostrar-enum-switch",
+      "titulo": "Mostrar el nombre con un switch",
+      "dado": "TTurno turno;\nturno = TARDE;",
+      "enunciado": "La variable `turno` ya tiene un valor: en este programa vale `TARDE`, pero el programa tiene que funcionar con cualquier turno. Con un `switch`, muestre con `printf` el nombre del turno: `Manana`, `Tarde` o `Noche`.",
+      "requiere": [
+        {
+          "ejecuta": {
+            "conSwitch": true,
+            "casos": [
+              { "datos": { "turno": "TARDE" }, "salida": "Tarde", "visible": true },
+              { "datos": { "turno": "MANANA" }, "salida": "Manana" },
+              { "datos": { "turno": "NOCHE" }, "salida": "Noche" }
+            ]
+          }
+        }
+      ],
+      "referencia": "switch (turno) {\n  case MANANA:\n    printf(\"Manana\");\n    break;\n  case TARDE:\n    printf(\"Tarde\");\n    break;\n  case NOCHE:\n    printf(\"Noche\");\n    break;\n}"
+    },
+    {
+      "id": "mostrar-enum-q-break",
+      "titulo": "Qué pasa sin break",
+      "enunciado": "Si `turno` vale `TARDE`, ¿qué muestra este código?",
+      "codigo": "switch (turno) {\n  case MANANA:\n    printf(\"Manana \");\n  case TARDE:\n    printf(\"Tarde \");\n  case NOCHE:\n    printf(\"Noche \");\n}",
+      "opciones": [
+        {
+          "texto": "`Tarde `",
+          "codigo": "OPCION_SOLO_EL_CASO",
+          "explicacion": "Entra en `case TARDE`, pero no hay `break` que lo detenga: sigue ejecutando lo que viene después, aunque sea de otro caso."
+        },
+        {
+          "texto": "`Tarde Noche `",
+          "correcta": true,
+          "explicacion": "El `switch` salta al `case TARDE` y desde ahí ejecuta todo lo que sigue hasta encontrar un `break` o llegar al final. Como ningún caso tiene `break`, pasa también por `NOCHE`."
+        },
+        {
+          "texto": "`Manana Tarde Noche `",
+          "codigo": "OPCION_TODOS",
+          "explicacion": "Se empieza desde el caso que coincide, no desde el primero. `MANANA` queda antes de `TARDE`, así que no se ejecuta."
+        },
+        {
+          "texto": "No muestra nada, porque falta `default`",
+          "codigo": "OPCION_FALTA_EL_DEFAULT",
+          "explicacion": "`default` es opcional: solo se usa cuando el valor no coincide con ningún caso. Acá `TARDE` coincide con uno."
+        }
+      ]
+    },
+    {
+      "id": "mostrar-enum-default",
+      "titulo": "El valor que no es ninguno",
+      "dado": "TTurno turno;\nturno = TARDE;",
+      "enunciado": "Como se vio al leer, `turno` puede tener un número que no es ninguno de los tres turnos (en este programa vale `TARDE`, pero tiene que funcionar con cualquier valor). Con un `switch`, muestre con `printf` el nombre del turno: `Manana`, `Tarde` o `Noche`. Si no es ninguno, muestre `Turno invalido`.",
+      "requiere": [
+        {
+          "ejecuta": {
+            "conSwitch": true,
+            "conDefault": true,
+            "casos": [
+              { "datos": { "turno": "NOCHE" }, "salida": "Noche", "visible": true },
+              { "datos": { "turno": "MANANA" }, "salida": "Manana" },
+              { "datos": { "turno": "TARDE" }, "salida": "Tarde" },
+              { "datos": { "turno": 7 }, "salida": "Turno invalido" }
+            ]
+          }
+        }
+      ],
+      "referencia": "switch (turno) {\n  case MANANA:\n    printf(\"Manana\");\n    break;\n  case TARDE:\n    printf(\"Tarde\");\n    break;\n  case NOCHE:\n    printf(\"Noche\");\n    break;\n  default:\n    printf(\"Turno invalido\");\n}"
+    }
+  ]
+}

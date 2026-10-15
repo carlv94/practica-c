@@ -1,6 +1,17 @@
 {
   "grupos": [
     {
+      "id": "enumerados",
+      "agrupar": true,
+      "titulo": "Enumerados",
+      "descripcion": "Un tipo con nombres para un conjunto cerrado de valores: declararlo, usarlo, leerlo y mostrarlo.",
+      "series": [
+        "enumerados-declarar.json",
+        "enumerados-leer.json",
+        "enumerados-mostrar.json"
+      ]
+    },
+    {
       "id": "arreglos",
       "agrupar": true,
       "titulo": "Arreglos",

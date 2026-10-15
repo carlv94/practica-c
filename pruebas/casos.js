@@ -22,6 +22,7 @@ import {
   CASOS_DE_ARREGLO_SIN_INDICE,
   CASOS_DE_ANIDADAS,
 } from './casos-estructuras.js';
+import { CASOS_DE_ENUMERADOS } from './casos-enumerados.js';
 
 const TYPEDEF_SIN_ETIQUETA = `typedef struct {
   char nombreFantasia[50];
@@ -1412,6 +1413,7 @@ export const CASOS = [
   ...CASOS_DE_RECORRER_ESTRUCTURAS,
   ...CASOS_DE_ARREGLO_SIN_INDICE,
   ...CASOS_DE_ANIDADAS,
+  ...CASOS_DE_ENUMERADOS,
   // ---- 1: declarar la estructura ----
   {
     nombre: 'otro nombre, otras dimensiones, otro orden, double y unsigned',
