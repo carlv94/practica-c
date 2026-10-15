@@ -1,0 +1,412 @@
+{
+  "id": "uniones-etiqueta",
+  "titulo": "Una unión con etiqueta",
+  "continua": false,
+  "dentroDeMain": true,
+  "buenasPracticas": [
+    "constantes"
+  ],
+  "descripcion": "Una estructura que dice qué miembro de la unión tiene el valor: declararla, guardar, mostrar según la etiqueta y recorrer un arreglo de lecturas contando y sumando.",
+  "cabecera": "#include <stdio.h>\n\n#define MAX_LECTURAS 4\n\ntypedef enum {\n  ENTERO,\n  REAL,\n  LETRA\n} TTipo;\n\ntypedef union {\n  int entero;\n  double real;\n  char letra;\n} TMedida;",
+  "consignas": [
+    {
+      "id": "etiqueta-declarar",
+      "titulo": "Declarar la estructura con la etiqueta",
+      "en": "archivo",
+      "buenasPracticas": [],
+      "enunciado": "Una unión guarda un solo valor, pero no dice de qué miembro es. Por eso cada lectura del sensor lleva también una etiqueta: un enumerado que dice cuál de los miembros tiene el valor. El enumerado `TTipo` (`ENTERO`, `REAL` y `LETRA`) y la unión `TMedida` ya están declarados. Declare una estructura con dos campos, en este orden: `tipo`, de tipo `TTipo`, y `medida`, de tipo `TMedida`. Dele el alias `TLectura`.",
+      "requiere": [
+        {
+          "struct": {
+            "capturar": "S",
+            "campos": [
+              {
+                "nombre": "tipo",
+                "tipo": "enumerado",
+                "de": "TTipo"
+              },
+              {
+                "nombre": "medida",
+                "tipo": "union",
+                "de": "TMedida"
+              }
+            ]
+          }
+        },
+        {
+          "alias": {
+            "de": "$S",
+            "nombre": "TLectura",
+            "capturar": "A"
+          }
+        }
+      ],
+      "referencia": "typedef struct {\n  TTipo tipo;\n  TMedida medida;\n} TLectura;"
+    },
+    {
+      "id": "etiqueta-guardar",
+      "titulo": "Guardar el valor",
+      "sigueDe": "etiqueta-declarar",
+      "dado": "TLectura lectura;",
+      "enunciado": "La variable `lectura` ya está declarada. El sensor midió una temperatura de `36.5` grados. Guarde ese valor en la unión que está dentro de `lectura`, en el miembro que corresponde a una temperatura.",
+      "dibujo": {
+        "titulo": "Así tiene que quedar la unión `lectura.medida`:",
+        "union": {
+          "nombre": "lectura.medida",
+          "miembros": [
+            "entero",
+            "real",
+            "letra"
+          ],
+          "vigente": "real",
+          "valor": "36.5"
+        }
+      },
+      "requiere": [
+        {
+          "campo": {
+            "variable": "lectura.medida",
+            "soloEsos": true,
+            "campos": [
+              {
+                "nombre": "real",
+                "tipo": "real",
+                "valor": "36.5"
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "lectura.medida.real = 36.5;"
+    },
+    {
+      "id": "etiqueta-etiquetar",
+      "titulo": "Guardar la etiqueta",
+      "sigueDe": "etiqueta-declarar",
+      "dado": "TLectura lectura;\nlectura.medida.real = 36.5;",
+      "enunciado": "La lectura ya tiene guardada la temperatura, pero todavía no dice de qué tipo es el valor: sin la etiqueta, nadie sabría cuál de los miembros leer. Guarde en el campo `tipo` de `lectura` la etiqueta que corresponde.",
+      "ficha": {
+        "leyenda": "Así tiene que quedar la lectura:",
+        "titulo": "lectura",
+        "campos": [
+          {
+            "nombre": "tipo",
+            "ejemplo": "REAL"
+          },
+          {
+            "nombre": "medida",
+            "ejemplo": "36.5"
+          }
+        ],
+        "marcar": [
+          "tipo"
+        ]
+      },
+      "requiere": [
+        {
+          "campo": {
+            "variable": "lectura",
+            "soloEsos": true,
+            "campos": [
+              {
+                "nombre": "tipo",
+                "tipo": "enumerado"
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "lectura.tipo = REAL;"
+    },
+    {
+      "id": "etiqueta-mostrar",
+      "titulo": "Mostrar el valor según la etiqueta",
+      "sigueDe": "etiqueta-declarar",
+      "dado": "TLectura lectura;\nlectura.tipo = REAL;\nlectura.medida.real = 36.5;",
+      "enunciado": "La variable `lectura` ya tiene un valor y su etiqueta: en este programa es un real, pero el programa tiene que funcionar con cualquier lectura. Con un `switch` sobre el campo `tipo`, muestre con `printf` el valor del miembro que corresponde: un entero con `%d`, un real con `%.1f` y una letra con `%c`.",
+      "requiere": [
+        {
+          "ejecuta": {
+            "conSwitch": true,
+            "casos": [
+              {
+                "datos": {
+                  "lectura.tipo": "REAL",
+                  "lectura.medida.real": 36.5
+                },
+                "salida": "36.5",
+                "visible": true
+              },
+              {
+                "datos": {
+                  "lectura.tipo": "ENTERO",
+                  "lectura.medida.entero": 7
+                },
+                "salida": "7"
+              },
+              {
+                "datos": {
+                  "lectura.tipo": "LETRA",
+                  "lectura.medida.letra": 66
+                },
+                "salida": "B"
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "switch (lectura.tipo) {\n  case ENTERO:\n    printf(\"%d\", lectura.medida.entero);\n    break;\n  case REAL:\n    printf(\"%.1f\", lectura.medida.real);\n    break;\n  case LETRA:\n    printf(\"%c\", lectura.medida.letra);\n    break;\n}"
+    },
+    {
+      "id": "etiqueta-contar",
+      "titulo": "Contar las lecturas de un tipo",
+      "sigueDe": "etiqueta-declarar",
+      "dado": "TLectura lecturas[MAX_LECTURAS];\nint cantidad = 0;\nint i;",
+      "enunciado": "El arreglo `lecturas` ya tiene cargadas las lecturas de estas fichas. Con un ciclo, cuente cuántas son reales y guarde la cantidad en `cantidad`. Use el índice `i`.",
+      "ficha": {
+        "arreglo": "lecturas",
+        "leyenda": "Las lecturas cargadas:",
+        "campos": [
+          "tipo",
+          "medida"
+        ],
+        "elementos": [
+          [
+            "REAL",
+            "36.5"
+          ],
+          [
+            "ENTERO",
+            "7"
+          ],
+          [
+            "REAL",
+            "18.2"
+          ],
+          [
+            "LETRA",
+            "'B'"
+          ]
+        ],
+        "marcar": [
+          "tipo"
+        ]
+      },
+      "requiere": [
+        {
+          "ejecuta": {
+            "conCiclo": true,
+            "limite": true,
+            "recorre": {
+              "lecturas.tipo": [
+                "la lectura"
+              ]
+            },
+            "casos": [
+              {
+                "datos": {
+                  "lecturas.tipo": [
+                    "REAL",
+                    "ENTERO",
+                    "REAL",
+                    "LETRA"
+                  ]
+                },
+                "queda": {
+                  "cantidad": 2
+                },
+                "visible": true
+              },
+              {
+                "datos": {
+                  "lecturas.tipo": [
+                    "ENTERO",
+                    "LETRA",
+                    "ENTERO",
+                    "LETRA"
+                  ]
+                },
+                "queda": {
+                  "cantidad": 0
+                }
+              },
+              {
+                "datos": {
+                  "lecturas.tipo": [
+                    "REAL",
+                    "REAL",
+                    "REAL",
+                    "REAL"
+                  ]
+                },
+                "queda": {
+                  "cantidad": 4
+                }
+              },
+              {
+                "datos": {
+                  "lecturas.tipo": [
+                    "LETRA",
+                    "LETRA",
+                    "REAL",
+                    "LETRA"
+                  ]
+                },
+                "queda": {
+                  "cantidad": 1
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "for (i = 0; i < MAX_LECTURAS; i++) {\n  if (lecturas[i].tipo == REAL) {\n    cantidad++;\n  }\n}"
+    },
+    {
+      "id": "etiqueta-sumar",
+      "titulo": "Sumar los valores reales",
+      "sigueDe": "etiqueta-declarar",
+      "dado": "TLectura lecturas[MAX_LECTURAS];\ndouble total = 0;\nint i;",
+      "enunciado": "Con el mismo arreglo `lecturas`, sume en `total` solo los valores de las lecturas reales. Las otras lecturas no tienen un miembro `real` con valor: leerlo sería un error. Use el índice `i`.",
+      "ficha": {
+        "arreglo": "lecturas",
+        "leyenda": "Las lecturas cargadas:",
+        "campos": [
+          "tipo",
+          "medida"
+        ],
+        "elementos": [
+          [
+            "REAL",
+            "36.5"
+          ],
+          [
+            "ENTERO",
+            "7"
+          ],
+          [
+            "REAL",
+            "18.5"
+          ],
+          [
+            "LETRA",
+            "'B'"
+          ]
+        ],
+        "marcar": [
+          "tipo"
+        ]
+      },
+      "requiere": [
+        {
+          "ejecuta": {
+            "conCiclo": true,
+            "limite": true,
+            "recorre": {
+              "lecturas.tipo": [
+                "la lectura"
+              ]
+            },
+            "casos": [
+              {
+                "datos": {
+                  "lecturas.tipo": [
+                    "REAL",
+                    "ENTERO",
+                    "REAL",
+                    "LETRA"
+                  ],
+                  "lecturas.medida.real": [
+                    36.5,
+                    null,
+                    18.5,
+                    null
+                  ],
+                  "lecturas.medida.entero": [
+                    null,
+                    7,
+                    null,
+                    null
+                  ],
+                  "lecturas.medida.letra": [
+                    null,
+                    null,
+                    null,
+                    66
+                  ]
+                },
+                "queda": {
+                  "total": 55
+                },
+                "visible": true
+              },
+              {
+                "datos": {
+                  "lecturas.tipo": [
+                    "ENTERO",
+                    "ENTERO",
+                    "LETRA",
+                    "REAL"
+                  ],
+                  "lecturas.medida.real": [
+                    null,
+                    null,
+                    null,
+                    2.5
+                  ],
+                  "lecturas.medida.entero": [
+                    4,
+                    9,
+                    null,
+                    null
+                  ],
+                  "lecturas.medida.letra": [
+                    null,
+                    null,
+                    65,
+                    null
+                  ]
+                },
+                "queda": {
+                  "total": 2.5
+                }
+              },
+              {
+                "datos": {
+                  "lecturas.tipo": [
+                    "REAL",
+                    "REAL",
+                    "REAL",
+                    "REAL"
+                  ],
+                  "lecturas.medida.real": [
+                    1.5,
+                    2.5,
+                    3,
+                    4
+                  ],
+                  "lecturas.medida.entero": [
+                    null,
+                    null,
+                    null,
+                    null
+                  ],
+                  "lecturas.medida.letra": [
+                    null,
+                    null,
+                    null,
+                    null
+                  ]
+                },
+                "queda": {
+                  "total": 11
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "for (i = 0; i < MAX_LECTURAS; i++) {\n  if (lecturas[i].tipo == REAL) {\n    total += lecturas[i].medida.real;\n  }\n}"
+    }
+  ]
+}

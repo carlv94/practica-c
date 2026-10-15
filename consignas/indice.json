@@ -67,6 +67,16 @@
         "estructuras-anidadas.json",
         "estructuras-enumerado.json"
       ]
+    },
+    {
+      "id": "uniones",
+      "agrupar": true,
+      "titulo": "Uniones",
+      "descripcion": "Un solo lugar para varios miembros: declarar una unión, saber qué miembro tiene el valor y usarla con una etiqueta.",
+      "series": [
+        "uniones-declarar.json",
+        "uniones-etiqueta.json"
+      ]
     }
   ]
 }

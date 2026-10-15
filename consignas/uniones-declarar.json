@@ -1,0 +1,181 @@
+{
+  "id": "uniones-declarar",
+  "titulo": "Declarar y usar una unión",
+  "continua": false,
+  "dentroDeMain": true,
+  "descripcion": "Declarar una unión, una variable y un alias, guardar un valor, saber qué miembro lo tiene, mostrarlo y cuánto ocupa.",
+  "cabecera": "#include <stdio.h>",
+  "consignas": [
+    {
+      "id": "union-declarar",
+      "titulo": "Declarar la unión",
+      "en": "archivo",
+      "enunciado": "Un sensor registra mediciones. Cada medición es un solo valor, pero según el instrumento puede ser un número entero (un conteo), un número con decimales (una temperatura) o una letra (un código de estado). Los miembros se llaman `entero`, `real` y `letra`. Declare la unión necesaria para guardar una medición.",
+      "requiere": [
+        {
+          "union": {
+            "capturar": "U",
+            "campos": [
+              { "nombre": "entero", "tipo": "entero" },
+              { "nombre": "real", "tipo": "real" },
+              { "nombre": "letra", "tipo": "caracter" }
+            ]
+          }
+        }
+      ],
+      "referencia": "union Medida {\n  int entero;\n  double real;\n  char letra;\n};"
+    },
+    {
+      "id": "union-variable",
+      "titulo": "Declarar una variable",
+      "sigueDe": "union-declarar",
+      "enunciado": "Declare una variable llamada `unaMedida` usando la unión {U}.",
+      "requiere": [{ "variable": { "tipo": "$U", "nombre": "unaMedida" } }],
+      "referencia": "union Medida unaMedida;"
+    },
+    {
+      "id": "union-alias",
+      "titulo": "Definir un alias",
+      "sigueDe": "union-variable",
+      "en": "archivo",
+      "enunciado": "Defina un alias llamado `TMedida` para la unión {U}.",
+      "requiere": [{ "alias": { "de": "$U", "nombre": "TMedida", "capturar": "A" } }],
+      "referencia": "typedef union Medida TMedida;"
+    },
+    {
+      "id": "union-variable-alias",
+      "titulo": "Declarar una variable con el alias",
+      "sigueDe": "union-alias",
+      "enunciado": "Declare una variable llamada `otraMedida` usando el alias {A}.",
+      "requiere": [{ "variable": { "tipo": "$U", "conAlias": true, "nombre": "otraMedida" } }],
+      "referencia": "{A} otraMedida;"
+    },
+    {
+      "id": "union-alias-junto",
+      "titulo": "La unión y su alias en una sola sentencia",
+      "sigueDe": "union-alias",
+      "en": "archivo",
+      "enunciado": "El sensor también registra el estado de su batería, que es un solo valor: o un porcentaje (un número entero) o una letra, `B` para baja y `A` para alta. Los miembros se llaman `porcentaje` y `nivel`. Declare la unión y dele el alias `TBateria` en la misma sentencia: el alias se escribe después de la llave de cierre, y así la unión no necesita nombre.",
+      "requiere": [
+        {
+          "union": {
+            "capturar": "B",
+            "campos": [
+              { "nombre": "porcentaje", "tipo": "entero" },
+              { "nombre": "nivel", "tipo": "caracter" }
+            ]
+          }
+        },
+        { "alias": { "de": "$B", "nombre": "TBateria", "capturar": "C" } }
+      ],
+      "referencia": "typedef union {\n  int porcentaje;\n  char nivel;\n} TBateria;"
+    },
+    {
+      "id": "union-guardar",
+      "titulo": "Guardar un valor",
+      "sigueDe": "union-alias",
+      "dado": "TMedida lectura;",
+      "enunciado": "La variable `lectura` ya está declarada. El sensor midió una temperatura de `36.5` grados. Guarde ese valor en `lectura`, en el miembro que corresponde a una temperatura.",
+      "dibujo": {
+        "titulo": "Así tiene que quedar `lectura`:",
+        "union": {
+          "nombre": "lectura",
+          "miembros": ["entero", "real", "letra"],
+          "vigente": "real",
+          "valor": "36.5"
+        }
+      },
+      "requiere": [
+        {
+          "campo": {
+            "variable": "lectura",
+            "soloEsos": true,
+            "campos": [{ "nombre": "real", "tipo": "real", "valor": "36.5" }]
+          }
+        }
+      ],
+      "referencia": "lectura.real = 36.5;"
+    },
+    {
+      "id": "union-q-vigente",
+      "titulo": "Qué miembro tiene el valor",
+      "archivo": "typedef union {\n  int entero;\n  double real;\n  char letra;\n} TMedida;",
+      "enunciado": "Al terminar este programa, ¿qué miembro de `lectura` tiene un valor que se puede usar?",
+      "codigo": "TMedida lectura;\n\nlectura.entero = 7;\nlectura.real = 36.5;",
+      "opciones": [
+        {
+          "texto": "`entero`",
+          "codigo": "OPCION_EL_PRIMERO_QUE_SE_GUARDO",
+          "explicacion": "Ahí se guardó un `7`, pero después se guardó otro valor en `real`. Los dos miembros comparten el mismo lugar, así que el segundo valor pisó al primero."
+        },
+        {
+          "texto": "`real`",
+          "correcta": true,
+          "explicacion": "En una unión todos los miembros comparten el mismo lugar: al guardar en uno, lo que había en los otros se pierde. `real` es el último miembro en el que se guardó un valor. Por eso solo se puede leer ese miembro."
+        },
+        {
+          "texto": "Los dos: `entero` vale `7` y `real` vale `36.5`",
+          "codigo": "OPCION_LOS_DOS",
+          "explicacion": "Eso pasa en una estructura, donde cada campo tiene su propio lugar. En una unión hay un solo lugar para todos los miembros, así que solo uno de ellos tiene valor."
+        },
+        {
+          "texto": "Ninguno, porque se guardaron valores en dos miembros",
+          "codigo": "OPCION_NINGUNO",
+          "explicacion": "Usar la unión dos veces no la deja sin valor: sigue guardando uno solo, y hay un miembro desde el que se lo puede leer."
+        }
+      ]
+    },
+    {
+      "id": "union-mostrar",
+      "titulo": "Mostrar el valor",
+      "sigueDe": "union-alias",
+      "dado": "TMedida lectura;\nlectura.real = 36.5;",
+      "enunciado": "La variable `lectura` ya tiene guardada la temperatura que midió el sensor. En este programa vale `36.5`, pero el programa tiene que funcionar con cualquier temperatura. Muestre con `printf` el valor de `lectura`, con un decimal.",
+      "requiere": [
+        {
+          "ejecuta": {
+            "casos": [
+              { "datos": { "lectura.real": 36.5 }, "salida": "36.5", "visible": true },
+              { "datos": { "lectura.real": 18.2 }, "salida": "18.2" },
+              { "datos": { "lectura.real": 0 }, "salida": "0.0" }
+            ]
+          }
+        }
+      ],
+      "referencia": "printf(\"%.1f\", lectura.real);"
+    },
+    {
+      "id": "union-q-tamano",
+      "titulo": "Cuánto ocupa",
+      "archivo": "typedef union {\n  int entero;\n  double real;\n  char letra;\n} TMedida;",
+      "enunciado": "En una computadora de uso común, un `int` ocupa 4 bytes, un `double` 8 y un `char` 1. ¿Cuántos bytes ocupa una variable de tipo `TMedida`?",
+      "codigo": "",
+      "opciones": [
+        {
+          "valor": "13",
+          "texto": "bytes",
+          "codigo": "OPCION_LA_SUMA",
+          "explicacion": "Los tamaños se suman en una estructura, donde cada campo tiene su lugar. En una unión los miembros comparten un solo lugar, así que no se suman."
+        },
+        {
+          "valor": "8",
+          "texto": "bytes",
+          "correcta": true,
+          "explicacion": "La unión tiene un solo lugar, y tiene que alcanzar para guardar cualquiera de sus miembros: ocupa lo que ocupa el más grande, el `double`. Por eso una unión gasta mucho menos que una estructura con los mismos campos."
+        },
+        {
+          "valor": "4",
+          "texto": "bytes",
+          "codigo": "OPCION_EL_ENTERO",
+          "explicacion": "Es lo que ocupa el `int`, pero el lugar de la unión también tiene que alcanzar para guardar el miembro más grande."
+        },
+        {
+          "valor": "1",
+          "texto": "bytes",
+          "codigo": "OPCION_EL_CHAR",
+          "explicacion": "Es lo que ocupa el `char`, el miembro más chico. El lugar de la unión tiene que alcanzar para el más grande, no para el más chico."
+        }
+      ]
+    }
+  ]
+}
