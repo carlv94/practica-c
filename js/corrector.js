@@ -2960,7 +2960,7 @@ export function corregir(
           'EXTREMO_FUERA_DEL_ARREGLO',
           `${resumen}: ese valor no es ninguno de los de \`${Object.keys(caso.datos || {})[0]}\`. El valor con que se empieza tiene que ser uno de los del arreglo.`
         );
-      } else if (!regla.busca && ultimos.includes(tiene) && asignacionesEnCiclo(nombre).length) {
+      } else if (!regla.busca && !(caso.enumQueda && caso.enumQueda[nombre]) && ultimos.includes(tiene) && asignacionesEnCiclo(nombre).length) {
         // Lo que quedo es el ultimo elemento: se volvio a empezar en cada
         // vuelta, o se reemplazo el valor en lugar de acumularlo.
         const reinicio = asignacionesEnCiclo(nombre).find((a) => a.derecha.clase === 'numero');
@@ -3119,6 +3119,27 @@ export function corregir(
     return true;
   }
 
+  // "indicesConNombre": un arreglo con un lugar por cada nombre de un enumerado
+  // se indexa con el nombre (ventas[TARDE]); con el numero (ventas[1]) esta bien,
+  // pero es una mejora.
+  function sugerirIndices(modelo) {
+    const valores = [];
+    for (const a of modelo.asignaciones.filter((x) => x.nuevo)) valores.push([a.izquierda, a.fila], [a.derecha, a.fila]);
+    for (const l of modelo.llamadas.filter((x) => x.nuevo)) for (const arg of l.argumentos) valores.push([arg, l.fila]);
+    for (const [v, fila] of valores) {
+      if (v.clase !== 'indice' || v.indices.length !== 1 || !/^\d+$/.test(v.indices[0].trim())) continue;
+      const numero = Number(v.indices[0]);
+      const e = modelo.enums.flatMap((d) => d.enumeradores).find((x) => x.valor === numero);
+      if (!e) continue;
+      mejora(
+        'ENUM_CON_NUMERO',
+        `Está bien, pero \`${numero}\` es el valor de \`${e.nombre}\`: con el nombre, se entiende de qué lugar se trata sin tener que recordar los números.`,
+        fila
+      );
+      return;
+    }
+  }
+
   // Un caso puede decir un valor con el nombre del enumerador ("turno": "TARDE"):
   // aca pasa a su numero, y los mensajes lo dicen con el nombre.
   function conEnumeradores(original, modelo) {
@@ -3193,6 +3214,7 @@ export function corregir(
         if (!usaLosCamposMarcados(hecha)) return;
         if (!revisarCaso(hecha, caso, modelo, regla)) return;
       }
+      if (regla.indicesConNombre) sugerirIndices(modelo);
       notasYMejoras(regla, modelo);
       return;
     }
@@ -6112,6 +6134,12 @@ function revisarEnumerados(modelo, error, mejora, nota, avisados) {
     for (const c of s.casos) {
       if (c.valor != null && /^\d+$/.test(c.valor)) sugerir(def, { clase: 'numero', valor: Number(c.valor) }, c.fila);
     }
+  }
+  // Un if o un ciclo que compara la variable del enumerado con un numero: t <= 2.
+  for (const x of [...modelo.ifs, ...modelo.ciclos].filter((y) => y.nuevo && y.condicion)) {
+    const m = /^\s*([A-Za-z_]\w*)\s*(?:<=|<|>=|>|==|!=)\s*(-?\d+)\s*$/.exec(x.condicion);
+    const def = m && definicion(m[1]);
+    if (def) sugerir(def, { clase: 'numero', valor: Number(m[2]) }, x.fila);
   }
   // Leer con scanf directo en una variable de enumerado: compila, pero el tipo
   // no controla el rango.

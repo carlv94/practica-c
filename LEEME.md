@@ -752,6 +752,16 @@ coincidencia). Los nombres de los mensajes salen como los escribe el alumno
   (`turno = 1`, `turno == 2`, `case 0:`) es la mejora `ENUM_CON_NUMERO`; leer con
   `scanf` directo en la variable del enumerado es la nota `SCANF_EN_ENUM` (una
   vez por serie).
+- Un `if` o un ciclo que compara la variable del enumerado con un número
+  (`turno <= 2`) también es `ENUM_CON_NUMERO`. En `ejecuta`,
+  `"indicesConNombre": true` hace lo mismo con un índice escrito como número
+  (`ventas[1]` donde va `ventas[TARDE]`): la serie "Arreglos con enumerados".
+- Un dibujo de arreglo puede llevar `"nombres": ["MANANA", "TARDE", "NOCHE"]`: el
+  nombre de cada posición, bajo su índice. La serie usa `#define TURNOS 3` en la
+  cabecera y acepta `TURNOS`, `NOCHE + 1` y `3` (con la mejora de usar la
+  constante). Una explicación de una opción equivocada no dice el valor correcto.
+- Con un enumerado en el resultado (`"queda": { "mejor": "NOCHE" }`) no se
+  aplica la pista del acumulador que se pisa: el valor distinto se dice tal cual.
 
 **Un `=` en una condición** (`if (x = 1)`, `while (n = 0)`, `for (...; i = MAX; ...)`,
 también `+=` y similares): en todas las series, sin configurar nada, es el error

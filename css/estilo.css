@@ -447,6 +447,18 @@ section[hidden] {
   line-height: 1.6;
 }
 
+/* El nombre de un enumerado bajo el indice de su posicion. */
+#figura .nombre-de-indice {
+  font: 600 0.7rem Consolas, "Cascadia Mono", Menlo, monospace;
+  color: var(--suave);
+  line-height: 1.4;
+  padding-bottom: 3px;
+}
+
+#figura .con-nombre .valor {
+  min-width: 78px;
+}
+
 #figura .valor {
   display: grid;
   place-items: center;

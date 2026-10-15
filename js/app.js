@@ -535,7 +535,9 @@ function descripcionDe(figura) {
   const resaltadas = Array.isArray(figura.resaltar) ? figura.resaltar : [];
   return (
     (figura.titulo ? figura.titulo.replace(/`/g, '') + ' ' : '') +
-    `Arreglo de ${figura.valores.length} elementos: ${figura.valores.map((v) => (v == null ? 'vacío' : v)).join(', ')}` +
+    `Arreglo de ${figura.valores.length} elementos: ${figura.valores
+      .map((v, i) => (Array.isArray(figura.nombres) && figura.nombres[i] ? `${figura.nombres[i]}: ` : '') + (v == null ? 'vacío' : v))
+      .join(', ')}` +
     (resaltadas.length ? `. Resaltadas las posiciones ${resaltadas.join(', ')}` : '')
   );
 }
@@ -550,7 +552,14 @@ function dibujarArreglo(caja, figura) {
     const casillero = elemento('div', 'casillero');
     const vacio = valor == null;
     const clase = 'valor' + (vacio ? ' vacio' : '') + (resaltadas.includes(i) ? ' resaltado' : '');
-    casillero.append(elemento('span', 'indice', i), elemento('span', clase, vacio ? '\u00A0' : valor));
+    // Con los nombres de un enumerado, cada uno va bajo su indice.
+    const nombre = Array.isArray(figura.nombres) && figura.nombres[i] != null ? figura.nombres[i] : null;
+    if (nombre) casillero.classList.add('con-nombre');
+    casillero.append(
+      elemento('span', 'indice', i),
+      ...(nombre ? [elemento('span', 'nombre-de-indice', nombre)] : []),
+      elemento('span', clase, vacio ? '\u00A0' : valor)
+    );
     fila.appendChild(casillero);
   });
   caja.appendChild(fila);
