@@ -182,6 +182,15 @@ function conCodigos(caso) {
   };
 }
 
+// El simulador sigue un arreglo de estructuras "aplanado" (alumnos.nacimiento.mes[0]);
+// el alumno lo escribe alumnos[0].nacimiento.mes.
+const comoLoEscribio = (nombre) => {
+  const m = /^([A-Za-z_]\w*)((?:\.\w+)+)\[(\d+)\]$/.exec(nombre);
+  return m ? `${m[1]}[${m[3]}]${m[2]}` : nombre;
+};
+// Un campo de un arreglo de estructuras (alumnos.promedio) es el arreglo "alumnos".
+const arregloDe = (nombre) => nombre.split('.')[0];
+
 const enLista = (valores) => {
   // Una fila de una tabla se escribe como en el codigo: {5, 8, 1, 4}.
   const comoEsta = (v) => (Array.isArray(v) ? `{${v.map(comoEsta).join(', ')}}` : esLetra(v) ? `'${v}'` : String(v));
@@ -2420,14 +2429,14 @@ export function corregir(
             e.dimensiones !== 2 ? ['posición', 'posiciones'] : e.dimension === 0 ? ['fila', 'filas'] : ['columna', 'columnas'];
           error(
             'INDICE_FUERA_DE_RANGO',
-            `${conContexto}\`${e.nombre}\` tiene ${e.tamano} ${plural}, numeradas de 0 a ${e.tamano - 1}${e.escrito ? ': ' : ', y '}${e.escrito ? `la ${singular} ${e.indice} no existe.` : `el ciclo llega hasta la ${singular} ${e.indice}, que no existe.`}`,
+            `${conContexto}\`${arregloDe(e.nombre)}\` tiene ${e.tamano} ${plural}, numeradas de 0 a ${e.tamano - 1}${e.escrito ? ': ' : ', y '}${e.escrito ? `la ${singular} ${e.indice} no existe.` : `el ciclo llega hasta la ${singular} ${e.indice}, que no existe.`}`,
             e.fila
           );
         }
       } else if (e instanceof SinValor) {
         error(
           'VARIABLE_SIN_VALOR',
-          `${conContexto}\`${e.nombre}\` todavía no tiene un valor cuando se usa: hay que dárselo antes.`,
+          `${conContexto}\`${comoLoEscribio(e.nombre)}\` todavía no tiene un valor cuando se usa: hay que dárselo antes.`,
           e.fila
         );
       } else if (e instanceof NoTermina) {
@@ -2913,6 +2922,59 @@ export function corregir(
   //       "deArreglo": "notas",             // lo mostrado tiene que salir de ese arreglo
   //       "pregunta": "Ingrese la nota %d: ",   // el mensaje antes de cada lectura
   //       "conCiclo": true, "limite": true } }
+  // Los valores de la ficha de la consigna, con los nombres que usa el simulador:
+  // alumnos[1].nacimiento.mes es la posicion 1 de alumnos.nacimiento.mes. Solo los
+  // numericos, y un arreglo solo si la ficha trae todas sus posiciones.
+  function datosDeLaFicha() {
+    const datos = {};
+    const incompletos = new Set();
+    const hojas = (campos, prefijo = '') =>
+      campos.flatMap((c) => (c.campos ? hojas(c.campos, `${prefijo}${c.nombre}.`) : [{ ruta: `${prefijo}${c.nombre}`, ejemplo: c.ejemplo }]));
+    for (const ficha of fichasDe(consigna)) {
+      if (!ficha.titulo) continue;
+      const elemento = /^([A-Za-z_]\w*)\[(\d+)\]$/.exec(ficha.titulo);
+      for (const { ruta, ejemplo } of hojas(ficha.campos)) {
+        const plano = elemento ? `${elemento[1]}.${ruta}` : `${ficha.titulo}.${ruta}`;
+        const numero = ejemplo != null && String(ejemplo).trim() !== '' ? Number(ejemplo) : NaN;
+        if (!Number.isFinite(numero)) {
+          incompletos.add(plano);
+          continue;
+        }
+        if (elemento) (datos[plano] = datos[plano] || [])[Number(elemento[2])] = numero;
+        else datos[plano] = numero;
+      }
+    }
+    for (const plano of incompletos) delete datos[plano];
+    for (const [plano, valor] of Object.entries(datos)) {
+      if (Array.isArray(valor) && Array.from(valor).some((v) => v === undefined)) delete datos[plano];
+    }
+    return datos;
+  }
+
+  // El campo que la ficha marca es sobre el que se trabaja: un programa que no
+  // lo lee nunca esta mirando otra cosa (el mes en vez del anio).
+  function usaLosCamposMarcados(corrida) {
+    for (const ficha of fichasDe(consigna)) {
+      const elemento = /^([A-Za-z_]\w*)\[\d+\]$/.exec(ficha.titulo || '');
+      // (una ficha escrita a mano no lleva marcarEnTodas: su marcar es el de todas)
+      const marcados = 'marcarEnTodas' in ficha ? ficha.marcarEnTodas : ficha.marcar;
+      if (!elemento || !Array.isArray(marcados)) continue;
+      for (const ruta of marcados) {
+        const plano = `${elemento[1]}.${ruta}`;
+        const variable = corrida.variables.get(plano);
+        if (!variable || !variable.dims) continue;
+        const leidas = corrida.lecturasPorPosicion.get(plano);
+        if (leidas && leidas[0].size) continue;
+        error(
+          'CAMPO_MARCADO_SIN_USAR',
+          `El programa nunca usa \`${elemento[1]}[i].${ruta}\`, que es el dato que la consigna pide mirar.`
+        );
+        return false;
+      }
+    }
+    return true;
+  }
+
   function reglaEjecuta(regla, modelo) {
     if (regla.conCiclo && !modelo.ciclos.some((c) => c.nuevo)) {
       error('CICLO_FALTA', 'La consigna pide un ciclo: una sentencia que se repite, como `for` o `while`.');
@@ -2926,11 +2988,18 @@ export function corregir(
     if (regla.casos) {
       for (const original of regla.casos) {
         const caso = conCodigos(original);
+        // Lo que la ficha muestra y el caso no dice tambien tiene valor: si no, el
+        // alumno que usa otro campo (el mes en vez del anio) leeria "sin valor".
+        if (caso.datos) {
+          caso.vistos = caso.vistos || caso.datos;
+          caso.datos = { ...datosDeLaFicha(), ...caso.datos };
+        }
         const hecha = correrCodigo(modelo, caso.entrada || entrada, caso.datos, {
           contexto: caso.visible || !caso.datos ? '' : conLosValores(caso.vistos || caso.datos),
           centinela: regla.centinela,
         });
         if (!hecha) return;
+        if (!usaLosCamposMarcados(hecha)) return;
         if (!revisarCaso(hecha, caso, modelo, regla)) return;
       }
       notasYMejoras(regla, modelo);

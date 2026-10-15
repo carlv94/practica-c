@@ -698,6 +698,21 @@ solo la mira esta regla). Con
 algo que no sabe seguir (una llamada, un `scanf`) es `EJECUCION_NO_VERIFICADA`:
 correcto, pero no excelente.
 
+**Los datos de la ficha completan los casos.** En `ejecuta` con `casos`, lo que
+la ficha de la consigna muestra y el caso no dice (el mes y el día, si el caso
+solo trae el año) tiene el valor de la ficha: así un alumno que usa otro campo
+no recibe un "todavía no tiene un valor" que contradice lo que ve. Se toman
+solo los números, y un arreglo solo si la ficha trae todas sus posiciones. El
+caso manda: lo que dice el caso reemplaza a la ficha.
+
+**El campo marcado se tiene que usar** (`CAMPO_MARCADO_SIN_USAR`): en un arreglo
+de estructuras, si la ficha marca un campo con `marcar` (el que se suma, el que
+se cuenta, el año) y el programa no lo lee en ninguna posición, el error es
+"El programa nunca usa `alumnos[i].nacimiento.anio`, que es el dato que la
+consigna pide mirar". No cuenta `marcarDestacado` (se lee solo si hay una
+coincidencia). Los nombres de los mensajes salen como los escribe el alumno
+(`alumnos[0].nacimiento.mes`), no como los guarda el simulador.
+
 **Un `=` en una condición** (`if (x = 1)`, `while (n = 0)`, `for (...; i = MAX; ...)`,
 también `+=` y similares): en todas las series, sin configurar nada, es el error
 `ASIGNACION_EN_CONDICION` con "se usa `==`". Se deja pasar el idioma

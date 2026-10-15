@@ -59,6 +59,8 @@ export function fichasDe(consigna) {
     destacar: (f.destacar || []).includes(i),
     resaltar: f.resaltar,
     marcar: (f.destacar || []).includes(i) ? [...(f.marcar || []), ...(f.marcarDestacado || [])] : f.marcar,
+    // Los que se marcan en todas: sobre estos campos se trabaja siempre.
+    marcarEnTodas: f.marcar,
     campos: f.campos.map((nombre, k) =>
       fila && fila[k] != null ? { nombre, ejemplo: String(fila[k]) } : { nombre }
     ),
