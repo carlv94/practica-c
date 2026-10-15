@@ -343,7 +343,10 @@ export function corregir(
     if (rotos.length) {
       // Primero los errores que se reconocen, con su explicacion; si no es
       // ninguno de esos, lo que diga el analizador.
-      const conocidos = erroresConocidos(respuesta);
+      // Lo que define la consigna, para decir que palabra falta en un typedef.
+      const palabraDeTipo =
+        consigna.requiere.map((r) => ['struct', 'union', 'enum'].find((p) => r[p])).find(Boolean) || null;
+      const conocidos = erroresConocidos(respuesta, palabraDeTipo);
       for (const c of conocidos) error(c.codigo, c.mensaje, filaBase + c.fila);
       if (!conocidos.length) for (const roto of rotos) informarSintaxis(roto, fuente, error);
       return terminar();
@@ -6439,7 +6442,8 @@ function revisarIndices(modelo, error) {
 // llave sin cerrar la informa en el primer renglon. Solo se llama cuando ya se
 // sabe que la sintaxis esta mal, asi que no puede marcar algo que estaba bien.
 //   -> [{ codigo, mensaje, fila }]   fila contada desde 0 dentro de la respuesta
-function erroresConocidos(respuesta) {
+// "palabraDeTipo": struct, union o enum, segun lo que pide la consigna (o null).
+function erroresConocidos(respuesta, palabraDeTipo = null) {
   // Sin comentarios ni textos entre comillas, que pueden traer cualquier cosa.
   const codigo = respuesta.replace(
     /\/\/[^\n]*|\/\*[\s\S]*?\*\/|"(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*'/g,
@@ -6562,6 +6566,19 @@ function erroresConocidos(respuesta) {
       'Dentro de una estructura solo se declaran los campos: no se les puede dar un valor ahí. El valor se pone después, en cada variable.',
     ],
   ];
+  // "typedef { ... } Nombre;": falta la palabra que dice que se define. Solo se dice
+  // cuando la consigna pide una estructura, una union o un enumerado.
+  if (palabraDeTipo) {
+    const m = /\btypedef\s*\{/.exec(codigo);
+    if (m) {
+      hallar(
+        'TYPEDEF_SIN_TIPO',
+        `Después de \`typedef\` falta la palabra \`${palabraDeTipo}\`: dice qué se está definiendo. Se escribe \`typedef ${palabraDeTipo} { ... } Nombre;\`.`,
+        m.index + m[0].length - 1
+      );
+      return hallados;
+    }
+  }
   for (const [forma, codigoError, mensaje, enElTextoOriginal] of FORMAS) {
     const m = forma.exec(enElTextoOriginal ? respuesta : codigo);
     if (m) hallar(codigoError, mensaje, m.index + m[0].length - 1);

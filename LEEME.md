@@ -1370,6 +1370,12 @@ antes de la línea que lo usa.
   respuesta y el código anterior). Llega a la hoja `Informes`; ver
   `estadisticas/LEEME.md`.
 
+- **`typedef { ... } Nombre;`** (falta la palabra): `TYPEDEF_SIN_TIPO` dice
+  cuál va, según la regla de la consigna (`struct`, `union` o `enum`), en lugar
+  del `NO_SE_ENTIENDE` general. Solo cuando la consigna pide una de esas tres
+  cosas; si pide solo el alias (`typedef struct Alumno TAlumno;`) sigue el
+  mensaje de siempre.
+
 Cuando un alumno escriba algo que el corrector entienda mal, se suma el caso a
 `pruebas/casos.js` antes de arreglarlo.
 

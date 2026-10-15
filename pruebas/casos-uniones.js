@@ -11,6 +11,8 @@ const serie = (id) => (paso, nombre, respuesta, espera = 'ok', extra = {}) => ({
 });
 
 const declarar = serie('uniones-declarar');
+const estructuras = serie('estructuras-alumno');
+const enumerados = serie('enumerados-declarar');
 const etiqueta = serie('uniones-etiqueta');
 
 const UNION = (cuerpo, nombre = 'Medida') => `union ${nombre} {\n${cuerpo}\n};`;
@@ -154,4 +156,18 @@ export const CASOS_DE_UNIONES = [
   etiqueta(6, 'suma sin mirar la etiqueta', CICLO('  total += lecturas[i].medida.real;'), ['UNION_MIEMBRO_NO_VIGENTE']),
   etiqueta(6, 'suma el miembro que no es', CICLO('  if (lecturas[i].tipo == REAL) {\n    total += lecturas[i].medida.entero;\n  }'), ['UNION_MIEMBRO_NO_VIGENTE']),
   etiqueta(6, 'suma los enteros', CICLO('  if (lecturas[i].tipo == ENTERO) {\n    total += lecturas[i].medida.entero;\n  }'), ['RESULTADO_VALOR_DISTINTO']),
+
+  // ---- typedef sin la palabra struct, union o enum ----
+  // Se dice cual falta cuando la consigna pide la estructura, la union o el enumerado.
+  estructuras(5, 'typedef sin struct', 'typedef {\n  int codigo;\n  char nombre[40];\n  int cupo;\n} TMateria;', ['TYPEDEF_SIN_TIPO'], {
+    dice: ['falta la palabra `struct`', 'typedef struct { ... } Nombre;'],
+  }),
+  declarar(5, 'typedef sin union', 'typedef {\n  int porcentaje;\n  char nivel;\n} TBateria;', ['TYPEDEF_SIN_TIPO'], {
+    dice: ['falta la palabra `union`'],
+  }),
+  enumerados(8, 'typedef sin enum', 'typedef {\n  MANANA,\n  TARDE,\n  NOCHE\n} TTurno;', ['TYPEDEF_SIN_TIPO'], {
+    dice: ['falta la palabra `enum`'],
+  }),
+  // Si la consigna pide solo el alias, no hay llave: sigue el mensaje general.
+  estructuras(3, 'typedef con llaves donde se pide solo el alias', 'typedef {\n  int a;\n} TAlumno;', ['NO_SE_ENTIENDE']),
 ];
