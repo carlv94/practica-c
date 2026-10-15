@@ -101,9 +101,13 @@ export function enunciadoEnDos(consigna) {
 // estos objetos: se dibujan uno debajo del otro.
 export function figuraDe(consigna) {
   // Una letra se dibuja entre comillas simples, como se escribe en el codigo.
-  const comoSeEscribe = (v) => (Array.isArray(v) ? v.map(comoSeEscribe) : typeof v === 'string' ? `'${v}'` : v);
+  const comoSeEscribeLetras = (v) =>
+    Array.isArray(v) ? v.map(comoSeEscribeLetras) : typeof v === 'string' ? `'${v}'` : v;
+  const comoSeEscribe = comoSeEscribeLetras;
   const d = consigna.dibujo;
   const propia = (d) => {
+    // Un dibujo de nombres de un enumerado ("enumerados": true) no lleva comillas.
+    const comoSeEscribe = d.enumerados ? (v) => v : comoSeEscribeLetras;
     const tresDimensiones = Array.isArray(d.valores[0]) && Array.isArray(d.valores[0][0]);
     return {
       clase: tresDimensiones ? 'planos' : Array.isArray(d.valores[0]) ? 'tabla' : 'arreglo',

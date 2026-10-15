@@ -599,6 +599,19 @@ export function construirModelo(arbol, desde) {
     for (const hijo of n.namedChildren) visitar(hijo, local);
   })(arbol.rootNode, false);
 
+  // Un enumerador en una lista de valores ({MANANA, TARDE}) vale su numero:
+  // se lo anota como numero, con el nombre y el enumerado al que pertenece.
+  const enumeradores = new Map();
+  for (const def of modelo.enums) {
+    for (const e of def.enumeradores) if (e.valor != null) enumeradores.set(e.nombre, { valor: e.valor, def });
+  }
+  const traducir = (el) => {
+    if (el.clase === 'lista') return { ...el, elementos: el.elementos.map(traducir) };
+    const e = el.clase === 'otro' ? enumeradores.get(el.texto.trim()) : null;
+    return e ? { clase: 'numero', valor: e.valor, texto: el.texto, enumerador: el.texto.trim(), enumDe: e.def.id } : el;
+  };
+  for (const v of modelo.variables) if (v.inicial && v.inicial.clase === 'lista') v.inicial = traducir(v.inicial);
+
   // Los typedef de un arreglo, en el orden en que estan escritos.
   expandirAlias(modelo.aliases, modelo);
   expandirAlias(modelo.variables, modelo);

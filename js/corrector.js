@@ -697,6 +697,17 @@ export function corregir(
   // ---- variable -------------------------------------------------------------
 
   function reglaVariable(regla, modelo) {
+    // Los valores de un arreglo de un enumerado se piden con los nombres de los
+    // enumeradores; aca pasan a sus numeros (una letra sola sigue siendo una letra).
+    if (regla.valores) {
+      const enNumeros = (v) => {
+        if (Array.isArray(v)) return v.map(enNumeros);
+        if (typeof v !== 'string' || v.length < 2) return v;
+        const e = modelo.enums.flatMap((d) => d.enumeradores).find((x) => x.nombre === v);
+        return e && e.valor != null ? e.valor : v;
+      };
+      regla = { ...regla, valores: enNumeros(regla.valores) };
+    }
     // El tipo pedido es uno concreto ("$S", "int") o una categoria ("entero").
     const pedido = valorDe(regla.tipo);
     const categoria = CATEGORIAS[pedido];
@@ -3172,6 +3183,9 @@ export function corregir(
       for (let k = 0; k < v.indices.length; k++) {
         const escrito = v.indices[k].trim();
         if (!/^\d+$/.test(escrito)) continue;
+        // Un indice que la consigna dice que no es de un enumerado (el empleado).
+        const declarados = regla.indicesDe && regla.indicesDe[v.nombre];
+        if (declarados && declarados[k] == null) continue;
         const numero = Number(escrito);
         // Con "indicesDe", el enumerado de cada indice es el que dice la consigna.
         const tipo = regla.indicesDe?.[v.nombre]?.[k]?.tipo;
@@ -3197,7 +3211,7 @@ export function corregir(
       const aplanado = /^([A-Za-z_]\w*)\.([A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*)$/.exec(nombre);
       const variable = aplanado ? modelo.variables.findLast((x) => x.nombre === aplanado[1]) : null;
       if (variable && variable.arreglo.length) return enumDeCamino(`${aplanado[1]}[0].${aplanado[2]}`, modelo);
-      return enumDeCamino(nombre, modelo);
+      return enumDeCamino(nombre, modelo, true);
     };
     let cambio = false;
     const enumQueda = {};
@@ -3205,16 +3219,18 @@ export function corregir(
       if (!objeto) return objeto;
       const salida = {};
       for (const [nombre, valor] of Object.entries(objeto)) {
-        const textos = Array.isArray(valor) ? valor : [valor];
-        const def = textos.some((v) => typeof v === 'string' && v.length > 1) ? definicion(nombre) : null;
-        const convertido = textos.map((v) => {
+        const conTextos = (v) => (Array.isArray(v) ? v.some(conTextos) : typeof v === 'string' && v.length > 1);
+        const def = conTextos(valor) ? definicion(nombre) : null;
+        // Un valor, una lista o una lista de listas (una tabla).
+        const convertir1 = (v) => {
+          if (Array.isArray(v)) return v.map(convertir1);
           const x = def && typeof v === 'string' && def.enumeradores.find((e) => e.nombre === v);
           if (!x || x.valor == null) return v;
           cambio = true;
           if (esQueda) enumQueda[nombre] = def;
           return x.valor;
-        });
-        salida[nombre] = Array.isArray(valor) ? convertido : convertido[0];
+        };
+        salida[nombre] = convertir1(valor);
       }
       return salida;
     };
@@ -3237,15 +3253,17 @@ export function corregir(
     if (regla.indicesDe) {
       for (const [tabla, pedidos] of Object.entries(regla.indicesDe)) {
         const defs = pedidos.map((p) => {
+          if (!p) return null; // un indice que no es de un enumerado (el empleado)
           const real = resolver(tipoDesdeTexto(p.tipo), modelo);
           return real.clase === 'enum' ? real.def : null;
         });
         for (const x of modelo.indexaciones.filter((y) => y.nuevo && y.nombre === tabla)) {
           for (let k = 0; k < Math.min(x.indices.length, pedidos.length); k++) {
+            if (!pedidos[k]) continue;
             const escrito = x.indices[k].trim();
             const def = modelo.enums.find((e) => e.enumeradores.some((en) => en.nombre === escrito));
             if (!def || def === defs[k]) continue;
-            const deQuien = pedidos.find((_, j) => defs[j] === def);
+            const deQuien = pedidos.find((p, j) => p && defs[j] === def);
             error(
               'INDICE_DE_OTRO_ENUMERADO',
               deQuien
@@ -6175,7 +6193,7 @@ function revisarCondiciones(modelo, error) {
 
 // El enumerado que es la variable o el campo que nombra un texto
 // ("turno", "alumno.turno", "alumnos[i].turno"), o null.
-function enumDeCamino(texto, modelo) {
+function enumDeCamino(texto, modelo, conArreglo = false) {
   const m = /^([A-Za-z_]\w*)((?:\[[^\]]*\])*)((?:\.[A-Za-z_]\w*)*)$/.exec(String(texto).replace(/\s+/g, ''));
   if (!m) return null;
   const variable = modelo.variables.findLast((v) => v.nombre === m[1]);
@@ -6186,9 +6204,11 @@ function enumDeCamino(texto, modelo) {
     return real.clase === 'enum' ? real.def : null;
   };
   if (!m[3]) {
-    // Una variable suelta, o un elemento de un arreglo de enumerados.
+    // Una variable suelta, un elemento de un arreglo o de una tabla de enumerados
+    // y, con "conArreglo", el arreglo o la tabla entera.
     if (variable.punteros) return null;
-    if (m[2] ? variable.arreglo.length !== 1 : variable.arreglo.length !== 0) return null;
+    const dados = (m[2].match(/\[/g) || []).length;
+    if (!(variable.arreglo.length === dados || (conArreglo && dados === 0 && variable.arreglo.length > 0))) return null;
     const real = resolver(variable.tipo, modelo);
     return real.clase === 'enum' ? real.def : null;
   }
@@ -6208,10 +6228,15 @@ function enumDeCamino(texto, modelo) {
 //  - leer directo en la variable del enumerado (nota),
 //  - un caso del switch que sigue con el siguiente porque falta el break (error).
 function revisarEnumerados(modelo, error, mejora, nota, avisados) {
-  const definicion = (nombre) => (nombre ? enumDeCamino(nombre, modelo) : null);
-  // Un nombre suelto o un campo (alumno.turno, alumnos[i].turno).
+  const definicion = (nombre) => (nombre ? enumDeCamino(nombre, modelo, true) : null);
+  // Un nombre suelto, un campo (alumno.turno, alumnos[i].turno) o un elemento
+  // de un arreglo o de una tabla (turnoDelDia[3], agenda[1][MARTES]).
   const soloNombre = (valor) =>
-    valor && valor.clase === 'nombre' ? valor.nombre : valor && valor.clase === 'campo' ? valor.texto : null;
+    valor && valor.clase === 'nombre'
+      ? valor.nombre
+      : valor && (valor.clase === 'campo' || valor.clase === 'indice')
+        ? valor.texto
+        : null;
   const conNombre = (def, numero) => def.enumeradores.find((x) => x.valor === numero);
   let dicho = false;
   const sugerir = (def, valor, fila) => {
@@ -6225,9 +6250,43 @@ function revisarEnumerados(modelo, error, mejora, nota, avisados) {
       fila
     );
   };
+  // Un enumerador de otro enumerado donde va uno de este: LUNES en un TTurno.
+  const nombreDeTipo = (def) => {
+    const alias = modelo.aliases.find((a) => a.tipo.clase === 'enum' && a.tipo.defId === def.id && !a.punteros && !a.arreglo.length);
+    return alias ? alias.nombre : def.etiqueta ? `enum ${def.etiqueta}` : 'ese enumerado';
+  };
+  const deOtro = (def, nombre, dondeVa, fila) => {
+    const otro = modelo.enums.find((e) => e !== def && e.enumeradores.some((x) => x.nombre === nombre));
+    if (!otro) return false;
+    error(
+      'ENUMERADOR_DE_OTRO_ENUMERADO',
+      `\`${nombre}\` es un valor de \`${nombreDeTipo(otro)}\`, y ${dondeVa} guarda valores de \`${nombreDeTipo(def)}\`.`,
+      fila
+    );
+    return true;
+  };
   for (const a of modelo.asignaciones.filter((x) => x.nuevo && x.operador === '=')) {
     const def = definicion(soloNombre(a.izquierda));
-    if (def) sugerir(def, a.derecha, a.fila);
+    if (!def) continue;
+    if (a.derecha.clase === 'nombre' && deOtro(def, a.derecha.nombre, `\`${a.izquierda.texto.trim()}\``, a.fila)) continue;
+    sugerir(def, a.derecha, a.fila);
+  }
+  // Los valores de un arreglo o de una tabla de enumerados, al declararlo.
+  for (const v of modelo.variables.filter((x) => x.nuevo && x.arreglo.length && x.inicial && x.inicial.clase === 'lista')) {
+    const real = v.punteros ? null : resolver(v.tipo, modelo);
+    if (!real || real.clase !== 'enum') continue;
+    const planos = [];
+    const aplanar = (el) => (el.clase === 'lista' ? el.elementos.forEach(aplanar) : planos.push(el));
+    aplanar(v.inicial);
+    // "= {0}" es la forma de dejar todo en cero: no se avisa.
+    if (planos.length === 1 && planos[0].clase === 'numero' && planos[0].valor === 0) continue;
+    for (const el of planos) {
+      if (el.enumerador && el.enumDe !== real.def.id) {
+        if (deOtro(real.def, el.enumerador, `\`${v.nombre}\``, v.fila)) break;
+      } else if (el.clase === 'numero' && !el.enumerador) {
+        sugerir(real.def, el, v.fila);
+      }
+    }
   }
   for (const c of modelo.comparaciones.filter((x) => x.nuevo)) {
     const def = definicion(soloNombre(c.izquierda));
@@ -6252,7 +6311,11 @@ function revisarEnumerados(modelo, error, mejora, nota, avisados) {
   // no controla el rango.
   if (!avisados.includes('SCANF_EN_ENUM')) {
     for (const l of modelo.llamadas.filter((x) => x.nuevo && x.funcion === 'scanf')) {
-      const directo = l.argumentos.find((a) => a.clase === 'direccion' && definicion(a.nombre));
+      const comoElemento = (a) =>
+        a.clase === 'otro' && /^&\s*[A-Za-z_]\w*(\s*\[[^\]]*\])+\s*$/.test(a.texto) ? a.texto.replace(/^&\s*/, '').trim() : null;
+      const directo = l.argumentos
+        .map((a) => (a.clase === 'direccion' && definicion(a.nombre) ? { nombre: a.nombre } : comoElemento(a) && definicion(comoElemento(a)) ? { nombre: comoElemento(a) } : null))
+        .find(Boolean);
       if (!directo) continue;
       nota(
         'SCANF_EN_ENUM',

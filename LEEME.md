@@ -760,6 +760,20 @@ coincidencia). Los nombres de los mensajes salen como los escribe el alumno
   nombre de cada posición, bajo su índice. La serie usa `#define TURNOS 3` en la
   cabecera y acepta `TURNOS`, `NOCHE + 1` y `3` (con la mejora de usar la
   constante). Una explicación de una opción equivocada no dice el valor correcto.
+- **Un arreglo o una tabla que guarda enumerados** (series "Un arreglo de
+  enumerados" y "Una tabla de enumerados"): `{ "variable": { "tipo": "TTurno",
+  "nombre": "turnoDelDia", "valores": ["MANANA", "TARDE", ...] } }` pide los
+  valores con los nombres de los enumeradores (una lista de listas, para una
+  tabla); el corrector los pasa a su número y el alumno puede escribirlos con
+  el nombre (correcto) o con el número (`ENUM_CON_NUMERO`). Un nombre de otro
+  enumerado donde va uno de este (`LUNES` en un `TTurno`) es
+  `ENUMERADOR_DE_OTRO_ENUMERADO`, en las asignaciones, en las listas de valores
+  y en los elementos. En `ejecuta`, `datos` y `queda` aceptan nombres en un
+  arreglo o en una tabla entera. `"indicesDe": { "agenda": [null, { "tipo":
+  "TDia", ... }] }`: un `null` es un índice que no es de un enumerado (el
+  empleado). El dibujo lleva `"enumerados": true` para mostrar los nombres sin
+  comillas. Las consignas que definen con valores dejan los corchetes vacíos
+  (`turnoDelDia[]`, `agenda[][DIAS]`), como en las series de valores.
 - **Una tabla indexada con dos enumerados** (serie "Una tabla con enumerados"):
   `"indicesDe": { "ventas": [{ "tipo": "TDia", "uno": "un día", "varios": "los
   días" }, { "tipo": "TTurno", "uno": "un turno", "varios": "los turnos" }] }`
