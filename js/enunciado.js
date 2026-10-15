@@ -96,6 +96,10 @@ export function enunciadoEnDos(consigna) {
 // enumerados, uno por fila y uno por columna, junto a los indices.
 // En un arreglo, "nombres" son los nombres de un enumerado, uno por posicion, que
 // se ven bajo cada indice (MANANA, TARDE, NOCHE).
+// Una union: "union": { "nombre": "lectura", "miembros": ["entero", "real"],
+//   "vigente": "real", "valor": "36.5" } se dibuja como un solo lugar que
+// comparten los miembros, con el que tiene el valor marcado. Sin "valor", el
+// lugar esta vacio.
 // En un arreglo, "resaltar" es la lista de posiciones que se marcan, y un valor
 // null es una posicion vacia (todavia sin nada). "dibujo" puede ser una lista de
 // estos objetos: se dibujan uno debajo del otro.
@@ -106,6 +110,8 @@ export function figuraDe(consigna) {
   const comoSeEscribe = comoSeEscribeLetras;
   const d = consigna.dibujo;
   const propia = (d) => {
+    // Una union: un solo lugar, con los nombres de sus miembros y el que tiene el valor.
+    if (d.union) return { clase: 'union', titulo: d.titulo, union: d.union, salida: consigna.salida };
     // Un dibujo de nombres de un enumerado ("enumerados": true) no lleva comillas.
     const comoSeEscribe = d.enumerados ? (v) => v : comoSeEscribeLetras;
     const tresDimensiones = Array.isArray(d.valores[0]) && Array.isArray(d.valores[0][0]);
@@ -160,7 +166,7 @@ export function partesDeEnunciado(enunciado, capturas) {
     const valor = capturas[m[1]];
     if (!valor) continue;
     if (m.index > hasta) partes.push({ texto: enunciado.slice(hasta, m.index) });
-    partes.push({ nombre: valor.replace(/^struct\s+/, '') });
+    partes.push({ nombre: valor.replace(/^(struct|union)\s+/, '') });
     hasta = m.index + m[0].length;
   }
   if (hasta < enunciado.length) partes.push({ texto: enunciado.slice(hasta) });

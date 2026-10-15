@@ -56,6 +56,16 @@ export class SinValor extends Error {
   }
 }
 
+// Un miembro de una union que se lee despues de escribir otro: comparten el
+// mismo lugar, y lo que habia en este se perdio. "texto" es lo leido tal como
+// esta escrito (lectura.entero) y "vigente" el miembro que si tiene el valor.
+export class MiembroNoVigente extends Error {
+  constructor(texto, miembro, vigente, fila) {
+    super(`${texto} no es el miembro que tiene el valor`);
+    Object.assign(this, { texto, miembro, vigente, fila });
+  }
+}
+
 // Un ciclo que no termina (o que da demasiadas vueltas para ser lo que se pide).
 export class NoTermina extends Error {
   constructor(fila) {
@@ -77,9 +87,10 @@ export class TextoComoLetra extends Error {
 // Una estructura entera (alumno.ingreso) donde va un numero: tiene que ser uno
 // de sus campos.
 export class EstructuraEntera extends Error {
-  constructor(texto, fila) {
+  // "esUnion": lo que se uso entero es una union (lectura, lectura.medida).
+  constructor(texto, fila, esUnion = false) {
     super('una estructura donde va un numero');
-    Object.assign(this, { texto, fila });
+    Object.assign(this, { texto, fila, esUnion });
   }
 }
 
@@ -177,7 +188,7 @@ function recogerEstructuras(arbol) {
         const deEstructura =
           simple && tipo.type === 'type_identifier'
             ? tipo.text
-            : simple && tipo.type === 'struct_specifier'
+            : simple && (tipo.type === 'struct_specifier' || tipo.type === 'union_specifier')
               ? tipo.childForFieldName('name')?.text
               : simple && tipo.type === 'enum_specifier' && tipo.childForFieldName('name')
                 ? 'enum ' + tipo.childForFieldName('name').text
@@ -192,19 +203,30 @@ function recogerEstructuras(arbol) {
     }
     return lista;
   };
+  // Una union es una lista de campos marcada: "esUnion". Sus miembros comparten
+  // el lugar, y lo que ocupa es lo del mas grande ("bytes", o null si alguno no
+  // se sabe cuanto mide).
+  const deUnion = (nodo, lista) => {
+    if (nodo.type !== 'union_specifier') return lista;
+    lista.esUnion = true;
+    lista.bytes = lista.every((c) => c.soportado)
+      ? Math.max(...lista.map((c) => bytesDe(c.texto)))
+      : null;
+    return lista;
+  };
   const visitar = (n) => {
-    if (n.type === 'struct_specifier') {
+    if (n.type === 'struct_specifier' || n.type === 'union_specifier') {
       const cuerpo = n.childForFieldName('body');
       const nombre = n.childForFieldName('name');
-      if (cuerpo && nombre) porNombre.set(nombre.text, camposDe(cuerpo));
+      if (cuerpo && nombre) porNombre.set(nombre.text, deUnion(n, camposDe(cuerpo)));
     }
     if (n.type === 'type_definition') {
       const tipo = n.childForFieldName('type');
       const alias = n.childForFieldName('declarator');
-      if (tipo && alias && tipo.type === 'struct_specifier' && alias.type === 'type_identifier') {
+      if (tipo && alias && ['struct_specifier', 'union_specifier'].includes(tipo.type) && alias.type === 'type_identifier') {
         const cuerpo = tipo.childForFieldName('body');
         const nombre = tipo.childForFieldName('name');
-        const lista = cuerpo ? camposDe(cuerpo) : nombre ? porNombre.get(nombre.text) : null;
+        const lista = cuerpo ? deUnion(tipo, camposDe(cuerpo)) : nombre ? porNombre.get(nombre.text) : null;
         if (lista) porNombre.set(alias.text, lista);
       }
     }
@@ -301,7 +323,10 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
   function posicion(n) {
     if (n.type === 'identifier') {
       const variable = variables.get(n.text);
-      if (!variable && estructurasVivas.has(n.text)) sinVerificar(n, `la estructura ${n.text} entera`);
+      if (!variable && estructurasVivas.has(n.text)) {
+        if (estructurasVivas.get(n.text).esUnion) throw new EstructuraEntera(n.text, fila(n), true);
+        sinVerificar(n, `la estructura ${n.text} entera`);
+      }
       if (!variable) {
         const valor = constante(n.text);
         if (valor == null) {
@@ -368,7 +393,10 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
     const variable = variables.get(clave);
     if (!variable) {
       const esEstructura = [...variables.keys()].some((k) => k.startsWith(clave + '.'));
-      if (esEstructura) throw new EstructuraEntera(n.text, fila(n));
+      if (esEstructura) {
+        const esUnion = [...variables.values()].some((v) => v.union && v.union.grupo === clave);
+        throw new EstructuraEntera(n.text, fila(n), esUnion);
+      }
       return sinVerificar(n, `el campo ${clave}`);
     }
     const posiciones = [];
@@ -401,7 +429,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
     if (p.constante != null) return { v: p.constante, f: false };
     const { variable, nombre, indices } = p;
     if (!variable.dims) {
-      if (variable.valor === undefined) throw new SinValor(nombre, fila(n));
+      if (variable.valor === undefined) throw faltaValor(variable, nombre, '', n);
       return { v: variable.valor, f: variable.flotante };
     }
     if (indices.length !== variable.dims.length) sinVerificar(n, `el arreglo ${nombre} entero`);
@@ -414,9 +442,16 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
     let dato = variable.datos;
     for (const i of indices) dato = dato[i];
     if (dato === undefined) {
-      throw new SinValor(`${nombre}${indices.map((i) => `[${i}]`).join('')}`, fila(n));
+      throw faltaValor(variable, `${nombre}${indices.map((i) => `[${i}]`).join('')}`, indices.join(','), n);
     }
     return { v: dato, f: variable.flotante };
+  }
+
+  // Sin valor porque nadie se lo dio, o porque otro miembro de la union lo piso.
+  function faltaValor(variable, nombre, lugar, n) {
+    const vigente = variable.pisado && variable.pisado.get(lugar);
+    if (!vigente) return new SinValor(nombre, fila(n));
+    return new MiembroNoVigente(n.text, nombre.split('.').pop().replace(/\[.*$/, ''), vigente, fila(n));
   }
 
   function escribir(n, valor) {
@@ -435,6 +470,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
     const v = variable.flotante ? valor.v : Math.trunc(valor.v);
     if (!variable.dims) {
       variable.valor = v;
+      if (variable.union) pisarOtrosMiembros(variable, nombre, []);
       return;
     }
     if (indices.length !== variable.dims.length) sinVerificar(n);
@@ -443,6 +479,31 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
     for (const i of indices.slice(0, -1)) dato = dato[i];
     dato[indices[indices.length - 1]] = v;
     escrituras.push({ nombre, indices });
+    if (variable.union) pisarOtrosMiembros(variable, nombre, indices);
+  }
+
+  // Los miembros de una union comparten el lugar: al guardar en uno, los otros
+  // ya no tienen valor. Se anota cual es el que lo tiene, para decirlo si despues
+  // se lee uno de los pisados. "indices" es la posicion, si la union es de un arreglo.
+  function pisarOtrosMiembros(variable, nombre, indices) {
+    const { grupo, miembros } = variable.union;
+    const propio = nombre.slice(grupo.length + 1);
+    const lugar = indices.join(',');
+    if (variable.pisado) variable.pisado.delete(lugar);
+    for (const m of miembros) {
+      if (m === propio) continue;
+      const otro = variables.get(`${grupo}.${m}`);
+      if (!otro) continue;
+      if (!otro.dims) {
+        otro.valor = undefined;
+      } else {
+        let dato = otro.datos;
+        for (const i of indices.slice(0, -1)) dato = dato[i];
+        dato[indices[indices.length - 1]] = undefined;
+      }
+      if (!otro.pisado) otro.pisado = new Map();
+      otro.pisado.set(lugar, propio);
+    }
   }
 
   function aplicar(operador, a, b, n) {
@@ -484,6 +545,26 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
     while (x && (x.type === 'parenthesized_expression' || x.type === 'type_descriptor')) x = x.namedChildren[0];
     if (!x) return sinVerificar(n);
     const producto = (dims) => dims.reduce((a, b) => a * b, 1);
+    // De una union (su tipo, o una variable) es lo del miembro mas grande. De una
+    // estructura no se sabe: depende de como la acomoda cada maquina.
+    const deUnion = (campos, conDims) => {
+      if (!campos || !campos.esUnion || campos.bytes == null || conDims) return sinVerificar(n, 'sizeof de una estructura');
+      return campos.bytes;
+    };
+    if (x.type === 'union_specifier' || x.type === 'struct_specifier') {
+      const nombre = x.childForFieldName('name');
+      return deUnion(nombre && definiciones.get(nombre.text), false);
+    }
+    if ((x.type === 'identifier' || x.type === 'type_identifier') && estructurasVivas.has(x.text)) {
+      const campos = estructurasVivas.get(x.text);
+      return deUnion(campos, Boolean(variables.get(`${x.text}.${campos[0] && campos[0].nombre}`)?.dims));
+    }
+    if (x.type === 'type_identifier' && !variables.has(x.text) && definiciones.has(x.text)) {
+      return deUnion(definiciones.get(x.text), false);
+    }
+    if (x.type === 'identifier' && !variables.has(x.text) && definiciones.has(x.text)) {
+      return deUnion(definiciones.get(x.text), false);
+    }
     if (x.type === 'identifier' || x.type === 'type_identifier') {
       const v = variables.get(x.text);
       if (!v) return sinVerificar(n, `sizeof de ${x.text}`);
@@ -660,7 +741,8 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
         const valorNodo = n.childForFieldName('value');
         const texto = tipoNodo ? tipoNodo.text.replace(/\s+/g, ' ').trim() : null;
         // "sizeof(v)" a veces se lee como un tipo llamado v.
-        if (texto != null && !variables.has(texto)) {
+        const sinPalabra = texto != null ? texto.replace(/^(union|struct)\s+/, '') : null;
+        if (texto != null && !variables.has(texto) && !estructurasVivas.has(texto) && !definiciones.has(sinPalabra)) {
           if (/^(char|short|int|long|long long|unsigned|unsigned int|float|double)$/.test(texto)) {
             return { v: bytesDe(texto), f: false };
           }
@@ -735,6 +817,22 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
           typeof prueba[izquierda.text] === 'number'
         ) {
           return leer(izquierda);
+        }
+        // Una union con valor de prueba en un miembro: lo que el codigo dado guarda en
+        // otro de sus miembros no se hace, porque pisaria al de la prueba.
+        if (
+          desde != null &&
+          n.startIndex < desde &&
+          operador === '=' &&
+          izquierda.type === 'field_expression' &&
+          prueba
+        ) {
+          const clave = izquierda.text.replace(/\s+|\[[^\]]*\]/g, '');
+          const grupo = clave.slice(0, clave.lastIndexOf('.') + 1);
+          const miembro = clave.slice(grupo.length);
+          const base = variables.get(clave);
+          const hermanos = base && base.union ? base.union.miembros.filter((m) => m !== miembro) : [];
+          if (hermanos.some((m) => prueba[`${grupo}${m}`] != null)) return { v: 0, f: false };
         }
         if (nodoDerecha.type === 'string_literal' && ['subscript_expression', 'field_expression'].includes(izquierda.type)) {
           throw new TextoComoLetra(nodoDerecha.text, fila(nodoDerecha));
@@ -827,6 +925,8 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
   // arreglo, si la variable lo es) y cada uno que es otra estructura se sigue por dentro.
   function crearCampos(prefijo, campos, dims, d, nivel) {
     if (nivel > 5) sinVerificar(d, 'estructuras muy anidadas');
+    // En una union, escribir un miembro deja sin valor a los otros.
+    const enUnion = campos.esUnion ? { grupo: prefijo, miembros: campos.map((c) => c.nombre) } : null;
     for (const campo of campos) {
       const clave = `${prefijo}.${campo.nombre}`;
       const deEnum = !campo.soportado && Boolean(campo.estructura) && tiposEnum.has(campo.estructura);
@@ -846,6 +946,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
           tipo: tipoCampo,
           bytes,
           valor: dado === undefined ? undefined : flotante ? dado : Math.trunc(dado),
+          union: enUnion,
         });
         continue;
       }
@@ -856,17 +957,47 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
         if (otraForma.length !== dims.length || otraForma.some((k, i) => k !== dims[i])) {
           sinVerificar(d, 'valores de otro tamano');
         }
-        const copia = (x) => (Array.isArray(x) ? x.map(copia) : flotante ? x : Math.trunc(x));
+        // Un null es una posicion sin valor (el miembro de una union que no es el vigente).
+        const copia = (x) =>
+          Array.isArray(x) ? x.map(copia) : x === null ? undefined : flotante ? x : Math.trunc(x);
         datos = copia(prueba[clave]);
       }
-      variables.set(clave, { flotante, tipo: tipoCampo, bytes, dims: [...dims], datos });
+      variables.set(clave, { flotante, tipo: tipoCampo, bytes, dims: [...dims], datos, union: enUnion });
+    }
+    if (enUnion) anotarPisados(enUnion, dims);
+  }
+
+  // Con valores de prueba, en cada posicion de una union solo uno de sus miembros
+  // trae valor: ese es el vigente, y los otros quedan "pisados" por el.
+  function anotarPisados({ grupo, miembros }, dims) {
+    const propios = miembros.map((m) => [m, variables.get(`${grupo}.${m}`)]).filter(([, v]) => v);
+    const posiciones = [];
+    const recorrer = (nivel, indices) => {
+      if (nivel === dims.length) return posiciones.push(indices);
+      for (let i = 0; i < dims[nivel]; i++) recorrer(nivel + 1, [...indices, i]);
+    };
+    recorrer(0, []);
+    const valorEn = (v, indices) => {
+      if (!v.dims) return v.valor;
+      let dato = v.datos;
+      for (const i of indices) dato = dato && dato[i];
+      return dato;
+    };
+    for (const indices of posiciones) {
+      const con = propios.find(([, v]) => valorEn(v, indices) !== undefined);
+      if (!con) continue;
+      for (const [m, v] of propios) {
+        if (m === con[0] || valorEn(v, indices) !== undefined) continue;
+        if (!v.pisado) v.pisado = new Map();
+        v.pisado.set(indices.join(','), con[0]);
+      }
     }
   }
 
   function declarar(n) {
     const tipo = n.childForFieldName('type');
     const campos =
-      tipo && ['struct_specifier', 'type_identifier'].includes(tipo.type)
+      tipo && ['struct_specifier', 'union_specifier', 'type_identifier'].includes(tipo.type)
         ? definiciones.get(tipo.type === 'type_identifier' ? tipo.text : tipo.childForFieldName('name')?.text)
         : null;
     if (campos) return declararEstructura(n, campos);

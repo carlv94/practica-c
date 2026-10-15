@@ -54,6 +54,7 @@ import {
   ejecutar,
   FueraDeRango,
   SinValor,
+  MiembroNoVigente,
   NoTermina,
   SinVerificar,
   SinEntrada,
@@ -81,7 +82,7 @@ const CATEGORIAS = {
 };
 
 const PALABRAS_DE_C = [
-  'struct', 'typedef', 'char', 'int', 'float', 'double', 'long', 'short', 'unsigned', 'signed',
+  'struct', 'union', 'typedef', 'char', 'int', 'float', 'double', 'long', 'short', 'unsigned', 'signed',
   'void', 'const', 'return', 'if', 'else', 'for', 'while', 'do', 'switch', 'case', 'break',
 ];
 const TIPOS_BASICOS = ['char', 'int', 'float', 'double', 'long', 'short', 'unsigned', 'void'];
@@ -106,6 +107,7 @@ function distancia(a, b) {
 function nombrarPedido(pedido) {
   const partes = pedido.trim().split(/\s+/);
   if (partes[0] === 'enum') return `del enumerado \`${partes[1]}\``;
+  if (partes[0] === 'union') return `de la unión \`${partes[1]}\``;
   return partes[0] === 'struct' ? `de la estructura \`${partes[1]}\`` : `del tipo \`${pedido}\``;
 }
 
@@ -390,6 +392,7 @@ export function corregir(
 
   function aplicarRegla(regla, modelo) {
     if (regla.struct) return reglaStruct(regla.struct, modelo);
+    if (regla.union) return reglaStruct(regla.union, modelo, true);
     if (regla.enum) return reglaEnum(regla.enum, modelo);
     if (regla.variable) return reglaVariable(regla.variable, modelo);
     if (regla.alias) return reglaAlias(regla.alias, modelo);
@@ -520,12 +523,30 @@ export function corregir(
 
   // ---- struct ---------------------------------------------------------------
 
-  function reglaStruct(regla, modelo) {
-    const candidatos = modelo.structs.filter((s) => s.nuevo);
+  // Una union se pide igual que una estructura, con { "union": { ... } }: sus
+  // miembros se llaman "campos" en la regla. Se la distingue por la palabra con
+  // que se declara: una estructura donde va una union (o al reves) es el error.
+  function reglaStruct(regla, modelo, esUnion = false) {
+    const candidatos = modelo.structs.filter((s) => s.nuevo && Boolean(s.union) === esUnion);
+    const palabra = esUnion ? 'union' : 'struct';
+    const miembro = esUnion ? 'miembro' : 'campo';
     if (!candidatos.length) {
+      const otra = modelo.structs.find((s) => s.nuevo && Boolean(s.union) !== esUnion);
+      if (otra) {
+        error(
+          esUnion ? 'UNION_FALTA' : 'STRUCT_FALTA',
+          esUnion
+            ? 'Declaró una estructura con `struct`, y la consigna pide una unión: se declara con la palabra `union`. En una estructura cada campo tiene su propio lugar; en una unión todos los miembros comparten uno solo.'
+            : 'Declaró una unión con `union`, y la consigna pide una estructura: se declara con la palabra `struct`.',
+          otra.fila
+        );
+        return;
+      }
       error(
-        'STRUCT_FALTA',
-        'No encontré la declaración de una estructura.'
+        esUnion ? 'UNION_FALTA' : 'STRUCT_FALTA',
+        esUnion
+          ? 'No encontré la declaración de una unión. Se escribe con la palabra `union` y, entre llaves, sus miembros.'
+          : 'No encontré la declaración de una estructura.'
       );
       return;
     }
@@ -551,14 +572,14 @@ export function corregir(
             distancia(c.nombre, esperado.nombre) <= 2)
       );
       if (!parecido) {
-        error('CAMPO_FALTA', `Falta el campo \`${esperado.nombre}\`.`, def.fila);
+        error('CAMPO_FALTA', `Falta el ${miembro} \`${esperado.nombre}\`.`, def.fila);
         continue;
       }
       sinUsar.delete(parecido);
       const soloMayusculas = parecido.nombre.toLowerCase() === esperado.nombre.toLowerCase();
       error(
         'CAMPO_NOMBRE',
-        `El campo \`${parecido.nombre}\` tendría que llamarse \`${esperado.nombre}\`` +
+        `El ${miembro} \`${parecido.nombre}\` tendría que llamarse \`${esperado.nombre}\`` +
           (soloMayusculas ? ': en C las mayúsculas y las minúsculas son letras distintas.' : '.'),
         parecido.fila
       );
@@ -566,7 +587,7 @@ export function corregir(
     }
 
     for (const campo of sinUsar) {
-      aviso('CAMPO_DE_MAS', `La consigna no pide el campo \`${campo.nombre}\`.`, campo.fila);
+      aviso('CAMPO_DE_MAS', `La consigna no pide el ${miembro} \`${campo.nombre}\`.`, campo.fila);
     }
 
     // Sin etiqueta y sin alias, la estructura no se puede volver a nombrar.
@@ -575,15 +596,17 @@ export function corregir(
     );
     if (!def.etiqueta && !alias) {
       error(
-        'STRUCT_SIN_NOMBRE',
-        'La estructura no tiene nombre, así que después no se la va a poder usar. ' +
-          'El nombre va entre `struct` y la llave.',
+        esUnion ? 'UNION_SIN_NOMBRE' : 'STRUCT_SIN_NOMBRE',
+        esUnion
+          ? 'La unión no tiene nombre, así que después no se la va a poder usar. El nombre va entre `union` y la llave, o se le da un alias con `typedef`.'
+          : 'La estructura no tiene nombre, así que después no se la va a poder usar. ' +
+              'El nombre va entre `struct` y la llave.',
         def.fila
       );
       return;
     }
     if (regla.capturar) {
-      nuevas[regla.capturar] = def.etiqueta ? 'struct ' + def.etiqueta : alias.nombre;
+      nuevas[regla.capturar] = def.etiqueta ? palabra + ' ' + def.etiqueta : alias.nombre;
     }
   }
 
@@ -654,8 +677,9 @@ export function corregir(
       return;
     }
 
-    // Un campo que es otra estructura: "tipo": "estructura", "de": "TFecha".
-    if (esperado.tipo === 'estructura') {
+    // Un campo que es otra estructura: "tipo": "estructura", "de": "TFecha". O una
+    // union: "tipo": "union", "de": "TDato".
+    if (esperado.tipo === 'estructura' || esperado.tipo === 'union') {
       const pedido = valorDe(esperado.de);
       if (campo.punteros || campo.arreglo.length) {
         error(
@@ -666,7 +690,7 @@ export function corregir(
       } else if (!mismoTipo(real, resolver(tipoDesdeTexto(pedido), modelo))) {
         error(
           'CAMPO_TIPO',
-          `\`${n}\` tiene que ser de tipo \`${pedido}\`: es una estructura dentro de otra. ${declarado}`,
+          `\`${n}\` tiene que ser de tipo \`${pedido}\`: es ${esperado.tipo === 'union' ? 'una unión dentro de la estructura' : 'una estructura dentro de otra'}. ${declarado}`,
           campo.fila
         );
       }
@@ -2011,7 +2035,9 @@ export function corregir(
       const ejemplo = (
         candidatos.find((c) => c.ruta === ruta && c.ejemplo != null) ||
         candidatos.find((c) => c.nombre === pedido.nombre && c.ejemplo != null)
-      )?.ejemplo;
+      )?.ejemplo ?? pedido.valor;
+      // Sin ficha (una union no tiene), el valor lo trae la regla: "valor".
+      const deDonde = fichas.length ? 'el que muestra la ficha' : 'el que pide la consigna';
       if (pedido.tipo === 'enumerado') {
         // Con el nombre, o con su numero (esto ultimo se avisa como mejora aparte).
         const buscado = modelo.enums.flatMap((e) => e.enumeradores).find((x) => x.nombre === String(ejemplo));
@@ -2025,7 +2051,7 @@ export function corregir(
             a.fila
           );
         } else {
-          error('ASIGNACION_VALOR_DISTINTO', `El valor que se guarda en \`${lugar}\` no es el que muestra la ficha.`, a.fila);
+          error('ASIGNACION_VALOR_DISTINTO', `El valor que se guarda en \`${lugar}\` no es ${deDonde}.`, a.fila);
         }
         continue;
       }
@@ -2052,7 +2078,7 @@ export function corregir(
             a.fila
           );
         } else {
-          error('ASIGNACION_VALOR_DISTINTO', `El valor que se guarda en \`${lugar}\` no es el que muestra la ficha.`, a.fila);
+          error('ASIGNACION_VALOR_DISTINTO', `El valor que se guarda en \`${lugar}\` no es ${deDonde}.`, a.fila);
         }
         continue;
       }
@@ -2064,7 +2090,7 @@ export function corregir(
           a.fila
         );
       } else if (derecha.clase !== 'numero' || Math.abs(parseFloat(derecha.texto) - Number(ejemplo)) > 1e-9) {
-        error('ASIGNACION_VALOR_DISTINTO', `El valor que se guarda en \`${lugar}\` no es el que muestra la ficha.`, a.fila);
+        error('ASIGNACION_VALOR_DISTINTO', `El valor que se guarda en \`${lugar}\` no es ${deDonde}.`, a.fila);
       }
     }
   }
@@ -2596,6 +2622,12 @@ export function corregir(
             e.fila
           );
         }
+      } else if (e instanceof MiembroNoVigente) {
+        error(
+          'UNION_MIEMBRO_NO_VIGENTE',
+          `${conContexto}\`${e.texto}\` no tiene el valor: en una unión todos los miembros comparten el mismo lugar, y lo último que se guardó fue en \`${e.vigente}\`. Solo se puede leer el miembro en el que se guardó el valor.`,
+          e.fila
+        );
       } else if (e instanceof SinValor) {
         error(
           'VARIABLE_SIN_VALOR',
@@ -2629,7 +2661,9 @@ export function corregir(
       } else if (e instanceof EstructuraEntera) {
         error(
           'CAMPO_ES_UNA_ESTRUCTURA',
-          `\`${e.texto}\` es una estructura entera, con varios campos adentro: no es un número. Para usarla en una cuenta hay que elegir uno de sus campos.`,
+          e.esUnion
+            ? `\`${e.texto}\` es una unión entera, con varios miembros que comparten un lugar: no es un número. Para usarla hay que elegir uno de sus miembros, el que tiene el valor.`
+            : `\`${e.texto}\` es una estructura entera, con varios campos adentro: no es un número. Para usarla en una cuenta hay que elegir uno de sus campos.`,
           e.fila
         );
       } else if (e instanceof TextoComoLetra) {
@@ -5466,7 +5500,7 @@ function estructuraDeTipo(tipo, modelo, vistos = 0) {
   if (tipo.clase === 'struct') {
     return tipo.defId != null
       ? modelo.structs.find((s) => s.id === tipo.defId) || null
-      : modelo.structs.findLast((s) => s.etiqueta === tipo.etiqueta) || null;
+      : modelo.structs.findLast((s) => s.etiqueta === tipo.etiqueta && Boolean(s.union) === Boolean(tipo.union)) || null;
   }
   if (tipo.clase === 'nombre') {
     const alias = modelo.aliases.findLast((a) => a.nombre === tipo.nombre);
@@ -5503,7 +5537,7 @@ function problemaDeCampo(valor, nombre, def, modelo) {
   if (valor.clase === 'nombre' && campos.includes(valor.nombre)) {
     return [
       'CAMPO_SIN_VARIABLE',
-      `\`${valor.nombre}\` es un campo de la estructura, no una variable: para llegar a él hay que decir de qué variable es, con un punto: \`${nombre}.${valor.nombre}\`.`,
+      `\`${valor.nombre}\` es un ${def.union ? 'miembro de la unión' : 'campo de la estructura'}, no una variable: para llegar a él hay que decir de qué variable es, con un punto: \`${nombre}.${valor.nombre}\`.`,
     ];
   }
   if (valor.clase !== 'campo') return null;
@@ -5513,7 +5547,7 @@ function problemaDeCampo(valor, nombre, def, modelo) {
   if (esTipo) {
     return [
       'TIPO_EN_VEZ_DE_VARIABLE',
-      `\`${valor.variable}\` es el nombre de la estructura, no el de una variable: los datos se guardan en la variable \`${nombre}\`, así que va \`${nombre}.${valor.campo}\`.`,
+      `\`${valor.variable}\` es el nombre ${def && def.union ? 'de la unión' : 'de la estructura'}, no el de una variable: los datos se guardan en la variable \`${nombre}\`, así que va \`${nombre}.${valor.campo}\`.`,
     ];
   }
   const sinEsp = (x) => x.replace(/\s+/g, '');
@@ -5551,9 +5585,15 @@ function problemaDeCampo(valor, nombre, def, modelo) {
     if (pedido === dicho + '.' + valor.campo) {
       return [
         'CAMPO_ES_UNA_ESTRUCTURA',
-        `\`${pedido}\` es una estructura entera, con varios campos adentro: no se le guarda un número. Hay que guardar en cada uno de sus campos, como \`${pedido}.${campos[0] || 'campo'}\`.`,
+        def && def.union
+          ? `\`${pedido}\` es una unión entera: no se le guarda un número. Se guarda en uno de sus miembros, como \`${pedido}.${campos[0] || 'miembro'}\`.`
+          : `\`${pedido}\` es una estructura entera, con varios campos adentro: no se le guarda un número. Hay que guardar en cada uno de sus campos, como \`${pedido}.${campos[0] || 'campo'}\`.`,
       ];
     }
+    // Un campo de la variable de afuera que esta regla no pide (lectura.tipo, cuando
+    // la regla es de lectura.medida): no es un error de llegar al campo.
+    const afuera = estructuraDeCamino(valor.variable, modelo);
+    if (!campos.includes(valor.campo) && afuera && afuera.campos.some((c) => c.nombre === valor.campo)) return null;
     return campos.includes(valor.campo)
       ? [
           'CAMPO_DE_OTRO_NIVEL',
@@ -5564,6 +5604,9 @@ function problemaDeCampo(valor, nombre, def, modelo) {
           `\`${nombre}\` no tiene ningún campo llamado \`${valor.campo}\`.${campos.length ? ` Sus campos son ${campos.map((c) => '\`' + c + '\`').join(', ')}.` : ''}`,
         ];
   }
+  // Un campo de una estructura de adentro (lectura.medida.real), cuando la regla es
+  // de la de afuera (lectura): otro nivel, que esta regla no revisa.
+  if (dicho.startsWith(pedido + '.') && def && !campos.includes(valor.campo)) return null;
   // Otra estructura de adentro del mismo lugar (alumno.ingreso en vez de alumno.nacimiento).
   const raiz = (x) => x.split('.')[0].replace(/\[[\s\S]*$/, '');
   if (dicho !== pedido && dicho.includes('.') && pedido.includes('.') && raiz(dicho) === raiz(pedido)) {
@@ -5593,10 +5636,10 @@ function problemaDeCampo(valor, nombre, def, modelo) {
     );
     return [
       'CAMPO_NO_EXISTE',
-      `La estructura no tiene ningún campo llamado \`${valor.campo}\`.` +
+      (def.union ? `La unión no tiene ningún miembro llamado \`${valor.campo}\`.` : `La estructura no tiene ningún campo llamado \`${valor.campo}\`.`) +
         (parecido
           ? ` ¿Quiso escribir \`${parecido}\`? En C las mayúsculas y las minúsculas son letras distintas.`
-          : ` Sus campos son ${campos.map((c) => '\`' + c + '\`').join(', ')}.`),
+          : ` Sus ${def.union ? 'miembros' : 'campos'} son ${campos.map((c) => '\`' + c + '\`').join(', ')}.`),
     ];
   }
   return null;
@@ -5622,12 +5665,23 @@ function revisarNombres(modelo, error) {
         error('TIPO_DESCONOCIDO', `No hay ningún enumerado llamado \`${nombre}\`.`, uso.fila);
         continue;
       }
-      let mensaje = `No hay ninguna estructura llamada \`${nombre}\`.`;
-      const parecida = modelo.structs.find((s) => s.etiqueta && s.etiqueta.toLowerCase() === enMinuscula);
+      // Una estructura y una union se piden con palabras distintas: no se mezclan.
+      const esUnion = Boolean(real.union);
+      const palabra = esUnion ? 'union' : 'struct';
+      let mensaje = esUnion
+        ? `No hay ninguna unión llamada \`${nombre}\`.`
+        : `No hay ninguna estructura llamada \`${nombre}\`.`;
+      const delMismoTipo = (s) => Boolean(s.union) === esUnion;
+      const parecida = modelo.structs.find((s) => delMismoTipo(s) && s.etiqueta && s.etiqueta.toLowerCase() === enMinuscula);
+      const deOtroTipo = modelo.structs.find((s) => !delMismoTipo(s) && s.etiqueta === nombre);
       if (parecida) {
         mensaje += ` La que está declarada es \`${parecida.etiqueta}\`: en C las mayúsculas y las minúsculas son letras distintas.`;
+      } else if (deOtroTipo) {
+        mensaje += esUnion
+          ? ` \`${nombre}\` es una estructura: se la nombra con \`struct ${nombre}\`.`
+          : ` \`${nombre}\` es una unión: se la nombra con \`union ${nombre}\`.`;
       } else if (modelo.aliases.some((a) => a.nombre === nombre)) {
-        mensaje += ` \`${nombre}\` es un alias: se usa solo, sin la palabra \`struct\`.`;
+        mensaje += ` \`${nombre}\` es un alias: se usa solo, sin la palabra \`${palabra}\`.`;
       }
       error('TIPO_DESCONOCIDO', mensaje, uso.fila);
       continue;
@@ -5638,6 +5692,8 @@ function revisarNombres(modelo, error) {
     const parecido = TIPOS_BASICOS.find((t) => t.length > 3 && distancia(t, enMinuscula) === 1);
     if (TIPOS_BASICOS.includes(enMinuscula)) {
       mensaje += ` Las palabras de C van todas en minúscula: \`${enMinuscula}\`.`;
+    } else if (modelo.structs.some((s) => s.etiqueta === nombre && s.union)) {
+      mensaje = `\`${nombre}\` es el nombre de una unión, pero así solo no es un tipo: falta la palabra \`union\`, como en \`union ${nombre}\`.`;
     } else if (modelo.structs.some((s) => s.etiqueta === nombre)) {
       mensaje = `\`${nombre}\` es el nombre de una estructura, pero así solo no es un tipo: falta indicar que se trata de una estructura.`;
     } else if (modelo.enums.some((e) => e.etiqueta === nombre)) {
@@ -5655,10 +5711,10 @@ function revisarNombres(modelo, error) {
   }
 
   for (const s of modelo.structs.filter((x) => x.nuevo && x.etiqueta)) {
-    if (modelo.structs.some((otro) => otro !== s && otro.id < s.id && otro.etiqueta === s.etiqueta)) {
+    if (modelo.structs.some((otro) => otro !== s && otro.id < s.id && otro.etiqueta === s.etiqueta && Boolean(otro.union) === Boolean(s.union))) {
       error(
         'STRUCT_REDEFINIDA',
-        `La estructura \`${s.etiqueta}\` ya está declarada: no hay que escribirla de nuevo, solo lo que pide esta consigna.`,
+        `${s.union ? 'La unión' : 'La estructura'} \`${s.etiqueta}\` ya está declarada: no hay que escribirla de nuevo, solo lo que pide esta consigna.`,
         s.fila
       );
     }
@@ -6129,7 +6185,7 @@ function revisarCampos(modelo, error) {
     } else {
       error(
         'CAMPO_NO_EXISTE',
-        `La estructura no tiene ningún campo llamado \`${c.campo}\`. Sus campos son ${def.campos.map((x) => '\`' + x.nombre + '\`').join(', ')}.`,
+        `${def.union ? 'La unión no tiene ningún miembro' : 'La estructura no tiene ningún campo'} llamado \`${c.campo}\`. Sus ${def.union ? 'miembros' : 'campos'} son ${def.campos.map((x) => '\`' + x.nombre + '\`').join(', ')}.`,
         c.fila
       );
     }

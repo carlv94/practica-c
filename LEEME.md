@@ -1096,6 +1096,47 @@ Si la posición escrita es justo la que sigue a la pedida (se contó desde 1),
 el mensaje agrega que las posiciones se numeran desde 0. Lo repetido en varias
 líneas se dice una vez ("lo mismo ocurre en las otras 4 asignaciones").
 
+### Uniones
+
+Grupo "Uniones" (`uniones-declarar.json`, `uniones-etiqueta.json`).
+
+- **Una unión es una estructura marcada.** El modelo la guarda en
+  `modelo.structs` con `union: true`, y el tipo de una variable lleva
+  `union: true`: por eso las reglas `variable`, `alias` y `campo` andan sin
+  cambios. Lo que se distingue es la palabra: una `struct` donde se pide una
+  `union` (o al revés) es `UNION_FALTA` / `STRUCT_FALTA` con el aviso de que
+  se declara con la otra palabra.
+- **Regla `union`**: igual que `struct`, con `campos` (en los mensajes son
+  "miembros"). `UNION_FALTA`, `UNION_SIN_NOMBRE`, y los de los campos
+  (`CAMPO_FALTA`, `CAMPO_NOMBRE`, `CAMPO_TIPO`, `CAMPO_DE_MAS`). Un campo de una
+  estructura que es una unión se pide con `{ "nombre": "medida", "tipo":
+  "union", "de": "TMedida" }`.
+- **Nombres**: `Medida unaMedida;` y `struct Medida unaMedida;` (cuando
+  `Medida` es una unión) dicen que es una unión y con qué palabra se nombra
+  (`TIPO_DESCONOCIDO`). Una unión entera donde va un número es
+  `CAMPO_ES_UNA_ESTRUCTURA`, dicho con "unión".
+- **`campo` con `valor`**: `{ "nombre": "real", "tipo": "real", "valor": "36.5" }`
+  fija el valor que se guarda cuando la consigna no tiene ficha (la unión no
+  tiene ficha). El mensaje dice "no es el que pide la consigna". La regla de
+  un camino (`lectura.medida`) no se queja de los campos de la variable de
+  afuera (`lectura.tipo`), ni al revés.
+- **El simulador comparte el lugar**: guardar en un miembro deja sin valor a
+  los otros. Leer uno de esos es **`UNION_MIEMBRO_NO_VIGENTE`** ("lo último que
+  se guardó fue en `real`"), distinto de `VARIABLE_SIN_VALOR` (nadie guardó
+  nada). `sizeof` de una unión (su tipo o una variable) es lo del miembro más
+  grande; el de una estructura no se sigue (depende de la máquina).
+- **Valores de prueba de una unión en un arreglo**: en cada posición solo uno
+  de los miembros trae valor y los demás `null`:
+  `"lecturas.medida.real": [36.5, null, 18.5]`,
+  `"lecturas.medida.entero": [null, 7, null]`. Con eso se sabe cuál es el
+  vigente en cada una, y leer otro es `UNION_MIEMBRO_NO_VIGENTE`. Si la
+  prueba da un miembro, el código dado no guarda en los otros del mismo
+  grupo (no pisa el valor de prueba).
+- **Dibujo de una unión**: `"dibujo": { "titulo": "...", "union": { "nombre":
+  "lectura", "miembros": ["entero", "real", "letra"], "vigente": "real",
+  "valor": "36.5" } }`. Un solo lugar con los nombres de los miembros arriba y el
+  vigente marcado; sin `valor`, el lugar queda vacío.
+
 ### Consignas de opciones
 
 En un enunciado, lo que va entre acentos graves (`nombre`, `"Maria"`, `1`) se

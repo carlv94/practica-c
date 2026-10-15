@@ -510,6 +510,11 @@ function dibujar(figura) {
     dibujarSalida(caja, figura.salida);
     return;
   }
+  if (figura.clase === 'union') {
+    dibujarUnion(caja, figura.union);
+    dibujarSalida(caja, figura.salida);
+    return;
+  }
   if (figura.clase === 'varias') {
     figura.figuras.forEach((f) => {
       if (f.titulo) caja.appendChild(elementoConCodigo('p', 'titulo-figura', f.titulo));
@@ -572,6 +577,28 @@ function dibujarArreglo(caja, figura) {
     fila.appendChild(casillero);
   });
   caja.appendChild(fila);
+}
+
+// Una union: un solo lugar que comparten sus miembros. Arriba, los nombres de
+// los miembros (el que tiene el valor, marcado) y abajo el lugar con el valor.
+function dibujarUnion(caja, u) {
+  const vacio = u.valor == null;
+  caja.setAttribute(
+    'aria-label',
+    `Unión ${u.nombre}: un solo lugar compartido por ${u.miembros.join(', ')}. ` +
+      (vacio ? 'Todavía sin valor.' : `Tiene el valor ${u.valor}, guardado en ${u.vigente}.`)
+  );
+  const bloque = elemento('div', 'union');
+  const nombres = elemento('div', 'union-miembros');
+  for (const m of u.miembros) {
+    nombres.appendChild(elemento('span', 'miembro' + (m === u.vigente && !vacio ? ' vigente' : ''), m));
+  }
+  bloque.append(
+    elemento('span', 'union-nombre', u.nombre),
+    nombres,
+    elemento('span', 'valor' + (vacio ? ' vacio' : ' resaltado'), vacio ? ' ' : u.valor)
+  );
+  caja.appendChild(bloque);
 }
 
 // Lo que tiene que mostrar el programa, en un recuadro de consola.

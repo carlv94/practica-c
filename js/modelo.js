@@ -302,6 +302,9 @@ export function construirModelo(arbol, desde) {
     const def = {
       id: modelo.structs.length,
       etiqueta: nombre ? nombre.text : null,
+      // Una union se sigue como una estructura (campos, alias, variables), marcada:
+      // sus miembros comparten el mismo lugar.
+      union: n.type === 'union_specifier',
       campos: [],
       nuevo: n.startIndex >= desde,
       fila: n.startPosition.row,
@@ -370,10 +373,16 @@ export function construirModelo(arbol, desde) {
         const def = n.childForFieldName('body') ? registrarEnum(n) : null;
         return { clase: 'enum', etiqueta: nombre ? nombre.text : null, defId: def ? def.id : null };
       }
+      case 'union_specifier':
       case 'struct_specifier': {
         const nombre = n.childForFieldName('name');
         const def = n.childForFieldName('body') ? registrarStruct(n) : null;
-        return { clase: 'struct', etiqueta: nombre ? nombre.text : null, defId: def ? def.id : null };
+        return {
+          clase: 'struct',
+          union: n.type === 'union_specifier',
+          etiqueta: nombre ? nombre.text : null,
+          defId: def ? def.id : null,
+        };
       }
       case 'primitive_type':
       case 'sized_type_specifier':
@@ -388,6 +397,7 @@ export function construirModelo(arbol, desde) {
   (function visitar(n, local) {
     switch (n.type) {
       case 'struct_specifier':
+      case 'union_specifier':
       case 'enum_specifier':
         leerTipo(n);
         break;
@@ -637,10 +647,10 @@ export function resolver(tipo, modelo, vistos = new Set()) {
     const def =
       tipo.defId != null
         ? modelo.structs[tipo.defId]
-        : modelo.structs.find((s) => s.etiqueta === tipo.etiqueta);
+        : modelo.structs.find((s) => s.etiqueta === tipo.etiqueta && Boolean(s.union) === Boolean(tipo.union));
     return def
       ? { clase: 'struct', def }
-      : { clase: 'desconocido', que: 'etiqueta', nombre: tipo.etiqueta };
+      : { clase: 'desconocido', que: 'etiqueta', nombre: tipo.etiqueta, union: Boolean(tipo.union) };
   }
 
   if (tipo.clase === 'enum') {
@@ -675,6 +685,7 @@ const BASICOS = ['char', 'int', 'float', 'double', 'long', 'short', 'unsigned', 
 export function tipoDesdeTexto(texto) {
   const partes = texto.trim().split(/\s+/);
   if (partes[0] === 'struct') return { clase: 'struct', etiqueta: partes[1], defId: null };
+  if (partes[0] === 'union') return { clase: 'struct', union: true, etiqueta: partes[1], defId: null };
   if (partes[0] === 'enum') return { clase: 'enum', etiqueta: partes[1], defId: null };
   if (partes.every((p) => BASICOS.includes(p))) return { clase: 'primitivo', nombre: partes.join(' ') };
   return { clase: 'nombre', nombre: partes[0] };
@@ -685,7 +696,7 @@ export function textoDeTipo(tipo) {
     case 'primitivo':
       return tipo.nombre;
     case 'struct':
-      return tipo.etiqueta ? 'struct ' + tipo.etiqueta : 'struct';
+      return (tipo.union ? 'union' : 'struct') + (tipo.etiqueta ? ' ' + tipo.etiqueta : '');
     case 'enum':
       return tipo.etiqueta ? 'enum ' + tipo.etiqueta : 'enum';
     case 'nombre':

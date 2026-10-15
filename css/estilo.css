@@ -433,6 +433,46 @@ section[hidden] {
   color: var(--suave);
 }
 
+/* Una union: un solo lugar, con los nombres de los miembros que lo comparten. */
+.union {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+}
+
+.union-nombre {
+  font: 600 0.8rem Consolas, "Cascadia Mono", Menlo, monospace;
+  color: var(--suave);
+}
+
+.union-miembros {
+  display: flex;
+  gap: 6px;
+}
+
+.union-miembros .miembro {
+  flex: 1;
+  text-align: center;
+  padding: 2px 8px;
+  border: 1px dashed var(--borde);
+  border-radius: 4px;
+  font: 600 0.8rem Consolas, "Cascadia Mono", Menlo, monospace;
+  color: var(--suave);
+}
+
+.union-miembros .miembro.vigente {
+  border-style: solid;
+  border-color: var(--mejora);
+  background: var(--mejora-fondo);
+  color: var(--texto);
+}
+
+#figura .union .valor {
+  margin-left: 0;
+  min-width: 160px;
+}
+
 /* El primero de la figura va pegado arriba; los que siguen, separados. */
 #figura > .titulo-figura:first-child {
   margin-top: 0;

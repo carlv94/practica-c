@@ -42,10 +42,28 @@ typedef struct {
   int legajo;
   TTurno turno;
 } TCursante;
+typedef enum {
+  ENTERO,
+  REAL,
+  LETRA
+} TTipo;
+typedef union {
+  int entero;
+  double real;
+  char letra;
+} TMedida;
+union Dato {
+  int a;
+  int b;
+};
+typedef struct {
+  TTipo tipo;
+  TMedida medida;
+} TLectura;
 `;
 
 // Los enumeradores, con el valor que les da la cabecera.
-const ENUMERADORES = { MAX: 3, MANANA: 0, TARDE: 1, NOCHE: 2, BAJO: 1, MEDIO: 5, ALTO: 6 };
+const ENUMERADORES = { MAX: 3, MANANA: 0, TARDE: 1, NOCHE: 2, BAJO: 1, MEDIO: 5, ALTO: 6, ENTERO: 0, REAL: 1, LETRA: 2 };
 
 const con = (cuerpo) => `${CABECERA}int main() {\n${cuerpo}\nreturn 0;\n}`;
 
@@ -228,6 +246,78 @@ export const CASOS_DEL_SIMULADOR = [
     nombre: 'estructuras: un texto donde va una letra',
     codigo: con('TAlumno alumno;\nalumno.turno = "T";'),
     espera: { error: 'TextoComoLetra' },
+  },
+  // ---- uniones ----
+  {
+    nombre: 'uniones: se guarda y se lee el mismo miembro',
+    codigo: con('TMedida m;\nm.real = 36.5;\nprintf("%.1f", m.real);'),
+    espera: { variables: { 'm.real': 36.5 }, salida: '36.5' },
+  },
+  {
+    nombre: 'uniones: guardar en otro miembro pisa al primero',
+    codigo: con('TMedida m;\nm.entero = 7;\nm.real = 2.5;\nint x = m.entero;'),
+    espera: { error: 'MiembroNoVigente' },
+  },
+  {
+    nombre: 'uniones: el miembro que se guardo ultimo se lee',
+    codigo: con('TMedida m;\nm.real = 2.5;\nm.entero = 7;\nint x = m.entero;'),
+    espera: { variables: { x: 7 } },
+  },
+  {
+    nombre: 'uniones: sin ningun valor no es un miembro pisado',
+    codigo: con('TMedida m;\nint x = m.entero;'),
+    espera: { error: 'SinValor' },
+  },
+  {
+    nombre: 'uniones: dentro de una estructura, con la etiqueta',
+    codigo: con('TLectura l;\nl.tipo = REAL;\nl.medida.real = 36.5;\nif (l.tipo == REAL) {\n  printf("%.1f", l.medida.real);\n}'),
+    espera: { variables: { 'l.tipo': 1, 'l.medida.real': 36.5 }, salida: '36.5' },
+  },
+  {
+    nombre: 'uniones: leer el miembro equivocado dentro de una estructura',
+    codigo: con('TLectura l;\nl.tipo = REAL;\nl.medida.real = 36.5;\nint x = l.medida.entero;'),
+    espera: { error: 'MiembroNoVigente' },
+  },
+  {
+    nombre: 'uniones: una union entera donde va un numero',
+    codigo: con('TMedida m;\nm.real = 1.5;\nprintf("%.1f", m);'),
+    espera: { error: 'EstructuraEntera' },
+  },
+  {
+    nombre: 'uniones: sizeof del tipo es el del miembro mas grande',
+    codigo: con('int n = sizeof(TMedida);'),
+    espera: { variables: { n: 8 } },
+  },
+  {
+    nombre: 'uniones: sizeof de una variable',
+    codigo: con('TMedida m;\nint n = sizeof(m);\nint c = sizeof(union Dato);'),
+    espera: { variables: { n: 8, c: 4 } },
+  },
+  {
+    nombre: 'uniones: sizeof de una estructura no se sabe',
+    codigo: con('int n = sizeof(TLectura);'),
+    espera: { error: 'SinVerificar' },
+  },
+  {
+    nombre: 'uniones: con valores de prueba por posicion, solo uno vale',
+    codigo: con(
+      'TLectura ls[MAX];\nint i;\ndouble total = 0;\nfor (i = 0; i < MAX; i++) {\n  if (ls[i].tipo == REAL) {\n    total += ls[i].medida.real;\n  }\n}'
+    ),
+    prueba: { 'ls.tipo': [1, 0, 1], 'ls.medida.real': [36.5, null, 18.5], 'ls.medida.entero': [null, 7, null] },
+    espera: { variables: { total: 55 } },
+  },
+  {
+    nombre: 'uniones: con valores de prueba, leer el miembro sin valor',
+    codigo: con('TLectura ls[MAX];\nint i;\nint total = 0;\nfor (i = 0; i < MAX; i++) {\n  total += ls[i].medida.entero;\n}'),
+    prueba: { 'ls.tipo': [1, 0, 1], 'ls.medida.real': [36.5, null, 18.5], 'ls.medida.entero': [null, 7, null] },
+    espera: { error: 'MiembroNoVigente' },
+  },
+  {
+    nombre: 'uniones: el valor de prueba de un miembro no lo pisa el codigo dado',
+    codigo: con('TMedida m;\nm.real = 1.5;\nprintf("%d", m.entero);'),
+    prueba: { 'm.entero': 9 },
+    desdeEn: 'printf',
+    espera: { salida: '9' },
   },
 ];
 
