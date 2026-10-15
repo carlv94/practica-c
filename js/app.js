@@ -326,6 +326,8 @@ function abrirSerie(s) {
   $('volver').hidden = false;
   $('volver').textContent = '← ' + s.grupo.titulo;
   $('volver').href = '#/grupo/' + encodeURIComponent(s.grupo.id);
+  // Al terminar la serie, el boton vuelve a las series de su mismo grupo.
+  $('volver-final').href = '#/grupo/' + encodeURIComponent(s.grupo.id);
   $('pasos').hidden = false;
   mostrarConsigna();
 }
