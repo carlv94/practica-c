@@ -51,7 +51,7 @@
         {
           "texto": "`2`",
           "codigo": "OPCION_ES_EL_ULTIMO",
-          "explicacion": "El `2` es el valor de `NOCHE`, el tercero. Se empieza a contar desde `0`, así que `TARDE`, que es el segundo, vale `1`."
+          "explicacion": "El `2` es el valor de `NOCHE`, el tercero. `TARDE` es el segundo."
         },
         {
           "texto": "Ninguno: `TARDE` es solo un nombre y no tiene valor",
@@ -113,7 +113,7 @@
         {
           "texto": "`0`",
           "codigo": "OPCION_ES_EL_PRIMERO",
-          "explicacion": "El `0` es el valor de `MANANA`. `NOCHE` es el tercero, así que vale `2`."
+          "explicacion": "El `0` es el valor de `MANANA`, el primer nombre. `NOCHE` es el tercero."
         }
       ]
     },
@@ -174,7 +174,7 @@
         {
           "texto": "`6`",
           "codigo": "OPCION_ES_EL_SEGUNDO",
-          "explicacion": "El `6` es el valor de `B`. `C` es el siguiente, uno más que `B`."
+          "explicacion": "El `6` es el valor de `B`. `C` es el nombre que viene después."
         },
         {
           "texto": "`7`",

@@ -1,0 +1,141 @@
+{
+  "id": "arreglos-enumerados",
+  "titulo": "Arreglos con enumerados",
+  "continua": false,
+  "dentroDeMain": true,
+  "buenasPracticas": ["constantes"],
+  "descripcion": "Un arreglo con un lugar por cada nombre de un enumerado: indexarlo con el nombre, recorrerlo con la variable del enumerado y buscar el mayor.",
+  "cabecera": "#include <stdio.h>\n\n#define TURNOS 3\n\ntypedef enum {\n  MANANA,\n  TARDE,\n  NOCHE\n} TTurno;",
+  "consignas": [
+    {
+      "id": "arr-enum-declarar",
+      "titulo": "Un lugar por cada turno",
+      "enunciado": "Un comercio registra la cantidad de ventas de cada turno. El tipo `TTurno` ya está declarado, con los turnos `MANANA`, `TARDE` y `NOCHE`, y la constante `TURNOS` vale `3`: uno por cada nombre. Declare el arreglo de enteros `ventas`, con un lugar para cada turno, usando la constante `TURNOS`.",
+      "requiere": [{ "variable": { "tipo": "int", "nombre": "ventas", "arreglo": 3 } }],
+      "referencia": "int ventas[TURNOS];"
+    },
+    {
+      "id": "arr-enum-guardar",
+      "titulo": "Guardar en el lugar de un turno",
+      "dado": "int ventas[TURNOS] = {0};",
+      "enunciado": "El arreglo `ventas` ya tiene sus tres lugares en cero. En el turno tarde se hicieron `120` ventas: guárdelas en el lugar de ese turno.",
+      "requiere": [
+        {
+          "ejecuta": {
+            "indicesConNombre": true,
+            "casos": [{ "queda": { "ventas": [0, 120, 0] }, "visible": true }]
+          }
+        }
+      ],
+      "referencia": "ventas[TARDE] = 120;"
+    },
+    {
+      "id": "arr-enum-q-posicion",
+      "titulo": "En qué lugar queda",
+      "enunciado": "¿En qué posición del arreglo se guarda el `80`?",
+      "codigo": "int ventas[TURNOS];\n\nventas[NOCHE] = 80;",
+      "opciones": [
+        {
+          "texto": "En la posición `0`",
+          "codigo": "OPCION_EL_PRIMERO",
+          "explicacion": "La posición `0` es la de `MANANA`, el primer nombre. `NOCHE` es el tercero."
+        },
+        {
+          "texto": "En la posición `1`",
+          "codigo": "OPCION_EL_SEGUNDO",
+          "explicacion": "La posición `1` es la de `TARDE`, el segundo nombre. `NOCHE` es el tercero."
+        },
+        {
+          "texto": "En la posición `2`",
+          "correcta": true,
+          "explicacion": "Un nombre del enumerado es un número, y se usa como posición: `NOCHE` vale `2`, así que `ventas[NOCHE]` es `ventas[2]`, la última posición de un arreglo de tres lugares."
+        },
+        {
+          "texto": "En la posición `3`",
+          "codigo": "OPCION_LA_CANTIDAD",
+          "explicacion": "El `3` es la cantidad de lugares que tiene el arreglo (lo que vale `TURNOS`), no el lugar de un turno. Las posiciones se cuentan desde `0`."
+        }
+      ]
+    },
+    {
+      "id": "arr-enum-sumar",
+      "titulo": "Sumar las ventas de todos los turnos",
+      "dado": "int ventas[TURNOS];\nTTurno turno;\nint total = 0;",
+      "enunciado": "El arreglo `ventas` ya tiene la cantidad de ventas de cada turno. Con un ciclo, calcule en `total` la suma de todas. Use la variable `turno`, de tipo `TTurno`, como índice: que vaya desde `MANANA` hasta `NOCHE`.",
+      "dibujo": {
+        "titulo": "Con estos valores en `ventas`, `total` tiene que quedar en `445`:",
+        "valores": [120, 85, 240],
+        "nombres": ["MANANA", "TARDE", "NOCHE"]
+      },
+      "requiere": [
+        {
+          "ejecuta": {
+            "conCiclo": true,
+            "recorre": "ventas",
+            "casos": [
+              { "datos": { "ventas": [120, 85, 240] }, "queda": { "total": 445 }, "visible": true },
+              { "datos": { "ventas": [10, 0, 5] }, "queda": { "total": 15 } },
+              { "datos": { "ventas": [0, 0, 0] }, "queda": { "total": 0 } },
+              { "datos": { "ventas": [100, 200, 300] }, "queda": { "total": 600 } }
+            ]
+          }
+        }
+      ],
+      "referencia": "for (turno = MANANA; turno <= NOCHE; turno++) {\n  total += ventas[turno];\n}"
+    },
+    {
+      "id": "arr-enum-mostrar",
+      "titulo": "Mostrar cada turno con su nombre",
+      "dado": "int ventas[TURNOS];\nTTurno turno;",
+      "enunciado": "El arreglo `ventas` ya tiene la cantidad de ventas de cada turno. Con un ciclo, muestre una línea por turno con su nombre y su cantidad de ventas, así: `Tarde: 85`. Los nombres son `Manana`, `Tarde` y `Noche`.",
+      "dibujo": {
+        "titulo": "Con estos valores en `ventas`:",
+        "valores": [120, 85, 240],
+        "nombres": ["MANANA", "TARDE", "NOCHE"]
+      },
+      "salida": "Manana: 120\nTarde: 85\nNoche: 240",
+      "requiere": [
+        {
+          "ejecuta": {
+            "conCiclo": true,
+            "recorre": "ventas",
+            "casos": [
+              {
+                "datos": { "ventas": [120, 85, 240] },
+                "salida": "Manana: 120\nTarde: 85\nNoche: 240",
+                "visible": true
+              },
+              { "datos": { "ventas": [10, 0, 5] }, "salida": "Manana: 10\nTarde: 0\nNoche: 5" }
+            ]
+          }
+        }
+      ],
+      "referencia": "for (turno = MANANA; turno <= NOCHE; turno++) {\n  switch (turno) {\n    case MANANA:\n      printf(\"Manana: \");\n      break;\n    case TARDE:\n      printf(\"Tarde: \");\n      break;\n    case NOCHE:\n      printf(\"Noche: \");\n      break;\n  }\n  printf(\"%d\\n\", ventas[turno]);\n}"
+    },
+    {
+      "id": "arr-enum-mayor",
+      "titulo": "El turno con más ventas",
+      "dado": "int ventas[TURNOS];\nTTurno turno;\nTTurno mejor;",
+      "enunciado": "El arreglo `ventas` ya tiene la cantidad de ventas de cada turno. Con un ciclo, guarde en `mejor` el turno con más ventas. Use la variable `turno` como índice del ciclo.",
+      "dibujo": {
+        "titulo": "Con estos valores, el turno con más ventas es `NOCHE`, el de la posición 2:",
+        "valores": [120, 85, 240],
+        "nombres": ["MANANA", "TARDE", "NOCHE"],
+        "resaltar": [2]
+      },
+      "requiere": [
+        {
+          "ejecuta": {
+            "conCiclo": true,
+            "casos": [
+              { "datos": { "ventas": [120, 85, 240] }, "queda": { "mejor": "NOCHE" }, "visible": true },
+              { "datos": { "ventas": [50, 300, 20] }, "queda": { "mejor": "TARDE" } },
+              { "datos": { "ventas": [200, 100, 100] }, "queda": { "mejor": "MANANA" } }
+            ]
+          }
+        }
+      ],
+      "referencia": "mejor = MANANA;\nfor (turno = TARDE; turno <= NOCHE; turno++) {\n  if (ventas[turno] > ventas[mejor]) {\n    mejor = turno;\n  }\n}"
+    }
+  ]
+}

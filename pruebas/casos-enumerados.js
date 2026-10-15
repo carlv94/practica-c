@@ -13,6 +13,7 @@ const serie = (id) => (paso, nombre, respuesta, espera = 'ok', extra = {}) => ({
 const declarar = serie('enumerados-declarar');
 const leer = serie('enumerados-leer');
 const mostrar = serie('enumerados-mostrar');
+const arreglo = serie('arreglos-enumerados');
 
 const ENUM = (cuerpo, nombre = 'TTurno') => `typedef enum {\n${cuerpo}\n} ${nombre};`;
 const ENUM_TURNO = (cuerpo) => `enum Turno {\n${cuerpo}\n};`;
@@ -164,5 +165,69 @@ export const CASOS_DE_ENUMERADOS = [
     'con if y else',
     'if (turno == MANANA) {\n  printf("Manana");\n} else if (turno == TARDE) {\n  printf("Tarde");\n} else if (turno == NOCHE) {\n  printf("Noche");\n} else {\n  printf("Turno invalido");\n}',
     ['SWITCH_FALTA']
+  ),
+
+  // ---- arreglos con enumerados ----
+  // 1: un lugar por turno
+  arreglo(1, 'con la constante', 'int ventas[TURNOS];', 'ok', { mejoras: [] }),
+  arreglo(1, 'con NOCHE + 1', 'int ventas[NOCHE + 1];', 'ok', { mejoras: [] }),
+  arreglo(1, 'con el numero', 'int ventas[3];', 'ok', { mejoras: ['CONSTANTE_SIN_REUTILIZAR'] }),
+  arreglo(1, 'con el ultimo nombre', 'int ventas[NOCHE];', ['ARREGLO_CHICO']),
+  arreglo(1, 'de mas', 'int ventas[4];', ['ARREGLO_GRANDE']),
+  arreglo(1, 'otro nombre', 'int cantidades[NOCHE + 1];', ['VARIABLE_NOMBRE']),
+  // 2: guardar en el lugar de un turno
+  arreglo(2, 'con el nombre', 'ventas[TARDE] = 120;', 'ok', { mejoras: [] }),
+  arreglo(2, 'con el numero', 'ventas[1] = 120;', 'ok', { mejoras: ['ENUM_CON_NUMERO'] }),
+  arreglo(2, 'en el lugar de otro turno', 'ventas[NOCHE] = 120;', ['RESULTADO_VALOR_DISTINTO']),
+  arreglo(2, 'sin guardar', 'ventas[TARDE] = 0;', ['RESULTADO_VALOR_DISTINTO']),
+  // 3: cuestionario, en que lugar queda
+  arreglo(3, 'lugar de NOCHE: el primero', '0', ['OPCION_EL_PRIMERO']),
+  arreglo(3, 'lugar de NOCHE: el segundo', '1', ['OPCION_EL_SEGUNDO']),
+  arreglo(3, 'lugar de NOCHE: la correcta', '2'),
+  arreglo(3, 'lugar de NOCHE: la cantidad', '3', ['OPCION_LA_CANTIDAD']),
+  // 4: sumar con un ciclo
+  arreglo(4, 'de MANANA a NOCHE', 'for (turno = MANANA; turno <= NOCHE; turno++) {\n  total += ventas[turno];\n}', 'ok', { mejoras: [] }),
+  arreglo(4, 'con < NOCHE + 1', 'for (turno = MANANA; turno < NOCHE + 1; turno++) {\n  total += ventas[turno];\n}'),
+  arreglo(4, 'con numeros', 'for (turno = 0; turno <= 2; turno++) {\n  total += ventas[turno];\n}', 'ok', { mejoras: ['ENUM_CON_NUMERO'] }),
+  arreglo(4, 'sin llegar a NOCHE', 'for (turno = MANANA; turno < NOCHE; turno++) {\n  total += ventas[turno];\n}', ['RECORRIDO_INCOMPLETO']),
+  arreglo(4, 'un lugar de mas', 'for (turno = MANANA; turno <= NOCHE + 1; turno++) {\n  total += ventas[turno];\n}', ['INDICE_FUERA_DE_RANGO']),
+  arreglo(4, 'sin ciclo', 'total = ventas[MANANA] + ventas[TARDE] + ventas[NOCHE];', ['CICLO_FALTA']),
+  // 5: mostrar cada turno con su nombre
+  arreglo(
+    5,
+    'con un switch',
+    'for (turno = MANANA; turno <= NOCHE; turno++) {\n  switch (turno) {\n    case MANANA:\n      printf("Manana: ");\n      break;\n    case TARDE:\n      printf("Tarde: ");\n      break;\n    case NOCHE:\n      printf("Noche: ");\n      break;\n  }\n  printf("%d\\n", ventas[turno]);\n}'
+  ),
+  arreglo(
+    5,
+    'con tres printf',
+    'for (turno = MANANA; turno <= NOCHE; turno++) {\n  switch (turno) {\n    case MANANA:\n      printf("Manana: %d\\n", ventas[turno]);\n      break;\n    case TARDE:\n      printf("Tarde: %d\\n", ventas[turno]);\n      break;\n    case NOCHE:\n      printf("Noche: %d\\n", ventas[turno]);\n      break;\n  }\n}'
+  ),
+  arreglo(5, 'sin el nombre', 'for (turno = MANANA; turno <= NOCHE; turno++) {\n  printf("%d\\n", ventas[turno]);\n}', ['MUESTRA_DISTINTA']),
+  // 6: el turno con mas ventas
+  arreglo(
+    6,
+    'desde TARDE',
+    'mejor = MANANA;\nfor (turno = TARDE; turno <= NOCHE; turno++) {\n  if (ventas[turno] > ventas[mejor]) {\n    mejor = turno;\n  }\n}',
+    'ok',
+    { mejoras: [] }
+  ),
+  arreglo(
+    6,
+    'desde MANANA',
+    'mejor = MANANA;\nfor (turno = MANANA; turno <= NOCHE; turno++) {\n  if (ventas[turno] > ventas[mejor]) {\n    mejor = turno;\n  }\n}'
+  ),
+  arreglo(
+    6,
+    'sin empezar mejor',
+    'for (turno = MANANA; turno <= NOCHE; turno++) {\n  if (ventas[turno] > ventas[mejor]) {\n    mejor = turno;\n  }\n}',
+    ['VARIABLE_SIN_VALOR']
+  ),
+  arreglo(
+    6,
+    'guarda la venta en lugar del turno',
+    'mejor = MANANA;\nfor (turno = TARDE; turno <= NOCHE; turno++) {\n  if (ventas[turno] > ventas[mejor]) {\n    mejor = ventas[turno];\n  }\n}',
+    ['RESULTADO_VALOR_DISTINTO'],
+    { dice: ['`mejor` termina valiendo'] }
   ),
 ];
