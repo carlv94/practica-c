@@ -1,0 +1,240 @@
+{
+  "id": "arreglos-enumerados-tabla",
+  "titulo": "Una tabla con enumerados",
+  "continua": false,
+  "dentroDeMain": true,
+  "buenasPracticas": ["constantes"],
+  "descripcion": "Una tabla con una fila por cada día y una columna por cada turno: indexarla con los dos enumerados, sumar una fila, sumar una columna y sumar cada día.",
+  "cabecera": "#include <stdio.h>\n\n#define DIAS 5\n#define TURNOS 3\n\ntypedef enum {\n  LUNES,\n  MARTES,\n  MIERCOLES,\n  JUEVES,\n  VIERNES\n} TDia;\n\ntypedef enum {\n  MANANA,\n  TARDE,\n  NOCHE\n} TTurno;",
+  "consignas": [
+    {
+      "id": "tabla-enum-declarar",
+      "titulo": "Una fila por día y una columna por turno",
+      "enunciado": "Un comercio registra las ventas de cada turno de cada día de la semana laboral. Los tipos `TDia` (de `LUNES` a `VIERNES`) y `TTurno` (`MANANA`, `TARDE` y `NOCHE`) ya están declarados, y las constantes `DIAS` y `TURNOS` valen `5` y `3`. Declare la tabla de enteros `ventas`, con una fila por cada día y una columna por cada turno, usando las dos constantes.",
+      "requiere": [{ "variable": { "tipo": "int", "nombre": "ventas", "arreglo": { "tamano": [5, 3], "unidades": ["días", "turnos"] } } }],
+      "referencia": "int ventas[DIAS][TURNOS];"
+    },
+    {
+      "id": "tabla-enum-guardar",
+      "titulo": "Guardar en la celda de un día y un turno",
+      "dado": "int ventas[DIAS][TURNOS] = {0};",
+      "enunciado": "La tabla `ventas` ya tiene todas sus celdas en cero. El miércoles por la tarde se hicieron `120` ventas: guárdelas en la celda de ese día y ese turno.",
+      "dibujo": {
+        "titulo": "Así tiene que quedar la tabla `ventas`:",
+        "valores": [
+          [0, 0, 0],
+          [0, 0, 0],
+          [0, 120, 0],
+          [0, 0, 0],
+          [0, 0, 0]
+        ],
+        "nombresFilas": ["LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES"],
+        "nombresColumnas": ["MANANA", "TARDE", "NOCHE"]
+      },
+      "requiere": [
+        {
+          "ejecuta": {
+            "indicesConNombre": true,
+            "indicesDe": {
+              "ventas": [
+                { "tipo": "TDia", "uno": "un día", "varios": "los días" },
+                { "tipo": "TTurno", "uno": "un turno", "varios": "los turnos" }
+              ]
+            },
+            "casos": [
+              {
+                "queda": { "ventas": [[0, 0, 0], [0, 0, 0], [0, 120, 0], [0, 0, 0], [0, 0, 0]] },
+                "visible": true
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "ventas[MIERCOLES][TARDE] = 120;"
+    },
+    {
+      "id": "tabla-enum-q-celda",
+      "titulo": "En qué fila y en qué columna queda",
+      "enunciado": "¿En qué fila y en qué columna de la tabla se guarda el `80`?",
+      "codigo": "int ventas[DIAS][TURNOS];\n\nventas[JUEVES][NOCHE] = 80;",
+      "opciones": [
+        {
+          "texto": "En la fila `2` y la columna `3`",
+          "codigo": "OPCION_AL_REVES",
+          "explicacion": "El primer índice elige la fila y el segundo, la columna. `JUEVES` es un día, y los días son las filas; `NOCHE` es un turno, y los turnos son las columnas."
+        },
+        {
+          "texto": "En la fila `3` y la columna `2`",
+          "correcta": true,
+          "explicacion": "`JUEVES` es el cuarto día y vale `3` (se cuenta desde `0`): es la fila `3`. `NOCHE` es el tercer turno y vale `2`: es la columna `2`."
+        },
+        {
+          "texto": "En la fila `4` y la columna `3`",
+          "codigo": "OPCION_DESDE_UNO",
+          "explicacion": "Las filas y las columnas se numeran desde `0`, como las posiciones de un arreglo, y no desde `1`."
+        },
+        {
+          "texto": "En toda la fila de `JUEVES`",
+          "codigo": "OPCION_TODA_LA_FILA",
+          "explicacion": "Con dos índices se elige una sola celda: la que está en esa fila y en esa columna. Para llegar a toda la fila hay que recorrerla con un ciclo."
+        }
+      ]
+    },
+    {
+      "id": "tabla-enum-total-dia",
+      "titulo": "El total de un día",
+      "dado": "int ventas[DIAS][TURNOS];\nTTurno turno;\nint total = 0;",
+      "enunciado": "La tabla `ventas` ya tiene lo vendido en cada turno de cada día. Con un ciclo, calcule en `total` lo que se vendió el martes: la suma de sus tres turnos. Use la variable `turno`, de tipo `TTurno`, como índice.",
+      "dibujo": {
+        "titulo": "La tabla `ventas`:",
+        "valores": [
+          [120, 85, 240],
+          [175, 90, 310],
+          [50, 130, 95],
+          [60, 200, 45],
+          [90, 110, 150]
+        ],
+        "nombresFilas": ["LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES"],
+        "nombresColumnas": ["MANANA", "TARDE", "NOCHE"]
+      },
+      "requiere": [
+        {
+          "ejecuta": {
+            "conCiclo": true,
+            "indicesConNombre": true,
+            "indicesDe": {
+              "ventas": [
+                { "tipo": "TDia", "uno": "un día", "varios": "los días" },
+                { "tipo": "TTurno", "uno": "un turno", "varios": "los turnos" }
+              ]
+            },
+            "casos": [
+              {
+                "datos": {
+                  "ventas": [[120, 85, 240], [175, 90, 310], [50, 130, 95], [60, 200, 45], [90, 110, 150]]
+                },
+                "queda": { "total": 575 },
+                "visible": true
+              },
+              {
+                "datos": { "ventas": [[1, 2, 3], [4, 5, 6], [7, 8, 9], [10, 11, 12], [13, 14, 15]] },
+                "queda": { "total": 15 }
+              },
+              {
+                "datos": { "ventas": [[9, 9, 9], [0, 0, 0], [9, 9, 9], [9, 9, 9], [9, 9, 9]] },
+                "queda": { "total": 0 }
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "for (turno = MANANA; turno <= NOCHE; turno++) {\n  total += ventas[MARTES][turno];\n}"
+    },
+    {
+      "id": "tabla-enum-total-turno",
+      "titulo": "El total de un turno",
+      "dado": "int ventas[DIAS][TURNOS];\nTDia dia;\nint total = 0;",
+      "enunciado": "La tabla `ventas` ya tiene lo vendido en cada turno de cada día. Con un ciclo, calcule en `total` lo que se vendió en el turno tarde durante toda la semana: la suma de sus cinco días. Use la variable `dia`, de tipo `TDia`, como índice.",
+      "dibujo": {
+        "titulo": "La tabla `ventas`:",
+        "valores": [
+          [120, 85, 240],
+          [175, 90, 310],
+          [50, 130, 95],
+          [60, 200, 45],
+          [90, 110, 150]
+        ],
+        "nombresFilas": ["LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES"],
+        "nombresColumnas": ["MANANA", "TARDE", "NOCHE"]
+      },
+      "requiere": [
+        {
+          "ejecuta": {
+            "conCiclo": true,
+            "indicesConNombre": true,
+            "indicesDe": {
+              "ventas": [
+                { "tipo": "TDia", "uno": "un día", "varios": "los días" },
+                { "tipo": "TTurno", "uno": "un turno", "varios": "los turnos" }
+              ]
+            },
+            "casos": [
+              {
+                "datos": {
+                  "ventas": [[120, 85, 240], [175, 90, 310], [50, 130, 95], [60, 200, 45], [90, 110, 150]]
+                },
+                "queda": { "total": 615 },
+                "visible": true
+              },
+              {
+                "datos": { "ventas": [[1, 2, 3], [4, 5, 6], [7, 8, 9], [10, 11, 12], [13, 14, 15]] },
+                "queda": { "total": 40 }
+              },
+              {
+                "datos": { "ventas": [[9, 0, 9], [9, 0, 9], [9, 0, 9], [9, 0, 9], [9, 0, 9]] },
+                "queda": { "total": 0 }
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "for (dia = LUNES; dia <= VIERNES; dia++) {\n  total += ventas[dia][TARDE];\n}"
+    },
+    {
+      "id": "tabla-enum-total-por-dia",
+      "titulo": "El total de cada día",
+      "dado": "int ventas[DIAS][TURNOS];\nint totalDia[DIAS];\nTDia dia;\nTTurno turno;",
+      "enunciado": "La tabla `ventas` ya tiene lo vendido en cada turno de cada día. Con dos ciclos, deje en `totalDia` lo que se vendió en total cada día: en el lugar de cada día va la suma de sus turnos. Use las variables `dia` y `turno`.",
+      "dibujo": {
+        "titulo": "La tabla `ventas`:",
+        "valores": [
+          [120, 85, 240],
+          [175, 90, 310],
+          [50, 130, 95],
+          [60, 200, 45],
+          [90, 110, 150]
+        ],
+        "nombresFilas": ["LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES"],
+        "nombresColumnas": ["MANANA", "TARDE", "NOCHE"],
+        "arreglo": { "nombre": "totalDia", "valores": [445, 575, 275, 305, 350], "vertical": true }
+      },
+      "requiere": [
+        {
+          "ejecuta": {
+            "conCiclo": true,
+            "recorre": "ventas",
+            "busca": true,
+            "indicesConNombre": true,
+            "indicesDe": {
+              "ventas": [
+                { "tipo": "TDia", "uno": "un día", "varios": "los días" },
+                { "tipo": "TTurno", "uno": "un turno", "varios": "los turnos" }
+              ]
+            },
+            "casos": [
+              {
+                "datos": {
+                  "ventas": [[120, 85, 240], [175, 90, 310], [50, 130, 95], [60, 200, 45], [90, 110, 150]]
+                },
+                "queda": { "totalDia": [445, 575, 275, 305, 350] },
+                "acumulado": { "totalDia": [445, 1020, 1295, 1600, 1950] },
+                "visible": true
+              },
+              {
+                "datos": { "ventas": [[1, 2, 3], [4, 5, 6], [7, 8, 9], [10, 11, 12], [13, 14, 15]] },
+                "queda": { "totalDia": [6, 15, 24, 33, 42] },
+                "acumulado": { "totalDia": [6, 21, 45, 78, 120] }
+              },
+              {
+                "datos": { "ventas": [[0, 0, 0], [0, 0, 0], [0, 0, 1], [0, 0, 0], [2, 0, 0]] },
+                "queda": { "totalDia": [0, 0, 1, 0, 2] },
+                "acumulado": { "totalDia": [0, 0, 1, 1, 3] }
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "for (dia = LUNES; dia <= VIERNES; dia++) {\n  totalDia[dia] = 0;\n  for (turno = MANANA; turno <= NOCHE; turno++) {\n    totalDia[dia] += ventas[dia][turno];\n  }\n}"
+    }
+  ]
+}

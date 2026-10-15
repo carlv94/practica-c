@@ -15,6 +15,7 @@ const leer = serie('enumerados-leer');
 const mostrar = serie('enumerados-mostrar');
 const arreglo = serie('arreglos-enumerados');
 const estructura = serie('estructuras-enumerado');
+const tabla = serie('arreglos-enumerados-tabla');
 
 const ENUM = (cuerpo, nombre = 'TTurno') => `typedef enum {\n${cuerpo}\n} ${nombre};`;
 const BUCLE = (cuerpo, hasta = 'i < MAX_ALUMNOS') => `for (i = 0; ${hasta}; i++) {\n${cuerpo}\n}`;
@@ -305,4 +306,78 @@ export const CASOS_DE_ENUMERADOS = [
   estructura(6, 'con el indice del ciclo', BUCLE('  porTurno[i]++;'), ['CAMPO_MARCADO_SIN_USAR']),
   estructura(6, 'se pisa en lugar de sumar', BUCLE('  porTurno[alumnos[i].turno] = 1;'), ['RESULTADO_VALOR_DISTINTO']),
   estructura(6, 'indexa con otro campo', BUCLE('  porTurno[alumnos[i].legajo]++;'), ['INDICE_FUERA_DE_RANGO']),
+
+  // ---- una tabla con enumerados ----
+  // 1: declarar
+  tabla(1, 'con las constantes', 'int ventas[DIAS][TURNOS];', 'ok', { mejoras: [] }),
+  tabla(1, 'con los numeros', 'int ventas[5][3];', 'ok', { mejoras: ['CONSTANTE_SIN_REUTILIZAR'] }),
+  tabla(1, 'con las dimensiones al reves', 'int ventas[TURNOS][DIAS];', ['DIMENSIONES_AL_REVES']),
+  tabla(1, 'un arreglo', 'int ventas[DIAS];', ['TABLA_UNA_DIMENSION']),
+  tabla(1, 'un turno de mas', 'int ventas[DIAS][TURNOS + 1];', ['ARREGLO_GRANDE']),
+  // 2: guardar en una celda
+  tabla(2, 'con los nombres', 'ventas[MIERCOLES][TARDE] = 120;', 'ok', { mejoras: [] }),
+  tabla(2, 'con los numeros', 'ventas[2][1] = 120;', 'ok', { mejoras: ['ENUM_CON_NUMERO'] }),
+  tabla(2, 'con los indices al reves', 'ventas[TARDE][MIERCOLES] = 120;', ['INDICE_DE_OTRO_ENUMERADO'], {
+    dice: ['`TARDE` es un turno, pero el primer índice de `ventas` elige los días'],
+  }),
+  tabla(2, 'con dos turnos', 'ventas[TARDE][NOCHE] = 120;', ['INDICE_DE_OTRO_ENUMERADO']),
+  tabla(2, 'con otro turno', 'ventas[MIERCOLES][NOCHE] = 120;', ['RESULTADO_VALOR_DISTINTO']),
+  tabla(2, 'con otro dia', 'ventas[JUEVES][TARDE] = 120;', ['RESULTADO_VALOR_DISTINTO']),
+  // 3: cuestionario, en que fila y columna
+  tabla(3, 'celda: al reves', '0', ['OPCION_AL_REVES']),
+  tabla(3, 'celda: la correcta', '1'),
+  tabla(3, 'celda: desde uno', '2', ['OPCION_DESDE_UNO']),
+  tabla(3, 'celda: toda la fila', '3', ['OPCION_TODA_LA_FILA']),
+  // 4: el total de un dia
+  tabla(4, 'con MARTES', 'for (turno = MANANA; turno <= NOCHE; turno++) {\n  total += ventas[MARTES][turno];\n}', 'ok', { mejoras: [] }),
+  tabla(4, 'con el numero', 'for (turno = MANANA; turno <= NOCHE; turno++) {\n  total += ventas[1][turno];\n}', 'ok', {
+    mejoras: ['ENUM_CON_NUMERO'],
+  }),
+  tabla(4, 'con los indices al reves', 'for (turno = MANANA; turno <= NOCHE; turno++) {\n  total += ventas[turno][MARTES];\n}', [
+    'INDICE_DE_OTRO_ENUMERADO',
+  ]),
+  tabla(4, 'sin el ultimo turno', 'for (turno = MANANA; turno < NOCHE; turno++) {\n  total += ventas[MARTES][turno];\n}', [
+    'RESULTADO_VALOR_DISTINTO',
+  ]),
+  tabla(4, 'con otro dia', 'for (turno = MANANA; turno <= NOCHE; turno++) {\n  total += ventas[LUNES][turno];\n}', [
+    'RESULTADO_VALOR_DISTINTO',
+  ]),
+  tabla(4, 'sin ciclo', 'total = ventas[MARTES][MANANA] + ventas[MARTES][TARDE] + ventas[MARTES][NOCHE];', ['CICLO_FALTA']),
+  // 5: el total de un turno
+  tabla(5, 'con TARDE', 'for (dia = LUNES; dia <= VIERNES; dia++) {\n  total += ventas[dia][TARDE];\n}', 'ok', { mejoras: [] }),
+  tabla(5, 'con los indices al reves', 'for (dia = LUNES; dia <= VIERNES; dia++) {\n  total += ventas[TARDE][dia];\n}', [
+    'INDICE_DE_OTRO_ENUMERADO',
+  ]),
+  tabla(5, 'con otro turno', 'for (dia = LUNES; dia <= VIERNES; dia++) {\n  total += ventas[dia][MANANA];\n}', [
+    'RESULTADO_VALOR_DISTINTO',
+  ]),
+  tabla(5, 'sin el ultimo dia', 'for (dia = LUNES; dia < VIERNES; dia++) {\n  total += ventas[dia][TARDE];\n}', [
+    'RESULTADO_VALOR_DISTINTO',
+  ]),
+  // 6: el total de cada dia
+  tabla(
+    6,
+    'con dos ciclos',
+    'for (dia = LUNES; dia <= VIERNES; dia++) {\n  totalDia[dia] = 0;\n  for (turno = MANANA; turno <= NOCHE; turno++) {\n    totalDia[dia] += ventas[dia][turno];\n  }\n}',
+    'ok',
+    { mejoras: [] }
+  ),
+  tabla(
+    6,
+    'sin reiniciar el total de cada dia',
+    'for (dia = LUNES; dia <= VIERNES; dia++) {\n  for (turno = MANANA; turno <= NOCHE; turno++) {\n    totalDia[dia] += ventas[dia][turno];\n  }\n}',
+    ['VARIABLE_SIN_VALOR']
+  ),
+  tabla(
+    6,
+    'con los indices al reves',
+    'for (dia = LUNES; dia <= VIERNES; dia++) {\n  totalDia[dia] = 0;\n  for (turno = MANANA; turno <= NOCHE; turno++) {\n    totalDia[dia] += ventas[turno][dia];\n  }\n}',
+    ['INDICE_FUERA_DE_RANGO']
+  ),
+  tabla(
+    6,
+    'sin llegar al ultimo turno',
+    'for (dia = LUNES; dia <= VIERNES; dia++) {\n  totalDia[dia] = 0;\n  for (turno = MANANA; turno < NOCHE; turno++) {\n    totalDia[dia] += ventas[dia][turno];\n  }\n}',
+    ['RECORRIDO_INCOMPLETO']
+  ),
 ];
