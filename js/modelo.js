@@ -179,6 +179,10 @@ export function construirModelo(arbol, desde) {
     // Donde empieza lo que escribio el alumno (lo de antes es lo que le dieron).
     desde,
     structs: [],
+    // Las funciones definidas y los prototipos: { nombre, tipo, punteros,
+    // parametros: [{ nombre, tipo, arreglo, punteros, fila }], retornos:
+    // [{ conValor, fila }], prototipo, posicion, fin, nuevo, fila }.
+    funciones: [],
     enums: [],
     switches: [],
     aliases: [],
@@ -394,6 +398,54 @@ export function construirModelo(arbol, desde) {
     }
   }
 
+  // Una funcion, definida o solo declarada (un prototipo): como se llama, que
+  // devuelve, sus parametros y cada "return" de su cuerpo.
+  function leerFuncion(declarador, tipoNodo, cuerpo, prototipo, nodo) {
+    if (!declarador) return;
+    const d = desenvolver(declarador);
+    let f = declarador;
+    while (f && f.type !== 'function_declarator') f = f.childForFieldName('declarator');
+    const lista = f && f.childForFieldName('parameters');
+    const parametros = [];
+    for (const p of lista ? lista.namedChildren : []) {
+      if (p.type !== 'parameter_declaration') continue;
+      const tipo = leerTipo(p.childForFieldName('type'));
+      const dec = p.childForFieldName('declarator');
+      // "(void)": ninguno.
+      if (!dec && tipo.clase === 'primitivo' && tipo.nombre === 'void') continue;
+      const dp = dec ? desenvolver(dec) : { nombre: null, arreglo: [], punteros: 0 };
+      parametros.push({
+        nombre: dp.nombre,
+        tipo,
+        arreglo: dp.arreglo,
+        punteros: dp.punteros,
+        fila: p.startPosition.row,
+      });
+    }
+    const retornos = [];
+    (function buscar(x) {
+      if (x.type === 'return_statement') {
+        retornos.push({
+          conValor: x.namedChildren.some((h) => h.type !== 'comment'),
+          fila: x.startPosition.row,
+        });
+      }
+      for (const h of x.namedChildren) buscar(h);
+    })(cuerpo || { type: '', namedChildren: [] });
+    modelo.funciones.push({
+      nombre: d.nombre,
+      tipo: leerTipo(tipoNodo),
+      punteros: d.punteros,
+      parametros,
+      retornos,
+      prototipo,
+      posicion: nodo.startIndex,
+      fin: nodo.endIndex,
+      nuevo: nodo.startIndex >= desde,
+      fila: nodo.startPosition.row,
+    });
+  }
+
   (function visitar(n, local) {
     switch (n.type) {
       case 'struct_specifier':
@@ -409,6 +461,10 @@ export function construirModelo(arbol, desde) {
         for (const declarador of hijosDeCampo(n, 'declarator')) {
           const d = desenvolver(declarador);
           // Un prototipo de funcion no es una variable.
+          if (d.esFuncion && d.nombre && n.type === 'declaration') {
+            leerFuncion(declarador, n.childForFieldName('type'), null, true, n);
+            continue;
+          }
           if (!d.nombre || d.esFuncion) continue;
           destino.push({
             ...d,
@@ -439,6 +495,7 @@ export function construirModelo(arbol, desde) {
         break;
       }
       case 'function_definition':
+        leerFuncion(n.childForFieldName('declarator'), n.childForFieldName('type'), n.childForFieldName('body'), false, n);
         local = true;
         break;
       case 'call_expression': {

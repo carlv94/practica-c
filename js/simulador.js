@@ -94,6 +94,80 @@ export class EstructuraEntera extends Error {
   }
 }
 
+// ---- funciones propias -----------------------------------------------------
+
+// Se llama a una funcion con otra cantidad de argumentos que parametros.
+export class ArgumentosDistintos extends Error {
+  constructor(funcion, esperados, recibidos, fila) {
+    super(`${funcion} recibe ${esperados} argumentos`);
+    Object.assign(this, { funcion, esperados, recibidos, fila });
+  }
+}
+
+// Un parametro que se declara con * y al que se le pasa el valor, sin &.
+export class LlamadaSinAmpersand extends Error {
+  constructor(funcion, parametro, texto, fila) {
+    super('falta el & al llamar');
+    Object.assign(this, { funcion, parametro, texto, fila });
+  }
+}
+
+// Un parametro comun al que se le pasa una direccion, con &.
+export class LlamadaConAmpersand extends Error {
+  constructor(funcion, parametro, texto, fila) {
+    super('sobra el & al llamar');
+    Object.assign(this, { funcion, parametro, texto, fila });
+  }
+}
+
+// Un parametro declarado con * que se usa sin el * (x = 5; en vez de *x = 5;).
+export class PunteroSinAsterisco extends Error {
+  constructor(nombre, fila) {
+    super(`${nombre} se usa sin el *`);
+    Object.assign(this, { nombre, fila });
+  }
+}
+
+// Un * delante de algo que no esta declarado con * (*x, con x un int).
+export class AsteriscoDeMas extends Error {
+  constructor(nombre, fila) {
+    super(`${nombre} no esta declarado con *`);
+    Object.assign(this, { nombre, fila });
+  }
+}
+
+// Se usa el valor de una funcion que termina sin devolver nada.
+export class SinRetorno extends Error {
+  constructor(funcion, fila) {
+    super(`${funcion} no devuelve nada`);
+    Object.assign(this, { funcion, fila });
+  }
+}
+
+// Se usa como valor lo que devuelve una funcion void.
+export class VoidComoValor extends Error {
+  constructor(funcion, fila) {
+    super(`${funcion} es void`);
+    Object.assign(this, { funcion, fila });
+  }
+}
+
+// Los ambitos de una funcion: sus variables, y detras las globales.
+class Ambito extends Map {
+  constructor(padre = null) {
+    super();
+    this.padre = padre;
+  }
+
+  get(clave) {
+    return super.has(clave) ? super.get(clave) : this.padre ? this.padre.get(clave) : undefined;
+  }
+
+  has(clave) {
+    return super.has(clave) || Boolean(this.padre && this.padre.has(clave));
+  }
+}
+
 export class DivisionPorCero extends Error {
   constructor(fila) {
     super('division por cero');
@@ -246,7 +320,22 @@ const ESCAPES = { n: 10, t: 9, r: 13, '0': 0, "'": 39, '"': 34, '\\': 92 };
 // que le dieron a una variable con valor de prueba no lo cambia (el valor de
 // prueba es el que vale en ese caso).
 export function ejecutar(arbol, constante, entrada = null, prueba = null, desde = null) {
-  const funcion = arbol.rootNode.namedChildren.find((n) => n.type === 'function_definition');
+  // Las funciones del programa, por nombre. Se empieza por la de prueba que arma
+  // el corrector (__prueba), la envoltura de las series (practica) o main.
+  const definidas = new Map();
+  for (const n of arbol.rootNode.namedChildren) {
+    if (n.type !== 'function_definition') continue;
+    let d = n.childForFieldName('declarator');
+    while (d && d.type !== 'function_declarator') d = d.childForFieldName('declarator');
+    const nombre = d && d.childForFieldName('declarator');
+    if (nombre && !definidas.has(nombre.text)) definidas.set(nombre.text, { nodo: n, declarador: d, nombre: nombre.text });
+  }
+  const entradaDelPrograma =
+    definidas.get('__prueba') ||
+    definidas.get('practica') ||
+    definidas.get('main') ||
+    [...definidas.values()][0];
+  const funcion = entradaDelPrograma && entradaDelPrograma.nodo;
   const cuerpo = funcion && funcion.childForFieldName('body');
   if (!cuerpo) throw new SinVerificar('no hay una funcion que seguir');
 
@@ -274,11 +363,17 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
       (nodo.type === 'enum_specifier' && nodo.childForFieldName('name') && tiposEnum.has('enum ' + nodo.childForFieldName('name').text))));
   };
 
-  const variables = new Map();
+  // Cada funcion tiene su ambito: sus parametros y variables, y detras las
+  // globales. "variables" es el de la funcion que se esta siguiendo.
+  const globales = new Ambito();
+  const globalesDeEstructuras = new Ambito();
+  let variables = new Ambito(globales);
   // Una variable de estructura se sigue "aplanada": cada campo numerico es una
   // variable con el nombre "alumno.promedio" (o un arreglo, si la variable lo es).
   const definiciones = recogerEstructuras(arbol);
-  const estructurasVivas = new Map(); // nombre de la variable -> sus campos
+  let estructurasVivas = new Ambito(globalesDeEstructuras); // nombre de la variable -> sus campos
+  let retorno = null; // lo que devolvio el ultimo "return"
+  let profundidad = 0;
   const escrituras = [];
   const mostrados = []; // los numeros que muestra printf, en orden
   const delArreglo = []; // de esos, los que salen de una posicion de un arreglo
@@ -360,6 +455,20 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
     }
     if (n.type === 'parenthesized_expression') return posicion(n.namedChildren[0]);
     if (n.type === 'field_expression') return posicionDeCampo(n);
+    // *x: lo que apunta un parametro declarado con * (la variable que llego con &).
+    if (n.type === 'pointer_expression' && /^\*/.test(n.text.trimStart())) {
+      const argumento = n.childForFieldName('argument') || n.namedChildren[n.namedChildren.length - 1];
+      if (!argumento || argumento.type !== 'identifier') return sinVerificar(n);
+      const variable = variables.get(argumento.text);
+      if (!variable) {
+        if (constante(argumento.text) != null || DE_LA_BIBLIOTECA.includes(argumento.text)) return sinVerificar(n);
+        throw new NombreDesconocido(argumento.text, fila(n));
+      }
+      if (variable.puntero) return variable.destino;
+      // *v en un arreglo es su primera posicion.
+      if (variable.dims && variable.dims.length === 1) return { variable, nombre: argumento.text, indices: [0] };
+      throw new AsteriscoDeMas(argumento.text, fila(n));
+    }
     return sinVerificar(n);
   }
 
@@ -428,6 +537,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
     const p = posicion(n);
     if (p.constante != null) return { v: p.constante, f: false };
     const { variable, nombre, indices } = p;
+    if (variable.puntero) throw new PunteroSinAsterisco(nombre, fila(n));
     if (!variable.dims) {
       if (variable.valor === undefined) throw faltaValor(variable, nombre, '', n);
       return { v: variable.valor, f: variable.flotante };
@@ -467,6 +577,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
   function guardar(p, valor, n) {
     if (p.constante != null) sinVerificar(n, 'una constante');
     const { variable, nombre, indices } = p;
+    if (variable.puntero) throw new PunteroSinAsterisco(nombre, fila(n));
     const v = variable.flotante ? valor.v : Math.trunc(valor.v);
     if (!variable.dims) {
       variable.valor = v;
@@ -701,12 +812,17 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
     convs.forEach((conv, k) => {
       const a = destinos[k];
       if (a.type === 'identifier' && variables.get(a.text)?.dims) throw new ArregloSinPosicion(a.text, fila(a));
-      if (!/^&/.test(a.text) || a.type === 'binary_expression') throw new AmpersandFalta(a.text, fila(a));
-      const destino = a.childForFieldName('argument') || a.namedChildren[a.namedChildren.length - 1];
-      if (destino.type === 'identifier' && variables.get(destino.text)?.dims) {
+      // Un parametro declarado con * ya es una direccion: se pasa tal cual.
+      const apuntado = a.type === 'identifier' ? variables.get(a.text) : null;
+      const esPuntero = Boolean(apuntado && apuntado.puntero);
+      if (!esPuntero && (!/^&/.test(a.text) || a.type === 'binary_expression')) {
+        throw new AmpersandFalta(a.text, fila(a));
+      }
+      const destino = esPuntero ? a : a.childForFieldName('argument') || a.namedChildren[a.namedChildren.length - 1];
+      if (!esPuntero && destino.type === 'identifier' && variables.get(destino.text)?.dims) {
         throw new ArregloSinPosicion(destino.text, fila(destino));
       }
-      const p = posicion(destino);
+      const p = esPuntero ? apuntado.destino : posicion(destino);
       if (p.constante != null || !p.variable) sinVerificar(a);
       if (p.variable.dims && p.indices.length !== p.variable.dims.length) sinVerificar(a);
       const tipo = p.variable.tipo;
@@ -733,6 +849,10 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
       case 'subscript_expression':
       case 'field_expression':
         return leer(n);
+      case 'pointer_expression':
+        // *x se lee; &x suelto no se sigue (solo como argumento de una llamada).
+        if (/^\*/.test(n.text.trimStart())) return leer(n);
+        return sinVerificar(n);
       case 'parenthesized_expression':
         return evaluar(n.namedChildren[0]);
       case 'sizeof_expression': {
@@ -797,6 +917,9 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
         const lista = argumentos ? argumentos.namedChildren.filter((a) => a.type !== 'comment') : [];
         if (funcion && funcion.text === 'printf' && lista.length >= 1) return imprimir(n, lista);
         if (funcion && funcion.text === 'scanf' && lista.length >= 2) return leerDelTeclado(n, lista);
+        if (funcion && funcion.type === 'identifier' && definidas.has(funcion.text)) {
+          return llamarFuncion(definidas.get(funcion.text), lista, n);
+        }
         if (!funcion || funcion.text !== 'pow' || lista.length !== 2) return sinVerificar(n);
         const base = evaluar(lista[0]);
         const exponente = evaluar(lista[1]);
@@ -1062,6 +1185,128 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
     }
   }
 
+  // ---- funciones del programa --------------------------------------------------
+
+  // Los parametros de una funcion tal como se los sigue, o null si alguno no se
+  // sabe seguir (una estructura, un puntero a otra cosa):
+  //   { nombre, clase: 'valor' | 'referencia' | 'arreglo', flotante, tipo, bytes }
+  function parametrosDe(def) {
+    if (def.parametros !== undefined) return def.parametros;
+    def.parametros = null;
+    const lista = def.declarador.childForFieldName('parameters');
+    const salidaDe = [];
+    for (const p of lista ? lista.namedChildren : []) {
+      if (p.type !== 'parameter_declaration') continue;
+      const tipoNodo = p.childForFieldName('type');
+      const dec = p.childForFieldName('declarator');
+      const textoTipo = tipoNodo ? tipoNodo.text.replace(/\s+/g, ' ').trim() : '';
+      if (!dec) {
+        if (textoTipo === 'void') continue;
+        return null;
+      }
+      let nombre = dec;
+      let puntero = false;
+      let arreglo = false;
+      while (nombre && nombre.type !== 'identifier') {
+        if (nombre.type === 'pointer_declarator') puntero = true;
+        else if (nombre.type === 'array_declarator') arreglo = true;
+        else return null;
+        nombre = nombre.childForFieldName('declarator');
+      }
+      const deEnum = esTipoEnum(tipoNodo);
+      if (!nombre || (!deEnum && !['primitive_type', 'sized_type_specifier'].includes(tipoNodo.type))) return null;
+      const textoBase = deEnum ? 'int' : textoTipo;
+      const flotante = /float|double/.test(textoBase);
+      salidaDe.push({
+        nombre: nombre.text,
+        clase: arreglo ? 'arreglo' : puntero ? 'referencia' : 'valor',
+        flotante,
+        tipo: /double/.test(textoBase) ? 'double' : flotante ? 'float' : /char/.test(textoBase) ? 'char' : 'int',
+        bytes: bytesDe(textoBase),
+      });
+    }
+    def.parametros = salidaDe;
+    return salidaDe;
+  }
+
+  // Una llamada a una funcion del programa. Los argumentos se resuelven en el
+  // ambito de quien llama; el cuerpo corre en uno nuevo, con los parametros:
+  // por valor una copia, con * la variable que llego con &, y un arreglo es el
+  // mismo arreglo.
+  function llamarFuncion(def, lista, n) {
+    const parametros = parametrosDe(def);
+    const tipoNodo = def.nodo.childForFieldName('type');
+    const textoRetorno = tipoNodo ? tipoNodo.text.replace(/\s+/g, ' ').trim() : '';
+    const conPuntero = def.nodo.childForFieldName('declarator').type === 'pointer_declarator';
+    if (parametros === null || conPuntero) sinVerificar(n, `la funcion ${def.nombre}`);
+    if (lista.length !== parametros.length) {
+      throw new ArgumentosDistintos(def.nombre, parametros.length, lista.length, fila(n));
+    }
+    if (profundidad >= 100) throw new NoTermina(fila(n));
+
+    const local = new Ambito(globales);
+    parametros.forEach((p, k) => {
+      const a = lista[k];
+      const texto = a.text.replace(/\s+/g, ' ').trim();
+      const conAmpersand = a.type === 'pointer_expression' && /^&/.test(a.text.trimStart());
+      const deArreglo = a.type === 'identifier' ? variables.get(a.text) : null;
+      if (p.clase === 'arreglo') {
+        if (!deArreglo || !deArreglo.dims) sinVerificar(a, `un argumento que no es un arreglo para ${p.nombre}`);
+        local.set(p.nombre, deArreglo);
+        return;
+      }
+      if (p.clase === 'referencia') {
+        if (deArreglo && (deArreglo.dims || deArreglo.puntero)) {
+          local.set(p.nombre, deArreglo);
+          return;
+        }
+        if (!conAmpersand) throw new LlamadaSinAmpersand(def.nombre, p.nombre, texto, fila(a));
+        const objetivo = a.childForFieldName('argument') || a.namedChildren[a.namedChildren.length - 1];
+        const destino = posicion(objetivo);
+        if (destino.constante != null || !destino.variable) sinVerificar(a);
+        if (destino.variable.dims && destino.indices.length !== destino.variable.dims.length) sinVerificar(a);
+        local.set(p.nombre, { puntero: true, destino, flotante: p.flotante, tipo: p.tipo, bytes: p.bytes });
+        return;
+      }
+      if (conAmpersand) throw new LlamadaConAmpersand(def.nombre, p.nombre, texto, fila(a));
+      if (deArreglo && deArreglo.dims) throw new ArregloSinPosicion(a.text, fila(a));
+      const valor = evaluar(a);
+      local.set(p.nombre, {
+        flotante: p.flotante,
+        tipo: p.tipo,
+        bytes: p.bytes,
+        valor: p.flotante ? valor.v : Math.trunc(valor.v),
+      });
+    });
+
+    const anteriores = { variables, estructurasVivas, retorno };
+    variables = local;
+    estructurasVivas = new Ambito(globalesDeEstructuras);
+    retorno = null;
+    profundidad++;
+    let devuelto = null;
+    try {
+      bloque(def.nodo.childForFieldName('body'));
+      devuelto = retorno;
+    } finally {
+      ({ variables, estructurasVivas, retorno } = anteriores);
+      profundidad--;
+    }
+
+    // El valor solo importa si se lo usa (f(); lo descarta).
+    const usado = !n.parent || n.parent.type !== 'expression_statement';
+    if (textoRetorno === 'void') {
+      if (usado) throw new VoidComoValor(def.nombre, fila(n));
+      return { v: 0, f: false };
+    }
+    if (!devuelto) {
+      if (usado) throw new SinRetorno(def.nombre, fila(n));
+      return { v: 0, f: false };
+    }
+    const flotante = /float|double/.test(textoRetorno);
+    return { v: flotante ? devuelto.v : Math.trunc(devuelto.v), f: flotante };
+  }
+
   // ---- sentencias: devuelven 'break', 'continue', 'return' o null ---------
 
   function condicion(n) {
@@ -1087,8 +1332,11 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
         return 'break';
       case 'continue_statement':
         return 'continue';
-      case 'return_statement':
+      case 'return_statement': {
+        const valor = n.namedChildren.find((h) => h.type !== 'comment');
+        retorno = valor ? evaluar(valor) : null;
         return 'return';
+      }
       case 'if_statement': {
         const alternativa = n.childForFieldName('alternative');
         if (condicion(n.childForFieldName('condition'))) return sentencia(n.childForFieldName('consequence'));
@@ -1163,7 +1411,28 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
     return null;
   }
 
+  // Las variables que se declaran fuera de toda funcion, y despues la funcion
+  // por la que se empieza. Un prototipo no es una variable, y lo que no se sabe
+  // seguir se deja de lado.
+  const contiene = (nodo, tipo) => nodo.type === tipo || nodo.namedChildren.some((h) => contiene(h, tipo));
+  const delArchivo = variables;
+  const delArchivoEstructuras = estructurasVivas;
+  variables = globales;
+  estructurasVivas = globalesDeEstructuras;
+  for (const n of arbol.rootNode.namedChildren) {
+    if (n.type !== 'declaration' || contiene(n, 'function_declarator')) continue;
+    try {
+      declarar(n);
+    } catch (e) {
+      if (!(e instanceof SinVerificar)) throw e;
+    }
+  }
+  variables = delArchivo;
+  estructurasVivas = delArchivoEstructuras;
+
   bloque(cuerpo);
   if (renglon.length) lineas.push(renglon);
-  return { variables, escrituras, mostrados, delArreglo, origenes, lineas, salida, lecturas, leidos, visitas, lecturasPorPosicion };
+  // Para quien mira el resultado, las globales y las de la funcion de entrada, juntas.
+  const finales = new Map([...globales, ...variables]);
+  return { variables: finales, escrituras, mostrados, delArreglo, origenes, lineas, salida, lecturas, leidos, visitas, lecturasPorPosicion };
 }

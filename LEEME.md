@@ -1137,6 +1137,48 @@ Grupo "Uniones" (`uniones-declarar.json`, `uniones-etiqueta.json`).
   "valor": "36.5" } }`. Un solo lugar con los nombres de los miembros arriba y el
   vigente marcado; sin `valor`, el lugar queda vacío.
 
+### Funciones
+
+Grupo "Funciones" (`funciones-declarar.json`, por ahora la primera serie).
+
+- **El modelo** (`modelo.funciones`) guarda cada función definida y cada
+  prototipo: nombre, tipo que devuelve, parámetros (nombre, tipo, `arreglo`,
+  `punteros`) y cada `return` (con o sin valor).
+- **Regla `funcion`**: `{ "funcion": { "retorna": "entero" | "real" |
+  "caracter" | "void", "parametros": [{ "tipo": "entero", "referencia": true }],
+  "capturar": "F" } }`. Acepta **cualquier nombre** (con `nombre` se pide uno) y
+  captura el que el alumno puso, para usarlo después como `$F`. Códigos:
+  `FUNCION_FALTA`, `FUNCION_TIPO_RETORNO`, `PARAMETROS_CANTIDAD`,
+  `PARAMETRO_TIPO`, `PARAMETRO_REFERENCIA_FALTA` (el que modifica lo de afuera
+  y no lleva `*`), `PARAMETRO_ASTERISCO_DE_MAS`, `RETORNO_FALTA`,
+  `RETORNO_EN_VOID`. Un parámetro `"arreglo": true` es `v[]` o con `*`.
+- **Regla `prototipo`**: `{ "prototipo": { "de": "$F" } }`. `PROTOTIPO_FALTA`,
+  `PROTOTIPO_NOMBRE`, `PROTOTIPO_NO_COINCIDE` (el tipo o los parámetros).
+- **Probar una función**: un caso de `ejecuta` con `llama` y `devuelve`:
+  `{ "llama": "$F(3, 4)", "devuelve": 7 }`. El corrector arma una función
+  aparte (`__prueba`) que declara las variables de `datos` y hace la llamada;
+  el resultado se compara con `devuelve` (`DEVUELVE_DISTINTO`) y las variables
+  con `queda`, así que sirve también para los parámetros por referencia:
+  `{ "datos": { "a": 3, "b": 8 }, "llama": "$I(&a, &b)", "queda": { "a": 8, "b": 3 } }`.
+  Con `salida` se comprueba lo que muestra la función.
+- **El simulador** sigue las funciones del programa: ámbito propio, parámetros
+  por valor (una copia), `return`, recursión (con tope) y variables globales.
+  Un arreglo pasado es el mismo arreglo. Sabe un **subconjunto mínimo de
+  punteros**: `&variable` (o `&arreglo[i]`) al llamar, un parámetro declarado con
+  `*` y `*x` adentro; nada de aritmética de punteros. Entra por `practica`
+  (o `main`); las funciones se conocen aunque estén definidas después.
+- **Errores de la receta `&` / `*`**, todos con la fórmula completa
+  ("`&` al llamarla, `*` en la declaración del parámetro y `*` cada vez que se
+  lo usa adentro"): `LLAMADA_SIN_AMPERSAND`, `LLAMADA_CON_AMPERSAND` (el
+  parámetro no lleva `*`), `PARAMETRO_SIN_ASTERISCO_AL_USARLO` (`x = 5;` en vez
+  de `*x = 5;`) y `ASTERISCO_DE_MAS`. Los mensajes no nombran el concepto de
+  puntero.
+- **Otros**: `LLAMADA_ARGUMENTOS_CANTIDAD`, `FUNCION_SIN_RETORNO` (se usa el
+  valor de una función que no devuelve nada), `VOID_COMO_VALOR`,
+  `FUNCION_NO_DECLARADA` y `LLAMADA_ANTES_DE_DEFINIR` (sin prototipo antes).
+  Estos dos solo cuando el programa define funciones propias.
+- **La regla `llamada`** acepta `"funcion": "$F"`.
+
 ### Consignas de opciones
 
 En un enunciado, lo que va entre acentos graves (`nombre`, `"Maria"`, `1`) se

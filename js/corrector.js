@@ -55,6 +55,13 @@ import {
   FueraDeRango,
   SinValor,
   MiembroNoVigente,
+  ArgumentosDistintos,
+  LlamadaSinAmpersand,
+  LlamadaConAmpersand,
+  PunteroSinAsterisco,
+  AsteriscoDeMas,
+  SinRetorno,
+  VoidComoValor,
   NoTermina,
   SinVerificar,
   SinEntrada,
@@ -80,6 +87,15 @@ const CATEGORIAS = {
   real: { es: esReal, pide: 'un número con decimales', pideVarios: 'números con decimales' },
   caracter: { es: (t) => t === 'char', pide: 'un solo carácter', pideVarios: 'caracteres' },
 };
+
+// Un acento grave, para armar mensajes con codigo.
+const BT = '`';
+
+// La receta de un parametro por referencia, que los mensajes repiten.
+const FORMULA_REFERENCIA =
+  'Para que la función modifique la variable de afuera: `&` al llamarla, `*` en la declaración del parámetro y `*` cada vez que se lo usa adentro.';
+// Las funciones que arma el sistema: no son del alumno.
+const NO_ES_DEL_ALUMNO = ['main', 'practica', '__prueba'];
 
 const PALABRAS_DE_C = [
   'struct', 'union', 'typedef', 'char', 'int', 'float', 'double', 'long', 'short', 'unsigned', 'signed',
@@ -354,6 +370,7 @@ export function corregir(
 
     const modelo = construirModelo(arbol, desde);
     revisarNombres(modelo, error);
+    revisarFunciones(modelo, error, consigna.requiere.some((r) => r.llamada));
     revisarRedefiniciones(modelo, error, practicas.includes('constantes') ? mejora : null);
     // Cuando la consigna pide los caracteres de a uno, o vaciar la cadena,
     // aconsejarle una funcion de la biblioteca seria mandarlo a otra cosa.
@@ -396,6 +413,8 @@ export function corregir(
   function aplicarRegla(regla, modelo) {
     if (regla.struct) return reglaStruct(regla.struct, modelo);
     if (regla.union) return reglaStruct(regla.union, modelo, true);
+    if (regla.funcion) return reglaFuncion(regla.funcion, modelo);
+    if (regla.prototipo) return reglaPrototipo(regla.prototipo, modelo);
     if (regla.enum) return reglaEnum(regla.enum, modelo);
     if (regla.variable) return reglaVariable(regla.variable, modelo);
     if (regla.alias) return reglaAlias(regla.alias, modelo);
@@ -521,6 +540,176 @@ export function corregir(
     }
     if (regla.capturar) {
       nuevas[regla.capturar] = def.etiqueta ? 'enum ' + def.etiqueta : alias.nombre;
+    }
+  }
+
+  // ---- funcion y prototipo --------------------------------------------------
+
+  // Una funcion: que devuelve y que parametros recibe. Acepta cualquier nombre
+  // (salvo con "nombre").
+  //   { "funcion": { "retorna": "entero" | "real" | "caracter" | "void",
+  //                  "parametros": [{ "tipo": "entero", "referencia": true }],
+  //                  "capturar": "F" } }
+  // Un parametro "referencia" se declara con * (el que modifica lo de afuera), y
+  // "arreglo": true es un arreglo (v[] o con *).
+
+  function reglaFuncion(regla, modelo) {
+    const candidatas = modelo.funciones.filter((f) => f.nuevo && !f.prototipo && !NO_ES_DEL_ALUMNO.includes(f.nombre));
+    if (!candidatas.length) {
+      error(
+        'FUNCION_FALTA',
+        'No encontré la definición de una función. Se escribe el tipo que devuelve, el nombre, los parámetros entre paréntesis y, entre llaves, lo que hace.'
+      );
+      return;
+    }
+    const pedidoNombre = regla.nombre ? valorDe(regla.nombre) : null;
+    const f = (pedidoNombre && candidatas.find((c) => c.nombre === pedidoNombre)) || candidatas[candidatas.length - 1];
+    if (pedidoNombre && f.nombre !== pedidoNombre) {
+      error('FUNCION_NOMBRE', `La consigna pide que la función se llame ${BT}${pedidoNombre}${BT}, y acá se llama ${BT}${f.nombre}${BT}.`, f.fila);
+      return;
+    }
+
+    // Lo que devuelve.
+    const real = resolver(f.tipo, modelo);
+    const escrito = textoDeTipo(f.tipo) + (f.punteros ? ' ' + '*'.repeat(f.punteros) : '');
+    if (regla.retorna === 'void') {
+      if (!(real.clase === 'primitivo' && real.nombre === 'void' && !f.punteros)) {
+        error(
+          'FUNCION_TIPO_RETORNO',
+          `La función no tiene que devolver ningún valor: el tipo que devuelve es ${BT}void${BT}. Está declarada como ${BT}${escrito}${BT}.`,
+          f.fila
+        );
+        return;
+      }
+    } else if (regla.retorna) {
+      const categoria = CATEGORIAS[regla.retorna];
+      if (!categoria) throw new Error(`La consigna "${consigna.id}" pide un tipo de retorno que no conozco: ${regla.retorna}`);
+      if (!(real.clase === 'primitivo' && categoria.es(real.nombre) && !f.punteros)) {
+        error(
+          'FUNCION_TIPO_RETORNO',
+          `La función tiene que devolver ${categoria.pide}: ese es el tipo que va antes del nombre. Está declarada como ${BT}${escrito}${BT}.`,
+          f.fila
+        );
+        return;
+      }
+    }
+
+    // Los parametros.
+    const pedidos = regla.parametros || [];
+    if (f.parametros.length !== pedidos.length) {
+      error(
+        'PARAMETROS_CANTIDAD',
+        `La consigna pide que la función ${pedidos.length === 0 ? 'no reciba ningún parámetro' : pedidos.length === 1 ? 'reciba un parámetro' : 'reciba ' + pedidos.length + ' parámetros'}, y tiene ${f.parametros.length === 0 ? 'ninguno' : f.parametros.length}.`,
+        f.fila
+      );
+      return;
+    }
+    for (let k = 0; k < pedidos.length; k++) {
+      const p = f.parametros[k];
+      const pedido = pedidos[k];
+      const tipo = resolver(p.tipo, modelo);
+      const categoria = CATEGORIAS[pedido.tipo];
+      const que = `El ${ordinal(k)} parámetro${p.nombre ? ' ' + BT + p.nombre + BT : ''}`;
+      const declarado = enPalabras(p);
+      if (pedido.referencia) {
+        if (!p.punteros || p.arreglo.length) {
+          error(
+            'PARAMETRO_REFERENCIA_FALTA',
+            `${que} tiene que modificar la variable de afuera, y para eso se declara con ${BT}*${BT}, como ${BT}${pedido.tipo === 'real' ? 'float' : 'int'} *${p.nombre || 'x'}${BT}. ${FORMULA_REFERENCIA}`,
+            p.fila
+          );
+          return;
+        }
+      } else if (pedido.arreglo) {
+        if (!(p.arreglo.length || p.punteros)) {
+          error('PARAMETRO_TIPO', `${que} tiene que ser un arreglo. Está declarado como ${declarado}.`, p.fila);
+          return;
+        }
+      } else if (p.punteros || p.arreglo.length) {
+        error(
+          'PARAMETRO_ASTERISCO_DE_MAS',
+          p.punteros
+            ? `${que} tiene un ${BT}*${BT} de más: la consigna no pide que la función modifique la variable de afuera, así que recibe solo el valor.`
+            : `${que} tiene que ser un solo valor, no un arreglo.`,
+          p.fila
+        );
+        return;
+      }
+      if (categoria && !(tipo.clase === 'primitivo' && categoria.es(tipo.nombre))) {
+        error(
+          'PARAMETRO_TIPO',
+          `${que} tiene que ser ${categoria.pide}. Está declarado como ${declarado}.`,
+          p.fila
+        );
+        return;
+      }
+    }
+
+    // El return.
+    const conValor = f.retornos.some((r) => r.conValor);
+    if (regla.retorna && regla.retorna !== 'void' && !conValor) {
+      error(
+        'RETORNO_FALTA',
+        `La función tiene que devolver un valor, y no tiene ningún ${BT}return${BT} con un valor: se escribe ${BT}return${BT} y lo que se devuelve.`,
+        f.fila
+      );
+      return;
+    }
+    if (regla.retorna === 'void' && conValor) {
+      const r = f.retornos.find((x) => x.conValor);
+      error(
+        'RETORNO_EN_VOID',
+        `La función es ${BT}void${BT}: no devuelve ningún valor, así que no lleva ${BT}return${BT} con un valor.`,
+        r.fila
+      );
+      return;
+    }
+    if (regla.capturar) nuevas[regla.capturar] = f.nombre;
+  }
+
+  // El prototipo de una funcion: su encabezado seguido de ";", para poder
+  // llamarla antes de definirla. Tiene que coincidir con la funcion.
+  //   { "prototipo": { "de": "$F" } }   (o el nombre de la funcion)
+  function reglaPrototipo(regla, modelo) {
+    const nombre = valorDe(regla.de);
+    const prototipos = modelo.funciones.filter((f) => f.nuevo && f.prototipo);
+    if (!prototipos.length) {
+      error(
+        'PROTOTIPO_FALTA',
+        `No encontré el prototipo de ${BT}${nombre}${BT}: es el encabezado de la función (el tipo que devuelve, el nombre y los parámetros) terminado en ${BT};${BT}, sin el cuerpo.`
+      );
+      return;
+    }
+    const p = prototipos.find((x) => x.nombre === nombre);
+    if (!p) {
+      error(
+        'PROTOTIPO_NOMBRE',
+        `El prototipo tiene que ser de la función ${BT}${nombre}${BT}, y este es de ${BT}${prototipos[0].nombre}${BT}.`,
+        prototipos[0].fila
+      );
+      return;
+    }
+    const definicion = modelo.funciones.find((x) => !x.prototipo && x.nombre === nombre);
+    if (!definicion) return;
+    const mismo = (a, b) => {
+      const ra = resolver(a.tipo, modelo);
+      const rb = resolver(b.tipo, modelo);
+      return mismoTipo(ra, rb) && a.punteros === b.punteros && (a.arreglo || []).length === (b.arreglo || []).length;
+    };
+    if (!mismo(p, definicion)) {
+      error(
+        'PROTOTIPO_NO_COINCIDE',
+        `El prototipo tiene que decir lo mismo que la función: devuelve ${BT}${textoDeTipo(definicion.tipo)}${BT}, y el prototipo ${BT}${textoDeTipo(p.tipo)}${BT}.`,
+        p.fila
+      );
+      return;
+    }
+    if (p.parametros.length !== definicion.parametros.length || p.parametros.some((x, i) => !mismo(x, definicion.parametros[i]))) {
+      error(
+        'PROTOTIPO_NO_COINCIDE',
+        `Los parámetros del prototipo tienen que ser los mismos que los de la función, en el mismo orden y con los mismos tipos.`,
+        p.fila
+      );
     }
   }
 
@@ -1535,7 +1724,7 @@ export function corregir(
   }
 
   function reglaLlamada(regla, modelo) {
-    const aceptadas = [regla.funcion, ...(regla.alternativas || [])];
+    const aceptadas = [valorDe(regla.funcion), ...(regla.alternativas || [])];
     const esperados = (regla.argumentos || []).map(valorDe);
     const llamadas = modelo.llamadas.filter((l) => l.nuevo);
     const llamada = llamadas.find((l) => aceptadas.includes(l.funcion));
@@ -2610,8 +2799,18 @@ export function corregir(
     // Si ya hay un error en lo escrito, no se sigue el codigo: el alumno
     // arregla eso primero, y un "no pude verificarlo" encima seria ruido.
     if (diagnosticos.some((d) => d.nivel === 'error')) return null;
+    // Para probar una funcion suelta se agrega una funcion que la llama con los
+    // datos del caso, y por esa se empieza (__prueba).
+    let propio = null;
+    if (opciones.llama) {
+      try {
+        propio = analizador.parse(fuente + '\n\n' + armarLlamada(modelo, opciones.llama, prueba));
+      } catch (e) {
+        throw new Error(`La consigna "${consigna.id}" tiene una llamada que no se puede armar: ${e.message}`);
+      }
+    }
     try {
-      return ejecutar(arbol, constante, entrada, prueba, modelo.desde);
+      return ejecutar(propio || arbol, constante, entrada, prueba, modelo.desde);
     } catch (e) {
       if (e instanceof FueraDeRango) {
         // Con el numero escrito ya lo dijo la revision general.
@@ -2718,6 +2917,48 @@ export function corregir(
           `El formato de \`${e.funcion}\` tiene ${e.conversiones} ${e.conversiones === 1 ? 'conversión' : 'conversiones'} (lo que empieza con \`%\`) y se le pasa${e.valores === 1 ? '' : 'n'} ${e.valores} ${e.valores === 1 ? 'valor' : 'valores'}: tiene que haber uno por cada una.`,
           e.fila
         );
+      } else if (e instanceof ArgumentosDistintos) {
+        error(
+          'LLAMADA_ARGUMENTOS_CANTIDAD',
+          `${conContexto}${BT}${e.funcion}${BT} ${e.esperados === 0 ? 'no recibe ningún argumento' : e.esperados === 1 ? 'recibe un argumento' : 'recibe ' + e.esperados + ' argumentos'}, y acá se la llama con ${e.recibidos === 0 ? 'ninguno' : e.recibidos}: tiene que haber uno por cada parámetro.`,
+          e.fila
+        );
+      } else if (e instanceof LlamadaSinAmpersand) {
+        error(
+          'LLAMADA_SIN_AMPERSAND',
+          `${conContexto}El parámetro ${BT}${e.parametro}${BT} de ${BT}${e.funcion}${BT} está declarado con ${BT}*${BT}, así que hay que pasarle la dirección de la variable: ${BT}&${e.texto}${BT}. ${FORMULA_REFERENCIA}`,
+          e.fila
+        );
+      } else if (e instanceof LlamadaConAmpersand) {
+        error(
+          'LLAMADA_CON_AMPERSAND',
+          `${conContexto}Se le pasa ${BT}${e.texto}${BT} a ${BT}${e.funcion}${BT}, pero el parámetro ${BT}${e.parametro}${BT} no está declarado con ${BT}*${BT}: recibe un valor y no una dirección. Si la función tiene que modificar la variable, al parámetro le falta el ${BT}*${BT}. ${FORMULA_REFERENCIA}`,
+          e.fila
+        );
+      } else if (e instanceof PunteroSinAsterisco) {
+        error(
+          'PARAMETRO_SIN_ASTERISCO_AL_USARLO',
+          `${conContexto}${BT}${e.nombre}${BT} está declarado con ${BT}*${BT}: para llegar a la variable de afuera hay que escribir ${BT}*${e.nombre}${BT} cada vez que se lo usa. Escrito ${BT}${e.nombre}${BT} solo, no es el valor. ${FORMULA_REFERENCIA}`,
+          e.fila
+        );
+      } else if (e instanceof AsteriscoDeMas) {
+        error(
+          'ASTERISCO_DE_MAS',
+          `${conContexto}${BT}${e.nombre}${BT} no está declarado con ${BT}*${BT}: es un valor común, así que se lo usa sin el ${BT}*${BT}.`,
+          e.fila
+        );
+      } else if (e instanceof SinRetorno) {
+        error(
+          'FUNCION_SIN_RETORNO',
+          `${conContexto}${BT}${e.funcion}${BT} termina sin devolver nada: una función que devuelve un valor tiene que terminar con ${BT}return${BT} y ese valor.`,
+          e.fila
+        );
+      } else if (e instanceof VoidComoValor) {
+        error(
+          'VOID_COMO_VALOR',
+          `${conContexto}${BT}${e.funcion}${BT} es ${BT}void${BT}: no devuelve ningún valor, así que no se puede guardar ni usar en una cuenta.`,
+          e.fila
+        );
       } else if (e instanceof SinVerificar) {
         aviso(
           'EJECUCION_NO_VERIFICADA',
@@ -2727,7 +2968,33 @@ export function corregir(
         throw e;
       }
       return null;
+    } finally {
+      if (propio) propio.delete();
     }
+  }
+
+  // La funcion que arma el corrector para probar otra: declara las variables de
+  // los datos del caso y hace la llamada, guardando lo que devuelve en
+  // __devuelve. Por esa funcion empieza el simulador.
+  function armarLlamada(modelo, llama, prueba) {
+    const m = /^\s*([A-Za-z_]\w*)\s*\(/.exec(llama);
+    if (!m) throw new Error(`no se entiende "${llama}"`);
+    const f = modelo.funciones.findLast((x) => !x.prototipo && x.nombre === m[1]);
+    const lineas = [];
+    for (const [nombre, valor] of Object.entries(prueba || {})) {
+      if (!/^[A-Za-z_]\w*$/.test(nombre)) continue;
+      const lista = Array.isArray(valor) ? valor : [valor];
+      const tipo = lista.every((v) => v === null || Number.isInteger(v)) ? 'int' : 'double';
+      lineas.push(Array.isArray(valor) ? `  ${tipo} ${nombre}[${valor.length}];` : `  ${tipo} ${nombre};`);
+    }
+    const devuelve = f ? textoDeTipo(f.tipo) : 'int';
+    if (f && !(f.tipo.clase === 'primitivo' && f.tipo.nombre === 'void' && !f.punteros)) {
+      lineas.push(`  ${devuelve} __devuelve;`);
+      lineas.push(`  __devuelve = ${llama.trim().replace(/;\s*$/, '')};`);
+    } else {
+      lineas.push(`  ${llama.trim().replace(/;\s*$/, '')};`);
+    }
+    return `void __prueba(void) {\n${lineas.join('\n')}\n}\n`;
   }
 
   // "%d" con un decimal, "%f" con un entero: dice cual es el que corresponde.
@@ -3341,11 +3608,36 @@ export function corregir(
           caso.vistos = caso.vistos || caso.datos;
           caso.datos = { ...datosDeLaFicha(modelo), ...caso.datos };
         }
+        // Con "llama", se prueba una funcion: se la llama con esos argumentos y,
+        // con "devuelve", lo que da tiene que ser eso.
+        const llamada = caso.llama ? valorDe(caso.llama) : null;
+        if (llamada && !modelo.funciones.some((x) => !x.prototipo && x.nombre === /^\s*([A-Za-z_]\w*)/.exec(llamada)[1])) {
+          error('FUNCION_FALTA', 'No encontré la definición de la función que pide la consigna.');
+          return;
+        }
         const hecha = correrCodigo(modelo, enCodigos(caso.entrada || entrada), caso.datos, {
           contexto: caso.visible || !caso.datos ? '' : conLosValores(caso.vistos || caso.datos),
           centinela: regla.centinela,
+          llama: llamada,
         });
         if (!hecha) return;
+        if (llamada && caso.devuelve !== undefined) {
+          const dio = hecha.variables.get('__devuelve');
+          if (!dio || dio.valor === undefined) {
+            error('FUNCION_SIN_RETORNO', `${BT}${llamada}${BT} no devuelve ningún valor: la consigna pide que lo devuelva.`);
+            return;
+          }
+          const debe = typeof caso.devuelve === 'string' && [...caso.devuelve].length === 1 ? caso.devuelve.codePointAt(0) : caso.devuelve;
+          if (Math.abs(dio.valor - debe) > 1e-9) {
+            const con = caso.visible || !caso.datos ? '' : `${conLosValores(caso.vistos || caso.datos)}, `;
+            const decir = (v) => (typeof caso.devuelve === 'string' ? deLetra(v) : v);
+            error(
+              'DEVUELVE_DISTINTO',
+              `${con}${BT}${llamada}${BT} devuelve ${BT}${decir(dio.valor)}${BT} y debería devolver ${BT}${decir(debe)}${BT}.`
+            );
+            return;
+          }
+        }
         if (!usaLosCamposMarcados(hecha)) return;
         if (!revisarCaso(hecha, caso, modelo, regla)) return;
       }
@@ -5646,6 +5938,50 @@ function problemaDeCampo(valor, nombre, def, modelo) {
     ];
   }
   return null;
+}
+
+// Las funciones de la biblioteca que se usan en las series.
+const DE_LA_BIBLIOTECA_C = new Set([
+  'printf', 'scanf', 'gets', 'fgets', 'puts', 'putchar', 'getchar', 'strlen', 'strcpy', 'strncpy', 'strcmp',
+  'strncmp', 'strcat', 'strncat', 'strchr', 'strstr', 'toupper', 'tolower', 'isalpha', 'isdigit', 'isspace',
+  'isupper', 'islower', 'isalnum', 'pow', 'sqrt', 'abs', 'fabs', 'rand', 'srand', 'time', 'exit', 'atoi',
+  'atof', 'fflush', 'sprintf', 'sscanf',
+]);
+
+// Llamar a lo que no existe, o a una funcion antes de que este definida o
+// declarada. Solo cuando el programa define funciones propias.
+// Si la consigna tiene la regla "llamada", esa ya dice lo que corresponde.
+function revisarFunciones(modelo, error, conReglaDeLlamada = false) {
+  const propias = modelo.funciones.filter((f) => !NO_ES_DEL_ALUMNO.includes(f.nombre));
+  if (!propias.length) return;
+  const nombres = [...new Set(propias.map((f) => f.nombre))];
+  for (const l of modelo.llamadas.filter((x) => x.nuevo)) {
+    if (!/^[A-Za-z_]\w*$/.test(l.funcion) || DE_LA_BIBLIOTECA_C.has(l.funcion)) continue;
+    if (!nombres.includes(l.funcion)) {
+      if (conReglaDeLlamada) continue;
+      const parecida = nombres.find(
+        (n) => n.toLowerCase() === l.funcion.toLowerCase() || distancia(n, l.funcion) <= 2
+      );
+      error(
+        'FUNCION_NO_DECLARADA',
+        parecida
+          ? `No hay ninguna función llamada \`${l.funcion}\`. ¿Quiso decir \`${parecida}\`? En C las mayúsculas y las minúsculas son letras distintas.`
+          : `No hay ninguna función llamada \`${l.funcion}\`: hay que definirla antes de llamarla.`,
+        l.fila
+      );
+      return;
+    }
+    const definicion = propias.find((f) => !f.prototipo && f.nombre === l.funcion);
+    const prototipoAntes = propias.some((f) => f.prototipo && f.nombre === l.funcion && f.posicion < l.posicion);
+    if (definicion && definicion.posicion > l.posicion && !prototipoAntes) {
+      error(
+        'LLAMADA_ANTES_DE_DEFINIR',
+        `\`${l.funcion}\` se llama antes de estar definida: hay que definirla más arriba o declarar su prototipo antes de usarla.`,
+        l.fila
+      );
+      return;
+    }
+  }
 }
 
 function revisarNombres(modelo, error) {

@@ -66,6 +66,8 @@ typedef struct {
 const ENUMERADORES = { MAX: 3, MANANA: 0, TARDE: 1, NOCHE: 2, BAJO: 1, MEDIO: 5, ALTO: 6, ENTERO: 0, REAL: 1, LETRA: 2 };
 
 const con = (cuerpo) => `${CABECERA}int main() {\n${cuerpo}\nreturn 0;\n}`;
+// Con funciones del programa definidas antes de main.
+const conFunciones = (funciones, cuerpo) => `${CABECERA}${funciones}\nint main() {\n${cuerpo}\nreturn 0;\n}`;
 
 export const CASOS_DEL_SIMULADOR = [
   {
@@ -311,6 +313,116 @@ export const CASOS_DEL_SIMULADOR = [
     codigo: con('TLectura ls[MAX];\nint i;\nint total = 0;\nfor (i = 0; i < MAX; i++) {\n  total += ls[i].medida.entero;\n}'),
     prueba: { 'ls.tipo': [1, 0, 1], 'ls.medida.real': [36.5, null, 18.5], 'ls.medida.entero': [null, 7, null] },
     espera: { error: 'MiembroNoVigente' },
+  },
+  // ---- funciones del programa ----
+  {
+    nombre: 'funciones: devuelve un valor',
+    codigo: conFunciones('int sumar(int a, int b) {\n  return a + b;\n}', 'int r;\nr = sumar(3, 4);'),
+    espera: { variables: { r: 7 } },
+  },
+  {
+    nombre: 'funciones: se puede llamar a una definida despues (con su prototipo)',
+    codigo: `${CABECERA}int doble(int n);\nint main() {\nint r;\nr = doble(4);\nreturn 0;\n}\nint doble(int n) {\n  return 2 * n;\n}`,
+    espera: { variables: { r: 8 } },
+  },
+  {
+    nombre: 'funciones: un parametro por valor no cambia la variable de afuera',
+    codigo: conFunciones('void duplicar(int n) {\n  n = n * 2;\n}', 'int numero = 5;\nduplicar(numero);'),
+    espera: { variables: { numero: 5 } },
+  },
+  {
+    nombre: 'funciones: con & y * cambia la variable de afuera',
+    codigo: conFunciones('void duplicar(int *n) {\n  *n = *n * 2;\n}', 'int numero = 5;\nduplicar(&numero);'),
+    espera: { variables: { numero: 10 } },
+  },
+  {
+    nombre: 'funciones: intercambiar dos variables',
+    codigo: conFunciones(
+      'void intercambiar(int *a, int *b) {\n  int aux;\n  aux = *a;\n  *a = *b;\n  *b = aux;\n}',
+      'int x = 3;\nint y = 8;\nintercambiar(&x, &y);'
+    ),
+    espera: { variables: { x: 8, y: 3 } },
+  },
+  {
+    nombre: 'funciones: un arreglo se pasa sin & y se modifica',
+    codigo: conFunciones(
+      'void llenar(int v[], int n) {\n  int i;\n  for (i = 0; i < n; i++) {\n    v[i] = i * 10;\n  }\n}',
+      'int notas[MAX];\nllenar(notas, MAX);'
+    ),
+    espera: { variables: { notas: [0, 10, 20] } },
+  },
+  {
+    nombre: 'funciones: la direccion de un elemento del arreglo',
+    codigo: conFunciones('void duplicar(int *n) {\n  *n = *n * 2;\n}', 'int notas[MAX] = {1, 2, 3};\nduplicar(&notas[1]);'),
+    espera: { variables: { notas: [1, 4, 3] } },
+  },
+  {
+    nombre: 'funciones: sin el & al llamar',
+    codigo: conFunciones('void duplicar(int *n) {\n  *n = *n * 2;\n}', 'int numero = 5;\nduplicar(numero);'),
+    espera: { error: 'LlamadaSinAmpersand' },
+  },
+  {
+    nombre: 'funciones: con & donde se recibe un valor',
+    codigo: conFunciones('void duplicar(int n) {\n  n = n * 2;\n}', 'int numero = 5;\nduplicar(&numero);'),
+    espera: { error: 'LlamadaConAmpersand' },
+  },
+  {
+    nombre: 'funciones: el parametro con * se usa sin el *',
+    codigo: conFunciones('void poner(int *n) {\n  n = 7;\n}', 'int numero = 5;\nponer(&numero);'),
+    espera: { error: 'PunteroSinAsterisco' },
+  },
+  {
+    nombre: 'funciones: un * donde no hay direccion',
+    codigo: conFunciones('void poner(int n) {\n  *n = 7;\n}', 'int numero = 5;\nponer(numero);'),
+    espera: { error: 'AsteriscoDeMas' },
+  },
+  {
+    nombre: 'funciones: otra cantidad de argumentos',
+    codigo: conFunciones('int sumar(int a, int b) {\n  return a + b;\n}', 'int r;\nr = sumar(3);'),
+    espera: { error: 'ArgumentosDistintos' },
+  },
+  {
+    nombre: 'funciones: usar el valor de una funcion que no devuelve nada',
+    codigo: conFunciones('int sumar(int a, int b) {\n  int c = a + b;\n}', 'int r;\nr = sumar(3, 4);'),
+    espera: { error: 'SinRetorno' },
+  },
+  {
+    nombre: 'funciones: usar el valor de una funcion void',
+    codigo: conFunciones('void hola(void) {\n  printf("hola");\n}', 'int r;\nr = hola();'),
+    espera: { error: 'VoidComoValor' },
+  },
+  {
+    nombre: 'funciones: una variable de adentro no es la de afuera',
+    codigo: conFunciones('int mas(int n) {\n  int r = n + 1;\n  return r;\n}', 'int r = 100;\nint s;\ns = mas(1);'),
+    espera: { variables: { r: 100, s: 2 } },
+  },
+  {
+    nombre: 'funciones: una recursion',
+    codigo: conFunciones(
+      'int factorial(int n) {\n  if (n <= 1) {\n    return 1;\n  }\n  return n * factorial(n - 1);\n}',
+      'int r;\nr = factorial(5);'
+    ),
+    espera: { variables: { r: 120 } },
+  },
+  {
+    nombre: 'funciones: una recursion que no termina',
+    codigo: conFunciones('int f(int n) {\n  return f(n + 1);\n}', 'int r;\nr = f(1);'),
+    espera: { error: 'NoTermina' },
+  },
+  {
+    nombre: 'funciones: devuelve un decimal',
+    codigo: conFunciones('float mitad(int n) {\n  return n / 2.0;\n}', 'float r;\nr = mitad(5);'),
+    espera: { variables: { r: 2.5 } },
+  },
+  {
+    nombre: 'funciones: una variable global',
+    codigo: `${CABECERA}int total = 10;\nvoid sumar(int n) {\n  total = total + n;\n}\nint main() {\nsumar(5);\nreturn 0;\n}`,
+    espera: { variables: { total: 15 } },
+  },
+  {
+    nombre: 'funciones: lo que muestra una funcion sale en la salida',
+    codigo: conFunciones('void saludar(void) {\n  printf("hola");\n}', 'saludar();\nsaludar();'),
+    espera: { salida: 'holahola' },
   },
   {
     nombre: 'uniones: el valor de prueba de un miembro no lo pisa el codigo dado',
