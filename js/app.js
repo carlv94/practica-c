@@ -24,6 +24,7 @@ import {
   corregirPaso,
   despuesDe,
   pidePracticas,
+  continuaLaAnterior,
 } from './serie.js';
 import { crearEditor, pintar } from './editor.js';
 import { enviarIntento, enviarInforme, numeroDeInforme, enviaEstadisticas, esLocal, esDocente } from './estadisticas.js';
@@ -51,7 +52,9 @@ let pendiente = null; // la respuesta correcta que espera el "Siguiente"
 let pidioSolucion = false;
 let informable = null; // lo ultimo que se comprobo: lo que se informa si el alumno dice que esta mal
 
-const claveAvance = (s) => 'practica-c:avance:' + s.id;
+// En el modo docente el avance se guarda aparte: los saltos entre consignas lo
+// llenan con soluciones de referencia, y no tienen que mezclarse con el real.
+const claveAvance = (s) => (VE_LAS_OCULTAS ? 'practica-c:avance-docente:' : 'practica-c:avance:') + s.id;
 const CLAVE_INTENTOS = 'practica-c:intentos';
 const CLAVE_SEMILLA = 'practica-c:semilla';
 
@@ -355,6 +358,7 @@ function mostrarConsigna() {
   const consigna = serie.consignas[actual];
   pendiente = null;
   pidioSolucion = false;
+  $('aviso-salto').hidden = true;
 
   const nombre = `${serie.grupo.titulo} › ${serie.numero}. ${serie.titulo}`;
   document.title = `${nombre} · ${TITULO}`;
@@ -366,6 +370,20 @@ function mostrarConsigna() {
       if (estrella) paso.title = 'Excelente';
       if (i < actual) paso.className = 'hecho';
       if (i === actual) paso.className = 'actual';
+      // En el modo docente se puede saltar a cualquier consigna.
+      if (VE_LAS_OCULTAS && i !== actual) {
+        paso.classList.add('salto');
+        paso.tabIndex = 0;
+        paso.setAttribute('role', 'button');
+        paso.title = 'Ir a esta consigna';
+        paso.addEventListener('click', () => irA(i));
+        paso.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            irA(i);
+          }
+        });
+      }
       return paso;
     })
   );
@@ -893,6 +911,42 @@ function alInformar(evento) {
   $('informe-enviado').textContent =
     `Gracias, el informe se envió. Su número es ${numero}: si quiere, puede mencionárselo al docente en clase.`;
   $('informe-enviado').hidden = false;
+}
+
+// Modo docente: va a la consigna "destino" completando las anteriores con sus
+// soluciones de referencia, como si se hubieran resuelto, para que el codigo
+// que ve sea el que corresponde. Se guarda en el avance del modo docente.
+function irA(destino) {
+  const nuevas = [];
+  let hasta = inicio();
+  for (let i = 0; i < destino; i++) {
+    const consigna = serie.consignas[i];
+    const codigo = respuestaDeReferencia(consigna, capturasPrevias(serie, i, hasta));
+    let r;
+    try {
+      r = corregirPaso(analizador, serie, i, hasta, codigo);
+    } catch (e) {
+      console.error(`La serie "${serie.id}" esta mal armada:`, e);
+      break;
+    }
+    // Si la referencia no pasa, el salto se queda ahi: asi se ve que algo anda mal.
+    if (!r.correcto) break;
+    hasta = despuesDe(serie, i, hasta, codigo, r);
+    nuevas.push({ codigo: codigo.trim(), conAyuda: false, excelente: !r.mejorable });
+  }
+  guardar(claveAvance(serie), nuevas);
+  abrirSerie(serie);
+  window.scrollTo(0, 0);
+  const encadenada = continuaLaAnterior(serie, nuevas.length) || serie.consignas[nuevas.length]?.sigueDe || serie.consignas[nuevas.length]?.parteDe;
+  const aviso = $('aviso-salto');
+  if (nuevas.length < destino) {
+    aviso.textContent = `La solución de referencia de la consigna ${nuevas.length + 1} no pasa: el salto se detuvo ahí.`;
+  } else if (destino > 0 && encadenada) {
+    aviso.textContent = 'Esta consigna sigue de las anteriores: se completaron con sus soluciones de referencia.';
+  } else {
+    aviso.textContent = '';
+  }
+  aviso.hidden = !aviso.textContent;
 }
 
 function siguiente() {

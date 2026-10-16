@@ -92,6 +92,12 @@ tales, **y no se envía ninguna estadística ni informe**. El modo queda guardad
 en ese navegador (`practica-c:docente`), así que sigue activo aunque se entre
 después sin el parámetro; una franja arriba lo avisa y tiene un enlace "Salir".
 `?docente=no` lo apaga (para probar lo que ve un alumno, con envío incluido).
+En este modo **los pasos del encabezado son enlaces**: al hacer clic en uno se
+salta a esa consigna (hacia adelante o hacia atrás) completando las anteriores
+con sus soluciones de referencia, como hacen las pruebas, así que una consigna
+encadenada se ve con el código que le corresponde (y un aviso lo dice). El
+avance del modo docente se guarda **aparte** (`practica-c:avance-docente:<id>`),
+sin mezclarse con el de un alumno.
 Abriendo la página en esta PC (`localhost`) pasa lo mismo sin hacer nada.
 
 **El `id` de una serie no se cambia** una vez que los alumnos la usaron: el

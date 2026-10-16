@@ -215,6 +215,16 @@ label {
   border-color: var(--bien);
 }
 
+/* Solo en el modo docente: los pasos del encabezado llevan a esa consigna. */
+#pasos li.salto {
+  cursor: pointer;
+}
+
+#pasos li.salto:hover,
+#pasos li.salto:focus-visible {
+  text-decoration: underline;
+}
+
 /* Solo se ve en el modo docente. */
 .modo-docente {
   margin: 0;
