@@ -26,8 +26,12 @@ import {
   pidePracticas,
 } from './serie.js';
 import { crearEditor, pintar } from './editor.js';
-import { enviarIntento, enviarInforme, numeroDeInforme, enviaEstadisticas } from './estadisticas.js';
+import { enviarIntento, enviarInforme, numeroDeInforme, enviaEstadisticas, esLocal } from './estadisticas.js';
 import { partesDeEnunciado, enunciadoEnDos, fichasDe, figuraDe, sustituir } from './enunciado.js';
+
+// La vista del docente: lista tambien las series y los grupos ocultos (con
+// "?docente" en la direccion, o abriendo la pagina en esta PC).
+const VE_LAS_OCULTAS = esLocal() || new URLSearchParams(location.search).has('docente');
 
 const CARPETA = 'consignas/';
 const INDICE = CARPETA + 'indice.json';
@@ -281,6 +285,7 @@ function mostrarLista(deGrupo) {
       texto = `En curso: ${resueltas} de ${total}`;
     }
     enlace.appendChild(elemento('span', 'estado ' + estado, texto));
+    if (s.oculta) enlace.appendChild(elemento('span', 'oculta', 'Oculta para los alumnos'));
     return enlace;
   };
 
@@ -309,13 +314,20 @@ function mostrarLista(deGrupo) {
     const empezadas = g.series.some((s) => estados.get(s).resueltas > 0);
     const estado = completas === g.series.length ? 'completa' : empezadas ? 'en-curso' : 'sin-empezar';
     enlace.appendChild(elemento('span', 'estado ' + estado, resumenDe(g)));
+    if (g.oculto) enlace.appendChild(elemento('span', 'oculta', 'Oculto para los alumnos'));
     caja.appendChild(enlace);
     return caja;
   };
 
-  const aparte = deGrupo && grupos.find((g) => g.id === deGrupo);
+  // Las series ocultas no se listan (salvo en la vista del docente), aunque se
+  // abren por su direccion. Un grupo oculto, abierto por la suya, muestra todo.
+  const aVer = (s) => VE_LAS_OCULTAS || !s.oculta;
+  const conLoVisible = (g, todo) => ({ ...g, series: g.series.filter((s) => todo || aVer(s)) });
+  const visibles = grupos.filter((g) => VE_LAS_OCULTAS || !g.oculto).map((g) => conLoVisible(g, false)).filter((g) => g.series.length);
+  const pedido = deGrupo && grupos.find((g) => g.id === deGrupo);
+  const aparte = pedido && conLoVisible(pedido, pedido.oculto);
   $('lista').replaceChildren(
-    ...(aparte ? [cajaDe(aparte)] : grupos.map((g) => (g.agrupar ? tarjetaDeGrupo(g) : cajaDe(g))))
+    ...(aparte ? [cajaDe(aparte)] : visibles.map((g) => (g.agrupar ? tarjetaDeGrupo(g) : cajaDe(g))))
   );
   if (!series.length) {
     $('lista').replaceChildren(mensaje('aviso', 'Todavía no hay ninguna serie cargada.'));
@@ -977,7 +989,14 @@ async function cargarSeries() {
   const buenas = [];
   const delIndice = [];
   indice.grupos.forEach((g, k) => {
-    const grupo = { id: g.id, titulo: g.titulo, descripcion: g.descripcion, agrupar: !!g.agrupar, series: [] };
+    const grupo = {
+      id: g.id,
+      titulo: g.titulo,
+      descripcion: g.descripcion,
+      agrupar: !!g.agrupar,
+      oculto: !!g.oculto,
+      series: [],
+    };
     leidas[k].forEach((leida, i) => {
       if (leida.status === 'rejected') {
         console.error(`No se pudo cargar la serie ${g.series[i]}:`, leida.reason);
@@ -985,8 +1004,13 @@ async function cargarSeries() {
         console.error(`La serie ${g.series[i]} repite el id "${leida.value.id}" y no se muestra.`);
       } else {
         const s = leida.value;
+        // "oculto" en el grupo, u "ocultas" con los archivos de las series: no se
+        // listan para los alumnos, pero se abren por su direccion.
+        s.oculta = grupo.oculto || (g.ocultas || []).includes(g.series[i]);
+        // El numero cuenta lo que se ve en la lista; en la vista del docente, todo.
+        const antes = grupo.series.filter((x) => VE_LAS_OCULTAS || !x.oculta).length;
         grupo.series.push(s);
-        s.numero = grupo.series.length;
+        s.numero = VE_LAS_OCULTAS || !s.oculta ? antes + 1 : grupo.series.length;
         s.grupo = { id: grupo.id, titulo: grupo.titulo };
         buenas.push(s);
       }

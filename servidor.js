@@ -2,6 +2,7 @@
 //
 //   node servidor.js          (queda en http://localhost:8080)
 //   node servidor.js 9000     (otro puerto)
+//   HOST=0.0.0.0 node servidor.js   (visible desde otros equipos de la red)
 //
 // Hace falta porque el navegador no deja cargar modulos ni el analizador de C
 // abriendo index.html con doble clic. No usa nada fuera de Node.
@@ -12,6 +13,8 @@ const path = require('path');
 
 const RAIZ = __dirname;
 const PUERTO = Number(process.argv[2]) || 8080;
+// Por defecto solo esta PC; para verla desde otro equipo, HOST=0.0.0.0.
+const HOST = process.env.HOST || '127.0.0.1';
 
 const TIPOS = {
   '.html': 'text/html; charset=utf-8',
@@ -47,6 +50,6 @@ http
       respuesta.end(contenido);
     });
   })
-  .listen(PUERTO, '127.0.0.1', () => {
+  .listen(PUERTO, HOST, () => {
     console.log('Practica de C en http://localhost:' + PUERTO);
   });

@@ -11,7 +11,8 @@ escribió en las anteriores.
 node servidor.js
 ```
 
-y abrir <http://localhost:8080>. Las pruebas del corrector están en
+y abrir <http://localhost:8080> (con `HOST=0.0.0.0 node servidor.js` se ve
+también desde otros equipos de la red). Las pruebas del corrector están en
 <http://localhost:8080/pruebas/>: una línea OK o FALLA por caso.
 
 Hace falta el servidor porque el navegador no carga módulos ni el analizador
@@ -51,7 +52,8 @@ Una serie es un archivo en `consignas/`:
 ```
 
 y se muestra recién cuando está anotada en `consignas/indice.json`, que
-además fija el orden de la lista. Sacarla de ahí la esconde sin borrarla.
+además fija el orden de la lista. Sacarla de ahí la esconde sin borrarla; para
+dejarla anotada pero sin listarla, ver "Ocultar series y grupos" más abajo.
 
 El índice agrupa las series:
 
@@ -75,6 +77,16 @@ no cambian, y `#/grupo/<id>` lleva a la lista, en ese grupo.
 Un grupo con `"agrupar": true` (hoy Arreglos y Cadenas) aparece en la lista como una
 sola tarjeta; al hacer clic, `#/grupo/<id>` muestra sus series. Los demás grupos
 muestran sus series directamente.
+
+**Ocultar series y grupos** (para ir habilitando los temas a medida que se
+ven en clase): en el índice, `"oculto": true` en un grupo, o `"ocultas":
+["archivo.json"]` con las series que no se listan. Una serie oculta **no
+aparece en la lista de los alumnos, pero se abre por su dirección**
+(`#/serie/<id>`, `#/grupo/<id>`), y el número de las demás no tiene huecos.
+Para habilitarla se saca la marca del índice. Con `?docente` en la dirección
+(por ejemplo `https://.../?docente`), o abriendo la página en esta PC
+(`localhost`), la lista muestra también las ocultas, marcadas como tales. No es
+un secreto: los archivos de la serie siguen siendo públicos.
 
 **El `id` de una serie no se cambia** una vez que los alumnos la usaron: el
 avance de cada uno está guardado con ese nombre, y con otro arrancan de cero.

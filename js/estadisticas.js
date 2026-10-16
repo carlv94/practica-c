@@ -17,7 +17,7 @@ const CLAVE_ANONIMO = 'practica-c:anonimo';
 
 let anonimoDeSesion = null;
 
-function esLocal() {
+export function esLocal() {
   const { hostname, protocol, pathname } = location;
   return (
     protocol === 'file:' ||
