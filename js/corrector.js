@@ -270,6 +270,7 @@ export function corregir(
     enArchivo = false,
     practicas = [],
     avisados = [],
+    despues = '',
   }
 ) {
   // Una sentencia suelta ("strcpy(a, b);") solo vale dentro de una funcion:
@@ -285,6 +286,11 @@ export function corregir(
   if (!dentroDeMain) {
     previo = afuera + adentro;
     fuente = previo + respuesta;
+  } else if (enArchivo && despues) {
+    // La respuesta va arriba (un prototipo) y el codigo dado, despues de todo.
+    previo = afuera;
+    fuente =
+      previo + respuesta.replace(/\s+$/, '') + '\n\n' + (adentro ? 'void practica(void) {\n' + adentro + '}\n\n' : '') + despues;
   } else if (enArchivo) {
     previo = afuera + (adentro ? 'void practica(void) {\n' + adentro + '}\n\n' : '');
     fuente = previo + respuesta;

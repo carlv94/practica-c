@@ -102,9 +102,15 @@ export function partesPrevias(serie, indice, avance) {
       serie.cabecera,
       avance.base,
       archivoPrevio(serie, indice, avance),
+      consigna.archivoDado,
       afuera ? consigna.dado : ''
     ),
-    main: unirEnMain(serie.dado, contextoPrevio(serie, indice, avance), afuera ? '' : consigna.dado),
+    main: unirEnMain(
+      serie.dado,
+      contextoPrevio(serie, indice, avance),
+      consigna.dadoEnMain,
+      afuera ? '' : consigna.dado
+    ),
   };
 }
 
@@ -146,7 +152,7 @@ function conMain(interior) {
 
 // El programa que se muestra: el preprocesador arriba (los #include primero),
 // lo de afuera, y main con lo de adentro. "aqui" es el lugar de la respuesta.
-function armar(archivo, main, { aquiAfuera = false, aquiAdentro = false } = {}) {
+function armar(archivo, main, { aquiAfuera = false, aquiAdentro = false, despues = '' } = {}) {
   const a = sacarPreprocesador(archivo);
   const m = sacarPreprocesador(main);
   const pre = [...new Set([...a.pre, ...m.pre])];
@@ -155,7 +161,7 @@ function armar(archivo, main, { aquiAfuera = false, aquiAdentro = false } = {}) 
   // El comentario con una linea en blanco antes y despues, para que se ubique
   // enseguida entre el resto del codigo.
   const interior = aquiAdentro ? (m.resto ? m.resto + '\n\n' : '') + aqui + '\n' : m.resto;
-  return unir(arriba.join('\n'), a.resto, aquiAfuera ? aqui : '', interior ? conMain(interior) : '');
+  return unir(arriba.join('\n'), a.resto, aquiAfuera ? aqui : '', interior ? conMain(interior) : '', despues);
 }
 
 // El marco que se le muestra al alumno: lo de afuera arriba, y lo de adentro
@@ -165,7 +171,11 @@ function marco(serie, indice, avance) {
   const { archivo, main } = partesPrevias(serie, indice, avance);
   // Si no hay nada antes y la respuesta va afuera, no hay marco que mostrar.
   if (afuera && !archivo.trim() && !main.trim()) return '';
-  return armar(archivo, main, { aquiAfuera: afuera, aquiAdentro: !afuera });
+  return armar(archivo, main, {
+    aquiAfuera: afuera,
+    aquiAdentro: !afuera,
+    despues: afuera ? serie.consignas[indice].despues : '',
+  });
 }
 
 // El programa que se le muestra en una consigna de opciones: el "archivo" y
@@ -213,6 +223,8 @@ export function corregirPaso(analizador, serie, indice, avance, respuesta) {
     capturas,
     dentroDeMain: Boolean(serie.dentroDeMain),
     enArchivo: enArchivo(consigna),
+    // Codigo que se le da despues de main, con la respuesta (un prototipo) arriba.
+    despues: consigna.despues || '',
     // Una consigna puede pedir otras practicas que las de la serie.
     practicas: consigna.buenasPracticas ?? serie.buenasPracticas ?? [],
     avisados: avance.avisados || [],

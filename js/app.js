@@ -422,7 +422,9 @@ function mostrarConsigna() {
   ambito.textContent =
     esMixta(serie) && !esCuestionario
       ? enArchivo(consigna)
-        ? 'Esta respuesta va fuera de main, antes de la función.'
+        ? consigna.despues
+          ? 'Esta respuesta va arriba de todo, antes de main.'
+          : 'Esta respuesta va fuera de main, antes de la función.'
         : 'Esta respuesta va dentro de main.'
       : '';
   ambito.hidden = !ambito.textContent;
