@@ -215,7 +215,22 @@ label {
   border-color: var(--bien);
 }
 
-/* Solo se ve en la vista del docente. */
+/* Solo se ve en el modo docente. */
+.modo-docente {
+  margin: 0;
+  padding: 6px 16px;
+  background: var(--aviso-fondo);
+  color: var(--aviso);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.modo-docente a {
+  margin-left: 8px;
+  color: inherit;
+  font-weight: 600;
+}
+
 .oculta {
   display: inline-block;
   margin-left: 8px;

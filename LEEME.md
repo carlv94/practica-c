@@ -83,10 +83,16 @@ ven en clase): en el índice, `"oculto": true` en un grupo, o `"ocultas":
 ["archivo.json"]` con las series que no se listan. Una serie oculta **no
 aparece en la lista de los alumnos, pero se abre por su dirección**
 (`#/serie/<id>`, `#/grupo/<id>`), y el número de las demás no tiene huecos.
-Para habilitarla se saca la marca del índice. Con `?docente` en la dirección
-(por ejemplo `https://.../?docente`), o abriendo la página en esta PC
-(`localhost`), la lista muestra también las ocultas, marcadas como tales. No es
-un secreto: los archivos de la serie siguen siendo públicos.
+Para habilitarla se saca la marca del índice. No es un secreto: los archivos
+de la serie siguen siendo públicos.
+
+**Modo docente**: con `?docente` en la dirección (por ejemplo
+`https://.../?docente`) la lista muestra también las ocultas, marcadas como
+tales, **y no se envía ninguna estadística ni informe**. El modo queda guardado
+en ese navegador (`practica-c:docente`), así que sigue activo aunque se entre
+después sin el parámetro; una franja arriba lo avisa y tiene un enlace "Salir".
+`?docente=no` lo apaga (para probar lo que ve un alumno, con envío incluido).
+Abriendo la página en esta PC (`localhost`) pasa lo mismo sin hacer nada.
 
 **El `id` de una serie no se cambia** una vez que los alumnos la usaron: el
 avance de cada uno está guardado con ese nombre, y con otro arrancan de cero.

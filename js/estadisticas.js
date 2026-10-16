@@ -7,8 +7,8 @@
 // recibe los datos (ver estadisticas/LEEME.md). Vacia, no se envia nada. Es
 // publica a proposito: la practica es una pagina estatica, no hay donde ocultarla.
 //
-// Tampoco se envia desde localhost ni desde la pagina de pruebas, para que las
-// pruebas del docente no ensucien la estadistica.
+// Tampoco se envia desde localhost ni desde la pagina de pruebas, ni en el modo
+// docente, para que las pruebas del docente no ensucien la estadistica.
 
 const DIRECCION =
   'https://script.google.com/macros/s/AKfycbxuUYWGXihrFaEXiGv_o4ljbAJMXC_-bdApYH5RzI-5gyOaRlxMnZmhL0bT7wyPkyQWdA/exec';
@@ -27,6 +27,38 @@ export function esLocal() {
     hostname.endsWith('.localhost') ||
     pathname.includes('/pruebas/')
   );
+}
+
+// El modo docente: "?docente" en la direccion lo enciende y queda guardado en
+// este navegador (para no ensuciar la estadistica la proxima vez que se entre
+// sin recordarlo); "?docente=no" lo apaga. Muestra las series ocultas y no
+// envia nada. La direccion se limpia: el modo ya quedo guardado.
+const CLAVE_DOCENTE = 'practica-c:docente';
+let docente = null;
+
+export function esDocente() {
+  if (docente !== null) return docente;
+  let guardado = false;
+  try {
+    guardado = localStorage.getItem(CLAVE_DOCENTE) === '1';
+  } catch {
+    // sin almacenamiento: vale solo para esta visita
+  }
+  const pedido = new URLSearchParams(location.search).get('docente');
+  docente = pedido === null ? guardado : pedido !== 'no';
+  if (pedido !== null) {
+    try {
+      if (docente) localStorage.setItem(CLAVE_DOCENTE, '1');
+      else localStorage.removeItem(CLAVE_DOCENTE);
+    } catch {
+      // sin almacenamiento
+    }
+    const parametros = new URLSearchParams(location.search);
+    parametros.delete('docente');
+    const resto = parametros.toString();
+    history.replaceState(null, '', location.pathname + (resto ? '?' + resto : '') + location.hash);
+  }
+  return docente;
 }
 
 // Un numero al azar que se genera una vez y queda en el navegador. No dice
@@ -53,7 +85,7 @@ function azar() {
 
 // Si esta pagina manda datos: es lo que decide si se muestra el aviso.
 export function enviaEstadisticas() {
-  return Boolean(DIRECCION) && !esLocal();
+  return Boolean(DIRECCION) && !esLocal() && !esDocente();
 }
 
 // Si falla (sin conexion, direccion caida), el alumno ni se entera: no se

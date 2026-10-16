@@ -26,12 +26,12 @@ import {
   pidePracticas,
 } from './serie.js';
 import { crearEditor, pintar } from './editor.js';
-import { enviarIntento, enviarInforme, numeroDeInforme, enviaEstadisticas, esLocal } from './estadisticas.js';
+import { enviarIntento, enviarInforme, numeroDeInforme, enviaEstadisticas, esLocal, esDocente } from './estadisticas.js';
 import { partesDeEnunciado, enunciadoEnDos, fichasDe, figuraDe, sustituir } from './enunciado.js';
 
-// La vista del docente: lista tambien las series y los grupos ocultos (con
-// "?docente" en la direccion, o abriendo la pagina en esta PC).
-const VE_LAS_OCULTAS = esLocal() || new URLSearchParams(location.search).has('docente');
+// La vista del docente: lista tambien las series y los grupos ocultos (en el
+// modo docente, o abriendo la pagina en esta PC).
+const VE_LAS_OCULTAS = esLocal() || esDocente();
 
 const CARPETA = 'consignas/';
 const INDICE = CARPETA + 'indice.json';
@@ -1021,6 +1021,9 @@ async function cargarSeries() {
 }
 async function iniciar() {
   $('aviso-estadisticas').hidden = !enviaEstadisticas();
+  // Se nota que es el modo docente: no se envia nada y se ven las series ocultas.
+  $('modo-docente').hidden = !VE_LAS_OCULTAS;
+  $('salir-docente').hidden = !esDocente();
   try {
     let cargadas;
     [analizador, cargadas] = await Promise.all([cargarAnalizador(), cargarSeries()]);
