@@ -22,6 +22,7 @@ export const CASOS_DE_FUNCIONES = [
   // ---- 1: una funcion que no recibe ni devuelve nada ----
   definir(1, 'void con el mensaje', FUNCION('void saludar(void)', '  printf("Bienvenido");'), 'ok', { mejoras: [] }),
   definir(1, 'sin la palabra void en los parentesis', FUNCION('void saludar()', '  printf("Bienvenido");')),
+  definir(1, 'con salto de linea', FUNCION('void saludar(void)', '  printf("Bienvenido\\n");')),
   definir(1, 'otro nombre', FUNCION('void mensaje(void)', '  printf("Bienvenido");')),
   definir(1, 'devuelve un int', FUNCION('int saludar(void)', '  printf("Bienvenido");\n  return 0;'), ['FUNCION_TIPO_RETORNO'], {
     dice: ['es `void`'],
@@ -41,21 +42,22 @@ export const CASOS_DE_FUNCIONES = [
   definir(2, 'con una mayuscula', 'Saludar();', ['FUNCION_MAL_ESCRITA']),
   definir(2, 'sin llamarla', 'printf("Bienvenido");', ['FUNCION_EQUIVOCADA']),
   // ---- 3: llamarla varias veces ----
-  definir(3, 'tres llamadas', 'saludar();\nsaludar();\nsaludar();', 'ok', { mejoras: [] }),
-  definir(3, 'en un ciclo', 'for (int i = 0; i < 3; i++) {\n  saludar();\n}'),
-  definir(3, 'solo dos', 'saludar();\nsaludar();', ['MUESTRA_DISTINTA']),
-  definir(3, 'una sola', 'saludar();', ['MUESTRA_DISTINTA']),
+  definir(3, 'tres llamadas', 'reirse();\nreirse();\nreirse();', 'ok', { mejoras: [] }),
+  definir(3, 'en un ciclo', 'for (int i = 0; i < 3; i++) {\n  reirse();\n}'),
+  definir(3, 'solo dos', 'reirse();\nreirse();', ['MUESTRA_DISTINTA']),
+  definir(3, 'una sola', 'reirse();', ['MUESTRA_DISTINTA']),
   // ---- 4: cuestionario, definir no es ejecutar ----
   definir(4, 'orden de las llamadas: la correcta', '1'),
   definir(4, 'orden de definicion', '0', ['OPCION_ORDEN_DE_DEFINICION']),
   definir(4, 'se ejecuta sola', '2', ['OPCION_SE_EJECUTA_SOLA']),
   // ---- 5: el prototipo ----
-  definir(5, 'el prototipo', 'void saludar(void);', 'ok', { mejoras: [] }),
-  definir(5, 'sin la palabra void', 'void saludar();'),
-  definir(5, 'la funcion y no el prototipo', FUNCION('void saludar(void)', '  printf("Bienvenido");'), ['PROTOTIPO_FALTA']),
-  definir(5, 'con un parametro', 'void saludar(int x);', ['PROTOTIPO_NO_COINCIDE']),
-  definir(5, 'con otro tipo', 'int saludar(void);', ['PROTOTIPO_NO_COINCIDE']),
-  definir(5, 'de otra funcion', 'void otra(void);', ['PROTOTIPO_NOMBRE']),
+  definir(5, 'el prototipo', 'void muestraA(void);', 'ok', { mejoras: [] }),
+  definir(5, 'sin la palabra void', 'void muestraA();'),
+  definir(5, 'sin nada', 'int x;', ['LLAMADA_ANTES_DE_DEFINIR', 'PROTOTIPO_FALTA']),
+  definir(5, 'la funcion y no el prototipo', FUNCION('void muestraA(void)', '  printf("A");'), ['PROTOTIPO_FALTA']),
+  definir(5, 'con un parametro', 'void muestraA(int x);', ['PROTOTIPO_NO_COINCIDE']),
+  definir(5, 'con otro tipo', 'int muestraA(void);', ['PROTOTIPO_NO_COINCIDE']),
+  definir(5, 'de otra funcion', 'void otra(void);', ['LLAMADA_ANTES_DE_DEFINIR', 'PROTOTIPO_NOMBRE']),
 
   // ===== Funciones con parametros =====
   // ---- 1: un parametro ----

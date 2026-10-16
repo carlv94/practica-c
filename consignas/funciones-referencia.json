@@ -34,7 +34,7 @@
       "id": "referencia-incrementar",
       "titulo": "Declarar el parámetro con *",
       "en": "archivo",
-      "enunciado": "Escriba una función que reciba un número entero por referencia y le sume 1 a la variable de afuera. Póngale el nombre que quiera.",
+      "enunciado": "Escriba una función que reciba un número entero por referencia y le sume 1 a la variable de afuera: si valía `4`, queda en `5`. Póngale el nombre que quiera.",
       "requiere": [
         {
           "funcion": {
@@ -175,7 +175,7 @@
       "id": "referencia-dos-resultados",
       "titulo": "Devolver dos resultados",
       "en": "archivo",
-      "enunciado": "Una función con `return` solo puede devolver un valor. Escriba una función que reciba cuatro números enteros: el dividendo, el divisor y dos variables por referencia, donde deje el cociente y el resto de la división. Póngale el nombre que quiera.",
+      "enunciado": "Una función con `return` solo puede devolver un valor. Escriba una función que reciba cuatro números enteros: el dividendo, el divisor y dos variables por referencia, donde deje el cociente y el resto de la división: con `17` y `5`, el cociente es `3` y el resto es `2`. Póngale el nombre que quiera.",
       "requiere": [
         {
           "funcion": {

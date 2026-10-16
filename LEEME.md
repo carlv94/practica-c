@@ -1147,6 +1147,13 @@ Falta la serie de refactorizar código repetido (el dominio se define después).
 - **`MUESTRA_EN_VEZ_DE_DEVOLVER`**: si la consigna pide que la función devuelva
   un valor y el alumno la declara `void` y la muestra con `printf`, el mensaje
   dice que el resultado se entrega con `return` y lo usa quien llama.
+- **Código dado alrededor de la respuesta**: una consigna puede traer
+  `archivoDado` (código de afuera de `main` que ve solo ella, por ejemplo una
+  función ya hecha, para no depender de cómo resolvió la anterior),
+  `dadoEnMain` (código dado dentro de `main` cuando su respuesta va afuera) y
+  `despues` (código de afuera que va **después** de `main`). Con `despues`, la
+  respuesta va **arriba de todo**, antes de `main`: así se ve por qué hace
+  falta un prototipo.
 - **Argumentos de la regla `llamada`**: además de nombres, textos y campos,
   aceptan números (`"21"`) y variables con `&` (`"&contador"`).
 

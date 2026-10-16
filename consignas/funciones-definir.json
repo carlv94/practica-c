@@ -38,6 +38,7 @@
       "titulo": "Llamar a la función",
       "sigueDe": "definir-sin-nada",
       "enunciado": "La función {F} ya está definida. Llámela desde el programa para que muestre el mensaje.",
+      "salida": "Bienvenido",
       "requiere": [
         {
           "llamada": {
@@ -61,12 +62,13 @@
     {
       "id": "definir-varias-veces",
       "titulo": "Llamarla varias veces",
-      "sigueDe": "definir-sin-nada",
-      "enunciado": "Una función se escribe una vez y se puede llamar todas las veces que haga falta. Llame a {F} tres veces para que el mensaje se muestre tres veces seguidas.",
+      "archivoDado": "void reirse(void) {\n  printf(\"Ja\");\n}",
+      "enunciado": "Una función se escribe una vez y se puede llamar todas las veces que haga falta. La función `reirse` ya está definida y muestra `Ja`. Llámela tres veces seguidas.",
+      "salida": "JaJaJa",
       "requiere": [
         {
           "llamada": {
-            "funcion": "$F",
+            "funcion": "reirse",
             "argumentos": []
           }
         },
@@ -74,21 +76,21 @@
           "ejecuta": {
             "casos": [
               {
-                "salida": "BienvenidoBienvenidoBienvenido",
+                "salida": "JaJaJa",
                 "visible": true
               }
             ]
           }
         }
       ],
-      "referencia": "{F}();\n{F}();\n{F}();"
+      "referencia": "reirse();\nreirse();\nreirse();"
     },
     {
       "id": "definir-q-orden",
       "titulo": "Definir no es ejecutar",
-      "archivo": "void a(void) {\n  printf(\"A\");\n}\n\nvoid b(void) {\n  printf(\"B\");\n}",
+      "archivo": "void muestraA(void) {\n  printf(\"A\");\n}\n\nvoid muestraB(void) {\n  printf(\"B\");\n}",
       "enunciado": "Las dos funciones están definidas en ese orden. ¿Qué muestra este programa?",
-      "codigo": "b();\na();\nb();",
+      "codigo": "muestraB();\nmuestraA();\nmuestraB();",
       "opciones": [
         {
           "texto": "`AB`",
@@ -98,7 +100,7 @@
         {
           "texto": "`BAB`",
           "correcta": true,
-          "explicacion": "Definir una función solo la deja disponible. Lo que se ejecuta, y en qué orden, lo marcan las llamadas: `b()`, luego `a()` y otra vez `b()`."
+          "explicacion": "Definir una función solo la deja disponible. Lo que se ejecuta, y en qué orden, lo marcan las llamadas: `muestraB()`, luego `muestraA()` y otra vez `muestraB()`."
         },
         {
           "texto": "`ABAB`",
@@ -110,17 +112,18 @@
     {
       "id": "definir-prototipo",
       "titulo": "El prototipo",
-      "sigueDe": "definir-sin-nada",
       "en": "archivo",
-      "enunciado": "Para poder llamar a una función antes de definirla, se declara su prototipo: el encabezado de la función terminado en `;`, sin el cuerpo. Escriba el prototipo de {F}.",
+      "dadoEnMain": "muestraA();",
+      "despues": "void muestraA(void) {\n  printf(\"A\");\n}",
+      "enunciado": "El compilador lee el programa de arriba hacia abajo. Acá `main` llama a `muestraA`, pero esa función está definida más abajo, así que al llegar a la llamada todavía no sabe cómo es. Para avisarle se declara su prototipo: el encabezado de la función terminado en `;`, sin el cuerpo. Escriba el prototipo de `muestraA`.",
       "requiere": [
         {
           "prototipo": {
-            "de": "$F"
+            "de": "muestraA"
           }
         }
       ],
-      "referencia": "void {F}(void);"
+      "referencia": "void muestraA(void);"
     }
   ]
 }

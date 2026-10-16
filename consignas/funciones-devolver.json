@@ -10,7 +10,7 @@
       "id": "devolver-suma",
       "titulo": "Devolver la suma",
       "en": "archivo",
-      "enunciado": "Escriba una función que reciba dos números enteros y devuelva su suma. Póngale el nombre que quiera.",
+      "enunciado": "Escriba una función que reciba dos números enteros y devuelva su suma: con `3` y `4` devuelve `7`. Póngale el nombre que quiera.",
       "requiere": [
         {
           "funcion": {
@@ -94,7 +94,7 @@
       "id": "devolver-decide",
       "titulo": "Una función que decide",
       "en": "archivo",
-      "enunciado": "Escriba una función que reciba un número entero y devuelva `1` si el número es par, o `0` si es impar. Póngale el nombre que quiera.",
+      "enunciado": "Escriba una función que reciba un número entero y devuelva `1` si el número es par, o `0` si es impar: con `4` devuelve `1` y con `7` devuelve `0`. Póngale el nombre que quiera.",
       "requiere": [
         {
           "funcion": {
@@ -138,6 +138,7 @@
       "titulo": "Usar lo que devuelve",
       "sigueDe": "devolver-decide",
       "enunciado": "La función {E} ya está definida. Con ella, muestre con `printf` el mensaje `par` si el número `8` es par.",
+      "salida": "par",
       "requiere": [
         {
           "llamada": {
