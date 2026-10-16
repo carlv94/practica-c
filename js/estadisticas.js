@@ -73,7 +73,18 @@ function enviar(datos) {
   }
 }
 
+// Un intento igual al anterior, enseguida (el clic repetido, la tecla
+// mantenida), no dice nada nuevo: se cuenta una sola vez. Mientras siga la
+// rafaga, la ventana se corre, asi que una rafaga larga tambien es uno.
+const VENTANA_DE_REPETIDOS = 5000;
+let ultimoIntento = null;
+
 export function enviarIntento({ serie, consigna, resultado, conAyuda, codigos }) {
+  const clave = JSON.stringify([serie, consigna, resultado, Boolean(conAyuda), codigos]);
+  const ahora = Date.now();
+  const repetido = ultimoIntento && ultimoIntento.clave === clave && ahora - ultimoIntento.hora < VENTANA_DE_REPETIDOS;
+  ultimoIntento = { clave, hora: ahora };
+  if (repetido) return;
   enviar({
     tipo: 'intento',
     anonimo: anonimo(),

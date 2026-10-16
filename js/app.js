@@ -930,6 +930,8 @@ function reiniciar() {
 function teclaEnRespuesta(evento) {
   if (evento.key === 'Enter' && (evento.ctrlKey || evento.metaKey)) {
     evento.preventDefault();
+    // Con la tecla mantenida el navegador repite el evento: es un solo intento.
+    if (evento.repeat) return;
     comprobar();
   }
 }

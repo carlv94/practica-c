@@ -1364,7 +1364,10 @@ antes de la línea que lo usa.
   nunca el código escrito) a una hoja de cálculo de Google. Está apagado hasta
   completar `DIRECCION` en `js/estadisticas.js`; los pasos y el script están en
   `estadisticas/LEEME.md`. No envía desde `localhost` ni desde `/pruebas/`, y
-  cuando envía, la pantalla muestra un aviso al pie.
+  cuando envía, la pantalla muestra un aviso al pie. Un intento igual al
+  anterior (misma consigna, resultado y códigos) en menos de 5 segundos no se
+  vuelve a enviar, y Ctrl+Enter mantenido apretado cuenta como una sola
+  comprobación: así el clic repetido no llena la hoja de filas idénticas.
 - "Informar un problema": después de cada comprobación el alumno puede mandar
   un informe (motivo, comentario, mensajes que vio y, solo con su permiso, su
   respuesta y el código anterior). Llega a la hoja `Informes`; ver
