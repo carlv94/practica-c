@@ -584,6 +584,14 @@ export function corregir(
     } else if (regla.retorna) {
       const categoria = CATEGORIAS[regla.retorna];
       if (!categoria) throw new Error(`La consigna "${consigna.id}" pide un tipo de retorno que no conozco: ${regla.retorna}`);
+      if (real.clase === 'primitivo' && real.nombre === 'void' && !f.punteros && f.muestra) {
+        error(
+          'MUESTRA_EN_VEZ_DE_DEVOLVER',
+          `La función muestra el resultado con ${BT}printf${BT}, pero la consigna pide que lo devuelva: el tipo que devuelve tiene que ser ${categoria.pide} y el resultado se entrega con ${BT}return${BT}. Lo que se devuelve lo usa quien llama a la función (lo guarda, lo muestra o lo compara).`,
+          f.fila
+        );
+        return;
+      }
       if (!(real.clase === 'primitivo' && categoria.es(real.nombre) && !f.punteros)) {
         error(
           'FUNCION_TIPO_RETORNO',
@@ -1686,7 +1694,15 @@ export function corregir(
       return;
     }
 
-    if (real.clase === 'cadena' && real.contenido === esperado) {
+    if (esperado.startsWith('&') && real.clase === 'nombre' && real.nombre === esperado.slice(1)) {
+      error(
+        'LLAMADA_SIN_AMPERSAND',
+        `Para que la función modifique ${BT}${real.nombre}${BT} hay que pasarle la variable misma, con ${BT}&${BT} adelante: ${BT}${esperado}${BT}. ${FORMULA_REFERENCIA}`,
+        llamada.fila
+      );
+    } else if (esperado.startsWith('&') && real.clase === 'direccion' && !modelo.variables.some((v) => v.nombre === real.nombre)) {
+      error('VARIABLE_DESCONOCIDA', `No hay ninguna variable llamada ${BT}${real.nombre}${BT}.`, llamada.fila);
+    } else if (real.clase === 'cadena' && real.contenido === esperado) {
       error(
         'ARGUMENTO_ENTRE_COMILLAS',
         `\`${real.texto}\` con comillas es un texto, no la variable \`${esperado}\`: el nombre de una variable va sin comillas.`,
@@ -1840,7 +1856,7 @@ export function corregir(
     if (justos ? reales.length !== esperados.length : reales.length < esperados.length) {
       error(
         'ARGUMENTOS_CANTIDAD',
-        `\`${llamada.funcion}\` lleva ${esperados.length} argumentos, separados por coma, y acá hay ${reales.length}.`,
+        `\`${llamada.funcion}\` lleva ${esperados.length} ${esperados.length === 1 ? 'argumento' : 'argumentos'}, separados por coma, y acá hay ${reales.length}.`,
         llamada.fila
       );
       return;
@@ -3994,6 +4010,10 @@ export function corregir(
     }
     if (esIndexado(esperado)) {
       return real.clase === 'indice' && sinEspacios(real.texto) === sinEspacios(esperado);
+    }
+    // Un numero escrito o una variable con &.
+    if (/^-?\d+(\.\d+)?$/.test(esperado) || esperado.startsWith('&')) {
+      return sinEspacios(real.texto) === sinEspacios(esperado);
     }
     return real.clase === 'nombre' && real.nombre === esperado;
   }

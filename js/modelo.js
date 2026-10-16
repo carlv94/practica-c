@@ -432,12 +432,22 @@ export function construirModelo(arbol, desde) {
       }
       for (const h of x.namedChildren) buscar(h);
     })(cuerpo || { type: '', namedChildren: [] });
+    // Si muestra algo con printf, puts o putchar (para distinguir "muestra" de "devuelve").
+    let muestra = false;
+    (function buscar(x) {
+      if (x.type === 'call_expression') {
+        const g = x.childForFieldName('function');
+        if (g && ['printf', 'puts', 'putchar'].includes(g.text)) muestra = true;
+      }
+      for (const h of x.namedChildren) buscar(h);
+    })(cuerpo || { type: '', namedChildren: [] });
     modelo.funciones.push({
       nombre: d.nombre,
       tipo: leerTipo(tipoNodo),
       punteros: d.punteros,
       parametros,
       retornos,
+      muestra,
       prototipo,
       posicion: nodo.startIndex,
       fin: nodo.endIndex,

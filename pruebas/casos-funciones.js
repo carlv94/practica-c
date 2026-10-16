@@ -46,7 +46,7 @@ export const CASOS_DE_FUNCIONES = [
   }),
   declarar(3, 'sin return', FUNCION('int sumar(int a, int b)', '  int c = a + b;'), ['RETORNO_FALTA']),
   declarar(3, 'muestra en vez de devolver', FUNCION('void sumar(int a, int b)', '  printf("%d", a + b);'), [
-    'FUNCION_TIPO_RETORNO',
+    'MUESTRA_EN_VEZ_DE_DEVOLVER',
   ]),
   declarar(3, 'un parametro', FUNCION('int sumar(int a)', '  return a;'), ['PARAMETROS_CANTIDAD']),
   declarar(3, 'devuelve un float', FUNCION('float sumar(int a, int b)', '  return a + b;'), ['FUNCION_TIPO_RETORNO']),
