@@ -84,7 +84,10 @@
       "titulo": "Funciones",
       "descripcion": "Definir funciones, llamarlas, pasarles valores y recibir resultados, y modificar las variables de afuera.",
       "series": [
-        "funciones-declarar.json"
+        "funciones-definir.json",
+        "funciones-parametros.json",
+        "funciones-devolver.json",
+        "funciones-referencia.json"
       ]
     }
   ]

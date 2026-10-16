@@ -1,0 +1,126 @@
+{
+  "id": "funciones-definir",
+  "titulo": "Definir y llamar una función",
+  "continua": false,
+  "dentroDeMain": true,
+  "descripcion": "Definir una función que no recibe ni devuelve nada, llamarla una o varias veces, saber que definirla no la ejecuta y declarar su prototipo para llamarla antes de definirla.",
+  "cabecera": "#include <stdio.h>",
+  "consignas": [
+    {
+      "id": "definir-sin-nada",
+      "titulo": "Una función que muestra un mensaje",
+      "en": "archivo",
+      "enunciado": "Escriba una función que no reciba nada ni devuelva nada, y que al llamarla muestre con `printf` el mensaje `Bienvenido`. Póngale el nombre que quiera.",
+      "requiere": [
+        {
+          "funcion": {
+            "retorna": "void",
+            "parametros": [],
+            "capturar": "F"
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "llama": "$F()",
+                "salida": "Bienvenido",
+                "visible": true
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "void saludar(void) {\n  printf(\"Bienvenido\");\n}"
+    },
+    {
+      "id": "definir-llamar",
+      "titulo": "Llamar a la función",
+      "sigueDe": "definir-sin-nada",
+      "enunciado": "La función {F} ya está definida. Llámela desde el programa para que muestre el mensaje.",
+      "requiere": [
+        {
+          "llamada": {
+            "funcion": "$F",
+            "argumentos": []
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "salida": "Bienvenido",
+                "visible": true
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "{F}();"
+    },
+    {
+      "id": "definir-varias-veces",
+      "titulo": "Llamarla varias veces",
+      "sigueDe": "definir-sin-nada",
+      "enunciado": "Una función se escribe una vez y se puede llamar todas las veces que haga falta. Llame a {F} tres veces para que el mensaje se muestre tres veces seguidas.",
+      "requiere": [
+        {
+          "llamada": {
+            "funcion": "$F",
+            "argumentos": []
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "salida": "BienvenidoBienvenidoBienvenido",
+                "visible": true
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "{F}();\n{F}();\n{F}();"
+    },
+    {
+      "id": "definir-q-orden",
+      "titulo": "Definir no es ejecutar",
+      "archivo": "void a(void) {\n  printf(\"A\");\n}\n\nvoid b(void) {\n  printf(\"B\");\n}",
+      "enunciado": "Las dos funciones están definidas en ese orden. ¿Qué muestra este programa?",
+      "codigo": "b();\na();\nb();",
+      "opciones": [
+        {
+          "texto": "`AB`",
+          "codigo": "OPCION_ORDEN_DE_DEFINICION",
+          "explicacion": "Ese es el orden en que están definidas, pero definir una función no la ejecuta: se ejecuta cada vez que se la llama, en el orden de las llamadas."
+        },
+        {
+          "texto": "`BAB`",
+          "correcta": true,
+          "explicacion": "Definir una función solo la deja disponible. Lo que se ejecuta, y en qué orden, lo marcan las llamadas: `b()`, luego `a()` y otra vez `b()`."
+        },
+        {
+          "texto": "`ABAB`",
+          "codigo": "OPCION_SE_EJECUTA_SOLA",
+          "explicacion": "Una función no se ejecuta al definirla. Solo se ejecuta cuando se la llama, y acá hay tres llamadas."
+        }
+      ]
+    },
+    {
+      "id": "definir-prototipo",
+      "titulo": "El prototipo",
+      "sigueDe": "definir-sin-nada",
+      "en": "archivo",
+      "enunciado": "Para poder llamar a una función antes de definirla, se declara su prototipo: el encabezado de la función terminado en `;`, sin el cuerpo. Escriba el prototipo de {F}.",
+      "requiere": [
+        {
+          "prototipo": {
+            "de": "$F"
+          }
+        }
+      ],
+      "referencia": "void {F}(void);"
+    }
+  ]
+}

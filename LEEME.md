@@ -1139,7 +1139,16 @@ Grupo "Uniones" (`uniones-declarar.json`, `uniones-etiqueta.json`).
 
 ### Funciones
 
-Grupo "Funciones" (`funciones-declarar.json`, por ahora la primera serie).
+Grupo "Funciones": cuatro series cortas, `funciones-definir.json` (definir,
+llamar y prototipo), `funciones-parametros.json`, `funciones-devolver.json`
+(`return`, una función que decide) y `funciones-referencia.json` (`&` y `*`).
+Falta la serie de refactorizar código repetido (el dominio se define después).
+
+- **`MUESTRA_EN_VEZ_DE_DEVOLVER`**: si la consigna pide que la función devuelva
+  un valor y el alumno la declara `void` y la muestra con `printf`, el mensaje
+  dice que el resultado se entrega con `return` y lo usa quien llama.
+- **Argumentos de la regla `llamada`**: además de nombres, textos y campos,
+  aceptan números (`"21"`) y variables con `&` (`"&contador"`).
 
 - **El modelo** (`modelo.funciones`) guarda cada función definida y cada
   prototipo: nombre, tipo que devuelve, parámetros (nombre, tipo, `arreglo`,

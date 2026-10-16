@@ -1,0 +1,188 @@
+{
+  "id": "funciones-devolver",
+  "titulo": "Funciones que devuelven un valor",
+  "continua": false,
+  "dentroDeMain": true,
+  "descripcion": "Entregar un resultado con `return`: una suma, un promedio con decimales, una función que decide devolviendo 1 o 0, y una función que usa a otra.",
+  "cabecera": "#include <stdio.h>",
+  "consignas": [
+    {
+      "id": "devolver-suma",
+      "titulo": "Devolver la suma",
+      "en": "archivo",
+      "enunciado": "Escriba una función que reciba dos números enteros y devuelva su suma. Póngale el nombre que quiera.",
+      "requiere": [
+        {
+          "funcion": {
+            "retorna": "entero",
+            "parametros": [
+              {
+                "tipo": "entero"
+              },
+              {
+                "tipo": "entero"
+              }
+            ],
+            "capturar": "S"
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "llama": "$S(3, 4)",
+                "devuelve": 7,
+                "visible": true
+              },
+              {
+                "llama": "$S(10, -2)",
+                "devuelve": 8
+              },
+              {
+                "llama": "$S(0, 0)",
+                "devuelve": 0
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "int sumar(int a, int b) {\n  return a + b;\n}"
+    },
+    {
+      "id": "devolver-promedio",
+      "titulo": "Un resultado con decimales",
+      "en": "archivo",
+      "enunciado": "Escriba una función que reciba dos números enteros y devuelva su promedio, con decimales: el promedio de `7` y `2` es `4.5`. Póngale el nombre que quiera.",
+      "requiere": [
+        {
+          "funcion": {
+            "retorna": "real",
+            "parametros": [
+              {
+                "tipo": "entero"
+              },
+              {
+                "tipo": "entero"
+              }
+            ],
+            "capturar": "P"
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "llama": "$P(7, 2)",
+                "devuelve": 4.5,
+                "visible": true
+              },
+              {
+                "llama": "$P(8, 2)",
+                "devuelve": 5
+              },
+              {
+                "llama": "$P(1, 2)",
+                "devuelve": 1.5
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "float promedio(int a, int b) {\n  return (a + b) / 2.0;\n}"
+    },
+    {
+      "id": "devolver-decide",
+      "titulo": "Una función que decide",
+      "en": "archivo",
+      "enunciado": "Escriba una función que reciba un número entero y devuelva `1` si el número es par, o `0` si es impar. Póngale el nombre que quiera.",
+      "requiere": [
+        {
+          "funcion": {
+            "retorna": "entero",
+            "parametros": [
+              {
+                "tipo": "entero"
+              }
+            ],
+            "capturar": "E"
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "llama": "$E(4)",
+                "devuelve": 1,
+                "visible": true
+              },
+              {
+                "llama": "$E(7)",
+                "devuelve": 0
+              },
+              {
+                "llama": "$E(0)",
+                "devuelve": 1
+              },
+              {
+                "llama": "$E(-3)",
+                "devuelve": 0
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "int esPar(int n) {\n  if (n % 2 == 0) {\n    return 1;\n  }\n  return 0;\n}"
+    },
+    {
+      "id": "devolver-usar",
+      "titulo": "Usar lo que devuelve",
+      "sigueDe": "devolver-decide",
+      "enunciado": "La función {E} ya está definida. Con ella, muestre con `printf` el mensaje `par` si el número `8` es par.",
+      "requiere": [
+        {
+          "llamada": {
+            "funcion": "$E",
+            "argumentos": [
+              "8"
+            ]
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "salida": "par",
+                "visible": true
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "if ({E}(8) == 1) {\n  printf(\"par\");\n}"
+    },
+    {
+      "id": "devolver-q-return",
+      "titulo": "Lo que viene después del return",
+      "archivo": "int obtener(int n) {\n  return n;\n  printf(\"fin\");\n}",
+      "enunciado": "¿Qué muestra este programa?",
+      "codigo": "printf(\"%d\", obtener(3));",
+      "opciones": [
+        {
+          "texto": "`3fin`",
+          "codigo": "OPCION_SIGUE_DESPUES_DEL_RETURN",
+          "explicacion": "Al ejecutar `return` la función termina en ese momento: lo que está escrito después no se ejecuta."
+        },
+        {
+          "texto": "`3`",
+          "correcta": true,
+          "explicacion": "El `return` termina la función y entrega el valor. El `printf(\"fin\")` que está después nunca se ejecuta."
+        },
+        {
+          "texto": "`fin3`",
+          "codigo": "OPCION_ORDEN_EQUIVOCADO",
+          "explicacion": "El `printf` de adentro de la función está después del `return` y no se ejecuta. Lo único que se muestra es el valor devuelto."
+        }
+      ]
+    }
+  ]
+}

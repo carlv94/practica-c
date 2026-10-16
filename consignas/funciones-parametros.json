@@ -1,0 +1,166 @@
+{
+  "id": "funciones-parametros",
+  "titulo": "Funciones con parámetros",
+  "continua": false,
+  "dentroDeMain": true,
+  "descripcion": "Pasarle valores a una función con parámetros: uno o dos, que el orden importa, que el nombre del argumento no tiene por qué coincidir y que la variable de afuera no cambia.",
+  "cabecera": "#include <stdio.h>",
+  "consignas": [
+    {
+      "id": "parametros-doble",
+      "titulo": "Un parámetro",
+      "en": "archivo",
+      "enunciado": "Escriba una función que reciba un número entero y muestre con `printf` su doble. Póngale el nombre que quiera.",
+      "requiere": [
+        {
+          "funcion": {
+            "retorna": "void",
+            "parametros": [
+              {
+                "tipo": "entero"
+              }
+            ],
+            "capturar": "D"
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "llama": "$D(4)",
+                "salida": "8",
+                "visible": true
+              },
+              {
+                "llama": "$D(-3)",
+                "salida": "-6"
+              },
+              {
+                "llama": "$D(0)",
+                "salida": "0"
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "void mostrarDoble(int n) {\n  printf(\"%d\", n * 2);\n}"
+    },
+    {
+      "id": "parametros-llamar",
+      "titulo": "Llamarla con un valor",
+      "sigueDe": "parametros-doble",
+      "enunciado": "La función {D} ya está definida. Llámela para que muestre el doble de `21`.",
+      "requiere": [
+        {
+          "llamada": {
+            "funcion": "$D",
+            "argumentos": [
+              "21"
+            ]
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "salida": "42",
+                "visible": true
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "{D}(21);"
+    },
+    {
+      "id": "parametros-orden",
+      "titulo": "Dos parámetros: el orden importa",
+      "en": "archivo",
+      "enunciado": "Escriba una función que reciba dos números enteros y muestre con `printf` el resultado de restarle el segundo al primero. Póngale el nombre que quiera.",
+      "requiere": [
+        {
+          "funcion": {
+            "retorna": "void",
+            "parametros": [
+              {
+                "tipo": "entero"
+              },
+              {
+                "tipo": "entero"
+              }
+            ],
+            "capturar": "R"
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "llama": "$R(10, 3)",
+                "salida": "7",
+                "visible": true
+              },
+              {
+                "llama": "$R(3, 10)",
+                "salida": "-7"
+              },
+              {
+                "llama": "$R(5, 5)",
+                "salida": "0"
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "void mostrarResta(int a, int b) {\n  printf(\"%d\", a - b);\n}"
+    },
+    {
+      "id": "parametros-q-nombre",
+      "titulo": "El nombre del argumento",
+      "archivo": "void mostrar(int x) {\n  printf(\"%d\", x);\n}",
+      "enunciado": "¿Qué muestra este programa?",
+      "codigo": "int edad = 20;\n\nmostrar(edad);",
+      "opciones": [
+        {
+          "texto": "`20`",
+          "correcta": true,
+          "explicacion": "Al llamar a la función se copia el valor de `edad` en el parámetro `x`. Los nombres no tienen por qué coincidir: lo que importa es el valor y la posición."
+        },
+        {
+          "texto": "Un error, porque `edad` y `x` no se llaman igual",
+          "codigo": "OPCION_ES_UN_ERROR",
+          "explicacion": "El parámetro `x` es un nombre propio de la función. La variable que se pasa puede llamarse de cualquier manera: se copia su valor."
+        },
+        {
+          "texto": "`0`",
+          "codigo": "OPCION_NO_SE_COPIA",
+          "explicacion": "El valor de `edad` sí llega a la función: al llamarla, se copia en `x`."
+        }
+      ]
+    },
+    {
+      "id": "parametros-q-valor",
+      "titulo": "Qué vale la variable de afuera",
+      "archivo": "void duplicar(int n) {\n  n = n * 2;\n}",
+      "enunciado": "¿Qué muestra este programa?",
+      "codigo": "int numero = 5;\n\nduplicar(numero);\nprintf(\"%d\", numero);",
+      "opciones": [
+        {
+          "texto": "`10`",
+          "codigo": "OPCION_SE_MODIFICO",
+          "explicacion": "Esa sería la cuenta de la función, pero la función trabaja con una copia del valor: lo que le pasa a `n` no llega a la variable de afuera."
+        },
+        {
+          "texto": "`5`",
+          "correcta": true,
+          "explicacion": "La función recibe una copia del valor, y la duplica ella. La variable `numero` queda como estaba."
+        },
+        {
+          "texto": "Un error: la función no puede cambiar `n`",
+          "codigo": "OPCION_ES_UN_ERROR",
+          "explicacion": "Dentro de la función, `n` es una variable como cualquier otra y se la puede cambiar. El programa compila y anda: lo que pasa es que ese cambio queda adentro."
+        }
+      ]
+    }
+  ]
+}

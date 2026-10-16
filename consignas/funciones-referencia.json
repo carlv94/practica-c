@@ -1,0 +1,246 @@
+{
+  "id": "funciones-referencia",
+  "titulo": "Funciones que modifican las variables de afuera",
+  "continua": false,
+  "dentroDeMain": true,
+  "descripcion": "Hacer que una función modifique las variables de afuera: se pasa la variable con `&` al llamar, el parámetro se declara con `*` y se usa con `*`.",
+  "cabecera": "#include <stdio.h>",
+  "consignas": [
+    {
+      "id": "referencia-q-sin",
+      "titulo": "Sin el & la variable no cambia",
+      "archivo": "void poner(int *x) {\n  *x = 10;\n}",
+      "enunciado": "La función modifica la variable que recibe, porque su parámetro se declara con `*`. ¿Qué valor tiene `numero` después de este programa?",
+      "codigo": "int numero = 5;\n\nponer(&numero);\nprintf(\"%d\", numero);",
+      "opciones": [
+        {
+          "texto": "`10`",
+          "correcta": true,
+          "explicacion": "Al llamar con `&numero` la función puede modificar la variable de afuera. Como la función hace `*x = 10;`, `numero` queda en `10`."
+        },
+        {
+          "texto": "`5`",
+          "codigo": "OPCION_SE_MODIFICO",
+          "explicacion": "Eso pasaría si se llamara sin `&`, que pasa solo una copia. Con `&numero` la función modifica la variable misma."
+        },
+        {
+          "texto": "`&numero`",
+          "codigo": "OPCION_ES_UN_ERROR",
+          "explicacion": "`&numero` es lo que se escribe al llamar para pasar la variable misma, no su valor. Lo que se muestra es el valor de `numero`, que la función cambió."
+        }
+      ]
+    },
+    {
+      "id": "referencia-incrementar",
+      "titulo": "Declarar el parámetro con *",
+      "en": "archivo",
+      "enunciado": "Escriba una función que reciba un número entero por referencia y le sume 1 a la variable de afuera. Póngale el nombre que quiera.",
+      "requiere": [
+        {
+          "funcion": {
+            "retorna": "void",
+            "parametros": [
+              {
+                "tipo": "entero",
+                "referencia": true
+              }
+            ],
+            "capturar": "I"
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "datos": {
+                  "n": 4
+                },
+                "llama": "$I(&n)",
+                "queda": {
+                  "n": 5
+                },
+                "visible": true
+              },
+              {
+                "datos": {
+                  "n": -1
+                },
+                "llama": "$I(&n)",
+                "queda": {
+                  "n": 0
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "void sumarUno(int *n) {\n  *n = *n + 1;\n}"
+    },
+    {
+      "id": "referencia-llamar",
+      "titulo": "Llamarla con &",
+      "sigueDe": "referencia-incrementar",
+      "dado": "int contador = 7;",
+      "enunciado": "La función {I} ya está definida. Llámela para que sume 1 a la variable `contador`.",
+      "requiere": [
+        {
+          "llamada": {
+            "funcion": "$I",
+            "argumentos": [
+              "&contador"
+            ]
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "queda": {
+                  "contador": 8
+                },
+                "visible": true
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "{I}(&contador);"
+    },
+    {
+      "id": "referencia-intercambiar",
+      "titulo": "Intercambiar dos variables",
+      "en": "archivo",
+      "enunciado": "Escriba una función que reciba dos números enteros por referencia y intercambie sus valores: lo que valía la primera variable pasa a la segunda, y al revés. Póngale el nombre que quiera.",
+      "requiere": [
+        {
+          "funcion": {
+            "retorna": "void",
+            "parametros": [
+              {
+                "tipo": "entero",
+                "referencia": true
+              },
+              {
+                "tipo": "entero",
+                "referencia": true
+              }
+            ],
+            "capturar": "X"
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "datos": {
+                  "a": 3,
+                  "b": 8
+                },
+                "llama": "$X(&a, &b)",
+                "queda": {
+                  "a": 8,
+                  "b": 3
+                },
+                "visible": true
+              },
+              {
+                "datos": {
+                  "a": -1,
+                  "b": 0
+                },
+                "llama": "$X(&a, &b)",
+                "queda": {
+                  "a": 0,
+                  "b": -1
+                }
+              },
+              {
+                "datos": {
+                  "a": 5,
+                  "b": 5
+                },
+                "llama": "$X(&a, &b)",
+                "queda": {
+                  "a": 5,
+                  "b": 5
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "void intercambiar(int *a, int *b) {\n  int aux;\n\n  aux = *a;\n  *a = *b;\n  *b = aux;\n}"
+    },
+    {
+      "id": "referencia-dos-resultados",
+      "titulo": "Devolver dos resultados",
+      "en": "archivo",
+      "enunciado": "Una función con `return` solo puede devolver un valor. Escriba una función que reciba cuatro números enteros: el dividendo, el divisor y dos variables por referencia, donde deje el cociente y el resto de la división. Póngale el nombre que quiera.",
+      "requiere": [
+        {
+          "funcion": {
+            "retorna": "void",
+            "parametros": [
+              {
+                "tipo": "entero"
+              },
+              {
+                "tipo": "entero"
+              },
+              {
+                "tipo": "entero",
+                "referencia": true
+              },
+              {
+                "tipo": "entero",
+                "referencia": true
+              }
+            ],
+            "capturar": "Q"
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "datos": {
+                  "c": 0,
+                  "r": 0
+                },
+                "llama": "$Q(17, 5, &c, &r)",
+                "queda": {
+                  "c": 3,
+                  "r": 2
+                },
+                "visible": true
+              },
+              {
+                "datos": {
+                  "c": 0,
+                  "r": 0
+                },
+                "llama": "$Q(20, 4, &c, &r)",
+                "queda": {
+                  "c": 5,
+                  "r": 0
+                }
+              },
+              {
+                "datos": {
+                  "c": 0,
+                  "r": 0
+                },
+                "llama": "$Q(3, 7, &c, &r)",
+                "queda": {
+                  "c": 0,
+                  "r": 3
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "void dividir(int dividendo, int divisor, int *cociente, int *resto) {\n  *cociente = dividendo / divisor;\n  *resto = dividendo % divisor;\n}"
+    }
+  ]
+}
