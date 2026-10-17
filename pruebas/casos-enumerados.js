@@ -42,6 +42,9 @@ export const CASOS_DE_ENUMERADOS = [
   declarar(1, 'uno de mas', ENUM_TURNO('  MANANA,\n  TARDE,\n  NOCHE,\n  MADRUGADA'), 'ok', { avisos: ['ENUMERADOR_DE_MAS'] }),
   declarar(1, 'empieza en uno', ENUM_TURNO('  MANANA = 1,\n  TARDE,\n  NOCHE'), ['ENUMERADOR_VALOR']),
   declarar(1, 'otro nombre', 'enum Horario {\n  MANANA,\n  TARDE,\n  NOCHE\n};', ['ENUM_ETIQUETA']),
+  declarar(1, 'con typedef y sin etiqueta', 'typedef enum {\n  MANANA,\n  TARDE,\n  NOCHE\n} Turno;', ['ENUM_CON_TYPEDEF'], {
+    dice: ['sin el alias', 'no use `typedef`'],
+  }),
   declarar(1, 'sin nombre', 'enum {\n  MANANA,\n  TARDE,\n  NOCHE\n};', ['ENUM_ETIQUETA']),
   declarar(1, 'una estructura', 'struct Turno {\n  int MANANA;\n};', ['ENUM_FALTA']),
   // 2: la variable
@@ -130,7 +133,13 @@ export const CASOS_DE_ENUMERADOS = [
     dice: ['`turno` termina valiendo `7` y debería valer `MANANA`'],
   }),
   leer(3, 'con || en vez de &&', 'scanf("%d", &opcion);\nif (opcion >= 0 || opcion <= 2) {\n  turno = opcion;\n} else {\n  printf("Opcion invalida");\n}', ['RESULTADO_VALOR_DISTINTO']),
-  leer(3, 'sin el mensaje', 'scanf("%d", &opcion);\nif (opcion >= 0 && opcion <= 2) {\n  turno = (TTurno) opcion;\n}', ['MUESTRA_FALTA']),
+  leer(3, 'el mensaje con tildes', 'scanf("%d", &opcion);\nif (opcion >= 0 && opcion <= 2) {\n  turno = (TTurno) opcion;\n} else {\n  printf("Opción inválida");\n}', ['MUESTRA_CASI_IGUAL'], {
+    dice: ['las mismas mayúsculas, tildes y espacios'],
+  }),
+  leer(3, 'el tipo como funcion', 'scanf("%d", &opcion);\nif (opcion >= 0 && opcion <= 2) {\n  turno = TTurno(opcion);\n} else {\n  printf("Opcion invalida");\n}', ['CONVERSION_COMO_FUNCION'], {
+    dice: ['(TTurno) opcion'],
+  }),
+  leer(3, 'sin el mensaje','scanf("%d", &opcion);\nif (opcion >= 0 && opcion <= 2) {\n  turno = (TTurno) opcion;\n}', ['MUESTRA_FALTA']),
   // 4: leer una letra
   leer(4, 'con if', "scanf(\" %c\", &letra);\nif (letra == 'M') {\n  turno = MANANA;\n} else if (letra == 'T') {\n  turno = TARDE;\n} else {\n  turno = NOCHE;\n}"),
   leer(4, 'con switch', "scanf(\" %c\", &letra);\nswitch (letra) {\n  case 'M':\n    turno = MANANA;\n    break;\n  case 'T':\n    turno = TARDE;\n    break;\n  case 'N':\n    turno = NOCHE;\n    break;\n}"),
@@ -145,7 +154,10 @@ export const CASOS_DE_ENUMERADOS = [
   mostrar(1, 'con los numeros', SWITCH_TURNO([CASO('0', 'Manana'), CASO('1', 'Tarde'), CASO('2', 'Noche')].join('\n')), 'ok', { mejoras: ['ENUM_CON_NUMERO'] }),
   mostrar(1, 'sin un break', SWITCH_TURNO([CASO('MANANA', 'Manana', false), CASO('TARDE', 'Tarde'), CASO('NOCHE', 'Noche')].join('\n')), ['SWITCH_SIN_BREAK']),
   mostrar(1, 'con if', 'if (turno == MANANA) {\n  printf("Manana");\n} else if (turno == TARDE) {\n  printf("Tarde");\n} else {\n  printf("Noche");\n}', ['SWITCH_FALTA']),
-  mostrar(1, 'con otro texto', SWITCH_TURNO([CASO('MANANA', 'manana'), CASO('TARDE', 'Tarde'), CASO('NOCHE', 'Noche')].join('\n')), ['MUESTRA_DISTINTA']),
+  mostrar(1, 'con otra mayuscula', SWITCH_TURNO([CASO('MANANA', 'manana'), CASO('TARDE', 'Tarde'), CASO('NOCHE', 'Noche')].join('\n')), ['MUESTRA_CASI_IGUAL'], {
+    dice: ['exactamente el de la consigna'],
+  }),
+  mostrar(1, 'con otro texto', SWITCH_TURNO([CASO('MANANA', 'Buenos dias'), CASO('TARDE', 'Tarde'), CASO('NOCHE', 'Noche')].join('\n')), ['MUESTRA_DISTINTA']),
   mostrar(1, 'con un caso que falta', SWITCH_TURNO([CASO('MANANA', 'Manana'), CASO('TARDE', 'Tarde')].join('\n')), ['MUESTRA_FALTA']),
   // 2: cuestionario, sin break
   mostrar(2, 'sin break: solo el caso', '0', ['OPCION_SOLO_EL_CASO']),

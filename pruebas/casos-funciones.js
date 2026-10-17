@@ -66,7 +66,9 @@ export const CASOS_DE_FUNCIONES = [
   parametros(1, 'con una variable', FUNCION('void doble(int n)', '  int d = n * 2;\n\n  printf("%d", d);')),
   parametros(1, 'el triple', FUNCION('void doble(int n)', '  printf("%d", n * 3);'), ['MUESTRA_DISTINTA']),
   parametros(1, 'sin parametros', FUNCION('void doble(void)', '  printf("%d", 8);'), ['PARAMETROS_CANTIDAD']),
-  parametros(1, 'devuelve en vez de mostrar', FUNCION('int doble(int n)', '  return n * 2;'), ['FUNCION_TIPO_RETORNO']),
+  parametros(1, 'devuelve en vez de mostrar', FUNCION('int doble(int n)', '  return n * 2;'), ['DEVUELVE_EN_VEZ_DE_MOSTRAR'], {
+    dice: ['muestre el resultado con `printf`, no que lo devuelva'],
+  }),
   parametros(1, 'un parametro float', FUNCION('void doble(float n)', '  printf("%d", n * 2);'), ['PARAMETRO_TIPO']),
   // ---- 2: llamarla con un valor ----
   parametros(2, 'la llamada', 'mostrarDoble(21);', 'ok', { mejoras: [] }),
@@ -111,8 +113,13 @@ export const CASOS_DE_FUNCIONES = [
   devolver(2, 'el promedio', FUNCION('float promedio(int a, int b)', '  return (a + b) / 2.0;'), 'ok', { mejoras: [] }),
   devolver(2, 'con una variable real', FUNCION('float promedio(int a, int b)', '  float p = (a + b) / 2.0;\n\n  return p;')),
   devolver(2, 'con un cast', FUNCION('float promedio(int a, int b)', '  return (float)(a + b) / 2;')),
-  devolver(2, 'con division entera', FUNCION('float promedio(int a, int b)', '  return (a + b) / 2;'), ['DEVUELVE_DISTINTO']),
-  devolver(2, 'devuelve un int', FUNCION('int promedio(int a, int b)', '  return (a + b) / 2;'), ['FUNCION_TIPO_RETORNO']),
+  devolver(2, 'con division entera', FUNCION('float promedio(int a, int b)', '  return (a + b) / 2;'), ['DEVUELVE_DISTINTO'], {
+    dice: ['Dividir dos enteros da un entero'],
+  }),
+  devolver(2, 'float como funcion', FUNCION('float promedio(int a, int b)', '  return float(a + b) / 2;'), ['CONVERSION_COMO_FUNCION'], {
+    dice: ['(float) (a + b)'],
+  }),
+  devolver(2, 'devuelve un int',FUNCION('int promedio(int a, int b)', '  return (a + b) / 2;'), ['FUNCION_TIPO_RETORNO']),
   devolver(2, 'muestra en vez de devolver', FUNCION('void promedio(int a, int b)', '  printf("%f", (a + b) / 2.0);'), [
     'MUESTRA_EN_VEZ_DE_DEVOLVER',
   ]),
@@ -150,7 +157,9 @@ export const CASOS_DE_FUNCIONES = [
     'PARAMETRO_SIN_ASTERISCO_AL_USARLO',
   ], { dice: ['`*n` cada vez que se lo usa'] }),
   referencia(2, 'suma dos', FUNCION('void sumarUno(int *n)', '  *n = *n + 2;'), ['RESULTADO_VALOR_DISTINTO']),
-  referencia(2, 'devuelve en vez de modificar', FUNCION('int sumarUno(int n)', '  return n + 1;'), ['FUNCION_TIPO_RETORNO']),
+  referencia(2, 'devuelve en vez de modificar', FUNCION('int sumarUno(int n)', '  return n + 1;'), ['DEVUELVE_EN_VEZ_DE_MOSTRAR'], {
+    dice: ['no que lo devuelva con `return`'],
+  }),
   // ---- 3: llamarla con & ----
   referencia(3, 'la llamada', 'sumarUno(&contador);', 'ok', { mejoras: [] }),
   referencia(3, 'sin el &', 'sumarUno(contador);', ['LLAMADA_SIN_AMPERSAND'], { dice: ['`&` al llamar'] }),
@@ -205,6 +214,6 @@ export const CASOS_DE_FUNCIONES = [
     5,
     'devuelve el cociente',
     FUNCION('int dividir(int a, int b, int *r)', '  *r = a % b;\n  return a / b;'),
-    ['FUNCION_TIPO_RETORNO']
+    ['DEVUELVE_EN_VEZ_DE_MOSTRAR']
   ),
 ];

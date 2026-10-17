@@ -39,7 +39,7 @@ export const CASOS_DE_AMBITO = [
   }),
   locales(4, 'un solo parametro', FUNCION('void mostrarPromedio(int suma)', '  printf("%.1f", (float) suma / cantidad);'), ['PARAMETROS_CANTIDAD']),
   locales(4, 'division entera', FUNCION('void promedio(int a, int b)', '  printf("%.1f", a / b);'), ['FORMATO_NO_CORRESPONDE_AL_TIPO']),
-  locales(4, 'devuelve en vez de mostrar', FUNCION('float promedio(int a, int b)', '  return (float) a / b;'), ['FUNCION_TIPO_RETORNO']),
+  locales(4, 'devuelve en vez de mostrar', FUNCION('float promedio(int a, int b)', '  return (float) a / b;'), ['DEVUELVE_EN_VEZ_DE_MOSTRAR']),
   // ---- 5: como sale un valor ----
   locales(5, 'como sale un valor: la correcta', '1'),
   locales(5, 'como sale un valor: otra variable', '0', ['OPCION_OTRA_VARIABLE']),

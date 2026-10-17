@@ -377,6 +377,7 @@ export function corregir(
     const modelo = construirModelo(arbol, desde);
     revisarNombres(modelo, error);
     revisarFunciones(modelo, error, consigna.requiere.some((r) => r.llamada));
+    revisarConversiones(modelo, error);
     revisarRedefiniciones(modelo, error, practicas.includes('constantes') ? mejora : null);
     // Cuando la consigna pide los caracteres de a uno, o vaciar la cadena,
     // aconsejarle una funcion de la biblioteca seria mandarlo a otra cosa.
@@ -526,6 +527,17 @@ export function corregir(
 
     // Con "etiqueta", el enumerado tiene que llamarse asi (enum Turno { ... }).
     if (regla.etiqueta && def.etiqueta !== regla.etiqueta) {
+      // Con typedef el enumerado no lleva nombre despues de enum: lo que pide la consigna es otra cosa.
+      const conAlias =
+        !def.etiqueta && modelo.aliases.some((a) => a.tipo.defId === def.id && a.tipo.clase === 'enum' && !a.punteros && !a.arreglo.length);
+      if (conAlias) {
+        error(
+          'ENUM_CON_TYPEDEF',
+          `En esta consigna se debe declarar el enumerado sin el alias: no use ${BT}typedef${BT}. El nombre ${BT}${regla.etiqueta}${BT} va entre la palabra ${BT}enum${BT} y la llave, como ${BT}enum ${regla.etiqueta} { ... };${BT}.`,
+          def.fila
+        );
+        return;
+      }
       error(
         'ENUM_ETIQUETA',
         def.etiqueta
@@ -581,6 +593,18 @@ export function corregir(
     const escrito = textoDeTipo(f.tipo) + (f.punteros ? ' ' + '*'.repeat(f.punteros) : '');
     if (regla.retorna === 'void') {
       if (!(real.clase === 'primitivo' && real.nombre === 'void' && !f.punteros)) {
+        // Devuelve el resultado en vez de mostrarlo (o de dejarlo en la variable de afuera).
+        if (f.retornos.some((r) => r.conValor) && !f.muestra) {
+          const porReferencia = (regla.parametros || []).some((p) => p.referencia);
+          error(
+            'DEVUELVE_EN_VEZ_DE_MOSTRAR',
+            porReferencia
+              ? `La consigna pide que la función deje el resultado en la variable de afuera, no que lo devuelva con ${BT}return${BT}: es ${BT}void${BT}, o sea que no devuelve nada, y modifica lo que recibe por referencia. ${FORMULA_REFERENCIA}`
+              : `La consigna pide que la función muestre el resultado con ${BT}printf${BT}, no que lo devuelva: es ${BT}void${BT}, o sea que no devuelve nada, y el resultado se muestra adentro de la función.`,
+            f.fila
+          );
+          return;
+        }
         error(
           'FUNCION_TIPO_RETORNO',
           `La función no tiene que devolver ningún valor: el tipo que devuelve es ${BT}void${BT}. Está declarada como ${BT}${escrito}${BT}.`,
@@ -3417,13 +3441,24 @@ export function corregir(
       const sale = corrida.salida.split('\n').map((l) => l.replace(/\s+$/, '')).join('\n').replace(/\s+$/, '');
       const debe = String(caso.salida).trim();
       if (sale !== debe) {
+        // Igual salvo tildes, mayusculas o espacios: el texto tiene que ser exacto.
+        const plano = (t) =>
+          t
+            .normalize('NFD')
+            .replace(/[̀-ͯ]/g, '')
+            .toLowerCase()
+            .replace(/[ \t]+/g, ' ')
+            .trim();
+        const casiIgual = sale && debe && plano(sale) === plano(debe);
         error(
-          sale ? 'MUESTRA_DISTINTA' : 'MUESTRA_FALTA',
+          casiIgual ? 'MUESTRA_CASI_IGUAL' : sale ? 'MUESTRA_DISTINTA' : 'MUESTRA_FALTA',
           !sale
             ? `${antes}${elPrograma} no muestra nada: la consigna pide mostrar el texto con \`printf\`.`
             : !debe
               ? `${antes}${elPrograma} muestra un texto, y con ese valor no tiene que mostrar nada:`
-              : `${antes}${elPrograma} muestra otro texto:`,
+              : casiIgual
+                ? `${antes}${elPrograma} muestra casi lo pedido, pero el texto tiene que ser exactamente el de la consigna, con las mismas mayúsculas, tildes y espacios:`
+                : `${antes}${elPrograma} muestra otro texto:`,
           undefined,
           !sale
             ? [{ titulo: 'Tiene que mostrar:', lineas: [debe] }]
@@ -3686,9 +3721,15 @@ export function corregir(
           if (Math.abs(dio.valor - debe) > 1e-9) {
             const con = caso.visible || !caso.datos ? '' : `${conLosValores(caso.vistos || caso.datos)}, `;
             const decir = (v) => (typeof caso.devuelve === 'string' ? deLetra(v) : v);
+            // Un resultado con decimales que llega sin ellos: la division entera.
+            const divisionEntera =
+              typeof debe === 'number' && !Number.isInteger(debe) && Number.isInteger(dio.valor) && dio.valor === Math.trunc(debe);
             error(
               'DEVUELVE_DISTINTO',
-              `${con}${BT}${llamada}${BT} devuelve ${BT}${decir(dio.valor)}${BT} y debería devolver ${BT}${decir(debe)}${BT}.`
+              `${con}${BT}${llamada}${BT} devuelve ${BT}${decir(dio.valor)}${BT} y debería devolver ${BT}${decir(debe)}${BT}.` +
+                (divisionEntera
+                  ? ' Dividir dos enteros da un entero, sin decimales: para que el resultado los tenga, al menos uno de los dos tiene que ser decimal (por ejemplo `2.0`, o con `(float)` adelante).'
+                  : '')
             );
             return;
           }
@@ -6016,6 +6057,8 @@ function revisarFunciones(modelo, error, conReglaDeLlamada = false) {
   const nombres = [...new Set(propias.map((f) => f.nombre))];
   for (const l of modelo.llamadas.filter((x) => x.nuevo)) {
     if (!/^[A-Za-z_]\w*$/.test(l.funcion) || DE_LA_BIBLIOTECA_C.has(l.funcion)) continue;
+    // Un tipo escrito como funcion lo dice revisarConversiones.
+    if (TIPOS_PRIMITIVOS.has(l.funcion) || modelo.aliases.some((a) => a.nombre === l.funcion)) continue;
     if (!nombres.includes(l.funcion)) {
       if (conReglaDeLlamada) continue;
       const parecida = nombres.find(
@@ -6041,6 +6084,23 @@ function revisarFunciones(modelo, error, conReglaDeLlamada = false) {
       return;
     }
   }
+}
+
+// Un tipo escrito como una funcion, TTurno(opcion) o float(x): eso es de C++.
+// En C la conversion lleva el tipo entre parentesis, delante del valor.
+const TIPOS_PRIMITIVOS = new Set(['int', 'float', 'double', 'char', 'long', 'short']);
+function revisarConversiones(modelo, error) {
+  const tipos = new Set([...modelo.aliases.map((a) => a.nombre), ...TIPOS_PRIMITIVOS]);
+  const l = modelo.llamadas.find((x) => x.nuevo && tipos.has(x.funcion));
+  if (!l) return;
+  const argumentos = l.argumentos.map((a) => a.texto).join(', ');
+  // Una cuenta entre parentesis, para que la conversion sea de toda la cuenta.
+  const valor = /^[\w.]+$/.test(argumentos) ? argumentos : `(${argumentos})`;
+  error(
+    'CONVERSION_COMO_FUNCION',
+    `${BT}${l.funcion}(${argumentos})${BT} se lee como la llamada a una función, pero ${BT}${l.funcion}${BT} es un tipo. Para convertir un valor a un tipo, el tipo va entre paréntesis y delante del valor: ${BT}(${l.funcion}) ${valor}${BT}.`,
+    l.fila
+  );
 }
 
 function revisarNombres(modelo, error) {
