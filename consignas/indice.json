@@ -90,6 +90,18 @@
         "funciones-devolver.json",
         "funciones-referencia.json"
       ]
+    },
+    {
+      "id": "ambito",
+      "agrupar": true,
+      "oculto": true,
+      "titulo": "Ámbito de las variables",
+      "descripcion": "Dónde vive cada variable y hasta dónde se la puede usar: locales, bloques y globales.",
+      "series": [
+        "ambito-locales.json",
+        "ambito-bloques.json",
+        "ambito-globales.json"
+      ]
     }
   ]
 }

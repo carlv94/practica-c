@@ -1219,6 +1219,27 @@ Falta la serie de refactorizar código repetido (el dominio se define después).
   Estos dos solo cuando el programa define funciones propias.
 - **La regla `llamada`** acepta `"funcion": "$F"`.
 
+### Ámbito de las variables
+
+Grupo "Ámbito de las variables" (oculto hasta habilitarlo): tres series,
+`ambito-locales.json`, `ambito-bloques.json` y `ambito-globales.json`. Casi
+todo son cuestionarios (predecir qué muestra o si compila) y unas pocas
+consignas de código (pasar por parámetro, usar lo que devuelve, declarar donde
+se la necesita, reescribir sin global).
+
+- **El simulador tiene ámbito de bloque**: lo declarado entre llaves, o en el
+  encabezado de un `for`, desaparece al terminar el bloque, y una variable de
+  adentro con el mismo nombre tapa a la de afuera.
+- **`NOMBRE_FUERA_DE_ALCANCE`**: un nombre declarado más arriba pero en un lugar
+  que ya no existe. Si es de otra función, el mensaje dice que es local de esa
+  función y que lo que otra necesita le llega por parámetros y `return`; si es de
+  un bloque que terminó, que hay que declararla antes del bloque.
+  **`NOMBRE_USADO_ANTES`**: se usa antes de declararla.
+- **Regla `sinGlobales`**: `{ "sinGlobales": true }`. Error `GLOBAL_DE_MAS` si lo
+  que escribió el alumno declara una variable afuera de las funciones.
+- **Código dado de la consigna**: se usan `archivoDado`, `ejemplo` y `salida`
+  (ver las series de funciones).
+
 ### Consignas de opciones
 
 En un enunciado, lo que va entre acentos graves (`nombre`, `"Maria"`, `1`) se

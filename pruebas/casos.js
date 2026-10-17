@@ -25,6 +25,7 @@ import {
 import { CASOS_DE_ENUMERADOS } from './casos-enumerados.js';
 import { CASOS_DE_UNIONES } from './casos-uniones.js';
 import { CASOS_DE_FUNCIONES } from './casos-funciones.js';
+import { CASOS_DE_AMBITO } from './casos-ambito.js';
 import { CASOS_DE_DECLARAR_ESTRUCTURAS } from './casos-estructuras-declarar.js';
 
 // Las sentencias de la serie de cadenas.
@@ -1407,5 +1408,6 @@ export const CASOS = [
   ...CASOS_DE_ENUMERADOS,
   ...CASOS_DE_UNIONES,
   ...CASOS_DE_FUNCIONES,
+  ...CASOS_DE_AMBITO,
   ...CASOS_DE_DECLARAR_ESTRUCTURAS,
 ];

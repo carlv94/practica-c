@@ -1,0 +1,194 @@
+{
+  "id": "ambito-globales",
+  "titulo": "Variables globales",
+  "continua": false,
+  "dentroDeMain": true,
+  "descripcion": "Una variable declarada fuera de todas las funciones la ven y la pueden modificar todas. Por eso se desaconseja: es mejor pasar los valores con parámetros y `return`.",
+  "cabecera": "#include <stdio.h>",
+  "consignas": [
+    {
+      "id": "globales-q-ver",
+      "titulo": "Una variable que ven todas las funciones",
+      "archivo": "int contador = 0;\n\nvoid sumarUno(void) {\n  contador = contador + 1;\n}",
+      "enunciado": "`contador` está declarada afuera de las funciones. ¿Qué muestra este programa?",
+      "codigo": "sumarUno();\nsumarUno();\nprintf(\"%d\", contador);",
+      "opciones": [
+        {
+          "texto": "`0`",
+          "codigo": "OPCION_COMO_LOCAL",
+          "explicacion": "Eso pasaría si `contador` fuera local de `sumarUno`. Pero está declarada afuera de las funciones: es una variable global, y `sumarUno` modifica esa misma variable."
+        },
+        {
+          "texto": "`2`",
+          "correcta": true,
+          "explicacion": "Una variable global la ven todas las funciones, y todas comparten la misma. `sumarUno` la modifica dos veces, y `main` ve el resultado."
+        },
+        {
+          "texto": "No compila: `contador` no existe en `main`",
+          "codigo": "OPCION_ES_UN_ERROR",
+          "explicacion": "`contador` está declarada afuera de todas las funciones, así que `main` la ve igual que `sumarUno`. Compila y anda."
+        }
+      ]
+    },
+    {
+      "id": "globales-q-tapa",
+      "titulo": "Una local que tapa a una global",
+      "archivo": "int limite = 10;\n\nvoid mostrar(void) {\n  int limite = 3;\n\n  printf(\"%d \", limite);\n}",
+      "enunciado": "¿Qué muestra este programa?",
+      "codigo": "mostrar();\nprintf(\"%d\", limite);",
+      "opciones": [
+        {
+          "texto": "`10 10`",
+          "codigo": "OPCION_USA_LA_GLOBAL",
+          "explicacion": "`mostrar` declara su propia variable `limite`, que tapa a la global dentro de la función. Ahí vale `3`."
+        },
+        {
+          "texto": "`3 10`",
+          "correcta": true,
+          "explicacion": "Dentro de `mostrar`, la variable local `limite` tapa a la global: vale `3`. Afuera de `mostrar`, la global sigue valiendo `10`. Son dos variables distintas con el mismo nombre."
+        },
+        {
+          "texto": "`3 3`",
+          "codigo": "OPCION_SE_MODIFICO",
+          "explicacion": "La variable de `mostrar` es otra, distinta de la global: darle un valor no cambia a la de afuera."
+        }
+      ]
+    },
+    {
+      "id": "globales-q-porque",
+      "titulo": "Por qué se desaconsejan",
+      "enunciado": "Las variables globales funcionan, pero se desaconseja usarlas. ¿Cuál es la razón principal?",
+      "opciones": [
+        {
+          "texto": "Ocupan más memoria que las locales",
+          "codigo": "OPCION_MEMORIA",
+          "explicacion": "No es por la memoria. El problema es otro: cualquier función puede modificarlas."
+        },
+        {
+          "texto": "Cualquier función las puede modificar, y cuesta saber cuál fue la que cambió su valor",
+          "correcta": true,
+          "explicacion": "Como todas las funciones ven la misma variable, un valor inesperado puede venir de cualquiera de ellas. Con parámetros y `return` se ve en cada llamada qué entra y qué sale de cada función."
+        },
+        {
+          "texto": "No se pueden usar dentro de las funciones",
+          "codigo": "OPCION_ES_UN_ERROR",
+          "explicacion": "Sí se pueden usar: todas las funciones las ven. Justamente por eso se desaconseja usarlas."
+        }
+      ]
+    },
+    {
+      "id": "globales-devolver",
+      "titulo": "Reescribirla sin variable global",
+      "en": "archivo",
+      "ejemplo": {
+        "texto": "Esta función acumula en una variable global:",
+        "codigo": "int total = 0;\n\nvoid acumular(int n) {\n  total = total + n;\n}"
+      },
+      "enunciado": "Escriba una función que haga lo mismo sin variables globales: que reciba el total actual y el número que se suma, y devuelva el total nuevo. Con `10` y `5` devuelve `15`. Póngale el nombre que quiera.",
+      "requiere": [
+        {
+          "sinGlobales": true
+        },
+        {
+          "funcion": {
+            "retorna": "entero",
+            "parametros": [
+              {
+                "tipo": "entero"
+              },
+              {
+                "tipo": "entero"
+              }
+            ],
+            "capturar": "A"
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "llama": "$A(10, 5)",
+                "devuelve": 15,
+                "visible": true
+              },
+              {
+                "llama": "$A(0, 7)",
+                "devuelve": 7
+              },
+              {
+                "llama": "$A(-3, 3)",
+                "devuelve": 0
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "int acumular(int total, int n) {\n  return total + n;\n}"
+    },
+    {
+      "id": "globales-referencia",
+      "titulo": "Reescribirla modificando la variable de afuera",
+      "en": "archivo",
+      "ejemplo": {
+        "texto": "La misma función con la variable global:",
+        "codigo": "int total = 0;\n\nvoid acumular(int n) {\n  total = total + n;\n}"
+      },
+      "enunciado": "Otra manera de reemplazar la global es pasarle a la función la variable de afuera, para que la modifique. Escriba una función que reciba por referencia el total y por valor el número que se suma, y le sume el número al total. Póngale el nombre que quiera.",
+      "requiere": [
+        {
+          "sinGlobales": true
+        },
+        {
+          "funcion": {
+            "retorna": "void",
+            "parametros": [
+              {
+                "tipo": "entero",
+                "referencia": true
+              },
+              {
+                "tipo": "entero"
+              }
+            ],
+            "capturar": "R"
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "datos": {
+                  "total": 10
+                },
+                "llama": "$R(&total, 5)",
+                "queda": {
+                  "total": 15
+                },
+                "visible": true
+              },
+              {
+                "datos": {
+                  "total": 0
+                },
+                "llama": "$R(&total, 7)",
+                "queda": {
+                  "total": 7
+                }
+              },
+              {
+                "datos": {
+                  "total": -3
+                },
+                "llama": "$R(&total, 3)",
+                "queda": {
+                  "total": 0
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "void acumular(int *total, int n) {\n  *total = *total + n;\n}"
+    }
+  ]
+}

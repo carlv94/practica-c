@@ -1,0 +1,98 @@
+{
+  "id": "ambito-bloques",
+  "titulo": "Ámbito de bloque",
+  "continua": false,
+  "dentroDeMain": true,
+  "descripcion": "Una variable declarada dentro de unas llaves (un `if`, un ciclo) existe solo hasta la llave que cierra, y una del mismo nombre adentro tapa a la de afuera.",
+  "cabecera": "#include <stdio.h>",
+  "consignas": [
+    {
+      "id": "bloques-q-if",
+      "titulo": "Una variable declarada dentro de un if",
+      "enunciado": "¿Qué pasa con este programa?",
+      "codigo": "int edad = 20;\n\nif (edad >= 18) {\n  int descuento = 10;\n}\nprintf(\"%d\", descuento);",
+      "opciones": [
+        {
+          "texto": "Muestra `10`",
+          "codigo": "OPCION_VARIABLE_VISIBLE",
+          "explicacion": "`descuento` se declaró entre las llaves del `if`, y existe solo hasta la llave que cierra. Después del `if` ya no se la puede usar."
+        },
+        {
+          "texto": "No compila: `descuento` no existe fuera del `if`",
+          "correcta": true,
+          "explicacion": "Una variable vive hasta la llave que cierra el bloque donde se la declaró. `descuento` desaparece al terminar el `if`. Para usarla después, hay que declararla antes del `if`."
+        },
+        {
+          "texto": "Muestra `0`",
+          "codigo": "OPCION_VALOR_POR_DEFECTO",
+          "explicacion": "Una variable que ya no existe no vale `0`: directamente no se puede usar."
+        }
+      ]
+    },
+    {
+      "id": "bloques-q-for",
+      "titulo": "La variable del for",
+      "enunciado": "¿Qué pasa con este programa?",
+      "codigo": "for (int i = 0; i < 3; i++) {\n  printf(\"%d \", i);\n}\nprintf(\"%d\", i);",
+      "opciones": [
+        {
+          "texto": "Muestra `0 1 2 3`",
+          "codigo": "OPCION_VARIABLE_VISIBLE",
+          "explicacion": "El `i` declarado dentro del `for` existe solo mientras dura el ciclo. Después del ciclo ya no se lo puede usar."
+        },
+        {
+          "texto": "No compila: `i` no existe después del ciclo",
+          "correcta": true,
+          "explicacion": "Una variable declarada en el encabezado del `for` vive solo dentro del ciclo. Para usar `i` después, hay que declararla antes del `for`."
+        },
+        {
+          "texto": "Muestra `0 1 2 0`",
+          "codigo": "OPCION_VALOR_POR_DEFECTO",
+          "explicacion": "Después del ciclo, `i` no vuelve a valer `0`: directamente no existe."
+        }
+      ]
+    },
+    {
+      "id": "bloques-q-tapa",
+      "titulo": "Una variable que tapa a otra",
+      "enunciado": "¿Qué muestra este programa?",
+      "codigo": "int x = 1;\n\nif (x == 1) {\n  int x = 5;\n  printf(\"%d \", x);\n}\nprintf(\"%d\", x);",
+      "opciones": [
+        {
+          "texto": "`5 5`",
+          "codigo": "OPCION_SE_MODIFICO",
+          "explicacion": "Dentro del `if` se declara una variable nueva, también llamada `x`, que no cambia la de afuera. Al terminar el `if` esa variable desaparece y vuelve a verse la primera."
+        },
+        {
+          "texto": "`5 1`",
+          "correcta": true,
+          "explicacion": "El `x` declarado dentro del `if` tapa al de afuera mientras dura el bloque: ahí `x` vale `5`. Al cerrar la llave esa variable desaparece, y el `x` de afuera sigue valiendo `1`."
+        },
+        {
+          "texto": "No compila: `x` está declarada dos veces",
+          "codigo": "OPCION_ES_UN_ERROR",
+          "explicacion": "Se puede declarar una variable con el mismo nombre dentro de un bloque: tapa a la de afuera. Compila y anda, aunque no conviene hacerlo porque confunde."
+        }
+      ]
+    },
+    {
+      "id": "bloques-acumular",
+      "titulo": "Declarar donde se la necesita",
+      "enunciado": "Se quiere sumar los números del `1` al `5` con un ciclo y mostrar el total al terminar. Declare la variable donde corresponde, de modo que siga existiendo después del ciclo, y escriba el ciclo con `printf` para mostrar `15`.",
+      "salida": "15",
+      "requiere": [
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "salida": "15",
+                "visible": true
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "int suma = 0;\n\nfor (int i = 1; i <= 5; i++) {\n  suma = suma + i;\n}\nprintf(\"%d\", suma);"
+    }
+  ]
+}
