@@ -396,6 +396,27 @@ export const CASOS_DEL_SIMULADOR = [
     codigo: conFunciones('int mas(int n) {\n  int r = n + 1;\n  return r;\n}', 'int r = 100;\nint s;\ns = mas(1);'),
     espera: { variables: { r: 100, s: 2 } },
   },
+  // ---- ambito de bloque ----
+  {
+    nombre: 'bloques: una variable de un if no existe despues',
+    codigo: conFunciones('', 'int r = 1;\nif (r == 1) {\n  int d = 10;\n}\nr = d;'),
+    espera: { error: 'NombreDesconocido' },
+  },
+  {
+    nombre: 'bloques: el i de un for no existe despues',
+    codigo: conFunciones('', 'int r = 0;\nfor (int i = 0; i < 3; i++) {\n  r = r + i;\n}\nr = i;'),
+    espera: { error: 'NombreDesconocido' },
+  },
+  {
+    nombre: 'bloques: una variable de adentro tapa a la de afuera',
+    codigo: conFunciones('', 'int x = 1;\nint y = 0;\nif (x == 1) {\n  int x = 5;\n  y = x;\n}'),
+    espera: { variables: { x: 1, y: 5 } },
+  },
+  {
+    nombre: 'bloques: lo declarado antes del bloque se ve y se modifica adentro',
+    codigo: conFunciones('', 'int suma = 0;\nfor (int i = 1; i <= 3; i++) {\n  suma = suma + i;\n}'),
+    espera: { variables: { suma: 6 } },
+  },
   {
     nombre: 'funciones: una recursion',
     codigo: conFunciones(

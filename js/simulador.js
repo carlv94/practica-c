@@ -38,9 +38,11 @@ export class FueraDeRango extends Error {
 // Un nombre que no es una variable ni una constante conocida: casi siempre, un
 // error de tipeo.
 export class NombreDesconocido extends Error {
-  constructor(nombre, fila) {
+  // "indice" es donde se uso el nombre, para saber si se declaro mas arriba
+  // pero en un lugar que ya no existe (otra funcion, un bloque que termino).
+  constructor(nombre, fila, indice = null) {
     super(`${nombre} no esta declarado`);
-    Object.assign(this, { nombre, fila });
+    Object.assign(this, { nombre, fila, indice });
   }
 }
 
@@ -426,7 +428,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
         const valor = constante(n.text);
         if (valor == null) {
           if (DE_LA_BIBLIOTECA.includes(n.text)) sinVerificar(n, `el nombre ${n.text}`);
-          throw new NombreDesconocido(n.text, fila(n));
+          throw new NombreDesconocido(n.text, fila(n), n.startIndex);
         }
         return { constante: valor };
       }
@@ -462,7 +464,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
       const variable = variables.get(argumento.text);
       if (!variable) {
         if (constante(argumento.text) != null || DE_LA_BIBLIOTECA.includes(argumento.text)) return sinVerificar(n);
-        throw new NombreDesconocido(argumento.text, fila(n));
+        throw new NombreDesconocido(argumento.text, fila(n), argumento.startIndex);
       }
       if (variable.puntero) return variable.destino;
       // *v en un arreglo es su primera posicion.
@@ -496,7 +498,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
     if (base.type !== 'identifier') return sinVerificar(n);
     if (!estructurasVivas.has(base.text)) {
       if (variables.has(base.text) || constante(base.text) != null) return sinVerificar(n);
-      throw new NombreDesconocido(base.text, fila(n));
+      throw new NombreDesconocido(base.text, fila(n), base.startIndex);
     }
     const clave = [base.text, ...partes.filter((p) => p.campo).map((p) => p.campo)].join('.');
     const variable = variables.get(clave);
@@ -1326,8 +1328,16 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
       case 'expression_statement':
         if (n.namedChildren.length) evaluar(n.namedChildren[0]);
         return null;
-      case 'compound_statement':
-        return bloque(n);
+      case 'compound_statement': {
+        // Lo que se declara entre llaves vive hasta la llave que cierra.
+        const afuera = variables;
+        variables = new Ambito(afuera);
+        try {
+          return bloque(n);
+        } finally {
+          variables = afuera;
+        }
+      }
       case 'break_statement':
         return 'break';
       case 'continue_statement':
@@ -1347,15 +1357,22 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
         const inicio = n.childForFieldName('initializer');
         const prueba = n.childForFieldName('condition');
         const avance = n.childForFieldName('update');
-        if (inicio) (inicio.type === 'declaration' ? declarar : evaluar)(inicio);
-        while (!prueba || condicion(prueba)) {
-          contar(n);
-          const salida = sentencia(n.childForFieldName('body'));
-          if (salida === 'break') break;
-          if (salida === 'return') return 'return';
-          if (avance) evaluar(avance);
+        // Lo declarado en el encabezado del for vive solo mientras dura el ciclo.
+        const afuera = variables;
+        variables = new Ambito(afuera);
+        try {
+          if (inicio) (inicio.type === 'declaration' ? declarar : evaluar)(inicio);
+          while (!prueba || condicion(prueba)) {
+            contar(n);
+            const salida = sentencia(n.childForFieldName('body'));
+            if (salida === 'break') break;
+            if (salida === 'return') return 'return';
+            if (avance) evaluar(avance);
+          }
+          return null;
+        } finally {
+          variables = afuera;
         }
-        return null;
       }
       case 'switch_statement': {
         // Se busca el "case" con ese valor (o el default) y se sigue desde ahi,

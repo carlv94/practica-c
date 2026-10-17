@@ -421,6 +421,7 @@ export function corregir(
     if (regla.union) return reglaStruct(regla.union, modelo, true);
     if (regla.funcion) return reglaFuncion(regla.funcion, modelo);
     if (regla.prototipo) return reglaPrototipo(regla.prototipo, modelo);
+    if (regla.sinGlobales) return reglaSinGlobales(modelo);
     if (regla.enum) return reglaEnum(regla.enum, modelo);
     if (regla.variable) return reglaVariable(regla.variable, modelo);
     if (regla.alias) return reglaAlias(regla.alias, modelo);
@@ -679,6 +680,19 @@ export function corregir(
       return;
     }
     if (regla.capturar) nuevas[regla.capturar] = f.nombre;
+  }
+
+  // La consigna pide no usar variables globales: ninguna declaracion fuera de
+  // las funciones en lo que escribio el alumno.
+  //   { "sinGlobales": true }
+  function reglaSinGlobales(modelo) {
+    const global = modelo.variables.find((v) => v.nuevo && !v.local);
+    if (!global) return;
+    error(
+      'GLOBAL_DE_MAS',
+      `${BT}${global.nombre}${BT} está declarada afuera de las funciones, así que es una variable global: la consigna pide no usarlas. Lo que la función necesita le llega por parámetros, y lo que calcula sale con ${BT}return${BT} o por referencia.`,
+      global.fila
+    );
   }
 
   // El prototipo de una funcion: su encabezado seguido de ";", para poder
@@ -2866,7 +2880,26 @@ export function corregir(
         );
       } else if (e instanceof NombreDesconocido) {
         const declarados = [...modelo.constantes.map((c) => c.nombre), ...modelo.variables.map((v) => v.nombre)];
-        if (declarados.includes(e.nombre)) {
+        // Declarada mas arriba, pero en un lugar que ya no existe: otra funcion o
+        // un bloque que termino. (Usada antes de declararla es otro caso.)
+        const lejana = e.indice != null && modelo.variables.find((v) => v.nombre === e.nombre && v.local && v.indice < e.indice);
+        if (lejana) {
+          const duena = modelo.funciones.find((f) => !f.prototipo && f.posicion <= lejana.indice && lejana.indice < f.fin);
+          const usadaEn = modelo.funciones.find((f) => !f.prototipo && f.posicion <= e.indice && e.indice < f.fin);
+          error(
+            'NOMBRE_FUERA_DE_ALCANCE',
+            duena && usadaEn && duena !== usadaEn
+              ? `${conContexto}\`${e.nombre}\` está declarada dentro de \`${duena.nombre}\`: es una variable local de esa función y las demás no la ven. Cada función tiene las suyas; lo que otra necesita le llega por parámetros, y lo que calcula sale con \`return\`.`
+              : `${conContexto}\`${e.nombre}\` se declaró entre llaves (un \`if\`, un ciclo) y desaparece cuando el bloque termina: acá ya no existe. Para usarla después, hay que declararla antes del bloque.`,
+            e.fila
+          );
+        } else if (e.indice != null && modelo.variables.some((v) => v.nombre === e.nombre && v.local && v.indice > e.indice)) {
+          error(
+            'NOMBRE_USADO_ANTES',
+            `${conContexto}\`${e.nombre}\` se usa antes de declararla: la declaración tiene que estar más arriba que el primer uso.`,
+            e.fila
+          );
+        } else if (declarados.includes(e.nombre)) {
           // Esta declarado, pero no sabemos su valor: no es un error del alumno.
           aviso('EJECUCION_NO_VERIFICADA', 'No pude seguir este código para comprobarlo. Verifique que haga lo que pide la consigna.');
         } else {
