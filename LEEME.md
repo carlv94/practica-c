@@ -1172,7 +1172,11 @@ cadena de necesidades: cada tema nace de un problema del anterior.
 3. `funciones-ambito.json`: ámbito de una variable (una función, unas llaves).
 4. `funciones-globales.json`: las globales, la salida tentadora, y por qué
    conviene evitarlas.
-5. `funciones-parametros.json`, 6. `funciones-devolver.json` (en preparación).
+5. `funciones-parametros.json`: parámetros por valor (la llamada asigna el
+   argumento al parámetro, y por eso es una copia).
+6. `funciones-parametros-compuestos.json`: estructuras (se copian), y
+   arreglos, cadenas y tablas (no se copian), solo para mostrar.
+7. `funciones-devolver.json` (en preparación).
 
 `funciones-referencia.json` está por ahora en un grupo "Punteros" provisorio,
 también oculto: es la serie 3 del grupo Punteros, que se arma después.
@@ -1184,6 +1188,18 @@ El plan de la reestructuración está en la memoria del proyecto
   consigna pide declarar una variable global: `GLOBAL_FALTA`, y
   `GLOBAL_DENTRO_DE_FUNCION` si la declaró adentro de una función (el mensaje
   explica que desaparece al terminar).
+- **Parámetros de la regla `funcion`**: además de `entero`, `real` y `caracter`,
+  `{ "tipo": "estructura" }` (una estructura por valor, no unión) y
+  `{ "tipo": "entero", "arreglo": true, "dimensiones": 2 }` (una tabla; sin
+  `dimensiones`, un arreglo cualquiera). Una cadena es un arreglo de `caracter`.
+- **Probar una función con datos compuestos**: el caso de `ejecuta` puede traer
+  `antes` (declaraciones escritas, p. ej. `"TFecha f;"`, cuyos campos salen de
+  `datos` con `"f.dia": 10`), un arreglo o una tabla en `datos` (una lista de
+  listas) y un **texto** (`"datos": { "texto": "Ana" }`, que es una cadena con su
+  `'\0'`; ojo: un texto de una sola letra se toma como carácter, así que las
+  pruebas usan al menos dos).
+- **El simulador copia las estructuras** que se pasan por valor, y un arreglo o
+  una tabla recibidos son los mismos.
 - **Las globales empiezan en `0`** en el simulador, como en C, y un dato de
   prueba (`datos`) sobre una global le da su valor inicial en lugar de declarar
   otra variable adentro de la prueba.

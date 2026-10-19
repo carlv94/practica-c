@@ -90,6 +90,7 @@
         "funciones-ambito.json",
         "funciones-globales.json",
         "funciones-parametros.json",
+        "funciones-parametros-compuestos.json",
         "funciones-devolver.json"
       ]
     },
