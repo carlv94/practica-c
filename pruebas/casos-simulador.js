@@ -396,6 +396,31 @@ export const CASOS_DEL_SIMULADOR = [
     codigo: conFunciones('int mas(int n) {\n  int r = n + 1;\n  return r;\n}', 'int r = 100;\nint s;\ns = mas(1);'),
     espera: { variables: { r: 100, s: 2 } },
   },
+  // ---- estructuras, arreglos y tablas como parametros ----
+  {
+    nombre: 'estructuras: por valor, la funcion modifica una copia',
+    codigo: conFunciones(
+      'typedef struct {\n  int dia;\n} TF;\n\nvoid adelantar(TF f) {\n  f.dia = f.dia + 1;\n}',
+      'TF hoy;\nint r;\nhoy.dia = 10;\nadelantar(hoy);\nr = hoy.dia;'
+    ),
+    espera: { variables: { r: 10 } },
+  },
+  {
+    nombre: 'estructuras: la funcion lee los campos de lo que recibe',
+    codigo: conFunciones(
+      'typedef struct {\n  int dia;\n  int mes;\n} TF;\n\nint sumar(TF f) {\n  return f.dia + f.mes;\n}',
+      'TF hoy;\nint r;\nhoy.dia = 10;\nhoy.mes = 5;\nr = sumar(hoy);'
+    ),
+    espera: { variables: { r: 15 } },
+  },
+  {
+    nombre: 'tablas: una tabla recibida es la misma',
+    codigo: conFunciones(
+      'void poner(int t[][2]) {\n  t[1][0] = 9;\n}',
+      'int t[2][2] = {{1, 2}, {3, 4}};\nint r;\nponer(t);\nr = t[1][0];'
+    ),
+    espera: { variables: { r: 9 } },
+  },
   // ---- globales ----
   {
     nombre: 'globales: sin valor empiezan en cero',

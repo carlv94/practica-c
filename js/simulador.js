@@ -1219,6 +1219,15 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
         nombre = nombre.childForFieldName('declarator');
       }
       const deEnum = esTipoEnum(tipoNodo);
+      // Una estructura por valor: se copia entera al llamar.
+      const camposDeLaEstructura =
+        nombre && !puntero && !arreglo && !deEnum && tipoNodo && ['struct_specifier', 'type_identifier'].includes(tipoNodo.type)
+          ? definiciones.get(tipoNodo.type === 'type_identifier' ? tipoNodo.text : tipoNodo.childForFieldName('name')?.text)
+          : null;
+      if (camposDeLaEstructura && !camposDeLaEstructura.esUnion) {
+        salidaDe.push({ nombre: nombre.text, clase: 'estructura', campos: camposDeLaEstructura });
+        continue;
+      }
       if (!nombre || (!deEnum && !['primitive_type', 'sized_type_specifier'].includes(tipoNodo.type))) return null;
       const textoBase = deEnum ? 'int' : textoTipo;
       const flotante = /float|double/.test(textoBase);
@@ -1250,9 +1259,24 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
     if (profundidad >= 100) throw new NoTermina(fila(n));
 
     const local = new Ambito(globales);
+    const estructurasDeLocal = new Map();
     parametros.forEach((p, k) => {
       const a = lista[k];
       const texto = a.text.replace(/\s+/g, ' ').trim();
+      if (p.clase === 'estructura') {
+        // Por valor: cada campo de la estructura de afuera se copia con el nombre del parametro.
+        const origen = a.type === 'identifier' ? a.text : null;
+        if (!origen || !estructurasVivas.has(origen)) sinVerificar(a, `un argumento que no es una estructura para ${p.nombre}`);
+        const claves = [];
+        for (let ambito = variables; ambito; ambito = ambito.padre) claves.push(...Map.prototype.keys.call(ambito));
+        for (const clave of new Set(claves)) {
+          if (!clave.startsWith(origen + '.')) continue;
+          const v = variables.get(clave);
+          local.set(p.nombre + clave.slice(origen.length), { ...v, datos: v.datos ? structuredClone(v.datos) : v.datos });
+        }
+        estructurasDeLocal.set(p.nombre, p.campos);
+        return;
+      }
       const conAmpersand = a.type === 'pointer_expression' && /^&/.test(a.text.trimStart());
       const deArreglo = a.type === 'identifier' ? variables.get(a.text) : null;
       if (p.clase === 'arreglo') {
@@ -1287,6 +1311,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
     const anteriores = { variables, estructurasVivas, retorno };
     variables = local;
     estructurasVivas = new Ambito(globalesDeEstructuras);
+    for (const [nombre, campos] of estructurasDeLocal) estructurasVivas.set(nombre, campos);
     retorno = null;
     profundidad++;
     let devuelto = null;

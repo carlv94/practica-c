@@ -666,6 +666,16 @@ export function corregir(
           error('PARAMETRO_TIPO', `${que} tiene que ser un arreglo. Está declarado como ${declarado}.`, p.fila);
           return;
         }
+        if (pedido.dimensiones && p.arreglo.length && p.arreglo.length !== pedido.dimensiones) {
+          error(
+            'PARAMETRO_TIPO',
+            pedido.dimensiones === 2
+              ? `${que} tiene que ser una tabla, con dos pares de corchetes. Está declarado como ${declarado}.`
+              : `${que} tiene que ser un arreglo de una dimensión, con un solo par de corchetes. Está declarado como ${declarado}.`,
+            p.fila
+          );
+          return;
+        }
       } else if (p.punteros || p.arreglo.length) {
         error(
           'PARAMETRO_ASTERISCO_DE_MAS',
@@ -674,6 +684,10 @@ export function corregir(
             : `${que} tiene que ser un solo valor, no un arreglo.`,
           p.fila
         );
+        return;
+      }
+      if (pedido.tipo === 'estructura' && !(tipo.clase === 'struct' && !tipo.union)) {
+        error('PARAMETRO_TIPO', `${que} tiene que ser una estructura. Está declarado como ${declarado}.`, p.fila);
         return;
       }
       if (categoria && !(tipo.clase === 'primitivo' && categoria.es(tipo.nombre))) {
@@ -1936,7 +1950,7 @@ export function corregir(
     if (justos ? reales.length !== esperados.length : reales.length < esperados.length) {
       error(
         'ARGUMENTOS_CANTIDAD',
-        `\`${llamada.funcion}\` lleva ${esperados.length} ${esperados.length === 1 ? 'argumento' : 'argumentos'}, separados por coma, y acá hay ${reales.length}.`,
+        `\`${llamada.funcion}\` lleva ${esperados.length} ${esperados.length === 1 ? 'argumento' : 'argumentos, separados por coma'}, y acá hay ${reales.length}.`,
         llamada.fila
       );
       return;
@@ -2900,13 +2914,19 @@ export function corregir(
     let propio = null;
     if (opciones.llama) {
       try {
-        propio = analizador.parse(fuente + '\n\n' + armarLlamada(modelo, opciones.llama, prueba));
+        propio = analizador.parse(fuente + '\n\n' + armarLlamada(modelo, opciones.llama, prueba, opciones.antes));
       } catch (e) {
         throw new Error(`La consigna "${consigna.id}" tiene una llamada que no se puede armar: ${e.message}`);
       }
     }
+    // Para el simulador, un texto de prueba son los codigos de sus letras y un 0 al final.
+    const pruebaSimulada = prueba
+      ? Object.fromEntries(
+          Object.entries(prueba).map(([k, v]) => [k, typeof v === 'string' ? [...v].map((c) => c.codePointAt(0)).concat(0) : v])
+        )
+      : prueba;
     try {
-      return ejecutar(propio || arbol, constante, entrada, prueba, modelo.desde);
+      return ejecutar(propio || arbol, constante, entrada, pruebaSimulada, modelo.desde);
     } catch (e) {
       if (e instanceof FueraDeRango) {
         // Con el numero escrito ya lo dijo la revision general.
@@ -3091,18 +3111,31 @@ export function corregir(
   // La funcion que arma el corrector para probar otra: declara las variables de
   // los datos del caso y hace la llamada, guardando lo que devuelve en
   // __devuelve. Por esa funcion empieza el simulador.
-  function armarLlamada(modelo, llama, prueba) {
+  function armarLlamada(modelo, llama, prueba, antes = '') {
     const m = /^\s*([A-Za-z_]\w*)\s*\(/.exec(llama);
     if (!m) throw new Error(`no se entiende "${llama}"`);
     const f = modelo.funciones.findLast((x) => !x.prototipo && x.nombre === m[1]);
     const lineas = [];
+    // Declaraciones que el caso trae escritas (una estructura: sus campos salen de los datos).
+    if (antes) lineas.push(...antes.split('\n').map((l) => `  ${l}`));
     for (const [nombre, valor] of Object.entries(prueba || {})) {
       if (!/^[A-Za-z_]\w*$/.test(nombre)) continue;
       // Una global no se declara de nuevo: la prueba le da su valor inicial.
       if (modelo.variables.some((v) => v.nombre === nombre && !v.local)) continue;
-      const lista = Array.isArray(valor) ? valor : [valor];
+      // Un texto es una cadena de caracteres con su fin.
+      if (typeof valor === 'string') {
+        lineas.push(`  char ${nombre}[${[...valor].length + 1}];`);
+        continue;
+      }
+      const lista = Array.isArray(valor) ? valor.flat(Infinity) : [valor];
       const tipo = lista.every((v) => v === null || Number.isInteger(v)) ? 'int' : 'double';
-      lineas.push(Array.isArray(valor) ? `  ${tipo} ${nombre}[${valor.length}];` : `  ${tipo} ${nombre};`);
+      // Un arreglo, o una tabla (una lista de listas), con las dimensiones que traen los datos.
+      const dimensiones = (x) => (Array.isArray(x) ? [x.length, ...dimensiones(x[0])] : []);
+      lineas.push(
+        Array.isArray(valor)
+          ? `  ${tipo} ${nombre}${dimensiones(valor).map((d) => `[${d}]`).join('')};`
+          : `  ${tipo} ${nombre};`
+      );
     }
     const devuelve = f ? textoDeTipo(f.tipo) : 'int';
     if (f && !(f.tipo.clase === 'primitivo' && f.tipo.nombre === 'void' && !f.punteros)) {
@@ -3749,6 +3782,7 @@ export function corregir(
           contexto: caso.visible || !caso.datos ? '' : conLosValores(caso.vistos || caso.datos),
           centinela: regla.centinela,
           llama: llamada,
+          antes: caso.antes,
         });
         if (!hecha) return;
         if (llamada && caso.devuelve !== undefined) {
@@ -4132,7 +4166,7 @@ export function corregir(
       return real.clase === 'indice' && sinEspacios(real.texto) === sinEspacios(esperado);
     }
     // Un numero escrito o una variable con &.
-    if (/^-?\d+(\.\d+)?$/.test(esperado) || esperado.startsWith('&')) {
+    if (/^-?\d+(\.\d+)?$/.test(esperado) || esperado.startsWith('&') || /[+\-*/%]/.test(esperado)) {
       return sinEspacios(real.texto) === sinEspacios(esperado);
     }
     return real.clase === 'nombre' && real.nombre === esperado;
