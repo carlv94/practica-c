@@ -396,6 +396,17 @@ export const CASOS_DEL_SIMULADOR = [
     codigo: conFunciones('int mas(int n) {\n  int r = n + 1;\n  return r;\n}', 'int r = 100;\nint s;\ns = mas(1);'),
     espera: { variables: { r: 100, s: 2 } },
   },
+  // ---- globales ----
+  {
+    nombre: 'globales: sin valor empiezan en cero',
+    codigo: `${CABECERA}int g;\nint main() {\nint r;\nr = g + 1;\nreturn 0;\n}`,
+    espera: { variables: { r: 1 } },
+  },
+  {
+    nombre: 'globales: una funcion cambia la que ve main',
+    codigo: `${CABECERA}int veces = 0;\nvoid contar(void) {\n  veces = veces + 1;\n}\nint main() {\ncontar();\ncontar();\nreturn 0;\n}`,
+    espera: { variables: { veces: 2 } },
+  },
   // ---- ambito de bloque ----
   {
     nombre: 'bloques: una variable de un if no existe despues',

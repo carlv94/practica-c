@@ -225,6 +225,10 @@ export function corregirPaso(analizador, serie, indice, avance, respuesta) {
     enArchivo: enArchivo(consigna),
     // Codigo que se le da despues de main, con la respuesta (un prototipo) arriba.
     despues: consigna.despues || '',
+    // La respuesta va antes de main cuando main la usa (dadoEnMain) o hay codigo despues.
+    arriba: Boolean(consigna.despues || consigna.dadoEnMain),
+    // La respuesta va antes de main cuando main la usa (dadoEnMain) o hay codigo despues.
+    arriba: Boolean(consigna.despues || consigna.dadoEnMain),
     // Una consigna puede pedir otras practicas que las de la serie.
     practicas: consigna.buenasPracticas ?? serie.buenasPracticas ?? [],
     avisados: avance.avisados || [],

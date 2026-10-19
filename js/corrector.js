@@ -271,6 +271,7 @@ export function corregir(
     practicas = [],
     avisados = [],
     despues = '',
+    arriba = false,
   }
 ) {
   // Una sentencia suelta ("strcpy(a, b);") solo vale dentro de una funcion:
@@ -286,7 +287,7 @@ export function corregir(
   if (!dentroDeMain) {
     previo = afuera + adentro;
     fuente = previo + respuesta;
-  } else if (enArchivo && despues) {
+  } else if (enArchivo && (despues || arriba)) {
     // La respuesta va arriba (un prototipo) y el codigo dado, despues de todo.
     previo = afuera;
     fuente =
@@ -376,7 +377,7 @@ export function corregir(
 
     const modelo = construirModelo(arbol, desde);
     revisarNombres(modelo, error);
-    revisarFunciones(modelo, error, consigna.requiere.some((r) => r.llamada));
+    revisarFunciones(modelo, error, consigna.requiere.some((r) => r.llamada), enArchivo && Boolean(arriba || despues));
     revisarConversiones(modelo, error);
     revisarRedefiniciones(modelo, error, practicas.includes('constantes') ? mejora : null);
     // Cuando la consigna pide los caracteres de a uno, o vaciar la cadena,
@@ -423,6 +424,7 @@ export function corregir(
     if (regla.funcion) return reglaFuncion(regla.funcion, modelo);
     if (regla.prototipo) return reglaPrototipo(regla.prototipo, modelo);
     if (regla.sinGlobales) return reglaSinGlobales(modelo);
+    if (regla.global) return reglaGlobal(regla.global, modelo);
     if (regla.enum) return reglaEnum(regla.enum, modelo);
     if (regla.variable) return reglaVariable(regla.variable, modelo);
     if (regla.alias) return reglaAlias(regla.alias, modelo);
@@ -704,6 +706,40 @@ export function corregir(
       return;
     }
     if (regla.capturar) nuevas[regla.capturar] = f.nombre;
+  }
+
+  // La consigna pide declarar una variable global: afuera de todas las funciones.
+  //   { "global": { "nombre": "veces", "tipo": "entero" } }
+  function reglaGlobal(regla, modelo) {
+    const nombre = valorDe(regla.nombre);
+    const declaradas = modelo.variables.filter((v) => v.nuevo && v.nombre === nombre);
+    if (!declaradas.length) {
+      error(
+        'GLOBAL_FALTA',
+        `No encontré la declaración de ${BT}${nombre}${BT}: la consigna pide una variable global con ese nombre, declarada afuera de las funciones.`
+      );
+      return;
+    }
+    const global = declaradas.find((v) => !v.local);
+    if (!global) {
+      const adentro = declaradas[0];
+      const f = modelo.funciones.find((x) => !x.prototipo && x.posicion <= adentro.indice && adentro.indice < x.fin);
+      error(
+        'GLOBAL_DENTRO_DE_FUNCION',
+        `${BT}${nombre}${BT} está declarada dentro de ${f ? BT + f.nombre + BT : 'una función'}: ahí es una variable local y desaparece cuando la función termina. Para que conserve su valor entre una llamada y otra, tiene que estar declarada afuera de todas las funciones.`,
+        adentro.fila
+      );
+      return;
+    }
+    const categoria = regla.tipo && CATEGORIAS[regla.tipo];
+    const real = resolver(global.tipo, modelo);
+    if (categoria && !(real.clase === 'primitivo' && categoria.es(real.nombre))) {
+      error(
+        'VARIABLE_TIPO',
+        `${BT}${nombre}${BT} tiene que ser ${categoria.pide}. Está declarada como ${textoDeTipo(global.tipo)}.`,
+        global.fila
+      );
+    }
   }
 
   // La consigna pide no usar variables globales: ninguna declaracion fuera de
@@ -3062,6 +3098,8 @@ export function corregir(
     const lineas = [];
     for (const [nombre, valor] of Object.entries(prueba || {})) {
       if (!/^[A-Za-z_]\w*$/.test(nombre)) continue;
+      // Una global no se declara de nuevo: la prueba le da su valor inicial.
+      if (modelo.variables.some((v) => v.nombre === nombre && !v.local)) continue;
       const lista = Array.isArray(valor) ? valor : [valor];
       const tipo = lista.every((v) => v === null || Number.isInteger(v)) ? 'int' : 'double';
       lineas.push(Array.isArray(valor) ? `  ${tipo} ${nombre}[${valor.length}];` : `  ${tipo} ${nombre};`);
@@ -3702,6 +3740,8 @@ export function corregir(
         // con "devuelve", lo que da tiene que ser eso.
         const llamada = caso.llama ? valorDe(caso.llama) : null;
         if (llamada && !modelo.funciones.some((x) => !x.prototipo && x.nombre === /^\s*([A-Za-z_]\w*)/.exec(llamada)[1])) {
+          // Si ya se dijo que la funcion se llama de otra manera, con eso alcanza.
+          if (diagnosticos.some((d) => d.codigo === 'FUNCION_NOMBRE')) return;
           error('FUNCION_FALTA', 'No encontré la definición de la función que pide la consigna.');
           return;
         }
@@ -6051,11 +6091,16 @@ const DE_LA_BIBLIOTECA_C = new Set([
 // Llamar a lo que no existe, o a una funcion antes de que este definida o
 // declarada. Solo cuando el programa define funciones propias.
 // Si la consigna tiene la regla "llamada", esa ya dice lo que corresponde.
-function revisarFunciones(modelo, error, conReglaDeLlamada = false) {
+function revisarFunciones(modelo, error, conReglaDeLlamada = false, conCodigoDelSistema = false) {
   const propias = modelo.funciones.filter((f) => !NO_ES_DEL_ALUMNO.includes(f.nombre));
   if (!propias.length) return;
   const nombres = [...new Set(propias.map((f) => f.nombre))];
+  const delSistema = modelo.funciones.filter((f) => NO_ES_DEL_ALUMNO.includes(f.nombre));
   for (const l of modelo.llamadas.filter((x) => x.nuevo)) {
+    // Una llamada del codigo que la consigna da (main llamando a lo que el alumno escribe)
+    // a una funcion que no existe: lo dice la regla de la funcion, no es un error aparte.
+    const enElSistema = conCodigoDelSistema && delSistema.some((f) => f.posicion <= l.posicion && l.posicion < f.fin);
+    if (enElSistema && !nombres.includes(l.funcion)) continue;
     if (!/^[A-Za-z_]\w*$/.test(l.funcion) || DE_LA_BIBLIOTECA_C.has(l.funcion)) continue;
     // Un tipo escrito como funcion lo dice revisarConversiones.
     if (TIPOS_PRIMITIVOS.has(l.funcion) || modelo.aliases.some((a) => a.nombre === l.funcion)) continue;

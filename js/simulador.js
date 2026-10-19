@@ -1019,9 +1019,12 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
     return datos;
   }
 
+  // Una global sin valor empieza en 0, como en C.
+  let declarandoGlobales = false;
+
   function sinLista(dims) {
     const [k, ...resto] = dims;
-    return Array.from({ length: k }, () => (resto.length ? sinLista(resto) : undefined));
+    return Array.from({ length: k }, () => (resto.length ? sinLista(resto) : declarandoGlobales ? 0 : undefined));
   }
 
   // "struct Alumno alumno;", "TAlumno alumnos[MAX];": cada campo numerico pasa
@@ -1156,7 +1159,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
           flotante,
           tipo: nombreDeTipo,
           bytes: bytesDe(textoTipo),
-          valor: valor ? (flotante ? valor.v : Math.trunc(valor.v)) : undefined,
+          valor: valor ? (flotante ? valor.v : Math.trunc(valor.v)) : declarandoGlobales ? 0 : undefined,
         });
         continue;
       }
@@ -1436,6 +1439,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
   const delArchivoEstructuras = estructurasVivas;
   variables = globales;
   estructurasVivas = globalesDeEstructuras;
+  declarandoGlobales = true;
   for (const n of arbol.rootNode.namedChildren) {
     if (n.type !== 'declaration' || contiene(n, 'function_declarator')) continue;
     try {
@@ -1444,6 +1448,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
       if (!(e instanceof SinVerificar)) throw e;
     }
   }
+  declarandoGlobales = false;
   variables = delArchivo;
   estructurasVivas = delArchivoEstructuras;
 
