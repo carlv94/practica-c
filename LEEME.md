@@ -1163,10 +1163,34 @@ Grupo "Uniones" (`uniones-declarar.json`, `uniones-etiqueta.json`).
 
 ### Funciones
 
-Grupo "Funciones": cuatro series cortas, `funciones-definir.json` (definir,
-llamar y prototipo), `funciones-parametros.json`, `funciones-devolver.json`
-(`return`, una función que decide) y `funciones-referencia.json` (`&` y `*`).
-Falta la serie de refactorizar código repetido (el dominio se define después).
+Grupo "Funciones y ámbito" (oculto hasta habilitarlo). El orden sigue una
+cadena de necesidades: cada tema nace de un problema del anterior.
+
+1. `funciones-definir.json`: funciones sin retorno (definir, llamar, prototipo).
+2. `funciones-variables.json`: las variables de una función nacen y mueren en
+   cada llamada.
+3. `funciones-ambito.json`: ámbito de una variable (una función, unas llaves).
+4. `funciones-globales.json`: las globales, la salida tentadora, y por qué
+   conviene evitarlas.
+5. `funciones-parametros.json`, 6. `funciones-devolver.json` (en preparación).
+
+`funciones-referencia.json` está por ahora en un grupo "Punteros" provisorio,
+también oculto: es la serie 3 del grupo Punteros, que se arma después.
+
+El plan de la reestructuración está en la memoria del proyecto
+(`funciones-ambito-flujo`).
+
+- **Regla `global`**: `{ "global": { "nombre": "veces", "tipo": "entero" } }`. La
+  consigna pide declarar una variable global: `GLOBAL_FALTA`, y
+  `GLOBAL_DENTRO_DE_FUNCION` si la declaró adentro de una función (el mensaje
+  explica que desaparece al terminar).
+- **Las globales empiezan en `0`** en el simulador, como en C, y un dato de
+  prueba (`datos`) sobre una global le da su valor inicial en lugar de declarar
+  otra variable adentro de la prueba.
+- **La respuesta antes de `main`**: si la consigna trae `dadoEnMain` (o
+  `despues`) y su respuesta va afuera, la respuesta se arma **arriba de
+  `main`**, como se le muestra, para que `main` pueda usar lo que el alumno
+  escribe.
 
 - **`MUESTRA_EN_VEZ_DE_DEVOLVER`**: si la consigna pide que la función devuelva
   un valor y el alumno la declara `void` y la muestra con `printf`, el mensaje
@@ -1221,11 +1245,9 @@ Falta la serie de refactorizar código repetido (el dominio se define después).
 
 ### Ámbito de las variables
 
-Grupo "Ámbito de las variables" (oculto hasta habilitarlo): tres series,
-`ambito-locales.json`, `ambito-bloques.json` y `ambito-globales.json`. Casi
-todo son cuestionarios (predecir qué muestra o si compila) y unas pocas
-consignas de código (pasar por parámetro, usar lo que devuelve, declarar donde
-se la necesita, reescribir sin global).
+Las series de ámbito (2, 3 y 4 de "Funciones y ámbito") son casi todo
+cuestionarios (predecir qué muestra o si compila) y unas pocas consignas de
+código.
 
 - **El simulador tiene ámbito de bloque**: lo declarado entre llaves, o en el
   encabezado de un `for`, desaparece al terminar el bloque, y una variable de

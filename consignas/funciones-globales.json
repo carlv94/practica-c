@@ -1,0 +1,245 @@
+{
+  "id": "funciones-globales",
+  "titulo": "Variables globales, la salida tentadora",
+  "continua": false,
+  "dentroDeMain": true,
+  "descripcion": "Una variable declarada afuera de todas las funciones la ven y la modifican todas. Resuelve varios problemas de golpe, pero tiene un costo.",
+  "cabecera": "#include <stdio.h>",
+  "consignas": [
+    {
+      "id": "globales-q-ver",
+      "titulo": "Una variable que ven todas las funciones",
+      "archivo": "int contador = 0;\n\nvoid sumarUno(void) {\n  contador = contador + 1;\n}",
+      "enunciado": "`contador` está declarada afuera de las funciones. ¿Qué muestra este programa?",
+      "codigo": "sumarUno();\nsumarUno();\nprintf(\"%d\", contador);",
+      "opciones": [
+        {
+          "texto": "`0`",
+          "codigo": "OPCION_COMO_LOCAL",
+          "explicacion": "Eso pasaría si `contador` fuera local de `sumarUno`. Pero está declarada afuera de las funciones: es una variable global, y `sumarUno` modifica esa misma variable."
+        },
+        {
+          "texto": "`2`",
+          "correcta": true,
+          "explicacion": "Una variable global la ven todas las funciones, y todas comparten la misma. `sumarUno` la modifica dos veces, y `main` ve el resultado."
+        },
+        {
+          "texto": "No compila: `contador` no existe en `main`",
+          "codigo": "OPCION_ES_UN_ERROR",
+          "explicacion": "`contador` está declarada afuera de todas las funciones, así que `main` la ve igual que `sumarUno`. Compila y anda."
+        }
+      ]
+    },
+    {
+      "id": "globales-contar",
+      "titulo": "Una función que recuerda",
+      "en": "archivo",
+      "dadoEnMain": "contar();\ncontar();\ncontar();",
+      "enunciado": "Una variable local no conserva su valor entre una llamada y otra. Una variable declarada afuera de las funciones sí. Declare una variable global `veces`, que empiece valiendo `0`, y escriba una función `contar` que le sume `1` a `veces` y la muestre con `printf(\"%d \", veces)`.\n\nAbajo se ve cómo `main` llama tres veces a `contar`. Esta consigna se resuelve con una variable global; en lo que sigue se verá por qué conviene evitarlas.",
+      "salida": "1 2 3",
+      "requiere": [
+        {
+          "global": {
+            "nombre": "veces",
+            "tipo": "entero"
+          }
+        },
+        {
+          "funcion": {
+            "nombre": "contar",
+            "retorna": "void",
+            "parametros": []
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "salida": "1 2 3",
+                "visible": true
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "int veces = 0;\n\nvoid contar(void) {\n  veces = veces + 1;\n  printf(\"%d \", veces);\n}"
+    },
+    {
+      "id": "globales-doble",
+      "titulo": "Un dato que entra por una global",
+      "en": "archivo",
+      "archivoDado": "int numero;",
+      "enunciado": "La variable global `numero` ya está declarada. Escriba una función `mostrarDoble` que no reciba nada y muestre con `printf` el doble de `numero`: si `numero` vale `4`, muestra `8`.\n\nEsta consigna se resuelve con una variable global; en lo que sigue se verá por qué conviene evitarlas.",
+      "requiere": [
+        {
+          "funcion": {
+            "nombre": "mostrarDoble",
+            "retorna": "void",
+            "parametros": []
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "datos": {
+                  "numero": 4
+                },
+                "llama": "mostrarDoble()",
+                "salida": "8",
+                "visible": true
+              },
+              {
+                "datos": {
+                  "numero": -3
+                },
+                "llama": "mostrarDoble()",
+                "salida": "-6"
+              },
+              {
+                "datos": {
+                  "numero": 0
+                },
+                "llama": "mostrarDoble()",
+                "salida": "0"
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "void mostrarDoble(void) {\n  printf(\"%d\", numero * 2);\n}"
+    },
+    {
+      "id": "globales-dos-valores",
+      "titulo": "Dos datos distintos",
+      "archivoDado": "int numero;\n\nvoid mostrarDoble(void) {\n  printf(\"%d \", numero * 2);\n}",
+      "dado": "int a = 3;\nint b = 8;",
+      "enunciado": "`mostrarDoble` muestra el doble de la variable global `numero`. Con ella, muestre el doble de `a` y, después, el doble de `b`.",
+      "salida": "6 16",
+      "requiere": [
+        {
+          "llamada": {
+            "funcion": "mostrarDoble",
+            "argumentos": []
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "salida": "6 16",
+                "visible": true
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "numero = a;\nmostrarDoble();\nnumero = b;\nmostrarDoble();"
+    },
+    {
+      "id": "globales-resultado",
+      "titulo": "Un resultado que sale por una global",
+      "en": "archivo",
+      "archivoDado": "int dividendo;\nint divisor;\nint cociente;\nint resto;",
+      "enunciado": "Las variables globales `dividendo`, `divisor`, `cociente` y `resto` ya están declaradas. Escriba una función `dividir` que no reciba nada y calcule el cociente y el resto de la división entera de `dividendo` por `divisor`, y los deje en `cociente` y en `resto`. Con `17` y `5`, el cociente es `3` y el resto es `2`.",
+      "requiere": [
+        {
+          "funcion": {
+            "nombre": "dividir",
+            "retorna": "void",
+            "parametros": []
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "datos": {
+                  "dividendo": 17,
+                  "divisor": 5
+                },
+                "llama": "dividir()",
+                "queda": {
+                  "cociente": 3,
+                  "resto": 2
+                },
+                "visible": true
+              },
+              {
+                "datos": {
+                  "dividendo": 20,
+                  "divisor": 4
+                },
+                "llama": "dividir()",
+                "queda": {
+                  "cociente": 5,
+                  "resto": 0
+                }
+              },
+              {
+                "datos": {
+                  "dividendo": 3,
+                  "divisor": 7
+                },
+                "llama": "dividir()",
+                "queda": {
+                  "cociente": 0,
+                  "resto": 3
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "void dividir(void) {\n  cociente = dividendo / divisor;\n  resto = dividendo % divisor;\n}"
+    },
+    {
+      "id": "globales-q-tapa",
+      "titulo": "Una local que tapa a una global",
+      "archivo": "int limite = 10;\n\nvoid mostrar(void) {\n  int limite = 3;\n\n  printf(\"%d \", limite);\n}",
+      "enunciado": "¿Qué muestra este programa?",
+      "codigo": "mostrar();\nprintf(\"%d\", limite);",
+      "opciones": [
+        {
+          "texto": "`10 10`",
+          "codigo": "OPCION_USA_LA_GLOBAL",
+          "explicacion": "`mostrar` declara su propia variable `limite`, que tapa a la global dentro de la función. Ahí vale `3`."
+        },
+        {
+          "texto": "`3 10`",
+          "correcta": true,
+          "explicacion": "Dentro de `mostrar`, la variable local `limite` tapa a la global: vale `3`. Afuera de `mostrar`, la global sigue valiendo `10`. Son dos variables distintas con el mismo nombre."
+        },
+        {
+          "texto": "`3 3`",
+          "codigo": "OPCION_SE_MODIFICO",
+          "explicacion": "La variable de `mostrar` es otra, distinta de la global: darle un valor no cambia a la de afuera."
+        }
+      ]
+    },
+    {
+      "id": "globales-q-tres-funciones",
+      "titulo": "Quién cambió la variable",
+      "archivo": "int total = 0;\n\nvoid cargar(void) {\n  total = 100;\n}\n\nvoid descontar(void) {\n  total = total - 30;\n}\n\nvoid cerrarCaja(void) {\n  total = 0;\n}\n\nvoid procesar(void) {\n  descontar();\n  cerrarCaja();\n}",
+      "enunciado": "Se esperaba que `total` quedara en `70`, pero este programa muestra `0`. ¿Cuál de estas funciones lo dejó en `0`?",
+      "codigo": "cargar();\nprocesar();\nprintf(\"%d\", total);",
+      "opciones": [
+        {
+          "texto": "`cargar`",
+          "codigo": "OPCION_FUNCION_CARGAR",
+          "explicacion": "`cargar` le da `100` a `total`. Eso pasa al principio, y después otras funciones lo siguen cambiando."
+        },
+        {
+          "texto": "`descontar`",
+          "codigo": "OPCION_FUNCION_DESCONTAR",
+          "explicacion": "`descontar` le resta `30`, y `total` queda en `70`. Pero `procesar` llama después a otra función."
+        },
+        {
+          "texto": "`cerrarCaja`",
+          "correcta": true,
+          "explicacion": "La que lo dejó en `0` es `cerrarCaja`, que `procesar` llama sin que se note desde `main`. Para encontrarla hubo que leer todas las funciones: como `total` es global, **cualquiera** de ellas puede cambiarla, y un valor inesperado puede venir de cualquier parte del programa."
+        }
+      ]
+    }
+  ]
+}

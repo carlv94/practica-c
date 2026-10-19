@@ -162,6 +162,52 @@
           "explicacion": "Dentro de la función, `n` es una variable como cualquier otra y se la puede cambiar. El programa compila y anda: lo que pasa es que ese cambio queda adentro."
         }
       ]
+    },
+    {
+      "id": "parametros-pasar",
+      "titulo": "Pasar por parámetro lo que la función necesita",
+      "en": "archivo",
+      "ejemplo": {
+        "texto": "Esta función no compila: usa `suma` y `cantidad`, que son variables de `main`, y una función solo ve sus propias variables y sus parámetros.",
+        "codigo": "void mostrarPromedio(void) {\n  printf(\"%.1f\", (float) suma / cantidad);\n}"
+      },
+      "enunciado": "Escríbala de nuevo para que reciba `suma` y `cantidad` como parámetros, ambos enteros, y muestre el promedio con un decimal: con `10` y `4` muestra `2.5`. Póngale el nombre que quiera.",
+      "requiere": [
+        {
+          "funcion": {
+            "retorna": "void",
+            "parametros": [
+              {
+                "tipo": "entero"
+              },
+              {
+                "tipo": "entero"
+              }
+            ],
+            "capturar": "M"
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "llama": "$M(10, 4)",
+                "salida": "2.5",
+                "visible": true
+              },
+              {
+                "llama": "$M(9, 3)",
+                "salida": "3.0"
+              },
+              {
+                "llama": "$M(7, 2)",
+                "salida": "3.5"
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "void mostrarPromedio(int suma, int cantidad) {\n  printf(\"%.1f\", (float) suma / cantidad);\n}"
     }
   ]
 }

@@ -1,0 +1,82 @@
+{
+  "id": "funciones-variables",
+  "titulo": "Las variables de una función",
+  "continua": false,
+  "dentroDeMain": true,
+  "descripcion": "Una función no guarda nada de una llamada a otra: sus variables se crean cuando se la llama y desaparecen cuando termina.",
+  "cabecera": "#include <stdio.h>",
+  "consignas": [
+    {
+      "id": "variables-q-nacen",
+      "titulo": "Cuándo se crea una variable",
+      "archivo": "void saludar(void) {\n  int n = 1;\n\n  printf(\"%d\", n);\n}",
+      "enunciado": "En este programa se llama dos veces a `saludar`. ¿Cuántas veces se crea la variable `n`?",
+      "codigo": "saludar();\nsaludar();",
+      "opciones": [
+        {
+          "texto": "Una sola vez, cuando empieza el programa",
+          "codigo": "OPCION_UNA_VEZ",
+          "explicacion": "Las variables de una función no se crean al empezar el programa: se crean **cada vez que se llama** a la función."
+        },
+        {
+          "texto": "Dos veces: una en cada llamada, y cada una desaparece cuando la función termina",
+          "correcta": true,
+          "explicacion": "Cada vez que se llama a `saludar`, la variable `n` se crea de nuevo, se usa y desaparece al terminar la función. Por eso una función no guarda nada de una llamada a la siguiente."
+        },
+        {
+          "texto": "Una sola vez, la primera vez que se llama, y después se reutiliza",
+          "codigo": "OPCION_SE_REUTILIZA",
+          "explicacion": "La variable no se reutiliza: cuando la función termina, `n` desaparece. La segunda llamada crea una `n` nueva."
+        }
+      ]
+    },
+    {
+      "id": "variables-q-reinicia",
+      "titulo": "Una local no recuerda nada",
+      "archivo": "void contar(void) {\n  int veces = 0;\n\n  veces = veces + 1;\n  printf(\"%d \", veces);\n}",
+      "enunciado": "¿Qué muestra este programa?",
+      "codigo": "contar();\ncontar();\ncontar();",
+      "opciones": [
+        {
+          "texto": "`1 2 3`",
+          "codigo": "OPCION_RECUERDA",
+          "explicacion": "Una variable local no conserva su valor entre una llamada y otra: desaparece cuando la función termina. En cada llamada `veces` vuelve a nacer."
+        },
+        {
+          "texto": "`1 1 1`",
+          "correcta": true,
+          "explicacion": "Cada vez que se llama a `contar`, la variable `veces` nace de nuevo en `0`, se le suma `1` y desaparece al terminar. Por eso siempre muestra `1`."
+        },
+        {
+          "texto": "`0 0 0`",
+          "codigo": "OPCION_NO_SUMA",
+          "explicacion": "La función sí le suma `1` a `veces` antes de mostrarla, así que muestra `1`."
+        }
+      ]
+    },
+    {
+      "id": "variables-q-mismo-nombre",
+      "titulo": "El mismo nombre en dos funciones",
+      "archivo": "void mostrar(void) {\n  int n = 20;\n\n  printf(\"%d \", n);\n}",
+      "enunciado": "¿Qué muestra este programa?",
+      "codigo": "int n = 5;\n\nmostrar();\nprintf(\"%d\", n);",
+      "opciones": [
+        {
+          "texto": "`20 20`",
+          "codigo": "OPCION_SE_MODIFICO",
+          "explicacion": "El `n` de `mostrar` y el `n` de `main` son dos variables distintas, aunque se llamen igual. Cambiar una no cambia la otra."
+        },
+        {
+          "texto": "`20 5`",
+          "correcta": true,
+          "explicacion": "Cada función tiene sus propias variables. `mostrar` muestra su `n`, que vale `20`, y `main` muestra el suyo, que sigue valiendo `5`."
+        },
+        {
+          "texto": "`5 5`",
+          "codigo": "OPCION_USA_LA_DE_AFUERA",
+          "explicacion": "`mostrar` no ve el `n` de `main`: usa el que declaró adentro, que vale `20`."
+        }
+      ]
+    }
+  ]
+}

@@ -184,6 +184,99 @@
           "explicacion": "El `printf` de adentro de la función está después del `return` y no se ejecuta. Lo único que se muestra es el valor devuelto."
         }
       ]
+    },
+    {
+      "id": "devolver-q-resultado",
+      "titulo": "Cómo sale un valor de una función",
+      "archivo": "int sumar(int a, int b) {\n  int resultado = a + b;\n\n  return resultado;\n}",
+      "enunciado": "Este programa no compila, porque `main` usa `resultado`, que es una variable local de `sumar`. ¿Cómo se arregla?",
+      "codigo": "int x = 3;\nint y = 4;\nint total;\n\ntotal = sumar(x, y);\nprintf(\"%d\", resultado);",
+      "opciones": [
+        {
+          "texto": "Declarando también `resultado` en `main`",
+          "codigo": "OPCION_OTRA_VARIABLE",
+          "explicacion": "Compilaría, pero sería otra variable, distinta de la de `sumar`, y no valdría lo que `sumar` calculó. Los valores no viajan por el nombre."
+        },
+        {
+          "texto": "Mostrando `total`, donde `main` guardó lo que `sumar` devolvió",
+          "correcta": true,
+          "explicacion": "Un valor sale de una función con `return`, y quien llama lo guarda en una variable propia. `resultado` desaparece cuando `sumar` termina, pero su valor ya viajó hasta `total`."
+        },
+        {
+          "texto": "Declarando `resultado` afuera de las dos funciones",
+          "codigo": "OPCION_GLOBAL",
+          "explicacion": "Funcionaría, porque entonces sería una variable global que ven todas las funciones. Pero es justo lo que se desaconseja: ver por qué en la serie de variables globales. Para pasar un valor de una función a otra se usan los parámetros y `return`."
+        }
+      ]
+    },
+    {
+      "id": "devolver-usar-resultado",
+      "titulo": "Usar lo que devuelve una función",
+      "archivoDado": "int calcular(void) {\n  int total = 10;\n\n  return total;\n}",
+      "enunciado": "La función `calcular` ya está definida y devuelve el valor de su variable local `total`. Muestre ese valor con `printf`.",
+      "salida": "10",
+      "requiere": [
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "salida": "10",
+                "visible": true
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "printf(\"%d\", calcular());"
+    },
+    {
+      "id": "devolver-sin-global",
+      "titulo": "Reescribirla sin variable global",
+      "en": "archivo",
+      "ejemplo": {
+        "texto": "Esta función acumula en una variable global:",
+        "codigo": "int total = 0;\n\nvoid acumular(int n) {\n  total = total + n;\n}"
+      },
+      "enunciado": "Escriba una función que haga lo mismo sin variables globales: que reciba el total actual y el número que se suma, y devuelva el total nuevo. Con `10` y `5` devuelve `15`. Póngale el nombre que quiera.",
+      "requiere": [
+        {
+          "sinGlobales": true
+        },
+        {
+          "funcion": {
+            "retorna": "entero",
+            "parametros": [
+              {
+                "tipo": "entero"
+              },
+              {
+                "tipo": "entero"
+              }
+            ],
+            "capturar": "A"
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "llama": "$A(10, 5)",
+                "devuelve": 15,
+                "visible": true
+              },
+              {
+                "llama": "$A(0, 7)",
+                "devuelve": 7
+              },
+              {
+                "llama": "$A(-3, 3)",
+                "devuelve": 0
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "int acumular(int total, int n) {\n  return total + n;\n}"
     }
   ]
 }

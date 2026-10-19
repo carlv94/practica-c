@@ -1,6 +1,6 @@
 {
   "id": "funciones-definir",
-  "titulo": "Definir y llamar una función",
+  "titulo": "Funciones sin retorno",
   "continua": false,
   "dentroDeMain": true,
   "descripcion": "Definir una función que no recibe ni devuelve nada, llamarla una o varias veces, saber que definirla no la ejecuta y declarar su prototipo para llamarla antes de definirla.",

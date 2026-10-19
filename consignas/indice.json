@@ -82,25 +82,25 @@
       "id": "funciones",
       "agrupar": true,
       "oculto": true,
-      "titulo": "Funciones",
-      "descripcion": "Definir funciones, llamarlas, pasarles valores y recibir resultados, y modificar las variables de afuera.",
+      "titulo": "Funciones y ámbito",
+      "descripcion": "Definir funciones, dónde vive cada variable y cómo pasar valores a una función y recibir sus resultados.",
       "series": [
         "funciones-definir.json",
+        "funciones-variables.json",
+        "funciones-ambito.json",
+        "funciones-globales.json",
         "funciones-parametros.json",
-        "funciones-devolver.json",
-        "funciones-referencia.json"
+        "funciones-devolver.json"
       ]
     },
     {
-      "id": "ambito",
+      "id": "punteros",
       "agrupar": true,
       "oculto": true,
-      "titulo": "Ámbito de las variables",
-      "descripcion": "Dónde vive cada variable y hasta dónde se la puede usar: locales, bloques y globales.",
+      "titulo": "Punteros",
+      "descripcion": "Direcciones, punteros y parámetros por referencia.",
       "series": [
-        "ambito-locales.json",
-        "ambito-bloques.json",
-        "ambito-globales.json"
+        "funciones-referencia.json"
       ]
     }
   ]

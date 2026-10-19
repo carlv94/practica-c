@@ -1,4 +1,5 @@
-// Casos de las series de ambito de las variables.
+// Casos de las series de ambito: las variables de una funcion, ambito de una
+// variable y variables globales (series 2, 3 y 4 de "Funciones y ambito").
 // Mismo formato que casos.js.
 
 const serie = (id) => (paso, nombre, respuesta, espera = 'ok', extra = {}) => ({
@@ -10,116 +11,95 @@ const serie = (id) => (paso, nombre, respuesta, espera = 'ok', extra = {}) => ({
   ...extra,
 });
 
-const locales = serie('ambito-locales');
-const bloques = serie('ambito-bloques');
-const globales = serie('ambito-globales');
+const variables = serie('funciones-variables');
+const ambito = serie('funciones-ambito');
+const globales = serie('funciones-globales');
 
 const FUNCION = (encabezado, cuerpo) => `${encabezado} {\n${cuerpo}\n}`;
 
 export const CASOS_DE_AMBITO = [
-  // ===== Variables locales =====
-  // ---- 1: una variable de otra funcion ----
-  locales(1, 'otra funcion: la correcta', '1'),
-  locales(1, 'otra funcion: se ve', '0', ['OPCION_VARIABLE_VISIBLE']),
-  locales(1, 'otra funcion: vale cero', '2', ['OPCION_VALOR_POR_DEFECTO']),
-  // ---- 2: el mismo nombre en dos funciones ----
-  locales(2, 'mismo nombre: la correcta', '1'),
-  locales(2, 'mismo nombre: se modifico', '0', ['OPCION_SE_MODIFICO']),
-  locales(2, 'mismo nombre: la de afuera', '2', ['OPCION_USA_LA_DE_AFUERA']),
-  // ---- 3: una local no recuerda ----
-  locales(3, 'no recuerda: la correcta', '1'),
-  locales(3, 'no recuerda: recuerda', '0', ['OPCION_RECUERDA']),
-  locales(3, 'no recuerda: ceros', '2', ['OPCION_NO_SUMA']),
-  // ---- 4: pasar por parametro ----
-  locales(4, 'dos parametros', FUNCION('void mostrarPromedio(int suma, int cantidad)', '  printf("%.1f", (float) suma / cantidad);'), 'ok'),
-  locales(4, 'otros nombres', FUNCION('void promedio(int a, int b)', '  printf("%.1f", (float) a / b);')),
-  locales(4, 'con un cast del otro lado', FUNCION('void promedio(int a, int b)', '  printf("%.1f", a / (float) b);')),
-  locales(4, 'sin parametros', FUNCION('void mostrarPromedio(void)', '  printf("%.1f", (float) suma / cantidad);'), ['PARAMETROS_CANTIDAD'], {
-    dice: ['reciba 2 parámetros'],
-  }),
-  locales(4, 'un solo parametro', FUNCION('void mostrarPromedio(int suma)', '  printf("%.1f", (float) suma / cantidad);'), ['PARAMETROS_CANTIDAD']),
-  locales(4, 'division entera', FUNCION('void promedio(int a, int b)', '  printf("%.1f", a / b);'), ['FORMATO_NO_CORRESPONDE_AL_TIPO']),
-  locales(4, 'devuelve en vez de mostrar', FUNCION('float promedio(int a, int b)', '  return (float) a / b;'), ['DEVUELVE_EN_VEZ_DE_MOSTRAR']),
-  // ---- 5: como sale un valor ----
-  locales(5, 'como sale un valor: la correcta', '1'),
-  locales(5, 'como sale un valor: otra variable', '0', ['OPCION_OTRA_VARIABLE']),
-  locales(5, 'como sale un valor: global', '2', ['OPCION_GLOBAL']),
-  // ---- 6: usar lo que devuelve ----
-  locales(6, 'directo en el printf', 'printf("%d", calcular());'),
-  locales(6, 'con una variable', 'int t = calcular();\nprintf("%d", t);'),
-  locales(6, 'la variable de la otra funcion', 'calcular();\nprintf("%d", total);', ['NOMBRE_FUERA_DE_ALCANCE'], {
-    dice: ['está declarada dentro de `calcular`', 'las demás no la ven'],
-  }),
-  locales(6, 'solo la variable de la otra funcion', 'printf("%d", total);', ['NOMBRE_FUERA_DE_ALCANCE']),
-  locales(6, 'un nombre que no existe en ninguna', 'printf("%d", resultado);', ['NOMBRE_NO_DECLARADO']),
+  // ===== 2: las variables de una funcion =====
+  variables(1, 'cuando se crea: la correcta', '1'),
+  variables(1, 'cuando se crea: una sola vez', '0', ['OPCION_UNA_VEZ']),
+  variables(1, 'cuando se crea: se reutiliza', '2', ['OPCION_SE_REUTILIZA']),
+  variables(2, 'no recuerda: la correcta', '1'),
+  variables(2, 'no recuerda: recuerda', '0', ['OPCION_RECUERDA']),
+  variables(2, 'no recuerda: ceros', '2', ['OPCION_NO_SUMA']),
+  variables(3, 'mismo nombre: la correcta', '1'),
+  variables(3, 'mismo nombre: se modifico', '0', ['OPCION_SE_MODIFICO']),
+  variables(3, 'mismo nombre: la de afuera', '2', ['OPCION_USA_LA_DE_AFUERA']),
 
-  // ===== Ambito de bloque =====
-  // ---- 1: dentro de un if ----
-  bloques(1, 'if: la correcta', '1'),
-  bloques(1, 'if: se ve', '0', ['OPCION_VARIABLE_VISIBLE']),
-  bloques(1, 'if: vale cero', '2', ['OPCION_VALOR_POR_DEFECTO']),
-  // ---- 2: la variable del for ----
-  bloques(2, 'for: la correcta', '1'),
-  bloques(2, 'for: se ve', '0', ['OPCION_VARIABLE_VISIBLE']),
-  bloques(2, 'for: vale cero', '2', ['OPCION_VALOR_POR_DEFECTO']),
-  // ---- 3: una variable que tapa a otra ----
-  bloques(3, 'tapa: la correcta', '1'),
-  bloques(3, 'tapa: se modifico', '0', ['OPCION_SE_MODIFICO']),
-  bloques(3, 'tapa: un error', '2', ['OPCION_ES_UN_ERROR']),
-  // ---- 4: declarar donde se la necesita ----
-  bloques(4, 'afuera del ciclo', 'int suma = 0;\n\nfor (int i = 1; i <= 5; i++) {\n  suma = suma + i;\n}\nprintf("%d", suma);'),
-  bloques(4, 'con el contador afuera', 'int suma = 0;\nint i;\n\nfor (i = 1; i <= 5; i++) {\n  suma = suma + i;\n}\nprintf("%d", suma);'),
-  bloques(4, 'con while', 'int suma = 0;\nint i = 1;\n\nwhile (i <= 5) {\n  suma = suma + i;\n  i++;\n}\nprintf("%d", suma);'),
-  bloques(4, 'declarada dentro del ciclo', 'for (int i = 1; i <= 5; i++) {\n  int suma = 0;\n  suma = suma + i;\n}\nprintf("%d", suma);', [
+  // ===== 3: ambito de una variable =====
+  ambito(1, 'otra funcion: la correcta', '1'),
+  ambito(1, 'otra funcion: se ve', '0', ['OPCION_VARIABLE_VISIBLE']),
+  ambito(1, 'otra funcion: vale cero', '2', ['OPCION_VALOR_POR_DEFECTO']),
+  ambito(2, 'if: la correcta', '1'),
+  ambito(2, 'if: se ve', '0', ['OPCION_VARIABLE_VISIBLE']),
+  ambito(2, 'if: vale cero', '2', ['OPCION_VALOR_POR_DEFECTO']),
+  ambito(3, 'for: la correcta', '1'),
+  ambito(3, 'for: se ve', '0', ['OPCION_VARIABLE_VISIBLE']),
+  ambito(3, 'for: vale cero', '2', ['OPCION_VALOR_POR_DEFECTO']),
+  ambito(4, 'tapa: la correcta', '1'),
+  ambito(4, 'tapa: se modifico', '0', ['OPCION_SE_MODIFICO']),
+  ambito(4, 'tapa: un error', '2', ['OPCION_ES_UN_ERROR']),
+  ambito(5, 'afuera del ciclo', 'int suma = 0;\n\nfor (int i = 1; i <= 5; i++) {\n  suma = suma + i;\n}\nprintf("%d", suma);'),
+  ambito(5, 'con el contador afuera', 'int suma = 0;\nint i;\n\nfor (i = 1; i <= 5; i++) {\n  suma = suma + i;\n}\nprintf("%d", suma);'),
+  ambito(5, 'con while', 'int suma = 0;\nint i = 1;\n\nwhile (i <= 5) {\n  suma = suma + i;\n  i++;\n}\nprintf("%d", suma);'),
+  ambito(5, 'declarada dentro del ciclo', 'for (int i = 1; i <= 5; i++) {\n  int suma = 0;\n  suma = suma + i;\n}\nprintf("%d", suma);', [
     'NOMBRE_FUERA_DE_ALCANCE',
   ], { dice: ['se declaró entre llaves', 'declararla antes del bloque'] }),
-  bloques(4, 'el i de afuera', 'int suma = 0;\nfor (int i = 1; i <= 5; i++) {\n  suma = suma + i;\n}\nprintf("%d", suma + i);', [
+  ambito(5, 'el i de afuera', 'int suma = 0;\nfor (int i = 1; i <= 5; i++) {\n  suma = suma + i;\n}\nprintf("%d", suma + i);', [
     'NOMBRE_FUERA_DE_ALCANCE',
   ]),
-  bloques(4, 'sin declararla', 'for (int i = 1; i <= 5; i++) {\n  suma = suma + i;\n}\nprintf("%d", suma);', ['NOMBRE_NO_DECLARADO']),
-  bloques(4, 'declarada despues del ciclo', 'for (int i = 1; i <= 5; i++) {\n  suma = suma + i;\n}\nint suma = 0;\nprintf("%d", suma);', [
+  ambito(5, 'sin declararla', 'for (int i = 1; i <= 5; i++) {\n  suma = suma + i;\n}\nprintf("%d", suma);', ['NOMBRE_NO_DECLARADO']),
+  ambito(5, 'declarada despues del ciclo', 'for (int i = 1; i <= 5; i++) {\n  suma = suma + i;\n}\nint suma = 0;\nprintf("%d", suma);', [
     'NOMBRE_USADO_ANTES',
   ], { dice: ['se usa antes de declararla'] }),
-  bloques(4, 'muestra en cada vuelta', 'int suma = 0;\nfor (int i = 1; i <= 5; i++) {\n  suma = suma + i;\n  printf("%d", suma);\n}', ['MUESTRA_DISTINTA']),
+  ambito(5, 'muestra en cada vuelta', 'int suma = 0;\nfor (int i = 1; i <= 5; i++) {\n  suma = suma + i;\n  printf("%d", suma);\n}', ['MUESTRA_DISTINTA']),
 
-  // ===== Variables globales =====
-  // ---- 1: una variable que ven todas ----
+  // ===== 4: variables globales =====
   globales(1, 'se ve: la correcta', '1'),
   globales(1, 'se ve: como local', '0', ['OPCION_COMO_LOCAL']),
   globales(1, 'se ve: un error', '2', ['OPCION_ES_UN_ERROR']),
-  // ---- 2: una local que tapa ----
-  globales(2, 'tapa: la correcta', '1'),
-  globales(2, 'tapa: la global', '0', ['OPCION_USA_LA_GLOBAL']),
-  globales(2, 'tapa: se modifico', '2', ['OPCION_SE_MODIFICO']),
-  // ---- 3: por que se desaconsejan ----
-  globales(3, 'por que: la correcta', '1'),
-  globales(3, 'por que: memoria', '0', ['OPCION_MEMORIA']),
-  globales(3, 'por que: no se pueden usar', '2', ['OPCION_ES_UN_ERROR']),
-  // ---- 4: reescribir con return ----
-  globales(4, 'devuelve el total nuevo', FUNCION('int acumular(int total, int n)', '  return total + n;')),
-  globales(4, 'con una variable', FUNCION('int acumular(int total, int n)', '  int nuevo = total + n;\n\n  return nuevo;')),
-  globales(4, 'con otros nombres', FUNCION('int sumar(int a, int b)', '  return a + b;')),
-  globales(4, 'con una global', 'int total = 0;\n' + FUNCION('int acumular(int n)', '  total = total + n;\n  return total;'), [
-    'GLOBAL_DE_MAS',
-    'PARAMETROS_CANTIDAD',
-  ], { dice: ['es una variable global'] }),
-  globales(4, 'una global con dos parametros', 'int total;\n' + FUNCION('int acumular(int a, int n)', '  total = a + n;\n  return total;'), [
-    'GLOBAL_DE_MAS',
+  // ---- 2: una funcion que recuerda ----
+  globales(2, 'contar con una global', 'int veces = 0;\n\n' + FUNCION('void contar(void)', '  veces = veces + 1;\n  printf("%d ", veces);')),
+  globales(2, 'con otro nombre de variable', 'int cuenta = 0;\n\n' + FUNCION('void contar(void)', '  cuenta++;\n  printf("%d ", cuenta);'), ['GLOBAL_FALTA']),
+  globales(2, 'la variable dentro de la funcion', FUNCION('void contar(void)', '  int veces = 0;\n\n  veces = veces + 1;\n  printf("%d ", veces);'), [
+    'GLOBAL_DENTRO_DE_FUNCION',
+  ], { dice: ['conserve su valor entre una llamada y otra', 'afuera de todas las funciones'] }),
+  globales(2, 'otro nombre de funcion', 'int veces = 0;\n\n' + FUNCION('void sumar(void)', '  veces = veces + 1;\n  printf("%d ", veces);'), [
+    'FUNCION_NOMBRE',
   ]),
-  globales(4, 'sin return', FUNCION('int acumular(int total, int n)', '  total = total + n;'), ['RETORNO_FALTA']),
-  globales(4, 'usa un total que no existe', FUNCION('int acumular(int a, int n)', '  return total + n;'), ['NOMBRE_NO_DECLARADO']),
-  // ---- 5: reescribir por referencia ----
-  globales(5, 'modifica por referencia', FUNCION('void acumular(int *total, int n)', '  *total = *total + n;')),
-  globales(5, 'con otros nombres', FUNCION('void sumar(int *t, int x)', '  *t = *t + x;')),
-  globales(5, 'sin asterisco en la declaracion', FUNCION('void acumular(int total, int n)', '  total = total + n;'), [
-    'PARAMETRO_REFERENCIA_FALTA',
+  globales(2, 'no muestra', 'int veces = 0;\n\n' + FUNCION('void contar(void)', '  veces = veces + 1;'), ['MUESTRA_FALTA']),
+  globales(2, 'una global de tipo real', 'float veces = 0;\n\n' + FUNCION('void contar(void)', '  veces = veces + 1;\n  printf("%d ", (int) veces);'), [
+    'VARIABLE_TIPO',
   ]),
-  globales(5, 'sin asterisco al usarlo', FUNCION('void acumular(int *total, int n)', '  total = total + n;'), [
-    'PARAMETRO_SIN_ASTERISCO_AL_USARLO',
+  // ---- 3: un dato que entra por una global ----
+  globales(3, 'el doble', FUNCION('void mostrarDoble(void)', '  printf("%d", numero * 2);')),
+  globales(3, 'con una suma', FUNCION('void mostrarDoble(void)', '  printf("%d", numero + numero);')),
+  globales(3, 'el triple', FUNCION('void mostrarDoble(void)', '  printf("%d", numero * 3);'), ['MUESTRA_DISTINTA']),
+  globales(3, 'con un parametro', FUNCION('void mostrarDoble(int n)', '  printf("%d", n * 2);'), ['PARAMETROS_CANTIDAD']),
+  globales(3, 'devuelve en vez de mostrar', FUNCION('int mostrarDoble(void)', '  return numero * 2;'), ['DEVUELVE_EN_VEZ_DE_MOSTRAR']),
+  globales(3, 'otro nombre', FUNCION('void doble(void)', '  printf("%d", numero * 2);'), ['FUNCION_NOMBRE']),
+  // ---- 4: dos datos distintos ----
+  globales(4, 'asignando antes de cada llamada', 'numero = a;\nmostrarDoble();\nnumero = b;\nmostrarDoble();'),
+  globales(4, 'sin asignar', 'mostrarDoble();\nmostrarDoble();', ['MUESTRA_DISTINTA']),
+  globales(4, 'sin llamar a la funcion', 'printf("%d %d", a * 2, b * 2);', ['FUNCION_EQUIVOCADA']),
+  globales(4, 'con un argumento', 'mostrarDoble(a);', ['ARGUMENTOS_CANTIDAD']),
+  // ---- 5: un resultado que sale por una global ----
+  globales(5, 'cociente y resto', FUNCION('void dividir(void)', '  cociente = dividendo / divisor;\n  resto = dividendo % divisor;')),
+  globales(5, 'al reves', FUNCION('void dividir(void)', '  cociente = dividendo % divisor;\n  resto = dividendo / divisor;'), ['RESULTADO_VALOR_DISTINTO']),
+  globales(5, 'solo el cociente', FUNCION('void dividir(void)', '  cociente = dividendo / divisor;'), ['RESULTADO_VALOR_DISTINTO']),
+  globales(5, 'con variables locales', FUNCION('void dividir(void)', '  int cociente = dividendo / divisor;\n  int resto = dividendo % divisor;'), [
+    'RESULTADO_VALOR_DISTINTO',
   ]),
-  globales(5, 'con una global', 'int total = 0;\n' + FUNCION('void acumular(int n)', '  total = total + n;'), [
-    'GLOBAL_DE_MAS',
-    'PARAMETROS_CANTIDAD',
-  ]),
-  globales(5, 'suma de menos', FUNCION('void acumular(int *total, int n)', '  *total = *total + 1;'), ['RESULTADO_VALOR_DISTINTO']),
+  globales(5, 'devuelve en vez de dejar en las globales', FUNCION('int dividir(void)', '  return dividendo / divisor;'), ['DEVUELVE_EN_VEZ_DE_MOSTRAR']),
+  // ---- 6: una local que tapa a una global ----
+  globales(6, 'tapa: la correcta', '1'),
+  globales(6, 'tapa: la global', '0', ['OPCION_USA_LA_GLOBAL']),
+  globales(6, 'tapa: se modifico', '2', ['OPCION_SE_MODIFICO']),
+  // ---- 7: quien cambio la variable ----
+  globales(7, 'tres funciones: la correcta', '2'),
+  globales(7, 'tres funciones: cargar', '0', ['OPCION_FUNCION_CARGAR']),
+  globales(7, 'tres funciones: descontar', '1', ['OPCION_FUNCION_DESCONTAR']),
 ];

@@ -1,13 +1,37 @@
 {
-  "id": "ambito-bloques",
-  "titulo": "Ámbito de bloque",
+  "id": "funciones-ambito",
+  "titulo": "Ámbito de una variable",
   "continua": false,
   "dentroDeMain": true,
-  "descripcion": "Una variable declarada dentro de unas llaves (un `if`, un ciclo) existe solo hasta la llave que cierra, y una del mismo nombre adentro tapa a la de afuera.",
+  "descripcion": "Una variable existe solo en el lugar donde se la declara: una función, o unas llaves (un `if`, un ciclo). Afuera de ese lugar no se la puede usar.",
   "cabecera": "#include <stdio.h>",
   "consignas": [
     {
-      "id": "bloques-q-if",
+      "id": "ambito-q-otra-funcion",
+      "titulo": "Una variable de otra función",
+      "archivo": "void calcular(void) {\n  int total = 10;\n\n  printf(\"%d\", total);\n}",
+      "enunciado": "¿Qué pasa con este programa?",
+      "codigo": "calcular();\nprintf(\"%d\", total);",
+      "opciones": [
+        {
+          "texto": "Muestra `1010`",
+          "codigo": "OPCION_VARIABLE_VISIBLE",
+          "explicacion": "`total` se declaró dentro de `calcular`, y solo existe ahí. Desde `main` no se la puede usar, aunque `calcular` ya haya terminado."
+        },
+        {
+          "texto": "No compila: `total` no existe en `main`",
+          "correcta": true,
+          "explicacion": "`total` es una variable local de `calcular`: nace cuando la función empieza y desaparece cuando termina. Una función solo ve sus propias variables y sus parámetros, así que `main` no la encuentra."
+        },
+        {
+          "texto": "Muestra `10` y después `0`",
+          "codigo": "OPCION_VALOR_POR_DEFECTO",
+          "explicacion": "Una variable que no existe no vale `0`: directamente no se puede usar. El compilador avisa que `total` no está declarada en `main`."
+        }
+      ]
+    },
+    {
+      "id": "ambito-q-if",
       "titulo": "Una variable declarada dentro de un if",
       "enunciado": "¿Qué pasa con este programa?",
       "codigo": "int edad = 20;\n\nif (edad >= 18) {\n  int descuento = 10;\n}\nprintf(\"%d\", descuento);",
@@ -30,7 +54,7 @@
       ]
     },
     {
-      "id": "bloques-q-for",
+      "id": "ambito-q-for",
       "titulo": "La variable del for",
       "enunciado": "¿Qué pasa con este programa?",
       "codigo": "for (int i = 0; i < 3; i++) {\n  printf(\"%d \", i);\n}\nprintf(\"%d\", i);",
@@ -53,7 +77,7 @@
       ]
     },
     {
-      "id": "bloques-q-tapa",
+      "id": "ambito-q-tapa",
       "titulo": "Una variable que tapa a otra",
       "enunciado": "¿Qué muestra este programa?",
       "codigo": "int x = 1;\n\nif (x == 1) {\n  int x = 5;\n  printf(\"%d \", x);\n}\nprintf(\"%d\", x);",
@@ -76,7 +100,7 @@
       ]
     },
     {
-      "id": "bloques-acumular",
+      "id": "ambito-acumular",
       "titulo": "Declarar donde se la necesita",
       "enunciado": "Se quiere sumar los números del `1` al `5` con un ciclo y mostrar el total al terminar. Declare la variable donde corresponde, de modo que siga existiendo después del ciclo, y escriba el ciclo con `printf` para mostrar `15`.",
       "salida": "15",

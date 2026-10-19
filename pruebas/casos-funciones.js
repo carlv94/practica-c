@@ -216,4 +216,55 @@ export const CASOS_DE_FUNCIONES = [
     FUNCION('int dividir(int a, int b, int *r)', '  *r = a % b;\n  return a / b;'),
     ['DEVUELVE_EN_VEZ_DE_MOSTRAR']
   ),
+
+  // ===== consignas que vinieron de las series de ambito =====
+  // ---- parametros: pasar por parametro lo que la funcion necesita ----
+  parametros(6, 'dos parametros', FUNCION('void mostrarPromedio(int suma, int cantidad)', '  printf("%.1f", (float) suma / cantidad);'), 'ok'),
+  parametros(6, 'otros nombres', FUNCION('void promedio(int a, int b)', '  printf("%.1f", (float) a / b);')),
+  parametros(6, 'con un cast del otro lado', FUNCION('void promedio(int a, int b)', '  printf("%.1f", a / (float) b);')),
+  parametros(6, 'sin parametros', FUNCION('void mostrarPromedio(void)', '  printf("%.1f", (float) suma / cantidad);'), ['PARAMETROS_CANTIDAD'], {
+    dice: ['reciba 2 parámetros'],
+  }),
+  parametros(6, 'un solo parametro', FUNCION('void mostrarPromedio(int suma)', '  printf("%.1f", (float) suma / cantidad);'), ['PARAMETROS_CANTIDAD']),
+  parametros(6, 'division entera', FUNCION('void promedio(int a, int b)', '  printf("%.1f", a / b);'), ['FORMATO_NO_CORRESPONDE_AL_TIPO']),
+  parametros(6, 'devuelve en vez de mostrar', FUNCION('float promedio(int a, int b)', '  return (float) a / b;'), ['DEVUELVE_EN_VEZ_DE_MOSTRAR']),
+  // ---- devolver: como sale un valor ----
+  devolver(6, 'como sale un valor: la correcta', '1'),
+  devolver(6, 'como sale un valor: otra variable', '0', ['OPCION_OTRA_VARIABLE']),
+  devolver(6, 'como sale un valor: global', '2', ['OPCION_GLOBAL']),
+  // ---- devolver: usar lo que devuelve ----
+  devolver(7, 'directo en el printf', 'printf("%d", calcular());'),
+  devolver(7, 'con una variable', 'int t = calcular();\nprintf("%d", t);'),
+  devolver(7, 'la variable de la otra funcion', 'calcular();\nprintf("%d", total);', ['NOMBRE_FUERA_DE_ALCANCE'], {
+    dice: ['está declarada dentro de `calcular`', 'las demás no la ven'],
+  }),
+  devolver(7, 'solo la variable de la otra funcion', 'printf("%d", total);', ['NOMBRE_FUERA_DE_ALCANCE']),
+  devolver(7, 'un nombre que no existe en ninguna', 'printf("%d", resultado);', ['NOMBRE_NO_DECLARADO']),
+  // ---- devolver: reescribir sin global ----
+  devolver(8, 'devuelve el total nuevo', FUNCION('int acumular(int total, int n)', '  return total + n;')),
+  devolver(8, 'con una variable', FUNCION('int acumular(int total, int n)', '  int nuevo = total + n;\n\n  return nuevo;')),
+  devolver(8, 'con otros nombres', FUNCION('int sumar(int a, int b)', '  return a + b;')),
+  devolver(8, 'con una global', 'int total = 0;\n' + FUNCION('int acumular(int n)', '  total = total + n;\n  return total;'), [
+    'GLOBAL_DE_MAS',
+    'PARAMETROS_CANTIDAD',
+  ], { dice: ['es una variable global'] }),
+  devolver(8, 'una global con dos parametros', 'int total;\n' + FUNCION('int acumular(int a, int n)', '  total = a + n;\n  return total;'), [
+    'GLOBAL_DE_MAS',
+  ]),
+  devolver(8, 'sin return', FUNCION('int acumular(int total, int n)', '  total = total + n;'), ['RETORNO_FALTA']),
+  devolver(8, 'usa un total que no existe', FUNCION('int acumular(int a, int n)', '  return total + n;'), ['NOMBRE_NO_DECLARADO']),
+  // ---- referencia: reescribir por referencia ----
+  referencia(6, 'modifica por referencia', FUNCION('void acumular(int *total, int n)', '  *total = *total + n;')),
+  referencia(6, 'con otros nombres', FUNCION('void sumar(int *t, int x)', '  *t = *t + x;')),
+  referencia(6, 'sin asterisco en la declaracion', FUNCION('void acumular(int total, int n)', '  total = total + n;'), [
+    'PARAMETRO_REFERENCIA_FALTA',
+  ]),
+  referencia(6, 'sin asterisco al usarlo', FUNCION('void acumular(int *total, int n)', '  total = total + n;'), [
+    'PARAMETRO_SIN_ASTERISCO_AL_USARLO',
+  ]),
+  referencia(6, 'con una global', 'int total = 0;\n' + FUNCION('void acumular(int n)', '  total = total + n;'), [
+    'GLOBAL_DE_MAS',
+    'PARAMETROS_CANTIDAD',
+  ]),
+  referencia(6, 'suma de menos', FUNCION('void acumular(int *total, int n)', '  *total = *total + 1;'), ['RESULTADO_VALOR_DISTINTO']),
 ];

@@ -241,6 +241,71 @@
         }
       ],
       "referencia": "void dividir(int dividendo, int divisor, int *cociente, int *resto) {\n  *cociente = dividendo / divisor;\n  *resto = dividendo % divisor;\n}"
+    },
+    {
+      "id": "referencia-sin-global",
+      "titulo": "Reescribirla modificando la variable de afuera",
+      "en": "archivo",
+      "ejemplo": {
+        "texto": "La misma función con la variable global:",
+        "codigo": "int total = 0;\n\nvoid acumular(int n) {\n  total = total + n;\n}"
+      },
+      "enunciado": "Otra manera de reemplazar la global es pasarle a la función la variable de afuera, para que la modifique. Escriba una función que reciba por referencia el total y por valor el número que se suma, y le sume el número al total. Póngale el nombre que quiera.",
+      "requiere": [
+        {
+          "sinGlobales": true
+        },
+        {
+          "funcion": {
+            "retorna": "void",
+            "parametros": [
+              {
+                "tipo": "entero",
+                "referencia": true
+              },
+              {
+                "tipo": "entero"
+              }
+            ],
+            "capturar": "R"
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "datos": {
+                  "total": 10
+                },
+                "llama": "$R(&total, 5)",
+                "queda": {
+                  "total": 15
+                },
+                "visible": true
+              },
+              {
+                "datos": {
+                  "total": 0
+                },
+                "llama": "$R(&total, 7)",
+                "queda": {
+                  "total": 7
+                }
+              },
+              {
+                "datos": {
+                  "total": -3
+                },
+                "llama": "$R(&total, 3)",
+                "queda": {
+                  "total": 0
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "void acumular(int *total, int n) {\n  *total = *total + n;\n}"
     }
   ]
 }
