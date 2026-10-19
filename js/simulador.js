@@ -962,6 +962,20 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
         if (nodoDerecha.type === 'string_literal' && ['subscript_expression', 'field_expression'].includes(izquierda.type)) {
           throw new TextoComoLetra(nodoDerecha.text, fila(nodoDerecha));
         }
+        // Copiar una estructura en otra, o guardar la que devuelve una funcion.
+        if (operador === '=' && izquierda.type === 'identifier' && estructurasVivas.has(izquierda.text)) {
+          let copia = null;
+          if (nodoDerecha.type === 'identifier' && estructurasVivas.has(nodoDerecha.text)) copia = camposCopiados(nodoDerecha.text);
+          else if (nodoDerecha.type === 'call_expression') {
+            const devuelta = evaluar(nodoDerecha);
+            if (!devuelta.estructura) sinVerificar(n, 'una estructura que no se sabe seguir');
+            copia = devuelta.estructura;
+          }
+          if (copia) {
+            volcarCampos(izquierda.text, copia);
+            return { v: 0, f: false };
+          }
+        }
         let derecha;
         try {
           derecha = evaluar(nodoDerecha);
@@ -1032,9 +1046,16 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
   function declararEstructura(n, campos) {
     for (const d of n.namedChildren) {
       if (!['identifier', 'init_declarator', 'array_declarator', 'pointer_declarator'].includes(d.type)) continue;
-      if (d.type === 'init_declarator') sinVerificar(d, 'una estructura con valores iniciales');
+      // Con valor inicial solo se sigue otra estructura, o lo que devuelve una funcion.
+      let declarador = d;
+      let inicial = null;
+      if (d.type === 'init_declarator') {
+        declarador = d.childForFieldName('declarator');
+        inicial = d.childForFieldName('value');
+        if (!inicial || !['call_expression', 'identifier'].includes(inicial.type)) sinVerificar(d, 'una estructura con valores iniciales');
+      }
       const dims = [];
-      let nombre = d;
+      let nombre = declarador;
       while (nombre.type === 'array_declarator') {
         const tamano = nombre.childForFieldName('size');
         if (!tamano) sinVerificar(d);
@@ -1043,8 +1064,46 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
       }
       if (nombre.type !== 'identifier') sinVerificar(d, 'un puntero');
       if (dims.some((k) => !Number.isInteger(k) || k < 0)) sinVerificar(d);
+      if (inicial && dims.length) sinVerificar(d, 'un arreglo de estructuras con valor inicial');
+      // La que viene de la funcion o de otra estructura se copia despues de crear los campos.
+      const copia = inicial
+        ? inicial.type === 'identifier'
+          ? estructurasVivas.has(inicial.text)
+            ? camposCopiados(inicial.text)
+            : sinVerificar(inicial)
+          : evaluar(inicial).estructura
+        : null;
+      if (inicial && !copia) sinVerificar(inicial);
       estructurasVivas.set(nombre.text, campos);
       crearCampos(nombre.text, campos, dims, d, 0);
+      if (copia) volcarCampos(nombre.text, copia);
+    }
+  }
+
+  // Los campos de una variable de estructura, copiados, con lo que va despues del
+  // nombre de la variable (".dia", ".nacimiento.anio") como clave.
+  function camposCopiados(nombre) {
+    const claves = [];
+    for (let ambito = variables; ambito; ambito = ambito.padre) claves.push(...Map.prototype.keys.call(ambito));
+    const copia = new Map();
+    for (const clave of new Set(claves)) {
+      if (!clave.startsWith(nombre + '.')) continue;
+      const v = variables.get(clave);
+      copia.set(clave.slice(nombre.length), { ...v, datos: v.datos ? structuredClone(v.datos) : v.datos });
+    }
+    return copia;
+  }
+
+  // Lo copiado pasa a ser los campos de otra variable de la misma estructura.
+  function volcarCampos(destino, copia) {
+    for (const [sufijo, v] of copia) {
+      const actual = variables.get(destino + sufijo);
+      if (actual) {
+        actual.valor = v.valor;
+        if (v.datos) actual.datos = structuredClone(v.datos);
+      } else {
+        variables.set(destino + sufijo, { ...v, datos: v.datos ? structuredClone(v.datos) : v.datos });
+      }
     }
   }
 
@@ -1267,13 +1326,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
         // Por valor: cada campo de la estructura de afuera se copia con el nombre del parametro.
         const origen = a.type === 'identifier' ? a.text : null;
         if (!origen || !estructurasVivas.has(origen)) sinVerificar(a, `un argumento que no es una estructura para ${p.nombre}`);
-        const claves = [];
-        for (let ambito = variables; ambito; ambito = ambito.padre) claves.push(...Map.prototype.keys.call(ambito));
-        for (const clave of new Set(claves)) {
-          if (!clave.startsWith(origen + '.')) continue;
-          const v = variables.get(clave);
-          local.set(p.nombre + clave.slice(origen.length), { ...v, datos: v.datos ? structuredClone(v.datos) : v.datos });
-        }
+        for (const [sufijo, v] of camposCopiados(origen)) local.set(p.nombre + sufijo, v);
         estructurasDeLocal.set(p.nombre, p.campos);
         return;
       }
@@ -1333,6 +1386,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
       if (usado) throw new SinRetorno(def.nombre, fila(n));
       return { v: 0, f: false };
     }
+    if (devuelto.estructura) return { v: 0, f: false, estructura: devuelto.estructura };
     const flotante = /float|double/.test(textoRetorno);
     return { v: flotante ? devuelto.v : Math.trunc(devuelto.v), f: flotante };
   }
@@ -1372,7 +1426,12 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
         return 'continue';
       case 'return_statement': {
         const valor = n.namedChildren.find((h) => h.type !== 'comment');
-        retorno = valor ? evaluar(valor) : null;
+        // Una estructura se devuelve por valor: sale una copia entera.
+        if (valor && valor.type === 'identifier' && estructurasVivas.has(valor.text)) {
+          retorno = { v: 0, f: false, estructura: camposCopiados(valor.text) };
+        } else {
+          retorno = valor ? evaluar(valor) : null;
+        }
         return 'return';
       }
       case 'if_statement': {

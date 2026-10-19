@@ -615,7 +615,9 @@ export function corregir(
         return;
       }
     } else if (regla.retorna) {
-      const categoria = CATEGORIAS[regla.retorna];
+      // 'estructura': devolver una estructura (no una union).
+      const deEstructura = regla.retorna === 'estructura';
+      const categoria = deEstructura ? { pide: 'una estructura' } : CATEGORIAS[regla.retorna];
       if (!categoria) throw new Error(`La consigna "${consigna.id}" pide un tipo de retorno que no conozco: ${regla.retorna}`);
       if (real.clase === 'primitivo' && real.nombre === 'void' && !f.punteros && f.muestra) {
         error(
@@ -625,7 +627,10 @@ export function corregir(
         );
         return;
       }
-      if (!(real.clase === 'primitivo' && categoria.es(real.nombre) && !f.punteros)) {
+      const cumple = deEstructura
+        ? real.clase === 'struct' && !real.union && !f.punteros
+        : real.clase === 'primitivo' && categoria.es(real.nombre) && !f.punteros;
+      if (!cumple) {
         error(
           'FUNCION_TIPO_RETORNO',
           `La función tiene que devolver ${categoria.pide}: ese es el tipo que va antes del nombre. Está declarada como ${BT}${escrito}${BT}.`,
@@ -3785,7 +3790,38 @@ export function corregir(
           antes: caso.antes,
         });
         if (!hecha) return;
-        if (llamada && caso.devuelve !== undefined) {
+        // Una estructura devuelta se compara campo por campo: "devuelve": { "cociente": 3, "resto": 2 }.
+        if (llamada && caso.devuelve && typeof caso.devuelve === 'object') {
+          const con = caso.visible || !caso.datos ? '' : `${conLosValores(caso.vistos || caso.datos)}, `;
+          const pedidos = Object.keys(caso.devuelve);
+          for (const [campo, esperado] of Object.entries(caso.devuelve)) {
+            const v = hecha.variables.get(`__devuelve.${campo}`);
+            if (!v) {
+              error(
+                'DEVUELVE_CAMPO_FALTA',
+                `La estructura que devuelve ${BT}${llamada}${BT} no tiene el campo ${BT}${campo}${BT}: la consigna pide los campos ${enLista(pedidos)}.`
+              );
+              return;
+            }
+            // Un campo de texto: sus letras hasta el fin.
+            const dio =
+              typeof esperado === 'string' && v.dims
+                ? String.fromCodePoint(...(v.datos || []).slice(0, Math.max(0, (v.datos || []).indexOf(0) < 0 ? (v.datos || []).length : (v.datos || []).indexOf(0))))
+                : v.valor;
+            if (dio === undefined) {
+              error('DEVUELVE_CAMPO_SIN_VALOR', `${con}el campo ${BT}${campo}${BT} de lo que devuelve ${BT}${llamada}${BT} no llega a tener un valor.`);
+              return;
+            }
+            const igual = typeof esperado === 'string' ? dio === esperado : Math.abs(dio - esperado) < 1e-6;
+            if (!igual) {
+              error(
+                'DEVUELVE_DISTINTO',
+                `${con}${BT}${llamada}${BT} devuelve una estructura con ${BT}${campo}${BT} en ${BT}${dio}${BT}, y debería tener ${BT}${esperado}${BT}.`
+              );
+              return;
+            }
+          }
+        } else if (llamada && caso.devuelve !== undefined) {
           const dio = hecha.variables.get('__devuelve');
           if (!dio || dio.valor === undefined) {
             error('FUNCION_SIN_RETORNO', `${BT}${llamada}${BT} no devuelve ningún valor: la consigna pide que lo devuelva.`);
@@ -6330,9 +6366,16 @@ function valorDeDimension(texto, modelo, vistos = new Set()) {
 // dos cosas); con el mismo valor compila, asi que no es un error sino una
 // mejora, y solo donde se pide la practica de las constantes.
 function revisarRedefiniciones(modelo, error, mejora) {
+  // Las locales de dos funciones distintas pueden llamarse igual.
+  const funcionDe = (x) => modelo.funciones.find((f) => !f.prototipo && f.posicion <= x.indice && x.indice < f.fin);
   for (const v of modelo.variables.filter((x) => x.nuevo)) {
     const antes = modelo.variables.find(
-      (w) => w !== v && w.nombre === v.nombre && w.local === v.local && w.indice < v.indice
+      (w) =>
+        w !== v &&
+        w.nombre === v.nombre &&
+        w.local === v.local &&
+        w.indice < v.indice &&
+        (!v.local || funcionDe(w) === funcionDe(v))
     );
     if (!antes) continue;
     error(

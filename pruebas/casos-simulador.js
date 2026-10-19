@@ -127,9 +127,25 @@ export const CASOS_DEL_SIMULADOR = [
     espera: { error: 'SinVerificar' },
   },
   {
-    nombre: 'estructuras: la estructura entera no se sigue',
-    codigo: con('TAlumno alumno;\nTAlumno copia;\ncopia = alumno;'),
-    espera: { error: 'SinVerificar' },
+    nombre: 'estructuras: una estructura entera se copia en otra',
+    codigo: con('TAlumno alumno;\nTAlumno copia;\nalumno.legajo = 5;\ncopia = alumno;\nalumno.legajo = 9;'),
+    espera: { variables: { 'copia.legajo': 5, 'alumno.legajo': 9 } },
+  },
+  {
+    nombre: 'estructuras: una funcion devuelve una estructura',
+    codigo: conFunciones(
+      'typedef struct {\n  int dia;\n  int mes;\n} TF;\n\nTF crear(void) {\n  TF f;\n\n  f.dia = 4;\n  f.mes = 12;\n  return f;\n}',
+      'TF hoy;\nint r;\nhoy = crear();\nr = hoy.mes;'
+    ),
+    espera: { variables: { r: 12, 'hoy.dia': 4 } },
+  },
+  {
+    nombre: 'estructuras: se declara con lo que devuelve una funcion',
+    codigo: conFunciones(
+      'typedef struct {\n  int dia;\n  int mes;\n} TF;\n\nTF crear(void) {\n  TF f;\n\n  f.dia = 4;\n  f.mes = 12;\n  return f;\n}',
+      'TF hoy = crear();\nint r;\nr = hoy.dia;'
+    ),
+    espera: { variables: { r: 4 } },
   },
   {
     nombre: 'estructuras anidadas: un campo de adentro',
