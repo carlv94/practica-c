@@ -1184,7 +1184,8 @@ cadena de necesidades: cada tema nace de un problema del anterior.
    de `return a, b;`), y una estructura agrupa varios.
 
 `funciones-referencia.json` está por ahora en un grupo "Punteros" provisorio,
-también oculto: es la serie 3 del grupo Punteros, que se arma después.
+también oculto, junto con `punteros-arreglos.json` (el cuestionario del `sizeof`
+de un arreglo recibido): son series del grupo Punteros, que se arma después.
 
 El plan de la reestructuración está en la memoria del proyecto
 (`funciones-ambito-flujo`).
@@ -1192,7 +1193,9 @@ El plan de la reestructuración está en la memoria del proyecto
 - **Regla `global`**: `{ "global": { "nombre": "veces", "tipo": "entero" } }`. La
   consigna pide declarar una variable global: `GLOBAL_FALTA`, y
   `GLOBAL_DENTRO_DE_FUNCION` si la declaró adentro de una función (el mensaje
-  explica que desaparece al terminar).
+  explica que desaparece al terminar). Si la declaró sin valor inicial es
+  correcto (una global empieza en `0`), pero sale una **nota** `GLOBAL_SIN_VALOR_INICIAL`
+  que aconseja escribir `= 0`.
 - **Parámetros de la regla `funcion`**: además de `entero`, `real` y `caracter`,
   `{ "tipo": "estructura" }` (una estructura por valor, no unión) y
   `{ "tipo": "entero", "arreglo": true, "dimensiones": 2 }` (una tabla; sin
@@ -1207,6 +1210,13 @@ El plan de la reestructuración está en la memoria del proyecto
   una tabla recibidos son los mismos. También sigue la copia de una estructura en
   otra (`a = b;`), una función que **devuelve** una estructura (`return r;`) y
   declarar con lo que devuelve (`TDivision r = dividir(17, 5);`).
+- **Retorno de enumerado**: `"retorna": "enumerado"`, y en los casos
+  `"devuelve": "VERDADERO"` se compara con lo que vale ese enumerador en el
+  enumerado del alumno.
+- **`printf` con `%s`**: el simulador muestra una cadena (un arreglo de
+  caracteres, hasta su `' '`) o un texto escrito.
+- **`ARGUMENTO_NUMERO`**: la regla `llamada` pide un número escrito en la llamada
+  (`"21"`) y el alumno pasó una variable u otro número.
 - **Retorno de estructura**: `{ "funcion": { "retorna": "estructura", ... } }` pide
   una estructura (no una unión), y el caso de `ejecuta` lo comprueba **campo por
   campo**: `{ "llama": "$D(17, 5)", "devuelve": { "cociente": 3, "resto": 2 } }`

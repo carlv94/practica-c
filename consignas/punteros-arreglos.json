@@ -1,0 +1,34 @@
+{
+  "id": "punteros-arreglos",
+  "titulo": "Arreglos y punteros",
+  "continua": false,
+  "dentroDeMain": true,
+  "descripcion": "Por qué un arreglo recibido por una función no es una copia, y qué mide `sizeof` ahí adentro.",
+  "cabecera": "#include <stdio.h>",
+  "consignas": [
+    {
+      "id": "punteros-q-tamano",
+      "titulo": "El tamaño de un arreglo recibido",
+      "archivo": "void mostrarTamano(int v[]) {\n  printf(\"%d\", (int) sizeof(v));\n}",
+      "enunciado": "El arreglo `notas` tiene 10 enteros, que ocupan 40 bytes. En una computadora de 64 bits, ¿qué muestra este programa?",
+      "codigo": "int notas[10];\n\nmostrarTamano(notas);",
+      "opciones": [
+        {
+          "texto": "`40`",
+          "codigo": "OPCION_TAMANO_DEL_ARREGLO",
+          "explicacion": "Dentro de la función, `v` no es el arreglo entero: la función recibe el arreglo mismo, sin copiarlo, y `sizeof(v)` no mide los 40 bytes. Por eso la función no puede saber cuántos elementos tiene."
+        },
+        {
+          "texto": "`8`",
+          "correcta": true,
+          "explicacion": "En una computadora de 64 bits, lo que la función recibe ocupa 8 bytes: es la dirección del arreglo, no el arreglo. Por eso `sizeof` no sirve para saber cuántos elementos hay, y la cantidad se pasa como otro parámetro."
+        },
+        {
+          "texto": "`10`",
+          "codigo": "OPCION_CANTIDAD",
+          "explicacion": "`sizeof` mide bytes, no elementos. Y dentro de la función ni siquiera mide el arreglo: la función no sabe cuántos elementos tiene, por eso la cantidad se pasa aparte."
+        }
+      ]
+    }
+  ]
+}

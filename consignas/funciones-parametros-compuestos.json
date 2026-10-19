@@ -4,12 +4,12 @@
   "continua": false,
   "dentroDeMain": true,
   "descripcion": "Una estructura se pasa por valor, igual que un número: la función recibe una copia entera. Un arreglo, una cadena o una tabla, en cambio, no se copian: la función recibe el mismo arreglo.",
-  "cabecera": "#include <stdio.h>\n#include <string.h>\n\ntypedef struct {\n  int dia;\n  int mes;\n  int anio;\n} TFecha;",
+  "cabecera": "#include <stdio.h>",
   "consignas": [
     {
       "id": "compuestos-q-copia",
       "titulo": "Una estructura se copia",
-      "archivo": "void adelantar(TFecha f) {\n  f.dia = f.dia + 1;\n}",
+      "archivo": "typedef struct {\n  int dia;\n  int mes;\n  int anio;\n} TFecha;\n\nvoid adelantar(TFecha f) {\n  f.dia = f.dia + 1;\n}",
       "enunciado": "¿Qué muestra este programa?",
       "codigo": "TFecha hoy;\n\nhoy.dia = 10;\nhoy.mes = 5;\nhoy.anio = 2026;\nadelantar(hoy);\nprintf(\"%d\", hoy.dia);",
       "opciones": [
@@ -34,7 +34,8 @@
       "id": "compuestos-estructura",
       "titulo": "Recibir una estructura",
       "en": "archivo",
-      "enunciado": "Escriba una función que reciba una fecha (`TFecha`) y la muestre con el formato `día/mes/año`: la fecha del 10 de mayo de 2026 se muestra `10/5/2026`. Póngale el nombre que quiera.",
+      "archivoDado": "typedef struct {\n  int dia;\n  int mes;\n  int anio;\n} TFecha;",
+      "enunciado": "La estructura `TFecha` ya está declarada. Escriba una función que reciba una fecha y la muestre con el formato `día/mes/año`: la fecha del 10 de mayo de 2026 se muestra `10/5/2026`. Póngale el nombre que quiera.",
       "requiere": [
         {
           "funcion": {
@@ -78,10 +79,43 @@
       "referencia": "void mostrarFecha(TFecha f) {\n  printf(\"%d/%d/%d\", f.dia, f.mes, f.anio);\n}"
     },
     {
+      "id": "compuestos-q-arreglo",
+      "titulo": "El parámetro de un arreglo",
+      "archivo": "void primeroA(int v[]) {\n  printf(\"%d\", v[0]);\n}\n\nvoid primeroB(int v[10]) {\n  printf(\"%d\", v[0]);\n}\n\nvoid primeroC(int v[3]) {\n  printf(\"%d\", v[0]);\n}",
+      "enunciado": "El arreglo `notas` tiene 5 elementos. ¿Qué pasa con este programa?",
+      "codigo": "int notas[5] = {8, 6, 9, 4, 7};\n\nprimeroA(notas);\nprimeroB(notas);\nprimeroC(notas);",
+      "opciones": [
+        {
+          "texto": "Compila y muestra `888`",
+          "correcta": true,
+          "explicacion": "El tamaño entre corchetes de un parámetro es opcional y no se tiene en cuenta: la función recibe el arreglo mismo, sin copiarlo, sean cuantos sean sus elementos. Por eso la cantidad de elementos se pasa aparte."
+        },
+        {
+          "texto": "No compila: `primeroB` y `primeroC` esperan otro tamaño",
+          "codigo": "OPCION_EL_TAMANO_IMPORTA",
+          "explicacion": "El tamaño que se escribe en el parámetro no se comprueba: se puede escribir cualquier número, o dejar los corchetes vacíos."
+        },
+        {
+          "texto": "Compila, pero `primeroC` solo puede usar los primeros 3 elementos",
+          "codigo": "OPCION_SOLO_TRES",
+          "explicacion": "El número entre corchetes no limita nada: la función recibe el arreglo completo. Si quisiera usar más elementos, podría hacerlo."
+        }
+      ]
+    },
+    {
       "id": "compuestos-arreglo",
       "titulo": "Recibir un arreglo",
       "en": "archivo",
-      "enunciado": "Escriba una función que reciba un arreglo de números enteros y su cantidad de elementos, y los muestre separados por un guion: con `7`, `4` y `9` muestra `7-4-9`. La función no puede saber cuántos elementos tiene el arreglo: la cantidad se le pasa aparte. Póngale el nombre que quiera.",
+      "dibujo": {
+        "titulo": "Un arreglo de ejemplo:",
+        "valores": [
+          7,
+          4,
+          9
+        ]
+      },
+      "enunciado": "Escriba una función que reciba un arreglo de números enteros y su cantidad de elementos, y los muestre con `printf`, cada uno seguido de un espacio. La función no puede saber cuántos elementos tiene el arreglo, es por eso que la cantidad se le pasa aparte. Póngale el nombre que quiera.",
+      "salida": "7 4 9",
       "requiere": [
         {
           "funcion": {
@@ -110,7 +144,7 @@
                   ]
                 },
                 "llama": "$M(v, 3)",
-                "salida": "7-4-9",
+                "salida": "7 4 9",
                 "visible": true
               },
               {
@@ -132,19 +166,29 @@
                   ]
                 },
                 "llama": "$M(v, 4)",
-                "salida": "1-2-3-4"
+                "salida": "1 2 3 4"
               }
             ]
           }
         }
       ],
-      "referencia": "void mostrarGuiones(int v[], int n) {\n  int i;\n\n  for (i = 0; i < n; i++) {\n    if (i > 0) {\n      printf(\"-\");\n    }\n    printf(\"%d\", v[i]);\n  }\n}"
+      "referencia": "void mostrarNumeros(int v[], int n) {\n  int i;\n\n  for (i = 0; i < n; i++) {\n    printf(\"%d \", v[i]);\n  }\n}"
     },
     {
       "id": "compuestos-arreglo-pares",
       "titulo": "Mostrar solo algunos elementos",
       "en": "archivo",
-      "enunciado": "Escriba una función que reciba un arreglo de números enteros y su cantidad de elementos, y muestre solo los pares, cada uno seguido de un espacio: con `3`, `4`, `7` y `8` muestra `4 8`. Póngale el nombre que quiera.",
+      "dibujo": {
+        "titulo": "Un arreglo de ejemplo:",
+        "valores": [
+          3,
+          4,
+          7,
+          8
+        ]
+      },
+      "enunciado": "Escriba una función que reciba un arreglo de números enteros y su cantidad de elementos, y muestre solo los pares, cada uno seguido de un espacio. Póngale el nombre que quiera.",
+      "salida": "4 8",
       "requiere": [
         {
           "funcion": {
@@ -205,34 +249,20 @@
       "referencia": "void mostrarPares(int v[], int n) {\n  int i;\n\n  for (i = 0; i < n; i++) {\n    if (v[i] % 2 == 0) {\n      printf(\"%d \", v[i]);\n    }\n  }\n}"
     },
     {
-      "id": "compuestos-q-tamano",
-      "titulo": "El tamaño de un arreglo recibido",
-      "archivo": "void mostrarTamano(int v[]) {\n  printf(\"%d\", (int) sizeof(v));\n}",
-      "enunciado": "El arreglo `notas` tiene 10 enteros, que ocupan 40 bytes. En una computadora de 64 bits, ¿qué muestra este programa?",
-      "codigo": "int notas[10];\n\nmostrarTamano(notas);",
-      "opciones": [
-        {
-          "texto": "`40`",
-          "codigo": "OPCION_TAMANO_DEL_ARREGLO",
-          "explicacion": "Dentro de la función, `v` no es el arreglo entero: la función recibe el arreglo mismo, sin copiarlo, y `sizeof(v)` no mide los 40 bytes. Por eso la función no puede saber cuántos elementos tiene."
-        },
-        {
-          "texto": "`8`",
-          "correcta": true,
-          "explicacion": "En una computadora de 64 bits, lo que la función recibe ocupa 8 bytes: es la dirección del arreglo, no el arreglo. Por eso `sizeof` no sirve para saber cuántos elementos hay, y la cantidad se pasa como otro parámetro."
-        },
-        {
-          "texto": "`10`",
-          "codigo": "OPCION_CANTIDAD",
-          "explicacion": "`sizeof` mide bytes, no elementos. Y dentro de la función ni siquiera mide el arreglo: la función no sabe cuántos elementos tiene, por eso la cantidad se pasa aparte."
-        }
-      ]
-    },
-    {
       "id": "compuestos-cadena",
       "titulo": "Recibir una cadena",
       "en": "archivo",
-      "enunciado": "Escriba una función que reciba una cadena y la muestre con un guion entre las letras: con `Ana` muestra `A-n-a`. Una cadena termina en `'\\0'`, así que la función no necesita que le pasen la cantidad de letras. Póngale el nombre que quiera.",
+      "dibujo": {
+        "titulo": "Una cadena de ejemplo:",
+        "valores": [
+          "A",
+          "n",
+          "a",
+          "\\0"
+        ]
+      },
+      "enunciado": "Escriba una función que reciba una cadena y la muestre entre corchetes con `printf`. La cadena se muestra con el formato `%s`. Póngale el nombre que quiera.",
+      "salida": "[Ana]",
       "requiere": [
         {
           "funcion": {
@@ -254,7 +284,7 @@
                   "texto": "Ana"
                 },
                 "llama": "$G(texto)",
-                "salida": "A-n-a",
+                "salida": "[Ana]",
                 "visible": true
               },
               {
@@ -262,26 +292,64 @@
                   "texto": "Sol"
                 },
                 "llama": "$G(texto)",
-                "salida": "S-o-l"
+                "salida": "[Sol]"
               },
               {
                 "datos": {
                   "texto": "Ok"
                 },
                 "llama": "$G(texto)",
-                "salida": "O-k"
+                "salida": "[Ok]"
               }
             ]
           }
         }
       ],
-      "referencia": "void mostrarConGuiones(char texto[]) {\n  int i;\n\n  for (i = 0; texto[i] != '\\0'; i++) {\n    if (i > 0) {\n      printf(\"-\");\n    }\n    printf(\"%c\", texto[i]);\n  }\n}"
+      "referencia": "void mostrarEntreCorchetes(char texto[]) {\n  printf(\"[%s]\", texto);\n}"
+    },
+    {
+      "id": "compuestos-q-tabla",
+      "titulo": "El parámetro de una tabla",
+      "enunciado": "Una función tiene que recibir una tabla de enteros de 3 columnas. ¿Cuál de estos encabezados es válido?",
+      "opciones": [
+        {
+          "texto": "`void mostrar(int t[][3])`",
+          "correcta": true,
+          "explicacion": "Para ubicar cada elemento, el compilador necesita saber cuántas columnas tiene cada fila. La cantidad de filas no hace falta: por eso queda vacía, o se pasa aparte."
+        },
+        {
+          "texto": "`void mostrar(int t[][])`",
+          "codigo": "OPCION_SIN_COLUMNAS",
+          "explicacion": "Falta la cantidad de columnas: sin ella, el compilador no puede saber dónde empieza cada fila."
+        },
+        {
+          "texto": "`void mostrar(int t[3][])`",
+          "codigo": "OPCION_FILAS_EN_VEZ_DE_COLUMNAS",
+          "explicacion": "Está al revés: lo que hay que escribir es la cantidad de columnas, que es la segunda, y no la de filas."
+        }
+      ]
     },
     {
       "id": "compuestos-tabla",
       "titulo": "Recibir una tabla",
       "en": "archivo",
-      "enunciado": "Escriba una función que reciba una tabla de enteros de 3 columnas y su cantidad de filas, y la muestre una fila por renglón, con un espacio entre los números. En el parámetro de una tabla hay que escribir las columnas: `int t[][3]`. Póngale el nombre que quiera.",
+      "dibujo": {
+        "titulo": "Una tabla de ejemplo:",
+        "valores": [
+          [
+            1,
+            2,
+            3
+          ],
+          [
+            4,
+            5,
+            6
+          ]
+        ]
+      },
+      "enunciado": "Escriba una función que reciba una tabla de enteros de 3 columnas y su cantidad de filas, y la muestre una fila por renglón, con un espacio después de cada número. Póngale el nombre que quiera.",
+      "salida": "1 2 3\n4 5 6",
       "requiere": [
         {
           "funcion": {

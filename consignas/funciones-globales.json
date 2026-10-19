@@ -16,7 +16,7 @@
         {
           "texto": "`0`",
           "codigo": "OPCION_COMO_LOCAL",
-          "explicacion": "Eso pasaría si `contador` fuera local de `sumarUno`. Pero está declarada afuera de las funciones: es una variable global, y `sumarUno` modifica esa misma variable."
+          "explicacion": "`contador` está declarada afuera de todas las funciones: es una variable global, por lo que `sumarUno` puede modificarla así como `main` puede mostrar su valor. No hay una copia para cada función: es una sola variable compartida."
         },
         {
           "texto": "`2`",
@@ -26,7 +26,7 @@
         {
           "texto": "No compila: `contador` no existe en `main`",
           "codigo": "OPCION_ES_UN_ERROR",
-          "explicacion": "`contador` está declarada afuera de todas las funciones, así que `main` la ve igual que `sumarUno`. Compila y anda."
+          "explicacion": "`contador` está declarada afuera de todas las funciones, así que tanto `main` como `sumarUno` pueden verla perfectamente. Compila y anda."
         }
       ]
     },
@@ -69,7 +69,7 @@
       "titulo": "Un dato que entra por una global",
       "en": "archivo",
       "archivoDado": "int numero;",
-      "enunciado": "La variable global `numero` ya está declarada. Escriba una función `mostrarDoble` que no reciba nada y muestre con `printf` el doble de `numero`: si `numero` vale `4`, muestra `8`.\n\nEsta consigna se resuelve con una variable global; en lo que sigue se verá por qué conviene evitarlas.",
+      "enunciado": "La variable global `numero` ya está declarada. Escriba una función `mostrarDoble` que no reciba nada y muestre con `printf` el doble de `numero`, sin modificar `numero`: si `numero` vale `4`, muestra `8` y `numero` sigue valiendo `4`.\n\nEsta consigna se resuelve con una variable global; en lo que sigue se verá por qué conviene evitarlas.",
       "requiere": [
         {
           "funcion": {
@@ -87,21 +87,30 @@
                 },
                 "llama": "mostrarDoble()",
                 "salida": "8",
-                "visible": true
+                "visible": true,
+                "queda": {
+                  "numero": 4
+                }
               },
               {
                 "datos": {
                   "numero": -3
                 },
                 "llama": "mostrarDoble()",
-                "salida": "-6"
+                "salida": "-6",
+                "queda": {
+                  "numero": -3
+                }
               },
               {
                 "datos": {
                   "numero": 0
                 },
                 "llama": "mostrarDoble()",
-                "salida": "0"
+                "salida": "0",
+                "queda": {
+                  "numero": 0
+                }
               }
             ]
           }
@@ -141,7 +150,7 @@
       "titulo": "Un resultado que sale por una global",
       "en": "archivo",
       "archivoDado": "int dividendo;\nint divisor;\nint cociente;\nint resto;",
-      "enunciado": "Las variables globales `dividendo`, `divisor`, `cociente` y `resto` ya están declaradas. Escriba una función `dividir` que no reciba nada y calcule el cociente y el resto de la división entera de `dividendo` por `divisor`, y los deje en `cociente` y en `resto`. Con `17` y `5`, el cociente es `3` y el resto es `2`.",
+      "enunciado": "Las variables globales `dividendo`, `divisor`, `cociente` y `resto` ya están declaradas. Escriba una función `dividir` que no reciba ni devuelva nada y que calcule el cociente y el resto de la división entera de `dividendo` por `divisor`, y los deje en `cociente` y en `resto`.\n\nAbajo se ve cómo se usaría desde `main`: con `17` y `5`, el cociente es `3` y el resto es `2`.",
       "requiere": [
         {
           "funcion": {
@@ -154,6 +163,10 @@
           "ejecuta": {
             "casos": [
               {
+                "salida": "3 2",
+                "visible": true
+              },
+              {
                 "datos": {
                   "dividendo": 17,
                   "divisor": 5
@@ -163,7 +176,7 @@
                   "cociente": 3,
                   "resto": 2
                 },
-                "visible": true
+                "visible": false
               },
               {
                 "datos": {
@@ -191,7 +204,59 @@
           }
         }
       ],
-      "referencia": "void dividir(void) {\n  cociente = dividendo / divisor;\n  resto = dividendo % divisor;\n}"
+      "referencia": "void dividir(void) {\n  cociente = dividendo / divisor;\n  resto = dividendo % divisor;\n}",
+      "dadoEnMain": "dividendo = 17;\ndivisor = 5;\ndividir();\nprintf(\"%d %d\", cociente, resto);",
+      "salida": "3 2"
+    },
+    {
+      "id": "globales-alumno",
+      "titulo": "Los datos de un alumno en una global",
+      "en": "archivo",
+      "archivoDado": "typedef struct {\n  int legajo;\n  int edad;\n  float promedio;\n} TAlumno;\n\nTAlumno alumno;",
+      "enunciado": "La estructura `TAlumno` y la variable global `alumno` ya están declaradas. Escriba una función `cargarAlumno` que no reciba ni devuelva nada y que lea con `scanf` el legajo, la edad y el promedio de un alumno, en ese orden, y los guarde en `alumno`.\n\nEsta consigna se resuelve con una variable global; en lo que sigue se verá por qué conviene evitarlas.",
+      "requiere": [
+        {
+          "funcion": {
+            "nombre": "cargarAlumno",
+            "retorna": "void",
+            "parametros": []
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "entrada": [
+                  12,
+                  20,
+                  8.5
+                ],
+                "llama": "cargarAlumno()",
+                "queda": {
+                  "alumno.legajo": 12,
+                  "alumno.edad": 20,
+                  "alumno.promedio": 8.5
+                },
+                "visible": true
+              },
+              {
+                "entrada": [
+                  7,
+                  31,
+                  6
+                ],
+                "llama": "cargarAlumno()",
+                "queda": {
+                  "alumno.legajo": 7,
+                  "alumno.edad": 31,
+                  "alumno.promedio": 6
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "void cargarAlumno(void) {\n  scanf(\"%d\", &alumno.legajo);\n  scanf(\"%d\", &alumno.edad);\n  scanf(\"%f\", &alumno.promedio);\n}"
     },
     {
       "id": "globales-q-tapa",
@@ -237,7 +302,7 @@
         {
           "texto": "`cerrarCaja`",
           "correcta": true,
-          "explicacion": "La que lo dejó en `0` es `cerrarCaja`, que `procesar` llama sin que se note desde `main`. Para encontrarla hubo que leer todas las funciones: como `total` es global, **cualquiera** de ellas puede cambiarla, y un valor inesperado puede venir de cualquier parte del programa."
+          "explicacion": "La que lo dejó en `0` es `cerrarCaja`, que `procesar` llama sin que se note desde `main`. Para encontrarla hubo que leer todas las funciones: como `total` es global, cualquiera de ellas puede cambiarla, y un valor inesperado puede venir de cualquier parte del programa."
         }
       ]
     }

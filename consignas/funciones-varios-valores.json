@@ -9,7 +9,7 @@
     {
       "id": "varios-q-coma",
       "titulo": "Devolver dos valores con una coma",
-      "archivo": "int dividir(int a, int b) {\n  return a / b, a % b;\n}",
+      "archivo": "int dividir(int a, int b) {\n  int cociente = a / b;\n  int resto = a % b;\n\n  return cociente, resto;\n}",
       "enunciado": "Se quiere que `dividir` entregue el cociente y el resto. ¿Qué muestra este programa?",
       "codigo": "printf(\"%d\", dividir(17, 5));",
       "opciones": [
@@ -21,7 +21,7 @@
         {
           "texto": "`2`",
           "correcta": true,
-          "explicacion": "La coma de `return a / b, a % b;` es un operador: calcula las dos expresiones y se queda con la última. Compila, pero solo devuelve el resto, `2`. Una función devuelve **un solo valor**."
+          "explicacion": "La coma de `return a / b, a % b;` es un operador: calcula las dos expresiones y se queda con la última. Compila, pero solo devuelve el resto, `2`. Una función devuelve un solo valor."
         },
         {
           "texto": "`3`",

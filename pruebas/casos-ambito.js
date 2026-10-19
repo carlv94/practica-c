@@ -63,6 +63,9 @@ export const CASOS_DE_AMBITO = [
   globales(1, 'se ve: un error', '2', ['OPCION_ES_UN_ERROR']),
   // ---- 2: una funcion que recuerda ----
   globales(2, 'contar con una global', 'int veces = 0;\n\n' + FUNCION('void contar(void)', '  veces = veces + 1;\n  printf("%d ", veces);')),
+  globales(2, 'sin valor inicial', 'int veces;\n\n' + FUNCION('void contar(void)', '  veces = veces + 1;\n  printf("%d ", veces);'), 'ok', {
+    notas: ['GLOBAL_SIN_VALOR_INICIAL'],
+  }),
   globales(2, 'con otro nombre de variable', 'int cuenta = 0;\n\n' + FUNCION('void contar(void)', '  cuenta++;\n  printf("%d ", cuenta);'), ['GLOBAL_FALTA']),
   globales(2, 'la variable dentro de la funcion', FUNCION('void contar(void)', '  int veces = 0;\n\n  veces = veces + 1;\n  printf("%d ", veces);'), [
     'GLOBAL_DENTRO_DE_FUNCION',
@@ -77,6 +80,9 @@ export const CASOS_DE_AMBITO = [
   // ---- 3: un dato que entra por una global ----
   globales(3, 'el doble', FUNCION('void mostrarDoble(void)', '  printf("%d", numero * 2);')),
   globales(3, 'con una suma', FUNCION('void mostrarDoble(void)', '  printf("%d", numero + numero);')),
+  globales(3, 'modifica numero', FUNCION('void mostrarDoble(void)', '  numero = numero * 2;\n  printf("%d", numero);'), ['RESULTADO_VALOR_DISTINTO'], {
+    dice: ['`numero` termina valiendo `8` y debería valer `4`'],
+  }),
   globales(3, 'el triple', FUNCION('void mostrarDoble(void)', '  printf("%d", numero * 3);'), ['MUESTRA_DISTINTA']),
   globales(3, 'con un parametro', FUNCION('void mostrarDoble(int n)', '  printf("%d", n * 2);'), ['PARAMETROS_CANTIDAD']),
   globales(3, 'devuelve en vez de mostrar', FUNCION('int mostrarDoble(void)', '  return numero * 2;'), ['DEVUELVE_EN_VEZ_DE_MOSTRAR']),
@@ -88,18 +94,42 @@ export const CASOS_DE_AMBITO = [
   globales(4, 'con un argumento', 'mostrarDoble(a);', ['ARGUMENTOS_CANTIDAD']),
   // ---- 5: un resultado que sale por una global ----
   globales(5, 'cociente y resto', FUNCION('void dividir(void)', '  cociente = dividendo / divisor;\n  resto = dividendo % divisor;')),
-  globales(5, 'al reves', FUNCION('void dividir(void)', '  cociente = dividendo % divisor;\n  resto = dividendo / divisor;'), ['RESULTADO_VALOR_DISTINTO']),
-  globales(5, 'solo el cociente', FUNCION('void dividir(void)', '  cociente = dividendo / divisor;'), ['RESULTADO_VALOR_DISTINTO']),
+  globales(5, 'al reves', FUNCION('void dividir(void)', '  cociente = dividendo % divisor;\n  resto = dividendo / divisor;'), ['MUESTRA_DISTINTA']),
+  globales(5, 'solo el cociente', FUNCION('void dividir(void)', '  cociente = dividendo / divisor;'), ['MUESTRA_DISTINTA']),
   globales(5, 'con variables locales', FUNCION('void dividir(void)', '  int cociente = dividendo / divisor;\n  int resto = dividendo % divisor;'), [
-    'RESULTADO_VALOR_DISTINTO',
+    'MUESTRA_DISTINTA',
   ]),
   globales(5, 'devuelve en vez de dejar en las globales', FUNCION('int dividir(void)', '  return dividendo / divisor;'), ['DEVUELVE_EN_VEZ_DE_MOSTRAR']),
-  // ---- 6: una local que tapa a una global ----
-  globales(6, 'tapa: la correcta', '1'),
-  globales(6, 'tapa: la global', '0', ['OPCION_USA_LA_GLOBAL']),
-  globales(6, 'tapa: se modifico', '2', ['OPCION_SE_MODIFICO']),
-  // ---- 7: quien cambio la variable ----
-  globales(7, 'tres funciones: la correcta', '2'),
-  globales(7, 'tres funciones: cargar', '0', ['OPCION_FUNCION_CARGAR']),
-  globales(7, 'tres funciones: descontar', '1', ['OPCION_FUNCION_DESCONTAR']),
+  // ---- 6: los datos de un alumno en una global ----
+  globales(
+    6,
+    'lee los tres datos',
+    FUNCION('void cargarAlumno(void)', '  scanf("%d", &alumno.legajo);\n  scanf("%d", &alumno.edad);\n  scanf("%f", &alumno.promedio);')
+  ),
+  globales(
+    6,
+    'en otro orden',
+    FUNCION('void cargarAlumno(void)', '  scanf("%d", &alumno.edad);\n  scanf("%d", &alumno.legajo);\n  scanf("%f", &alumno.promedio);'),
+    ['RESULTADO_VALOR_DISTINTO']
+  ),
+  globales(
+    6,
+    'sin el promedio',
+    FUNCION('void cargarAlumno(void)', '  scanf("%d", &alumno.legajo);\n  scanf("%d", &alumno.edad);'),
+    ['RESULTADO_VARIABLE_SIN_VALOR']
+  ),
+  globales(
+    6,
+    'con una variable local',
+    FUNCION('void cargarAlumno(void)', '  TAlumno a;\n\n  scanf("%d", &a.legajo);\n  scanf("%d", &a.edad);\n  scanf("%f", &a.promedio);'),
+    ['RESULTADO_VARIABLE_SIN_VALOR']
+  ),
+  // ---- 7: una local que tapa a una global ----
+  globales(7, 'tapa: la correcta', '1'),
+  globales(7, 'tapa: la global', '0', ['OPCION_USA_LA_GLOBAL']),
+  globales(7, 'tapa: se modifico', '2', ['OPCION_SE_MODIFICO']),
+  // ---- 8: quien cambio la variable ----
+  globales(8, 'tres funciones: la correcta', '2'),
+  globales(8, 'tres funciones: cargar', '0', ['OPCION_FUNCION_CARGAR']),
+  globales(8, 'tres funciones: descontar', '1', ['OPCION_FUNCION_DESCONTAR']),
 ];

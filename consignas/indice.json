@@ -103,7 +103,8 @@
       "titulo": "Punteros",
       "descripcion": "Direcciones, punteros y parámetros por referencia.",
       "series": [
-        "funciones-referencia.json"
+        "funciones-referencia.json",
+        "punteros-arreglos.json"
       ]
     }
   ]

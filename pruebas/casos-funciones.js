@@ -140,29 +140,35 @@ export const CASOS_DE_FUNCIONES = [
   compuestos(2, 'con guiones', FUNCION('void mostrarFecha(TFecha f)', '  printf("%d-%d-%d", f.dia, f.mes, f.anio);'), ['MUESTRA_DISTINTA']),
   compuestos(2, 'un entero en vez de la estructura', FUNCION('void mostrarFecha(int f)', '  printf("%d", f);'), ['PARAMETRO_TIPO']),
   compuestos(2, 'con asterisco', FUNCION('void mostrarFecha(TFecha *f)', '  printf("%d", f->dia);'), ['PARAMETRO_ASTERISCO_DE_MAS']),
-  // ---- 3: recibir un arreglo ----
-  compuestos(3, 'con guiones', FUNCION('void mostrarGuiones(int v[], int n)', '  int i;\n\n  for (i = 0; i < n; i++) {\n    if (i > 0) {\n      printf("-");\n    }\n    printf("%d", v[i]);\n  }'), 'ok', { mejoras: [] }),
-  compuestos(3, 'con el guion despues', FUNCION('void mostrarGuiones(int v[], int n)', '  int i;\n\n  for (i = 0; i < n; i++) {\n    printf("%d", v[i]);\n    if (i < n - 1) {\n      printf("-");\n    }\n  }')),
-  compuestos(3, 'sin la cantidad', FUNCION('void mostrarGuiones(int v[])', '  printf("%d", v[0]);'), ['PARAMETROS_CANTIDAD']),
-  compuestos(3, 'con espacios', FUNCION('void mostrarGuiones(int v[], int n)', '  int i;\n\n  for (i = 0; i < n; i++) {\n    printf("%d ", v[i]);\n  }'), ['MUESTRA_DISTINTA']),
-  compuestos(3, 'un entero en vez del arreglo', FUNCION('void mostrarGuiones(int v, int n)', '  printf("%d", v);'), ['PARAMETRO_TIPO']),
-  // ---- 4: mostrar solo algunos elementos ----
-  compuestos(4, 'solo los pares', FUNCION('void mostrarPares(int v[], int n)', '  int i;\n\n  for (i = 0; i < n; i++) {\n    if (v[i] % 2 == 0) {\n      printf("%d ", v[i]);\n    }\n  }'), 'ok', { mejoras: [] }),
-  compuestos(4, 'los impares', FUNCION('void mostrarPares(int v[], int n)', '  int i;\n\n  for (i = 0; i < n; i++) {\n    if (v[i] % 2 != 0) {\n      printf("%d ", v[i]);\n    }\n  }'), ['MUESTRA_DISTINTA']),
-  compuestos(4, 'todos', FUNCION('void mostrarPares(int v[], int n)', '  int i;\n\n  for (i = 0; i < n; i++) {\n    printf("%d ", v[i]);\n  }'), ['MUESTRA_DISTINTA']),
-  // ---- 5: cuestionario, el tamano de un arreglo recibido ----
-  compuestos(5, 'tamano: la correcta', '1'),
-  compuestos(5, 'tamano: el del arreglo', '0', ['OPCION_TAMANO_DEL_ARREGLO']),
-  compuestos(5, 'tamano: la cantidad', '2', ['OPCION_CANTIDAD']),
+  // ---- 3: cuestionario, el parametro de un arreglo ----
+  compuestos(3, 'arreglo: la correcta', '0'),
+  compuestos(3, 'arreglo: el tamano importa', '1', ['OPCION_EL_TAMANO_IMPORTA']),
+  compuestos(3, 'arreglo: solo tres', '2', ['OPCION_SOLO_TRES']),
+  // ---- 4: recibir un arreglo ----
+  compuestos(4, 'cada numero con un espacio', FUNCION('void mostrarNumeros(int v[], int n)', '  int i;\n\n  for (i = 0; i < n; i++) {\n    printf("%d ", v[i]);\n  }'), 'ok', { mejoras: [] }),
+  compuestos(4, 'con el espacio antes', FUNCION('void mostrarNumeros(int v[], int n)', '  int i;\n\n  for (i = 0; i < n; i++) {\n    printf(" %d", v[i]);\n  }'), ['MUESTRA_CASI_IGUAL']),
+  compuestos(4, 'con un tamano escrito', FUNCION('void mostrarNumeros(int v[10], int n)', '  int i;\n\n  for (i = 0; i < n; i++) {\n    printf("%d ", v[i]);\n  }')),
+  compuestos(4, 'sin la cantidad', FUNCION('void mostrarNumeros(int v[])', '  printf("%d ", v[0]);'), ['PARAMETROS_CANTIDAD']),
+  compuestos(4, 'con guiones', FUNCION('void mostrarNumeros(int v[], int n)', '  int i;\n\n  for (i = 0; i < n; i++) {\n    printf("%d-", v[i]);\n  }'), ['MUESTRA_DISTINTA']),
+  compuestos(4, 'un entero en vez del arreglo', FUNCION('void mostrarNumeros(int v, int n)', '  printf("%d", v);'), ['PARAMETRO_TIPO']),
+  // ---- 5: mostrar solo algunos elementos ----
+  compuestos(5, 'solo los pares', FUNCION('void mostrarPares(int v[], int n)', '  int i;\n\n  for (i = 0; i < n; i++) {\n    if (v[i] % 2 == 0) {\n      printf("%d ", v[i]);\n    }\n  }'), 'ok', { mejoras: [] }),
+  compuestos(5, 'los impares', FUNCION('void mostrarPares(int v[], int n)', '  int i;\n\n  for (i = 0; i < n; i++) {\n    if (v[i] % 2 != 0) {\n      printf("%d ", v[i]);\n    }\n  }'), ['MUESTRA_DISTINTA']),
+  compuestos(5, 'todos', FUNCION('void mostrarPares(int v[], int n)', '  int i;\n\n  for (i = 0; i < n; i++) {\n    printf("%d ", v[i]);\n  }'), ['MUESTRA_DISTINTA']),
   // ---- 6: recibir una cadena ----
-  compuestos(6, 'con guiones', FUNCION('void mostrarConGuiones(char texto[])', "  int i;\n\n  for (i = 0; texto[i] != '\\0'; i++) {\n    if (i > 0) {\n      printf(\"-\");\n    }\n    printf(\"%c\", texto[i]);\n  }"), 'ok', { mejoras: [] }),
-  compuestos(6, 'con un tamano escrito', FUNCION('void mostrarConGuiones(char texto[20])', "  int i;\n\n  for (i = 0; texto[i] != '\\0'; i++) {\n    if (i > 0) {\n      printf(\"-\");\n    }\n    printf(\"%c\", texto[i]);\n  }")),
-  compuestos(6, 'sin guiones', FUNCION('void mostrarConGuiones(char texto[])', "  int i;\n\n  for (i = 0; texto[i] != '\\0'; i++) {\n    printf(\"%c\", texto[i]);\n  }"), ['MUESTRA_DISTINTA']),
-  compuestos(6, 'un entero en vez de la cadena', FUNCION('void mostrarConGuiones(int texto)', '  printf("%d", texto);'), ['PARAMETRO_TIPO']),
-  // ---- 7: recibir una tabla ----
-  compuestos(7, 'una fila por renglon', FUNCION('void mostrarTabla(int t[][3], int filas)', '  int i;\n  int j;\n\n  for (i = 0; i < filas; i++) {\n    for (j = 0; j < 3; j++) {\n      printf("%d ", t[i][j]);\n    }\n    printf("\\n");\n  }'), 'ok', { mejoras: [] }),
-  compuestos(7, 'todo en un renglon', FUNCION('void mostrarTabla(int t[][3], int filas)', '  int i;\n  int j;\n\n  for (i = 0; i < filas; i++) {\n    for (j = 0; j < 3; j++) {\n      printf("%d ", t[i][j]);\n    }\n  }'), ['MUESTRA_DISTINTA']),
-  compuestos(7, 'un arreglo en vez de una tabla', FUNCION('void mostrarTabla(int t[], int filas)', '  printf("%d", t[0]);'), ['PARAMETRO_TIPO']),
+  compuestos(6, 'entre corchetes', FUNCION('void mostrarEntreCorchetes(char texto[])', '  printf("[%s]", texto);'), 'ok', { mejoras: [] }),
+  compuestos(6, 'con un tamano escrito', FUNCION('void mostrarEntreCorchetes(char texto[20])', '  printf("[%s]", texto);')),
+  compuestos(6, 'letra por letra', FUNCION('void mostrarEntreCorchetes(char texto[])', "  int i;\n\n  printf(\"[\");\n  for (i = 0; texto[i] != '\\0'; i++) {\n    printf(\"%c\", texto[i]);\n  }\n  printf(\"]\");")),
+  compuestos(6, 'sin corchetes', FUNCION('void mostrarEntreCorchetes(char texto[])', '  printf("%s", texto);'), ['MUESTRA_DISTINTA']),
+  compuestos(6, 'un entero en vez de la cadena', FUNCION('void mostrarEntreCorchetes(int texto)', '  printf("%d", texto);'), ['PARAMETRO_TIPO']),
+  // ---- 7: cuestionario, el parametro de una tabla ----
+  compuestos(7, 'tabla: la correcta', '0'),
+  compuestos(7, 'tabla: sin columnas', '1', ['OPCION_SIN_COLUMNAS']),
+  compuestos(7, 'tabla: filas en vez de columnas', '2', ['OPCION_FILAS_EN_VEZ_DE_COLUMNAS']),
+  // ---- 8: recibir una tabla ----
+  compuestos(8, 'una fila por renglon', FUNCION('void mostrarTabla(int t[][3], int filas)', '  int i;\n  int j;\n\n  for (i = 0; i < filas; i++) {\n    for (j = 0; j < 3; j++) {\n      printf("%d ", t[i][j]);\n    }\n    printf("\\n");\n  }'), 'ok', { mejoras: [] }),
+  compuestos(8, 'todo en un renglon', FUNCION('void mostrarTabla(int t[][3], int filas)', '  int i;\n  int j;\n\n  for (i = 0; i < filas; i++) {\n    for (j = 0; j < 3; j++) {\n      printf("%d ", t[i][j]);\n    }\n  }'), ['MUESTRA_DISTINTA']),
+  compuestos(8, 'un arreglo en vez de una tabla', FUNCION('void mostrarTabla(int t[], int filas)', '  printf("%d", t[0]);'), ['PARAMETRO_TIPO']),
 
   // ===== Funciones con retorno =====
   // ---- 1: reemplazar la global por un valor devuelto ----
@@ -206,16 +212,20 @@ export const CASOS_DE_FUNCIONES = [
   devolver(5, 'muestra en vez de devolver', FUNCION('void promedio(int a, int b)', '  printf("%f", (a + b) / 2.0);'), [
     'MUESTRA_EN_VEZ_DE_DEVOLVER',
   ]),
-  devolver(7, 'par con if', FUNCION('int esPar(int n)', '  if (n % 2 == 0) {\n    return 1;\n  }\n  return 0;'), 'ok', { mejoras: [] }),
-  devolver(7, 'par con return directo', FUNCION('int esPar(int n)', '  return n % 2 == 0;')),
-  devolver(7, 'par con if y else', FUNCION('int esPar(int n)', '  if (n % 2 == 0) {\n    return 1;\n  } else {\n    return 0;\n  }')),
-  devolver(7, 'al reves', FUNCION('int esPar(int n)', '  return n % 2;'), ['DEVUELVE_DISTINTO']),
-  devolver(7, 'muestra en vez de devolver', FUNCION('void esPar(int n)', '  if (n % 2 == 0) {\n    printf("1");\n  }'), [
-    'MUESTRA_EN_VEZ_DE_DEVOLVER',
-  ]),
-  devolver(7, 'sin return en todos los caminos', FUNCION('int esPar(int n)', '  if (n % 2 == 0) {\n    return 1;\n  }'), ['FUNCION_SIN_RETORNO']),
-  devolver(8, 'con if', 'if (esPar(8) == 1) {\n  printf("par");\n}', 'ok', { mejoras: [] }),
+  devolver(7, 'par con if', 'typedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\n' + FUNCION('TBool esPar(int n)', '  if (n % 2 == 0) {\n    return VERDADERO;\n  }\n  return FALSO;'), 'ok', { mejoras: [] }),
+  devolver(7, 'par con return directo', 'typedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\n' + FUNCION('TBool esPar(int n)', '  return n % 2 == 0;')),
+  devolver(7, 'par con if y else', 'typedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\n' + FUNCION('TBool esPar(int n)', '  if (n % 2 == 0) {\n    return VERDADERO;\n  } else {\n    return FALSO;\n  }')),
+  devolver(7, 'al reves', 'typedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\n' + FUNCION('TBool esPar(int n)', '  if (n % 2 == 0) {\n    return FALSO;\n  }\n  return VERDADERO;'), ['DEVUELVE_DISTINTO'], {
+    dice: ['VERDADERO'],
+  }),
+  devolver(7, 'devuelve un entero', 'typedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\n' + FUNCION('int esPar(int n)', '  return n % 2 == 0;'), ['FUNCION_TIPO_RETORNO'], { dice: ['un enumerado'] }),
+  devolver(7, 'muestra en vez de devolver', 'typedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\n' + FUNCION('void esPar(int n)', '  if (n % 2 == 0) {\n    printf("VERDADERO");\n  }'), ['MUESTRA_EN_VEZ_DE_DEVOLVER']),
+  devolver(7, 'sin return en todos los caminos', 'typedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\n' + FUNCION('TBool esPar(int n)', '  if (n % 2 == 0) {\n    return VERDADERO;\n  }'), ['FUNCION_SIN_RETORNO']),
+  devolver(7, 'los valores en otro orden', 'typedef enum {\n  VERDADERO,\n  FALSO\n} TBool;\n\n' + FUNCION('TBool esPar(int n)', '  if (n % 2 == 0) {\n    return VERDADERO;\n  }\n  return FALSO;'), ['ENUMERADOR_ORDEN']),
+  devolver(7, 'sin el enumerado', FUNCION('int esPar(int n)', '  return n % 2 == 0;'), ['ENUM_FALTA']),
+  devolver(8, 'con if', 'if (esPar(8) == VERDADERO) {\n  printf("par");\n}', 'ok', { mejoras: [] }),
   devolver(8, 'con if sin comparar', 'if (esPar(8)) {\n  printf("par");\n}'),
+  devolver(8, 'comparando con uno', 'if (esPar(8) == 1) {\n  printf("par");\n}'),
   devolver(8, 'sin llamar a la funcion', 'printf("par");', ['FUNCION_EQUIVOCADA']),
   devolver(9, 'el return termina: la correcta', '1'),
   devolver(9, 'el return termina: sigue', '0', ['OPCION_SIGUE_DESPUES_DEL_RETURN']),

@@ -44,12 +44,12 @@
         {
           "texto": "No compila: `descuento` no existe fuera del `if`",
           "correcta": true,
-          "explicacion": "Una variable vive hasta la llave que cierra el bloque donde se la declaró. `descuento` desaparece al terminar el `if`. Para usarla después, hay que declararla antes del `if`."
+          "explicacion": "Una variable vive hasta la llave que cierra el bloque donde se la declaró. `descuento` desaparece al terminar el `if`. Para usarla después, hay que declararla antes del `if`, afuera de él."
         },
         {
           "texto": "Muestra `0`",
           "codigo": "OPCION_VALOR_POR_DEFECTO",
-          "explicacion": "Una variable que ya no existe no vale `0`: directamente no se puede usar."
+          "explicacion": "`descuento` solo existe en el cuerpo del `if`: una variable que ya no existe no vale `0`, directamente no se puede usar."
         }
       ]
     },
@@ -67,12 +67,12 @@
         {
           "texto": "No compila: `i` no existe después del ciclo",
           "correcta": true,
-          "explicacion": "Una variable declarada en el encabezado del `for` vive solo dentro del ciclo. Para usar `i` después, hay que declararla antes del `for`."
+          "explicacion": "Una variable declarada en el encabezado del `for` vive solo dentro del ciclo. Para usar `i` después, hay que declararla antes del `for`, afuera de él."
         },
         {
           "texto": "Muestra `0 1 2 0`",
           "codigo": "OPCION_VALOR_POR_DEFECTO",
-          "explicacion": "Después del ciclo, `i` no vuelve a valer `0`: directamente no existe."
+          "explicacion": "El `i` declarado dentro del `for` existe solo mientras dura el ciclo. Después, `i` no vuelve a valer `0`: directamente no existe."
         }
       ]
     },
@@ -102,7 +102,7 @@
     {
       "id": "ambito-acumular",
       "titulo": "Declarar donde se la necesita",
-      "enunciado": "Se quiere sumar los números del `1` al `5` con un ciclo y mostrar el total al terminar. Declare la variable donde corresponde, de modo que siga existiendo después del ciclo, y escriba el ciclo con `printf` para mostrar `15`.",
+      "enunciado": "Se quiere sumar los números del `1` al `5` con un ciclo y mostrar el total al terminar. Declare la variable donde corresponde, de modo que siga existiendo después del ciclo, y escriba el ciclo con `printf` para mostrar `15`. No hace falta escribir `main`: escriba solo las sentencias.",
       "salida": "15",
       "requiere": [
         {

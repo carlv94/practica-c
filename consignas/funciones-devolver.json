@@ -191,12 +191,12 @@
         {
           "texto": "`4.5`",
           "codigo": "OPCION_CON_DECIMALES",
-          "explicacion": "La cuenta da `4.5`, pero la función se declaró `int`: lo que devuelve es un entero, así que los decimales se pierden. Para que devuelva `4.5`, tiene que ser `float`."
+          "explicacion": "La cuenta da `4.5`, pero la función se declaró `int` como tipo de retorno: lo que devuelve es un entero, así que los decimales se pierden. Para que devuelva `4.5`, tiene que ser `float`."
         },
         {
           "texto": "`4`",
           "correcta": true,
-          "explicacion": "La cuenta da `4.5`, pero la función se declaró `int`: al devolverlo se descartan los decimales y queda `4`. El tipo que va antes del nombre manda sobre lo que se devuelve."
+          "explicacion": "La cuenta da `4.5`, pero la función se declaró `int` como tipo de retorno: lo que devuelve es un entero, así que los decimales se pierden y queda `4`. Para que devuelva `4.5`, tiene que ser `float`."
         },
         {
           "texto": "`5`",
@@ -209,55 +209,71 @@
       "id": "devolver-decide",
       "titulo": "Una función que decide",
       "en": "archivo",
-      "enunciado": "Escriba una función que reciba un número entero y devuelva `1` si el número es par, o `0` si es impar: con `4` devuelve `1` y con `7` devuelve `0`. Póngale el nombre que quiera.",
+      "enunciado": "Declare un enumerado con los valores `FALSO` y `VERDADERO`, en ese orden, y dele el alias `TBool`. Después escriba una función que reciba un número entero y devuelva `VERDADERO` si el número es par, o `FALSO` si es impar. Póngale el nombre que quiera a la función.",
       "requiere": [
         {
+          "enum": {
+            "enumeradores": [
+              "FALSO",
+              "VERDADERO"
+            ],
+            "capturar": "E"
+          }
+        },
+        {
+          "alias": {
+            "de": "$E",
+            "nombre": "TBool",
+            "capturar": "A"
+          }
+        },
+        {
           "funcion": {
-            "retorna": "entero",
+            "retorna": "enumerado",
             "parametros": [
               {
                 "tipo": "entero"
               }
             ],
-            "capturar": "E"
+            "capturar": "F"
           }
         },
         {
           "ejecuta": {
             "casos": [
               {
-                "llama": "$E(4)",
-                "devuelve": 1,
+                "llama": "$F(4)",
+                "devuelve": "VERDADERO",
                 "visible": true
               },
               {
-                "llama": "$E(7)",
-                "devuelve": 0
+                "llama": "$F(7)",
+                "devuelve": "FALSO"
               },
               {
-                "llama": "$E(0)",
-                "devuelve": 1
+                "llama": "$F(0)",
+                "devuelve": "VERDADERO"
               },
               {
-                "llama": "$E(-3)",
-                "devuelve": 0
+                "llama": "$F(-3)",
+                "devuelve": "FALSO"
               }
             ]
           }
         }
       ],
-      "referencia": "int esPar(int n) {\n  if (n % 2 == 0) {\n    return 1;\n  }\n  return 0;\n}"
+      "referencia": "typedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\nTBool esPar(int n) {\n  if (n % 2 == 0) {\n    return VERDADERO;\n  }\n  return FALSO;\n}"
     },
     {
       "id": "devolver-usar",
       "titulo": "Usar lo que devuelve",
       "sigueDe": "devolver-decide",
-      "enunciado": "La función {E} ya está definida. Con ella, muestre con `printf` el mensaje `par` si el número `8` es par.",
+      "enunciado": "La función {F} ya está definida y devuelve `VERDADERO` si el número es par. Con ella, muestre con `printf` el mensaje `par` si el número `8` es par.",
       "salida": "par",
       "requiere": [
         {
           "llamada": {
-            "funcion": "$E",
+            "funcion": "$F",
             "argumentos": [
               "8"
             ]
@@ -274,7 +290,7 @@
           }
         }
       ],
-      "referencia": "if ({E}(8) == 1) {\n  printf(\"par\");\n}"
+      "referencia": "if ({F}(8) == VERDADERO) {\n  printf(\"par\");\n}"
     },
     {
       "id": "devolver-q-return",

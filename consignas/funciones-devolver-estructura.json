@@ -100,7 +100,7 @@
     },
     {
       "id": "estructura-q-arreglo",
-      "titulo": "Un arreglo no se devuelve",
+      "titulo": "Retornar un arreglo",
       "enunciado": "Una función puede devolver un número, una letra o una estructura. ¿Qué pasa con una función que intenta devolver un arreglo?",
       "opciones": [
         {

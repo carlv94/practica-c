@@ -21,7 +21,7 @@
         {
           "texto": "`5 5`",
           "correcta": true,
-          "explicacion": "`numero = a;` copia el valor de `a` en `numero`, y duplicar `numero` no cambia a `a`. Con el parámetro pasa exactamente lo mismo: al llamar `duplicarConParametro(b)` es como si se escribiera `n = b;`, porque **la llamada hace la asignación**. Un parámetro es una variable local de la función que recibe una **copia** del argumento."
+          "explicacion": "`numero = a;` copia el valor de `a` en `numero`, y duplicar `numero` no cambia a `a`. Con el parámetro pasa exactamente lo mismo: al llamar `duplicarConParametro(b)` es como si se escribiera `n = b;`, porque la llamada hace la asignación. Un parámetro es una variable local de la función que recibe una copia del argumento."
         },
         {
           "texto": "`10 5`",
@@ -159,7 +159,7 @@
       "id": "parametros-llamar",
       "titulo": "Llamarla con un valor",
       "archivoDado": "void mostrarDoble(int n) {\n  printf(\"%d\", n * 2);\n}",
-      "enunciado": "La función `mostrarDoble` recibe un número y muestra su doble. Llámela para que muestre el doble de `21`.",
+      "enunciado": "La función `mostrarDoble` recibe un número y muestra su doble. Llámela pasándole directamente el número `21`, escrito en la llamada: no use ninguna variable.",
       "salida": "42",
       "requiere": [
         {

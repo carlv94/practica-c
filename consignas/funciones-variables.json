@@ -9,19 +9,19 @@
     {
       "id": "variables-q-nacen",
       "titulo": "Cuándo se crea una variable",
-      "archivo": "void saludar(void) {\n  int n = 1;\n\n  printf(\"%d\", n);\n}",
-      "enunciado": "En este programa se llama dos veces a `saludar`. ¿Cuántas veces se crea la variable `n`?",
-      "codigo": "saludar();\nsaludar();",
+      "archivo": "void mostrarUno(void) {\n  int n = 1;\n\n  printf(\"%d\", n);\n}",
+      "enunciado": "En este programa se llama dos veces a `mostrarUno`. ¿Cuántas veces se crea la variable `n`?",
+      "codigo": "mostrarUno();\nmostrarUno();",
       "opciones": [
         {
           "texto": "Una sola vez, cuando empieza el programa",
           "codigo": "OPCION_UNA_VEZ",
-          "explicacion": "Las variables de una función no se crean al empezar el programa: se crean **cada vez que se llama** a la función."
+          "explicacion": "Las variables de una función no se crean al empezar el programa: se crean cada vez que se llama a la función."
         },
         {
           "texto": "Dos veces: una en cada llamada, y cada una desaparece cuando la función termina",
           "correcta": true,
-          "explicacion": "Cada vez que se llama a `saludar`, la variable `n` se crea de nuevo, se usa y desaparece al terminar la función. Por eso una función no guarda nada de una llamada a la siguiente."
+          "explicacion": "Cada vez que se llama a `mostrarUno`, la variable `n` se crea de nuevo, se usa y desaparece al terminar la función. Por eso una función no guarda nada de una llamada a la siguiente."
         },
         {
           "texto": "Una sola vez, la primera vez que se llama, y después se reutiliza",
