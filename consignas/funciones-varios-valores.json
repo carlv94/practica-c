@@ -1,0 +1,225 @@
+{
+  "id": "funciones-varios-valores",
+  "titulo": "Devolver varios valores",
+  "continua": false,
+  "dentroDeMain": true,
+  "descripcion": "Una función devuelve un solo valor. Cuando hay que entregar varios resultados, una estructura los agrupa en un solo valor.",
+  "cabecera": "#include <stdio.h>",
+  "consignas": [
+    {
+      "id": "varios-q-coma",
+      "titulo": "Devolver dos valores con una coma",
+      "archivo": "int dividir(int a, int b) {\n  return a / b, a % b;\n}",
+      "enunciado": "Se quiere que `dividir` entregue el cociente y el resto. ¿Qué muestra este programa?",
+      "codigo": "printf(\"%d\", dividir(17, 5));",
+      "opciones": [
+        {
+          "texto": "`3 2`",
+          "codigo": "OPCION_LOS_DOS",
+          "explicacion": "Una función devuelve un solo valor. `return a / b, a % b;` no devuelve los dos: no hay forma de que `return` entregue dos valores separados."
+        },
+        {
+          "texto": "`2`",
+          "correcta": true,
+          "explicacion": "La coma de `return a / b, a % b;` es un operador: calcula las dos expresiones y se queda con la última. Compila, pero solo devuelve el resto, `2`. Una función devuelve **un solo valor**."
+        },
+        {
+          "texto": "`3`",
+          "codigo": "OPCION_EL_PRIMERO",
+          "explicacion": "La coma se queda con la última expresión, no con la primera: devuelve `a % b`, que es `2`."
+        }
+      ]
+    },
+    {
+      "id": "varios-division",
+      "titulo": "Una estructura con el cociente y el resto",
+      "en": "archivo",
+      "archivoDado": "typedef struct {\n  int cociente;\n  int resto;\n} TDivision;",
+      "enunciado": "Una función devuelve un solo valor, pero una estructura es un solo valor que guarda varios. Escriba una función que reciba un dividendo y un divisor y devuelva un `TDivision` con el cociente y el resto de la división entera: con `17` y `5`, el cociente es `3` y el resto es `2`. Póngale el nombre que quiera.",
+      "requiere": [
+        {
+          "funcion": {
+            "retorna": "estructura",
+            "parametros": [
+              {
+                "tipo": "entero"
+              },
+              {
+                "tipo": "entero"
+              }
+            ],
+            "capturar": "D"
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "llama": "$D(17, 5)",
+                "devuelve": {
+                  "cociente": 3,
+                  "resto": 2
+                },
+                "visible": true
+              },
+              {
+                "llama": "$D(20, 4)",
+                "devuelve": {
+                  "cociente": 5,
+                  "resto": 0
+                }
+              },
+              {
+                "llama": "$D(3, 7)",
+                "devuelve": {
+                  "cociente": 0,
+                  "resto": 3
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "TDivision dividir(int dividendo, int divisor) {\n  TDivision r;\n\n  r.cociente = dividendo / divisor;\n  r.resto = dividendo % divisor;\n  return r;\n}"
+    },
+    {
+      "id": "varios-division-llamada",
+      "titulo": "Usar la estructura que devuelve la función",
+      "archivoDado": "typedef struct {\n  int cociente;\n  int resto;\n} TDivision;\n\nTDivision dividir(int dividendo, int divisor) {\n  TDivision r;\n\n  r.cociente = dividendo / divisor;\n  r.resto = dividendo % divisor;\n  return r;\n}",
+      "enunciado": "La función `dividir` devuelve un `TDivision`. Con ella, muestre el cociente y el resto de dividir `17` por `5`, en una sola línea y separados por un espacio.",
+      "salida": "3 2",
+      "requiere": [
+        {
+          "llamada": {
+            "funcion": "dividir",
+            "argumentos": [
+              "17",
+              "5"
+            ]
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "salida": "3 2",
+                "visible": true
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "TDivision r = dividir(17, 5);\nprintf(\"%d %d\", r.cociente, r.resto);"
+    },
+    {
+      "id": "varios-circulo",
+      "titulo": "Los tres datos de un círculo",
+      "en": "archivo",
+      "enunciado": "Escriba una estructura con los campos `diametro`, `perimetro` y `area` (números con decimales) y una función que reciba el radio y devuelva esa estructura con los datos del círculo. Use `3.14` para π. Con radio `2`: diámetro `4`, perímetro `12.56` y área `12.56`. Póngale el nombre que quiera a la estructura y a la función.",
+      "requiere": [
+        {
+          "funcion": {
+            "retorna": "estructura",
+            "parametros": [
+              {
+                "tipo": "real"
+              }
+            ],
+            "capturar": "C"
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "llama": "$C(2)",
+                "devuelve": {
+                  "diametro": 4,
+                  "perimetro": 12.56,
+                  "area": 12.56
+                },
+                "visible": true
+              },
+              {
+                "llama": "$C(1)",
+                "devuelve": {
+                  "diametro": 2,
+                  "perimetro": 6.28,
+                  "area": 3.14
+                }
+              },
+              {
+                "llama": "$C(5)",
+                "devuelve": {
+                  "diametro": 10,
+                  "perimetro": 31.4,
+                  "area": 78.5
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "typedef struct {\n  float diametro;\n  float perimetro;\n  float area;\n} TCirculo;\n\nTCirculo calcularCirculo(float radio) {\n  TCirculo c;\n\n  c.diametro = radio * 2;\n  c.perimetro = 2 * 3.14 * radio;\n  c.area = 3.14 * radio * radio;\n  return c;\n}"
+    },
+    {
+      "id": "varios-tiempo",
+      "titulo": "Horas, minutos y segundos",
+      "en": "archivo",
+      "enunciado": "Escriba una estructura con los campos `horas`, `minutos` y `segundos` (enteros) y una función que reciba una cantidad de segundos y devuelva esa estructura con cuántas horas, minutos y segundos contiene: `3725` segundos son `1` hora, `2` minutos y `5` segundos. Póngale el nombre que quiera a la estructura y a la función.",
+      "requiere": [
+        {
+          "funcion": {
+            "retorna": "estructura",
+            "parametros": [
+              {
+                "tipo": "entero"
+              }
+            ],
+            "capturar": "T"
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "llama": "$T(3725)",
+                "devuelve": {
+                  "horas": 1,
+                  "minutos": 2,
+                  "segundos": 5
+                },
+                "visible": true
+              },
+              {
+                "llama": "$T(60)",
+                "devuelve": {
+                  "horas": 0,
+                  "minutos": 1,
+                  "segundos": 0
+                }
+              },
+              {
+                "llama": "$T(59)",
+                "devuelve": {
+                  "horas": 0,
+                  "minutos": 0,
+                  "segundos": 59
+                }
+              },
+              {
+                "llama": "$T(7200)",
+                "devuelve": {
+                  "horas": 2,
+                  "minutos": 0,
+                  "segundos": 0
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "typedef struct {\n  int horas;\n  int minutos;\n  int segundos;\n} TTiempo;\n\nTTiempo descomponer(int total) {\n  TTiempo t;\n\n  t.horas = total / 3600;\n  t.minutos = (total % 3600) / 60;\n  t.segundos = total % 60;\n  return t;\n}"
+    }
+  ]
+}

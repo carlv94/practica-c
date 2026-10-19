@@ -91,7 +91,9 @@
         "funciones-globales.json",
         "funciones-parametros.json",
         "funciones-parametros-compuestos.json",
-        "funciones-devolver.json"
+        "funciones-devolver.json",
+        "funciones-devolver-estructura.json",
+        "funciones-varios-valores.json"
       ]
     },
     {

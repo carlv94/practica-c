@@ -1176,7 +1176,12 @@ cadena de necesidades: cada tema nace de un problema del anterior.
    argumento al parámetro, y por eso es una copia).
 6. `funciones-parametros-compuestos.json`: estructuras (se copian), y
    arreglos, cadenas y tablas (no se copian), solo para mostrar.
-7. `funciones-devolver.json` (en preparación).
+7. `funciones-devolver.json`: funciones con retorno (la llamada vale lo que
+   devuelve; mostrar frente a devolver; el tipo de retorno trunca).
+8. `funciones-devolver-estructura.json`: devolver una estructura (`leerAlumno`)
+   y que un arreglo no se devuelve.
+9. `funciones-varios-valores.json`: una función devuelve un solo valor (la coma
+   de `return a, b;`), y una estructura agrupa varios.
 
 `funciones-referencia.json` está por ahora en un grupo "Punteros" provisorio,
 también oculto: es la serie 3 del grupo Punteros, que se arma después.
@@ -1199,7 +1204,19 @@ El plan de la reestructuración está en la memoria del proyecto
   `'\0'`; ojo: un texto de una sola letra se toma como carácter, así que las
   pruebas usan al menos dos).
 - **El simulador copia las estructuras** que se pasan por valor, y un arreglo o
-  una tabla recibidos son los mismos.
+  una tabla recibidos son los mismos. También sigue la copia de una estructura en
+  otra (`a = b;`), una función que **devuelve** una estructura (`return r;`) y
+  declarar con lo que devuelve (`TDivision r = dividir(17, 5);`).
+- **Retorno de estructura**: `{ "funcion": { "retorna": "estructura", ... } }` pide
+  una estructura (no una unión), y el caso de `ejecuta` lo comprueba **campo por
+  campo**: `{ "llama": "$D(17, 5)", "devuelve": { "cociente": 3, "resto": 2 } }`
+  (`DEVUELVE_DISTINTO`; `DEVUELVE_CAMPO_FALTA` si la estructura no tiene el campo
+  y `DEVUELVE_CAMPO_SIN_VALOR` si no llega a tener valor). Un campo de texto no
+  se sigue en el simulador, así que las estructuras de las consignas son de
+  números.
+- **`DEVUELVE_EN_VEZ_DE_MOSTRAR`** (la consigna pide una función `void` y el
+  alumno la declara con `return`) y la pista de la división entera en
+  `DEVUELVE_DISTINTO`.
 - **Las globales empiezan en `0`** en el simulador, como en C, y un dato de
   prueba (`datos`) sobre una global le da su valor inicial en lugar de declarar
   otra variable adentro de la prueba.

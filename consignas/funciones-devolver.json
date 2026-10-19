@@ -1,19 +1,27 @@
 {
   "id": "funciones-devolver",
-  "titulo": "Funciones que devuelven un valor",
+  "titulo": "Funciones con retorno",
   "continua": false,
   "dentroDeMain": true,
-  "descripcion": "Entregar un resultado con `return`: una suma, un promedio con decimales, una función que decide devolviendo 1 o 0, y una función que usa a otra.",
+  "descripcion": "Una variable de una función desaparece cuando termina, pero su valor puede viajar: `return` entrega un valor a quien la llamó, y la llamada vale lo que devuelve.",
   "cabecera": "#include <stdio.h>",
   "consignas": [
     {
-      "id": "devolver-suma",
-      "titulo": "Devolver la suma",
+      "id": "devolver-refactor-funcion",
+      "titulo": "Reemplazar la global por un valor devuelto",
       "en": "archivo",
-      "enunciado": "Escriba una función que reciba dos números enteros y devuelva su suma: con `3` y `4` devuelve `7`. Póngale el nombre que quiera.",
+      "ejemplo": {
+        "texto": "Esta función recibe sus datos por variables globales y deja el resultado en otra:",
+        "codigo": "int dividendo;\nint divisor;\nint cociente;\n\nvoid dividir(void) {\n  cociente = dividendo / divisor;\n}"
+      },
+      "enunciado": "Escríbala de nuevo sin variables globales: que reciba el dividendo y el divisor como parámetros y devuelva el cociente con `return`. Con `17` y `5` devuelve `3`. Se sigue llamando `dividir`. Por ahora, solo el cociente.",
       "requiere": [
         {
+          "sinGlobales": true
+        },
+        {
           "funcion": {
+            "nombre": "dividir",
             "retorna": "entero",
             "parametros": [
               {
@@ -22,31 +30,114 @@
               {
                 "tipo": "entero"
               }
-            ],
-            "capturar": "S"
+            ]
           }
         },
         {
           "ejecuta": {
             "casos": [
               {
-                "llama": "$S(3, 4)",
-                "devuelve": 7,
+                "llama": "dividir(17, 5)",
+                "devuelve": 3,
                 "visible": true
               },
               {
-                "llama": "$S(10, -2)",
-                "devuelve": 8
+                "llama": "dividir(20, 4)",
+                "devuelve": 5
               },
               {
-                "llama": "$S(0, 0)",
+                "llama": "dividir(3, 7)",
                 "devuelve": 0
               }
             ]
           }
         }
       ],
-      "referencia": "int sumar(int a, int b) {\n  return a + b;\n}"
+      "referencia": "int dividir(int dividendo, int divisor) {\n  return dividendo / divisor;\n}"
+    },
+    {
+      "id": "devolver-refactor-llamada",
+      "titulo": "Reemplazar la lectura de la global por el valor de la llamada",
+      "archivoDado": "int dividir(int dividendo, int divisor) {\n  return dividendo / divisor;\n}",
+      "dado": "int dividendo = 17;\nint divisor = 5;\nint cociente;",
+      "ejemplo": {
+        "texto": "Con la función que usaba variables globales, `dividir();` dejaba el resultado en `cociente`. Ahora la llamada vale lo que devuelve.",
+        "codigo": "dividir();\n/* el resultado quedaba en cociente */"
+      },
+      "enunciado": "Guarde en `cociente` el cociente de `dividendo` y `divisor`, usando `dividir`.",
+      "requiere": [
+        {
+          "llamada": {
+            "funcion": "dividir",
+            "argumentos": [
+              "dividendo",
+              "divisor"
+            ],
+            "resultadoEn": "cociente"
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "queda": {
+                  "cociente": 3
+                },
+                "visible": true
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "cociente = dividir(dividendo, divisor);"
+    },
+    {
+      "id": "devolver-q-expresion",
+      "titulo": "La llamada vale lo que devuelve",
+      "archivo": "int sumar(int a, int b) {\n  return a + b;\n}\n\nint doble(int n) {\n  return n * 2;\n}",
+      "enunciado": "¿Qué muestra este programa?",
+      "codigo": "printf(\"%d\", sumar(2, 3) + doble(sumar(1, 1)));",
+      "opciones": [
+        {
+          "texto": "`9`",
+          "correcta": true,
+          "explicacion": "Cada llamada vale lo que devuelve: `sumar(2, 3)` vale `5`, `sumar(1, 1)` vale `2`, y `doble(2)` vale `4`. La cuenta queda `5 + 4`."
+        },
+        {
+          "texto": "`7`",
+          "codigo": "OPCION_SIN_LA_LLAMADA_DE_ADENTRO",
+          "explicacion": "La llamada de adentro, `sumar(1, 1)`, también vale algo: `2`, y eso es lo que recibe `doble`. Entonces `doble` devuelve `4`, no `2`."
+        },
+        {
+          "texto": "`5 4`",
+          "codigo": "OPCION_MUESTRA_CADA_UNA",
+          "explicacion": "Las funciones no muestran nada: devuelven valores. Quien los muestra es el `printf`, una sola vez, con el resultado de la cuenta."
+        }
+      ]
+    },
+    {
+      "id": "devolver-q-resultado",
+      "titulo": "Cómo sale un valor de una función",
+      "archivo": "int sumar(int a, int b) {\n  int resultado = a + b;\n\n  return resultado;\n}",
+      "enunciado": "Este programa no compila, porque `main` usa `resultado`, que es una variable local de `sumar`. ¿Cómo se arregla?",
+      "codigo": "int x = 3;\nint y = 4;\nint total;\n\ntotal = sumar(x, y);\nprintf(\"%d\", resultado);",
+      "opciones": [
+        {
+          "texto": "Declarando también `resultado` en `main`",
+          "codigo": "OPCION_OTRA_VARIABLE",
+          "explicacion": "Compilaría, pero sería otra variable, distinta de la de `sumar`, y no valdría lo que `sumar` calculó. Los valores no viajan por el nombre."
+        },
+        {
+          "texto": "Mostrando `total`, donde `main` guardó lo que `sumar` devolvió",
+          "correcta": true,
+          "explicacion": "Un valor sale de una función con `return`, y quien llama lo guarda en una variable propia. `resultado` desaparece cuando `sumar` termina, pero su valor ya viajó hasta `total`."
+        },
+        {
+          "texto": "Declarando `resultado` afuera de las dos funciones",
+          "codigo": "OPCION_GLOBAL",
+          "explicacion": "Funcionaría, porque entonces sería una variable global que ven todas las funciones. Pero es justo lo que se desaconseja: ver por qué en la serie de variables globales. Para pasar un valor de una función a otra se usan los parámetros y `return`."
+        }
+      ]
     },
     {
       "id": "devolver-promedio",
@@ -89,6 +180,30 @@
         }
       ],
       "referencia": "float promedio(int a, int b) {\n  return (a + b) / 2.0;\n}"
+    },
+    {
+      "id": "devolver-q-trunca",
+      "titulo": "El tipo de retorno trunca",
+      "archivo": "int promedio(int a, int b) {\n  return (a + b) / 2.0;\n}",
+      "enunciado": "¿Qué muestra este programa?",
+      "codigo": "printf(\"%d\", promedio(7, 2));",
+      "opciones": [
+        {
+          "texto": "`4.5`",
+          "codigo": "OPCION_CON_DECIMALES",
+          "explicacion": "La cuenta da `4.5`, pero la función se declaró `int`: lo que devuelve es un entero, así que los decimales se pierden. Para que devuelva `4.5`, tiene que ser `float`."
+        },
+        {
+          "texto": "`4`",
+          "correcta": true,
+          "explicacion": "La cuenta da `4.5`, pero la función se declaró `int`: al devolverlo se descartan los decimales y queda `4`. El tipo que va antes del nombre manda sobre lo que se devuelve."
+        },
+        {
+          "texto": "`5`",
+          "codigo": "OPCION_REDONDEA",
+          "explicacion": "No se redondea: al convertir un decimal a entero se descarta la parte decimal, sin importar cuál sea."
+        }
+      ]
     },
     {
       "id": "devolver-decide",
@@ -186,97 +301,28 @@
       ]
     },
     {
-      "id": "devolver-q-resultado",
-      "titulo": "Cómo sale un valor de una función",
-      "archivo": "int sumar(int a, int b) {\n  int resultado = a + b;\n\n  return resultado;\n}",
-      "enunciado": "Este programa no compila, porque `main` usa `resultado`, que es una variable local de `sumar`. ¿Cómo se arregla?",
-      "codigo": "int x = 3;\nint y = 4;\nint total;\n\ntotal = sumar(x, y);\nprintf(\"%d\", resultado);",
+      "id": "devolver-q-mostrar",
+      "titulo": "Mostrar o devolver",
+      "archivo": "void mostrarDoble(int n) {\n  printf(\"%d\", n * 2);\n}\n\nint doble(int n) {\n  return n * 2;\n}",
+      "enunciado": "Este programa no compila. ¿Por qué?",
+      "codigo": "int a = doble(4);\nint b = mostrarDoble(4);\n\nprintf(\"%d %d\", a, b);",
       "opciones": [
         {
-          "texto": "Declarando también `resultado` en `main`",
-          "codigo": "OPCION_OTRA_VARIABLE",
-          "explicacion": "Compilaría, pero sería otra variable, distinta de la de `sumar`, y no valdría lo que `sumar` calculó. Los valores no viajan por el nombre."
-        },
-        {
-          "texto": "Mostrando `total`, donde `main` guardó lo que `sumar` devolvió",
+          "texto": "`mostrarDoble` no devuelve nada: no se puede guardar en `b`",
           "correcta": true,
-          "explicacion": "Un valor sale de una función con `return`, y quien llama lo guarda en una variable propia. `resultado` desaparece cuando `sumar` termina, pero su valor ya viajó hasta `total`."
+          "explicacion": "`mostrarDoble` muestra el resultado, pero es `void`: no devuelve ningún valor, así que su llamada no vale nada y no se puede guardar. `doble` sí devuelve, y su llamada se puede guardar, sumar o mostrar."
         },
         {
-          "texto": "Declarando `resultado` afuera de las dos funciones",
-          "codigo": "OPCION_GLOBAL",
-          "explicacion": "Funcionaría, porque entonces sería una variable global que ven todas las funciones. Pero es justo lo que se desaconseja: ver por qué en la serie de variables globales. Para pasar un valor de una función a otra se usan los parámetros y `return`."
+          "texto": "`doble` está mal escrita",
+          "codigo": "OPCION_DOBLE_MAL",
+          "explicacion": "`doble` está bien: devuelve un `int`, y por eso `int a = doble(4);` es válido."
+        },
+        {
+          "texto": "Falta declarar `a` antes de usarla",
+          "codigo": "OPCION_FALTA_DECLARAR",
+          "explicacion": "En C se puede declarar y darle valor en la misma línea: `int a = doble(4);` es correcto."
         }
       ]
-    },
-    {
-      "id": "devolver-usar-resultado",
-      "titulo": "Usar lo que devuelve una función",
-      "archivoDado": "int calcular(void) {\n  int total = 10;\n\n  return total;\n}",
-      "enunciado": "La función `calcular` ya está definida y devuelve el valor de su variable local `total`. Muestre ese valor con `printf`.",
-      "salida": "10",
-      "requiere": [
-        {
-          "ejecuta": {
-            "casos": [
-              {
-                "salida": "10",
-                "visible": true
-              }
-            ]
-          }
-        }
-      ],
-      "referencia": "printf(\"%d\", calcular());"
-    },
-    {
-      "id": "devolver-sin-global",
-      "titulo": "Reescribirla sin variable global",
-      "en": "archivo",
-      "ejemplo": {
-        "texto": "Esta función acumula en una variable global:",
-        "codigo": "int total = 0;\n\nvoid acumular(int n) {\n  total = total + n;\n}"
-      },
-      "enunciado": "Escriba una función que haga lo mismo sin variables globales: que reciba el total actual y el número que se suma, y devuelva el total nuevo. Con `10` y `5` devuelve `15`. Póngale el nombre que quiera.",
-      "requiere": [
-        {
-          "sinGlobales": true
-        },
-        {
-          "funcion": {
-            "retorna": "entero",
-            "parametros": [
-              {
-                "tipo": "entero"
-              },
-              {
-                "tipo": "entero"
-              }
-            ],
-            "capturar": "A"
-          }
-        },
-        {
-          "ejecuta": {
-            "casos": [
-              {
-                "llama": "$A(10, 5)",
-                "devuelve": 15,
-                "visible": true
-              },
-              {
-                "llama": "$A(0, 7)",
-                "devuelve": 7
-              },
-              {
-                "llama": "$A(-3, 3)",
-                "devuelve": 0
-              }
-            ]
-          }
-        }
-      ],
-      "referencia": "int acumular(int total, int n) {\n  return total + n;\n}"
     }
   ]
 }

@@ -1,0 +1,124 @@
+{
+  "id": "funciones-devolver-estructura",
+  "titulo": "Devolver una estructura",
+  "continua": false,
+  "dentroDeMain": true,
+  "descripcion": "Una función también puede devolver una estructura entera: lo que viaja es una copia con todos sus campos. Un arreglo, en cambio, no se puede devolver.",
+  "cabecera": "#include <stdio.h>",
+  "consignas": [
+    {
+      "id": "estructura-refactor-funcion",
+      "titulo": "Reemplazar la global por una estructura devuelta",
+      "en": "archivo",
+      "archivoDado": "typedef struct {\n  int legajo;\n  int edad;\n  float promedio;\n} TAlumno;",
+      "ejemplo": {
+        "texto": "Esta función lee los datos de un alumno y los deja en una variable global:",
+        "codigo": "TAlumno alumno;\n\nvoid cargarAlumno(void) {\n  scanf(\"%d\", &alumno.legajo);\n  scanf(\"%d\", &alumno.edad);\n  scanf(\"%f\", &alumno.promedio);\n}"
+      },
+      "enunciado": "Escriba una función `leerAlumno` que no reciba nada, lea esos tres datos (legajo, edad y promedio) en una variable local de tipo `TAlumno` y devuelva el alumno, sin variables globales.",
+      "requiere": [
+        {
+          "sinGlobales": true
+        },
+        {
+          "funcion": {
+            "nombre": "leerAlumno",
+            "retorna": "estructura",
+            "parametros": []
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "entrada": [
+                  12,
+                  20,
+                  8.5
+                ],
+                "llama": "leerAlumno()",
+                "devuelve": {
+                  "legajo": 12,
+                  "edad": 20,
+                  "promedio": 8.5
+                },
+                "visible": true
+              },
+              {
+                "entrada": [
+                  7,
+                  31,
+                  6
+                ],
+                "llama": "leerAlumno()",
+                "devuelve": {
+                  "legajo": 7,
+                  "edad": 31,
+                  "promedio": 6
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "TAlumno leerAlumno(void) {\n  TAlumno a;\n\n  scanf(\"%d\", &a.legajo);\n  scanf(\"%d\", &a.edad);\n  scanf(\"%f\", &a.promedio);\n  return a;\n}"
+    },
+    {
+      "id": "estructura-refactor-llamada",
+      "titulo": "Guardar el alumno que devuelve la función",
+      "archivoDado": "typedef struct {\n  int legajo;\n  int edad;\n  float promedio;\n} TAlumno;\n\nTAlumno leerAlumno(void) {\n  TAlumno a;\n\n  scanf(\"%d\", &a.legajo);\n  scanf(\"%d\", &a.edad);\n  scanf(\"%f\", &a.promedio);\n  return a;\n}",
+      "dado": "TAlumno alumno;",
+      "enunciado": "`leerAlumno` lee los datos de un alumno y lo devuelve. Guarde en `alumno` lo que devuelve.",
+      "requiere": [
+        {
+          "llamada": {
+            "funcion": "leerAlumno",
+            "argumentos": []
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "entrada": [
+                  12,
+                  20,
+                  8.5
+                ],
+                "queda": {
+                  "alumno.legajo": 12,
+                  "alumno.edad": 20,
+                  "alumno.promedio": 8.5
+                },
+                "visible": true
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "alumno = leerAlumno();"
+    },
+    {
+      "id": "estructura-q-arreglo",
+      "titulo": "Un arreglo no se devuelve",
+      "enunciado": "Una función puede devolver un número, una letra o una estructura. ¿Qué pasa con una función que intenta devolver un arreglo?",
+      "opciones": [
+        {
+          "texto": "Compila y devuelve una copia del arreglo",
+          "codigo": "OPCION_DEVUELVE_UNA_COPIA",
+          "explicacion": "No: el arreglo no se copia al devolverlo, y de hecho C no permite que una función devuelva un arreglo."
+        },
+        {
+          "texto": "No se puede: en C una función no devuelve un arreglo",
+          "correcta": true,
+          "explicacion": "Es una regla del lenguaje: una función devuelve un número, una letra o una estructura, pero no un arreglo. Cómo trabajar con arreglos en una función se verá más adelante."
+        },
+        {
+          "texto": "Devuelve solamente el primer elemento",
+          "codigo": "OPCION_SOLO_EL_PRIMERO",
+          "explicacion": "Tampoco: no hay ninguna forma de que una función devuelva un arreglo, ni siquiera parcialmente."
+        }
+      ]
+    }
+  ]
+}

@@ -13,6 +13,8 @@ const serie = (id) => (paso, nombre, respuesta, espera = 'ok', extra = {}) => ({
 const definir = serie('funciones-definir');
 const parametros = serie('funciones-parametros');
 const compuestos = serie('funciones-parametros-compuestos');
+const estructura = serie('funciones-devolver-estructura');
+const varios = serie('funciones-varios-valores');
 const devolver = serie('funciones-devolver');
 const referencia = serie('funciones-referencia');
 
@@ -159,57 +161,217 @@ export const CASOS_DE_FUNCIONES = [
   compuestos(7, 'todo en un renglon', FUNCION('void mostrarTabla(int t[][3], int filas)', '  int i;\n  int j;\n\n  for (i = 0; i < filas; i++) {\n    for (j = 0; j < 3; j++) {\n      printf("%d ", t[i][j]);\n    }\n  }'), ['MUESTRA_DISTINTA']),
   compuestos(7, 'un arreglo en vez de una tabla', FUNCION('void mostrarTabla(int t[], int filas)', '  printf("%d", t[0]);'), ['PARAMETRO_TIPO']),
 
-  // ===== Funciones que devuelven un valor =====
-  // ---- 1: la suma ----
-  devolver(1, 'la suma', FUNCION('int sumar(int a, int b)', '  return a + b;'), 'ok', { mejoras: [] }),
-  devolver(1, 'con otros nombres', FUNCION('int total(int x, int y)', '  return x + y;')),
-  devolver(1, 'con una variable', FUNCION('int sumar(int a, int b)', '  int resultado;\n\n  resultado = a + b;\n  return resultado;')),
-  devolver(1, 'multiplica', FUNCION('int sumar(int a, int b)', '  return a * b;'), ['DEVUELVE_DISTINTO'], {
-    dice: ['`sumar(3, 4)` devuelve `12` y debería devolver `7`'],
-  }),
-  devolver(1, 'sin return', FUNCION('int sumar(int a, int b)', '  int c = a + b;'), ['RETORNO_FALTA']),
-  devolver(1, 'muestra en vez de devolver', FUNCION('void sumar(int a, int b)', '  printf("%d", a + b);'), [
-    'MUESTRA_EN_VEZ_DE_DEVOLVER',
-  ], { dice: ['la consigna pide que lo devuelva'] }),
-  devolver(1, 'void sin mostrar', FUNCION('void sumar(int a, int b)', '  int c = a + b;'), ['FUNCION_TIPO_RETORNO']),
-  devolver(1, 'un parametro', FUNCION('int sumar(int a)', '  return a;'), ['PARAMETROS_CANTIDAD']),
-  devolver(1, 'devuelve un float', FUNCION('float sumar(int a, int b)', '  return a + b;'), ['FUNCION_TIPO_RETORNO']),
-  devolver(1, 'un parametro float', FUNCION('int sumar(float a, int b)', '  return a + b;'), ['PARAMETRO_TIPO']),
-  devolver(1, 'parametros con asterisco', FUNCION('int sumar(int *a, int *b)', '  return *a + *b;'), [
-    'PARAMETRO_ASTERISCO_DE_MAS',
+  // ===== Funciones con retorno =====
+  // ---- 1: reemplazar la global por un valor devuelto ----
+  devolver(1, 'devuelve el cociente', FUNCION('int dividir(int dividendo, int divisor)', '  return dividendo / divisor;'), 'ok', { mejoras: [] }),
+  devolver(1, 'con otros nombres', FUNCION('int dividir(int a, int b)', '  return a / b;')),
+  devolver(1, 'con una variable', FUNCION('int dividir(int a, int b)', '  int c = a / b;\n\n  return c;')),
+  devolver(1, 'con una global', 'int cociente;\n' + FUNCION('int dividir(int a, int b)', '  cociente = a / b;\n  return cociente;'), ['GLOBAL_DE_MAS']),
+  devolver(1, 'sigue sin parametros', 'int dividendo;\nint divisor;\n' + FUNCION('int dividir(void)', '  return dividendo / divisor;'), [
+    'GLOBAL_DE_MAS',
+    'PARAMETROS_CANTIDAD',
   ]),
-  // ---- 2: el promedio ----
-  devolver(2, 'el promedio', FUNCION('float promedio(int a, int b)', '  return (a + b) / 2.0;'), 'ok', { mejoras: [] }),
-  devolver(2, 'con una variable real', FUNCION('float promedio(int a, int b)', '  float p = (a + b) / 2.0;\n\n  return p;')),
-  devolver(2, 'con un cast', FUNCION('float promedio(int a, int b)', '  return (float)(a + b) / 2;')),
-  devolver(2, 'con division entera', FUNCION('float promedio(int a, int b)', '  return (a + b) / 2;'), ['DEVUELVE_DISTINTO'], {
+  devolver(1, 'sin return', FUNCION('int dividir(int a, int b)', '  int c = a / b;'), ['RETORNO_FALTA']),
+  devolver(1, 'el resto en vez del cociente', FUNCION('int dividir(int a, int b)', '  return a % b;'), ['DEVUELVE_DISTINTO']),
+  devolver(1, 'muestra en vez de devolver', FUNCION('void dividir(int a, int b)', '  printf("%d", a / b);'), ['MUESTRA_EN_VEZ_DE_DEVOLVER']),
+  devolver(1, 'otro nombre de funcion', FUNCION('int cociente(int a, int b)', '  return a / b;'), ['FUNCION_NOMBRE']),
+  // ---- 2: reemplazar la lectura de la global por el valor de la llamada ----
+  devolver(2, 'guarda lo que devuelve', 'cociente = dividir(dividendo, divisor);', 'ok', { mejoras: [] }),
+  devolver(2, 'sin guardarlo', 'dividir(dividendo, divisor);', ['RESULTADO_PERDIDO']),
+  devolver(2, 'en otra variable', 'int otro;\notro = dividir(dividendo, divisor);', ['RESULTADO_EN_OTRA']),
+  devolver(2, 'con los argumentos al reves', 'cociente = dividir(divisor, dividendo);', ['ARGUMENTOS_EN_OTRO_ORDEN']),
+  devolver(2, 'con los numeros', 'cociente = dividir(17, 5);', ['ARGUMENTO_EQUIVOCADO']),
+  // ---- 3: cuestionario, la llamada vale lo que devuelve ----
+  devolver(3, 'la llamada vale: la correcta', '0'),
+  devolver(3, 'la llamada vale: sin la de adentro', '1', ['OPCION_SIN_LA_LLAMADA_DE_ADENTRO']),
+  devolver(3, 'la llamada vale: cada una', '2', ['OPCION_MUESTRA_CADA_UNA']),
+  // ---- 4: cuestionario, como sale un valor ----
+  devolver(4, 'como sale un valor: la correcta', '1'),
+  devolver(4, 'como sale un valor: otra variable', '0', ['OPCION_OTRA_VARIABLE']),
+  devolver(4, 'como sale un valor: global', '2', ['OPCION_GLOBAL']),
+  // ---- 5 a 9: promedio, truncamiento, funcion que decide, usarla y return ----
+  devolver(5, 'el promedio', FUNCION('float promedio(int a, int b)', '  return (a + b) / 2.0;'), 'ok', { mejoras: [] }),
+  devolver(5, 'con una variable real', FUNCION('float promedio(int a, int b)', '  float p = (a + b) / 2.0;\n\n  return p;')),
+  devolver(5, 'con un cast', FUNCION('float promedio(int a, int b)', '  return (float)(a + b) / 2;')),
+  devolver(5, 'con division entera', FUNCION('float promedio(int a, int b)', '  return (a + b) / 2;'), ['DEVUELVE_DISTINTO'], {
     dice: ['Dividir dos enteros da un entero'],
   }),
-  devolver(2, 'float como funcion', FUNCION('float promedio(int a, int b)', '  return float(a + b) / 2;'), ['CONVERSION_COMO_FUNCION'], {
+  devolver(5, 'float como funcion', FUNCION('float promedio(int a, int b)', '  return float(a + b) / 2;'), ['CONVERSION_COMO_FUNCION'], {
     dice: ['(float) (a + b)'],
   }),
-  devolver(2, 'devuelve un int',FUNCION('int promedio(int a, int b)', '  return (a + b) / 2;'), ['FUNCION_TIPO_RETORNO']),
-  devolver(2, 'muestra en vez de devolver', FUNCION('void promedio(int a, int b)', '  printf("%f", (a + b) / 2.0);'), [
+  devolver(5, 'devuelve un int', FUNCION('int promedio(int a, int b)', '  return (a + b) / 2;'), ['FUNCION_TIPO_RETORNO']),
+  devolver(5, 'muestra en vez de devolver', FUNCION('void promedio(int a, int b)', '  printf("%f", (a + b) / 2.0);'), [
     'MUESTRA_EN_VEZ_DE_DEVOLVER',
   ]),
-  // ---- 3: una funcion que decide ----
-  devolver(3, 'par con if', FUNCION('int esPar(int n)', '  if (n % 2 == 0) {\n    return 1;\n  }\n  return 0;'), 'ok', { mejoras: [] }),
-  devolver(3, 'par con return directo', FUNCION('int esPar(int n)', '  return n % 2 == 0;')),
-  devolver(3, 'par con if y else', FUNCION('int esPar(int n)', '  if (n % 2 == 0) {\n    return 1;\n  } else {\n    return 0;\n  }')),
-  devolver(3, 'al reves', FUNCION('int esPar(int n)', '  return n % 2;'), ['DEVUELVE_DISTINTO']),
-  devolver(3, 'muestra en vez de devolver', FUNCION('void esPar(int n)', '  if (n % 2 == 0) {\n    printf("1");\n  }'), [
+  devolver(7, 'par con if', FUNCION('int esPar(int n)', '  if (n % 2 == 0) {\n    return 1;\n  }\n  return 0;'), 'ok', { mejoras: [] }),
+  devolver(7, 'par con return directo', FUNCION('int esPar(int n)', '  return n % 2 == 0;')),
+  devolver(7, 'par con if y else', FUNCION('int esPar(int n)', '  if (n % 2 == 0) {\n    return 1;\n  } else {\n    return 0;\n  }')),
+  devolver(7, 'al reves', FUNCION('int esPar(int n)', '  return n % 2;'), ['DEVUELVE_DISTINTO']),
+  devolver(7, 'muestra en vez de devolver', FUNCION('void esPar(int n)', '  if (n % 2 == 0) {\n    printf("1");\n  }'), [
     'MUESTRA_EN_VEZ_DE_DEVOLVER',
   ]),
-  devolver(3, 'sin return en todos los caminos', FUNCION('int esPar(int n)', '  if (n % 2 == 0) {\n    return 1;\n  }'), ['FUNCION_SIN_RETORNO']),
-  // ---- 4: usar lo que devuelve ----
-  devolver(4, 'con if', 'if (esPar(8) == 1) {\n  printf("par");\n}', 'ok', { mejoras: [] }),
-  devolver(4, 'con if sin comparar', 'if (esPar(8)) {\n  printf("par");\n}'),
-  devolver(4, 'sin llamar a la funcion', 'printf("par");', ['FUNCION_EQUIVOCADA']),
-  // ---- 5: cuestionario, el return termina la funcion ----
-  devolver(5, 'el return termina: la correcta', '1'),
-  devolver(5, 'el return termina: sigue', '0', ['OPCION_SIGUE_DESPUES_DEL_RETURN']),
-  devolver(5, 'el return termina: orden', '2', ['OPCION_ORDEN_EQUIVOCADO']),
+  devolver(7, 'sin return en todos los caminos', FUNCION('int esPar(int n)', '  if (n % 2 == 0) {\n    return 1;\n  }'), ['FUNCION_SIN_RETORNO']),
+  devolver(8, 'con if', 'if (esPar(8) == 1) {\n  printf("par");\n}', 'ok', { mejoras: [] }),
+  devolver(8, 'con if sin comparar', 'if (esPar(8)) {\n  printf("par");\n}'),
+  devolver(8, 'sin llamar a la funcion', 'printf("par");', ['FUNCION_EQUIVOCADA']),
+  devolver(9, 'el return termina: la correcta', '1'),
+  devolver(9, 'el return termina: sigue', '0', ['OPCION_SIGUE_DESPUES_DEL_RETURN']),
+  devolver(9, 'el return termina: orden', '2', ['OPCION_ORDEN_EQUIVOCADO']),
+  // ---- 6: cuestionario, el tipo de retorno trunca ----
+  devolver(6, 'trunca: la correcta', '1'),
+  devolver(6, 'trunca: con decimales', '0', ['OPCION_CON_DECIMALES']),
+  devolver(6, 'trunca: redondea', '2', ['OPCION_REDONDEA']),
+  // ---- 10: cuestionario, mostrar o devolver ----
+  devolver(10, 'mostrar o devolver: la correcta', '0'),
+  devolver(10, 'mostrar o devolver: doble mal', '1', ['OPCION_DOBLE_MAL']),
+  devolver(10, 'mostrar o devolver: falta declarar', '2', ['OPCION_FALTA_DECLARAR']),
 
+  // ===== Devolver una estructura =====
+  // ---- 1: reemplazar la global por una estructura devuelta ----
+  estructura(
+    1,
+    'devuelve el alumno',
+    FUNCION('TAlumno leerAlumno(void)', '  TAlumno a;\n\n  scanf("%d", &a.legajo);\n  scanf("%d", &a.edad);\n  scanf("%f", &a.promedio);\n  return a;'),
+    'ok',
+    { mejoras: [] }
+  ),
+  estructura(
+    1,
+    'con otro nombre de variable',
+    FUNCION('TAlumno leerAlumno(void)', '  TAlumno alumno;\n\n  scanf("%d", &alumno.legajo);\n  scanf("%d", &alumno.edad);\n  scanf("%f", &alumno.promedio);\n  return alumno;')
+  ),
+  estructura(
+    1,
+    'con una global',
+    'TAlumno alumno;\n' + FUNCION('TAlumno leerAlumno(void)', '  scanf("%d", &alumno.legajo);\n  scanf("%d", &alumno.edad);\n  scanf("%f", &alumno.promedio);\n  return alumno;'),
+    ['GLOBAL_DE_MAS']
+  ),
+  estructura(
+    1,
+    'no devuelve el alumno',
+    FUNCION('void leerAlumno(void)', '  TAlumno a;\n\n  scanf("%d", &a.legajo);\n  scanf("%d", &a.edad);\n  scanf("%f", &a.promedio);'),
+    ['FUNCION_TIPO_RETORNO']
+  ),
+  estructura(
+    1,
+    'devuelve un entero',
+    FUNCION('int leerAlumno(void)', '  int legajo;\n\n  scanf("%d", &legajo);\n  return legajo;'),
+    ['FUNCION_TIPO_RETORNO']
+  ),
+  estructura(
+    1,
+    'lee en otro orden',
+    FUNCION('TAlumno leerAlumno(void)', '  TAlumno a;\n\n  scanf("%d", &a.edad);\n  scanf("%d", &a.legajo);\n  scanf("%f", &a.promedio);\n  return a;'),
+    ['DEVUELVE_DISTINTO']
+  ),
+  estructura(
+    1,
+    'no lee el promedio',
+    FUNCION('TAlumno leerAlumno(void)', '  TAlumno a;\n\n  scanf("%d", &a.legajo);\n  scanf("%d", &a.edad);\n  return a;'),
+    ['DEVUELVE_CAMPO_SIN_VALOR']
+  ),
+  // ---- 2: guardar el alumno que devuelve la funcion ----
+  estructura(2, 'guarda lo que devuelve', 'alumno = leerAlumno();', 'ok', { mejoras: [] }),
+  estructura(2, 'sin guardarlo', 'leerAlumno();', ['RESULTADO_VARIABLE_SIN_VALOR']),
+  // ---- 3: cuestionario, un arreglo no se devuelve ----
+  estructura(3, 'arreglo: la correcta', '1'),
+  estructura(3, 'arreglo: devuelve una copia', '0', ['OPCION_DEVUELVE_UNA_COPIA']),
+  estructura(3, 'arreglo: el primero', '2', ['OPCION_SOLO_EL_PRIMERO']),
+
+  // ===== Devolver varios valores =====
+  // ---- 1: cuestionario, la coma ----
+  varios(1, 'coma: la correcta', '1'),
+  varios(1, 'coma: los dos', '0', ['OPCION_LOS_DOS']),
+  varios(1, 'coma: el primero', '2', ['OPCION_EL_PRIMERO']),
+  // ---- 2: una estructura con el cociente y el resto ----
+  varios(
+    2,
+    'cociente y resto',
+    FUNCION('TDivision dividir(int dividendo, int divisor)', '  TDivision r;\n\n  r.cociente = dividendo / divisor;\n  r.resto = dividendo % divisor;\n  return r;'),
+    'ok',
+    { mejoras: [] }
+  ),
+  varios(
+    2,
+    'con otros nombres',
+    FUNCION('TDivision partir(int a, int b)', '  TDivision resultado;\n\n  resultado.cociente = a / b;\n  resultado.resto = a % b;\n  return resultado;')
+  ),
+  varios(
+    2,
+    'al reves',
+    FUNCION('TDivision dividir(int a, int b)', '  TDivision r;\n\n  r.cociente = a % b;\n  r.resto = a / b;\n  return r;'),
+    ['DEVUELVE_DISTINTO']
+  ),
+  varios(
+    2,
+    'sin el resto',
+    FUNCION('TDivision dividir(int a, int b)', '  TDivision r;\n\n  r.cociente = a / b;\n  return r;'),
+    ['DEVUELVE_CAMPO_SIN_VALOR']
+  ),
+  varios(2, 'devuelve un entero', FUNCION('int dividir(int a, int b)', '  return a / b;'), ['FUNCION_TIPO_RETORNO']),
+  varios(
+    2,
+    'muestra en vez de devolver',
+    FUNCION('void dividir(int a, int b)', '  printf("%d %d", a / b, a % b);'),
+    ['MUESTRA_EN_VEZ_DE_DEVOLVER']
+  ),
+  // ---- 3: usar la estructura que devuelve la funcion ----
+  varios(3, 'muestra los dos campos', 'TDivision r = dividir(17, 5);\nprintf("%d %d", r.cociente, r.resto);', 'ok', { mejoras: [] }),
+  varios(3, 'guardada despues', 'TDivision r;\n\nr = dividir(17, 5);\nprintf("%d %d", r.cociente, r.resto);'),
+  varios(3, 'al reves', 'TDivision r = dividir(17, 5);\nprintf("%d %d", r.resto, r.cociente);', ['MUESTRA_DISTINTA']),
+  varios(3, 'con otros numeros', 'TDivision r = dividir(20, 4);\nprintf("%d %d", r.cociente, r.resto);', ['ARGUMENTO_EQUIVOCADO']),
+  // ---- 4: los tres datos de un circulo ----
+  varios(
+    4,
+    'el circulo',
+    'typedef struct {\n  float diametro;\n  float perimetro;\n  float area;\n} TCirculo;\n\n' +
+      FUNCION('TCirculo calcularCirculo(float radio)', '  TCirculo c;\n\n  c.diametro = radio * 2;\n  c.perimetro = 2 * 3.14 * radio;\n  c.area = 3.14 * radio * radio;\n  return c;'),
+    'ok',
+    { mejoras: [] }
+  ),
+  varios(
+    4,
+    'con struct y etiqueta',
+    'struct Circulo {\n  float diametro;\n  float perimetro;\n  float area;\n};\n\n' +
+      FUNCION('struct Circulo calcular(float r)', '  struct Circulo c;\n\n  c.diametro = r * 2;\n  c.perimetro = 2 * 3.14 * r;\n  c.area = 3.14 * r * r;\n  return c;')
+  ),
+  varios(
+    4,
+    'con pi aproximado distinto',
+    'typedef struct {\n  float diametro;\n  float perimetro;\n  float area;\n} TCirculo;\n\n' +
+      FUNCION('TCirculo calcularCirculo(float radio)', '  TCirculo c;\n\n  c.diametro = radio * 2;\n  c.perimetro = 2 * 3 * radio;\n  c.area = 3 * radio * radio;\n  return c;'),
+    ['DEVUELVE_DISTINTO']
+  ),
+  varios(
+    4,
+    'sin el area',
+    'typedef struct {\n  float diametro;\n  float perimetro;\n} TCirculo;\n\n' +
+      FUNCION('TCirculo calcularCirculo(float radio)', '  TCirculo c;\n\n  c.diametro = radio * 2;\n  c.perimetro = 2 * 3.14 * radio;\n  return c;'),
+    ['DEVUELVE_CAMPO_FALTA'],
+    { dice: ['`diametro`, `perimetro` y `area`'] }
+  ),
+  // ---- 5: horas, minutos y segundos ----
+  varios(
+    5,
+    'descompone los segundos',
+    'typedef struct {\n  int horas;\n  int minutos;\n  int segundos;\n} TTiempo;\n\n' +
+      FUNCION('TTiempo descomponer(int total)', '  TTiempo t;\n\n  t.horas = total / 3600;\n  t.minutos = (total % 3600) / 60;\n  t.segundos = total % 60;\n  return t;'),
+    'ok',
+    { mejoras: [] }
+  ),
+  varios(
+    5,
+    'con restas',
+    'typedef struct {\n  int horas;\n  int minutos;\n  int segundos;\n} TTiempo;\n\n' +
+      FUNCION('TTiempo descomponer(int total)', '  TTiempo t;\n\n  t.horas = total / 3600;\n  total = total - t.horas * 3600;\n  t.minutos = total / 60;\n  t.segundos = total - t.minutos * 60;\n  return t;')
+  ),
+  varios(
+    5,
+    'los minutos sin descontar las horas',
+    'typedef struct {\n  int horas;\n  int minutos;\n  int segundos;\n} TTiempo;\n\n' +
+      FUNCION('TTiempo descomponer(int total)', '  TTiempo t;\n\n  t.horas = total / 3600;\n  t.minutos = total / 60;\n  t.segundos = total % 60;\n  return t;'),
+    ['DEVUELVE_DISTINTO']
+  ),
   // ===== Funciones que modifican las variables de afuera =====
   // ---- 1: cuestionario con & ----
   referencia(1, 'con &: la correcta', '0'),
@@ -287,31 +449,6 @@ export const CASOS_DE_FUNCIONES = [
   ),
 
   // ===== consignas que vinieron de las series de ambito =====
-  // ---- devolver: como sale un valor ----
-  devolver(6, 'como sale un valor: la correcta', '1'),
-  devolver(6, 'como sale un valor: otra variable', '0', ['OPCION_OTRA_VARIABLE']),
-  devolver(6, 'como sale un valor: global', '2', ['OPCION_GLOBAL']),
-  // ---- devolver: usar lo que devuelve ----
-  devolver(7, 'directo en el printf', 'printf("%d", calcular());'),
-  devolver(7, 'con una variable', 'int t = calcular();\nprintf("%d", t);'),
-  devolver(7, 'la variable de la otra funcion', 'calcular();\nprintf("%d", total);', ['NOMBRE_FUERA_DE_ALCANCE'], {
-    dice: ['está declarada dentro de `calcular`', 'las demás no la ven'],
-  }),
-  devolver(7, 'solo la variable de la otra funcion', 'printf("%d", total);', ['NOMBRE_FUERA_DE_ALCANCE']),
-  devolver(7, 'un nombre que no existe en ninguna', 'printf("%d", resultado);', ['NOMBRE_NO_DECLARADO']),
-  // ---- devolver: reescribir sin global ----
-  devolver(8, 'devuelve el total nuevo', FUNCION('int acumular(int total, int n)', '  return total + n;')),
-  devolver(8, 'con una variable', FUNCION('int acumular(int total, int n)', '  int nuevo = total + n;\n\n  return nuevo;')),
-  devolver(8, 'con otros nombres', FUNCION('int sumar(int a, int b)', '  return a + b;')),
-  devolver(8, 'con una global', 'int total = 0;\n' + FUNCION('int acumular(int n)', '  total = total + n;\n  return total;'), [
-    'GLOBAL_DE_MAS',
-    'PARAMETROS_CANTIDAD',
-  ], { dice: ['es una variable global'] }),
-  devolver(8, 'una global con dos parametros', 'int total;\n' + FUNCION('int acumular(int a, int n)', '  total = a + n;\n  return total;'), [
-    'GLOBAL_DE_MAS',
-  ]),
-  devolver(8, 'sin return', FUNCION('int acumular(int total, int n)', '  total = total + n;'), ['RETORNO_FALTA']),
-  devolver(8, 'usa un total que no existe', FUNCION('int acumular(int a, int n)', '  return total + n;'), ['NOMBRE_NO_DECLARADO']),
   // ---- referencia: reescribir por referencia ----
   referencia(6, 'modifica por referencia', FUNCION('void acumular(int *total, int n)', '  *total = *total + n;')),
   referencia(6, 'con otros nombres', FUNCION('void sumar(int *t, int x)', '  *t = *t + x;')),
