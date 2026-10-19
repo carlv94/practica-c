@@ -617,7 +617,8 @@ export function corregir(
     } else if (regla.retorna) {
       // 'estructura': devolver una estructura (no una union).
       const deEstructura = regla.retorna === 'estructura';
-      const categoria = deEstructura ? { pide: 'una estructura' } : CATEGORIAS[regla.retorna];
+      const deEnumerado = regla.retorna === 'enumerado';
+      const categoria = deEstructura ? { pide: 'una estructura' } : deEnumerado ? { pide: 'un enumerado' } : CATEGORIAS[regla.retorna];
       if (!categoria) throw new Error(`La consigna "${consigna.id}" pide un tipo de retorno que no conozco: ${regla.retorna}`);
       if (real.clase === 'primitivo' && real.nombre === 'void' && !f.punteros && f.muestra) {
         error(
@@ -629,7 +630,9 @@ export function corregir(
       }
       const cumple = deEstructura
         ? real.clase === 'struct' && !real.union && !f.punteros
-        : real.clase === 'primitivo' && categoria.es(real.nombre) && !f.punteros;
+        : deEnumerado
+          ? real.clase === 'enum' && !f.punteros
+          : real.clase === 'primitivo' && categoria.es(real.nombre) && !f.punteros;
       if (!cumple) {
         error(
           'FUNCION_TIPO_RETORNO',
@@ -756,6 +759,15 @@ export function corregir(
       error(
         'VARIABLE_TIPO',
         `${BT}${nombre}${BT} tiene que ser ${categoria.pide}. Está declarada como ${textoDeTipo(global.tipo)}.`,
+        global.fila
+      );
+      return;
+    }
+    // Es correcto (en C una global sin valor empieza en 0), pero conviene escribirlo.
+    if (!global.inicializada && !avisados.includes('GLOBAL_SIN_VALOR_INICIAL')) {
+      nota(
+        'GLOBAL_SIN_VALOR_INICIAL',
+        `Su respuesta es correcta. Solo una observación: una variable global empieza valiendo ${BT}0${BT} aunque no se le escriba ningún valor, pero escribir ${BT}= 0${BT} deja clara la intención.`,
         global.fila
       );
     }
@@ -1686,7 +1698,17 @@ export function corregir(
   }
 
   function diagnosticarArgumento(llamada, i, esperado, real, modelo) {
-
+    // Un numero escrito en la llamada: no una variable ni otro numero.
+    if (/^-?\d+(\.\d+)?$/.test(esperado) && real) {
+      error(
+        'ARGUMENTO_NUMERO',
+        real.clase === 'nombre'
+          ? `La consigna pide pasar el número \`${esperado}\` escrito directamente en la llamada: \`${real.texto}\` es una variable, y acá no hay que usar ninguna.`
+          : `El argumento de \`${llamada.funcion}\` es \`${real.texto}\`, y la consigna pide el número \`${esperado}\` escrito directamente en la llamada.`,
+        llamada.fila
+      );
+      return;
+    }
     if (esTexto(esperado)) {
       const pedido = esperado.slice(1, -1);
       if (real.clase === 'cadena') {
@@ -3827,10 +3849,24 @@ export function corregir(
             error('FUNCION_SIN_RETORNO', `${BT}${llamada}${BT} no devuelve ningún valor: la consigna pide que lo devuelva.`);
             return;
           }
-          const debe = typeof caso.devuelve === 'string' && [...caso.devuelve].length === 1 ? caso.devuelve.codePointAt(0) : caso.devuelve;
+          // Un nombre de enumerador ("VERDADERO") vale lo que vale en el enumerado del alumno.
+          const enumerador =
+            typeof caso.devuelve === 'string' && [...caso.devuelve].length > 1
+              ? modelo.constantes.find((c) => c.clase === 'enum' && c.nombre === caso.devuelve)
+              : null;
+          const debe = enumerador
+            ? valorDeDimension(enumerador.valor, modelo)
+            : typeof caso.devuelve === 'string' && [...caso.devuelve].length === 1
+              ? caso.devuelve.codePointAt(0)
+              : caso.devuelve;
           if (Math.abs(dio.valor - debe) > 1e-9) {
             const con = caso.visible || !caso.datos ? '' : `${conLosValores(caso.vistos || caso.datos)}, `;
-            const decir = (v) => (typeof caso.devuelve === 'string' ? deLetra(v) : v);
+            const decir = (v) =>
+              enumerador
+                ? (modelo.constantes.find((c) => c.clase === 'enum' && valorDeDimension(c.valor, modelo) === v)?.nombre ?? v)
+                : typeof caso.devuelve === 'string'
+                  ? deLetra(v)
+                  : v;
             // Un resultado con decimales que llega sin ellos: la division entera.
             const divisionEntera =
               typeof debe === 'number' && !Number.isInteger(debe) && Number.isInteger(dio.valor) && dio.valor === Math.trunc(debe);

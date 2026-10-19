@@ -103,7 +103,10 @@ export const CASOS_DE_FUNCIONES = [
   // ---- 5: llamarla con un valor ----
   parametros(5, 'la llamada', 'mostrarDoble(21);', 'ok', { mejoras: [] }),
   parametros(5, 'sin argumento', 'mostrarDoble();', ['ARGUMENTOS_CANTIDAD']),
-  parametros(5, 'otro valor', 'mostrarDoble(10);', ['ARGUMENTO_EQUIVOCADO']),
+  parametros(5, 'otro valor', 'mostrarDoble(10);', ['ARGUMENTO_NUMERO']),
+  parametros(5, 'una variable', 'int n = 21;\nmostrarDoble(n);', ['ARGUMENTO_NUMERO'], {
+    dice: ['escrito directamente en la llamada'],
+  }),
   parametros(5, 'dos argumentos', 'mostrarDoble(21, 2);', ['ARGUMENTOS_CANTIDAD']),
   // ---- 6: una expresion como argumento ----
   parametros(6, 'a mas uno', 'mostrarDoble(a + 1);', 'ok', { mejoras: [] }),
@@ -319,7 +322,7 @@ export const CASOS_DE_FUNCIONES = [
   varios(3, 'muestra los dos campos', 'TDivision r = dividir(17, 5);\nprintf("%d %d", r.cociente, r.resto);', 'ok', { mejoras: [] }),
   varios(3, 'guardada despues', 'TDivision r;\n\nr = dividir(17, 5);\nprintf("%d %d", r.cociente, r.resto);'),
   varios(3, 'al reves', 'TDivision r = dividir(17, 5);\nprintf("%d %d", r.resto, r.cociente);', ['MUESTRA_DISTINTA']),
-  varios(3, 'con otros numeros', 'TDivision r = dividir(20, 4);\nprintf("%d %d", r.cociente, r.resto);', ['ARGUMENTO_EQUIVOCADO']),
+  varios(3, 'con otros numeros', 'TDivision r = dividir(20, 4);\nprintf("%d %d", r.cociente, r.resto);', ['ARGUMENTO_NUMERO']),
   // ---- 4: los tres datos de un circulo ----
   varios(
     4,

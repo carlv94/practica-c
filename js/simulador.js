@@ -709,7 +709,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
   }
 
   // Las partes de un formato: texto fijo y conversiones (%d, %i, %f, %lf, %c).
-  function partes(texto, n) {
+  function partes(texto, n, conTexto = false) {
     const lista = [];
     const re = /%([-0]*)(\d*)(?:\.(\d+))?(l?)([a-zA-Z%])/g;
     let desde = 0;
@@ -722,7 +722,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
         continue;
       }
       const formato = `%${m[4]}${m[5]}`;
-      if (!['%d', '%i', '%f', '%lf', '%c'].includes(formato)) sinVerificar(n, `la conversion ${m[0]}`);
+      if (![...['%d', '%i', '%f', '%lf', '%c'], ...(conTexto ? ['%s'] : [])].includes(formato)) sinVerificar(n, `la conversion ${m[0]}`);
       if (m[4] && m[5] !== 'f') sinVerificar(n, `la conversion ${m[0]}`);
       lista.push({ formato, relleno: m[1], ancho: Number(m[2] || 0), decimales: m[3] === undefined ? null : Number(m[3]) });
     }
@@ -742,15 +742,32 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
     return null;
   }
 
+  // Las letras de una cadena: un arreglo de caracteres, hasta su fin ('\0'), o un texto escrito.
+  function textoDeCadena(a) {
+    if (a.type === 'string_literal') return textoDe(a);
+    if (!(a.type === 'identifier' || a.type === 'field_expression')) return sinVerificar(a, 'un texto que no se sabe seguir');
+    const v = variables.get(a.text.replace(/\s+/g, ''));
+    if (!v || !v.dims || v.dims.length !== 1) return sinVerificar(a, 'un texto que no se sabe seguir');
+    let texto = '';
+    for (const codigo of v.datos) {
+      if (codigo === undefined) return sinVerificar(a, 'una cadena sin su fin');
+      if (codigo === 0) return texto;
+      texto += String.fromCodePoint(codigo);
+    }
+    return sinVerificar(a, 'una cadena sin su fin');
+  }
+
   function imprimir(n, lista) {
-    const partesDelFormato = partes(textoDe(lista[0]), n);
+    const partesDelFormato = partes(textoDe(lista[0]), n, true);
     const convs = conversiones(partesDelFormato);
     const valores = lista.slice(1);
     if (convs.length !== valores.length) {
       throw new ConversionesDistintas('printf', convs.length, valores.length, fila(n));
     }
     const mostrado = [];
-    const calculados = valores.map((a) => {
+    const calculados = valores.map((a, idx) => {
+      // %s: las letras de una cadena (un arreglo de caracteres) hasta su fin, o un texto escrito.
+      if (convs[idx].formato === '%s') return { texto: textoDeCadena(a), nodo: a };
       if (/^&/.test(a.text) && a.type !== 'binary_expression') throw new AmpersandDeMas(a.text, fila(a));
       if (a.type === 'identifier') {
         const variable = variables.get(a.text);
@@ -771,7 +788,14 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
         });
         continue;
       }
-      const { valor, tipo, nodo } = calculados[k++];
+      const calculado = calculados[k++];
+      if (calculado.texto !== undefined) {
+        let delTexto = calculado.texto;
+        if (delTexto.length < p.ancho) delTexto = p.relleno.includes('-') ? delTexto.padEnd(p.ancho) : delTexto.padStart(p.ancho);
+        mostrado.push(delTexto);
+        continue;
+      }
+      const { valor, tipo, nodo } = calculado;
       const decimal = valor.f;
       const esDecimal = p.formato === '%f' || p.formato === '%lf';
       const esLetra = p.formato === '%c';

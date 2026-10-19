@@ -437,6 +437,22 @@ export const CASOS_DEL_SIMULADOR = [
     ),
     espera: { variables: { r: 9 } },
   },
+  // ---- printf con %s ----
+  {
+    nombre: 'cadenas: printf con %s muestra la cadena hasta su fin',
+    codigo: con("char t[5];\nt[0] = 'A';\nt[1] = 'n';\nt[2] = 'a';\nt[3] = 0;\nprintf(\"[%s]\", t);"),
+    espera: { salida: '[Ana]' },
+  },
+  {
+    nombre: 'cadenas: printf con %s y un texto escrito',
+    codigo: con('printf("<%s>", "hola");'),
+    espera: { salida: '<hola>' },
+  },
+  {
+    nombre: 'cadenas: una cadena sin su fin no se sigue',
+    codigo: con("char t[2];\nt[0] = 'A';\nt[1] = 'b';\nprintf(\"%s\", t);"),
+    espera: { error: 'SinVerificar' },
+  },
   // ---- globales ----
   {
     nombre: 'globales: sin valor empiezan en cero',
