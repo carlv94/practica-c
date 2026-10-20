@@ -60,6 +60,7 @@ import {
   LlamadaConAmpersand,
   PunteroSinAsterisco,
   PunteroSinAmpersand,
+  PunteroEnScanf,
   PunteroConUnValor,
   PunteroTipoDistinto,
   DireccionEnVariable,
@@ -98,7 +99,7 @@ const BT = '`';
 
 // La receta de un parametro por referencia, que los mensajes repiten.
 const FORMULA_REFERENCIA =
-  'Para que la función modifique la variable de afuera: `&` al llamarla, `*` en la declaración del parámetro y `*` cada vez que se lo usa adentro.';
+  'Para que la función modifique la variable de afuera: el parámetro es un puntero (se declara con `*`), al llamarla se le pasa la dirección de la variable (con `&`) y adentro se llega a la variable con `*`.';
 // Las funciones que arma el sistema: no son del alumno.
 const NO_ES_DEL_ALUMNO = ['main', 'practica', '__prueba'];
 
@@ -671,7 +672,7 @@ export function corregir(
         if (!p.punteros || p.arreglo.length) {
           error(
             'PARAMETRO_REFERENCIA_FALTA',
-            `${que} tiene que modificar la variable de afuera, y para eso se declara con ${BT}*${BT}, como ${BT}${pedido.tipo === 'real' ? 'float' : 'int'} *${p.nombre || 'x'}${BT}. ${FORMULA_REFERENCIA}`,
+            `${que} tiene que ser un puntero, para recibir la dirección de la variable de afuera y poder modificarla: se declara con un ${BT}*${BT} antes del nombre, como ${BT}${pedido.tipo === 'real' ? 'float' : 'int'} *${p.nombre || 'x'}${BT}. ${FORMULA_REFERENCIA}`,
             p.fila
           );
           return;
@@ -1896,7 +1897,7 @@ export function corregir(
     if (esperado.startsWith('&') && real.clase === 'nombre' && real.nombre === esperado.slice(1)) {
       error(
         'LLAMADA_SIN_AMPERSAND',
-        `Para que la función modifique ${BT}${real.nombre}${BT} hay que pasarle la variable misma, con ${BT}&${BT} adelante: ${BT}${esperado}${BT}. ${FORMULA_REFERENCIA}`,
+        `Para que la función modifique ${BT}${real.nombre}${BT} hay que pasarle su dirección, con ${BT}&${BT} adelante: ${BT}${esperado}${BT}. ${FORMULA_REFERENCIA}`,
         llamada.fila
       );
     } else if (esperado.startsWith('&') && real.clase === 'direccion' && !modelo.variables.some((v) => v.nombre === real.nombre)) {
@@ -3166,19 +3167,25 @@ export function corregir(
       } else if (e instanceof LlamadaSinAmpersand) {
         error(
           'LLAMADA_SIN_AMPERSAND',
-          `${conContexto}El parámetro ${BT}${e.parametro}${BT} de ${BT}${e.funcion}${BT} está declarado con ${BT}*${BT}, así que hay que pasarle la dirección de la variable: ${BT}&${e.texto}${BT}. ${FORMULA_REFERENCIA}`,
+          `${conContexto}El parámetro ${BT}${e.parametro}${BT} de ${BT}${e.funcion}${BT} es un puntero: recibe una dirección, así que hay que pasarle la dirección de la variable: ${BT}&${e.texto}${BT}. ${FORMULA_REFERENCIA}`,
           e.fila
         );
       } else if (e instanceof LlamadaConAmpersand) {
         error(
           'LLAMADA_CON_AMPERSAND',
-          `${conContexto}Se le pasa ${BT}${e.texto}${BT} a ${BT}${e.funcion}${BT}, pero el parámetro ${BT}${e.parametro}${BT} no está declarado con ${BT}*${BT}: recibe un valor y no una dirección. Si la función tiene que modificar la variable, al parámetro le falta el ${BT}*${BT}. ${FORMULA_REFERENCIA}`,
+          `${conContexto}Se le pasa ${BT}${e.texto}${BT} a ${BT}${e.funcion}${BT}, pero el parámetro ${BT}${e.parametro}${BT} no es un puntero: recibe un valor y no una dirección. Si la función tiene que modificar la variable, el parámetro tiene que ser un puntero, con un ${BT}*${BT} en la declaración. ${FORMULA_REFERENCIA}`,
           e.fila
         );
       } else if (e instanceof PunteroSinAsterisco && !e.esParametro) {
         error(
           'PUNTERO_SIN_ASTERISCO',
           `${conContexto}${BT}${e.nombre}${BT} es un puntero: guarda la dirección de una variable y no su valor. Para llegar al valor de la variable a la que apunta hay que escribir ${BT}*${e.nombre}${BT}.`,
+          e.fila
+        );
+      } else if (e instanceof PunteroEnScanf) {
+        error(
+          'PUNTERO_EN_SCANF',
+          `${conContexto}${BT}${e.nombre}${BT} ya es un puntero: guarda la dirección de la variable, que es justo lo que ${BT}scanf${BT} necesita. Se le pasa tal cual, sin ${BT}&${BT} ni ${BT}*${BT}.`,
           e.fila
         );
       } else if (e instanceof PunteroSinAmpersand) {
@@ -3216,7 +3223,7 @@ export function corregir(
       } else if (e instanceof PunteroSinAsterisco) {
         error(
           'PARAMETRO_SIN_ASTERISCO_AL_USARLO',
-          `${conContexto}${BT}${e.nombre}${BT} está declarado con ${BT}*${BT}: para llegar a la variable de afuera hay que escribir ${BT}*${e.nombre}${BT} cada vez que se lo usa. Escrito ${BT}${e.nombre}${BT} solo, no es el valor. ${FORMULA_REFERENCIA}`,
+          `${conContexto}${BT}${e.nombre}${BT} es un puntero: guarda la dirección de la variable de afuera. Para llegar a esa variable hay que escribir ${BT}*${e.nombre}${BT} cada vez que se usa; escrito ${BT}${e.nombre}${BT} solo es la dirección y no el valor. ${FORMULA_REFERENCIA}`,
           e.fila
         );
       } else if (e instanceof AsteriscoDeMas) {

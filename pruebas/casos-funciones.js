@@ -396,17 +396,17 @@ export const CASOS_DE_FUNCIONES = [
   referencia(2, 'con ++', FUNCION('void subir(int *x)', '  (*x)++;')),
   referencia(2, 'sin asterisco en la declaracion', FUNCION('void sumarUno(int n)', '  n = n + 1;'), [
     'PARAMETRO_REFERENCIA_FALTA',
-  ], { dice: ['`&` al llamarla', '`*` en la declaración'] }),
+  ], { dice: ['tiene que ser un puntero'] }),
   referencia(2, 'sin asterisco al usarlo', FUNCION('void sumarUno(int *n)', '  n = n + 1;'), [
     'PARAMETRO_SIN_ASTERISCO_AL_USARLO',
-  ], { dice: ['`*n` cada vez que se lo usa'] }),
+  ], { dice: ['`*n` cada vez que se usa'] }),
   referencia(2, 'suma dos', FUNCION('void sumarUno(int *n)', '  *n = *n + 2;'), ['RESULTADO_VALOR_DISTINTO']),
   referencia(2, 'devuelve en vez de modificar', FUNCION('int sumarUno(int n)', '  return n + 1;'), ['DEVUELVE_EN_VEZ_DE_MOSTRAR'], {
     dice: ['no que lo devuelva con `return`'],
   }),
   // ---- 3: llamarla con & ----
   referencia(3, 'la llamada', 'sumarUno(&contador);', 'ok', { mejoras: [] }),
-  referencia(3, 'sin el &', 'sumarUno(contador);', ['LLAMADA_SIN_AMPERSAND'], { dice: ['`&` al llamar'] }),
+  referencia(3, 'sin el &', 'sumarUno(contador);', ['LLAMADA_SIN_AMPERSAND'], { dice: ['la dirección de la variable'] }),
   referencia(3, 'otra variable', 'sumarUno(&otra);', ['VARIABLE_DESCONOCIDA']),
   // ---- 4: intercambiar ----
   referencia(
@@ -418,10 +418,10 @@ export const CASOS_DE_FUNCIONES = [
   ),
   referencia(4, 'sin asteriscos en la declaracion', FUNCION('void cambiar(int a, int b)', '  int aux;\n\n  aux = a;\n  a = b;\n  b = aux;'), [
     'PARAMETRO_REFERENCIA_FALTA',
-  ], { dice: ['`&` al llamarla', '`*` en la declaración'] }),
+  ], { dice: ['tiene que ser un puntero'] }),
   referencia(4, 'sin asterisco al usarlos', FUNCION('void cambiar(int *a, int *b)', '  int aux;\n\n  aux = a;\n  a = b;\n  b = aux;'), [
     'PARAMETRO_SIN_ASTERISCO_AL_USARLO',
-  ], { dice: ['`*a` cada vez que se lo usa'] }),
+  ], { dice: ['`*a` cada vez que se usa'] }),
   referencia(4, 'sin aux', FUNCION('void cambiar(int *a, int *b)', '  *a = *b;\n  *b = *a;'), ['RESULTADO_VALOR_DISTINTO']),
   referencia(4, 'uno por valor', FUNCION('void cambiar(int *a, int b)', '  int aux;\n\n  aux = *a;\n  *a = b;'), [
     'PARAMETRO_REFERENCIA_FALTA',

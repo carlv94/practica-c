@@ -131,6 +131,14 @@ export class PunteroSinAsterisco extends Error {
   }
 }
 
+// Una variable puntero que se le pasa a scanf con & o con *: ya es una direccion.
+export class PunteroEnScanf extends Error {
+  constructor(nombre, forma, fila) {
+    super(`${nombre} ya es una direccion`);
+    Object.assign(this, { nombre, forma, fila });
+  }
+}
+
 // Una variable comun donde va una direccion: "p = n;" (falta el &).
 export class PunteroSinAmpersand extends Error {
   constructor(nombre, texto, fila) {
@@ -929,6 +937,13 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
     let leidosAhora = 0;
     convs.forEach((conv, k) => {
       const a = destinos[k];
+      // &p o *p con p ya declarado con *: la variable puntero se pasa tal cual.
+      if (a.type === 'pointer_expression') {
+        const sobre = a.childForFieldName('argument') || a.namedChildren[a.namedChildren.length - 1];
+        if (sobre && sobre.type === 'identifier' && variables.get(sobre.text)?.puntero) {
+          throw new PunteroEnScanf(sobre.text, /^&/.test(a.text.trimStart()) ? '&' : '*', fila(a));
+        }
+      }
       if (a.type === 'identifier' && variables.get(a.text)?.dims) throw new ArregloSinPosicion(a.text, fila(a));
       // Un parametro declarado con * ya es una direccion: se pasa tal cual.
       const apuntado = a.type === 'identifier' ? variables.get(a.text) : null;

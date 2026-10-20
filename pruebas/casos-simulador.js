@@ -618,6 +618,24 @@ export const CASOS_DEL_SIMULADOR = [
     espera: { error: 'PunteroSinDestino' },
   },
   {
+    nombre: 'punteros: scanf con el puntero tal cual',
+    codigo: conFunciones('void leer(int *x) {\n  scanf("%d", x);\n}', 'int n = 0;\nleer(&n);'),
+    entrada: [4],
+    espera: { variables: { n: 4 } },
+  },
+  {
+    nombre: 'punteros: scanf con & sobre el puntero',
+    codigo: conFunciones('void leer(int *x) {\n  scanf("%d", &x);\n}', 'int n = 0;\nleer(&n);'),
+    entrada: [4],
+    espera: { error: 'PunteroEnScanf' },
+  },
+  {
+    nombre: 'punteros: scanf con * sobre el puntero',
+    codigo: conFunciones('void leer(int *x) {\n  scanf("%d", *x);\n}', 'int n = 0;\nleer(&n);'),
+    entrada: [4],
+    espera: { error: 'PunteroEnScanf' },
+  },
+  {
     nombre: 'punteros: la aritmetica de punteros no se sigue',
     codigo: conFunciones('', 'int v[MAX] = {1, 2, 3};\nint *p = &v[0];\np = p + 1;'),
     espera: { error: 'SinVerificar' },
