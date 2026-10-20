@@ -936,3 +936,55 @@ form[hidden],
   margin-bottom: 12px;
   color: var(--texto);
 }
+
+/* La memoria: un casillero por variable, con su direccion arriba y su nombre
+   abajo; de cada puntero sale una flecha por debajo hasta su destino. */
+.memoria {
+  display: inline-block;
+  position: relative;
+  color: var(--mejora);
+}
+
+.memoria-fila {
+  display: flex;
+  gap: 10px;
+}
+
+.celda {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.celda .direccion {
+  font: 0.75rem Consolas, "Cascadia Mono", Menlo, monospace;
+  color: var(--suave);
+}
+
+#figura .celda .valor {
+  margin-left: 0;
+  min-width: 78px;
+  color: var(--texto);
+}
+
+#figura .celda .valor.puntero {
+  border-color: var(--mejora);
+  background: var(--mejora-fondo);
+}
+
+.celda .nombre-de-celda {
+  font: 600 0.8rem Consolas, "Cascadia Mono", Menlo, monospace;
+  color: var(--texto);
+}
+
+.memoria-flechas {
+  display: block;
+  overflow: visible;
+}
+
+.memoria-flechas .flecha {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+}

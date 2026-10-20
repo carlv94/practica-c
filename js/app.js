@@ -547,6 +547,11 @@ function dibujar(figura) {
     dibujarSalida(caja, figura.salida);
     return;
   }
+  if (figura.clase === 'memoria') {
+    dibujarMemoria(caja, figura.celdas);
+    dibujarSalida(caja, figura.salida);
+    return;
+  }
   if (figura.clase === 'varias') {
     figura.figuras.forEach((f) => {
       if (f.titulo) caja.appendChild(elementoConCodigo('p', 'titulo-figura', f.titulo));
@@ -631,6 +636,74 @@ function dibujarUnion(caja, u) {
     elemento('span', 'valor' + (vacio ? ' vacio' : ' resaltado'), vacio ? ' ' : u.valor)
   );
   caja.appendChild(bloque);
+}
+
+// La memoria: un casillero por variable, con su direccion arriba y su nombre
+// abajo. De cada puntero sale una flecha, por debajo, hasta la variable a la
+// que apunta.
+function dibujarMemoria(caja, celdas) {
+  const texto = (v) => (v == null ? '?' : v);
+  caja.setAttribute(
+    'aria-label',
+    'La memoria. ' +
+      celdas
+        .map((c) => {
+          const decl = `${c.tipo}${c.puntero ? ' *' : ' '}${c.nombre}`;
+          return `${decl} en la dirección ${c.direccion}, ` +
+            (c.apunta ? `guarda ${c.valor} y apunta a ${c.apunta}` : c.valor == null ? 'sin valor' : `vale ${c.valor}`);
+        })
+        .join('. ')
+  );
+  const bloque = elemento('div', 'memoria');
+  const fila = elemento('div', 'memoria-fila');
+  const casilleros = new Map();
+  for (const c of celdas) {
+    const celda = elemento('div', 'celda');
+    celda.append(
+      elemento('span', 'direccion', c.direccion),
+      elemento('span', 'valor' + (c.valor == null ? ' vacio' : '') + (c.apunta ? ' puntero' : ''), texto(c.valor)),
+      elemento('span', 'nombre-de-celda', `${c.tipo}${c.puntero ? ' *' : ' '}${c.nombre}`)
+    );
+    casilleros.set(c.nombre, celda);
+    fila.appendChild(celda);
+  }
+  bloque.appendChild(fila);
+  caja.appendChild(bloque);
+
+  // Las flechas: una curva por debajo de los casilleros, de cada puntero a su destino.
+  const flechas = celdas.filter((c) => c.apunta);
+  if (!flechas.length) return;
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('class', 'memoria-flechas');
+  svg.setAttribute('aria-hidden', 'true');
+  bloque.appendChild(svg);
+  const trazar = () => {
+    svg.replaceChildren();
+    const origen = bloque.getBoundingClientRect();
+    const alto = 14 + 10 * flechas.length;
+    svg.setAttribute('width', origen.width);
+    svg.setAttribute('height', alto);
+    const punta = document.createElementNS(ns, 'defs');
+    punta.innerHTML =
+      '<marker id="punta-memoria" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">' +
+      '<path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>';
+    svg.appendChild(punta);
+    flechas.forEach((c, k) => {
+      const desde = casilleros.get(c.nombre).querySelector('.valor').getBoundingClientRect();
+      const hasta = casilleros.get(c.apunta).querySelector('.valor').getBoundingClientRect();
+      const x1 = desde.left + desde.width / 2 - origen.left;
+      const x2 = hasta.left + hasta.width / 2 - origen.left;
+      const profundidad = 10 + 10 * k + (Math.abs(x1 - x2) > 0 ? 6 : 0);
+      const camino = document.createElementNS(ns, 'path');
+      camino.setAttribute('d', `M${x1},0 C${x1},${profundidad + 12} ${x2},${profundidad + 12} ${x2},2`);
+      camino.setAttribute('class', 'flecha');
+      camino.setAttribute('marker-end', 'url(#punta-memoria)');
+      svg.appendChild(camino);
+    });
+  };
+  requestAnimationFrame(trazar);
+  if (typeof ResizeObserver !== 'undefined') new ResizeObserver(trazar).observe(fila);
 }
 
 // Lo que tiene que mostrar el programa, en un recuadro de consola.

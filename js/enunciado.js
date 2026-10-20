@@ -103,6 +103,33 @@ export function enunciadoEnDos(consigna) {
 // En un arreglo, "resaltar" es la lista de posiciones que se marcan, y un valor
 // null es una posicion vacia (todavia sin nada). "dibujo" puede ser una lista de
 // estos objetos: se dibujan uno debajo del otro.
+//
+// La memoria: una fila de casilleros, uno por variable, con su direccion arriba.
+//   "dibujo": { "titulo": "La memoria:", "memoria": [
+//     { "nombre": "x", "valor": 5 },
+//     { "nombre": "p", "puntero": true, "apunta": "x" } ] }
+// Las direcciones son inventadas y fijas: empiezan en 1000 y avanzan lo que
+// ocupa cada tipo (int y float 4, char 1, double 8, un puntero 8). Un puntero
+// que "apunta" a una variable guarda su direccion y lleva una flecha hacia ella;
+// sin "apunta" guarda lo que diga "valor" (null: todavia sin nada, "?").
+const BYTES_DE_MEMORIA = { int: 4, float: 4, char: 1, short: 2, double: 8, long: 8, puntero: 8 };
+
+export function celdasDeMemoria(lista, desde = 1000) {
+  let siguiente = desde;
+  const celdas = lista.map((c) => {
+    const direccion = c.direccion ?? siguiente;
+    siguiente = direccion + (BYTES_DE_MEMORIA[c.puntero ? 'puntero' : c.tipo || 'int'] ?? 4);
+    return { tipo: 'int', ...c, direccion };
+  });
+  for (const c of celdas) {
+    if (!c.apunta) continue;
+    const destino = celdas.find((x) => x.nombre === c.apunta);
+    if (!destino) throw new Error(`La memoria dibujada: ${c.nombre} apunta a ${c.apunta}, que no esta.`);
+    c.valor = destino.direccion;
+  }
+  return celdas;
+}
+
 export function figuraDe(consigna) {
   // Una letra se dibuja entre comillas simples, como se escribe en el codigo.
   const comoSeEscribeLetras = (v) =>
@@ -112,6 +139,7 @@ export function figuraDe(consigna) {
   const propia = (d) => {
     // Una union: un solo lugar, con los nombres de sus miembros y el que tiene el valor.
     if (d.union) return { clase: 'union', titulo: d.titulo, union: d.union, salida: consigna.salida };
+    if (d.memoria) return { clase: 'memoria', titulo: d.titulo, celdas: celdasDeMemoria(d.memoria, d.desde), salida: consigna.salida };
     // Un dibujo de nombres de un enumerado ("enumerados": true) no lleva comillas.
     const comoSeEscribe = d.enumerados ? (v) => v : comoSeEscribeLetras;
     const tresDimensiones = Array.isArray(d.valores[0]) && Array.isArray(d.valores[0][0]);

@@ -520,6 +520,108 @@ export const CASOS_DEL_SIMULADOR = [
     desdeEn: 'printf',
     espera: { salida: '9' },
   },
+  // ---- variables puntero ----
+  {
+    nombre: 'punteros: se escribe en la variable a traves del puntero',
+    codigo: conFunciones('', 'int n = 5;\nint *p = &n;\n*p = 10;'),
+    espera: { variables: { n: 10 } },
+  },
+  {
+    nombre: 'punteros: declarar primero y apuntar despues',
+    codigo: conFunciones('', 'int n = 5;\nint *p;\np = &n;\n*p = *p + 1;'),
+    espera: { variables: { n: 6 } },
+  },
+  {
+    nombre: 'punteros: se lee la variable a traves del puntero',
+    codigo: conFunciones('', 'int n = 7;\nint r;\nint *p = &n;\nr = *p;'),
+    espera: { variables: { r: 7 } },
+  },
+  {
+    nombre: 'punteros: dos punteros a la misma variable',
+    codigo: conFunciones('', 'int n = 1;\nint r;\nint *p = &n;\nint *q = p;\n*q = 9;\nr = *p;'),
+    espera: { variables: { n: 9, r: 9 } },
+  },
+  {
+    nombre: 'punteros: apuntar a otra variable',
+    codigo: conFunciones('', 'int a = 1;\nint b = 2;\nint *p = &a;\np = &b;\n*p = 7;'),
+    espera: { variables: { a: 1, b: 7 } },
+  },
+  {
+    nombre: 'punteros: un puntero a float',
+    codigo: conFunciones('', 'float x = 1.5;\nfloat *p = &x;\n*p = *p * 2;'),
+    espera: { variables: { x: 3 } },
+  },
+  {
+    nombre: 'punteros: un puntero a un elemento de un arreglo',
+    codigo: conFunciones('', 'int v[MAX] = {1, 2, 3};\nint *p = &v[1];\n*p = 20;'),
+    espera: { variables: { v: [1, 20, 3] } },
+  },
+  {
+    nombre: 'punteros: el puntero se pasa a una funcion',
+    codigo: conFunciones('void poner(int *x) {\n  *x = 4;\n}', 'int n = 1;\nint *p = &n;\nponer(p);'),
+    espera: { variables: { n: 4 } },
+  },
+  {
+    nombre: 'punteros: scanf con un puntero',
+    codigo: conFunciones('', 'int n = 0;\nint *p = &n;\nscanf("%d", p);'),
+    entrada: [5],
+    espera: { variables: { n: 5 } },
+  },
+  {
+    nombre: 'punteros: se muestra lo que apunta',
+    codigo: conFunciones('', 'int n = 8;\nint *p = &n;\nprintf("%d", *p);'),
+    espera: { salida: '8' },
+  },
+  {
+    nombre: 'punteros: sin el & el puntero no recibe una direccion',
+    codigo: conFunciones('', 'int n = 5;\nint *p;\np = n;'),
+    espera: { error: 'PunteroSinAmpersand' },
+  },
+  {
+    nombre: 'punteros: sin el & al declararlo',
+    codigo: conFunciones('', 'int n = 5;\nint *p = n;'),
+    espera: { error: 'PunteroSinAmpersand' },
+  },
+  {
+    nombre: 'punteros: un numero donde va una direccion',
+    codigo: conFunciones('', 'int n = 5;\nint *p = &n;\np = 10;'),
+    espera: { error: 'PunteroConUnValor' },
+  },
+  {
+    nombre: 'punteros: el puntero se muestra sin el *',
+    codigo: conFunciones('', 'int n = 5;\nint *p = &n;\nprintf("%d", p);'),
+    espera: { error: 'PunteroSinAsterisco' },
+  },
+  {
+    nombre: 'punteros: un puntero a otro tipo',
+    codigo: conFunciones('', 'float x = 1.5;\nint *p = &x;'),
+    espera: { error: 'PunteroTipoDistinto' },
+  },
+  {
+    nombre: 'punteros: una direccion en una variable comun',
+    codigo: conFunciones('', 'int n = 5;\nint m = 0;\nm = &n;'),
+    espera: { error: 'DireccionEnVariable' },
+  },
+  {
+    nombre: 'punteros: una direccion donde va el valor',
+    codigo: conFunciones('', 'int n = 5;\nint *p = &n;\n*p = &n;'),
+    espera: { error: 'DireccionEnVariable' },
+  },
+  {
+    nombre: 'punteros: sin apuntar a nada',
+    codigo: conFunciones('', 'int *p;\n*p = 3;'),
+    espera: { error: 'PunteroSinDestino' },
+  },
+  {
+    nombre: 'punteros: NULL no apunta a nada',
+    codigo: conFunciones('', 'int *p = NULL;\n*p = 3;'),
+    espera: { error: 'PunteroSinDestino' },
+  },
+  {
+    nombre: 'punteros: la aritmetica de punteros no se sigue',
+    codigo: conFunciones('', 'int v[MAX] = {1, 2, 3};\nint *p = &v[0];\np = p + 1;'),
+    espera: { error: 'SinVerificar' },
+  },
 ];
 
 // Corre un caso y dice si salio lo esperado. "ejecutar" es la funcion del

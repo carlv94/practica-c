@@ -124,9 +124,51 @@ export class LlamadaConAmpersand extends Error {
 
 // Un parametro declarado con * que se usa sin el * (x = 5; en vez de *x = 5;).
 export class PunteroSinAsterisco extends Error {
-  constructor(nombre, fila) {
+  // "esParametro": viene de un parametro declarado con * (y no de una variable puntero).
+  constructor(nombre, fila, esParametro = true) {
     super(`${nombre} se usa sin el *`);
-    Object.assign(this, { nombre, fila });
+    Object.assign(this, { nombre, fila, esParametro });
+  }
+}
+
+// Una variable comun donde va una direccion: "p = n;" (falta el &).
+export class PunteroSinAmpersand extends Error {
+  constructor(nombre, texto, fila) {
+    super(`a ${nombre} le falta el & en ${texto}`);
+    Object.assign(this, { nombre, texto, fila });
+  }
+}
+
+// Un numero donde va una direccion: "p = 10;".
+export class PunteroConUnValor extends Error {
+  constructor(nombre, texto, fila) {
+    super(`${nombre} es un puntero y se le da un numero`);
+    Object.assign(this, { nombre, texto, fila });
+  }
+}
+
+// Un puntero a un tipo que apunta a una variable de otro: int *p = &f, con f un float.
+export class PunteroTipoDistinto extends Error {
+  constructor(nombre, tipoPuntero, tipoDestino, texto, fila) {
+    super(`${nombre} apunta a ${tipoPuntero} y ${texto} es ${tipoDestino}`);
+    Object.assign(this, { nombre, tipoPuntero, tipoDestino, texto, fila });
+  }
+}
+
+// Una direccion guardada en una variable comun: "n = &x;" o "*p = &x;".
+export class DireccionEnVariable extends Error {
+  constructor(izquierda, derecha, fila) {
+    super(`${derecha} es una direccion y ${izquierda} guarda un valor`);
+    Object.assign(this, { izquierda, derecha, fila });
+  }
+}
+
+// Se llega con * a lo que apunta un puntero que no apunta a nada: nunca se le dio
+// una direccion, o vale NULL.
+export class PunteroSinDestino extends Error {
+  constructor(nombre, fila, nulo) {
+    super(`${nombre} no apunta a ninguna variable`);
+    Object.assign(this, { nombre, fila, nulo });
   }
 }
 
@@ -466,7 +508,10 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
         if (constante(argumento.text) != null || DE_LA_BIBLIOTECA.includes(argumento.text)) return sinVerificar(n);
         throw new NombreDesconocido(argumento.text, fila(n), argumento.startIndex);
       }
-      if (variable.puntero) return variable.destino;
+      if (variable.puntero) {
+        if (!variable.destino) throw new PunteroSinDestino(argumento.text, fila(n), variable.destino === null);
+        return variable.destino;
+      }
       // *v en un arreglo es su primera posicion.
       if (variable.dims && variable.dims.length === 1) return { variable, nombre: argumento.text, indices: [0] };
       throw new AsteriscoDeMas(argumento.text, fila(n));
@@ -535,11 +580,58 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
     return { variable, nombre: clave, indices: posiciones };
   }
 
+  // Una variable puntero que se usa en una cuenta o una comparacion (p + 1, p != NULL).
+  function enCuentaDePunteros(n) {
+    const padre = n.parent;
+    if (!padre) return false;
+    if (padre.type === 'binary_expression' || padre.type === 'update_expression') return true;
+    return padre.type === 'assignment_expression' && padre.childForFieldName('left') === n && padre.childForFieldName('operator').text !== '=';
+  }
+
+  // A donde apunta un puntero despues de "p = valor" o "int *p = valor": la
+  // posicion de una variable, o null (NULL). "tipo" es el de lo que apunta.
+  function destinoDe(nodo, nombre, tipo) {
+    while (nodo.type === 'parenthesized_expression') nodo = nodo.namedChildren[0];
+    const texto = nodo.text.replace(/\s+/g, ' ').trim();
+    if (nodo.type === 'pointer_expression' && /^&/.test(nodo.text.trimStart())) {
+      const objetivo = nodo.childForFieldName('argument') || nodo.namedChildren[nodo.namedChildren.length - 1];
+      const p = posicion(objetivo);
+      if (p.constante != null || !p.variable) return sinVerificar(nodo);
+      if (p.variable.dims && p.indices.length !== p.variable.dims.length) return sinVerificar(nodo);
+      if (p.variable.puntero) return sinVerificar(nodo, 'un puntero a puntero');
+      if (p.variable.tipo !== tipo) throw new PunteroTipoDistinto(nombre, tipo, p.variable.tipo, texto, fila(nodo));
+      return p;
+    }
+    if (nodo.text === 'NULL') return null;
+    if (nodo.type === 'identifier') {
+      const v = variables.get(nodo.text);
+      if (!v) {
+        posicion(nodo);
+        return sinVerificar(nodo);
+      }
+      if (v.dims) return sinVerificar(nodo, 'un arreglo como direccion');
+      if (v.puntero) {
+        if (v.tipo !== tipo) throw new PunteroTipoDistinto(nombre, tipo, v.tipo, texto, fila(nodo));
+        return v.destino;
+      }
+      throw new PunteroSinAmpersand(nombre, texto, fila(nodo));
+    }
+    if (nodo.type === 'number_literal') {
+      if (Number(nodo.text) === 0) return null;
+      throw new PunteroConUnValor(nombre, texto, fila(nodo));
+    }
+    return sinVerificar(nodo);
+  }
+
   function leer(n) {
     const p = posicion(n);
     if (p.constante != null) return { v: p.constante, f: false };
     const { variable, nombre, indices } = p;
-    if (variable.puntero) throw new PunteroSinAsterisco(nombre, fila(n));
+    if (variable.puntero) {
+      // p + 1, p == q, p++: la aritmetica de punteros no se sigue.
+      if (!variable.parametro && enCuentaDePunteros(n)) sinVerificar(n, 'cuentas con punteros');
+      throw new PunteroSinAsterisco(nombre, fila(n), Boolean(variable.parametro));
+    }
     if (!variable.dims) {
       if (variable.valor === undefined) throw faltaValor(variable, nombre, '', n);
       return { v: variable.valor, f: variable.flotante };
@@ -579,7 +671,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
   function guardar(p, valor, n) {
     if (p.constante != null) sinVerificar(n, 'una constante');
     const { variable, nombre, indices } = p;
-    if (variable.puntero) throw new PunteroSinAsterisco(nombre, fila(n));
+    if (variable.puntero) throw new PunteroSinAsterisco(nombre, fila(n), Boolean(variable.parametro));
     const v = variable.flotante ? valor.v : Math.trunc(valor.v);
     if (!variable.dims) {
       variable.valor = v;
@@ -848,6 +940,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
       if (!esPuntero && destino.type === 'identifier' && variables.get(destino.text)?.dims) {
         throw new ArregloSinPosicion(destino.text, fila(destino));
       }
+      if (esPuntero && !apuntado.destino) throw new PunteroSinDestino(a.text, fila(a), apuntado.destino === null);
       const p = esPuntero ? apuntado.destino : posicion(destino);
       if (p.constante != null || !p.variable) sinVerificar(a);
       if (p.variable.dims && p.indices.length !== p.variable.dims.length) sinVerificar(a);
@@ -998,6 +1091,21 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
           if (copia) {
             volcarCampos(izquierda.text, copia);
             return { v: 0, f: false };
+          }
+        }
+        // Un puntero recibe una direccion: "p = &n;".
+        if (operador === '=' && izquierda.type === 'identifier') {
+          const v = variables.get(izquierda.text);
+          if (v && v.puntero && !v.parametro) {
+            v.destino = destinoDe(nodoDerecha, izquierda.text, v.tipo);
+            return { v: 0, f: false };
+          }
+        }
+        // Y una variable comun no guarda direcciones: "n = &x;", "*p = &x;".
+        if (operador === '=' && nodoDerecha.type === 'pointer_expression' && /^&/.test(nodoDerecha.text.trimStart())) {
+          const v = izquierda.type === 'identifier' ? variables.get(izquierda.text) : null;
+          if ((v && !v.puntero && !v.dims) || (izquierda.type === 'pointer_expression' && /^\*/.test(izquierda.text.trimStart()))) {
+            throw new DireccionEnVariable(izquierda.text, nodoDerecha.text.replace(/\s+/g, ' ').trim(), fila(n));
           }
         }
         let derecha;
@@ -1233,6 +1341,14 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
         dims.unshift(tamano ? evaluar(tamano).v : null);
         nombre = nombre.childForFieldName('declarator');
       }
+      // Un puntero: "int *p;" o "int *p = &n;".
+      if (declarador.type === 'pointer_declarator' && !dims.length) {
+        const interno = declarador.childForFieldName('declarator');
+        if (!interno || interno.type !== 'identifier') sinVerificar(declarador, 'un puntero que no se sabe seguir');
+        const destino = inicial ? destinoDe(inicial, interno.text, nombreDeTipo) : declarandoGlobales ? null : undefined;
+        variables.set(interno.text, { puntero: true, flotante, tipo: nombreDeTipo, bytes: 8, destino });
+        continue;
+      }
       if (nombre.type !== 'identifier') sinVerificar(declarador, 'un puntero');
       if (!dims.length) {
         let valor = inicial ? evaluar(inicial) : null;
@@ -1363,7 +1479,8 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
       }
       if (p.clase === 'referencia') {
         if (deArreglo && (deArreglo.dims || deArreglo.puntero)) {
-          local.set(p.nombre, deArreglo);
+          // Un puntero se copia (la funcion recibe la direccion); un arreglo es el mismo.
+          local.set(p.nombre, deArreglo.puntero ? { ...deArreglo, parametro: true } : deArreglo);
           return;
         }
         if (!conAmpersand) throw new LlamadaSinAmpersand(def.nombre, p.nombre, texto, fila(a));
@@ -1371,7 +1488,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
         const destino = posicion(objetivo);
         if (destino.constante != null || !destino.variable) sinVerificar(a);
         if (destino.variable.dims && destino.indices.length !== destino.variable.dims.length) sinVerificar(a);
-        local.set(p.nombre, { puntero: true, destino, flotante: p.flotante, tipo: p.tipo, bytes: p.bytes });
+        local.set(p.nombre, { puntero: true, parametro: true, destino, flotante: p.flotante, tipo: p.tipo, bytes: p.bytes });
         return;
       }
       if (conAmpersand) throw new LlamadaConAmpersand(def.nombre, p.nombre, texto, fila(a));

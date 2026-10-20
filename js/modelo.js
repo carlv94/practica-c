@@ -26,6 +26,7 @@
 //   comparacion: { operador, izquierda, derecha, enIf, nuevo, fila }  a == b, a != b
 //   campoUsado: { variable, campo, nuevo, fila }       alumno.legajo, alumnos[i].legajo (variable: "alumnos[i]")
 //   sizeof:     { argumento, nuevo, fila }
+//   contenido:  { nombre, nuevo, fila }                 *p (lo que hay en la direccion que guarda p)
 // Un argumento (o un lado de una asignacion) es:
 //   { clase: 'nombre', nombre }               cadena1
 //   { clase: 'cadena', contenido }            "cadena1"
@@ -198,6 +199,7 @@ export function construirModelo(arbol, desde) {
     includes: [],
     comparaciones: [],
     sizeofs: [],
+    contenidos: [],
   };
 
   // Un argumento, o un lado de una asignacion.
@@ -570,6 +572,14 @@ export function construirModelo(arbol, desde) {
               fila: n.startPosition.row,
             });
           }
+        }
+        break;
+      }
+      case 'pointer_expression': {
+        // *p (y no &p): el nombre del puntero.
+        const de = n.childForFieldName('argument');
+        if (n.text.startsWith('*') && de && de.type === 'identifier') {
+          modelo.contenidos.push({ nombre: de.text, nuevo: n.startIndex >= desde, fila: n.startPosition.row });
         }
         break;
       }

@@ -59,6 +59,11 @@ import {
   LlamadaSinAmpersand,
   LlamadaConAmpersand,
   PunteroSinAsterisco,
+  PunteroSinAmpersand,
+  PunteroConUnValor,
+  PunteroTipoDistinto,
+  DireccionEnVariable,
+  PunteroSinDestino,
   AsteriscoDeMas,
   SinRetorno,
   VoidComoValor,
@@ -427,6 +432,8 @@ export function corregir(
     if (regla.global) return reglaGlobal(regla.global, modelo);
     if (regla.enum) return reglaEnum(regla.enum, modelo);
     if (regla.variable) return reglaVariable(regla.variable, modelo);
+    if (regla.puntero) return reglaPuntero(regla.puntero, modelo);
+    if (regla.usaContenido) return reglaUsaContenido(regla.usaContenido, modelo);
     if (regla.alias) return reglaAlias(regla.alias, modelo);
     if (regla.llamada) return reglaLlamada(regla.llamada, modelo);
     if (regla.elementos) return reglaElementos(regla.elementos, modelo);
@@ -1236,6 +1243,77 @@ export function corregir(
         v.fila
       );
     }
+  }
+
+  // Un puntero: una variable declarada con * delante del nombre.
+  //   { "puntero": { "tipo": "entero", "nombre": "p", "capturar": "P" } }
+  // "tipo" es el de lo que apunta. A donde apunta no se mira aca: lo comprueba el
+  // caso de la regla ejecuta, con "apunta".
+  function reglaPuntero(regla, modelo) {
+    const pedido = valorDe(regla.tipo);
+    const categoria = CATEGORIAS[pedido];
+    const objetivo = categoria ? null : resolver(tipoDesdeTexto(pedido), modelo);
+    const esDelTipo = (v) => {
+      const real = resolver(v.tipo, modelo);
+      return categoria ? real.clase === 'primitivo' && categoria.es(real.nombre) : mismoTipo(real, objetivo);
+    };
+    const nuevas_ = modelo.variables.filter((v) => v.nuevo);
+    const punteros = nuevas_.filter((v) => v.punteros === 1 && !v.arreglo.length);
+    if (!punteros.length) {
+      const comun = nuevas_.find((v) => !v.punteros && !v.arreglo.length && esDelTipo(v));
+      if (comun) {
+        error(
+          'PUNTERO_FALTA_ASTERISCO',
+          `${BT}${comun.nombre}${BT} es una variable común, no un puntero: a un puntero se lo declara con un ${BT}*${BT} antes del nombre, como en ${BT}${textoDeTipo(comun.tipo)} *${comun.nombre};${BT}.`,
+          comun.fila
+        );
+      } else {
+        error(
+          'PUNTERO_FALTA',
+          'No encontré la declaración de un puntero. Se declara con el tipo de lo que apunta y un `*` antes del nombre: `tipo *nombre;`'
+        );
+      }
+      return;
+    }
+    let candidatos = punteros;
+    if (regla.nombre) {
+      candidatos = punteros.filter((v) => v.nombre === regla.nombre);
+      if (!candidatos.length) {
+        error(
+          'PUNTERO_NOMBRE',
+          `La consigna pide que el puntero se llame ${BT}${regla.nombre}${BT}. El que está declarado se llama ${BT}${punteros[0].nombre}${BT}.`,
+          punteros[0].fila
+        );
+        return;
+      }
+    }
+    const bueno = candidatos.find(esDelTipo);
+    if (!bueno) {
+      const v = candidatos[0];
+      if (resolver(v.tipo, modelo).clase !== 'desconocido') {
+        error(
+          'PUNTERO_TIPO',
+          `${BT}${v.nombre}${BT} apunta a variables de tipo ${BT}${textoDeTipo(v.tipo)}${BT}. ` +
+            (categoria ? `Tiene que apuntar a ${categoria.pideVarios}.` : `Tiene que apuntar a ${nombrarPedido(pedido)}.`),
+          v.fila
+        );
+      }
+      return;
+    }
+    if (regla.capturar) nuevas[regla.capturar] = bueno.nombre;
+  }
+
+  // Se llega a una variable a traves de su puntero: *p en alguna parte del codigo.
+  //   { "usaContenido": { "de": "p", "para": "mostrar el valor de `n`" } }
+  function reglaUsaContenido(regla, modelo) {
+    const nombre = valorDe(regla.de);
+    // Si el codigo ya tiene un error, ese es el que importa.
+    if (diagnosticos.some((d) => d.nivel === 'error')) return;
+    if (modelo.contenidos.some((c) => c.nuevo && c.nombre === nombre)) return;
+    error(
+      'CONTENIDO_FALTA',
+      `La consigna pide ${regla.para} usando el puntero ${BT}${nombre}${BT}, y el código no lo usa: para llegar a la variable a la que apunta se escribe ${BT}*${nombre}${BT}.`
+    );
   }
 
   // ": una para los cursos, otra para los alumnos y otra para los parciales".
@@ -3097,6 +3175,44 @@ export function corregir(
           `${conContexto}Se le pasa ${BT}${e.texto}${BT} a ${BT}${e.funcion}${BT}, pero el parámetro ${BT}${e.parametro}${BT} no está declarado con ${BT}*${BT}: recibe un valor y no una dirección. Si la función tiene que modificar la variable, al parámetro le falta el ${BT}*${BT}. ${FORMULA_REFERENCIA}`,
           e.fila
         );
+      } else if (e instanceof PunteroSinAsterisco && !e.esParametro) {
+        error(
+          'PUNTERO_SIN_ASTERISCO',
+          `${conContexto}${BT}${e.nombre}${BT} es un puntero: guarda la dirección de una variable y no su valor. Para llegar al valor de la variable a la que apunta hay que escribir ${BT}*${e.nombre}${BT}.`,
+          e.fila
+        );
+      } else if (e instanceof PunteroSinAmpersand) {
+        error(
+          'PUNTERO_SIN_AMPERSAND',
+          `${conContexto}${BT}${e.nombre}${BT} es un puntero: guarda una dirección, y ${BT}${e.texto}${BT} es un valor, no una dirección. La dirección de una variable se escribe con un ${BT}&${BT} delante: ${BT}&${e.texto}${BT}.`,
+          e.fila
+        );
+      } else if (e instanceof PunteroConUnValor) {
+        error(
+          'PUNTERO_CON_UN_VALOR',
+          `${conContexto}${BT}${e.nombre}${BT} es un puntero: guarda una dirección y no un número. Para cambiar el valor de la variable a la que apunta hay que escribir ${BT}*${e.nombre} = ${e.texto};${BT}.`,
+          e.fila
+        );
+      } else if (e instanceof PunteroTipoDistinto) {
+        error(
+          'PUNTERO_TIPO_DISTINTO',
+          `${conContexto}${BT}${e.nombre}${BT} es un puntero a ${BT}${e.tipoPuntero}${BT}, pero ${BT}${e.texto}${BT} es de tipo ${BT}${e.tipoDestino}${BT}. Un puntero solo puede apuntar a variables de su mismo tipo.`,
+          e.fila
+        );
+      } else if (e instanceof DireccionEnVariable) {
+        error(
+          'DIRECCION_EN_UNA_VARIABLE',
+          `${conContexto}${BT}${e.derecha}${BT} es una dirección, y ${BT}${e.izquierda}${BT} guarda un valor, no una dirección. Una dirección solo se puede guardar en un puntero.`,
+          e.fila
+        );
+      } else if (e instanceof PunteroSinDestino) {
+        error(
+          'PUNTERO_SIN_DESTINO',
+          e.nulo
+            ? `${conContexto}${BT}${e.nombre}${BT} vale ${BT}NULL${BT}: no apunta a ninguna variable, así que no se puede llegar a un valor con ${BT}*${e.nombre}${BT}.`
+            : `${conContexto}${BT}${e.nombre}${BT} todavía no apunta a ninguna variable: antes de usar ${BT}*${e.nombre}${BT} hay que darle una dirección, por ejemplo ${BT}${e.nombre} = &variable;${BT}.`,
+          e.fila
+        );
       } else if (e instanceof PunteroSinAsterisco) {
         error(
           'PARAMETRO_SIN_ASTERISCO_AL_USARLO',
@@ -3388,6 +3504,29 @@ export function corregir(
           a.izquierda.nombre === nombre &&
           modelo.ciclos.some((c) => c.nuevo && c.posicion < a.posicion && a.posicion < c.fin)
       );
+    // A quien apunta cada puntero: { "p": "n" } es que p tiene que apuntar a n.
+    for (const [clave, destinoPedido] of Object.entries(caso.apunta || {})) {
+      const nombre = valorDe(clave);
+      const variable = corrida.variables.get(nombre);
+      if (!variable || !variable.puntero) {
+        error('PUNTERO_FALTA', `No encontré el puntero ${BT}${nombre}${BT}.`);
+        return false;
+      }
+      if (!variable.destino) {
+        error(
+          'PUNTERO_SIN_APUNTAR',
+          `${antes}${BT}${nombre}${BT} no llega a apuntar a ${BT}${destinoPedido}${BT}: falta darle su dirección, con ${BT}&${destinoPedido}${BT}.`
+        );
+        return false;
+      }
+      if (variable.destino.nombre !== destinoPedido) {
+        error(
+          'PUNTERO_APUNTA_A_OTRO',
+          `${antes}${BT}${nombre}${BT} apunta a ${BT}${variable.destino.nombre}${BT} y la consigna pide que apunte a ${BT}${destinoPedido}${BT}.`
+        );
+        return false;
+      }
+    }
     for (const [nombre, debe] of Object.entries(caso.queda || {})) {
       const variable = corrida.variables.get(nombre);
       // Un arreglo: las primeras posiciones tienen que tener esos valores.
