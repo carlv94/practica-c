@@ -51,12 +51,12 @@
         {
           "texto": "`1000`",
           "codigo": "OPCION_MUESTRA_LA_DIRECCION",
-          "explicacion": "Escrito solo, `a` es el valor de la variable. Para pedir la dirección hay que escribir `&a`."
+          "explicacion": "`1000` es la dirección de la variable `a`; al escribir `a` lo que se usa es su valor."
         },
         {
           "texto": "`7`",
           "correcta": true,
-          "explicacion": "Al escribir `a` se usa su valor, `7`. La dirección, `1000`, se pide con `&a`."
+          "explicacion": "Al escribir `a` lo que se usa es su valor, que es `7`. Para usar su dirección se debe escribir `&a`."
         },
         {
           "texto": "Una dirección distinta en cada ejecución",
@@ -104,7 +104,7 @@
         {
           "texto": "Porque `scanf` necesita saber dónde está guardada `b` para dejar ahí el número que se lee",
           "correcta": true,
-          "explicacion": "A `scanf` se le pasa la dirección de `b`, no su valor: con esa dirección sabe en qué casillero escribir el número leído."
+          "explicacion": "A `scanf` se le pasa la dirección de `b`, no su valor: con esa dirección sabe en qué lugar de la memoria escribir el valor ingresado desde el teclado."
         },
         {
           "texto": "Porque `scanf` solo sabe leer números",
@@ -121,7 +121,7 @@
     {
       "id": "direcciones-q-tamano",
       "titulo": "Cuántos casilleros ocupa una variable",
-      "enunciado": "Cada casillero de la memoria guarda muy poco, y una variable puede ocupar varios seguidos. Las variables `a` y `b` se guardaron una a continuación de la otra. ¿Por qué sus direcciones, `1000` y `1004`, se diferencian en `4` y no en `1`?",
+      "enunciado": "Las variables `a` y `b` se guardaron una a continuación de la otra. ¿Por qué sus direcciones son `1000` y `1004` en vez de `1000` y `1001`?",
       "codigo": "int a = 7;\nint b = 3;",
       "dibujo": {
         "titulo": "La memoria:",
@@ -139,7 +139,7 @@
         {
           "texto": "Porque un `int` ocupa cuatro casilleros: `a` usa de la `1000` a la `1003`, y `b` empieza en la `1004`",
           "correcta": true,
-          "explicacion": "Un `int` ocupa cuatro casilleros seguidos, y su dirección es la del primero. Por eso la variable siguiente empieza cuatro lugares más adelante."
+          "explicacion": "Un `int` ocupa cuatro casilleros seguidos, pero como su dirección se toma la del primero: `a` ocupa de la `1000` a la `1003`. Por eso la variable siguiente, `b`, empieza cuatro lugares más adelante, en la `1004`."
         },
         {
           "texto": "Porque la dirección de cada variable siempre es un múltiplo de `4`, sea cual sea su tipo",
