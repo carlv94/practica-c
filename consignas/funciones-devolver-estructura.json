@@ -111,7 +111,7 @@
         {
           "texto": "No se puede: en C una función no devuelve un arreglo",
           "correcta": true,
-          "explicacion": "Es una regla del lenguaje: una función devuelve un número, una letra o una estructura, pero no un arreglo. Cómo trabajar con arreglos en una función se verá más adelante."
+          "explicacion": "Es una regla del lenguaje: una función devuelve un número, una letra o una estructura, pero no un arreglo. Como consecuencia, tampoco puede devolver una tabla ni una cadena, porque una cadena es un arreglo de letras y una tabla es un arreglo de arreglos. Cómo trabajar con arreglos en una función se verá más adelante."
         },
         {
           "texto": "Devuelve solamente el primer elemento",

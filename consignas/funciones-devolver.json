@@ -191,12 +191,12 @@
         {
           "texto": "`4.5`",
           "codigo": "OPCION_CON_DECIMALES",
-          "explicacion": "La cuenta da `4.5`, pero la función se declaró `int` como tipo de retorno: lo que devuelve es un entero, así que los decimales se pierden. Para que devuelva `4.5`, tiene que ser `float`."
+          "explicacion": "La cuenta da `4.5`, pero la función se declaró `int` como tipo de retorno: lo que devuelve es un entero, así que los decimales se pierden. Para que devuelva `4.5`, el tipo de retorno tiene que ser `float`."
         },
         {
           "texto": "`4`",
           "correcta": true,
-          "explicacion": "La cuenta da `4.5`, pero la función se declaró `int` como tipo de retorno: lo que devuelve es un entero, así que los decimales se pierden y queda `4`. Para que devuelva `4.5`, tiene que ser `float`."
+          "explicacion": "La cuenta da `4.5`, pero la función se declaró `int` como tipo de retorno: lo que devuelve es un entero, así que los decimales se pierden y queda `4`. Para que devuelva `4.5`, el tipo de retorno tiene que ser `float`."
         },
         {
           "texto": "`5`",
