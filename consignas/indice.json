@@ -81,7 +81,6 @@
     {
       "id": "funciones",
       "agrupar": true,
-      "oculto": true,
       "titulo": "Funciones y ámbito",
       "descripcion": "Definir funciones, dónde vive cada variable y cómo pasar valores a una función y recibir sus resultados.",
       "series": [
