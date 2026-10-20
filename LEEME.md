@@ -1183,9 +1183,10 @@ cadena de necesidades: cada tema nace de un problema del anterior.
 9. `funciones-varios-valores.json`: una función devuelve un solo valor (la coma
    de `return a, b;`), y una estructura agrupa varios.
 
-`funciones-referencia.json` está por ahora en un grupo "Punteros" provisorio,
-también oculto, junto con `punteros-arreglos.json` (el cuestionario del `sizeof`
-de un arreglo recibido): son series del grupo Punteros, que se arma después.
+Los parámetros por referencia están en el grupo Punteros (oculto), en
+`punteros-referencia.json` (serie 3). `punteros-arreglos.json` (el cuestionario
+del `sizeof` de un arreglo recibido) es por ahora una serie provisoria del mismo
+grupo.
 
 El plan de la reestructuración está en la memoria del proyecto
 (`funciones-ambito-flujo`).
@@ -1338,7 +1339,9 @@ variable" (`punteros-direcciones`, solo cuestionarios) y "Variables puntero"
   `PUNTERO_SIN_AMPERSAND` (`p = n;`), `PUNTERO_CON_UN_VALOR` (`p = 10;`),
   `PUNTERO_TIPO_DISTINTO` (`int *p = &f;` con `f` float),
   `DIRECCION_EN_UNA_VARIABLE` (`n = &x;`, `*p = &x;`) y `PUNTERO_SIN_DESTINO`
-  (`*p` sin haberle dado una dirección, o con `NULL`). Un parámetro declarado
+  (`*p` sin haberle dado una dirección, o con `NULL`) y `PUNTERO_EN_SCANF`
+  (`scanf("%d", &p)` o `*p` con `p` ya declarado con `*`: se le pasa tal cual).
+  Los mensajes de los parámetros por referencia nombran al puntero. Un parámetro declarado
   con `*` sigue con sus mensajes de siempre (`PARAMETRO_SIN_ASTERISCO_AL_USARLO`).
 
 ### Consignas de opciones

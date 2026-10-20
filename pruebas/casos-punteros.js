@@ -12,6 +12,9 @@ const serie = (id) => (paso, nombre, respuesta, espera = 'ok', extra = {}) => ({
 
 const direcciones = serie('punteros-direcciones');
 const variables = serie('punteros-variables');
+const referencia = serie('punteros-referencia');
+
+const FUNCION = (encabezado, cuerpo) => `${encabezado} {\n${cuerpo}\n}`;
 
 export const CASOS_DE_PUNTEROS = [
   // ===== Donde vive una variable =====
@@ -85,4 +88,151 @@ export const CASOS_DE_PUNTEROS = [
   variables(10, 'tiene que ser del mismo tipo', '1'),
   variables(10, 'funciona', '0', ['OPCION_FUNCIONA']),
   variables(10, 'se trunca', '2', ['OPCION_SE_TRUNCA']),
+
+  // ===== Parametros por referencia =====
+  // ---- 1: intercambiar con parametros por valor ----
+  referencia(1, 'no se intercambia', '1'),
+  referencia(1, 'se intercambia', '0', ['OPCION_SE_INTERCAMBIAN']),
+  referencia(1, 'en cero', '2', ['OPCION_SE_PONEN_EN_CERO']),
+  // ---- 2: que recibe el parametro ----
+  referencia(2, 'la direccion', '1'),
+  referencia(2, 'el valor', '0', ['OPCION_GUARDA_EL_VALOR']),
+  referencia(2, 'el nuevo valor', '2', ['OPCION_GUARDA_EL_NUEVO']),
+  // ---- 3: declarar el parametro con * ----
+  referencia(3, 'sumar uno', FUNCION('void sumarUno(int *n)', '  *n = *n + 1;'), 'ok', { mejoras: [] }),
+  referencia(3, 'con otro nombre', FUNCION('void subir(int *x)', '  *x = *x + 1;')),
+  referencia(3, 'con ++', FUNCION('void subir(int *x)', '  (*x)++;')),
+  referencia(3, 'sin asterisco en la declaracion', FUNCION('void sumarUno(int n)', '  n = n + 1;'), [
+    'PARAMETRO_REFERENCIA_FALTA',
+  ], { dice: ['tiene que ser un puntero'] }),
+  referencia(3, 'sin asterisco al usarlo', FUNCION('void sumarUno(int *n)', '  n = n + 1;'), [
+    'PARAMETRO_SIN_ASTERISCO_AL_USARLO',
+  ], { dice: ['`*n` cada vez que se usa'] }),
+  referencia(3, 'suma dos', FUNCION('void sumarUno(int *n)', '  *n = *n + 2;'), ['RESULTADO_VALOR_DISTINTO']),
+  referencia(3, 'devuelve en vez de modificar', FUNCION('int sumarUno(int n)', '  return n + 1;'), ['DEVUELVE_EN_VEZ_DE_MOSTRAR'], {
+    dice: ['no que lo devuelva con `return`'],
+  }),
+  // ---- 4: llamarla con & ----
+  referencia(4, 'la llamada', 'sumarUno(&contador);', 'ok', { mejoras: [] }),
+  referencia(4, 'sin el &', 'sumarUno(contador);', ['LLAMADA_SIN_AMPERSAND'], { dice: ['la dirección de la variable'] }),
+  referencia(4, 'otra variable', 'sumarUno(&otra);', ['VARIABLE_DESCONOCIDA']),
+  // ---- 5: un puntero en vez de & ----
+  referencia(5, 'cambia', '1'),
+  referencia(5, 'no cambia', '0', ['OPCION_NO_CAMBIA']),
+  referencia(5, 'solo con ampersand', '2', ['OPCION_SOLO_CON_AMPERSAND']),
+  // ---- 6: intercambiar ----
+  referencia(
+    6,
+    'intercambia con aux',
+    FUNCION('void cambiar(int *a, int *b)', '  int aux;\n\n  aux = *a;\n  *a = *b;\n  *b = aux;'),
+    'ok',
+    { mejoras: [] }
+  ),
+  referencia(6, 'sin asteriscos en la declaracion', FUNCION('void cambiar(int a, int b)', '  int aux;\n\n  aux = a;\n  a = b;\n  b = aux;'), [
+    'PARAMETRO_REFERENCIA_FALTA',
+  ], { dice: ['tiene que ser un puntero'] }),
+  referencia(6, 'sin asterisco al usarlos', FUNCION('void cambiar(int *a, int *b)', '  int aux;\n\n  aux = a;\n  a = b;\n  b = aux;'), [
+    'PARAMETRO_SIN_ASTERISCO_AL_USARLO',
+  ], { dice: ['`*a` cada vez que se usa'] }),
+  referencia(6, 'sin aux', FUNCION('void cambiar(int *a, int *b)', '  *a = *b;\n  *b = *a;'), ['RESULTADO_VALOR_DISTINTO']),
+  referencia(6, 'uno por valor', FUNCION('void cambiar(int *a, int b)', '  int aux;\n\n  aux = *a;\n  *a = b;'), [
+    'PARAMETRO_REFERENCIA_FALTA',
+  ]),
+  referencia(6, 'devuelve algo', FUNCION('void cambiar(int *a, int *b)', '  int aux;\n\n  aux = *a;\n  *a = *b;\n  *b = aux;\n  return aux;'), [
+    'RETORNO_EN_VOID',
+  ]),
+  // ---- 7: dos resultados ----
+  referencia(
+    7,
+    'cociente y resto',
+    FUNCION('void dividir(int dividendo, int divisor, int *cociente, int *resto)', '  *cociente = dividendo / divisor;\n  *resto = dividendo % divisor;'),
+    'ok',
+    { mejoras: [] }
+  ),
+  referencia(
+    7,
+    'con otros nombres',
+    FUNCION('void dividir(int a, int b, int *c, int *r)', '  *c = a / b;\n  *r = a % b;')
+  ),
+  referencia(
+    7,
+    'resto por valor',
+    FUNCION('void dividir(int a, int b, int *c, int r)', '  *c = a / b;\n  r = a % b;'),
+    ['PARAMETRO_REFERENCIA_FALTA']
+  ),
+  referencia(
+    7,
+    'cociente y resto al reves',
+    FUNCION('void dividir(int a, int b, int *c, int *r)', '  *c = a % b;\n  *r = a / b;'),
+    ['RESULTADO_VALOR_DISTINTO']
+  ),
+  referencia(
+    7,
+    'devuelve el cociente',
+    FUNCION('int dividir(int a, int b, int *r)', '  *r = a % b;\n  return a / b;'),
+    ['DEVUELVE_EN_VEZ_DE_MOSTRAR']
+  ),
+
+  // ---- 8: acumular sin la global ----
+  referencia(8, 'modifica por referencia', FUNCION('void acumular(int *total, int n)', '  *total = *total + n;')),
+  referencia(8, 'con otros nombres', FUNCION('void sumar(int *t, int x)', '  *t = *t + x;')),
+  referencia(8, 'sin asterisco en la declaracion', FUNCION('void acumular(int total, int n)', '  total = total + n;'), [
+    'PARAMETRO_REFERENCIA_FALTA',
+  ]),
+  referencia(8, 'sin asterisco al usarlo', FUNCION('void acumular(int *total, int n)', '  total = total + n;'), [
+    'PARAMETRO_SIN_ASTERISCO_AL_USARLO',
+  ]),
+  referencia(8, 'con una global', 'int total = 0;\n' + FUNCION('void acumular(int n)', '  total = total + n;'), [
+    'GLOBAL_DE_MAS',
+    'PARAMETROS_CANTIDAD',
+  ]),
+  referencia(8, 'suma de menos', FUNCION('void acumular(int *total, int n)', '  *total = *total + 1;'), ['RESULTADO_VALOR_DISTINTO']),
+  // ---- 9: leer un alumno ----
+  referencia(
+    9,
+    'tres scanf',
+    FUNCION('void leerAlumno(int *legajo, int *edad, float *promedio)', '  scanf("%d", legajo);\n  scanf("%d", edad);\n  scanf("%f", promedio);'),
+    'ok',
+    { mejoras: [] }
+  ),
+  referencia(
+    9,
+    'un solo scanf',
+    FUNCION('void leerAlumno(int *legajo, int *edad, float *promedio)', '  scanf("%d %d %f", legajo, edad, promedio);')
+  ),
+  referencia(
+    9,
+    'con ampersand en el scanf',
+    FUNCION('void leerAlumno(int *legajo, int *edad, float *promedio)', '  scanf("%d", &legajo);\n  scanf("%d", edad);\n  scanf("%f", promedio);'),
+    ['PUNTERO_EN_SCANF'],
+    { dice: ['sin `&` ni `*`'] }
+  ),
+  referencia(
+    9,
+    'con asterisco en el scanf',
+    FUNCION('void leerAlumno(int *legajo, int *edad, float *promedio)', '  scanf("%d", *legajo);\n  scanf("%d", edad);\n  scanf("%f", promedio);'),
+    ['PUNTERO_EN_SCANF']
+  ),
+  referencia(
+    9,
+    'el legajo por valor',
+    FUNCION('void leerAlumno(int legajo, int *edad, float *promedio)', '  scanf("%d", &legajo);\n  scanf("%d", edad);\n  scanf("%f", promedio);'),
+    ['PARAMETRO_REFERENCIA_FALTA']
+  ),
+  referencia(
+    9,
+    'promedio entero',
+    FUNCION('void leerAlumno(int *legajo, int *edad, int *promedio)', '  scanf("%d", legajo);\n  scanf("%d", edad);\n  scanf("%d", promedio);'),
+    ['PARAMETRO_TIPO']
+  ),
+  referencia(
+    9,
+    'en otro orden',
+    FUNCION('void leerAlumno(int *legajo, int *edad, float *promedio)', '  scanf("%d", edad);\n  scanf("%d", legajo);\n  scanf("%f", promedio);'),
+    ['RESULTADO_VALOR_DISTINTO']
+  ),
+  // ---- 10: tres formas de llamar ----
+  referencia(10, 'siete', '2'),
+  referencia(10, 'seis', '0', ['OPCION_FALTA_LA_DEVUELTA']),
+  referencia(10, 'ocho', '1', ['OPCION_TODAS_CAMBIAN']),
 ];

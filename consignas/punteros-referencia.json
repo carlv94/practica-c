@@ -1,0 +1,475 @@
+{
+  "id": "punteros-referencia",
+  "titulo": "Parámetros por referencia",
+  "continua": false,
+  "dentroDeMain": true,
+  "descripcion": "Hacer que una función modifique las variables de afuera: se le pasa la dirección de la variable con `&` y el parámetro es un puntero, que se usa con `*`.",
+  "cabecera": "#include <stdio.h>",
+  "consignas": [
+    {
+      "id": "referencia-q-valor",
+      "titulo": "Intercambiar con parámetros por valor",
+      "archivo": "void intercambiar(int a, int b) {\n  int aux;\n\n  aux = a;\n  a = b;\n  b = aux;\n}",
+      "enunciado": "Esta función intercambia sus dos parámetros. Se la llama con `x` valiendo `3` y `z` valiendo `8`. ¿Qué muestra este programa?",
+      "codigo": "int x = 3;\nint z = 8;\n\nintercambiar(x, z);\nprintf(\"%d %d\", x, z);",
+      "opciones": [
+        {
+          "texto": "`8 3`",
+          "codigo": "OPCION_SE_INTERCAMBIAN",
+          "explicacion": "La función intercambia `a` y `b`, que son copias de `x` y de `z`: la llamada hace `a = x;` y `b = z;`. El intercambio ocurre en las copias y no llega a `x` ni a `z`."
+        },
+        {
+          "texto": "`3 8`",
+          "correcta": true,
+          "explicacion": "Al llamar, `a` recibe una copia de `x` y `b` una copia de `z`. La función intercambia las copias, y `x` y `z` quedan como estaban. Para que una función pueda cambiar variables de afuera hace falta otra cosa: que sepa dónde están guardadas, es decir, sus direcciones."
+        },
+        {
+          "texto": "`0 0`",
+          "codigo": "OPCION_SE_PONEN_EN_CERO",
+          "explicacion": "Las variables no se ponen en cero: la función no las toca, y conservan lo que valían."
+        }
+      ]
+    },
+    {
+      "id": "referencia-q-recibe",
+      "titulo": "Qué recibe el parámetro",
+      "archivo": "void poner(int *x) {\n  *x = 10;\n}",
+      "enunciado": "Para que una función pueda cambiar una variable de afuera hay que pasarle su dirección, y el parámetro que la recibe es un puntero. La llamada `poner(&numero)` hace una asignación, igual que con los otros parámetros: `x = &numero;`. Mire la memoria cuando empieza a ejecutarse `poner`: ¿qué guarda `x`?",
+      "codigo": "int numero = 5;\n\nponer(&numero);\nprintf(\"%d\", numero);",
+      "dibujo": {
+        "titulo": "La memoria cuando empieza `poner`:",
+        "memoria": [
+          {
+            "nombre": "numero",
+            "valor": 5
+          },
+          {
+            "nombre": "x",
+            "puntero": true,
+            "apunta": "numero"
+          }
+        ]
+      },
+      "opciones": [
+        {
+          "texto": "`5`, el valor de `numero`",
+          "codigo": "OPCION_GUARDA_EL_VALOR",
+          "explicacion": "Eso pasaría si se llamara con `poner(numero)`, que pasa una copia del valor. Con `&numero` se pasa la dirección."
+        },
+        {
+          "texto": "`1000`, la dirección de `numero`",
+          "correcta": true,
+          "explicacion": "`x` es un puntero y guarda la dirección de `numero`. Por eso `*x = 10;` cambia `numero`: `*x` es `numero`. Después de la llamada, `numero` vale `10`."
+        },
+        {
+          "texto": "`10`",
+          "codigo": "OPCION_GUARDA_EL_NUEVO",
+          "explicacion": "`10` es lo que la función escribe más tarde a través de `x`, con `*x = 10;`. Cuando empieza la función, `x` guarda una dirección."
+        }
+      ]
+    },
+    {
+      "id": "referencia-incrementar",
+      "titulo": "Declarar el parámetro con *",
+      "en": "archivo",
+      "enunciado": "Escriba una función que reciba por referencia un número entero (un puntero a la variable de afuera) y le sume 1 a esa variable: si valía `4`, queda en `5`. Póngale el nombre que quiera.",
+      "requiere": [
+        {
+          "funcion": {
+            "retorna": "void",
+            "parametros": [
+              {
+                "tipo": "entero",
+                "referencia": true
+              }
+            ],
+            "capturar": "I"
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "datos": {
+                  "n": 4
+                },
+                "llama": "$I(&n)",
+                "queda": {
+                  "n": 5
+                },
+                "visible": true
+              },
+              {
+                "datos": {
+                  "n": -1
+                },
+                "llama": "$I(&n)",
+                "queda": {
+                  "n": 0
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "void sumarUno(int *n) {\n  *n = *n + 1;\n}"
+    },
+    {
+      "id": "referencia-llamar",
+      "titulo": "Llamarla con &",
+      "sigueDe": "referencia-incrementar",
+      "dado": "int contador = 7;",
+      "enunciado": "La función {I} ya está definida. Llámela para que sume 1 a la variable `contador`: hay que pasarle su dirección.",
+      "requiere": [
+        {
+          "llamada": {
+            "funcion": "$I",
+            "argumentos": [
+              "&contador"
+            ]
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "queda": {
+                  "contador": 8
+                },
+                "visible": true
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "{I}(&contador);"
+    },
+    {
+      "id": "referencia-q-llamada",
+      "titulo": "Pasar un puntero en vez de &",
+      "archivo": "void sumarUno(int *n) {\n  *n = *n + 1;\n}",
+      "enunciado": "`p` guarda la dirección de `contador`, así que `p` vale lo mismo que `&contador`. ¿Qué muestra este programa?",
+      "codigo": "int contador = 7;\nint *p;\n\np = &contador;\nsumarUno(p);\nprintf(\"%d\", contador);",
+      "dibujo": {
+        "titulo": "La memoria antes de llamar a `sumarUno`:",
+        "memoria": [
+          {
+            "nombre": "contador",
+            "valor": 7
+          },
+          {
+            "nombre": "p",
+            "puntero": true,
+            "apunta": "contador"
+          }
+        ]
+      },
+      "opciones": [
+        {
+          "texto": "`7`",
+          "codigo": "OPCION_NO_CAMBIA",
+          "explicacion": "`sumarUno(p)` le pasa a la función la dirección que guarda `p`, que es la de `contador`: la función puede cambiarlo."
+        },
+        {
+          "texto": "`8`",
+          "correcta": true,
+          "explicacion": "A la función le llega la dirección de `contador`, igual que con `sumarUno(&contador)`. Adentro, `*n` es `contador`, y se le suma `1`."
+        },
+        {
+          "texto": "Un error: a la función hay que pasarle `&contador`, no `p`",
+          "codigo": "OPCION_SOLO_CON_AMPERSAND",
+          "explicacion": "`p` ya es una dirección: la de `contador`. Una función que recibe un puntero acepta tanto `&contador` como un puntero que apunte a `contador`."
+        }
+      ]
+    },
+    {
+      "id": "referencia-intercambiar",
+      "titulo": "Intercambiar dos variables",
+      "en": "archivo",
+      "enunciado": "Escriba una función que reciba dos números enteros por referencia y intercambie sus valores: lo que valía la primera variable pasa a la segunda, y al revés. Póngale el nombre que quiera.",
+      "requiere": [
+        {
+          "funcion": {
+            "retorna": "void",
+            "parametros": [
+              {
+                "tipo": "entero",
+                "referencia": true
+              },
+              {
+                "tipo": "entero",
+                "referencia": true
+              }
+            ],
+            "capturar": "X"
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "datos": {
+                  "a": 3,
+                  "b": 8
+                },
+                "llama": "$X(&a, &b)",
+                "queda": {
+                  "a": 8,
+                  "b": 3
+                },
+                "visible": true
+              },
+              {
+                "datos": {
+                  "a": -1,
+                  "b": 0
+                },
+                "llama": "$X(&a, &b)",
+                "queda": {
+                  "a": 0,
+                  "b": -1
+                }
+              },
+              {
+                "datos": {
+                  "a": 5,
+                  "b": 5
+                },
+                "llama": "$X(&a, &b)",
+                "queda": {
+                  "a": 5,
+                  "b": 5
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "void intercambiar(int *a, int *b) {\n  int aux;\n\n  aux = *a;\n  *a = *b;\n  *b = aux;\n}"
+    },
+    {
+      "id": "referencia-dos-resultados",
+      "titulo": "Devolver dos resultados",
+      "en": "archivo",
+      "enunciado": "Con `return` una función solo devuelve un valor, y con una estructura había que declarar un tipo nuevo. Otra alternativa es que la función modifique variables de afuera. Escriba una función que reciba cuatro números enteros: el dividendo, el divisor y dos variables por referencia, donde deje el cociente y el resto de la división: con `17` y `5`, el cociente es `3` y el resto es `2`. Póngale el nombre que quiera.",
+      "requiere": [
+        {
+          "funcion": {
+            "retorna": "void",
+            "parametros": [
+              {
+                "tipo": "entero"
+              },
+              {
+                "tipo": "entero"
+              },
+              {
+                "tipo": "entero",
+                "referencia": true
+              },
+              {
+                "tipo": "entero",
+                "referencia": true
+              }
+            ],
+            "capturar": "Q"
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "datos": {
+                  "c": 0,
+                  "r": 0
+                },
+                "llama": "$Q(17, 5, &c, &r)",
+                "queda": {
+                  "c": 3,
+                  "r": 2
+                },
+                "visible": true
+              },
+              {
+                "datos": {
+                  "c": 0,
+                  "r": 0
+                },
+                "llama": "$Q(20, 4, &c, &r)",
+                "queda": {
+                  "c": 5,
+                  "r": 0
+                }
+              },
+              {
+                "datos": {
+                  "c": 0,
+                  "r": 0
+                },
+                "llama": "$Q(3, 7, &c, &r)",
+                "queda": {
+                  "c": 0,
+                  "r": 3
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "void dividir(int dividendo, int divisor, int *cociente, int *resto) {\n  *cociente = dividendo / divisor;\n  *resto = dividendo % divisor;\n}"
+    },
+    {
+      "id": "referencia-sin-global",
+      "titulo": "Reescribirla modificando la variable de afuera",
+      "en": "archivo",
+      "ejemplo": {
+        "texto": "La misma función con la variable global:",
+        "codigo": "int total = 0;\n\nvoid acumular(int n) {\n  total = total + n;\n}"
+      },
+      "enunciado": "Otra manera de reemplazar la global es pasarle a la función la variable de afuera, para que la modifique. Escriba una función que reciba por referencia el total y por valor el número que se suma, y le sume el número al total. Póngale el nombre que quiera.",
+      "requiere": [
+        {
+          "sinGlobales": true
+        },
+        {
+          "funcion": {
+            "retorna": "void",
+            "parametros": [
+              {
+                "tipo": "entero",
+                "referencia": true
+              },
+              {
+                "tipo": "entero"
+              }
+            ],
+            "capturar": "R"
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "datos": {
+                  "total": 10
+                },
+                "llama": "$R(&total, 5)",
+                "queda": {
+                  "total": 15
+                },
+                "visible": true
+              },
+              {
+                "datos": {
+                  "total": 0
+                },
+                "llama": "$R(&total, 7)",
+                "queda": {
+                  "total": 7
+                }
+              },
+              {
+                "datos": {
+                  "total": -3
+                },
+                "llama": "$R(&total, 3)",
+                "queda": {
+                  "total": 0
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "void acumular(int *total, int n) {\n  *total = *total + n;\n}"
+    },
+    {
+      "id": "referencia-leer-alumno",
+      "titulo": "Leer un alumno",
+      "en": "archivo",
+      "enunciado": "Escriba una función que pida con `scanf` el legajo, la edad y el promedio de un alumno, en ese orden, y los deje en tres variables de afuera, que recibe por referencia: el legajo y la edad son enteros y el promedio tiene decimales. Póngale el nombre que quiera.",
+      "requiere": [
+        {
+          "funcion": {
+            "retorna": "void",
+            "parametros": [
+              {
+                "tipo": "entero",
+                "referencia": true
+              },
+              {
+                "tipo": "entero",
+                "referencia": true
+              },
+              {
+                "tipo": "real",
+                "referencia": true
+              }
+            ],
+            "capturar": "L"
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "antes": "int legajo;\nint edad;\nfloat promedio;",
+                "llama": "$L(&legajo, &edad, &promedio)",
+                "entrada": [
+                  20431,
+                  19,
+                  8.5
+                ],
+                "queda": {
+                  "legajo": 20431,
+                  "edad": 19,
+                  "promedio": 8.5
+                },
+                "visible": true
+              },
+              {
+                "antes": "int legajo;\nint edad;\nfloat promedio;",
+                "llama": "$L(&legajo, &edad, &promedio)",
+                "entrada": [
+                  18560,
+                  22,
+                  7.25
+                ],
+                "queda": {
+                  "legajo": 18560,
+                  "edad": 22,
+                  "promedio": 7.25
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "void leerAlumno(int *legajo, int *edad, float *promedio) {\n  scanf(\"%d\", legajo);\n  scanf(\"%d\", edad);\n  scanf(\"%f\", promedio);\n}"
+    },
+    {
+      "id": "referencia-q-cual",
+      "titulo": "Tres formas de llamar",
+      "archivo": "void sumarA(int n) {\n  n = n + 1;\n}\n\nvoid sumarB(int *n) {\n  *n = *n + 1;\n}\n\nint sumarC(int n) {\n  return n + 1;\n}",
+      "enunciado": "Cada una de estas funciones le suma `1` a su parámetro, pero lo hacen de formas distintas. ¿Qué muestra este programa?",
+      "codigo": "int x = 5;\n\nsumarA(x);\nsumarB(&x);\nx = sumarC(x);\nprintf(\"%d\", x);",
+      "opciones": [
+        {
+          "texto": "`6`",
+          "codigo": "OPCION_FALTA_LA_DEVUELTA",
+          "explicacion": "Falta una: `x = sumarC(x);` guarda en `x` lo que devuelve la función, que es `x + 1`. Esa suma también llega a `x`."
+        },
+        {
+          "texto": "`8`",
+          "codigo": "OPCION_TODAS_CAMBIAN",
+          "explicacion": "`sumarA` no puede cambiar `x`: recibe una copia, le suma `1` a la copia y la copia desaparece al terminar. Solo cambian `x` las otras dos."
+        },
+        {
+          "texto": "`7`",
+          "correcta": true,
+          "explicacion": "`sumarA` le suma `1` a una copia y `x` no cambia. `sumarB` recibe la dirección de `x` y le suma `1`: pasa a `6`. `sumarC` devuelve `x + 1`, y la asignación lo guarda: `7`. Hay dos maneras de cambiar una variable de afuera: con un puntero, o con `return` y guardando lo que devuelve."
+        }
+      ]
+    }
+  ]
+}

@@ -16,7 +16,6 @@ const compuestos = serie('funciones-parametros-compuestos');
 const estructura = serie('funciones-devolver-estructura');
 const varios = serie('funciones-varios-valores');
 const devolver = serie('funciones-devolver');
-const referencia = serie('funciones-referencia');
 
 const FUNCION = (encabezado, cuerpo) => `${encabezado} {\n${cuerpo}\n}`;
 
@@ -385,95 +384,4 @@ export const CASOS_DE_FUNCIONES = [
       FUNCION('TTiempo descomponer(int total)', '  TTiempo t;\n\n  t.horas = total / 3600;\n  t.minutos = total / 60;\n  t.segundos = total % 60;\n  return t;'),
     ['DEVUELVE_DISTINTO']
   ),
-  // ===== Funciones que modifican las variables de afuera =====
-  // ---- 1: cuestionario con & ----
-  referencia(1, 'con &: la correcta', '0'),
-  referencia(1, 'con &: no cambia', '1', ['OPCION_SE_MODIFICO']),
-  referencia(1, 'con &: el nombre', '2', ['OPCION_ES_UN_ERROR']),
-  // ---- 2: declarar el parametro con * ----
-  referencia(2, 'sumar uno', FUNCION('void sumarUno(int *n)', '  *n = *n + 1;'), 'ok', { mejoras: [] }),
-  referencia(2, 'con otro nombre', FUNCION('void subir(int *x)', '  *x = *x + 1;')),
-  referencia(2, 'con ++', FUNCION('void subir(int *x)', '  (*x)++;')),
-  referencia(2, 'sin asterisco en la declaracion', FUNCION('void sumarUno(int n)', '  n = n + 1;'), [
-    'PARAMETRO_REFERENCIA_FALTA',
-  ], { dice: ['tiene que ser un puntero'] }),
-  referencia(2, 'sin asterisco al usarlo', FUNCION('void sumarUno(int *n)', '  n = n + 1;'), [
-    'PARAMETRO_SIN_ASTERISCO_AL_USARLO',
-  ], { dice: ['`*n` cada vez que se usa'] }),
-  referencia(2, 'suma dos', FUNCION('void sumarUno(int *n)', '  *n = *n + 2;'), ['RESULTADO_VALOR_DISTINTO']),
-  referencia(2, 'devuelve en vez de modificar', FUNCION('int sumarUno(int n)', '  return n + 1;'), ['DEVUELVE_EN_VEZ_DE_MOSTRAR'], {
-    dice: ['no que lo devuelva con `return`'],
-  }),
-  // ---- 3: llamarla con & ----
-  referencia(3, 'la llamada', 'sumarUno(&contador);', 'ok', { mejoras: [] }),
-  referencia(3, 'sin el &', 'sumarUno(contador);', ['LLAMADA_SIN_AMPERSAND'], { dice: ['la dirección de la variable'] }),
-  referencia(3, 'otra variable', 'sumarUno(&otra);', ['VARIABLE_DESCONOCIDA']),
-  // ---- 4: intercambiar ----
-  referencia(
-    4,
-    'intercambia con aux',
-    FUNCION('void cambiar(int *a, int *b)', '  int aux;\n\n  aux = *a;\n  *a = *b;\n  *b = aux;'),
-    'ok',
-    { mejoras: [] }
-  ),
-  referencia(4, 'sin asteriscos en la declaracion', FUNCION('void cambiar(int a, int b)', '  int aux;\n\n  aux = a;\n  a = b;\n  b = aux;'), [
-    'PARAMETRO_REFERENCIA_FALTA',
-  ], { dice: ['tiene que ser un puntero'] }),
-  referencia(4, 'sin asterisco al usarlos', FUNCION('void cambiar(int *a, int *b)', '  int aux;\n\n  aux = a;\n  a = b;\n  b = aux;'), [
-    'PARAMETRO_SIN_ASTERISCO_AL_USARLO',
-  ], { dice: ['`*a` cada vez que se usa'] }),
-  referencia(4, 'sin aux', FUNCION('void cambiar(int *a, int *b)', '  *a = *b;\n  *b = *a;'), ['RESULTADO_VALOR_DISTINTO']),
-  referencia(4, 'uno por valor', FUNCION('void cambiar(int *a, int b)', '  int aux;\n\n  aux = *a;\n  *a = b;'), [
-    'PARAMETRO_REFERENCIA_FALTA',
-  ]),
-  referencia(4, 'devuelve algo', FUNCION('void cambiar(int *a, int *b)', '  int aux;\n\n  aux = *a;\n  *a = *b;\n  *b = aux;\n  return aux;'), [
-    'RETORNO_EN_VOID',
-  ]),
-  // ---- 5: dos resultados ----
-  referencia(
-    5,
-    'cociente y resto',
-    FUNCION('void dividir(int dividendo, int divisor, int *cociente, int *resto)', '  *cociente = dividendo / divisor;\n  *resto = dividendo % divisor;'),
-    'ok',
-    { mejoras: [] }
-  ),
-  referencia(
-    5,
-    'con otros nombres',
-    FUNCION('void dividir(int a, int b, int *c, int *r)', '  *c = a / b;\n  *r = a % b;')
-  ),
-  referencia(
-    5,
-    'resto por valor',
-    FUNCION('void dividir(int a, int b, int *c, int r)', '  *c = a / b;\n  r = a % b;'),
-    ['PARAMETRO_REFERENCIA_FALTA']
-  ),
-  referencia(
-    5,
-    'cociente y resto al reves',
-    FUNCION('void dividir(int a, int b, int *c, int *r)', '  *c = a % b;\n  *r = a / b;'),
-    ['RESULTADO_VALOR_DISTINTO']
-  ),
-  referencia(
-    5,
-    'devuelve el cociente',
-    FUNCION('int dividir(int a, int b, int *r)', '  *r = a % b;\n  return a / b;'),
-    ['DEVUELVE_EN_VEZ_DE_MOSTRAR']
-  ),
-
-  // ===== consignas que vinieron de las series de ambito =====
-  // ---- referencia: reescribir por referencia ----
-  referencia(6, 'modifica por referencia', FUNCION('void acumular(int *total, int n)', '  *total = *total + n;')),
-  referencia(6, 'con otros nombres', FUNCION('void sumar(int *t, int x)', '  *t = *t + x;')),
-  referencia(6, 'sin asterisco en la declaracion', FUNCION('void acumular(int total, int n)', '  total = total + n;'), [
-    'PARAMETRO_REFERENCIA_FALTA',
-  ]),
-  referencia(6, 'sin asterisco al usarlo', FUNCION('void acumular(int *total, int n)', '  total = total + n;'), [
-    'PARAMETRO_SIN_ASTERISCO_AL_USARLO',
-  ]),
-  referencia(6, 'con una global', 'int total = 0;\n' + FUNCION('void acumular(int n)', '  total = total + n;'), [
-    'GLOBAL_DE_MAS',
-    'PARAMETROS_CANTIDAD',
-  ]),
-  referencia(6, 'suma de menos', FUNCION('void acumular(int *total, int n)', '  *total = *total + 1;'), ['RESULTADO_VALOR_DISTINTO']),
 ];
