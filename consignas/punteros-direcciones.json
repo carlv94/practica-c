@@ -1,0 +1,152 @@
+{
+  "id": "punteros-direcciones",
+  "titulo": "Dónde vive una variable",
+  "continua": false,
+  "dentroDeMain": true,
+  "descripcion": "Toda variable ocupa un lugar en la memoria, y ese lugar tiene una dirección. El operador `&` da la dirección de una variable.",
+  "cabecera": "#include <stdio.h>",
+  "consignas": [
+    {
+      "id": "direcciones-q-casillero",
+      "titulo": "Cada variable tiene su lugar",
+      "enunciado": "La memoria de la computadora es una larga fila de casilleros, y cada casillero tiene un número que lo identifica: su dirección. Cuando se ejecuta un programa, cada variable queda guardada en algún lugar de esa fila. En este dibujo las direcciones están inventadas, porque las reales cambian cada vez que se ejecuta el programa. ¿Qué dirección tiene la variable `b`?",
+      "codigo": "int a = 7;\nint b = 3;",
+      "dibujo": {
+        "titulo": "La memoria:",
+        "memoria": [
+          { "nombre": "a", "valor": 7 },
+          { "nombre": "b", "valor": 3 }
+        ]
+      },
+      "opciones": [
+        {
+          "texto": "`3`",
+          "codigo": "OPCION_ES_EL_VALOR",
+          "explicacion": "`3` es lo que vale `b`, no el lugar donde está guardada. La dirección es el número que está arriba del casillero."
+        },
+        {
+          "texto": "`1000`",
+          "codigo": "OPCION_ES_LA_DE_OTRA",
+          "explicacion": "`1000` es la dirección de `a`. Cada variable tiene la suya."
+        },
+        {
+          "texto": "`1004`",
+          "correcta": true,
+          "explicacion": "La variable `b` está guardada en la dirección `1004`: ese número, arriba de su casillero, dice dónde está."
+        }
+      ]
+    },
+    {
+      "id": "direcciones-q-valor",
+      "titulo": "El valor y la dirección",
+      "enunciado": "Toda variable tiene dos cosas: un valor y una dirección. Acá `a` está en la dirección `1000` y guarda el valor `7`. ¿Qué muestra este programa?",
+      "codigo": "int a = 7;\n\nprintf(\"%d\", a);",
+      "dibujo": {
+        "titulo": "La memoria:",
+        "memoria": [
+          { "nombre": "a", "valor": 7 }
+        ]
+      },
+      "opciones": [
+        {
+          "texto": "`1000`",
+          "codigo": "OPCION_MUESTRA_LA_DIRECCION",
+          "explicacion": "Escrito solo, `a` es el valor de la variable. Para pedir la dirección hay que escribir `&a`."
+        },
+        {
+          "texto": "`7`",
+          "correcta": true,
+          "explicacion": "Al escribir `a` se usa su valor, `7`. La dirección, `1000`, se pide con `&a`."
+        },
+        {
+          "texto": "Una dirección distinta en cada ejecución",
+          "codigo": "OPCION_CAMBIA_CADA_VEZ",
+          "explicacion": "Eso le pasa a la dirección, que puede ser otra en cada ejecución. Pero acá se muestra el valor de `a`, que siempre es `7`."
+        }
+      ]
+    },
+    {
+      "id": "direcciones-q-ampersand",
+      "titulo": "Qué es &b",
+      "enunciado": "El operador `&` delante de una variable da su dirección. Con la memoria de este dibujo, ¿qué es `&b`?",
+      "codigo": "int a = 7;\nint b = 3;",
+      "dibujo": {
+        "titulo": "La memoria:",
+        "memoria": [
+          { "nombre": "a", "valor": 7 },
+          { "nombre": "b", "valor": 3 }
+        ]
+      },
+      "opciones": [
+        {
+          "texto": "El valor de `b`, que es `3`",
+          "codigo": "OPCION_ES_EL_VALOR",
+          "explicacion": "El valor de `b` se escribe `b`. Con el `&` delante se pide otra cosa: dónde está guardada."
+        },
+        {
+          "texto": "La dirección de `b`, que es `1004`",
+          "correcta": true,
+          "explicacion": "`&b` es la dirección de `b`: el lugar de la memoria donde está guardada."
+        },
+        {
+          "texto": "Una copia de `b`",
+          "codigo": "OPCION_ES_UNA_COPIA",
+          "explicacion": "`&b` no es una copia. Dice dónde está la variable misma, y quien conoce esa dirección puede llegar a la variable."
+        }
+      ]
+    },
+    {
+      "id": "direcciones-q-scanf",
+      "titulo": "El & de scanf",
+      "enunciado": "Hasta ahora escribió `&` sin saber bien para qué. ¿Por qué `scanf` lleva el `&` delante de la variable?",
+      "codigo": "int b;\n\nscanf(\"%d\", &b);",
+      "opciones": [
+        {
+          "texto": "Porque `scanf` necesita saber dónde está guardada `b` para dejar ahí el número que se lee",
+          "correcta": true,
+          "explicacion": "A `scanf` se le pasa la dirección de `b`, no su valor: con esa dirección sabe en qué casillero escribir el número leído."
+        },
+        {
+          "texto": "Porque `scanf` solo sabe leer números",
+          "codigo": "OPCION_SOLO_NUMEROS",
+          "explicacion": "`scanf` también lee letras y números con decimales, y en todos los casos lleva `&`. El `&` no tiene que ver con el tipo de dato."
+        },
+        {
+          "texto": "Porque el `&` hace que el número leído también se muestre en pantalla",
+          "codigo": "OPCION_SE_MUESTRA",
+          "explicacion": "El `&` no muestra nada. Lo que hace es pasar la dirección de la variable."
+        }
+      ]
+    },
+    {
+      "id": "direcciones-q-tamano",
+      "titulo": "Cuántos casilleros ocupa una variable",
+      "enunciado": "Cada casillero de la memoria guarda muy poco, y una variable puede ocupar varios seguidos. Las variables `a` y `b` se guardaron una a continuación de la otra. ¿Por qué sus direcciones, `1000` y `1004`, se diferencian en `4` y no en `1`?",
+      "codigo": "int a = 7;\nint b = 3;",
+      "dibujo": {
+        "titulo": "La memoria:",
+        "memoria": [
+          { "nombre": "a", "valor": 7 },
+          { "nombre": "b", "valor": 3 }
+        ]
+      },
+      "opciones": [
+        {
+          "texto": "Porque la computadora deja tres casilleros libres entre una variable y la siguiente",
+          "codigo": "OPCION_DEJA_LIBRES",
+          "explicacion": "No se deja nada libre: las variables se guardan una al lado de la otra. Lo que pasa es que cada variable ocupa más de un casillero."
+        },
+        {
+          "texto": "Porque un `int` ocupa cuatro casilleros: `a` usa de la `1000` a la `1003`, y `b` empieza en la `1004`",
+          "correcta": true,
+          "explicacion": "Un `int` ocupa cuatro casilleros seguidos, y su dirección es la del primero. Por eso la variable siguiente empieza cuatro lugares más adelante."
+        },
+        {
+          "texto": "Porque la dirección de cada variable siempre es un múltiplo de `4`, sea cual sea su tipo",
+          "codigo": "OPCION_SIEMPRE_CUATRO",
+          "explicacion": "Depende del tipo: una variable `char`, por ejemplo, ocupa un solo casillero. Lo que se avanza es lo que ocupa la variable anterior."
+        }
+      ]
+    }
+  ]
+}

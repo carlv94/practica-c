@@ -1305,6 +1305,42 @@ código.
 - **Código dado de la consigna**: se usan `archivoDado`, `ejemplo` y `salida`
   (ver las series de funciones).
 
+### Punteros
+
+El grupo Punteros (oculto por ahora) empieza con dos series: "Dónde vive una
+variable" (`punteros-direcciones`, solo cuestionarios) y "Variables puntero"
+(`punteros-variables`).
+
+- **Figura de memoria**: `"dibujo": { "titulo": "...", "memoria": [...] }`. Cada
+  celda es una variable: `{ "nombre": "x", "valor": 5 }`, o un puntero
+  `{ "nombre": "p", "puntero": true, "apunta": "x" }`. Las direcciones son
+  inventadas y fijas: empiezan en 1000 (`"desde"` las cambia) y avanzan lo que
+  ocupa cada tipo (`int` y `float` 4, `char` 1, `double` 8, un puntero 8; con
+  `"tipo"` en la celda se cambia, y `"direccion"` fija una). Un puntero que
+  `apunta` guarda la dirección de su destino y lleva una flecha. Un `valor` null
+  se dibuja como `?` (sin valor todavía). Las direcciones salen de
+  `celdasDeMemoria` (`js/enunciado.js`), que se puede probar sola.
+- **Regla `puntero`**: `{ "puntero": { "tipo": "entero", "nombre": "p", "capturar": "P" } }`.
+  Pide una variable declarada con un `*` (`int *p;`, con o sin valor inicial).
+  `PUNTERO_FALTA`, `PUNTERO_FALTA_ASTERISCO` (declaró una variable común),
+  `PUNTERO_NOMBRE` y `PUNTERO_TIPO` (apunta a otro tipo del pedido). A quién
+  apunta no se mira acá: lo dice el caso de `ejecuta`.
+- **Caso `apunta`**: en `ejecuta`, `{ "apunta": { "$P": "n" } }` pide que `P`
+  termine apuntando a `n`. `PUNTERO_SIN_APUNTAR` y `PUNTERO_APUNTA_A_OTRO`.
+- **Regla `usaContenido`**: `{ "usaContenido": { "de": "p", "para": "mostrar el valor de n" } }`.
+  Exige un `*p` en lo que escribió el alumno (`CONTENIDO_FALTA`), para las
+  consignas que piden llegar a la variable "a través del puntero". Va después
+  de `ejecuta`, y no dice nada si ya hay otro error.
+- **El simulador** sigue variables puntero (`int *p;`, `int *p = &n;`,
+  `p = &n;`, `q = p;`, `NULL`), `*p` para leer y escribir, y pasarlas a una
+  función. No sigue la aritmética (`p + 1`, `p++`, comparar punteros): queda
+  "sin verificar". Errores: `PUNTERO_SIN_ASTERISCO` (`printf("%d", p)`),
+  `PUNTERO_SIN_AMPERSAND` (`p = n;`), `PUNTERO_CON_UN_VALOR` (`p = 10;`),
+  `PUNTERO_TIPO_DISTINTO` (`int *p = &f;` con `f` float),
+  `DIRECCION_EN_UNA_VARIABLE` (`n = &x;`, `*p = &x;`) y `PUNTERO_SIN_DESTINO`
+  (`*p` sin haberle dado una dirección, o con `NULL`). Un parámetro declarado
+  con `*` sigue con sus mensajes de siempre (`PARAMETRO_SIN_ASTERISCO_AL_USARLO`).
+
 ### Consignas de opciones
 
 En un enunciado, lo que va entre acentos graves (`nombre`, `"Maria"`, `1`) se

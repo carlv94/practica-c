@@ -1,0 +1,251 @@
+{
+  "id": "punteros-variables",
+  "titulo": "Variables puntero",
+  "continua": false,
+  "dentroDeMain": true,
+  "descripcion": "Un puntero es una variable que guarda la dirección de otra variable. Con el `*` se llega a la variable a la que apunta, para leerla o cambiarla.",
+  "cabecera": "#include <stdio.h>",
+  "consignas": [
+    {
+      "id": "puntero-q-guarda",
+      "titulo": "Qué guarda un puntero",
+      "enunciado": "Un puntero es una variable que, en lugar de un número, guarda la dirección de otra variable. Se declara con un `*` antes del nombre: `int *p;` es un puntero a un entero. En este programa, `p` recibe la dirección de `x`. ¿Qué valor guarda `p`?",
+      "codigo": "int x = 5;\nint *p;\n\np = &x;",
+      "dibujo": {
+        "titulo": "La memoria después de la última línea:",
+        "memoria": [
+          {
+            "nombre": "x",
+            "valor": 5
+          },
+          {
+            "nombre": "p",
+            "puntero": true,
+            "apunta": "x"
+          }
+        ]
+      },
+      "opciones": [
+        {
+          "texto": "`5`",
+          "codigo": "OPCION_GUARDA_EL_VALOR",
+          "explicacion": "`5` es el valor de `x`. El puntero `p` no guarda el valor de `x` sino su dirección, que le permite llegar a ella."
+        },
+        {
+          "texto": "`1000`, la dirección de `x`",
+          "correcta": true,
+          "explicacion": "`p` guarda `1000`, la dirección de `x`. Por eso se dice que `p` apunta a `x`, y en el dibujo se ve como una flecha."
+        },
+        {
+          "texto": "`1004`, la dirección de `p`",
+          "codigo": "OPCION_GUARDA_SU_DIRECCION",
+          "explicacion": "`1004` es el lugar donde está guardada la propia variable `p`. Lo que `p` guarda adentro es la dirección de otra variable, `x`."
+        }
+      ]
+    },
+    {
+      "id": "puntero-apuntar",
+      "titulo": "Declarar un puntero y apuntar",
+      "dado": "int n = 5;",
+      "enunciado": "Declare un puntero a un número entero y haga que apunte a la variable `n`. La dirección de una variable se obtiene con `&`. Póngale el nombre que quiera al puntero.",
+      "requiere": [
+        {
+          "puntero": {
+            "tipo": "entero",
+            "capturar": "P"
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "apunta": {
+                  "$P": "n"
+                },
+                "visible": true
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "int *p;\n\np = &n;"
+    },
+    {
+      "id": "puntero-leer",
+      "titulo": "Leer a través del puntero",
+      "dado": "int n = 7;\nint *p;\n\np = &n;",
+      "enunciado": "La variable `n` vale `7` y el puntero `p` apunta a ella. Muestre el valor de `n` usando el puntero: para llegar a la variable a la que apunta `p` se escribe un `*` delante de su nombre.",
+      "requiere": [
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "salida": "7",
+                "visible": true
+              }
+            ]
+          }
+        },
+        {
+          "usaContenido": {
+            "de": "p",
+            "para": "mostrar el valor de `n`"
+          }
+        }
+      ],
+      "referencia": "printf(\"%d\", *p);"
+    },
+    {
+      "id": "puntero-escribir",
+      "titulo": "Cambiar la variable a través del puntero",
+      "dado": "int n = 5;\nint *p;\n\np = &n;",
+      "enunciado": "Cambie el valor de `n` a `10` usando el puntero `p`: lo que se escribe con `*p` no solo se puede leer, también se puede cambiar.",
+      "requiere": [
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "queda": {
+                  "n": 10
+                },
+                "visible": true
+              }
+            ]
+          }
+        },
+        {
+          "usaContenido": {
+            "de": "p",
+            "para": "cambiar el valor de `n`"
+          }
+        }
+      ],
+      "referencia": "*p = 10;"
+    },
+    {
+      "id": "puntero-q-seguir",
+      "titulo": "Seguir el puntero",
+      "enunciado": "Se está por ejecutar la última línea de este programa. Mire en el dibujo a quién apunta `p`. ¿Qué muestra el programa?",
+      "codigo": "int n = 5;\nint *p;\n\np = &n;\n*p = *p + 1;\nprintf(\"%d\", n);",
+      "dibujo": {
+        "titulo": "La memoria antes de ejecutar `*p = *p + 1;`:",
+        "memoria": [
+          {
+            "nombre": "n",
+            "valor": 5
+          },
+          {
+            "nombre": "p",
+            "puntero": true,
+            "apunta": "n"
+          }
+        ]
+      },
+      "opciones": [
+        {
+          "texto": "`5`",
+          "codigo": "OPCION_NO_CAMBIA",
+          "explicacion": "`n` sí cambia: `*p` es la variable `n`, así que `*p = *p + 1;` es lo mismo que `n = n + 1;`."
+        },
+        {
+          "texto": "`6`",
+          "correcta": true,
+          "explicacion": "`p` apunta a `n`, así que `*p` es `n`. La línea `*p = *p + 1;` lee `5`, le suma `1` y guarda `6` en `n`."
+        },
+        {
+          "texto": "`1000`",
+          "codigo": "OPCION_MUESTRA_LA_DIRECCION",
+          "explicacion": "Lo que se muestra es el valor de `n`, no su dirección. La dirección no aparece en ningún `printf`."
+        }
+      ]
+    },
+    {
+      "id": "puntero-q-dos",
+      "titulo": "Dos punteros a la misma variable",
+      "enunciado": "Dos punteros pueden apuntar a la misma variable. Mire el dibujo: ¿qué muestra este programa?",
+      "codigo": "int n = 1;\nint *p;\nint *q;\n\np = &n;\nq = &n;\n*q = 9;\nprintf(\"%d\", *p);",
+      "dibujo": {
+        "titulo": "La memoria antes de ejecutar `*q = 9;`:",
+        "memoria": [
+          {
+            "nombre": "n",
+            "valor": 1
+          },
+          {
+            "nombre": "p",
+            "puntero": true,
+            "apunta": "n"
+          },
+          {
+            "nombre": "q",
+            "puntero": true,
+            "apunta": "n"
+          }
+        ]
+      },
+      "opciones": [
+        {
+          "texto": "`1`",
+          "codigo": "OPCION_SOLO_CAMBIA_Q",
+          "explicacion": "Cambiar algo a través de `q` no es cambiar una copia: `p` y `q` apuntan a la misma variable, y ese cambio se ve también desde `p`."
+        },
+        {
+          "texto": "`9`",
+          "correcta": true,
+          "explicacion": "`*q = 9;` cambia la variable `n`, que es también a la que apunta `p`. Por eso `*p` vale `9`."
+        },
+        {
+          "texto": "`1000`",
+          "codigo": "OPCION_MUESTRA_LA_DIRECCION",
+          "explicacion": "El `printf` muestra `*p`, el valor de la variable a la que apunta `p`, y no la dirección."
+        }
+      ]
+    },
+    {
+      "id": "puntero-q-asterisco",
+      "titulo": "Los dos significados del *",
+      "enunciado": "En este programa el `*` aparece en dos lugares. ¿Qué significa en cada uno?",
+      "codigo": "int n = 5;\nint *p;\n\np = &n;\n*p = 8;",
+      "opciones": [
+        {
+          "texto": "En los dos casos significa multiplicar",
+          "codigo": "OPCION_MULTIPLICAR",
+          "explicacion": "Multiplicar necesita un número a cada lado del `*`, y acá no hay ninguno. En estos lugares el `*` se usa para punteros."
+        },
+        {
+          "texto": "En `int *p;` dice que `p` es un puntero, y en `*p = 8;` dice «la variable a la que apunta `p`»",
+          "correcta": true,
+          "explicacion": "El mismo símbolo tiene dos usos. En una declaración indica que la variable es un puntero. Fuera de una declaración, delante de un puntero, indica la variable a la que apunta."
+        },
+        {
+          "texto": "En los dos casos dice que `p` es un puntero",
+          "codigo": "OPCION_SIEMPRE_PUNTERO",
+          "explicacion": "Eso es verdad solo en la declaración. En `*p = 8;` el `*` no declara nada: lleva a la variable a la que apunta `p`, que es `n`."
+        }
+      ]
+    },
+    {
+      "id": "puntero-q-tipo",
+      "titulo": "Un puntero para cada tipo",
+      "enunciado": "Un puntero a `int` se declara `int *p;` y uno a `float`, `float *q;`. ¿Qué pasa con este programa?",
+      "codigo": "float x = 1.5;\nint *p;\n\np = &x;",
+      "opciones": [
+        {
+          "texto": "Funciona: `p` apunta a `x` y `*p` vale `1.5`",
+          "codigo": "OPCION_FUNCIONA",
+          "explicacion": "`p` es un puntero a `int` y `x` es un `float`. Con `*p` se leerían los casilleros de `x` como si fueran un entero, y no daría `1.5`."
+        },
+        {
+          "texto": "Está mal: un puntero a `int` tiene que apuntar a una variable `int`",
+          "correcta": true,
+          "explicacion": "Un puntero tiene que apuntar a variables de su mismo tipo. Para apuntar a `x`, que es un `float`, hace falta un `float *`."
+        },
+        {
+          "texto": "Funciona, pero `*p` vale `1`",
+          "codigo": "OPCION_SE_TRUNCA",
+          "explicacion": "No se trunca nada: el valor `1.5` no se convierte a entero. Se leen los casilleros de `x` como si fueran de un `int`, que es otra cosa."
+        }
+      ]
+    }
+  ]
+}
