@@ -9,7 +9,7 @@
     {
       "id": "puntero-q-guarda",
       "titulo": "Qué guarda un puntero",
-      "enunciado": "Un puntero es una variable que, en lugar de un número, guarda la dirección de otra variable. Se declara con un `*` antes del nombre: `int *p;` es un puntero a un entero. En este programa, `p` recibe la dirección de `x`. ¿Qué valor guarda `p`?",
+      "enunciado": "Un puntero es un tipo especial de variable: no guarda un dato común, como un número, una letra o una estructura, sino la dirección de memoria de otra variable. Se declara con un `*` antes del nombre: `int *p;` es un puntero a un entero. En este programa, `p` recibe la dirección de `x`. ¿Qué guarda `p`?",
       "codigo": "int x = 5;\nint *p;\n\np = &x;",
       "dibujo": {
         "titulo": "La memoria después de la última línea:",
@@ -34,12 +34,12 @@
         {
           "texto": "`1000`, la dirección de `x`",
           "correcta": true,
-          "explicacion": "`p` guarda `1000`, la dirección de `x`. Por eso se dice que `p` apunta a `x`, y en el dibujo se ve como una flecha."
+          "explicacion": "`p` guarda `1000`, la dirección de `x`. Por eso se dice que `p` apunta a `x`, y en el dibujo se representa con una flecha."
         },
         {
           "texto": "`1004`, la dirección de `p`",
           "codigo": "OPCION_GUARDA_SU_DIRECCION",
-          "explicacion": "`1004` es el lugar donde está guardada la propia variable `p`. Lo que `p` guarda adentro es la dirección de otra variable, `x`."
+          "explicacion": "`1004` es el lugar donde está guardada la propia variable `p`. Lo que `p` guarda adentro es la dirección de otra variable."
         }
       ]
     },
@@ -69,6 +69,43 @@
         }
       ],
       "referencia": "int *p;\n\np = &n;"
+    },
+    {
+      "id": "puntero-q-indireccion",
+      "titulo": "Llegar a la variable con *",
+      "enunciado": "En esta memoria, `p` apunta a `n`. Delante de un puntero, el `*` lleva a la variable a la que apunta: es lo contrario del `&`, que da la dirección de una variable. ¿Qué es `*p`?",
+      "codigo": "int n = 7;\nint *p;\n\np = &n;",
+      "dibujo": {
+        "titulo": "La memoria:",
+        "memoria": [
+          {
+            "nombre": "n",
+            "valor": 7
+          },
+          {
+            "nombre": "p",
+            "puntero": true,
+            "apunta": "n"
+          }
+        ]
+      },
+      "opciones": [
+        {
+          "texto": "La dirección de `n`, que es `1000`",
+          "codigo": "OPCION_ES_LA_DIRECCION",
+          "explicacion": "`1000` es lo que guarda `p`, y se obtiene escribiendo `p`. El `*` delante de `p` hace otra cosa: va hasta la variable que está en esa dirección."
+        },
+        {
+          "texto": "La variable `n`, a la que apunta `p`",
+          "correcta": true,
+          "explicacion": "`*p` es la variable a la que apunta `p`, o sea `n`. Con `*p` se puede leer el valor de `n`, que es `7`, o cambiarlo."
+        },
+        {
+          "texto": "Una copia de `n`",
+          "codigo": "OPCION_ES_UNA_COPIA",
+          "explicacion": "`*p` no es una copia: es la variable `n` misma. Lo que se escriba en `*p` se está escribiendo en `n`."
+        }
+      ]
     },
     {
       "id": "puntero-leer",
@@ -160,6 +197,43 @@
       ]
     },
     {
+      "id": "puntero-q-expresiones",
+      "titulo": "Qué vale cada expresión",
+      "enunciado": "En esta memoria, `x` vale `5`, está en la dirección `1000` y `p` apunta a ella. ¿Cuál de estas expresiones no vale `1000`?",
+      "codigo": "int x = 5;\nint *p;\n\np = &x;",
+      "dibujo": {
+        "titulo": "La memoria:",
+        "memoria": [
+          {
+            "nombre": "x",
+            "valor": 5
+          },
+          {
+            "nombre": "p",
+            "puntero": true,
+            "apunta": "x"
+          }
+        ]
+      },
+      "opciones": [
+        {
+          "texto": "`p`",
+          "codigo": "OPCION_P_VALE_MIL",
+          "explicacion": "`p` guarda la dirección de `x`, así que vale `1000`. Es lo mismo que vale `&x`: por eso `p = &x;` hace que `p` apunte a `x`."
+        },
+        {
+          "texto": "`*p`",
+          "correcta": true,
+          "explicacion": "`*p` no es una dirección: es la variable a la que apunta `p`, o sea `x`, y vale `5`. En cambio `&x` y `p` valen `1000`."
+        },
+        {
+          "texto": "`&x`",
+          "codigo": "OPCION_DIRECCION_VALE_MIL",
+          "explicacion": "`&x` es la dirección de `x`, que es `1000`: el mismo valor que guarda `p`."
+        }
+      ]
+    },
+    {
       "id": "puntero-q-dos",
       "titulo": "Dos punteros a la misma variable",
       "enunciado": "Dos punteros pueden apuntar a la misma variable. Mire el dibujo: ¿qué muestra este programa?",
@@ -233,17 +307,17 @@
         {
           "texto": "Funciona: `p` apunta a `x` y `*p` vale `1.5`",
           "codigo": "OPCION_FUNCIONA",
-          "explicacion": "`p` es un puntero a `int` y `x` es un `float`. Con `*p` se leerían los casilleros de `x` como si fueran un entero, y no daría `1.5`."
+          "explicacion": "`p` es un puntero a `int` y `x` es un `float`. Con `*p` se leerían los casilleros de `x` como si fueran de un `int`, y cada tipo se representa de manera distinta en la memoria: no daría `1.5`."
         },
         {
           "texto": "Está mal: un puntero a `int` tiene que apuntar a una variable `int`",
           "correcta": true,
-          "explicacion": "Un puntero tiene que apuntar a variables de su mismo tipo. Para apuntar a `x`, que es un `float`, hace falta un `float *`."
+          "explicacion": "Un puntero tiene que apuntar a variables de su mismo tipo. Para apuntar a `x`, que es un `float`, hace falta un `float *`. Con `*p` se leerían los casilleros de `x` como si fueran de un `int`, y cada tipo se representa de manera distinta en la memoria. Según el compilador, esto ni siquiera compila o compila con una advertencia: aun así está mal."
         },
         {
           "texto": "Funciona, pero `*p` vale `1`",
           "codigo": "OPCION_SE_TRUNCA",
-          "explicacion": "No se trunca nada: el valor `1.5` no se convierte a entero. Se leen los casilleros de `x` como si fueran de un `int`, que es otra cosa."
+          "explicacion": "No se trunca nada: el valor `1.5` no se convierte a entero. Se leen los casilleros de `x` como si fueran de un `int`, y cada tipo se representa de manera distinta en la memoria."
         }
       ]
     }
