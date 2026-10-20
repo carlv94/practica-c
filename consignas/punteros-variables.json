@@ -111,7 +111,7 @@
       "id": "puntero-leer",
       "titulo": "Leer a través del puntero",
       "dado": "int n = 7;\nint *p;\n\np = &n;",
-      "enunciado": "La variable `n` vale `7` y el puntero `p` apunta a ella. Muestre el valor de `n` usando el puntero: para llegar a la variable a la que apunta `p` se escribe un `*` delante de su nombre.",
+      "enunciado": "La variable `n` vale `7` y el puntero `p` apunta a ella. Muestre en pantalla, con `printf`, el valor de `n` usando el puntero: para llegar a la variable a la que apunta `p` se escribe un `*` delante de su nombre.",
       "requiere": [
         {
           "ejecuta": {
