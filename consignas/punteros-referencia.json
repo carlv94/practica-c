@@ -10,23 +10,23 @@
       "id": "referencia-q-valor",
       "titulo": "Intercambiar con parámetros por valor",
       "archivo": "void intercambiar(int a, int b) {\n  int aux;\n\n  aux = a;\n  a = b;\n  b = aux;\n}",
-      "enunciado": "Esta función intercambia sus dos parámetros. Se la llama con `x` valiendo `3` y `z` valiendo `8`. ¿Qué muestra este programa?",
+      "enunciado": "Esta función intercambia los valores de sus dos parámetros. Se la llama con `x` valiendo `3` y `z` valiendo `8`. ¿Qué mostraría este programa?",
       "codigo": "int x = 3;\nint z = 8;\n\nintercambiar(x, z);\nprintf(\"%d %d\", x, z);",
       "opciones": [
         {
           "texto": "`8 3`",
           "codigo": "OPCION_SE_INTERCAMBIAN",
-          "explicacion": "La función intercambia `a` y `b`, que son copias de `x` y de `z`: la llamada hace `a = x;` y `b = z;`. El intercambio ocurre en las copias y no llega a `x` ni a `z`."
+          "explicacion": "La función intercambia los valores de `a` y `b`, que son copias de `x` y de `z`: la llamada hace `a = x;` y `b = z;`. El intercambio ocurre en las copias y no afecta a `x` ni a `z`."
         },
         {
           "texto": "`3 8`",
           "correcta": true,
-          "explicacion": "Al llamar, `a` recibe una copia de `x` y `b` una copia de `z`. La función intercambia las copias, y `x` y `z` quedan como estaban. Para que una función pueda cambiar variables de afuera hace falta otra cosa: que sepa dónde están guardadas, es decir, sus direcciones."
+          "explicacion": "Al llamar, `a` recibe una copia de `x` y `b` una copia de `z`. La función intercambia los valores de las copias, y `x` y `z` quedan como estaban. Para que una función pueda cambiar los valores de variables de afuera hace falta otra cosa: que sepa dónde están guardadas, es decir, sus direcciones."
         },
         {
           "texto": "`0 0`",
           "codigo": "OPCION_SE_PONEN_EN_CERO",
-          "explicacion": "Las variables no se ponen en cero: la función no las toca, y conservan lo que valían."
+          "explicacion": "Nada pone las variables en cero: ni la llamada ni la función tienen por qué hacerlo."
         }
       ]
     },
@@ -54,7 +54,7 @@
         {
           "texto": "`5`, el valor de `numero`",
           "codigo": "OPCION_GUARDA_EL_VALOR",
-          "explicacion": "Eso pasaría si se llamara con `poner(numero)`, que pasa una copia del valor. Con `&numero` se pasa la dirección."
+          "explicacion": "Eso pasaría si se llamara con `poner(numero)`, que pasa una copia del valor."
         },
         {
           "texto": "`1000`, la dirección de `numero`",
@@ -64,7 +64,7 @@
         {
           "texto": "`10`",
           "codigo": "OPCION_GUARDA_EL_NUEVO",
-          "explicacion": "`10` es lo que la función escribe más tarde a través de `x`, con `*x = 10;`. Cuando empieza la función, `x` guarda una dirección."
+          "explicacion": "`10` es lo que la función escribe más tarde a través de `x`, con `*x = 10;`."
         }
       ]
     },
@@ -72,7 +72,7 @@
       "id": "referencia-incrementar",
       "titulo": "Declarar el parámetro con *",
       "en": "archivo",
-      "enunciado": "Escriba una función que reciba por referencia un número entero (un puntero a la variable de afuera) y le sume 1 a esa variable: si valía `4`, queda en `5`. Póngale el nombre que quiera.",
+      "enunciado": "Escriba una función que reciba por referencia un número entero (un puntero a la variable de afuera) y le sume 1 al valor de esa variable: si valía `4`, pasa a valer `5`. Póngale el nombre que quiera.",
       "requiere": [
         {
           "funcion": {
@@ -119,7 +119,7 @@
       "titulo": "Llamarla con &",
       "sigueDe": "referencia-incrementar",
       "dado": "int contador = 7;",
-      "enunciado": "La función {I} ya está definida. Llámela para que sume 1 a la variable `contador`: hay que pasarle su dirección.",
+      "enunciado": "La función {I} ya está definida. Llámela para que sume 1 al valor de la variable `contador`: hay que pasarle su dirección.",
       "requiere": [
         {
           "llamada": {
@@ -168,7 +168,7 @@
         {
           "texto": "`7`",
           "codigo": "OPCION_NO_CAMBIA",
-          "explicacion": "`sumarUno(p)` le pasa a la función la dirección que guarda `p`, que es la de `contador`: la función puede cambiarlo."
+          "explicacion": "`7` es lo que valía `contador` antes de llamar a la función. Hay que ver qué recibe `sumarUno` cuando se la llama con `p`."
         },
         {
           "texto": "`8`",
@@ -186,7 +186,7 @@
       "id": "referencia-intercambiar",
       "titulo": "Intercambiar dos variables",
       "en": "archivo",
-      "enunciado": "Escriba una función que reciba dos números enteros por referencia y intercambie sus valores: lo que valía la primera variable pasa a la segunda, y al revés. Póngale el nombre que quiera.",
+      "enunciado": "Escriba una función que reciba dos números enteros por referencia e intercambie sus valores: lo que valía la primera variable pasa a la segunda, y al revés. Póngale el nombre que quiera.",
       "requiere": [
         {
           "funcion": {
@@ -249,9 +249,9 @@
     },
     {
       "id": "referencia-dos-resultados",
-      "titulo": "Devolver dos resultados",
+      "titulo": "Reescribir cociente y resto con referencias",
       "en": "archivo",
-      "enunciado": "Con `return` una función solo devuelve un valor, y con una estructura había que declarar un tipo nuevo. Otra alternativa es que la función modifique variables de afuera. Escriba una función que reciba cuatro números enteros: el dividendo, el divisor y dos variables por referencia, donde deje el cociente y el resto de la división: con `17` y `5`, el cociente es `3` y el resto es `2`. Póngale el nombre que quiera.",
+      "enunciado": "Con una estructura, `dividir` devolvía el cociente y el resto juntos, pero había que declarar un tipo nuevo para eso. Otra alternativa es que la función cambie el valor de variables de afuera. Reescríbala para que reciba cuatro números enteros: el dividendo, el divisor y dos variables por referencia, donde deje el cociente y el resto de la división: con `17` y `5`, el cociente es `3` y el resto es `2`. Póngale el nombre que quiera.",
       "requiere": [
         {
           "funcion": {
@@ -316,7 +316,43 @@
           }
         }
       ],
-      "referencia": "void dividir(int dividendo, int divisor, int *cociente, int *resto) {\n  *cociente = dividendo / divisor;\n  *resto = dividendo % divisor;\n}"
+      "referencia": "void dividir(int dividendo, int divisor, int *cociente, int *resto) {\n  *cociente = dividendo / divisor;\n  *resto = dividendo % divisor;\n}",
+      "ejemplo": {
+        "texto": "La función con una estructura:",
+        "codigo": "typedef struct {\n  int cociente;\n  int resto;\n} TDivision;\n\nTDivision dividir(int dividendo, int divisor) {\n  TDivision r;\n\n  r.cociente = dividendo / divisor;\n  r.resto = dividendo % divisor;\n  return r;\n}"
+      }
+    },
+    {
+      "id": "referencia-dividir-llamada",
+      "titulo": "Usar la función con las dos variables",
+      "sigueDe": "referencia-dos-resultados",
+      "dado": "int cociente;\nint resto;",
+      "enunciado": "La función {Q} ya está definida. Con ella, calcule el cociente y el resto de dividir `17` por `5` y muéstrelos en una sola línea, separados por un espacio.",
+      "salida": "3 2",
+      "requiere": [
+        {
+          "llamada": {
+            "funcion": "$Q",
+            "argumentos": [
+              "17",
+              "5",
+              "&cociente",
+              "&resto"
+            ]
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "salida": "3 2",
+                "visible": true
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "{Q}(17, 5, &cociente, &resto);\nprintf(\"%d %d\", cociente, resto);"
     },
     {
       "id": "referencia-sin-global",
@@ -326,7 +362,7 @@
         "texto": "La misma función con la variable global:",
         "codigo": "int total = 0;\n\nvoid acumular(int n) {\n  total = total + n;\n}"
       },
-      "enunciado": "Otra manera de reemplazar la global es pasarle a la función la variable de afuera, para que la modifique. Escriba una función que reciba por referencia el total y por valor el número que se suma, y le sume el número al total. Póngale el nombre que quiera.",
+      "enunciado": "Otra manera de reemplazar la global es pasarle a la función la variable de afuera, para que cambie su valor. Escriba una función que reciba por referencia el total y por valor el número que se suma, y le sume el número al total. Póngale el nombre que quiera.",
       "requiere": [
         {
           "sinGlobales": true
@@ -387,7 +423,7 @@
       "id": "referencia-leer-alumno",
       "titulo": "Leer un alumno",
       "en": "archivo",
-      "enunciado": "Escriba una función que pida con `scanf` el legajo, la edad y el promedio de un alumno, en ese orden, y los deje en tres variables de afuera, que recibe por referencia: el legajo y la edad son enteros y el promedio tiene decimales. Póngale el nombre que quiera.",
+      "enunciado": "Con una estructura, `leerAlumno` devolvía los tres datos juntos. Otra alternativa es que deje cada valor en una variable de afuera. Escriba una función que pida con `scanf` el legajo, la edad y el promedio de un alumno, en ese orden, y los deje en tres variables que recibe por referencia: el legajo y la edad son enteros y el promedio tiene decimales. Póngale el nombre que quiera.",
       "requiere": [
         {
           "funcion": {
@@ -445,7 +481,11 @@
           }
         }
       ],
-      "referencia": "void leerAlumno(int *legajo, int *edad, float *promedio) {\n  scanf(\"%d\", legajo);\n  scanf(\"%d\", edad);\n  scanf(\"%f\", promedio);\n}"
+      "referencia": "void leerAlumno(int *legajo, int *edad, float *promedio) {\n  scanf(\"%d\", legajo);\n  scanf(\"%d\", edad);\n  scanf(\"%f\", promedio);\n}",
+      "ejemplo": {
+        "texto": "La función con una estructura:",
+        "codigo": "typedef struct {\n  int legajo;\n  int edad;\n  float promedio;\n} TAlumno;\n\nTAlumno leerAlumno(void) {\n  TAlumno a;\n\n  scanf(\"%d\", &a.legajo);\n  scanf(\"%d\", &a.edad);\n  scanf(\"%f\", &a.promedio);\n  return a;\n}"
+      }
     },
     {
       "id": "referencia-q-cual",
@@ -457,12 +497,12 @@
         {
           "texto": "`6`",
           "codigo": "OPCION_FALTA_LA_DEVUELTA",
-          "explicacion": "Falta una: `x = sumarC(x);` guarda en `x` lo que devuelve la función, que es `x + 1`. Esa suma también llega a `x`."
+          "explicacion": "Falta una: `x = sumarC(x);` guarda en `x` lo que devuelve la función, que es `x + 1`."
         },
         {
           "texto": "`8`",
           "codigo": "OPCION_TODAS_CAMBIAN",
-          "explicacion": "`sumarA` no puede cambiar `x`: recibe una copia, le suma `1` a la copia y la copia desaparece al terminar. Solo cambian `x` las otras dos."
+          "explicacion": "`sumarA` no puede cambiar el valor de `x`: recibe una copia, le suma `1` a la copia y la copia desaparece al terminar."
         },
         {
           "texto": "`7`",

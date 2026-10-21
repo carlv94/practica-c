@@ -93,7 +93,7 @@
         {
           "texto": "La dirección de `n`, que es `1000`",
           "codigo": "OPCION_ES_LA_DIRECCION",
-          "explicacion": "`1000` es lo que guarda `p`, y se obtiene escribiendo `p`. El `*` delante de `p` hace otra cosa: va hasta la variable que está en esa dirección."
+          "explicacion": "`1000` es lo que guarda `p`, y se obtiene escribiendo `p`."
         },
         {
           "texto": "La variable `n`, a la que apunta `p`",

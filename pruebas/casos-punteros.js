@@ -114,7 +114,7 @@ export const CASOS_DE_PUNTEROS = [
   }),
   // ---- 4: llamarla con & ----
   referencia(4, 'la llamada', 'sumarUno(&contador);', 'ok', { mejoras: [] }),
-  referencia(4, 'sin el &', 'sumarUno(contador);', ['LLAMADA_SIN_AMPERSAND'], { dice: ['la dirección de la variable'] }),
+  referencia(4, 'sin el &', 'sumarUno(contador);', ['LLAMADA_SIN_AMPERSAND'], { dice: ['hay que pasarle su dirección'] }),
   referencia(4, 'otra variable', 'sumarUno(&otra);', ['VARIABLE_DESCONOCIDA']),
   // ---- 5: un puntero en vez de & ----
   referencia(5, 'cambia', '1'),
@@ -173,66 +173,72 @@ export const CASOS_DE_PUNTEROS = [
     ['DEVUELVE_EN_VEZ_DE_MOSTRAR']
   ),
 
-  // ---- 8: acumular sin la global ----
-  referencia(8, 'modifica por referencia', FUNCION('void acumular(int *total, int n)', '  *total = *total + n;')),
-  referencia(8, 'con otros nombres', FUNCION('void sumar(int *t, int x)', '  *t = *t + x;')),
-  referencia(8, 'sin asterisco en la declaracion', FUNCION('void acumular(int total, int n)', '  total = total + n;'), [
+  // ---- 8: usar la funcion con las dos variables ----
+  referencia(8, 'la llamada y el printf', 'dividir(17, 5, &cociente, &resto);\nprintf("%d %d", cociente, resto);', 'ok', { mejoras: [] }),
+  referencia(8, 'sin el ampersand', 'dividir(17, 5, cociente, resto);\nprintf("%d %d", cociente, resto);', ['LLAMADA_SIN_AMPERSAND']),
+  referencia(8, 'sin mostrar', 'dividir(17, 5, &cociente, &resto);', ['MUESTRA_FALTA']),
+  referencia(8, 'el resto primero', 'dividir(17, 5, &cociente, &resto);\nprintf("%d %d", resto, cociente);', ['MUESTRA_DISTINTA']),
+  referencia(8, 'los argumentos cambiados', 'dividir(17, 5, &resto, &cociente);\nprintf("%d %d", cociente, resto);', ['ARGUMENTOS_EN_OTRO_ORDEN']),
+  // ---- 9: acumular sin la global ----
+  referencia(9, 'modifica por referencia', FUNCION('void acumular(int *total, int n)', '  *total = *total + n;')),
+  referencia(9, 'con otros nombres', FUNCION('void sumar(int *t, int x)', '  *t = *t + x;')),
+  referencia(9, 'sin asterisco en la declaracion', FUNCION('void acumular(int total, int n)', '  total = total + n;'), [
     'PARAMETRO_REFERENCIA_FALTA',
   ]),
-  referencia(8, 'sin asterisco al usarlo', FUNCION('void acumular(int *total, int n)', '  total = total + n;'), [
+  referencia(9, 'sin asterisco al usarlo', FUNCION('void acumular(int *total, int n)', '  total = total + n;'), [
     'PARAMETRO_SIN_ASTERISCO_AL_USARLO',
   ]),
-  referencia(8, 'con una global', 'int total = 0;\n' + FUNCION('void acumular(int n)', '  total = total + n;'), [
+  referencia(9, 'con una global', 'int total = 0;\n' + FUNCION('void acumular(int n)', '  total = total + n;'), [
     'GLOBAL_DE_MAS',
     'PARAMETROS_CANTIDAD',
   ]),
-  referencia(8, 'suma de menos', FUNCION('void acumular(int *total, int n)', '  *total = *total + 1;'), ['RESULTADO_VALOR_DISTINTO']),
-  // ---- 9: leer un alumno ----
+  referencia(9, 'suma de menos', FUNCION('void acumular(int *total, int n)', '  *total = *total + 1;'), ['RESULTADO_VALOR_DISTINTO']),
+  // ---- 10: leer un alumno ----
   referencia(
-    9,
+    10,
     'tres scanf',
     FUNCION('void leerAlumno(int *legajo, int *edad, float *promedio)', '  scanf("%d", legajo);\n  scanf("%d", edad);\n  scanf("%f", promedio);'),
     'ok',
     { mejoras: [] }
   ),
   referencia(
-    9,
+    10,
     'un solo scanf',
     FUNCION('void leerAlumno(int *legajo, int *edad, float *promedio)', '  scanf("%d %d %f", legajo, edad, promedio);')
   ),
   referencia(
-    9,
+    10,
     'con ampersand en el scanf',
     FUNCION('void leerAlumno(int *legajo, int *edad, float *promedio)', '  scanf("%d", &legajo);\n  scanf("%d", edad);\n  scanf("%f", promedio);'),
     ['PUNTERO_EN_SCANF'],
     { dice: ['sin `&` ni `*`'] }
   ),
   referencia(
-    9,
+    10,
     'con asterisco en el scanf',
     FUNCION('void leerAlumno(int *legajo, int *edad, float *promedio)', '  scanf("%d", *legajo);\n  scanf("%d", edad);\n  scanf("%f", promedio);'),
     ['PUNTERO_EN_SCANF']
   ),
   referencia(
-    9,
+    10,
     'el legajo por valor',
     FUNCION('void leerAlumno(int legajo, int *edad, float *promedio)', '  scanf("%d", &legajo);\n  scanf("%d", edad);\n  scanf("%f", promedio);'),
     ['PARAMETRO_REFERENCIA_FALTA']
   ),
   referencia(
-    9,
+    10,
     'promedio entero',
     FUNCION('void leerAlumno(int *legajo, int *edad, int *promedio)', '  scanf("%d", legajo);\n  scanf("%d", edad);\n  scanf("%d", promedio);'),
     ['PARAMETRO_TIPO']
   ),
   referencia(
-    9,
+    10,
     'en otro orden',
     FUNCION('void leerAlumno(int *legajo, int *edad, float *promedio)', '  scanf("%d", edad);\n  scanf("%d", legajo);\n  scanf("%f", promedio);'),
     ['RESULTADO_VALOR_DISTINTO']
   ),
-  // ---- 10: tres formas de llamar ----
-  referencia(10, 'siete', '2'),
-  referencia(10, 'seis', '0', ['OPCION_FALTA_LA_DEVUELTA']),
-  referencia(10, 'ocho', '1', ['OPCION_TODAS_CAMBIAN']),
+  // ---- 11: tres formas de llamar ----
+  referencia(11, 'siete', '2'),
+  referencia(11, 'seis', '0', ['OPCION_FALTA_LA_DEVUELTA']),
+  referencia(11, 'ocho', '1', ['OPCION_TODAS_CAMBIAN']),
 ];
