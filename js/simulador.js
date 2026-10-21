@@ -486,6 +486,13 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
     }
     if (n.type === 'subscript_expression') {
       const base = posicion(n.childForFieldName('argument'));
+      // p[i] con p un puntero: lo mismo que *(p + i).
+      if (base.variable && base.variable.puntero) {
+        const indiceDelPuntero = evaluar(n.childForFieldName('index') || n.childForFieldName('indices'));
+        const movido = mover({ destino: base.variable.destino, nombre: base.nombre }, indiceDelPuntero.v, n);
+        comprobarRango(movido.destino, n);
+        return movido.destino;
+      }
       if (!base.variable || !base.variable.dims) sinVerificar(n);
       const nodoIndice = n.childForFieldName('index') || n.childForFieldName('indices');
       const indice = evaluar(nodoIndice);
@@ -510,7 +517,15 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
     // *x: lo que apunta un parametro declarado con * (la variable que llego con &).
     if (n.type === 'pointer_expression' && /^\*/.test(n.text.trimStart())) {
       const argumento = n.childForFieldName('argument') || n.namedChildren[n.namedChildren.length - 1];
-      if (!argumento || argumento.type !== 'identifier') return sinVerificar(n);
+      if (!argumento) return sinVerificar(n);
+      // *(p + 1), *p++: la direccion es una cuenta.
+      if (argumento.type !== 'identifier') {
+        const ptr = comoPuntero(argumento);
+        if (!ptr) return sinVerificar(n);
+        if (!ptr.destino) throw new PunteroSinDestino(ptr.nombre ?? argumento.text, fila(n), ptr.destino === null);
+        comprobarRango(ptr.destino, n);
+        return ptr.destino;
+      }
       const variable = variables.get(argumento.text);
       if (!variable) {
         if (constante(argumento.text) != null || DE_LA_BIBLIOTECA.includes(argumento.text)) return sinVerificar(n);
@@ -518,6 +533,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
       }
       if (variable.puntero) {
         if (!variable.destino) throw new PunteroSinDestino(argumento.text, fila(n), variable.destino === null);
+        comprobarRango(variable.destino, n);
         return variable.destino;
       }
       // *v en un arreglo es su primera posicion.
@@ -617,7 +633,12 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
         posicion(nodo);
         return sinVerificar(nodo);
       }
-      if (v.dims) return sinVerificar(nodo, 'un arreglo como direccion');
+      if (v.dims) {
+        // El nombre de un arreglo es la direccion de su primer elemento.
+        if (v.dims.length !== 1) return sinVerificar(nodo, 'una tabla como direccion');
+        if (v.tipo !== tipo) throw new PunteroTipoDistinto(nombre, tipo, v.tipo, texto, fila(nodo));
+        return { variable: v, nombre: nodo.text, indices: [0] };
+      }
       if (v.puntero) {
         if (v.tipo !== tipo) throw new PunteroTipoDistinto(nombre, tipo, v.tipo, texto, fila(nodo));
         return v.destino;
@@ -628,8 +649,91 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
       if (Number(nodo.text) === 0) return null;
       throw new PunteroConUnValor(nombre, texto, fila(nodo));
     }
+    // p + 1, v + 2, p++: una cuenta con direcciones.
+    if (nodo.type === 'binary_expression' || nodo.type === 'update_expression') {
+      const ptr = comoPuntero(nodo);
+      if (!ptr) return sinVerificar(nodo);
+      if (ptr.destino && ptr.destino.variable.tipo !== tipo) {
+        throw new PunteroTipoDistinto(nombre, tipo, ptr.destino.variable.tipo, texto, fila(nodo));
+      }
+      return ptr.destino;
+    }
     return sinVerificar(nodo);
   }
+
+  // Lo que vale una expresion que es una direccion: un arreglo, un puntero, &x,
+  // p + 1, p++. Devuelve { destino, nombre } (destino: la posicion a la que
+  // apunta, null si es NULL, undefined si el puntero no tiene nada todavia) o
+  // undefined si la expresion no es una direccion.
+  function comoPuntero(nodo) {
+    while (nodo.type === 'parenthesized_expression') nodo = nodo.namedChildren[0];
+    if (nodo.text === 'NULL') return { destino: null };
+    if (nodo.type === 'identifier') {
+      const v = variables.get(nodo.text);
+      if (!v) return undefined;
+      if (v.puntero) return { destino: v.destino, nombre: nodo.text };
+      if (v.dims && v.dims.length === 1) return { destino: { variable: v, nombre: nodo.text, indices: [0] }, nombre: nodo.text };
+      return undefined;
+    }
+    if (nodo.type === 'pointer_expression' && /^&/.test(nodo.text.trimStart())) {
+      const objetivo = nodo.childForFieldName('argument') || nodo.namedChildren[nodo.namedChildren.length - 1];
+      const p = posicion(objetivo);
+      if (p.constante != null || !p.variable) return sinVerificar(nodo);
+      if (p.variable.dims && p.indices.length !== p.variable.dims.length) return sinVerificar(nodo);
+      return { destino: p };
+    }
+    if (nodo.type === 'binary_expression') {
+      const operador = nodo.childForFieldName('operator').text;
+      if (operador !== '+' && operador !== '-') return undefined;
+      const izquierda = nodo.childForFieldName('left');
+      const derecha = nodo.childForFieldName('right');
+      const deLaIzquierda = comoPuntero(izquierda);
+      if (deLaIzquierda) {
+        if (comoPuntero(derecha)) return sinVerificar(nodo, 'cuentas entre punteros');
+        const k = evaluar(derecha).v;
+        return mover(deLaIzquierda, operador === '-' ? -k : k, nodo);
+      }
+      if (operador === '+') {
+        const deLaDerecha = comoPuntero(derecha);
+        if (deLaDerecha) return mover(deLaDerecha, evaluar(izquierda).v, nodo);
+      }
+      return undefined;
+    }
+    if (nodo.type === 'update_expression') {
+      const argumento = nodo.childForFieldName('argument');
+      const v = argumento && argumento.type === 'identifier' ? variables.get(argumento.text) : null;
+      if (!v || !v.puntero) return undefined;
+      const antes = { destino: v.destino, nombre: argumento.text };
+      const despues = mover(antes, nodo.text.includes('++') ? 1 : -1, nodo);
+      v.destino = despues.destino;
+      return /^(\+\+|--)/.test(nodo.text.trimStart()) ? despues : antes;
+    }
+    return undefined;
+  }
+
+  // Una direccion corrida k lugares: solo dentro de un arreglo de una dimension.
+  function mover(ptr, k, nodo) {
+    if (!Number.isInteger(k)) return sinVerificar(nodo);
+    if (!ptr.destino) throw new PunteroSinDestino(ptr.nombre ?? nodo.text, fila(nodo), ptr.destino === null);
+    const d = ptr.destino;
+    if (!d.variable.dims || d.variable.dims.length !== 1 || d.indices.length !== 1) {
+      if (k === 0) return ptr;
+      return sinVerificar(nodo, 'cuentas con punteros fuera de un arreglo');
+    }
+    return { destino: { ...d, indices: [d.indices[0] + k] }, nombre: ptr.nombre };
+  }
+
+  // Llegar a una posicion que no existe: un puntero corrido de mas.
+  function comprobarRango(destino, n) {
+    const v = destino.variable;
+    if (!v.dims || v.dims.length !== 1 || destino.indices.length !== 1) return;
+    const i = destino.indices[0];
+    if (i < 0 || i >= v.dims[0]) throw new FueraDeRango(destino.nombre, i, v.dims[0], fila(n), false, 0, 1);
+  }
+
+  // El arreglo que llega como parametro: la funcion trabaja con el mismo, pero
+  // lo que recibe es una direccion (sizeof(v) da lo que ocupa un puntero).
+  const comoParametro = (arreglo) => Object.assign(Object.create(arreglo), { comoParametro: true });
 
   function leer(n) {
     const p = posicion(n);
@@ -781,6 +885,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
     if (x.type === 'identifier' || x.type === 'type_identifier') {
       const v = variables.get(x.text);
       if (!v) return sinVerificar(n, `sizeof de ${x.text}`);
+      if (v.comoParametro) return 8;
       return v.dims ? producto(v.dims) * v.bytes : v.bytes;
     }
     if (x.type === 'subscript_expression') {
@@ -1116,6 +1221,15 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
             return { v: 0, f: false };
           }
         }
+        // p += 2, p -= 1: el puntero se corre.
+        if ((operador === '+=' || operador === '-=') && izquierda.type === 'identifier') {
+          const v = variables.get(izquierda.text);
+          if (v && v.puntero) {
+            const k = evaluar(nodoDerecha).v;
+            v.destino = mover({ destino: v.destino, nombre: izquierda.text }, operador === '-=' ? -k : k, n).destino;
+            return { v: 0, f: false };
+          }
+        }
         // Y una variable comun no guarda direcciones: "n = &x;", "*p = &x;".
         if (operador === '=' && nodoDerecha.type === 'pointer_expression' && /^&/.test(nodoDerecha.text.trimStart())) {
           const v = izquierda.type === 'identifier' ? variables.get(izquierda.text) : null;
@@ -1140,6 +1254,11 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
       }
       case 'update_expression': {
         const argumento = n.childForFieldName('argument');
+        // p++ con p un puntero: pasa a apuntar al elemento siguiente.
+        if (argumento.type === 'identifier' && variables.get(argumento.text)?.puntero) {
+          comoPuntero(n);
+          return { v: 0, f: false };
+        }
         const antes = leer(argumento);
         const despues = { v: antes.v + (n.text.includes('++') ? 1 : -1), f: antes.f };
         escribir(argumento, despues);
@@ -1489,13 +1608,13 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
       const deArreglo = a.type === 'identifier' ? variables.get(a.text) : null;
       if (p.clase === 'arreglo') {
         if (!deArreglo || !deArreglo.dims) sinVerificar(a, `un argumento que no es un arreglo para ${p.nombre}`);
-        local.set(p.nombre, deArreglo);
+        local.set(p.nombre, comoParametro(deArreglo));
         return;
       }
       if (p.clase === 'referencia') {
         if (deArreglo && (deArreglo.dims || deArreglo.puntero)) {
           // Un puntero se copia (la funcion recibe la direccion); un arreglo es el mismo.
-          local.set(p.nombre, deArreglo.puntero ? { ...deArreglo, parametro: true } : deArreglo);
+          local.set(p.nombre, deArreglo.puntero ? { ...deArreglo, parametro: true } : comoParametro(deArreglo));
           return;
         }
         if (!conAmpersand) throw new LlamadaSinAmpersand(def.nombre, p.nombre, texto, fila(a));

@@ -636,9 +636,118 @@ export const CASOS_DEL_SIMULADOR = [
     espera: { error: 'PunteroEnScanf' },
   },
   {
-    nombre: 'punteros: la aritmetica de punteros no se sigue',
-    codigo: conFunciones('', 'int v[MAX] = {1, 2, 3};\nint *p = &v[0];\np = p + 1;'),
+    nombre: 'punteros: la aritmetica fuera de un arreglo no se sigue',
+    codigo: conFunciones('', 'int n = 1;\nint *p = &n;\np = p + 1;'),
     espera: { error: 'SinVerificar' },
+  },
+  {
+    nombre: 'punteros: una cuenta con un puntero no es un numero',
+    codigo: conFunciones('', 'int v[MAX] = {1, 2, 3};\nint *p = v;\nprintf("%d", p + 1);'),
+    espera: { error: 'SinVerificar' },
+  },
+  // ---- punteros y arreglos ----
+  {
+    nombre: 'arreglos: el nombre del arreglo es la direccion de su primer elemento',
+    codigo: conFunciones('', 'int v[MAX] = {10, 20, 30};\nint *p = v;\nint r;\nr = *p;'),
+    espera: { variables: { r: 10 } },
+  },
+  {
+    nombre: 'arreglos: p + 2 apunta al tercer elemento',
+    codigo: conFunciones('', 'int v[MAX] = {10, 20, 30};\nint *p = v;\nint r;\nr = *(p + 2);'),
+    espera: { variables: { r: 30 } },
+  },
+  {
+    nombre: 'arreglos: *(v + 1) con el nombre del arreglo',
+    codigo: conFunciones('', 'int v[MAX] = {10, 20, 30};\n*(v + 1) = 8;'),
+    espera: { variables: { v: [10, 8, 30] } },
+  },
+  {
+    nombre: 'arreglos: un puntero a una posicion',
+    codigo: conFunciones('', 'int v[MAX] = {10, 20, 30};\nint *p = &v[1];\n*p = 99;'),
+    espera: { variables: { v: [10, 99, 30] } },
+  },
+  {
+    nombre: 'arreglos: p[i] es *(p + i)',
+    codigo: conFunciones('', 'int v[MAX] = {10, 20, 30};\nint *p = v;\nint r;\nr = p[1];\np[2] = 7;'),
+    espera: { variables: { r: 20, v: [10, 20, 7] } },
+  },
+  {
+    nombre: 'arreglos: p++ pasa al elemento siguiente',
+    codigo: conFunciones('', 'int v[MAX] = {10, 20, 30};\nint *p = v;\nint r;\np++;\nr = *p;'),
+    espera: { variables: { r: 20 } },
+  },
+  {
+    nombre: 'arreglos: p += 2 y p--',
+    codigo: conFunciones('', 'int v[MAX] = {10, 20, 30};\nint *p = v;\np += 2;\n*p = 1;\np--;\n*p = 2;'),
+    espera: { variables: { v: [10, 2, 1] } },
+  },
+  {
+    nombre: 'arreglos: recorrer con un puntero que avanza',
+    codigo: conFunciones(
+      '',
+      'int v[MAX] = {10, 20, 30};\nint *p = v;\nint s = 0;\nint i;\nfor (i = 0; i < MAX; i++) {\n  s = s + *p;\n  p++;\n}'
+    ),
+    espera: { variables: { s: 60 } },
+  },
+  {
+    nombre: 'arreglos: *p++ lee y avanza',
+    codigo: conFunciones('', 'int v[MAX] = {10, 20, 30};\nint *p = v;\nint a;\nint b;\na = *p++;\nb = *p;'),
+    espera: { variables: { a: 10, b: 20 } },
+  },
+  {
+    nombre: 'arreglos: un puntero que se pasa del arreglo',
+    codigo: conFunciones('', 'int v[MAX] = {10, 20, 30};\nint *p = v;\nint r;\nr = *(p + 3);'),
+    espera: { error: 'FueraDeRango' },
+  },
+  {
+    nombre: 'arreglos: una posicion despues del final se puede tener pero no leer',
+    codigo: conFunciones('', 'int v[MAX] = {10, 20, 30};\nint *p = v + MAX;\nint r;\nr = *p;'),
+    espera: { error: 'FueraDeRango' },
+  },
+  {
+    nombre: 'arreglos: un puntero a otro tipo de arreglo',
+    codigo: conFunciones('', 'float x[MAX] = {1.5, 2.5, 3.5};\nint *p = x;'),
+    espera: { error: 'PunteroTipoDistinto' },
+  },
+  {
+    nombre: 'arreglos: un puntero a un arreglo se pasa a una funcion',
+    codigo: conFunciones(
+      'void ponerEnCero(int *v, int n) {\n  int i;\n\n  for (i = 0; i < n; i++) {\n    *(v + i) = 0;\n  }\n}',
+      'int v[MAX] = {1, 2, 3};\nponerEnCero(v, MAX);'
+    ),
+    espera: { variables: { v: [0, 0, 0] } },
+  },
+  {
+    nombre: 'arreglos: un parametro arreglo se recorre con un puntero',
+    codigo: conFunciones(
+      'void duplicar(int v[], int n) {\n  int *p = v;\n  int i;\n\n  for (i = 0; i < n; i++) {\n    *p = *p * 2;\n    p++;\n  }\n}',
+      'int v[MAX] = {1, 2, 3};\nduplicar(v, MAX);'
+    ),
+    espera: { variables: { v: [2, 4, 6] } },
+  },
+  {
+    nombre: 'arreglos: un parametro arreglo con indices',
+    codigo: conFunciones(
+      'void poner(int v[]) {\n  v[1] = 5;\n}',
+      'int v[MAX] = {1, 2, 3};\nponer(v);'
+    ),
+    espera: { variables: { v: [1, 5, 3] } },
+  },
+  {
+    nombre: 'arreglos: sizeof de un parametro arreglo es lo que ocupa un puntero',
+    codigo: conFunciones('void tamano(int v[]) {\n  printf("%d", (int) sizeof(v));\n}', 'int v[MAX] = {1, 2, 3};\ntamano(v);'),
+    espera: { salida: '8' },
+  },
+  {
+    nombre: 'arreglos: sizeof del arreglo en main es lo que ocupa el arreglo',
+    codigo: conFunciones('', 'int v[MAX] = {1, 2, 3};\nprintf("%d", (int) sizeof(v));'),
+    espera: { salida: '12' },
+  },
+  {
+    nombre: 'cadenas: recorrer una cadena con un puntero hasta el fin',
+    codigo: conFunciones('', 'char texto[3];\nchar *p = texto;\nint n = 0;\nwhile (*p != \'\\0\') {\n  n++;\n  p++;\n}'),
+    prueba: { texto: [72, 105, 0] },
+    espera: { variables: { n: 2 } },
   },
 ];
 
