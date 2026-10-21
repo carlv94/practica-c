@@ -1329,13 +1329,23 @@ variable" (`punteros-direcciones`, solo cuestionarios) y "Variables puntero"
 - **Caso `apunta`**: en `ejecuta`, `{ "apunta": { "$P": "n" } }` pide que `P`
   termine apuntando a `n`. `PUNTERO_SIN_APUNTAR` y `PUNTERO_APUNTA_A_OTRO`.
 - **Regla `usaContenido`**: `{ "usaContenido": { "de": "p", "para": "mostrar el valor de n" } }`.
-  Exige un `*p` en lo que escribió el alumno (`CONTENIDO_FALTA`), para las
-  consignas que piden llegar a la variable "a través del puntero". Va después
-  de `ejecuta`, y no dice nada si ya hay otro error.
+  Exige un `*p` (o `*(p + 2)`: cuenta cualquier nombre que esté después del `*`)
+  en lo que escribió el alumno (`CONTENIDO_FALTA`), para las consignas que piden
+  llegar a la variable "a través del puntero". Va después de `ejecuta`, y no
+  dice nada si ya hay otro error.
+- **Regla `avanza`**: `{ "avanza": { "de": "p", "para": "recorrer el arreglo" } }`.
+  Exige que el puntero avance (`p++`, `p--`, `p += 1`; `AVANCE_FALTA`). Con
+  `"de": "*"`, cualquier variable o parámetro puntero.
 - **El simulador** sigue variables puntero (`int *p;`, `int *p = &n;`,
   `p = &n;`, `q = p;`, `NULL`), `*p` para leer y escribir, y pasarlas a una
-  función. No sigue la aritmética (`p + 1`, `p++`, comparar punteros): queda
-  "sin verificar". Errores: `PUNTERO_SIN_ASTERISCO` (`printf("%d", p)`),
+  función. El nombre de un arreglo vale la dirección de su primer elemento
+  (`p = v;`) y se siguen `p + k`, `p - k`, `*(p + k)`, `p[k]`, `p++`, `p--`,
+  `p += k`, `*p++` y `&v[k]`; un puntero corrido fuera del arreglo da
+  `INDICE_FUERA_DE_RANGO` al leerlo o escribirlo (una posición después del
+  final se puede tener, no leer). Un arreglo recibido por una función es una
+  dirección: `sizeof(v)` da `8`. Quedan "sin verificar" la resta y la
+  comparación entre punteros y las cuentas con punteros fuera de un arreglo.
+  Errores: `PUNTERO_SIN_ASTERISCO` (`printf("%d", p)`),
   `PUNTERO_SIN_AMPERSAND` (`p = n;`), `PUNTERO_CON_UN_VALOR` (`p = 10;`),
   `PUNTERO_TIPO_DISTINTO` (`int *p = &f;` con `f` float),
   `DIRECCION_EN_UNA_VARIABLE` (`n = &x;`, `*p = &x;`) y `PUNTERO_SIN_DESTINO`
@@ -1344,8 +1354,18 @@ variable" (`punteros-direcciones`, solo cuestionarios) y "Variables puntero"
   Los mensajes de los parámetros por referencia nombran al puntero. Un parámetro declarado
   con `*` sigue con sus mensajes de siempre (`PARAMETRO_SIN_ASTERISCO_AL_USARLO`).
 
-La serie 3 (`punteros-referencia`) y la 4 (`punteros-acceso`, "Dar el menor
-acceso") completan por ahora el grupo.
+Las series 3 (`punteros-referencia`), 4 (`punteros-acceso`, "Dar el menor
+acceso"), 5 (`punteros-aritmetica`, "Arreglos y punteros") y 6
+(`punteros-arreglos`, "Arreglos que cambian dentro de una función") completan por
+ahora el grupo; las tres últimas están ocultas.
+
+- **Memoria con arreglos**: una celda `{ "nombre": "v", "arreglo": [10, 20, 30] }`
+  se dibuja como una celda por elemento (`v[0]`, `v[1]`, ...) con direcciones
+  seguidas. Un puntero apunta a un elemento (`"apunta": "v[1]"`) o, con el nombre
+  del arreglo (`"apunta": "v"`), al primero.
+- **`"deja": "arreglo"`** en la regla `funcion`: el error de devolver con
+  `return` en una función `void` dice que el resultado se deja en el arreglo que
+  recibe, no que se muestra con `printf`.
 
 - **Figura `escalera`**: `"dibujo": { "titulo": "...", "escalera": true }`. Tres
   escalones fijos (una copia, esa variable, todas las variables), de menos a más

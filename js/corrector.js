@@ -609,7 +609,9 @@ export function corregir(
           const porReferencia = (regla.parametros || []).some((p) => p.referencia && p.referencia !== 'libre');
           error(
             'DEVUELVE_EN_VEZ_DE_MOSTRAR',
-            porReferencia
+            regla.deja === 'arreglo'
+              ? `La consigna pide que la función deje el resultado en el arreglo que recibe, no que lo devuelva con ${BT}return${BT}: es ${BT}void${BT}, o sea que no devuelve nada, y cambia los valores del arreglo de afuera.`
+              : porReferencia
               ? `La consigna pide que la función deje el resultado en la variable de afuera, no que lo devuelva con ${BT}return${BT}: es ${BT}void${BT}, o sea que no devuelve nada, y cambia el valor de lo que recibe por referencia.`
               : `La consigna pide que la función muestre el resultado con ${BT}printf${BT}, no que lo devuelva: es ${BT}void${BT}, o sea que no devuelve nada, y el resultado se muestra adentro de la función.`,
             f.fila

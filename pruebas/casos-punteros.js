@@ -15,6 +15,7 @@ const variables = serie('punteros-variables');
 const referencia = serie('punteros-referencia');
 const acceso = serie('punteros-acceso');
 const aritmetica = serie('punteros-aritmetica');
+const arreglos = serie('punteros-arreglos');
 
 const FUNCION = (encabezado, cuerpo) => `${encabezado} {\n${cuerpo}\n}`;
 
@@ -334,4 +335,72 @@ export const CASOS_DE_PUNTEROS = [
   aritmetica(6, 'sin avanzar', 'suma = *p + *(p + 1) + *(p + 2);', ['AVANCE_FALTA']),
   aritmetica(6, 'una sola vuelta', 'suma = suma + *p;\np++;', ['RESULTADO_VALOR_DISTINTO']),
   aritmetica(6, 'sin sumar el valor', 'for (i = 0; i < 3; i++) {\n  suma = suma + 1;\n  p++;\n}', ['RESULTADO_VALOR_DISTINTO']),
+
+  // ===== Arreglos que cambian dentro de una funcion =====
+  // ---- 1: int v[] es int *v ----
+  arreglos(1, 'el puntero', '1'),
+  arreglos(1, 'un entero', '0', ['OPCION_UN_ENTERO']),
+  arreglos(1, 'la cantidad con puntero', '2', ['OPCION_CANTIDAD_PUNTERO']),
+  // ---- 2: un entero y un arreglo ----
+  arreglos(2, 'cambia solo el arreglo', '1'),
+  arreglos(2, 'cambian los dos', '0', ['OPCION_CAMBIAN_LOS_DOS']),
+  arreglos(2, 'no cambia ninguno', '2', ['OPCION_NO_CAMBIA_NINGUNO']),
+  // ---- 3: poner un arreglo en cero ----
+  arreglos(3, 'con un ciclo', FUNCION('void ponerEnCero(int v[], int n)', '  int i;\n\n  for (i = 0; i < n; i++) {\n    v[i] = 0;\n  }'), 'ok', { mejoras: [] }),
+  arreglos(3, 'con un puntero en el parametro', FUNCION('void ponerEnCero(int *v, int n)', '  int i;\n\n  for (i = 0; i < n; i++) {\n    *(v + i) = 0;\n  }')),
+  arreglos(3, 'avanzando con un puntero', FUNCION('void ponerEnCero(int v[], int n)', '  int *p = v;\n  int i;\n\n  for (i = 0; i < n; i++) {\n    *p = 0;\n    p++;\n  }')),
+  arreglos(3, 'con un while', FUNCION('void ponerEnCero(int v[], int n)', '  int i = 0;\n\n  while (i < n) {\n    v[i] = 0;\n    i++;\n  }')),
+  arreglos(3, 'solo el primero', FUNCION('void ponerEnCero(int v[], int n)', '  v[0] = 0;'), ['RESULTADO_VALOR_DISTINTO']),
+  arreglos(3, 'sin la cantidad', FUNCION('void ponerEnCero(int v[])', '  v[0] = 0;'), ['PARAMETROS_CANTIDAD']),
+  arreglos(3, 'un entero en lugar del arreglo', FUNCION('void ponerEnCero(int v, int n)', '  v = 0;'), ['PARAMETRO_TIPO']),
+  arreglos(3, 'pasa de la cantidad', FUNCION('void ponerEnCero(int v[], int n)', '  int i;\n\n  for (i = 0; i <= n; i++) {\n    v[i] = 0;\n  }'), ['INDICE_FUERA_DE_RANGO']),
+  // ---- 4: duplicar los elementos ----
+  arreglos(4, 'multiplicando', FUNCION('void duplicar(int v[], int n)', '  int i;\n\n  for (i = 0; i < n; i++) {\n    v[i] = v[i] * 2;\n  }'), 'ok', { mejoras: [] }),
+  arreglos(4, 'con *=', FUNCION('void duplicar(int v[], int n)', '  int i;\n\n  for (i = 0; i < n; i++) {\n    v[i] *= 2;\n  }')),
+  arreglos(4, 'sumando el mismo', FUNCION('void duplicar(int v[], int n)', '  int i;\n\n  for (i = 0; i < n; i++) {\n    v[i] = v[i] + v[i];\n  }')),
+  arreglos(4, 'con un puntero', FUNCION('void duplicar(int *v, int n)', '  int i;\n\n  for (i = 0; i < n; i++) {\n    *(v + i) = *(v + i) * 2;\n  }')),
+  arreglos(4, 'sumando dos', FUNCION('void duplicar(int v[], int n)', '  int i;\n\n  for (i = 0; i < n; i++) {\n    v[i] = v[i] + 2;\n  }'), ['RESULTADO_VALOR_DISTINTO']),
+  arreglos(4, 'devuelve el arreglo', FUNCION('int duplicar(int v[], int n)', '  return v[0] * 2;'), ['DEVUELVE_EN_VEZ_DE_MOSTRAR'], {
+    dice: ['deje el resultado en el arreglo que recibe'],
+  }),
+  // ---- 5: el tamano de un arreglo recibido ----
+  arreglos(5, 'ocho', '1'),
+  arreglos(5, 'cuarenta', '0', ['OPCION_TAMANO_DEL_ARREGLO']),
+  arreglos(5, 'diez', '2', ['OPCION_CANTIDAD']),
+  // ---- 6: contar las letras de una cadena ----
+  arreglos(
+    6,
+    'con un puntero que avanza',
+    FUNCION('int contarLetras(char *texto)', "  char *p = texto;\n  int cantidad = 0;\n\n  while (*p != '\\0') {\n    cantidad++;\n    p++;\n  }\n  return cantidad;"),
+    'ok',
+    { mejoras: [] }
+  ),
+  arreglos(
+    6,
+    'con un parametro con corchetes',
+    FUNCION('int contarLetras(char texto[])', "  char *p = texto;\n  int cantidad = 0;\n\n  while (*p != '\\0') {\n    cantidad++;\n    p++;\n  }\n  return cantidad;")
+  ),
+  arreglos(
+    6,
+    'avanzando el propio parametro',
+    FUNCION('int contarLetras(char *texto)', "  int cantidad = 0;\n\n  while (*texto != '\\0') {\n    cantidad++;\n    texto++;\n  }\n  return cantidad;")
+  ),
+  arreglos(
+    6,
+    'con indices',
+    FUNCION('int contarLetras(char texto[])', "  int i = 0;\n\n  while (texto[i] != '\\0') {\n    i++;\n  }\n  return i;"),
+    ['AVANCE_FALTA']
+  ),
+  arreglos(
+    6,
+    'cuenta una de mas',
+    FUNCION('int contarLetras(char *texto)', "  char *p = texto;\n  int cantidad = 1;\n\n  while (*p != '\\0') {\n    cantidad++;\n    p++;\n  }\n  return cantidad;"),
+    ['DEVUELVE_DISTINTO']
+  ),
+  arreglos(
+    6,
+    'muestra en vez de devolver',
+    FUNCION('void contarLetras(char *texto)', "  char *p = texto;\n  int cantidad = 0;\n\n  while (*p != '\\0') {\n    cantidad++;\n    p++;\n  }\n  printf(\"%d\", cantidad);"),
+    ['MUESTRA_EN_VEZ_DE_DEVOLVER']
+  ),
 ];

@@ -1,11 +1,251 @@
 {
   "id": "punteros-arreglos",
-  "titulo": "Arreglos y punteros",
+  "titulo": "Arreglos que cambian dentro de una función",
   "continua": false,
   "dentroDeMain": true,
-  "descripcion": "Por qué un arreglo recibido por una función no es una copia, y qué mide `sizeof` ahí adentro.",
+  "descripcion": "Un arreglo se pasa a una función sin copiarse: lo que recibe es la dirección de su primer elemento. Por eso la función puede cambiar el arreglo de afuera.",
   "cabecera": "#include <stdio.h>",
   "consignas": [
+    {
+      "id": "arreglos-q-encabezado",
+      "titulo": "int v[] es int *v",
+      "enunciado": "Una función recibe un arreglo de enteros y su cantidad de elementos. ¿Cuál de estos encabezados recibe lo mismo que `void mostrar(int v[], int n)`?",
+      "opciones": [
+        {
+          "texto": "`void mostrar(int v, int n)`",
+          "codigo": "OPCION_UN_ENTERO",
+          "explicacion": "`int v` recibe un solo entero. Un arreglo se recibe con corchetes o con un puntero."
+        },
+        {
+          "texto": "`void mostrar(int *v, int n)`",
+          "correcta": true,
+          "explicacion": "En un parámetro, `int v[]` y `int *v` significan lo mismo: la función recibe la dirección del primer elemento. Por eso el arreglo no se copia."
+        },
+        {
+          "texto": "`void mostrar(int *v, int *n)`",
+          "codigo": "OPCION_CANTIDAD_PUNTERO",
+          "explicacion": "`n` es la cantidad de elementos, un número común: no hace falta pasarle su dirección."
+        }
+      ]
+    },
+    {
+      "id": "arreglos-q-cambia",
+      "titulo": "Un entero y un arreglo",
+      "archivo": "void cambiarEntero(int n) {\n  n = 99;\n}\n\nvoid cambiarArreglo(int v[]) {\n  v[0] = 99;\n}",
+      "enunciado": "Las dos funciones cambian a `99` lo que reciben. ¿Qué muestra este programa?",
+      "codigo": "int n = 1;\nint v[2] = {1, 2};\n\ncambiarEntero(n);\ncambiarArreglo(v);\nprintf(\"%d %d\", n, v[0]);",
+      "opciones": [
+        {
+          "texto": "`99 99`",
+          "codigo": "OPCION_CAMBIAN_LOS_DOS",
+          "explicacion": "`cambiarEntero` recibe una copia de `n` y cambia la copia: `n` no se modifica."
+        },
+        {
+          "texto": "`1 99`",
+          "correcta": true,
+          "explicacion": "`n` se pasa por valor, y la función cambia una copia. Del arreglo se pasa la dirección de su primer elemento, así que `cambiarArreglo` llega al arreglo mismo y lo modifica."
+        },
+        {
+          "texto": "`1 1`",
+          "codigo": "OPCION_NO_CAMBIA_NINGUNO",
+          "explicacion": "Un arreglo no se copia al pasarlo: la función recibe su dirección y cambia el arreglo de afuera."
+        }
+      ]
+    },
+    {
+      "id": "arreglos-cero",
+      "titulo": "Poner un arreglo en cero",
+      "en": "archivo",
+      "enunciado": "Escriba una función que reciba un arreglo de números enteros y su cantidad de elementos, y ponga todos sus elementos en cero. Póngale el nombre que quiera.",
+      "dibujo": [
+        {
+          "titulo": "El arreglo antes de llamar a la función:",
+          "valores": [
+            5,
+            6,
+            7
+          ]
+        },
+        {
+          "titulo": "El arreglo después:",
+          "valores": [
+            0,
+            0,
+            0
+          ]
+        }
+      ],
+      "requiere": [
+        {
+          "funcion": {
+            "retorna": "void",
+            "parametros": [
+              {
+                "tipo": "entero",
+                "arreglo": true
+              },
+              {
+                "tipo": "entero"
+              }
+            ],
+            "capturar": "Z",
+            "deja": "arreglo"
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "datos": {
+                  "v": [
+                    5,
+                    6,
+                    7
+                  ]
+                },
+                "llama": "$Z(v, 3)",
+                "queda": {
+                  "v": [
+                    0,
+                    0,
+                    0
+                  ]
+                },
+                "visible": true
+              },
+              {
+                "datos": {
+                  "v": [
+                    9
+                  ]
+                },
+                "llama": "$Z(v, 1)",
+                "queda": {
+                  "v": [
+                    0
+                  ]
+                }
+              },
+              {
+                "datos": {
+                  "v": [
+                    1,
+                    2,
+                    3,
+                    4
+                  ]
+                },
+                "llama": "$Z(v, 4)",
+                "queda": {
+                  "v": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "void ponerEnCero(int v[], int n) {\n  int i;\n\n  for (i = 0; i < n; i++) {\n    v[i] = 0;\n  }\n}"
+    },
+    {
+      "id": "arreglos-duplicar",
+      "titulo": "Duplicar los elementos",
+      "en": "archivo",
+      "enunciado": "Escriba una función que reciba un arreglo de números enteros y su cantidad de elementos, y duplique cada elemento: lo que valía `3` pasa a valer `6`. Póngale el nombre que quiera.",
+      "dibujo": [
+        {
+          "titulo": "El arreglo antes de llamar a la función:",
+          "valores": [
+            1,
+            2,
+            3
+          ]
+        },
+        {
+          "titulo": "El arreglo después:",
+          "valores": [
+            2,
+            4,
+            6
+          ]
+        }
+      ],
+      "requiere": [
+        {
+          "funcion": {
+            "retorna": "void",
+            "parametros": [
+              {
+                "tipo": "entero",
+                "arreglo": true
+              },
+              {
+                "tipo": "entero"
+              }
+            ],
+            "capturar": "D",
+            "deja": "arreglo"
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "datos": {
+                  "v": [
+                    1,
+                    2,
+                    3
+                  ]
+                },
+                "llama": "$D(v, 3)",
+                "queda": {
+                  "v": [
+                    2,
+                    4,
+                    6
+                  ]
+                },
+                "visible": true
+              },
+              {
+                "datos": {
+                  "v": [
+                    0,
+                    5
+                  ]
+                },
+                "llama": "$D(v, 2)",
+                "queda": {
+                  "v": [
+                    0,
+                    10
+                  ]
+                }
+              },
+              {
+                "datos": {
+                  "v": [
+                    -2
+                  ]
+                },
+                "llama": "$D(v, 1)",
+                "queda": {
+                  "v": [
+                    -4
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "void duplicar(int v[], int n) {\n  int i;\n\n  for (i = 0; i < n; i++) {\n    v[i] = v[i] * 2;\n  }\n}"
+    },
     {
       "id": "punteros-q-tamano",
       "titulo": "El tamaño de un arreglo recibido",
@@ -29,6 +269,61 @@
           "explicacion": "`sizeof` mide bytes, no elementos. Y dentro de la función ni siquiera mide el arreglo: la función no sabe cuántos elementos tiene, por eso la cantidad se pasa aparte."
         }
       ]
+    },
+    {
+      "id": "arreglos-contar-letras",
+      "titulo": "Contar las letras de una cadena",
+      "en": "archivo",
+      "enunciado": "Una cadena es un arreglo de letras que termina en el carácter `'\\0'`. Escriba una función que reciba una cadena y devuelva cuántas letras tiene, recorriéndola con un puntero que avance hasta llegar al `'\\0'`: `Hola` tiene `4`. Póngale el nombre que quiera.",
+      "requiere": [
+        {
+          "funcion": {
+            "retorna": "entero",
+            "parametros": [
+              {
+                "tipo": "caracter",
+                "arreglo": true
+              }
+            ],
+            "capturar": "C"
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "datos": {
+                  "texto": "Hola"
+                },
+                "llama": "$C(texto)",
+                "devuelve": 4,
+                "visible": true
+              },
+              {
+                "datos": {
+                  "texto": "Ana"
+                },
+                "llama": "$C(texto)",
+                "devuelve": 3
+              },
+              {
+                "datos": {
+                  "texto": "Hola mundo"
+                },
+                "llama": "$C(texto)",
+                "devuelve": 10
+              }
+            ]
+          }
+        },
+        {
+          "avanza": {
+            "de": "*",
+            "para": "recorrer la cadena"
+          }
+        }
+      ],
+      "referencia": "int contarLetras(char *texto) {\n  char *p = texto;\n  int cantidad = 0;\n\n  while (*p != '\\0') {\n    cantidad++;\n    p++;\n  }\n  return cantidad;\n}"
     }
   ]
 }
