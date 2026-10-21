@@ -547,6 +547,11 @@ function dibujar(figura) {
     dibujarSalida(caja, figura.salida);
     return;
   }
+  if (figura.clase === 'escalera') {
+    dibujarEscalera(caja, figura.escalones);
+    dibujarSalida(caja, figura.salida);
+    return;
+  }
   if (figura.clase === 'memoria') {
     dibujarMemoria(caja, figura.celdas);
     dibujarSalida(caja, figura.salida);
@@ -636,6 +641,21 @@ function dibujarUnion(caja, u) {
     elemento('span', 'valor' + (vacio ? ' vacio' : ' resaltado'), vacio ? ' ' : u.valor)
   );
   caja.appendChild(bloque);
+}
+
+// La escalera de acceso: cada escalon da mas acceso que el anterior.
+function dibujarEscalera(caja, escalones) {
+  caja.setAttribute(
+    'aria-label',
+    'Escalera de acceso, de menos a más: ' + escalones.map((e) => `${e.nombre} (${e.detalle.replace(/\`/g, '')})`).join('; ')
+  );
+  const escalera = elemento('div', 'escalera');
+  escalones.forEach((e, i) => {
+    const escalon = elemento('div', `escalon escalon-${i + 1}`);
+    escalon.append(elemento('span', 'escalon-nombre', e.nombre), elementoConCodigo('span', 'escalon-detalle', e.detalle));
+    escalera.appendChild(escalon);
+  });
+  caja.appendChild(escalera);
 }
 
 // La memoria: un casillero por variable, con su direccion arriba y su nombre

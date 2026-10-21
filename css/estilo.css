@@ -988,3 +988,43 @@ form[hidden],
   stroke: currentColor;
   stroke-width: 1.5;
 }
+
+/* La escalera de acceso: tres escalones, cada uno mas alto que el anterior. */
+.escalera {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.escalon {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 4px;
+  width: 11.5rem;
+  padding: 8px 10px;
+  border: 1px solid var(--borde);
+  border-radius: 6px 6px 0 0;
+  background: var(--codigo);
+}
+
+.escalon-1 {
+  min-height: 4.5rem;
+}
+
+.escalon-2 {
+  min-height: 6.5rem;
+}
+
+.escalon-3 {
+  min-height: 8.5rem;
+}
+
+.escalon-nombre {
+  font-weight: 600;
+}
+
+.escalon-detalle {
+  font-size: 0.85rem;
+  color: var(--suave);
+}

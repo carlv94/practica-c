@@ -306,6 +306,9 @@ export function corregir(
   const filaBase = previo.split('\n').length - 1;
 
   const diagnosticos = [];
+  // Los numeros que armarLlamada guardo en variables para pasar su direccion:
+  // [{ indice, nombre, inicial }].
+  let ultimaLlamada = [];
   const nuevas = { ...capturas };
 
   // "fila" es la del codigo completo; al alumno se le dice la linea de SU respuesta.
@@ -602,7 +605,7 @@ export function corregir(
       if (!(real.clase === 'primitivo' && real.nombre === 'void' && !f.punteros)) {
         // Devuelve el resultado en vez de mostrarlo (o de dejarlo en la variable de afuera).
         if (f.retornos.some((r) => r.conValor) && !f.muestra) {
-          const porReferencia = (regla.parametros || []).some((p) => p.referencia);
+          const porReferencia = (regla.parametros || []).some((p) => p.referencia && p.referencia !== 'libre');
           error(
             'DEVUELVE_EN_VEZ_DE_MOSTRAR',
             porReferencia
@@ -665,7 +668,13 @@ export function corregir(
       const categoria = CATEGORIAS[pedido.tipo];
       const que = `El ${ordinal(k)} parámetro${p.nombre ? ' ' + BT + p.nombre + BT : ''}`;
       const declarado = enPalabras(p);
-      if (pedido.referencia) {
+      if (pedido.referencia === 'libre') {
+        // Por valor o por referencia, como elija: la consigna lo deja a su criterio.
+        if (p.arreglo.length) {
+          error('PARAMETRO_TIPO', `${que} tiene que ser un solo valor, no un arreglo.`, p.fila);
+          return;
+        }
+      } else if (pedido.referencia) {
         if (!p.punteros || p.arreglo.length) {
           error(
             'PARAMETRO_REFERENCIA_FALTA',
@@ -693,7 +702,7 @@ export function corregir(
         error(
           'PARAMETRO_ASTERISCO_DE_MAS',
           p.punteros
-            ? `${que} tiene un ${BT}*${BT} de más: la consigna no pide que la función modifique la variable de afuera, así que recibe solo el valor.`
+            ? `${que} tiene un ${BT}*${BT} de más: la consigna no pide que la función cambie el valor de la variable de afuera, así que recibe solo el valor.`
             : `${que} tiene que ser un solo valor, no un arreglo.`,
           p.fila
         );
@@ -3284,14 +3293,46 @@ export function corregir(
           : `  ${tipo} ${nombre};`
       );
     }
+    let llamada = llama.trim().replace(/;\s*$/, '');
+    // Un numero donde la funcion recibe un puntero: se guarda en una variable y se
+    // pasa su direccion, asi la misma prueba sirve para una funcion por valor o por referencia.
+    ultimaLlamada = [];
+    const abre = llamada.indexOf('(');
+    if (f && abre > 0 && !llamada.slice(abre + 1).includes('(')) {
+      const args = llamada.slice(abre + 1, llamada.lastIndexOf(')')).split(',').map((a) => a.trim());
+      args.forEach((a, i) => {
+        const p = f.parametros[i];
+        if (!p || p.punteros !== 1 || p.arreglo.length || !/^-?\d+(\.\d+)?$/.test(a)) return;
+        const nombre = `__arg${i}`;
+        lineas.push(`  ${textoDeTipo(p.tipo)} ${nombre} = ${a};`);
+        args[i] = `&${nombre}`;
+        ultimaLlamada.push({ indice: i, nombre, inicial: Number(a) });
+      });
+      llamada = `${llamada.slice(0, abre)}(${args.join(', ')})`;
+    }
     const devuelve = f ? textoDeTipo(f.tipo) : 'int';
     if (f && !(f.tipo.clase === 'primitivo' && f.tipo.nombre === 'void' && !f.punteros)) {
       lineas.push(`  ${devuelve} __devuelve;`);
-      lineas.push(`  __devuelve = ${llama.trim().replace(/;\s*$/, '')};`);
+      lineas.push(`  __devuelve = ${llamada};`);
     } else {
-      lineas.push(`  ${llama.trim().replace(/;\s*$/, '')};`);
+      lineas.push(`  ${llamada};`);
     }
     return `void __prueba(void) {\n${lineas.join('\n')}\n}\n`;
+  }
+
+  // Un parametro por referencia al que la funcion nunca le cambia el valor: la
+  // respuesta esta bien, pero alcanza con recibirlo por valor.
+  function avisarReferenciaInnecesaria(modelo, regla, pasadas, cambiadas) {
+    const nombres = [...pasadas].filter((i) => !cambiadas.has(i));
+    const f = modelo.funciones.findLast((x) => !x.prototipo && x.parametros.some((p) => p.punteros === 1));
+    if (!f || !nombres.length) return;
+    const quienes = nombres.map((i) => `${BT}${f.parametros[i].nombre}${BT}`);
+    const lista = quienes.length === 1 ? quienes[0] : `${quienes.slice(0, -1).join(', ')} y ${quienes[quienes.length - 1]}`;
+    mejora(
+      'REFERENCIA_INNECESARIA',
+      `Está bien, pero la función recibe por referencia a ${lista} y no le cambia el valor: alcanza con recibirlo${quienes.length === 1 ? '' : 's'} por valor. Así la función da menos acceso, y se la puede llamar con cualquier valor, no solo con variables.`,
+      f.fila
+    );
   }
 
   // "%d" con un decimal, "%f" con un entero: dice cual es el que corresponde.
@@ -3931,6 +3972,8 @@ export function corregir(
     // Varios conjuntos de valores para los arreglos, cada uno con lo que tiene
     // que dar: asi no vale escribir el resultado a mano.
     if (regla.casos) {
+      const pasadas = new Set();
+      const cambiadas = new Set();
       for (const original of regla.casos) {
         const caso = conCodigos(conEnumeradores(original, modelo));
         // Lo que la ficha muestra y el caso no dice tambien tiene valor: si no, el
@@ -4025,7 +4068,15 @@ export function corregir(
         }
         if (!usaLosCamposMarcados(hecha)) return;
         if (!revisarCaso(hecha, caso, modelo, regla)) return;
+        // Una referencia que no se usa para cambiar nada: se anota cuales se pasaron
+        // y cuales cambiaron de valor, en todos los casos.
+        for (const x of ultimaLlamada) {
+          pasadas.add(x.indice);
+          const v = hecha.variables.get(x.nombre);
+          if (v && v.valor !== undefined && v.valor !== x.inicial) cambiadas.add(x.indice);
+        }
       }
+      if (regla.referenciaInnecesaria) avisarReferenciaInnecesaria(modelo, regla, pasadas, cambiadas);
       if (regla.indicesConNombre) sugerirIndices(modelo, regla);
       notasYMejoras(regla, modelo);
       return;

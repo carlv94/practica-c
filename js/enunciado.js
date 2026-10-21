@@ -130,6 +130,15 @@ export function celdasDeMemoria(lista, desde = 1000) {
   return celdas;
 }
 
+//
+// La escalera de acceso: tres escalones, de una copia a todas las variables.
+//   "dibujo": { "titulo": "Los escalones de acceso:", "escalera": true }
+export const ESCALONES_DE_ACCESO = [
+  { nombre: 'Una copia', detalle: 'parámetro por valor y `return`' },
+  { nombre: 'Esa variable', detalle: 'parámetro por referencia, solo en esa llamada' },
+  { nombre: 'Todas las variables', detalle: 'variable global, desde todas las funciones' },
+];
+
 export function figuraDe(consigna) {
   // Una letra se dibuja entre comillas simples, como se escribe en el codigo.
   const comoSeEscribeLetras = (v) =>
@@ -139,6 +148,7 @@ export function figuraDe(consigna) {
   const propia = (d) => {
     // Una union: un solo lugar, con los nombres de sus miembros y el que tiene el valor.
     if (d.union) return { clase: 'union', titulo: d.titulo, union: d.union, salida: consigna.salida };
+    if (d.escalera) return { clase: 'escalera', titulo: d.titulo, escalones: ESCALONES_DE_ACCESO, salida: consigna.salida };
     if (d.memoria) return { clase: 'memoria', titulo: d.titulo, celdas: celdasDeMemoria(d.memoria, d.desde), salida: consigna.salida };
     // Un dibujo de nombres de un enumerado ("enumerados": true) no lleva comillas.
     const comoSeEscribe = d.enumerados ? (v) => v : comoSeEscribeLetras;
