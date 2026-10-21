@@ -14,6 +14,7 @@ const direcciones = serie('punteros-direcciones');
 const variables = serie('punteros-variables');
 const referencia = serie('punteros-referencia');
 const acceso = serie('punteros-acceso');
+const aritmetica = serie('punteros-aritmetica');
 
 const FUNCION = (encabezado, cuerpo) => `${encabezado} {\n${cuerpo}\n}`;
 
@@ -294,4 +295,43 @@ export const CASOS_DE_PUNTEROS = [
   acceso(9, 'suma mal', FUNCION('void sumar(int a, int b)', '  printf("%d", a - b);'), ['MUESTRA_DISTINTA']),
   acceso(9, 'devuelve en vez de mostrar', FUNCION('int sumar(int a, int b)', '  return a + b;'), ['DEVUELVE_EN_VEZ_DE_MOSTRAR'], { dice: ['muestre el resultado con `printf`'] }),
   acceso(9, 'con un solo parametro', FUNCION('void sumar(int a)', '  printf("%d", a);'), ['PARAMETROS_CANTIDAD']),
+
+  // ===== Arreglos y punteros =====
+  // ---- 1: el nombre de un arreglo ----
+  aritmetica(1, 'la direccion del primero', '1'),
+  aritmetica(1, 'el valor', '0', ['OPCION_ES_EL_VALOR']),
+  aritmetica(1, 'la del ultimo', '2', ['OPCION_EL_ULTIMO']),
+  // ---- 2: un puntero a un arreglo ----
+  aritmetica(2, 'v[0]', '1'),
+  aritmetica(2, 'el arreglo entero', '0', ['OPCION_EL_ARREGLO']),
+  aritmetica(2, 'la direccion', '2', ['OPCION_ES_LA_DIRECCION']),
+  // ---- 3: sumarle uno a un puntero ----
+  aritmetica(3, 'mil cuatro', '1'),
+  aritmetica(3, 'mil uno', '0', ['OPCION_UN_CASILLERO']),
+  aritmetica(3, 'once', '2', ['OPCION_SUMA_AL_VALOR']),
+  // ---- 4: llegar a un elemento sumando ----
+  aritmetica(4, 'con p + 2', 'printf("%d", *(p + 2));', 'ok', { mejoras: [] }),
+  aritmetica(4, 'con 2 + p', 'printf("%d", *(2 + p));'),
+  aritmetica(4, 'moviendo p', 'p = p + 2;\nprintf("%d", *p);'),
+  aritmetica(4, 'con p += 2', 'p += 2;\nprintf("%d", *p);'),
+  aritmetica(4, 'con corchetes sobre el puntero', 'printf("%d", p[2]);', ['CONTENIDO_FALTA'], {
+    dice: ['hay que llegar a la variable con `*`'],
+  }),
+  aritmetica(4, 'con el arreglo', 'printf("%d", v[2]);', ['CONTENIDO_FALTA']),
+  aritmetica(4, 'sumando al valor', 'printf("%d", *p + 2);', ['MUESTRA_DISTINTA']),
+  aritmetica(4, 'el segundo', 'printf("%d", *(p + 1));', ['MUESTRA_DISTINTA']),
+  aritmetica(4, 'se pasa del arreglo', 'printf("%d", *(p + 3));', ['INDICE_FUERA_DE_RANGO']),
+  // ---- 5: v[2] y *(v + 2) ----
+  aritmetica(5, 'con los parentesis', '2'),
+  aritmetica(5, 'la direccion', '0', ['OPCION_ES_LA_DIRECCION']),
+  aritmetica(5, 'sumando al valor', '1', ['OPCION_SUMA_AL_VALOR']),
+  // ---- 6: recorrer con un puntero que avanza ----
+  aritmetica(6, 'con p++', 'for (i = 0; i < 3; i++) {\n  suma = suma + *p;\n  p++;\n}', 'ok', { mejoras: [] }),
+  aritmetica(6, 'con p += 1', 'for (i = 0; i < 3; i++) {\n  suma = suma + *p;\n  p += 1;\n}'),
+  aritmetica(6, 'leyendo y avanzando juntos', 'for (i = 0; i < 3; i++) {\n  suma = suma + *p++;\n}'),
+  aritmetica(6, 'con un while', 'i = 0;\nwhile (i < 3) {\n  suma = suma + *p;\n  p++;\n  i++;\n}'),
+  aritmetica(6, 'con los indices', 'for (i = 0; i < 3; i++) {\n  suma = suma + v[i];\n}', ['CONTENIDO_FALTA']),
+  aritmetica(6, 'sin avanzar', 'suma = *p + *(p + 1) + *(p + 2);', ['AVANCE_FALTA']),
+  aritmetica(6, 'una sola vuelta', 'suma = suma + *p;\np++;', ['RESULTADO_VALOR_DISTINTO']),
+  aritmetica(6, 'sin sumar el valor', 'for (i = 0; i < 3; i++) {\n  suma = suma + 1;\n  p++;\n}', ['RESULTADO_VALOR_DISTINTO']),
 ];
