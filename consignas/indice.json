@@ -98,13 +98,16 @@
     {
       "id": "punteros",
       "agrupar": true,
-      "oculto": true,
       "titulo": "Punteros",
       "descripcion": "Direcciones, punteros y parámetros por referencia.",
       "series": [
         "punteros-direcciones.json",
         "punteros-variables.json",
         "punteros-referencia.json",
+        "punteros-acceso.json",
+        "punteros-arreglos.json"
+      ],
+      "ocultas": [
         "punteros-acceso.json",
         "punteros-arreglos.json"
       ]
