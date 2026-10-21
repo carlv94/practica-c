@@ -13,6 +13,7 @@ const serie = (id) => (paso, nombre, respuesta, espera = 'ok', extra = {}) => ({
 const direcciones = serie('punteros-direcciones');
 const variables = serie('punteros-variables');
 const referencia = serie('punteros-referencia');
+const acceso = serie('punteros-acceso');
 
 const FUNCION = (encabezado, cuerpo) => `${encabezado} {\n${cuerpo}\n}`;
 
@@ -241,4 +242,56 @@ export const CASOS_DE_PUNTEROS = [
   referencia(11, 'siete', '2'),
   referencia(11, 'seis', '0', ['OPCION_FALTA_LA_DEVUELTA']),
   referencia(11, 'ocho', '1', ['OPCION_TODAS_CAMBIAN']),
+
+  // ===== Dar el menor acceso =====
+  // ---- 1: quien puede cambiar la variable ----
+  acceso(1, 'solo sumar', '1'),
+  acceso(1, 'las dos', '0', ['OPCION_LAS_DOS']),
+  acceso(1, 'ninguna', '2', ['OPCION_NINGUNA']),
+  // ---- 2: recibir un puntero no es cambiar el valor ----
+  acceso(2, 'duplicar', '2'),
+  acceso(2, 'mostrar', '0', ['OPCION_MUESTRA']),
+  acceso(2, 'las dos', '1', ['OPCION_LAS_DOS']),
+  // ---- 3: el costo de pedir de mas ----
+  acceso(3, 'con una constante', '1'),
+  acceso(3, 'con una variable', '0', ['OPCION_COMPILA_VARIABLE']),
+  acceso(3, 'con una posicion', '2', ['OPCION_COMPILA_POSICION']),
+  // ---- 4: recibir el numero por valor ----
+  acceso(4, 'por valor', FUNCION('void mostrar(int n)', '  printf("%d", n);'), 'ok', { mejoras: [] }),
+  acceso(4, 'con otro nombre del parametro', FUNCION('void mostrar(int numero)', '  printf("%d", numero);')),
+  acceso(4, 'con puntero', FUNCION('void mostrar(int *n)', '  printf("%d", *n);'), ['PARAMETRO_ASTERISCO_DE_MAS'], {
+    dice: ['cambie el valor de la variable de afuera'],
+  }),
+  acceso(4, 'otro nombre de funcion', FUNCION('void imprimir(int n)', '  printf("%d", n);'), ['FUNCION_NOMBRE']),
+  acceso(4, 'muestra otra cosa', FUNCION('void mostrar(int n)', '  printf("%d", n + 1);'), ['MUESTRA_DISTINTA']),
+  // ---- 5: llamarla con el valor ----
+  acceso(5, 'con el valor', 'mostrar(a);\nmostrar(b);', 'ok', { mejoras: [] }),
+  acceso(5, 'con el ampersand', 'mostrar(&a);\nmostrar(&b);', ['LLAMADA_CON_AMPERSAND']),
+  acceso(5, 'solo una', 'mostrar(a);', ['MUESTRA_DISTINTA']),
+  acceso(5, 'al reves', 'mostrar(b);\nmostrar(a);', ['MUESTRA_DISTINTA']),
+  // ---- 6, 7 y 8: que conviene ----
+  acceso(6, 'las globales no convienen', '1'),
+  acceso(6, 'la estructura conviene', '0', ['OPCION_ESTRUCTURA_SIRVE']),
+  acceso(6, 'la referencia conviene', '2', ['OPCION_REFERENCIA_SIRVE']),
+  acceso(7, 'la estructura', '2'),
+  acceso(7, 'las globales', '0', ['OPCION_GLOBALES']),
+  acceso(7, 'tres referencias', '1', ['OPCION_TRES_REFERENCIAS']),
+  acceso(8, 'return', '0'),
+  acceso(8, 'una global', '1', ['OPCION_GLOBAL']),
+  acceso(8, 'una referencia', '2', ['OPCION_REFERENCIA']),
+  // ---- 9: elegir como recibir los numeros ----
+  acceso(9, 'por valor', FUNCION('void sumar(int a, int b)', '  printf("%d", a + b);'), 'ok', { mejoras: [] }),
+  acceso(9, 'las dos por referencia sin cambiarlas', FUNCION('void sumar(int *a, int *b)', '  printf("%d", *a + *b);'), 'ok', {
+    mejoras: ['REFERENCIA_INNECESARIA'],
+    dice: ['recibe por referencia a `a` y `b`'],
+  }),
+  acceso(9, 'una por referencia sin cambiarla', FUNCION('void sumar(int *a, int b)', '  printf("%d", *a + b);'), 'ok', {
+    mejoras: ['REFERENCIA_INNECESARIA'],
+  }),
+  acceso(9, 'una por referencia que cambia', FUNCION('void sumar(int *a, int b)', '  *a = *a + b;\n  printf("%d", *a);'), 'ok', {
+    mejoras: [],
+  }),
+  acceso(9, 'suma mal', FUNCION('void sumar(int a, int b)', '  printf("%d", a - b);'), ['MUESTRA_DISTINTA']),
+  acceso(9, 'devuelve en vez de mostrar', FUNCION('int sumar(int a, int b)', '  return a + b;'), ['DEVUELVE_EN_VEZ_DE_MOSTRAR'], { dice: ['muestre el resultado con `printf`'] }),
+  acceso(9, 'con un solo parametro', FUNCION('void sumar(int a)', '  printf("%d", a);'), ['PARAMETROS_CANTIDAD']),
 ];

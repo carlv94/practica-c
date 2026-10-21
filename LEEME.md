@@ -1344,6 +1344,23 @@ variable" (`punteros-direcciones`, solo cuestionarios) y "Variables puntero"
   Los mensajes de los parámetros por referencia nombran al puntero. Un parámetro declarado
   con `*` sigue con sus mensajes de siempre (`PARAMETRO_SIN_ASTERISCO_AL_USARLO`).
 
+La serie 3 (`punteros-referencia`) y la 4 (`punteros-acceso`, "Dar el menor
+acceso") completan por ahora el grupo.
+
+- **Figura `escalera`**: `"dibujo": { "titulo": "...", "escalera": true }`. Tres
+  escalones fijos (una copia, esa variable, todas las variables), de menos a más
+  acceso. Sin resaltado: en los cuestionarios no puede marcar la respuesta.
+- **Parámetro "libre"**: en la regla `funcion`, `"referencia": "libre"` deja que
+  el alumno elija entre recibir el dato por valor o por referencia (con un
+  arreglo sigue siendo error).
+- **Mejora `REFERENCIA_INNECESARIA`**: en `ejecuta`, `"referenciaInnecesaria":
+  true`. Si algún parámetro por referencia nunca cambia de valor en los casos, la
+  respuesta es correcta pero se avisa que alcanza con recibirlo por valor.
+- **Llamadas de prueba con números**: en `llama`, un número donde la función
+  recibe un puntero (`$S(3, 4)` con `int *a, int b`) se guarda en una variable
+  y se pasa su dirección, así que el mismo caso sirve para una función por valor
+  o por referencia.
+
 ### Consignas de opciones
 
 En un enunciado, lo que va entre acentos graves (`nombre`, `"Maria"`, `1`) se

@@ -1,0 +1,285 @@
+{
+  "id": "punteros-acceso",
+  "titulo": "Dar el menor acceso",
+  "continua": false,
+  "dentroDeMain": true,
+  "descripcion": "Elegir cuánto acceso se le da a una función: una copia del valor, una variable en particular o todas las variables. Conviene el escalón más bajo que resuelva el problema.",
+  "cabecera": "#include <stdio.h>",
+  "consignas": [
+    {
+      "id": "acceso-q-escalera",
+      "titulo": "Quién puede cambiar la variable",
+      "archivo": "void mostrar(int total) {\n  printf(\"%d \", total);\n}\n\nvoid sumar(int *total, int n) {\n  *total = *total + n;\n}",
+      "enunciado": "Una función puede tener acceso a las variables de tres maneras, de menos a más: una copia del valor, una variable en particular o todas las variables. La regla es dar el escalón más bajo que resuelva el problema. En este programa, ¿qué funciones pueden cambiar el valor de `total`?",
+      "codigo": "int total = 10;\n\nmostrar(total);\nsumar(&total, 5);",
+      "dibujo": {
+        "titulo": "Los escalones de acceso:",
+        "escalera": true
+      },
+      "opciones": [
+        {
+          "texto": "`mostrar` y `sumar`",
+          "codigo": "OPCION_LAS_DOS",
+          "explicacion": "`mostrar` recibe una copia del valor de `total`: la puede usar, pero lo que haga con la copia no afecta a `total`."
+        },
+        {
+          "texto": "Solo `sumar`",
+          "correcta": true,
+          "explicacion": "`sumar` recibe la dirección de `total`, y con ella puede cambiar su valor. Es un permiso explícito: solo pueden cambiar `total` las funciones a las que se les pasa `&total`, y el `&` en la llamada avisa a quien lee que esa función puede hacerlo."
+        },
+        {
+          "texto": "Ninguna de las dos",
+          "codigo": "OPCION_NINGUNA",
+          "explicacion": "`sumar` recibe la dirección de `total`, y con ella llega a la variable misma. Cambiar su valor es justo lo que hace con `*total = *total + n;`."
+        }
+      ]
+    },
+    {
+      "id": "acceso-q-modifica",
+      "titulo": "Recibir un puntero no es cambiar el valor",
+      "archivo": "void mostrar(int *n) {\n  printf(\"%d \", *n);\n}\n\nvoid duplicar(int *n) {\n  *n = *n * 2;\n}",
+      "enunciado": "Las dos funciones reciben un puntero a la variable `x`. ¿Cuál de las dos cambia el valor de `x`?",
+      "codigo": "int x = 5;\n\nmostrar(&x);\nduplicar(&x);",
+      "opciones": [
+        {
+          "texto": "`mostrar`",
+          "codigo": "OPCION_MUESTRA",
+          "explicacion": "`mostrar` solo lee `*n` para mostrarlo: no escribe nada en `x`."
+        },
+        {
+          "texto": "Las dos, porque las dos reciben un puntero",
+          "codigo": "OPCION_LAS_DOS",
+          "explicacion": "Recibir un puntero permite cambiar el valor de la variable, pero no obliga a hacerlo. Hay que mirar qué hace la función con el parámetro."
+        },
+        {
+          "texto": "`duplicar`",
+          "correcta": true,
+          "explicacion": "`duplicar` guarda en `*n` el doble de lo que valía, así que cambia el valor de `x`. Recibir un puntero da acceso a la variable, pero lo que decide si cambia o no es lo que la función hace con ese acceso."
+        }
+      ]
+    },
+    {
+      "id": "acceso-q-constante",
+      "titulo": "El costo de pedir de más",
+      "archivo": "void mostrar(int *n) {\n  printf(\"%d\", *n);\n}",
+      "enunciado": "`mostrar` solo muestra el valor que recibe, pero se declaró con un puntero. ¿Cuál de estas llamadas no compila?",
+      "codigo": "int x = 8;\nint notas[3] = {4, 6, 9};",
+      "opciones": [
+        {
+          "texto": "`mostrar(&x);`",
+          "codigo": "OPCION_COMPILA_VARIABLE",
+          "explicacion": "`x` es una variable y tiene dirección: esta llamada compila."
+        },
+        {
+          "texto": "`mostrar(&5);`",
+          "correcta": true,
+          "explicacion": "`&5` no compila: el `&` pide la dirección de una variable, y `5` es un valor que no está guardado en ninguna. Por pedir un puntero, `mostrar` obliga a tener una variable solo para mostrar algo; recibiendo el número por valor se podría escribir `mostrar(5)`."
+        },
+        {
+          "texto": "`mostrar(&notas[0]);`",
+          "codigo": "OPCION_COMPILA_POSICION",
+          "explicacion": "`notas[0]` es una posición del arreglo, y como cualquier variable tiene dirección: esta llamada compila."
+        }
+      ]
+    },
+    {
+      "id": "acceso-por-valor",
+      "titulo": "Recibir el número por valor",
+      "en": "archivo",
+      "ejemplo": {
+        "texto": "Esta función solo muestra el valor que recibe, pero se declaró con un puntero:",
+        "codigo": "void mostrar(int *n) {\n  printf(\"%d\", *n);\n}"
+      },
+      "enunciado": "Escríbala de nuevo para que reciba el número por valor, que alcanza para mostrarlo. Con `7` muestra `7`. Se sigue llamando `mostrar`.",
+      "requiere": [
+        {
+          "funcion": {
+            "nombre": "mostrar",
+            "retorna": "void",
+            "parametros": [
+              {
+                "tipo": "entero"
+              }
+            ]
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "llama": "mostrar(7)",
+                "salida": "7",
+                "visible": true
+              },
+              {
+                "llama": "mostrar(-2)",
+                "salida": "-2"
+              },
+              {
+                "llama": "mostrar(0)",
+                "salida": "0"
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "void mostrar(int n) {\n  printf(\"%d\", n);\n}"
+    },
+    {
+      "id": "acceso-llamadas",
+      "titulo": "Llamarla con el valor",
+      "archivoDado": "void mostrar(int n) {\n  printf(\"%d \", n);\n}",
+      "dado": "int a = 3;\nint b = 8;",
+      "ejemplo": {
+        "texto": "Con la función que recibía un puntero, para mostrar `a` y `b` había que pasar la dirección de cada una:",
+        "codigo": "mostrar(&a);\nmostrar(&b);"
+      },
+      "enunciado": "Ahora `mostrar` recibe el número por valor. Muestre `a` y, después, `b`, llamándola con cada una.",
+      "salida": "3 8",
+      "requiere": [
+        {
+          "llamada": {
+            "funcion": "mostrar",
+            "argumentos": [
+              "*"
+            ]
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "salida": "3 8",
+                "visible": true
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "mostrar(a);\nmostrar(b);"
+    },
+    {
+      "id": "acceso-q-cociente",
+      "titulo": "Cociente y resto: qué no conviene",
+      "enunciado": "Se necesita una función que calcule el cociente y el resto de una división, y que `main` los use. Ya conoce tres maneras de hacerlo. ¿Cuál de ellas no conviene?",
+      "dibujo": {
+        "titulo": "Los escalones de acceso:",
+        "escalera": true
+      },
+      "opciones": [
+        {
+          "texto": "Que devuelva una estructura con los dos campos",
+          "codigo": "OPCION_ESTRUCTURA_SIRVE",
+          "explicacion": "Conviene: es una copia, y la función no tiene acceso a nada de afuera. Su costo es que hay que declarar un tipo nuevo para solo dos números."
+        },
+        {
+          "texto": "Que complete dos variables globales, `cociente` y `resto`",
+          "correcta": true,
+          "explicacion": "Es el escalón más alto: cualquier función podría cambiar `cociente` y `resto`, y hay opciones que resuelven lo mismo con menos acceso."
+        },
+        {
+          "texto": "Que reciba dos parámetros por referencia y deje ahí el resultado",
+          "codigo": "OPCION_REFERENCIA_SIRVE",
+          "explicacion": "Conviene: da acceso solo a esas dos variables, en esa llamada. Es más liviana que la estructura, porque no hace falta declarar un tipo nuevo."
+        }
+      ]
+    },
+    {
+      "id": "acceso-q-alumno",
+      "titulo": "Leer un alumno: qué conviene",
+      "enunciado": "Se necesita una función que lea con `scanf` el legajo, la edad y el promedio de un alumno. ¿Cuál de estas maneras conviene más?",
+      "dibujo": {
+        "titulo": "Los escalones de acceso:",
+        "escalera": true
+      },
+      "opciones": [
+        {
+          "texto": "Que complete tres variables globales, una por cada dato",
+          "codigo": "OPCION_GLOBALES",
+          "explicacion": "Funciona, pero es el escalón más alto: cualquier función podría cambiar esos datos."
+        },
+        {
+          "texto": "Que reciba tres parámetros por referencia, uno por cada dato",
+          "codigo": "OPCION_TRES_REFERENCIAS",
+          "explicacion": "Funciona, y da acceso solo a esas tres variables. Pero la lista de parámetros es larga, y crece cada vez que se agrega un dato al alumno."
+        },
+        {
+          "texto": "Que devuelva una estructura `TAlumno` con los tres datos",
+          "correcta": true,
+          "explicacion": "Es una copia: la función no tiene acceso a nada de afuera. Y la estructura agrupa datos que van juntos, así que la función se escribe y se llama igual aunque después se agreguen datos al alumno."
+        }
+      ]
+    },
+    {
+      "id": "acceso-q-doble",
+      "titulo": "El doble de un número: qué conviene",
+      "enunciado": "Se necesita una función que calcule el doble de un número, y que `main` lo muestre. ¿Qué conviene?",
+      "dibujo": {
+        "titulo": "Los escalones de acceso:",
+        "escalera": true
+      },
+      "opciones": [
+        {
+          "texto": "Que devuelva el resultado con `return`",
+          "correcta": true,
+          "explicacion": "Es el escalón más bajo: la función no necesita acceso a nada de afuera, solo entrega un valor. Cuando la función da un único resultado, `return` es lo que conviene."
+        },
+        {
+          "texto": "Que complete una variable global `resultado`",
+          "codigo": "OPCION_GLOBAL",
+          "explicacion": "Funciona, pero da acceso de más: cualquier función podría cambiar `resultado`."
+        },
+        {
+          "texto": "Que reciba un parámetro por referencia y deje ahí el resultado",
+          "codigo": "OPCION_REFERENCIA",
+          "explicacion": "Funciona, pero obliga a tener una variable de afuera solo para recibir el resultado. Con `return` no hace falta."
+        }
+      ]
+    },
+    {
+      "id": "acceso-elegir",
+      "titulo": "Elegir cómo recibir los números",
+      "en": "archivo",
+      "enunciado": "Escriba una función que reciba dos números enteros y muestre su suma: con `3` y `4` muestra `7`. Usted decide cómo recibir los números, según lo que vio en esta serie. Póngale el nombre que quiera.",
+      "requiere": [
+        {
+          "funcion": {
+            "retorna": "void",
+            "parametros": [
+              {
+                "tipo": "entero",
+                "referencia": "libre"
+              },
+              {
+                "tipo": "entero",
+                "referencia": "libre"
+              }
+            ],
+            "capturar": "S"
+          }
+        },
+        {
+          "ejecuta": {
+            "referenciaInnecesaria": true,
+            "casos": [
+              {
+                "llama": "$S(3, 4)",
+                "salida": "7",
+                "visible": true
+              },
+              {
+                "llama": "$S(10, -2)",
+                "salida": "8"
+              },
+              {
+                "llama": "$S(0, 0)",
+                "salida": "0"
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "void mostrarSuma(int a, int b) {\n  printf(\"%d\", a + b);\n}"
+    }
+  ]
+}
