@@ -435,6 +435,7 @@ export function corregir(
     if (regla.variable) return reglaVariable(regla.variable, modelo);
     if (regla.puntero) return reglaPuntero(regla.puntero, modelo);
     if (regla.usaContenido) return reglaUsaContenido(regla.usaContenido, modelo);
+    if (regla.avanza) return reglaAvanza(regla.avanza, modelo);
     if (regla.alias) return reglaAlias(regla.alias, modelo);
     if (regla.llamada) return reglaLlamada(regla.llamada, modelo);
     if (regla.elementos) return reglaElementos(regla.elementos, modelo);
@@ -1319,7 +1320,25 @@ export function corregir(
     if (modelo.contenidos.some((c) => c.nuevo && c.nombre === nombre)) return;
     error(
       'CONTENIDO_FALTA',
-      `La consigna pide ${regla.para} usando el puntero ${BT}${nombre}${BT}, y el código no lo usa: para llegar a la variable a la que apunta se escribe ${BT}*${nombre}${BT}.`
+      `La consigna pide ${regla.para} con el puntero ${BT}${nombre}${BT}: hay que llegar a la variable con ${BT}*${BT}, como en ${BT}*${nombre}${BT}, y el código no lo hace.`
+    );
+  }
+
+  // Un puntero que avanza de un elemento al siguiente: p++, p--, p += 1.
+  //   { "avanza": { "de": "p", "para": "recorrer el arreglo" } }
+  // Con "de": "*", cualquier puntero (una variable o un parametro con *).
+  function reglaAvanza(regla, modelo) {
+    if (diagnosticos.some((d) => d.nivel === 'error')) return;
+    const esPuntero = (nombre) => {
+      if (modelo.variables.some((v) => v.nombre === nombre && v.punteros)) return true;
+      return modelo.funciones.some((f) => !f.prototipo && f.parametros.some((p) => p.nombre === nombre && p.punteros));
+    };
+    const nombre = regla.de === '*' ? null : valorDe(regla.de);
+    const avanzan = modelo.avances.filter((a) => a.nuevo && (nombre ? a.nombre === nombre : esPuntero(a.nombre)));
+    if (avanzan.length) return;
+    error(
+      'AVANCE_FALTA',
+      `La consigna pide ${regla.para} con un puntero que avance de un elemento al siguiente: ${nombre ? `${BT}${nombre}${BT}` : 'el puntero'} se corre con ${BT}++${BT} (o ${BT}+= 1${BT}), y el código no lo hace.`
     );
   }
 

@@ -668,9 +668,9 @@ function dibujarMemoria(caja, celdas) {
     'La memoria. ' +
       celdas
         .map((c) => {
-          const decl = `${c.tipo}${c.puntero ? ' *' : ' '}${c.nombre}`;
+          const decl = c.elemento ? c.nombre : `${c.tipo}${c.puntero ? ' *' : ' '}${c.nombre}`;
           return `${decl} en la dirección ${c.direccion}, ` +
-            (c.apunta ? `guarda ${c.valor} y apunta a ${c.apunta}` : c.valor == null ? 'sin valor' : `vale ${c.valor}`);
+            (c.apunta ? `guarda ${c.valor} y apunta a ${c.destino}` : c.valor == null ? 'sin valor' : `vale ${c.valor}`);
         })
         .join('. ')
   );
@@ -682,7 +682,7 @@ function dibujarMemoria(caja, celdas) {
     celda.append(
       elemento('span', 'direccion', c.direccion),
       elemento('span', 'valor' + (c.valor == null ? ' vacio' : '') + (c.apunta ? ' puntero' : ''), texto(c.valor)),
-      elemento('span', 'nombre-de-celda', `${c.tipo}${c.puntero ? ' *' : ' '}${c.nombre}`)
+      elemento('span', 'nombre-de-celda', c.elemento ? c.nombre : `${c.tipo}${c.puntero ? ' *' : ' '}${c.nombre}`)
     );
     casilleros.set(c.nombre, celda);
     fila.appendChild(celda);
@@ -711,7 +711,7 @@ function dibujarMemoria(caja, celdas) {
     svg.appendChild(punta);
     flechas.forEach((c, k) => {
       const desde = casilleros.get(c.nombre).querySelector('.valor').getBoundingClientRect();
-      const hasta = casilleros.get(c.apunta).querySelector('.valor').getBoundingClientRect();
+      const hasta = casilleros.get(c.destino).querySelector('.valor').getBoundingClientRect();
       const x1 = desde.left + desde.width / 2 - origen.left;
       const x2 = hasta.left + hasta.width / 2 - origen.left;
       const profundidad = 10 + 10 * k + (Math.abs(x1 - x2) > 0 ? 6 : 0);

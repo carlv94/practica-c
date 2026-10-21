@@ -26,7 +26,8 @@
 //   comparacion: { operador, izquierda, derecha, enIf, nuevo, fila }  a == b, a != b
 //   campoUsado: { variable, campo, nuevo, fila }       alumno.legajo, alumnos[i].legajo (variable: "alumnos[i]")
 //   sizeof:     { argumento, nuevo, fila }
-//   contenido:  { nombre, nuevo, fila }                 *p (lo que hay en la direccion que guarda p)
+//   contenido:  { nombre, nuevo, fila }                 *p, *(p + 2): los nombres que estan despues del *
+//   avance:     { nombre, nuevo, fila }                 p++, p--, p += 1, p -= 1
 // Un argumento (o un lado de una asignacion) es:
 //   { clase: 'nombre', nombre }               cadena1
 //   { clase: 'cadena', contenido }            "cadena1"
@@ -200,6 +201,7 @@ export function construirModelo(arbol, desde) {
     comparaciones: [],
     sizeofs: [],
     contenidos: [],
+    avances: [],
   };
 
   // Un argumento, o un lado de una asignacion.
@@ -529,6 +531,9 @@ export function construirModelo(arbol, desde) {
       case 'assignment_expression': {
         const izquierda = n.childForFieldName('left');
         const derecha = n.childForFieldName('right');
+        if (izquierda && izquierda.type === 'identifier' && /^[+-]=$/.test(n.childForFieldName('operator')?.text || '')) {
+          modelo.avances.push({ nombre: izquierda.text, nuevo: n.startIndex >= desde, fila: n.startPosition.row });
+        }
         if (izquierda && derecha) {
           modelo.asignaciones.push({
             izquierda: leerValor(izquierda),
@@ -576,10 +581,26 @@ export function construirModelo(arbol, desde) {
         break;
       }
       case 'pointer_expression': {
-        // *p (y no &p): el nombre del puntero.
+        // *p, *(p + 2) (y no &p): los nombres de la direccion a la que se llega.
         const de = n.childForFieldName('argument');
-        if (n.text.startsWith('*') && de && de.type === 'identifier') {
-          modelo.contenidos.push({ nombre: de.text, nuevo: n.startIndex >= desde, fila: n.startPosition.row });
+        if (n.text.startsWith('*') && de) {
+          const nombres = [];
+          const juntar = (x) => {
+            if (x.type === 'identifier') nombres.push(x.text);
+            else for (const h of x.namedChildren) juntar(h);
+          };
+          juntar(de);
+          for (const nombre of nombres) {
+            modelo.contenidos.push({ nombre, nuevo: n.startIndex >= desde, fila: n.startPosition.row });
+          }
+        }
+        break;
+      }
+      case 'update_expression': {
+        // p++, p--, ++p
+        const de = n.childForFieldName('argument');
+        if (de && de.type === 'identifier') {
+          modelo.avances.push({ nombre: de.text, nuevo: n.startIndex >= desde, fila: n.startPosition.row });
         }
         break;
       }

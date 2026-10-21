@@ -112,9 +112,19 @@ export function enunciadoEnDos(consigna) {
 // ocupa cada tipo (int y float 4, char 1, double 8, un puntero 8). Un puntero
 // que "apunta" a una variable guarda su direccion y lleva una flecha hacia ella;
 // sin "apunta" guarda lo que diga "valor" (null: todavia sin nada, "?").
+// Un arreglo es una celda con "arreglo": { "nombre": "v", "arreglo": [10, 20, 30] }
+// se dibuja como una celda por elemento (v[0], v[1], v[2]), seguidas. Un puntero
+// puede apuntar a un elemento ("apunta": "v[1]") o, con el nombre del arreglo
+// ("apunta": "v"), al primero.
 const BYTES_DE_MEMORIA = { int: 4, float: 4, char: 1, short: 2, double: 8, long: 8, puntero: 8 };
 
-export function celdasDeMemoria(lista, desde = 1000) {
+export function celdasDeMemoria(entrada, desde = 1000) {
+  // Un arreglo pasa a una celda por elemento.
+  const lista = entrada.flatMap((c) =>
+    c.arreglo
+      ? c.arreglo.map((valor, i) => ({ nombre: `${c.nombre}[${i}]`, valor, tipo: c.tipo || 'int', elemento: true }))
+      : [c]
+  );
   let siguiente = desde;
   const celdas = lista.map((c) => {
     const direccion = c.direccion ?? siguiente;
@@ -123,9 +133,10 @@ export function celdasDeMemoria(lista, desde = 1000) {
   });
   for (const c of celdas) {
     if (!c.apunta) continue;
-    const destino = celdas.find((x) => x.nombre === c.apunta);
+    const destino = celdas.find((x) => x.nombre === c.apunta) || celdas.find((x) => x.nombre === `${c.apunta}[0]`);
     if (!destino) throw new Error(`La memoria dibujada: ${c.nombre} apunta a ${c.apunta}, que no esta.`);
     c.valor = destino.direccion;
+    c.destino = destino.nombre;
   }
   return celdas;
 }
