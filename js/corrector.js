@@ -1320,9 +1320,12 @@ export function corregir(
     // Si el codigo ya tiene un error, ese es el que importa.
     if (diagnosticos.some((d) => d.nivel === 'error')) return;
     if (modelo.contenidos.some((c) => c.nuevo && c.nombre === nombre)) return;
+    const esArreglo = modelo.variables.some((v) => v.nombre === nombre && v.arreglo && v.arreglo.length);
     error(
       'CONTENIDO_FALTA',
-      `La consigna pide ${regla.para} con el puntero ${BT}${nombre}${BT}: hay que llegar a la variable con ${BT}*${BT}, como en ${BT}*${nombre}${BT}, y el código no lo hace.`
+      esArreglo
+        ? `La consigna pide ${regla.para} con ${BT}${nombre}${BT} sin usar corchetes: hay que llegar a la variable con ${BT}*${BT}, como en ${BT}*(${nombre} + 1)${BT}, y el código no lo hace.`
+        : `La consigna pide ${regla.para} con el puntero ${BT}${nombre}${BT}: hay que llegar a la variable con ${BT}*${BT}, como en ${BT}*${nombre}${BT}, y el código no lo hace.`
     );
   }
 
