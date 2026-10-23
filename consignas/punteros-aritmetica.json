@@ -67,7 +67,7 @@
       },
       "opciones": [
         {
-          "texto": "El arreglo `v` entero",
+          "texto": "El arreglo `v` completo",
           "codigo": "OPCION_EL_ARREGLO",
           "explicacion": "`p` guarda la dirección de un solo elemento, el primero, así que `*p` es ese elemento y no todo el arreglo."
         },
@@ -125,10 +125,10 @@
       ]
     },
     {
-      "id": "aritmetica-tercero",
-      "titulo": "Llegar a un elemento sumando",
-      "dado": "int v[3] = {10, 20, 30};\nint *p;\n\np = v;",
-      "enunciado": "El puntero `p` apunta al primer elemento de `v`. Muestre con `printf` el tercer elemento, sin usar corchetes: sumándole a `p` la cantidad de elementos que hay que avanzar y llegando a esa posición con `*`.",
+      "id": "aritmetica-q-contenido",
+      "titulo": "Llegar al elemento siguiente",
+      "enunciado": "Si `p + 1` es la dirección del segundo elemento, ¿qué es `*(p + 1)`?",
+      "codigo": "int v[3] = {10, 20, 30};\nint *p;\n\np = v;",
       "dibujo": {
         "titulo": "La memoria:",
         "memoria": [
@@ -147,41 +147,28 @@
           }
         ]
       },
-      "salida": "30",
-      "requiere": [
+      "opciones": [
         {
-          "ejecuta": {
-            "casos": [
-              {
-                "salida": "30",
-                "visible": true
-              },
-              {
-                "datos": {
-                  "v": [
-                    4,
-                    5,
-                    6
-                  ]
-                },
-                "salida": "6"
-              }
-            ]
-          }
+          "texto": "`1004`, la dirección del segundo elemento",
+          "codigo": "OPCION_ES_LA_DIRECCION",
+          "explicacion": "`1004` es lo que vale `p + 1`. Con el `*` se llega al elemento que está en esa dirección."
         },
         {
-          "usaContenido": {
-            "de": "p",
-            "para": "mostrar el tercer elemento"
-          }
+          "texto": "`v[1]`, que vale `20`",
+          "correcta": true,
+          "explicacion": "`*(p + 1)` es el elemento al que apunta `p + 1`, el segundo: `v[1]`."
+        },
+        {
+          "texto": "`11`, el valor del primer elemento más uno",
+          "codigo": "OPCION_SUMA_AL_VALOR",
+          "explicacion": "Eso sería `*p + 1`. En `*(p + 1)` los paréntesis hacen que el `1` se sume al puntero, antes de llegar al elemento."
         }
-      ],
-      "referencia": "printf(\"%d\", *(p + 2));"
+      ]
     },
     {
       "id": "aritmetica-q-equivale",
-      "titulo": "v[2] y *(v + 2)",
-      "enunciado": "En C, `v[2]` es otra forma de escribir `*(v + 2)`: se le suma `2` a la dirección de `v` y se llega al elemento con `*`. Con el arreglo del dibujo, ¿cuál de estas expresiones vale lo mismo que `v[2]`?",
+      "titulo": "Otra forma de escribir `v[2]`",
+      "enunciado": "Sabiendo que `v` es la dirección del primer elemento del arreglo del dibujo, ¿cuál de estas expresiones vale lo mismo que `v[2]`?",
       "codigo": "int v[3] = {10, 20, 30};",
       "dibujo": {
         "titulo": "La memoria:",
@@ -210,7 +197,146 @@
         {
           "texto": "`*(v + 2)`",
           "correcta": true,
-          "explicacion": "Los paréntesis hacen que el `2` se sume a la dirección, antes de llegar al elemento: `*(v + 2)` es `v[2]`, que vale `30`."
+          "explicacion": "En C, `v[2]` es otra forma de escribir `*(v + 2)`: los paréntesis hacen que el `2` se sume a la dirección, antes de llegar al elemento con `*`. Vale `30`."
+        }
+      ]
+    },
+    {
+      "id": "aritmetica-cuarto",
+      "titulo": "Llegar a un elemento sumando",
+      "dado": "int v[4] = {10, 20, 30, 40};",
+      "enunciado": "Muestre con `printf` el cuarto elemento de `v`, sin usar corchetes: sumándole a `v` la cantidad de elementos que hay que avanzar y llegando a esa posición con `*`.",
+      "dibujo": {
+        "titulo": "La memoria:",
+        "memoria": [
+          {
+            "nombre": "v",
+            "arreglo": [
+              10,
+              20,
+              30,
+              40
+            ]
+          }
+        ]
+      },
+      "salida": "40",
+      "requiere": [
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "salida": "40",
+                "visible": true
+              },
+              {
+                "datos": {
+                  "v": [
+                    4,
+                    5,
+                    6,
+                    7
+                  ]
+                },
+                "salida": "7"
+              }
+            ]
+          }
+        },
+        {
+          "usaContenido": {
+            "de": "v",
+            "para": "mostrar el cuarto elemento"
+          }
+        }
+      ],
+      "referencia": "printf(\"%d\", *(v + 3));"
+    },
+    {
+      "id": "aritmetica-indice",
+      "titulo": "Recorrer sumando el índice",
+      "dado": "int v[3] = {10, 20, 30};\nint suma = 0;\nint i;",
+      "enunciado": "Sume los elementos de `v` en `suma`, sin usar corchetes: en cada vuelta se suma el elemento que está `i` posiciones después del comienzo de `v`, al que se llega con `*(v + i)`.",
+      "dibujo": {
+        "titulo": "La memoria:",
+        "memoria": [
+          {
+            "nombre": "v",
+            "arreglo": [
+              10,
+              20,
+              30
+            ]
+          }
+        ]
+      },
+      "requiere": [
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "queda": {
+                  "suma": 60
+                },
+                "visible": true
+              },
+              {
+                "datos": {
+                  "v": [
+                    5,
+                    5,
+                    5
+                  ]
+                },
+                "queda": {
+                  "suma": 15
+                }
+              }
+            ]
+          }
+        },
+        {
+          "usaContenido": {
+            "de": "v",
+            "para": "sumar los elementos"
+          }
+        }
+      ],
+      "referencia": "for (i = 0; i < 3; i++) {\n  suma = suma + *(v + i);\n}"
+    },
+    {
+      "id": "aritmetica-q-incrementar",
+      "titulo": "Sumarle uno al nombre del arreglo",
+      "enunciado": "`v` es el nombre de un arreglo. ¿Qué pasa con `v++`?",
+      "codigo": "int v[3] = {10, 20, 30};\n\nv++;",
+      "dibujo": {
+        "titulo": "La memoria:",
+        "memoria": [
+          {
+            "nombre": "v",
+            "arreglo": [
+              10,
+              20,
+              30
+            ]
+          }
+        ]
+      },
+      "opciones": [
+        {
+          "texto": "`v` pasa a apuntar al segundo elemento",
+          "codigo": "OPCION_V_AVANZA",
+          "explicacion": "`v` es el nombre del arreglo y, escrito solo, vale la dirección donde comienza. Esa dirección es fija: el arreglo no cambia de lugar en la memoria, así que `v` no se puede modificar."
+        },
+        {
+          "texto": "No compila",
+          "correcta": true,
+          "explicacion": "El nombre de un arreglo es una dirección fija: el arreglo no cambia de lugar en la memoria, así que `v` no se puede modificar. En cambio, un puntero que apunte al inicio del arreglo sí puede modificar la dirección a la que apunta. El texto del error cambia según el compilador, pero todos lo rechazan."
+        },
+        {
+          "texto": "El primer elemento pasa a valer `11`",
+          "codigo": "OPCION_SUMA_AL_ELEMENTO",
+          "explicacion": "Eso es lo que haría `v[0]++`, que le suma uno al primer elemento. `v++` no toca los elementos: se aplica a `v`, o sea, a la dirección donde comienza el arreglo."
         }
       ]
     },
@@ -218,7 +344,7 @@
       "id": "aritmetica-recorrer",
       "titulo": "Recorrer con un puntero que avanza",
       "dado": "int v[3] = {10, 20, 30};\nint *p;\nint suma = 0;\nint i;\n\np = v;",
-      "enunciado": "Sume los elementos de `v` en `suma`, usando el puntero `p`: en cada vuelta se suma el elemento al que apunta `p` y se avanza con `p++` al siguiente.",
+      "enunciado": "Recorra el arreglo y sume sus elementos en `suma`, pero sin elegir cada elemento con un índice, como `v[i]` o `*(v + i)`: avance, en cambio, incrementando la dirección. Como `v` no se puede modificar, use `p`, que está declarado como un puntero a entero y apunta a `v`. En cada vuelta debe sumar el elemento al que apunta `p` y después avanzar al siguiente con `p++`.",
       "requiere": [
         {
           "ejecuta": {
@@ -257,7 +383,25 @@
           }
         }
       ],
-      "referencia": "for (i = 0; i < 3; i++) {\n  suma = suma + *p;\n  p++;\n}"
+      "referencia": "for (i = 0; i < 3; i++) {\n  suma = suma + *p;\n  p++;\n}",
+      "dibujo": {
+        "titulo": "La memoria:",
+        "memoria": [
+          {
+            "nombre": "v",
+            "arreglo": [
+              10,
+              20,
+              30
+            ]
+          },
+          {
+            "nombre": "p",
+            "puntero": true,
+            "apunta": "v"
+          }
+        ]
+      }
     }
   ]
 }
