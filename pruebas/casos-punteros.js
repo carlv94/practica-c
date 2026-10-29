@@ -380,9 +380,9 @@ export const CASOS_DE_PUNTEROS = [
     dice: ['deje el resultado en el arreglo que recibe'],
   }),
   // ---- 5: el tamano de un arreglo recibido ----
-  arreglos(5, 'ocho', '1'),
-  arreglos(5, 'cuarenta', '0', ['OPCION_TAMANO_DEL_ARREGLO']),
-  arreglos(5, 'diez', '2', ['OPCION_CANTIDAD']),
+  arreglos(5, 'cuarenta y ocho', '1'),
+  arreglos(5, 'cuarenta y cuarenta', '0', ['OPCION_TAMANO_DEL_ARREGLO']),
+  arreglos(5, 'siempre ocho', '2', ['OPCION_SIEMPRE_OCHO']),
   // ---- 6: contar las letras de una cadena ----
   arreglos(
     6,
