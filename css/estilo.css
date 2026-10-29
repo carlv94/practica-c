@@ -225,6 +225,11 @@ label {
   text-decoration: underline;
 }
 
+/* Repasando una consigna: el aviso lleva el boton para volver. */
+#aviso-repaso button {
+  margin-left: 8px;
+}
+
 /* Solo se ve en el modo docente. */
 .modo-docente {
   margin: 0;
@@ -805,6 +810,34 @@ button[hidden] {
 .opcion:has(input:checked) {
   border-color: var(--acento);
   box-shadow: 0 0 0 1px var(--acento);
+}
+
+/* Una opcion probada: el mensaje queda debajo de ella. */
+.opcion.incorrecta,
+.opcion.incorrecta:has(input:checked) {
+  border-color: var(--error);
+}
+
+.opcion.incorrecta:has(input:checked) {
+  box-shadow: 0 0 0 1px var(--error);
+}
+
+.opcion.correcta,
+.opcion.correcta:has(input:checked) {
+  border-color: var(--bien);
+  box-shadow: 0 0 0 1px var(--bien);
+}
+
+.opcion:has(input:disabled) {
+  cursor: default;
+}
+
+#opciones > .mensaje {
+  margin: -2px 0 10px 24px;
+}
+
+#opciones > .mensaje.bien {
+  font-weight: 400;
 }
 
 .opcion input {

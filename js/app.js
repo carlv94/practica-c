@@ -48,6 +48,10 @@ let grupos = []; // [{ id, titulo, descripcion, series }], en el orden del indic
 let serie = null; // la que esta abierta, o null en la lista
 let hechas = []; // [{ codigo, conAyuda }], una por consigna resuelta
 let avance = inicio(); // el codigo y las capturas que dejan las resueltas
+let antes = []; // el avance que habia antes de cada consigna resuelta: para repasarla
+let repasando = null; // el lugar de la consigna resuelta que se esta repasando, o null
+let borrador = ''; // lo que habia escrito en la consigna de la que salio para repasar
+let cajasDeOpcion = new Map(); // lugar de la opcion -> { etiqueta, caja } en una consigna de opciones
 let pendiente = null; // la respuesta correcta que espera el "Siguiente"
 let pidioSolucion = false;
 let informable = null; // lo ultimo que se comprobo: lo que se informa si el alumno dice que esta mal
@@ -154,6 +158,7 @@ function elemento(etiqueta, clase, texto) {
 // y las capturas que dejan.
 function recorrer(s) {
   const validas = [];
+  const previos = [];
   let hasta = inicio();
   for (const [i, hecha] of leer(claveAvance(s), []).entries()) {
     if (!s.consignas[i] || typeof hecha?.codigo !== 'string') break;
@@ -170,11 +175,13 @@ function recorrer(s) {
     // Los nombres con los que se le mostro la consigna: el resumen final los
     // necesita, y al final de la serie ya no son los mismos.
     const capturas = capturasPrevias(s, i, hasta);
+    const antesDeEsta = hasta;
     hasta = despuesDe(s, i, hasta, hecha.codigo, r);
     // Si quedo excelente se calcula de nuevo, igual que si sigue valiendo.
     validas.push({ ...hecha, excelente: !r.mejorable, capturas });
+    previos.push(antesDeEsta);
   }
-  return { hechas: validas, avance: hasta };
+  return { hechas: validas, avance: hasta, antes: previos };
 }
 
 // ---- consignas de opciones ----------------------------------------------------
@@ -222,6 +229,7 @@ function respuestaEscrita(consigna, hecha) {
 function dibujarOpciones(consigna, capturas) {
   const caja = $('opciones');
   caja.replaceChildren(elemento('legend', null, 'Elija una opción'));
+  cajasDeOpcion = new Map();
   for (const lugar of ordenDeOpciones(consigna)) {
     const etiqueta = elemento('label', 'opcion');
     const radio = document.createElement('input');
@@ -238,6 +246,28 @@ function dibujarOpciones(consigna, capturas) {
       etiqueta.append(radio, detalle);
     }
     caja.appendChild(etiqueta);
+    cajasDeOpcion.set(lugar, { etiqueta, caja: null });
+  }
+}
+
+// El mensaje de una opcion queda pegado a ella: asi se sabe de cual habla, no
+// se pierde al probar otra y se puede volver a leer despues de acertar.
+function mensajeDeOpcion(lugar, clase, texto, marca) {
+  const { etiqueta, caja: anterior } = cajasDeOpcion.get(lugar);
+  const caja = mensaje(clase, texto);
+  if (anterior) anterior.remove();
+  etiqueta.after(caja);
+  if (marca) etiqueta.classList.add(marca);
+  cajasDeOpcion.get(lugar).caja = caja;
+  return caja;
+}
+
+// Al acertar se explican tambien las que no probo.
+function explicarLasDemas(consigna, capturas, elegida) {
+  for (const [lugar, { caja }] of cajasDeOpcion) {
+    const texto = consigna.opciones[lugar].explicacion;
+    if (lugar === elegida || caja || !texto) continue;
+    mensajeDeOpcion(lugar, 'explicacion', sustituir(texto, capturas));
   }
 }
 
@@ -341,7 +371,9 @@ function mostrarLista(deGrupo) {
 
 function abrirSerie(s) {
   serie = s;
-  ({ hechas, avance } = recorrer(s));
+  ({ hechas, avance, antes } = recorrer(s));
+  repasando = null;
+  borrador = '';
   $('lista').hidden = true;
   $('vista-serie').hidden = false;
   $('volver').hidden = false;
@@ -354,33 +386,52 @@ function abrirSerie(s) {
 }
 
 function mostrarConsigna() {
-  const actual = hechas.length;
+  // Repasando, la consigna es una ya resuelta y se ve con lo que habia antes
+  // de ella; el avance guardado no cambia.
+  const actual = repasando ?? hechas.length;
+  const avanceVisto = avanceMostrado();
+  // Lo que habia escrito antes de salir a repasar, si vuelve a esa consigna.
+  const textoGuardado = repasando == null ? borrador : '';
+  if (repasando == null) borrador = '';
   const consigna = serie.consignas[actual];
   pendiente = null;
   pidioSolucion = false;
   $('aviso-salto').hidden = true;
+  $('aviso-repaso').hidden = repasando == null;
+  if (repasando != null) {
+    const donde = hechas.length >= serie.consignas.length ? 'al final de la serie' : `a la consigna ${hechas.length + 1}`;
+    $('texto-repaso').textContent = `Está repasando la consigna ${actual + 1}: su avance no cambia.`;
+    $('salir-repaso').textContent = `Volver ${donde}`;
+  }
 
   const nombre = `${serie.grupo.titulo} › ${serie.numero}. ${serie.titulo}`;
   document.title = `${nombre} · ${TITULO}`;
   $('titulo-serie').textContent = nombre;
   $('pasos').replaceChildren(
     ...serie.consignas.map((c, i) => {
-      const estrella = i < actual && pidePracticas(serie) && hechas[i].excelente ? ' ★' : '';
+      const estrella = i < hechas.length && pidePracticas(serie) && hechas[i].excelente ? ' ★' : '';
       const paso = elemento('li', null, `${i + 1}. ${c.titulo}${estrella}`);
       if (estrella) paso.title = 'Excelente';
-      if (i < actual) paso.className = 'hecho';
+      if (i < hechas.length) paso.className = 'hecho';
       if (i === actual) paso.className = 'actual';
-      // En el modo docente se puede saltar a cualquier consigna.
-      if (VE_LAS_OCULTAS && i !== actual) {
+      // Una consigna resuelta se puede repasar. Desde el repaso, la que sigue
+      // vuelve a donde estaba. En el modo docente se puede saltar a cualquiera.
+      let accion = null;
+      if (i === actual) accion = null;
+      else if (i < hechas.length) accion = () => repasar(i);
+      else if (repasando != null && i === hechas.length) accion = salirDelRepaso;
+      else if (VE_LAS_OCULTAS) accion = () => irA(i);
+      if (accion) {
         paso.classList.add('salto');
         paso.tabIndex = 0;
         paso.setAttribute('role', 'button');
-        paso.title = 'Ir a esta consigna';
-        paso.addEventListener('click', () => irA(i));
+        paso.title =
+          i < hechas.length ? 'Volver a resolver esta consigna' : accion === salirDelRepaso ? 'Volver a donde estaba' : 'Ir a esta consigna';
+        paso.addEventListener('click', accion);
         paso.addEventListener('keydown', (e) => {
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
-            irA(i);
+            accion();
           }
         });
       }
@@ -390,12 +441,12 @@ function mostrarConsigna() {
 
   const termino = !consigna;
   const esCuestionario = Boolean(consigna?.opciones);
-  const capturas = termino ? {} : capturasPrevias(serie, actual, avance);
+  const capturas = termino ? {} : capturasPrevias(serie, actual, avanceVisto);
   // Lo ya resuelto mas lo que esta consigna trae escrito.
   // En una consigna de opciones el codigo es un programa completo, de una sola
   // pieza: no hay un "codigo hasta aca" aparte.
-  const previo = termino || esCuestionario ? '' : codigoPrevio(serie, actual, avance);
-  const programa = !termino && esCuestionario ? programaDeOpciones(serie, actual, avance) : '';
+  const previo = termino || esCuestionario ? '' : codigoPrevio(serie, actual, avanceVisto);
+  const programa = !termino && esCuestionario ? programaDeOpciones(serie, actual, avanceVisto) : '';
   $('consigna').hidden = termino;
   $('bloque-contexto').hidden = !previo;
   $('bloque-respuesta').hidden = termino;
@@ -460,15 +511,18 @@ function mostrarConsigna() {
   ambito.hidden = !ambito.textContent;
   $('comprobar').hidden = false;
   $('siguiente').hidden = true;
+  $('usar-anterior').hidden = true;
   if (esCuestionario) {
     pintar($('codigo-consigna'), programa);
     dibujarOpciones(consigna, capturas);
     $('ver-solucion').hidden = true;
     return;
   }
-  editor.poner('');
+  editor.poner(textoGuardado);
   $('respuesta').readOnly = false;
   $('ver-solucion').hidden = false;
+  // Repasando, se puede traer lo que se habia respondido.
+  $('usar-anterior').hidden = repasando == null;
   $('respuesta').focus({ preventScroll: true });
 }
 
@@ -829,7 +883,8 @@ function dibujarResultado(caja, resultado) {
 }
 
 function comprobar() {
-  const consigna = serie?.consignas[hechas.length];
+  const indice = repasando ?? hechas.length;
+  const consigna = serie?.consignas[indice];
   const esCuestionario = Boolean(consigna?.opciones);
   if (!consigna || (!esCuestionario && $('respuesta').readOnly)) return;
   pendiente = null;
@@ -842,7 +897,7 @@ function comprobar() {
   const respuesta = esCuestionario ? elegida.value : $('respuesta').value;
   let r;
   try {
-    r = corregirPaso(analizador, serie, hechas.length, avance, respuesta);
+    r = corregirPaso(analizador, serie, indice, avanceMostrado(), respuesta);
   } catch (e) {
     // Es un error de como esta armada la consigna, no de la respuesta: no hay
     // nada que el alumno pueda corregir, pero tiene que enterarse de que no es
@@ -853,25 +908,38 @@ function comprobar() {
     ]);
     return;
   }
-  registrarIntento(consigna, r);
-  enviarIntento({
-    serie: serie.id,
-    consigna: consigna.id,
-    resultado: r.correcto ? (r.mejorable ? 'mejorable' : 'correcto') : 'incorrecto',
-    conAyuda: pidioSolucion,
-    codigos: codigosDe(r),
-  });
+  // Un repaso no cuenta como intento: la serie ya estaba resuelta.
+  if (repasando == null) {
+    registrarIntento(consigna, r);
+    enviarIntento({
+      serie: serie.id,
+      consigna: consigna.id,
+      resultado: r.correcto ? (r.mejorable ? 'mejorable' : 'correcto') : 'incorrecto',
+      conAyuda: pidioSolucion,
+      codigos: codigosDe(r),
+    });
+  }
   ofrecerInforme(consigna, esCuestionario, respuesta, r);
   if (!esCuestionario) editor.marcar(r.diagnosticos);
 
-  const cajas = r.diagnosticos.map((d) => mensaje(d.nivel, d.mensaje, d.linea, d.bloques));
+  // En un cuestionario el mensaje de la opcion va debajo de ella.
+  let cajas = r.diagnosticos.map((d) => mensaje(d.nivel, d.mensaje, d.linea, d.bloques));
+  let delaOpcion = null;
+  if (esCuestionario) {
+    const lugar = Number(respuesta);
+    const d = r.diagnosticos[0];
+    cajas = [];
+    if (d) delaOpcion = mensajeDeOpcion(lugar, r.correcto ? 'bien' : 'error', d.mensaje, r.correcto ? 'correcta' : 'incorrecta');
+    else cajasDeOpcion.get(lugar).etiqueta.classList.add('correcta');
+    if (r.correcto) explicarLasDemas(consigna, capturasPrevias(serie, indice, avanceMostrado()), lugar);
+  }
   $('siguiente').hidden = !r.correcto;
   if (r.correcto) {
     pendiente = {
       hecha: { codigo: respuesta.trim(), conAyuda: pidioSolucion, excelente: !r.mejorable },
       resultado: r,
     };
-    const ultima = hechas.length + 1 >= serie.consignas.length;
+    const ultima = repasando == null && hechas.length + 1 >= serie.consignas.length;
     // Con algo para mejorar, el boton que se destaca sigue siendo "Comprobar".
     $('siguiente').classList.toggle('principal', !r.mejorable);
     if (r.mejorable) {
@@ -888,28 +956,29 @@ function comprobar() {
             : 'Correcto, y se puede mejorar. Puede cambiarlo y comprobar de nuevo, o seguir así.'
         )
       );
-      $('siguiente').textContent = ultima ? 'Terminar así' : 'Seguir así';
+      $('siguiente').textContent = repasando != null ? 'Volver así' : ultima ? 'Terminar así' : 'Seguir así';
     } else {
       cajas.unshift(mensaje('bien', pidePracticas(serie) ? 'Excelente.' : 'Correcto.'));
       $('respuesta').readOnly = true;
       for (const radio of document.querySelectorAll('#opciones input')) radio.disabled = true;
       $('comprobar').hidden = true;
       // "Ver una solucion" queda: con la respuesta bien, es otra forma de resolver lo mismo.
-      $('siguiente').textContent = ultima ? 'Terminar' : 'Siguiente';
+      $('siguiente').textContent = repasando != null ? 'Volver' : ultima ? 'Terminar' : 'Siguiente';
       $('siguiente').focus({ preventScroll: true });
     }
   }
-  mostrarResultado(cajas);
+  mostrarResultado(cajas, delaOpcion);
 }
 
 // Los mensajes quedan debajo del editor, y con el codigo previo arriba suelen
 // caer fuera de la pantalla: sin esto, comprobar parece no hacer nada. Se
 // desplaza lo justo para que entren, sin llevarse el editor si no hace falta.
-function mostrarResultado(cajas) {
+// "destino" es el mensaje de una opcion, si lo que hay que ver esta ahi.
+function mostrarResultado(cajas, destino) {
   const resultado = $('resultado');
   resultado.replaceChildren(...cajas);
   const sinAnimar = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  resultado.scrollIntoView({ behavior: sinAnimar ? 'auto' : 'smooth', block: 'nearest' });
+  (cajas.length ? resultado : destino || resultado).scrollIntoView({ behavior: sinAnimar ? 'auto' : 'smooth', block: 'nearest' });
 }
 
 // Lo comprobado vale para el texto que se comprobo: si despues lo cambia, hay
@@ -948,8 +1017,9 @@ function mensajesComoTexto(r) {
 // el alumno cree justamente que no lo es.
 function ofrecerInforme(consigna, esCuestionario, respuesta, r) {
   if (!enviaEstadisticas()) return;
-  const indice = hechas.length;
-  const capturas = capturasPrevias(serie, indice, avance);
+  const indice = repasando ?? hechas.length;
+  const avanceVisto = avanceMostrado();
+  const capturas = capturasPrevias(serie, indice, avanceVisto);
   informable = {
     serie: serie.id,
     consigna: consigna.id,
@@ -960,7 +1030,7 @@ function ofrecerInforme(consigna, esCuestionario, respuesta, r) {
       MAX_RESPUESTA
     ),
     previo: recortar(
-      esCuestionario ? programaDeOpciones(serie, indice, avance) : codigoPrevio(serie, indice, avance),
+      esCuestionario ? programaDeOpciones(serie, indice, avanceVisto) : codigoPrevio(serie, indice, avanceVisto),
       MAX_PREVIO
     ),
   };
@@ -1042,10 +1112,37 @@ function irA(destino) {
   aviso.hidden = !aviso.textContent;
 }
 
+// El avance que corresponde a la consigna que se ve: el de ahora, o el que
+// habia antes de la que se repasa.
+function avanceMostrado() {
+  return repasando != null ? antes[repasando] : avance;
+}
+
+// Volver a resolver una consigna ya resuelta. No toca lo guardado: la respuesta
+// y la estrella quedan como estaban y se vuelve a donde se estaba.
+function repasar(lugar) {
+  if (lugar >= hechas.length) return;
+  if (repasando == null && !$('respuesta').readOnly) borrador = $('respuesta').value;
+  repasando = lugar;
+  mostrarConsigna();
+  window.scrollTo(0, 0);
+}
+
+function salirDelRepaso() {
+  repasando = null;
+  mostrarConsigna();
+  window.scrollTo(0, 0);
+}
+
 function siguiente() {
   if (!pendiente) return;
+  if (repasando != null) {
+    salirDelRepaso();
+    return;
+  }
   const { hecha, resultado } = pendiente;
   hecha.capturas = capturasPrevias(serie, hechas.length, avance);
+  antes[hechas.length] = avance;
   avance = despuesDe(serie, hechas.length, avance, hecha.codigo, resultado);
   hechas.push(hecha);
   guardar(claveAvance(serie), hechas);
@@ -1055,15 +1152,16 @@ function siguiente() {
 }
 
 function verSolucion() {
-  const consigna = serie?.consignas[hechas.length];
+  const indice = repasando ?? hechas.length;
+  const consigna = serie?.consignas[indice];
   if (!consigna || consigna.opciones) return;
   // La referencia nombra las cosas a su manera ("struct Puesto"): solo sirve
   // tal cual si el alumno viene siguiendo las referencias. Si no, se le
   // muestra como ejemplo y la adapta a sus nombres.
   pidioSolucion = true;
   // Con los nombres que el alumno uso antes, cuando la referencia los nombra.
-  const referencia = respuestaDeReferencia(consigna, capturasPrevias(serie, hechas.length, avance));
-  const r = corregirPaso(analizador, serie, hechas.length, avance, referencia);
+  const referencia = respuestaDeReferencia(consigna, capturasPrevias(serie, indice, avanceMostrado()));
+  const r = corregirPaso(analizador, serie, indice, avanceMostrado(), referencia);
   // Con la respuesta ya bien, la solucion es otra forma de resolver lo mismo y
   // se muestra debajo del resultado, que se queda.
   const yaResuelta = Boolean(pendiente);
@@ -1187,6 +1285,12 @@ async function iniciar() {
   $('comprobar').disabled = false;
   $('comprobar').addEventListener('click', comprobar);
   $('siguiente').addEventListener('click', siguiente);
+  $('salir-repaso').addEventListener('click', salirDelRepaso);
+  $('usar-anterior').addEventListener('click', () => {
+    if (repasando == null || !hechas[repasando]) return;
+    editor.poner(hechas[repasando].codigo);
+    $('respuesta').focus({ preventScroll: true });
+  });
   $('ver-solucion').addEventListener('click', verSolucion);
   $('reiniciar').addEventListener('click', reiniciar);
   $('respuesta').addEventListener('keydown', teclaEnRespuesta);

@@ -93,12 +93,22 @@ en ese navegador (`practica-c:docente`), así que sigue activo aunque se entre
 después sin el parámetro; una franja arriba lo avisa y tiene un enlace "Salir".
 `?docente=no` lo apaga (para probar lo que ve un alumno, con envío incluido).
 En este modo **los pasos del encabezado son enlaces**: al hacer clic en uno se
-salta a esa consigna (hacia adelante o hacia atrás) completando las anteriores
+salta a esa consigna hacia adelante, completando las anteriores
 con sus soluciones de referencia, como hacen las pruebas, así que una consigna
 encadenada se ve con el código que le corresponde (y un aviso lo dice). El
 avance del modo docente se guarda **aparte** (`practica-c:avance-docente:<id>`),
 sin mezclarse con el de un alumno.
 Abriendo la página en esta PC (`localhost`) pasa lo mismo sin hacer nada.
+
+**Repasar y releer mensajes (alumnos y docente).** Las consignas ya resueltas
+son enlaces en los pasos del encabezado: al hacer clic se vuelve a resolver
+esa consigna, con el código y los nombres que había antes de ella. Es un
+repaso: no cambia lo guardado (ni la respuesta ni la estrella), no cuenta como
+intento ni se envía a las estadísticas, y un aviso con un botón lleva de
+vuelta a la consigna en la que estaba (lo que había escrito en su editor se
+conserva), y un botón trae al editor la respuesta que había dado. También se repasa desde la pantalla final de la serie. En un
+cuestionario, el mensaje de cada opción queda debajo de ella, los de las
+equivocadas se acumulan, y al acertar se explican también las que no probó.
 
 **El `id` de una serie no se cambia** una vez que los alumnos la usaron: el
 avance de cada uno está guardado con ese nombre, y con otro arrancan de cero.
