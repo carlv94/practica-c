@@ -56,7 +56,7 @@
       "id": "arreglos-cero",
       "titulo": "Poner un arreglo en cero",
       "en": "archivo",
-      "enunciado": "Escriba la función `ponerEnCero`, cuyo prototipo está escrito arriba, con el mismo encabezado: recibe un arreglo de números enteros y su cantidad de elementos, y pone todos sus elementos en cero.",
+      "enunciado": "Escriba la función `ponerEnCero` con el mismo encabezado del prototipo proporcionado: debe recibir un arreglo de números enteros y su cantidad de elementos, y poner todos sus elementos en cero.",
       "dibujo": [
         {
           "titulo": "El arreglo antes de llamar a la función:",
@@ -157,7 +157,7 @@
       "id": "arreglos-duplicar",
       "titulo": "Duplicar los elementos",
       "en": "archivo",
-      "enunciado": "Escriba la función `duplicar`, cuyo prototipo está escrito arriba, con el mismo encabezado: recibe un arreglo de números enteros y su cantidad de elementos, y duplica cada elemento: lo que valía `3` pasa a valer `6`.",
+      "enunciado": "Escriba la función `duplicar` con el mismo encabezado del prototipo proporcionado: debe recibir un arreglo de números enteros y su cantidad de elementos, y duplicar cada elemento. Lo que valía `3` pasa a valer `6`.",
       "dibujo": [
         {
           "titulo": "El arreglo antes de llamar a la función:",
