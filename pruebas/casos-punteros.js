@@ -334,19 +334,23 @@ export const CASOS_DE_PUNTEROS = [
   aritmetica(7, 'con corchetes', 'for (i = 0; i < 3; i++) {\n  suma = suma + v[i];\n}', ['CONTENIDO_FALTA']),
   aritmetica(7, 'sin sumar el indice', 'for (i = 0; i < 3; i++) {\n  suma = suma + *v;\n}', ['RESULTADO_VALOR_DISTINTO']),
   aritmetica(7, 'se pasa del arreglo', 'for (i = 0; i < 4; i++) {\n  suma = suma + *(v + i);\n}', ['INDICE_FUERA_DE_RANGO']),
-  // ---- 8: sumarle uno al nombre del arreglo ----
-  aritmetica(8, 'no compila', '1'),
-  aritmetica(8, 'v avanza', '0', ['OPCION_V_AVANZA']),
-  aritmetica(8, 'el primero vale once', '2', ['OPCION_SUMA_AL_ELEMENTO']),
-  // ---- 9: recorrer con un puntero que avanza ----
-  aritmetica(9, 'con p++', 'for (i = 0; i < 3; i++) {\n  suma = suma + *p;\n  p++;\n}', 'ok', { mejoras: [] }),
-  aritmetica(9, 'con p += 1', 'for (i = 0; i < 3; i++) {\n  suma = suma + *p;\n  p += 1;\n}'),
-  aritmetica(9, 'leyendo y avanzando juntos', 'for (i = 0; i < 3; i++) {\n  suma = suma + *p++;\n}'),
-  aritmetica(9, 'con un while', 'i = 0;\nwhile (i < 3) {\n  suma = suma + *p;\n  p++;\n  i++;\n}'),
-  aritmetica(9, 'con los indices', 'for (i = 0; i < 3; i++) {\n  suma = suma + v[i];\n}', ['CONTENIDO_FALTA']),
-  aritmetica(9, 'sin avanzar', 'suma = *p + *(p + 1) + *(p + 2);', ['AVANCE_FALTA']),
-  aritmetica(9, 'una sola vuelta', 'suma = suma + *p;\np++;', ['RESULTADO_VALOR_DISTINTO']),
-  aritmetica(9, 'sin sumar el valor', 'for (i = 0; i < 3; i++) {\n  suma = suma + 1;\n  p++;\n}', ['RESULTADO_VALOR_DISTINTO']),
+  // ---- 8: corchetes con un puntero ----
+  aritmetica(8, 'tercer elemento', '1'),
+  aritmetica(8, 'cuenta desde uno', '0', ['OPCION_CUENTA_DESDE_UNO']),
+  aritmetica(8, 'no compila', '2', ['OPCION_NO_COMPILA']),
+  // ---- 9: sumarle uno al nombre del arreglo ----
+  aritmetica(9, 'no compila', '1'),
+  aritmetica(9, 'v avanza', '0', ['OPCION_V_AVANZA']),
+  aritmetica(9, 'el primero vale once', '2', ['OPCION_SUMA_AL_ELEMENTO']),
+  // ---- 10: recorrer con un puntero que avanza ----
+  aritmetica(10, 'con p++', 'for (i = 0; i < 3; i++) {\n  suma = suma + *p;\n  p++;\n}', 'ok', { mejoras: [] }),
+  aritmetica(10, 'con p += 1', 'for (i = 0; i < 3; i++) {\n  suma = suma + *p;\n  p += 1;\n}'),
+  aritmetica(10, 'leyendo y avanzando juntos', 'for (i = 0; i < 3; i++) {\n  suma = suma + *p++;\n}'),
+  aritmetica(10, 'con un while', 'i = 0;\nwhile (i < 3) {\n  suma = suma + *p;\n  p++;\n  i++;\n}'),
+  aritmetica(10, 'con los indices', 'for (i = 0; i < 3; i++) {\n  suma = suma + v[i];\n}', ['CONTENIDO_FALTA']),
+  aritmetica(10, 'sin avanzar', 'suma = *p + *(p + 1) + *(p + 2);', ['AVANCE_FALTA']),
+  aritmetica(10, 'una sola vuelta', 'suma = suma + *p;\np++;', ['RESULTADO_VALOR_DISTINTO']),
+  aritmetica(10, 'sin sumar el valor', 'for (i = 0; i < 3; i++) {\n  suma = suma + 1;\n  p++;\n}', ['RESULTADO_VALOR_DISTINTO']),
 
   // ===== Arreglos que cambian dentro de una funcion =====
   // ---- 1: int v[] es int *v ----

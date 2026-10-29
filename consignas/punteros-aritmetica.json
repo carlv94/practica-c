@@ -305,6 +305,47 @@
       "referencia": "for (i = 0; i < 3; i++) {\n  suma = suma + *(v + i);\n}"
     },
     {
+      "id": "aritmetica-q-corchetes",
+      "titulo": "Corchetes con un puntero",
+      "enunciado": "Si `p` apunta al primer elemento del arreglo del dibujo, ¿cuánto vale `p[2]`?",
+      "codigo": "int v[3] = {10, 20, 30};\nint *p;\n\np = v;",
+      "dibujo": {
+        "titulo": "La memoria:",
+        "memoria": [
+          {
+            "nombre": "v",
+            "arreglo": [
+              10,
+              20,
+              30
+            ]
+          },
+          {
+            "nombre": "p",
+            "puntero": true,
+            "apunta": "v"
+          }
+        ]
+      },
+      "opciones": [
+        {
+          "texto": "`20`, el segundo elemento",
+          "codigo": "OPCION_CUENTA_DESDE_UNO",
+          "explicacion": "El `2` de `p[2]` no cuenta desde uno: indica cuántas posiciones hay después del primer elemento, así que se llega al tercero."
+        },
+        {
+          "texto": "`30`, el tercer elemento",
+          "correcta": true,
+          "explicacion": "`p[2]` es otra forma de escribir `*(p + 2)`: los corchetes sirven con cualquier dirección, sea el nombre de un arreglo o un puntero. Se llega al tercer elemento, que vale `30`."
+        },
+        {
+          "texto": "Nada, no compila porque `p` no es un arreglo",
+          "codigo": "OPCION_NO_COMPILA",
+          "explicacion": "Compila: los corchetes no son exclusivos de los arreglos. Como `p` guarda una dirección, `p[2]` es `*(p + 2)`, igual que `v[2]`."
+        }
+      ]
+    },
+    {
       "id": "aritmetica-q-incrementar",
       "titulo": "Sumarle uno al nombre del arreglo",
       "enunciado": "`v` es el nombre de un arreglo. ¿Qué pasa con `v++`?",
