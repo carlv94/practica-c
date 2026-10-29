@@ -56,7 +56,7 @@
       "id": "arreglos-cero",
       "titulo": "Poner un arreglo en cero",
       "en": "archivo",
-      "enunciado": "Escriba una función que reciba un arreglo de números enteros y su cantidad de elementos, y ponga todos sus elementos en cero. Póngale el nombre que quiera.",
+      "enunciado": "Escriba la función `ponerEnCero`, cuyo prototipo está escrito arriba, con el mismo encabezado: recibe un arreglo de números enteros y su cantidad de elementos, y pone todos sus elementos en cero.",
       "dibujo": [
         {
           "titulo": "El arreglo antes de llamar a la función:",
@@ -89,7 +89,8 @@
               }
             ],
             "capturar": "Z",
-            "deja": "arreglo"
+            "deja": "arreglo",
+            "nombre": "ponerEnCero"
           }
         },
         {
@@ -149,13 +150,14 @@
           }
         }
       ],
-      "referencia": "void ponerEnCero(int v[], int n) {\n  int i;\n\n  for (i = 0; i < n; i++) {\n    v[i] = 0;\n  }\n}"
+      "referencia": "void ponerEnCero(int *v, int n) {\n  int i;\n\n  for (i = 0; i < n; i++) {\n    v[i] = 0;\n  }\n}",
+      "archivoDado": "void ponerEnCero(int *v, int n);"
     },
     {
       "id": "arreglos-duplicar",
       "titulo": "Duplicar los elementos",
       "en": "archivo",
-      "enunciado": "Escriba una función que reciba un arreglo de números enteros y su cantidad de elementos, y duplique cada elemento: lo que valía `3` pasa a valer `6`. Póngale el nombre que quiera.",
+      "enunciado": "Escriba la función `duplicar`, cuyo prototipo está escrito arriba, con el mismo encabezado: recibe un arreglo de números enteros y su cantidad de elementos, y duplica cada elemento: lo que valía `3` pasa a valer `6`.",
       "dibujo": [
         {
           "titulo": "El arreglo antes de llamar a la función:",
@@ -188,7 +190,8 @@
               }
             ],
             "capturar": "D",
-            "deja": "arreglo"
+            "deja": "arreglo",
+            "nombre": "duplicar"
           }
         },
         {
@@ -244,7 +247,8 @@
           }
         }
       ],
-      "referencia": "void duplicar(int v[], int n) {\n  int i;\n\n  for (i = 0; i < n; i++) {\n    v[i] = v[i] * 2;\n  }\n}"
+      "referencia": "void duplicar(int v[], int n) {\n  int i;\n\n  for (i = 0; i < n; i++) {\n    *(v + i) = *(v + i) * 2;\n  }\n}",
+      "archivoDado": "void duplicar(int v[], int n);"
     },
     {
       "id": "punteros-q-tamano",
