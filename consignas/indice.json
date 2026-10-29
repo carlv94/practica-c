@@ -104,14 +104,13 @@
         "punteros-direcciones.json",
         "punteros-variables.json",
         "punteros-referencia.json",
-        "punteros-acceso.json",
         "punteros-aritmetica.json",
-        "punteros-arreglos.json"
+        "punteros-arreglos.json",
+        "punteros-acceso.json"
       ],
       "ocultas": [
-        "punteros-acceso.json",
-        "punteros-aritmetica.json",
-        "punteros-arreglos.json"
+        "punteros-arreglos.json",
+        "punteros-acceso.json"
       ]
     }
   ]
