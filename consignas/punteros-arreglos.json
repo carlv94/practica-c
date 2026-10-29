@@ -7,28 +7,6 @@
   "cabecera": "#include <stdio.h>",
   "consignas": [
     {
-      "id": "arreglos-q-encabezado",
-      "titulo": "int v[] es int *v",
-      "enunciado": "Una función recibe un arreglo de enteros y su cantidad de elementos. ¿Cuál de estos encabezados recibe lo mismo que `void mostrar(int v[], int n)`?",
-      "opciones": [
-        {
-          "texto": "`void mostrar(int v, int n)`",
-          "codigo": "OPCION_UN_ENTERO",
-          "explicacion": "`int v` recibe un solo entero. Un arreglo se recibe con corchetes o con un puntero."
-        },
-        {
-          "texto": "`void mostrar(int *v, int n)`",
-          "correcta": true,
-          "explicacion": "En un parámetro, `int v[]` y `int *v` significan lo mismo: la función recibe la dirección del primer elemento. Por eso el arreglo no se copia."
-        },
-        {
-          "texto": "`void mostrar(int *v, int *n)`",
-          "codigo": "OPCION_CANTIDAD_PUNTERO",
-          "explicacion": "`n` es la cantidad de elementos, un número común: no hace falta pasarle su dirección."
-        }
-      ]
-    },
-    {
       "id": "arreglos-q-cambia",
       "titulo": "Un entero y un arreglo",
       "archivo": "void cambiarEntero(int n) {\n  n = 99;\n}\n\nvoid cambiarArreglo(int v[]) {\n  v[0] = 99;\n}",
@@ -49,6 +27,28 @@
           "texto": "`1 1`",
           "codigo": "OPCION_NO_CAMBIA_NINGUNO",
           "explicacion": "Un arreglo no se copia al pasarlo: la función recibe su dirección y cambia el arreglo de afuera."
+        }
+      ]
+    },
+    {
+      "id": "arreglos-q-encabezado",
+      "titulo": "int v[] es int *v",
+      "enunciado": "Recién `cambiarArreglo` modificó el arreglo de afuera. Una función recibe un arreglo de enteros y su cantidad de elementos. ¿Cuál de estos encabezados recibe lo mismo que `void mostrar(int v[], int n)`?",
+      "opciones": [
+        {
+          "texto": "`void mostrar(int v, int n)`",
+          "codigo": "OPCION_UN_ENTERO",
+          "explicacion": "`int v` recibe un solo entero. Un arreglo se recibe con corchetes o con un puntero."
+        },
+        {
+          "texto": "`void mostrar(int *v, int n)`",
+          "correcta": true,
+          "explicacion": "En un parámetro, `int v[]` y `int *v` significan lo mismo: la función recibe la dirección del primer elemento. Por eso el arreglo no se copia, y por eso `cambiarArreglo` pudo modificar el de afuera."
+        },
+        {
+          "texto": "`void mostrar(int *v, int *n)`",
+          "codigo": "OPCION_CANTIDAD_PUNTERO",
+          "explicacion": "`n` es la cantidad de elementos, un número común: no hace falta pasarle su dirección."
         }
       ]
     },

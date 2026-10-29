@@ -353,14 +353,14 @@ export const CASOS_DE_PUNTEROS = [
   aritmetica(10, 'sin sumar el valor', 'for (i = 0; i < 3; i++) {\n  suma = suma + 1;\n  p++;\n}', ['RESULTADO_VALOR_DISTINTO']),
 
   // ===== Arreglos que cambian dentro de una funcion =====
-  // ---- 1: int v[] es int *v ----
-  arreglos(1, 'el puntero', '1'),
-  arreglos(1, 'un entero', '0', ['OPCION_UN_ENTERO']),
-  arreglos(1, 'la cantidad con puntero', '2', ['OPCION_CANTIDAD_PUNTERO']),
-  // ---- 2: un entero y un arreglo ----
-  arreglos(2, 'cambia solo el arreglo', '1'),
-  arreglos(2, 'cambian los dos', '0', ['OPCION_CAMBIAN_LOS_DOS']),
-  arreglos(2, 'no cambia ninguno', '2', ['OPCION_NO_CAMBIA_NINGUNO']),
+  // ---- 1: un entero y un arreglo ----
+  arreglos(1, 'cambia solo el arreglo', '1'),
+  arreglos(1, 'cambian los dos', '0', ['OPCION_CAMBIAN_LOS_DOS']),
+  arreglos(1, 'no cambia ninguno', '2', ['OPCION_NO_CAMBIA_NINGUNO']),
+  // ---- 2: int v[] es int *v ----
+  arreglos(2, 'el puntero', '1'),
+  arreglos(2, 'un entero', '0', ['OPCION_UN_ENTERO']),
+  arreglos(2, 'la cantidad con puntero', '2', ['OPCION_CANTIDAD_PUNTERO']),
   // ---- 3: poner un arreglo en cero ----
   arreglos(3, 'con un ciclo', FUNCION('void ponerEnCero(int v[], int n)', '  int i;\n\n  for (i = 0; i < n; i++) {\n    v[i] = 0;\n  }'), 'ok', { mejoras: [] }),
   arreglos(3, 'con un puntero en el parametro', FUNCION('void ponerEnCero(int *v, int n)', '  int i;\n\n  for (i = 0; i < n; i++) {\n    *(v + i) = 0;\n  }')),
