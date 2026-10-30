@@ -496,7 +496,7 @@ export const CASOS_DEL_SIMULADOR = [
   {
     nombre: 'funciones: una recursion que no termina',
     codigo: conFunciones('int f(int n) {\n  return f(n + 1);\n}', 'int r;\nr = f(1);'),
-    espera: { error: 'NoTermina' },
+    espera: { error: 'RecursionSinFin' },
   },
   {
     nombre: 'funciones: devuelve un decimal',
@@ -918,6 +918,36 @@ export const CASOS_DEL_SIMULADOR = [
     nombre: "NULL y direcciones: pasar NULL a una funcion con un puntero a estructura, sin comprobar",
     codigo: conFunciones('void poner(TFecha *x) {\n  x->dia = 1;\n}', 'TFecha f;\nponer(NULL);'),
     espera: { error: 'PunteroSinDestino' },
+  },
+  {
+    nombre: "recursion: factorial",
+    codigo: conFunciones("int factorial(int n) {\n  if (n == 0) {\n    return 1;\n  }\n  return n * factorial(n - 1);\n}", "int r = factorial(5);"),
+    espera: { variables: { r: 120 } },
+  },
+  {
+    nombre: "recursion: el caso base solo",
+    codigo: conFunciones("int factorial(int n) {\n  if (n == 0) {\n    return 1;\n  }\n  return n * factorial(n - 1);\n}", "int r = factorial(0);"),
+    espera: { variables: { r: 1 } },
+  },
+  {
+    nombre: "recursion: sin caso base",
+    codigo: conFunciones("int suma(int n) {\n  return n + suma(n - 1);\n}", "int r = suma(3);"),
+    espera: { error: 'RecursionSinFin' },
+  },
+  {
+    nombre: "recursion: un caso base que no se alcanza",
+    codigo: conFunciones("int suma(int n) {\n  if (n == 0) {\n    return 0;\n  }\n  return n + suma(n + 1);\n}", "int r = suma(3);"),
+    espera: { error: 'RecursionSinFin' },
+  },
+  {
+    nombre: "recursion: muestra antes y despues de llamarse",
+    codigo: conFunciones("void cuenta(int n) {\n  if (n == 0) {\n    return;\n  }\n  printf(\"%d \", n);\n  cuenta(n - 1);\n  printf(\"%d \", n);\n}", "cuenta(3);"),
+    espera: { salida: '3 2 1 1 2 3 ' },
+  },
+  {
+    nombre: "recursion: sobre un arreglo con un indice",
+    codigo: conFunciones("int sumar(int v[], int n) {\n  if (n == 0) {\n    return 0;\n  }\n  return v[n - 1] + sumar(v, n - 1);\n}", "int v[4] = {1, 2, 3, 4};\nint r = sumar(v, 4);"),
+    espera: { variables: { r: 10 } },
   },
   {
     nombre: 'punteros a estructuras: un campo que no existe no se sigue',

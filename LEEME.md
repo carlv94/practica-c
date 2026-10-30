@@ -1406,6 +1406,7 @@ rehacer). Están ocultas las dos últimas.
 - **`sigueDe` no arrastra el `archivoDado`** de la consigna de la que sigue (por
   ejemplo, una estructura declarada ahí): si la que sigue la necesita, la repite o trae
   todo en su propio `archivoDado`.
+- **`"recursiva": true`** en la regla `funcion` pide que la función se llame a sí misma: si no lo hace da `FUNCION_NO_RECURSIVA` (y dice si resolvió con un ciclo). Una recursión que no termina (más de 100 llamadas sin volver) da `RECURSION_SIN_FIN`, distinto de `CICLO_NO_TERMINA`, que es de los ciclos.
 - **`"deja": "arreglo"`** en la regla `funcion`: el error de devolver con
   `return` en una función `void` dice que el resultado se deja en el arreglo que
   recibe, no que se muestra con `printf`.

@@ -445,6 +445,17 @@ export function construirModelo(arbol, desde) {
       }
       for (const h of x.namedChildren) buscar(h);
     })(cuerpo || { type: '', namedChildren: [] });
+    // Si se llama a si misma (recursiva) y si tiene algun ciclo.
+    let recursiva = false;
+    let conCiclo = false;
+    (function buscar(x) {
+      if (x.type === 'call_expression') {
+        const g = x.childForFieldName('function');
+        if (g && g.text === d.nombre) recursiva = true;
+      }
+      if (['for_statement', 'while_statement', 'do_statement'].includes(x.type)) conCiclo = true;
+      for (const h of x.namedChildren) buscar(h);
+    })(cuerpo || { type: '', namedChildren: [] });
     modelo.funciones.push({
       nombre: d.nombre,
       tipo: leerTipo(tipoNodo),
@@ -452,6 +463,8 @@ export function construirModelo(arbol, desde) {
       parametros,
       retornos,
       muestra,
+      recursiva,
+      conCiclo,
       prototipo,
       posicion: nodo.startIndex,
       fin: nodo.endIndex,

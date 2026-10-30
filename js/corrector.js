@@ -71,6 +71,7 @@ import {
   SinRetorno,
   VoidComoValor,
   NoTermina,
+  RecursionSinFin,
   SinVerificar,
   SinEntrada,
   AmpersandFalta,
@@ -583,7 +584,7 @@ export function corregir(
   //                  "parametros": [{ "tipo": "entero", "referencia": true }],
   //                  "capturar": "F" } }
   // Un parametro "referencia" se declara con * (el que modifica lo de afuera), y
-  // "arreglo": true es un arreglo (v[] o con *).
+  // "arreglo": true es un arreglo (v[] o con *). "recursiva": true pide que se llame a si misma.
 
   function reglaFuncion(regla, modelo) {
     const candidatas = modelo.funciones.filter((f) => f.nuevo && !f.prototipo && !NO_ES_DEL_ALUMNO.includes(f.nombre));
@@ -743,6 +744,15 @@ export function corregir(
         'RETORNO_EN_VOID',
         `La función es ${BT}void${BT}: no devuelve ningún valor, así que no lleva ${BT}return${BT} con un valor.`,
         r.fila
+      );
+      return;
+    }
+    // Una funcion recursiva se llama a si misma.
+    if (regla.recursiva && !f.recursiva) {
+      error(
+        'FUNCION_NO_RECURSIVA',
+        `La consigna pide una función recursiva, o sea que se llame a sí misma, y ${BT}${f.nombre}${BT} no se llama a sí misma${f.conCiclo ? ': resuelve el problema con un ciclo' : ''}.`,
+        f.fila
       );
       return;
     }
@@ -3099,6 +3109,12 @@ export function corregir(
         error(
           'VARIABLE_SIN_VALOR',
           `${conContexto}\`${comoLoEscribio(e.nombre)}\` todavía no tiene un valor cuando se usa: hay que dárselo antes.`,
+          e.fila
+        );
+      } else if (e instanceof RecursionSinFin) {
+        error(
+          'RECURSION_SIN_FIN',
+          `${opciones.contexto ? `${opciones.contexto}, ` : ''}${BT}${e.nombre}${BT} se llama a sí misma sin parar. Hace falta un caso base, un ${BT}if${BT} que devuelva sin llamarse otra vez, y que en cada llamada el argumento se acerque a él.`,
           e.fila
         );
       } else if (e instanceof NoTermina) {

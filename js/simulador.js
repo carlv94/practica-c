@@ -76,6 +76,15 @@ export class NoTermina extends Error {
   }
 }
 
+// Una funcion que se llama a si misma sin parar: falta el caso base, o las llamadas no
+// se acercan a el. Se corta al llegar a cierta cantidad de llamadas sin terminar.
+export class RecursionSinFin extends Error {
+  constructor(nombre, fila) {
+    super(`${nombre} se llama a si misma sin parar`);
+    Object.assign(this, { nombre, fila });
+  }
+}
+
 // Una division (o un resto) por cero.
 // Un texto entre comillas dobles ("A") donde va una letra ('A'): al compararlo o
 // asignarlo se usa el lugar donde esta el texto, no la letra.
@@ -1769,7 +1778,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
     if (lista.length !== parametros.length) {
       throw new ArgumentosDistintos(def.nombre, parametros.length, lista.length, fila(n));
     }
-    if (profundidad >= 100) throw new NoTermina(fila(n));
+    if (profundidad >= 100) throw new RecursionSinFin(def.nombre, fila(n));
 
     const local = new Ambito(globales);
     const estructurasDeLocal = new Map();
