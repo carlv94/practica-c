@@ -109,7 +109,6 @@
         "punteros-acceso.json"
       ],
       "ocultas": [
-        "punteros-arreglos.json",
         "punteros-acceso.json"
       ]
     }
