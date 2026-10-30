@@ -11,7 +11,8 @@
 //     "pistas": { "ida": "...", "vuelta": "..." },
 //     "salida": { "titulo": "...", "esperada": "3 2 1", "pista": "..." }   // opcional
 //   }
-// Una fila puede traer "dadas": ["ida"] para las celdas que vienen escritas solo en ella.
+// Una fila puede traer "dadas": ["ida"] para las celdas que vienen escritas solo en ella, y
+// "ejemplo": true para marcarla como un modelo resuelto (se ve una etiqueta "ejemplo").
 //
 // Los tipos de columna: "llamada" y "cuenta" se escriben como expresiones, que se
 // comparan por su estructura (no por el resultado): los operandos van en el orden del

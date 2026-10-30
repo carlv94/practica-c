@@ -1104,6 +1104,17 @@ table.pila td.dada code {
   color: var(--suave);
 }
 
+table.pila .marca-ejemplo {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 0 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--mejora);
+  background: var(--mejora-fondo);
+  border-radius: 4px;
+}
+
 table.pila input,
 #pila .salida-pila input {
   width: 100%;

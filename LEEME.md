@@ -1452,7 +1452,8 @@ en `js/app.js`.
   (`x`, `×` y `·` se leen como `*`; lo que sigue a un `=` no cuenta), pero `24` no. Los
   operandos van en el orden del código: `6 * 4` da `PILA_ORDEN_DISTINTO`.
 - **`dadas`**: columnas que vienen escritas en todas las filas; una fila puede traer
-  las suyas. Las filas son fijas.
+  las suyas, y con `"ejemplo": true` se la marca como un modelo resuelto (etiqueta
+  "ejemplo"). Las filas son fijas.
 - **Códigos**: `PILA_IDA_INCORRECTA`, `PILA_VUELTA_INCORRECTA`, `PILA_ORDEN_DISTINTO`,
   `PILA_VUELTA_SIN_CUENTA` (escribió solo el resultado), `PILA_ARGUMENTO_SIN_CALCULAR`
   (`factorial(3 - 1)`), `PILA_EXPRESION_ILEGIBLE`, `PILA_TEXTO_INCORRECTO`,

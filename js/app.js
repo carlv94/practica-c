@@ -291,6 +291,7 @@ function dibujarPila(consigna) {
     const primera = elemento('td', 'llamada');
     primera.dataset.rotulo = 'Llamada';
     primera.appendChild(elemento('code', null, fila.llamada));
+    if (fila.ejemplo) primera.appendChild(elemento('span', 'marca-ejemplo', 'ejemplo'));
     tr.appendChild(primera);
     pila.columnas.forEach((columna, j) => {
       const td = elemento('td');

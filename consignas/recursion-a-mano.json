@@ -11,7 +11,7 @@
       "titulo": "La ida de una llamada recursiva",
       "archivo": "int factorial(int n) {\n  if (n == 0) {\n    return 1;\n  }\n  return n * factorial(n - 1);\n}",
       "codigo": "printf(\"%d\\n\", factorial(3));",
-      "enunciado": "La función `factorial` se llama a sí misma. `main` la llama con `3`, y cada llamada que se hace queda en la tabla. En la columna Ida, escriba qué hace cada llamada: su `return`, con `n` reemplazada por el valor que tiene en esa llamada, y con la llamada que queda esperando. La vuelta ya está escrita.",
+      "enunciado": "La función `factorial` se llama a sí misma. `main` la llama con `3`, y cada llamada que se hace queda en la tabla. En la columna Ida, escriba qué hace cada llamada: su `return`, con `n` reemplazada por el valor que tiene en esa llamada, y con la llamada que queda esperando. La vuelta ya está escrita. La primera llamada, `factorial(3)`, ya está resuelta como ejemplo: complete las demás de la misma forma.",
       "pila": {
         "columnas": [
           {
@@ -40,7 +40,11 @@
           {
             "llamada": "factorial(3)",
             "ida": "3 * factorial(2)",
-            "vuelta": "3 * 2"
+            "vuelta": "3 * 2",
+            "dadas": [
+              "ida"
+            ],
+            "ejemplo": true
           },
           {
             "llamada": "factorial(2)",

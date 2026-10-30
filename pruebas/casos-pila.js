@@ -66,22 +66,23 @@ const DIGITOS = [
 export const CASOS_DE_PILA = [
   // ---- 1: la ida de factorial(3) ----
   serie(1, 'la ida bien escrita', tabla(FACTORIAL_3), 'ok'),
-  serie(1, 'sin espacios', tabla(con(FACTORIAL_3, 1, 0, '3*factorial(2)'))),
-  serie(1, 'con una x en lugar del asterisco', tabla(con(FACTORIAL_3, 1, 0, '3 x factorial(2)'))),
-  serie(1, 'con una cruz en lugar del asterisco', tabla(con(FACTORIAL_3, 1, 0, '3 × factorial(2)'))),
-  serie(1, 'con los operandos al reves', tabla(con(FACTORIAL_3, 1, 0, 'factorial(2) * 3')), ['PILA_ORDEN_DISTINTO'], {
+  serie(1, 'la fila de ejemplo no se corrige', tabla(con(FACTORIAL_3, 1, 0, 'lo que sea'))),
+  serie(1, 'sin espacios', tabla(con(FACTORIAL_3, 2, 0, '2*factorial(1)'))),
+  serie(1, 'con una x en lugar del asterisco', tabla(con(FACTORIAL_3, 2, 0, '2 x factorial(1)'))),
+  serie(1, 'con una cruz en lugar del asterisco', tabla(con(FACTORIAL_3, 2, 0, '2 × factorial(1)'))),
+  serie(1, 'con los operandos al reves', tabla(con(FACTORIAL_3, 2, 0, 'factorial(1) * 2')), ['PILA_ORDEN_DISTINTO'], {
     dice: ['los operandos van en el mismo orden'],
   }),
-  serie(1, 'sin reemplazar n', tabla(con(FACTORIAL_3, 1, 0, 'n * factorial(n - 1)')), ['PILA_IDA_INCORRECTA']),
-  serie(1, 'con el argumento sin calcular', tabla(con(FACTORIAL_3, 1, 0, '3 * factorial(3 - 1)')), ['PILA_ARGUMENTO_SIN_CALCULAR'], {
+  serie(1, 'sin reemplazar n', tabla(con(FACTORIAL_3, 2, 0, 'n * factorial(n - 1)')), ['PILA_IDA_INCORRECTA']),
+  serie(1, 'con el argumento sin calcular', tabla(con(FACTORIAL_3, 2, 0, '2 * factorial(2 - 1)')), ['PILA_ARGUMENTO_SIN_CALCULAR'], {
     dice: ['ya calculado'],
   }),
-  serie(1, 'la llamada de otra fila', tabla(con(FACTORIAL_3, 1, 0, '3 * factorial(1)')), ['PILA_IDA_INCORRECTA']),
+  serie(1, 'la llamada de otra fila', tabla(con(FACTORIAL_3, 2, 0, '2 * factorial(0)')), ['PILA_IDA_INCORRECTA']),
   serie(1, 'el caso base con una cuenta', tabla(con(FACTORIAL_3, 4, 0, '0 * factorial(-1)')), ['PILA_IDA_INCORRECTA']),
   serie(1, 'una cuenta incompleta', tabla(con(FACTORIAL_3, 2, 0, '2 *')), ['PILA_EXPRESION_ILEGIBLE']),
   serie(1, 'una celda sin completar', tabla(con(FACTORIAL_3, 3, 0, '')), ['PILA_CELDA_VACIA'], { dice: ['Falta completar 1 celda'] }),
   serie(1, 'la tabla vacia', tabla(FACTORIAL_3.map((f, i) => (i === 0 ? f : ['', f[1]]))), ['PILA_CELDA_VACIA'], {
-    dice: ['Faltan completar 4 celdas'],
+    dice: ['Faltan completar 3 celdas'],
   }),
   serie(1, 'una respuesta que no es una tabla', 'hola', ['PILA_CELDA_VACIA']),
   // ---- 2: la vuelta de factorial(3) ----
