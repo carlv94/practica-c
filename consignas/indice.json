@@ -107,6 +107,7 @@
         "punteros-aritmetica.json",
         "punteros-arreglos.json",
         "punteros-estructuras.json",
+        "punteros-errores.json",
         "punteros-acceso.json"
       ],
       "ocultas": [

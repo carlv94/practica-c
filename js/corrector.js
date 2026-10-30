@@ -1291,6 +1291,17 @@ export function corregir(
     if (regla.nombre) {
       candidatos = punteros.filter((v) => v.nombre === regla.nombre);
       if (!candidatos.length) {
+        // "int *a, b;": el * vale solo para el nombre que tiene al lado.
+        const comun = nuevas_.find((v) => v.nombre === regla.nombre && !v.punteros && !v.arreglo.length);
+        const hermano = comun && punteros.find((v) => v.fila === comun.fila);
+        if (hermano) {
+          error(
+            'PUNTERO_UN_SOLO_ASTERISCO',
+            `${BT}${comun.nombre}${BT} es una variable común, no un puntero: en una declaración con varios nombres, el ${BT}*${BT} vale solo para el nombre que tiene al lado. ${BT}${textoDeTipo(hermano.tipo)} *${hermano.nombre}, ${comun.nombre};${BT} declara ${BT}${hermano.nombre}${BT} como puntero y ${BT}${comun.nombre}${BT} como ${BT}${textoDeTipo(comun.tipo)}${BT} común. Cada puntero lleva su propio ${BT}*${BT}: ${BT}${textoDeTipo(hermano.tipo)} *${hermano.nombre}, *${comun.nombre};${BT}.`,
+            comun.fila
+          );
+          return;
+        }
         error(
           'PUNTERO_NOMBRE',
           `La consigna pide que el puntero se llame ${BT}${regla.nombre}${BT}. El que está declarado se llama ${BT}${punteros[0].nombre}${BT}.`,

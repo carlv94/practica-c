@@ -1,0 +1,384 @@
+{
+  "id": "punteros-errores",
+  "titulo": "Errores típicos con punteros",
+  "continua": false,
+  "dentroDeMain": true,
+  "descripcion": "Los errores que más se cometen con punteros: usar uno que no apunta a nada, olvidar el `*` al declarar dos, y comparar direcciones en lugar de valores.",
+  "cabecera": "#include <stdio.h>",
+  "consignas": [
+    {
+      "id": "perr-q-sin-inicializar",
+      "titulo": "Un puntero sin inicializar",
+      "enunciado": "`p` está declarado, pero nunca se le dio una dirección. ¿Qué pasa al ejecutar este programa?",
+      "codigo": "int n = 7;\nint *p;\n\n*p = 5;\nprintf(\"%d\\n\", n);",
+      "dibujo": {
+        "titulo": "La memoria antes de `*p = 5;`:",
+        "memoria": [
+          {
+            "nombre": "n",
+            "valor": 7
+          },
+          {
+            "nombre": "p",
+            "puntero": true,
+            "valor": null
+          }
+        ]
+      },
+      "opciones": [
+        {
+          "texto": "Muestra `5`, porque `p` apunta a `n`.",
+          "codigo": "OPCION_APUNTA_A_N",
+          "explicacion": "`p` no apunta a `n`: para eso habría que escribir `p = &n;`. Declarar un puntero no lo hace apuntar a ninguna variable."
+        },
+        {
+          "texto": "Muestra `7`, porque `p` vale `0` y no escribe en ningún lado.",
+          "codigo": "OPCION_VALE_CERO",
+          "explicacion": "Una variable local que no se inicializó no vale `0`: guarda lo que haya quedado en esa memoria, y con un puntero eso es una dirección cualquiera."
+        },
+        {
+          "texto": "No compila.",
+          "codigo": "OPCION_NO_COMPILA",
+          "explicacion": "Sí compila: C no obliga a darle una dirección a un puntero antes de usarlo, a lo sumo el compilador avisa con una advertencia. El error aparece recién al ejecutar."
+        },
+        {
+          "texto": "No se puede saber: puede detenerse, o escribir en cualquier lado.",
+          "correcta": true,
+          "explicacion": "`p` guarda una dirección cualquiera, la que haya quedado en esa memoria, y `*p = 5;` escribe `5` ahí. Puede detener el programa, pisar otra variable o parecer que funciona, y cambia de una ejecución a otra: por eso es un error difícil de encontrar. Este simulador lo detiene siempre, para que lo vea. La solución es darle una dirección antes de usarlo, con `p = &n;`, o declararlo con `NULL` si todavía no hay a quién apuntar."
+        }
+      ]
+    },
+    {
+      "id": "perr-q-null",
+      "titulo": "Un puntero NULL",
+      "enunciado": "Esta vez `p` se inicializó con `NULL`. ¿Qué pasa al ejecutar este programa?",
+      "codigo": "int n = 7;\nint *p = NULL;\n\n*p = 5;\nprintf(\"%d\\n\", n);",
+      "dibujo": {
+        "titulo": "La memoria antes de `*p = 5;`:",
+        "memoria": [
+          {
+            "nombre": "n",
+            "valor": 7
+          },
+          {
+            "nombre": "p",
+            "puntero": true,
+            "valor": "NULL"
+          }
+        ]
+      },
+      "opciones": [
+        {
+          "texto": "Muestra `7`: con `NULL` la escritura se ignora.",
+          "codigo": "OPCION_SE_IGNORA",
+          "explicacion": "Nada se ignora: C escribe en la dirección que guarda `p`, y la de `NULL` no pertenece a ninguna variable."
+        },
+        {
+          "texto": "Muestra `5`: `NULL` hace que `p` apunte a la primera variable.",
+          "codigo": "OPCION_APUNTA_A_LA_PRIMERA",
+          "explicacion": "`NULL` no apunta a la primera variable ni a ninguna otra: es la dirección que se usa para decir que un puntero no apunta a nada."
+        },
+        {
+          "texto": "El programa se detiene en `*p = 5;`.",
+          "correcta": true,
+          "explicacion": "`NULL` es una dirección que no pertenece a ninguna variable, y escribir en ella detiene el programa, siempre. Es el mismo error que con un puntero sin inicializar, pero acá es seguro y se puede evitar: a un puntero se lo puede comparar con `NULL` antes de usarlo, con `if (p != NULL)`."
+        }
+      ]
+    },
+    {
+      "id": "perr-comprobar",
+      "titulo": "Comprobar antes de usar",
+      "en": "archivo",
+      "enunciado": "Escriba una función que reciba la dirección de un entero y le sume uno a ese entero, pero que no haga nada si lo que recibe es `NULL`. Póngale el nombre que quiera.",
+      "requiere": [
+        {
+          "funcion": {
+            "retorna": "void",
+            "parametros": [
+              {
+                "tipo": "entero",
+                "referencia": true
+              }
+            ],
+            "capturar": "S"
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "datos": {
+                  "n": 4
+                },
+                "llama": "$S(&n)",
+                "queda": {
+                  "n": 5
+                },
+                "visible": true
+              },
+              {
+                "datos": {
+                  "n": 4
+                },
+                "llama": "$S(NULL)",
+                "queda": {
+                  "n": 4
+                },
+                "visible": true
+              },
+              {
+                "datos": {
+                  "n": -1
+                },
+                "llama": "$S(&n)",
+                "queda": {
+                  "n": 0
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "void sumarUno(int *x) {\n  if (x != NULL) {\n    *x = *x + 1;\n  }\n}"
+    },
+    {
+      "id": "perr-q-dos-punteros",
+      "titulo": "Dos punteros en una línea",
+      "enunciado": "Se declaran dos variables en una sola línea. ¿De qué tipo es `b`?",
+      "codigo": "int *a, b;",
+      "opciones": [
+        {
+          "texto": "`int *`: un puntero a entero, igual que `a`.",
+          "codigo": "OPCION_B_ES_PUNTERO",
+          "explicacion": "El `*` no se reparte entre los nombres: vale solo para el que tiene al lado. Por eso `b` no es un puntero."
+        },
+        {
+          "texto": "No compila: no se pueden mezclar un puntero y un entero en una línea.",
+          "codigo": "OPCION_NO_COMPILA",
+          "explicacion": "Sí compila: en una misma declaración cada nombre lleva sus propios modificadores, así que se pueden mezclar."
+        },
+        {
+          "texto": "`int`: un entero común.",
+          "correcta": true,
+          "explicacion": "El `*` pertenece al nombre que tiene al lado, no al tipo: `int *a, b;` declara `a`, un puntero a entero, y `b`, un entero común. Con `b = &x;` el compilador se queja, porque `b` no puede guardar una dirección. Para dos punteros, cada nombre lleva su `*`: `int *a, *b;`."
+        }
+      ]
+    },
+    {
+      "id": "perr-declarar-dos",
+      "titulo": "Declarar dos punteros",
+      "dado": "int n = 3;\nint m = 4;",
+      "enunciado": "Declare dos punteros a entero, `a` y `b`, en una sola línea, y haga que `a` apunte a `n` y `b` apunte a `m`.",
+      "dibujo": {
+        "titulo": "La memoria cuando `a` apunta a `n` y `b` a `m`:",
+        "memoria": [
+          {
+            "nombre": "n",
+            "valor": 3
+          },
+          {
+            "nombre": "m",
+            "valor": 4
+          },
+          {
+            "nombre": "a",
+            "puntero": true,
+            "apunta": "n"
+          },
+          {
+            "nombre": "b",
+            "puntero": true,
+            "apunta": "m"
+          }
+        ]
+      },
+      "requiere": [
+        {
+          "puntero": {
+            "tipo": "entero",
+            "nombre": "a"
+          }
+        },
+        {
+          "puntero": {
+            "tipo": "entero",
+            "nombre": "b"
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "apunta": {
+                  "a": "n",
+                  "b": "m"
+                },
+                "visible": true
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "int *a = &n, *b = &m;"
+    },
+    {
+      "id": "perr-q-comparar",
+      "titulo": "Comparar dos punteros",
+      "enunciado": "`n` y `m` valen lo mismo. ¿Qué muestra este programa?",
+      "codigo": "int n = 5;\nint m = 5;\nint *p = &n;\nint *q = &m;\n\nif (p == q) {\n  printf(\"iguales\\n\");\n} else {\n  printf(\"distintos\\n\");\n}",
+      "dibujo": {
+        "titulo": "La memoria:",
+        "memoria": [
+          {
+            "nombre": "n",
+            "valor": 5
+          },
+          {
+            "nombre": "m",
+            "valor": 5
+          },
+          {
+            "nombre": "p",
+            "puntero": true,
+            "apunta": "n"
+          },
+          {
+            "nombre": "q",
+            "puntero": true,
+            "apunta": "m"
+          }
+        ]
+      },
+      "opciones": [
+        {
+          "texto": "`iguales`",
+          "codigo": "OPCION_COMPARA_VALORES",
+          "explicacion": "`p == q` no compara los valores de `n` y `m`, sino las direcciones que guardan `p` y `q`. Esa condición sería verdadera si los dos punteros apuntaran a la misma variable. Para comparar los valores hay que llegar a ellos con el asterisco."
+        },
+        {
+          "texto": "`distintos`",
+          "correcta": true,
+          "explicacion": "`p == q` compara las direcciones que guardan los punteros, no los valores a los que apuntan: `p` guarda la dirección de `n` y `q` la de `m`, que son distintas aunque las dos variables valgan `5`, así que la condición es falsa y el programa muestra `distintos`. Para comparar los valores hay que llegar a ellos con el asterisco, como en `*p == *q`, que acá es verdadera."
+        },
+        {
+          "texto": "No compila: no se pueden comparar dos punteros.",
+          "codigo": "OPCION_NO_COMPILA",
+          "explicacion": "Sí compila: dos punteros se pueden comparar con `==` y `!=`, y la comparación dice si guardan la misma dirección."
+        }
+      ]
+    },
+    {
+      "id": "perr-iguales",
+      "titulo": "Comparar lo que apuntan",
+      "en": "archivo",
+      "enunciado": "Escriba una función que reciba las direcciones de dos enteros y muestre con `printf` el mensaje `iguales` si los dos enteros valen lo mismo, o `distintos` si no. Póngale el nombre que quiera.",
+      "requiere": [
+        {
+          "funcion": {
+            "retorna": "void",
+            "parametros": [
+              {
+                "tipo": "entero",
+                "referencia": true
+              },
+              {
+                "tipo": "entero",
+                "referencia": true
+              }
+            ],
+            "capturar": "C"
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "datos": {
+                  "a": 4,
+                  "b": 4
+                },
+                "llama": "$C(&a, &b)",
+                "salida": "iguales",
+                "visible": true
+              },
+              {
+                "datos": {
+                  "a": 4,
+                  "b": 9
+                },
+                "llama": "$C(&a, &b)",
+                "salida": "distintos",
+                "visible": true
+              },
+              {
+                "datos": {
+                  "a": 0,
+                  "b": 0
+                },
+                "llama": "$C(&a, &b)",
+                "salida": "iguales"
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "void comparar(int *a, int *b) {\n  if (*a == *b) {\n    printf(\"iguales\");\n  } else {\n    printf(\"distintos\");\n  }\n}"
+    },
+    {
+      "id": "perr-misma",
+      "titulo": "Comparar las direcciones",
+      "en": "archivo",
+      "enunciado": "Escriba una función que reciba las direcciones de dos enteros y muestre con `printf` el mensaje `misma` si las dos direcciones son la misma, es decir, si los dos punteros apuntan a la misma variable, o `distintas` si no. Póngale el nombre que quiera.",
+      "requiere": [
+        {
+          "funcion": {
+            "retorna": "void",
+            "parametros": [
+              {
+                "tipo": "entero",
+                "referencia": true
+              },
+              {
+                "tipo": "entero",
+                "referencia": true
+              }
+            ],
+            "capturar": "M"
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "datos": {
+                  "a": 4
+                },
+                "llama": "$M(&a, &a)",
+                "salida": "misma",
+                "visible": true
+              },
+              {
+                "datos": {
+                  "a": 4,
+                  "b": 4
+                },
+                "llama": "$M(&a, &b)",
+                "salida": "distintas",
+                "visible": true
+              },
+              {
+                "datos": {
+                  "a": 4,
+                  "b": 9
+                },
+                "llama": "$M(&a, &b)",
+                "salida": "distintas"
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "void comparar(int *a, int *b) {\n  if (a == b) {\n    printf(\"misma\");\n  } else {\n    printf(\"distintas\");\n  }\n}"
+    }
+  ]
+}

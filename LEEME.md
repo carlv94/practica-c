@@ -1334,7 +1334,9 @@ variable" (`punteros-direcciones`, solo cuestionarios) y "Variables puntero"
 - **Regla `puntero`**: `{ "puntero": { "tipo": "entero", "nombre": "p", "capturar": "P" } }`.
   Pide una variable declarada con un `*` (`int *p;`, con o sin valor inicial).
   `PUNTERO_FALTA`, `PUNTERO_FALTA_ASTERISCO` (declaró una variable común),
-  `PUNTERO_NOMBRE` y `PUNTERO_TIPO` (apunta a otro tipo del pedido). A quién
+  `PUNTERO_NOMBRE`, `PUNTERO_UN_SOLO_ASTERISCO` (pidió `b` y declaró `int *a, b;`:
+  el `*` vale solo para el nombre que tiene al lado) y `PUNTERO_TIPO` (apunta a otro
+  tipo del pedido). A quién
   apunta no se mira acá: lo dice el caso de `ejecuta`.
 - **Caso `apunta`**: en `ejecuta`, `{ "apunta": { "$P": "n" } }` pide que `P`
   termine apuntando a `n`. `PUNTERO_SIN_APUNTAR` y `PUNTERO_APUNTA_A_OTRO`.
@@ -1367,9 +1369,18 @@ variable" (`punteros-direcciones`, solo cuestionarios) y "Variables puntero"
 El grupo tiene, en este orden, `punteros-direcciones`, `punteros-variables`,
 `punteros-referencia`, `punteros-aritmetica` ("Arreglos y punteros"),
 `punteros-arreglos` ("Arreglos que cambian dentro de una función"),
-`punteros-estructuras` ("Punteros a estructuras") y, al final,
-`punteros-acceso` ("Dar el menor acceso", a rehacer). Están ocultas las dos
-últimas.
+`punteros-estructuras` ("Punteros a estructuras"), `punteros-errores` ("Errores
+típicos con punteros") y, al final, `punteros-acceso` ("Dar el menor acceso", a
+rehacer). Están ocultas las dos últimas.
+
+- **Punteros y `NULL` (simulador)**: un puntero en una condición (`if (p)`, `!p`, `p && ...`,
+  `while (p != NULL)`) vale verdadero si apunta a algo y falso si es `NULL`; `p == q` y
+  `p != q` comparan direcciones (la misma posición de la misma variable o del mismo
+  arreglo), no los valores a los que apuntan, y también se puede comparar con `NULL` o
+  con `0`. Un puntero que todavía no apunta a nada, usado en una condición o en una
+  comparación, queda sin verificar (en C vale cualquier cosa). A una función con un
+  parámetro `int *x` o `TAlumno *a` se le puede pasar `NULL`, y entonces `*x` o `a->campo`
+  dan `PUNTERO_SIN_DESTINO`, con el mensaje de `NULL`.
 
 - **Memoria con arreglos**: una celda `{ "nombre": "v", "arreglo": [10, 20, 30] }`
   se dibuja como una celda por elemento (`v[0]`, `v[1]`, ...) con direcciones

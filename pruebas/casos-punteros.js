@@ -17,6 +17,7 @@ const acceso = serie('punteros-acceso');
 const aritmetica = serie('punteros-aritmetica');
 const arreglos = serie('punteros-arreglos');
 const estructuras = serie('punteros-estructuras');
+const errores = serie('punteros-errores');
 
 const FUNCION = (encabezado, cuerpo) => `${encabezado} {\n${cuerpo}\n}`;
 
@@ -500,4 +501,81 @@ export const CASOS_DE_PUNTEROS = [
   estructuras(7, 'un solo puntero', '2'),
   estructuras(7, 'tres punteros', '0', ['OPCION_TRES_PUNTEROS']),
   estructuras(7, 'devuelve la estructura', '1', ['OPCION_DEVUELVE_LA_ESTRUCTURA']),
+  // ===== Errores tipicos con punteros =====
+  // ---- 1: un puntero sin inicializar ----
+  errores(1, 'no se puede saber', '3'),
+  errores(1, 'apunta a n', '0', ['OPCION_APUNTA_A_N']),
+  errores(1, 'vale cero', '1', ['OPCION_VALE_CERO']),
+  errores(1, 'no compila', '2', ['OPCION_NO_COMPILA']),
+  // ---- 2: un puntero NULL ----
+  errores(2, 'se detiene', '2'),
+  errores(2, 'se ignora', '0', ['OPCION_SE_IGNORA']),
+  errores(2, 'apunta a la primera', '1', ['OPCION_APUNTA_A_LA_PRIMERA']),
+  // ---- 3: comprobar antes de usar ----
+  errores(3, 'con if y NULL', FUNCION('void sumarUno(int *x)', '  if (x != NULL) {\n    *x = *x + 1;\n  }'), 'ok', { mejoras: [] }),
+  errores(3, 'con if (x)', FUNCION('void sumarUno(int *x)', '  if (x) {\n    *x = *x + 1;\n  }')),
+  errores(3, 'con if (x == NULL) y return', FUNCION('void sumarUno(int *x)', '  if (x == NULL) {\n    return;\n  }\n  *x = *x + 1;')),
+  errores(3, 'con ++', FUNCION('void sumarUno(int *x)', '  if (x != NULL) {\n    (*x)++;\n  }')),
+  errores(3, 'sin comprobar', FUNCION('void sumarUno(int *x)', '  *x = *x + 1;'), ['PUNTERO_SIN_DESTINO'], {
+    dice: ['vale `NULL`'],
+  }),
+  errores(3, 'suma dos', FUNCION('void sumarUno(int *x)', '  if (x != NULL) {\n    *x = *x + 2;\n  }'), ['RESULTADO_VALOR_DISTINTO']),
+  errores(3, 'por valor', FUNCION('void sumarUno(int x)', '  x = x + 1;'), ['PARAMETRO_REFERENCIA_FALTA']),
+  // ---- 4: dos punteros en una linea ----
+  errores(4, 'un entero comun', '2'),
+  errores(4, 'un puntero', '0', ['OPCION_B_ES_PUNTERO']),
+  errores(4, 'no compila', '1', ['OPCION_NO_COMPILA']),
+  // ---- 5: declarar dos punteros ----
+  errores(5, 'cada uno con su asterisco', 'int *a = &n, *b = &m;', 'ok', { mejoras: [] }),
+  errores(5, 'sin valores iniciales', 'int *a, *b;\na = &n;\nb = &m;'),
+  errores(5, 'en dos lineas', 'int *a = &n;\nint *b = &m;'),
+  errores(5, 'el asterisco solo en el primero', 'int *a, b;\na = &n;\nb = &m;', ['PUNTERO_UN_SOLO_ASTERISCO'], {
+    dice: ['int *a, *b;'],
+  }),
+  errores(5, 'el asterisco solo en el primero, con valores', 'int *a = &n, b = &m;', ['PUNTERO_UN_SOLO_ASTERISCO']),
+  errores(5, 'cruzados', 'int *a = &m, *b = &n;', ['PUNTERO_APUNTA_A_OTRO']),
+  errores(5, 'sin apuntar', 'int *a, *b;', ['PUNTERO_SIN_APUNTAR']),
+  errores(5, 'de otro tipo', 'float *a, *b;\na = &n;\nb = &m;', ['PUNTERO_TIPO']),
+  // ---- 6: comparar dos punteros ----
+  errores(6, 'distintos', '1'),
+  errores(6, 'iguales', '0', ['OPCION_COMPARA_VALORES']),
+  errores(6, 'no compila', '2', ['OPCION_NO_COMPILA']),
+  // ---- 7: comparar lo que apuntan ----
+  errores(
+    7,
+    'con asteriscos',
+    FUNCION('void comparar(int *a, int *b)', '  if (*a == *b) {\n    printf("iguales");\n  } else {\n    printf("distintos");\n  }'),
+    'ok',
+    { mejoras: [] }
+  ),
+  errores(
+    7,
+    'con != y asteriscos',
+    FUNCION('void comparar(int *a, int *b)', '  if (*a != *b) {\n    printf("distintos");\n  } else {\n    printf("iguales");\n  }')
+  ),
+  errores(
+    7,
+    'comparando las direcciones',
+    FUNCION('void comparar(int *a, int *b)', '  if (a == b) {\n    printf("iguales");\n  } else {\n    printf("distintos");\n  }'),
+    ['MUESTRA_DISTINTA']
+  ),
+  // ---- 8: comparar las direcciones ----
+  errores(
+    8,
+    'con ==',
+    FUNCION('void comparar(int *a, int *b)', '  if (a == b) {\n    printf("misma");\n  } else {\n    printf("distintas");\n  }'),
+    'ok',
+    { mejoras: [] }
+  ),
+  errores(
+    8,
+    'con !=',
+    FUNCION('void comparar(int *a, int *b)', '  if (a != b) {\n    printf("distintas");\n  } else {\n    printf("misma");\n  }')
+  ),
+  errores(
+    8,
+    'comparando los valores',
+    FUNCION('void comparar(int *a, int *b)', '  if (*a == *b) {\n    printf("misma");\n  } else {\n    printf("distintas");\n  }'),
+    ['MUESTRA_DISTINTA']
+  ),
 ];
