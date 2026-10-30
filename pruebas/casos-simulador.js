@@ -749,6 +749,111 @@ export const CASOS_DEL_SIMULADOR = [
     prueba: { texto: [72, 105, 0] },
     espera: { variables: { n: 2 } },
   },
+  // ---- punteros a estructuras ----
+  {
+    nombre: 'punteros a estructuras: la flecha escribe en los campos',
+    codigo: conFunciones('', 'TFecha f;\nTFecha *p = &f;\np->dia = 10;\np->mes = 5;'),
+    espera: { variables: { 'f.dia': 10, 'f.mes': 5 } },
+  },
+  {
+    nombre: 'punteros a estructuras: declarar primero y apuntar despues',
+    codigo: conFunciones('', 'TFecha f;\nTFecha *p;\np = &f;\np->anio = 2026;'),
+    espera: { variables: { 'f.anio': 2026 } },
+  },
+  {
+    nombre: 'punteros a estructuras: (*p).campo lee',
+    codigo: conFunciones('', 'TFecha f;\nint r;\nf.anio = 2026;\nTFecha *p = &f;\nr = (*p).anio;'),
+    espera: { variables: { r: 2026 } },
+  },
+  {
+    nombre: 'punteros a estructuras: (*p).campo escribe',
+    codigo: conFunciones('', 'TFecha f;\nTFecha *p = &f;\n(*p).mes = 12;'),
+    espera: { variables: { 'f.mes': 12 } },
+  },
+  {
+    nombre: 'punteros a estructuras: se muestra un campo con la flecha',
+    codigo: conFunciones('', 'TFecha f;\nf.dia = 3;\nTFecha *p = &f;\nprintf("%d", p->dia);'),
+    espera: { salida: '3' },
+  },
+  {
+    nombre: 'punteros a estructuras: una funcion cambia la estructura de afuera',
+    codigo: conFunciones('void siguienteAnio(TFecha *x) {\n  x->anio = x->anio + 1;\n}', 'TFecha f;\nf.anio = 2026;\nsiguienteAnio(&f);'),
+    espera: { variables: { 'f.anio': 2027 } },
+  },
+  {
+    nombre: 'punteros a estructuras: el puntero se pasa a otra funcion',
+    codigo: conFunciones(
+      'void poner(TFecha *x) {\n  x->dia = 1;\n}\nvoid inicio(TFecha *y) {\n  poner(y);\n}',
+      'TFecha f;\nTFecha *p = &f;\ninicio(p);'
+    ),
+    espera: { variables: { 'f.dia': 1 } },
+  },
+  {
+    nombre: 'punteros a estructuras: scanf con &p->campo',
+    codigo: conFunciones('void leer(TFecha *x) {\n  scanf("%d", &x->dia);\n  scanf("%d", &x->mes);\n}', 'TFecha f;\nleer(&f);'),
+    entrada: [7, 9],
+    espera: { variables: { 'f.dia': 7, 'f.mes': 9 } },
+  },
+  {
+    nombre: 'punteros a estructuras: una estructura de adentro',
+    codigo: conFunciones('', 'TPersona a;\nTPersona *p = &a;\np->legajo = 5;\np->nacimiento.anio = 2004;'),
+    espera: { variables: { 'a.legajo': 5, 'a.nacimiento.anio': 2004 } },
+  },
+  {
+    nombre: 'punteros a estructuras: dos punteros a la misma estructura',
+    codigo: conFunciones('', 'TFecha f;\nint r;\nTFecha *p = &f;\nTFecha *q = p;\nq->dia = 9;\nr = p->dia;'),
+    espera: { variables: { r: 9 } },
+  },
+  {
+    nombre: 'punteros a estructuras: el punto con un puntero',
+    codigo: conFunciones('', 'TFecha f;\nTFecha *p = &f;\np.dia = 1;'),
+    espera: { error: 'PuntoConPuntero' },
+  },
+  {
+    nombre: 'punteros a estructuras: el asterisco antes del punto',
+    codigo: conFunciones('', 'TFecha f;\nTFecha *p = &f;\n*p.dia = 1;'),
+    espera: { error: 'PuntoConPuntero' },
+  },
+  {
+    nombre: 'punteros a estructuras: la flecha con una estructura comun',
+    codigo: conFunciones('', 'TFecha f;\nf->dia = 1;'),
+    espera: { error: 'FlechaConEstructura' },
+  },
+  {
+    nombre: 'punteros a estructuras: llamar sin el &',
+    codigo: conFunciones('void poner(TFecha *x) {\n  x->dia = 1;\n}', 'TFecha f;\nponer(f);'),
+    espera: { error: 'LlamadaSinAmpersand' },
+  },
+  {
+    nombre: 'punteros a estructuras: sin el & al apuntar',
+    codigo: conFunciones('', 'TFecha f;\nTFecha *p = f;'),
+    espera: { error: 'PunteroSinAmpersand' },
+  },
+  {
+    nombre: 'punteros a estructuras: apuntar a una variable de otro tipo',
+    codigo: conFunciones('', 'int n = 1;\nTFecha *p = &n;'),
+    espera: { error: 'PunteroTipoDistinto' },
+  },
+  {
+    nombre: 'punteros a estructuras: apuntar a otra estructura',
+    codigo: conFunciones('', 'TPersona a;\nTFecha *p = &a;'),
+    espera: { error: 'PunteroTipoDistinto' },
+  },
+  {
+    nombre: 'punteros a estructuras: un puntero que todavia no apunta a nada',
+    codigo: conFunciones('', 'TFecha *p;\np->dia = 1;'),
+    espera: { error: 'PunteroSinDestino' },
+  },
+  {
+    nombre: 'punteros a estructuras: un puntero NULL',
+    codigo: conFunciones('', 'TFecha *p = NULL;\np->dia = 1;'),
+    espera: { error: 'PunteroSinDestino' },
+  },
+  {
+    nombre: 'punteros a estructuras: un campo que no existe no se sigue',
+    codigo: conFunciones('', 'TFecha f;\nTFecha *p = &f;\np->hora = 1;'),
+    espera: { error: 'SinVerificar' },
+  },
 ];
 
 // Corre un caso y dice si salio lo esperado. "ejecutar" es la funcion del

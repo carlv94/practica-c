@@ -65,6 +65,8 @@ import {
   PunteroTipoDistinto,
   DireccionEnVariable,
   PunteroSinDestino,
+  PuntoConPuntero,
+  FlechaConEstructura,
   AsteriscoDeMas,
   SinRetorno,
   VoidComoValor,
@@ -681,7 +683,7 @@ export function corregir(
         if (!p.punteros || p.arreglo.length) {
           error(
             'PARAMETRO_REFERENCIA_FALTA',
-            `${que} tiene que ser un puntero, para recibir la dirección de la variable de afuera y poder cambiar su valor: se declara con un ${BT}*${BT} antes del nombre, como ${BT}${pedido.tipo === 'real' ? 'float' : 'int'} *${p.nombre || 'x'}${BT}.`,
+            `${que} tiene que ser un puntero, para recibir la dirección de la variable de afuera y poder cambiar su valor: se declara con un ${BT}*${BT} antes del nombre, como ${BT}${pedido.tipo === 'estructura' ? textoDeTipo(p.tipo) : pedido.tipo === 'real' ? 'float' : 'int'} *${p.nombre || 'x'}${BT}.`,
             p.fila
           );
           return;
@@ -3254,6 +3256,20 @@ export function corregir(
         error(
           'PARAMETRO_SIN_ASTERISCO_AL_USARLO',
           `${conContexto}${BT}${e.nombre}${BT} es un puntero: guarda la dirección de la variable de afuera. Para llegar al valor de esa variable hay que escribir ${BT}*${e.nombre}${BT} cada vez que se usa; escrito ${BT}${e.nombre}${BT} solo es la dirección y no el valor.`,
+          e.fila
+        );
+      } else if (e instanceof PuntoConPuntero) {
+        error(
+          'PUNTO_CON_PUNTERO',
+          e.conAsterisco
+            ? `${conContexto}${BT}*${e.nombre}.${e.campo}${BT} se lee como ${BT}*(${e.nombre}.${e.campo})${BT}: el punto se resuelve antes que el ${BT}*${BT}, y ${BT}${e.nombre}${BT} es un puntero y no una estructura. Para llegar al campo hay que escribir ${BT}(*${e.nombre}).${e.campo}${BT} o, más corto, ${BT}${e.nombre}->${e.campo}${BT}.`
+            : `${conContexto}${BT}${e.nombre}${BT} es un puntero a una estructura: el punto se usa con estructuras y no con punteros. Para llegar a un campo a través del puntero se escribe ${BT}${e.nombre}->${e.campo}${BT}.`,
+          e.fila
+        );
+      } else if (e instanceof FlechaConEstructura) {
+        error(
+          'FLECHA_CON_VARIABLE',
+          `${conContexto}La flecha ${BT}->${BT} se usa con punteros. ${BT}${e.nombre}${BT} es una variable común: para llegar a un campo se usa el punto, ${BT}${e.nombre}.${e.campo}${BT}.`,
           e.fila
         );
       } else if (e instanceof AsteriscoDeMas) {

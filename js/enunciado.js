@@ -116,14 +116,25 @@ export function enunciadoEnDos(consigna) {
 // se dibuja como una celda por elemento (v[0], v[1], v[2]), seguidas. Un puntero
 // puede apuntar a un elemento ("apunta": "v[1]") o, con el nombre del arreglo
 // ("apunta": "v"), al primero.
+// Una estructura es una celda con "estructura": { "nombre": "f", "estructura": [
+// { "nombre": "dia", "valor": 10 }, { "nombre": "mes", "valor": 5 } ] }: una celda
+// por campo (f.dia, f.mes), seguidas, y un puntero que "apunta": "f" llega al primer campo.
 const BYTES_DE_MEMORIA = { int: 4, float: 4, char: 1, short: 2, double: 8, long: 8, puntero: 8 };
 
 export function celdasDeMemoria(entrada, desde = 1000) {
-  // Un arreglo pasa a una celda por elemento.
+  // Un arreglo pasa a una celda por elemento y una estructura a una por campo.
   const lista = entrada.flatMap((c) =>
     c.arreglo
       ? c.arreglo.map((valor, i) => ({ nombre: `${c.nombre}[${i}]`, valor, tipo: c.tipo || 'int', elemento: true }))
-      : [c]
+      : c.estructura
+        ? c.estructura.map((campo) => ({
+            nombre: `${c.nombre}.${campo.nombre}`,
+            valor: campo.valor,
+            tipo: campo.tipo || 'int',
+            elemento: true,
+            deEstructura: c.nombre,
+          }))
+        : [c]
   );
   let siguiente = desde;
   const celdas = lista.map((c) => {
@@ -133,7 +144,10 @@ export function celdasDeMemoria(entrada, desde = 1000) {
   });
   for (const c of celdas) {
     if (!c.apunta) continue;
-    const destino = celdas.find((x) => x.nombre === c.apunta) || celdas.find((x) => x.nombre === `${c.apunta}[0]`);
+    const destino =
+      celdas.find((x) => x.nombre === c.apunta) ||
+      celdas.find((x) => x.nombre === `${c.apunta}[0]`) ||
+      celdas.find((x) => x.deEstructura === c.apunta);
     if (!destino) throw new Error(`La memoria dibujada: ${c.nombre} apunta a ${c.apunta}, que no esta.`);
     c.valor = destino.direccion;
     c.destino = destino.nombre;

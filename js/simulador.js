@@ -180,6 +180,24 @@ export class PunteroSinDestino extends Error {
   }
 }
 
+// El punto con un puntero a una estructura (p.edad, *p.edad): el punto es para las
+// estructuras, y con un puntero se usa la flecha o (*p). "conAsterisco": estaba
+// escrito *p.edad, que C lee como *(p.edad).
+export class PuntoConPuntero extends Error {
+  constructor(nombre, campo, conAsterisco, fila) {
+    super(`${nombre} es un puntero a una estructura y se usa el punto`);
+    Object.assign(this, { nombre, campo, conAsterisco, fila });
+  }
+}
+
+// La flecha con una variable de estructura comun (alumno->edad).
+export class FlechaConEstructura extends Error {
+  constructor(nombre, campo, fila) {
+    super(`${nombre} es una estructura y se usa la flecha`);
+    Object.assign(this, { nombre, campo, fila });
+  }
+}
+
 // Un * delante de algo que no esta declarado con * (*x, con x un int).
 export class AsteriscoDeMas extends Error {
   constructor(nombre, fila) {
@@ -488,6 +506,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
       const base = posicion(n.childForFieldName('argument'));
       // p[i] con p un puntero: lo mismo que *(p + i).
       if (base.variable && base.variable.puntero) {
+        if (base.variable.aEstructura) sinVerificar(n, 'un arreglo de estructuras con un puntero');
         const indiceDelPuntero = evaluar(n.childForFieldName('index') || n.childForFieldName('indices'));
         const movido = mover({ destino: base.variable.destino, nombre: base.nombre }, indiceDelPuntero.v, n);
         comprobarRango(movido.destino, n);
@@ -518,6 +537,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
     if (n.type === 'pointer_expression' && /^\*/.test(n.text.trimStart())) {
       const argumento = n.childForFieldName('argument') || n.namedChildren[n.namedChildren.length - 1];
       if (!argumento) return sinVerificar(n);
+      if (argumento.type === 'field_expression') return posicionDeCampo(argumento);
       // *(p + 1), *p++: la direccion es una cuenta.
       if (argumento.type !== 'identifier') {
         const ptr = comoPuntero(argumento);
@@ -532,6 +552,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
         throw new NombreDesconocido(argumento.text, fila(n), argumento.startIndex);
       }
       if (variable.puntero) {
+        if (variable.aEstructura) sinVerificar(n, 'la estructura entera');
         if (!variable.destino) throw new PunteroSinDestino(argumento.text, fila(n), variable.destino === null);
         comprobarRango(variable.destino, n);
         return variable.destino;
@@ -546,15 +567,18 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
   // Un campo de una variable de estructura: "alumno.promedio" es esa variable
   // aplanada, y "alumnos[i].promedio" una de las posiciones de "alumnos.promedio".
   function posicionDeCampo(n) {
-    if (n.text.includes('->')) return sinVerificar(n);
     // El camino de afuera hacia adentro: campos e indices, hasta la variable.
+    // Con una flecha (p->edad) o un asterisco ((*p).edad) la variable es un puntero
+    // a una estructura, y los campos son los de la estructura a la que apunta.
     const partes = [];
+    const operadores = []; // de adentro hacia afuera; el primero es el que toca a la base
     let actual = n;
     while (['field_expression', 'subscript_expression', 'parenthesized_expression'].includes(actual.type)) {
       if (actual.type === 'field_expression') {
         const campo = actual.childForFieldName('field');
         if (!campo) return sinVerificar(n);
         partes.unshift({ campo: campo.text });
+        operadores.unshift(actual.children.some((h) => h.type === '->') ? '->' : '.');
         actual = actual.childForFieldName('argument');
       } else if (actual.type === 'subscript_expression') {
         partes.unshift({ indice: actual.childForFieldName('index') || actual.childForFieldName('indices') });
@@ -563,21 +587,63 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
         actual = actual.namedChildren[0];
       }
     }
-    const base = actual;
+    let base = actual;
+    // (*p).edad: la base es *p, un puntero al que se llega con el asterisco.
+    let conAsterisco = false;
+    if (base.type === 'pointer_expression' && /^\*/.test(base.text.trimStart())) {
+      const sobre = base.childForFieldName('argument') || base.namedChildren[base.namedChildren.length - 1];
+      if (sobre && sobre.type === 'identifier') {
+        base = sobre;
+        conAsterisco = true;
+      }
+    }
     if (base.type !== 'identifier') return sinVerificar(n);
-    if (!estructurasVivas.has(base.text)) {
+    if (operadores.slice(1).includes('->')) return sinVerificar(n, 'un campo que es un puntero');
+    const puntero = variables.get(base.text);
+    const alEstructura = Boolean(puntero && puntero.puntero && puntero.aEstructura);
+    const flecha = operadores[0] === '->';
+    const primero = partes.find((p) => p.campo).campo;
+    if (conAsterisco && !alEstructura) return sinVerificar(n);
+    if (!conAsterisco && alEstructura && !flecha) {
+      const dentroDeAsterisco = n.parent && n.parent.type === 'pointer_expression' && /^\*/.test(n.parent.text.trimStart());
+      throw new PuntoConPuntero(base.text, primero, dentroDeAsterisco, fila(n));
+    }
+    if (flecha && !alEstructura) {
+      if (estructurasVivas.has(base.text)) throw new FlechaConEstructura(base.text, primero, fila(n));
       if (variables.has(base.text) || constante(base.text) != null) return sinVerificar(n);
       throw new NombreDesconocido(base.text, fila(n), base.startIndex);
     }
-    const clave = [base.text, ...partes.filter((p) => p.campo).map((p) => p.campo)].join('.');
-    const variable = variables.get(clave);
-    if (!variable) {
-      const esEstructura = [...variables.keys()].some((k) => k.startsWith(clave + '.'));
-      if (esEstructura) {
-        const esUnion = [...variables.values()].some((v) => v.union && v.union.grupo === clave);
-        throw new EstructuraEntera(n.text, fila(n), esUnion);
+    let variable;
+    let nombreBase;
+    let clave;
+    if (alEstructura) {
+      const destino = puntero.destino;
+      if (!destino) throw new PunteroSinDestino(base.text, fila(n), destino === null);
+      nombreBase = destino.nombre;
+      const camino = partes.filter((p) => p.campo).map((p) => p.campo).join('.');
+      clave = `${destino.nombre}.${camino}`;
+      variable = destino.claves.get(camino);
+      if (!variable) {
+        const esEstructura = [...destino.claves.keys()].some((k) => k.startsWith(camino + '.'));
+        if (esEstructura) throw new EstructuraEntera(n.text, fila(n), false);
+        return sinVerificar(n, `el campo ${camino}`);
       }
-      return sinVerificar(n, `el campo ${clave}`);
+    } else {
+      nombreBase = base.text;
+      if (!estructurasVivas.has(base.text)) {
+        if (variables.has(base.text) || constante(base.text) != null) return sinVerificar(n);
+        throw new NombreDesconocido(base.text, fila(n), base.startIndex);
+      }
+      clave = [base.text, ...partes.filter((p) => p.campo).map((p) => p.campo)].join('.');
+      variable = variables.get(clave);
+      if (!variable) {
+        const esEstructura = [...variables.keys()].some((k) => k.startsWith(clave + '.'));
+        if (esEstructura) {
+          const esUnion = [...variables.values()].some((v) => v.union && v.union.grupo === clave);
+          throw new EstructuraEntera(n.text, fila(n), esUnion);
+        }
+        return sinVerificar(n, `el campo ${clave}`);
+      }
     }
     const posiciones = [];
     partes
@@ -588,7 +654,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
         if (tamano === undefined) sinVerificar(n);
         if (!Number.isInteger(indice.v) || indice.v < 0 || indice.v >= tamano) {
           throw new FueraDeRango(
-            base.text,
+            nombreBase,
             indice.v,
             tamano,
             fila(n),
@@ -599,7 +665,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
         }
         posiciones.push(indice.v);
       });
-    if (variable.dims && posiciones.length !== variable.dims.length) sinVerificar(n, `${base.text} sin todos sus indices`);
+    if (variable.dims && posiciones.length !== variable.dims.length) sinVerificar(n, `${nombreBase} sin todos sus indices`);
     if (!variable.dims && posiciones.length) sinVerificar(n);
     return { variable, nombre: clave, indices: posiciones };
   }
@@ -661,6 +727,60 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
     return sinVerificar(nodo);
   }
 
+  // Dos listas de campos son la misma estructura (struct Alumno y su alias TAlumno
+  // se recogen por separado).
+  const mismaEstructura = (a, b) =>
+    a === b || (a.length === b.length && a.every((c, i) => c.nombre === b[i].nombre && c.texto === b[i].texto));
+
+  // Los campos de una variable de estructura tal como son, no copiados: el camino
+  // que sigue al nombre ("edad", "nacimiento.anio") y la variable de cada uno.
+  function clavesDe(nombre) {
+    const claves = new Set();
+    for (let ambito = variables; ambito; ambito = ambito.padre) {
+      for (const clave of Map.prototype.keys.call(ambito)) if (clave.startsWith(nombre + '.')) claves.add(clave);
+    }
+    return new Map([...claves].map((clave) => [clave.slice(nombre.length + 1), variables.get(clave)]));
+  }
+
+  // A donde apunta un puntero a una estructura despues de "p = &alumno" o de
+  // "TAlumno *p = &alumno": { nombre, claves }, o null (NULL). "campos" es la
+  // estructura a la que apunta el puntero y "tipo" como se la escribio.
+  function destinoDeEstructura(nodo, nombre, campos, tipo) {
+    while (nodo.type === 'parenthesized_expression') nodo = nodo.namedChildren[0];
+    const texto = nodo.text.replace(/s+/g, ' ').trim();
+    if (nodo.type === 'pointer_expression' && /^&/.test(nodo.text.trimStart())) {
+      const objetivo = nodo.childForFieldName('argument') || nodo.namedChildren[nodo.namedChildren.length - 1];
+      if (objetivo.type !== 'identifier') return sinVerificar(nodo);
+      if (estructurasVivas.has(objetivo.text)) {
+        if (!mismaEstructura(estructurasVivas.get(objetivo.text), campos)) {
+          throw new PunteroTipoDistinto(nombre, tipo, 'otra estructura', texto, fila(nodo));
+        }
+        return { nombre: objetivo.text, claves: clavesDe(objetivo.text) };
+      }
+      const v = variables.get(objetivo.text);
+      if (!v) throw new NombreDesconocido(objetivo.text, fila(nodo), objetivo.startIndex);
+      if (v.puntero || v.dims) return sinVerificar(nodo);
+      throw new PunteroTipoDistinto(nombre, tipo, v.tipo, texto, fila(nodo));
+    }
+    if (nodo.text === 'NULL') return null;
+    if (nodo.type === 'identifier') {
+      const v = variables.get(nodo.text);
+      if (v && v.puntero) {
+        if (!v.aEstructura || !mismaEstructura(v.aEstructura, campos)) {
+          throw new PunteroTipoDistinto(nombre, tipo, v.tipo, texto, fila(nodo));
+        }
+        return v.destino;
+      }
+      if (v || estructurasVivas.has(nodo.text)) throw new PunteroSinAmpersand(nombre, texto, fila(nodo));
+      throw new NombreDesconocido(nodo.text, fila(nodo), nodo.startIndex);
+    }
+    if (nodo.type === 'number_literal') {
+      if (Number(nodo.text) === 0) return null;
+      throw new PunteroConUnValor(nombre, texto, fila(nodo));
+    }
+    return sinVerificar(nodo);
+  }
+
   // Lo que vale una expresion que es una direccion: un arreglo, un puntero, &x,
   // p + 1, p++. Devuelve { destino, nombre } (destino: la posicion a la que
   // apunta, null si es NULL, undefined si el puntero no tiene nada todavia) o
@@ -716,6 +836,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
     if (!Number.isInteger(k)) return sinVerificar(nodo);
     if (!ptr.destino) throw new PunteroSinDestino(ptr.nombre ?? nodo.text, fila(nodo), ptr.destino === null);
     const d = ptr.destino;
+    if (!d.variable) return sinVerificar(nodo, 'cuentas con punteros a estructuras');
     if (!d.variable.dims || d.variable.dims.length !== 1 || d.indices.length !== 1) {
       if (k === 0) return ptr;
       return sinVerificar(nodo, 'cuentas con punteros fuera de un arreglo');
@@ -1217,7 +1338,9 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
         if (operador === '=' && izquierda.type === 'identifier') {
           const v = variables.get(izquierda.text);
           if (v && v.puntero && !v.parametro) {
-            v.destino = destinoDe(nodoDerecha, izquierda.text, v.tipo);
+            v.destino = v.aEstructura
+              ? destinoDeEstructura(nodoDerecha, izquierda.text, v.aEstructura, v.tipo)
+              : destinoDe(nodoDerecha, izquierda.text, v.tipo);
             return { v: 0, f: false };
           }
         }
@@ -1318,7 +1441,18 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
       if (d.type === 'init_declarator') {
         declarador = d.childForFieldName('declarator');
         inicial = d.childForFieldName('value');
-        if (!inicial || !['call_expression', 'identifier'].includes(inicial.type)) sinVerificar(d, 'una estructura con valores iniciales');
+        if (declarador.type !== 'pointer_declarator' && (!inicial || !['call_expression', 'identifier'].includes(inicial.type))) {
+          sinVerificar(d, 'una estructura con valores iniciales');
+        }
+      }
+      // Un puntero a una estructura: "TAlumno *p;" o "TAlumno *p = &alumno;".
+      if (declarador.type === 'pointer_declarator') {
+        const interno = declarador.childForFieldName('declarator');
+        if (!interno || interno.type !== 'identifier') sinVerificar(declarador, 'un puntero que no se sabe seguir');
+        const tipo = n.childForFieldName('type').text.replace(/s+/g, ' ').trim();
+        const destino = inicial ? destinoDeEstructura(inicial, interno.text, campos, tipo) : declarandoGlobales ? null : undefined;
+        variables.set(interno.text, { puntero: true, aEstructura: campos, tipo, bytes: 8, destino });
+        continue;
       }
       const dims = [];
       let nombre = declarador;
@@ -1561,6 +1695,15 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
         salidaDe.push({ nombre: nombre.text, clase: 'estructura', campos: camposDeLaEstructura });
         continue;
       }
+      // Un puntero a una estructura: recibe la direccion de la variable.
+      const camposDelPuntero =
+        nombre && puntero && !arreglo && !deEnum && tipoNodo && ['struct_specifier', 'type_identifier'].includes(tipoNodo.type)
+          ? definiciones.get(tipoNodo.type === 'type_identifier' ? tipoNodo.text : tipoNodo.childForFieldName('name')?.text)
+          : null;
+      if (camposDelPuntero && !camposDelPuntero.esUnion) {
+        salidaDe.push({ nombre: nombre.text, clase: 'punteroAEstructura', campos: camposDelPuntero, tipo: textoTipo });
+        continue;
+      }
       if (!nombre || (!deEnum && !['primitive_type', 'sized_type_specifier'].includes(tipoNodo.type))) return null;
       const textoBase = deEnum ? 'int' : textoTipo;
       const flotante = /float|double/.test(textoBase);
@@ -1606,6 +1749,16 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
       }
       const conAmpersand = a.type === 'pointer_expression' && /^&/.test(a.text.trimStart());
       const deArreglo = a.type === 'identifier' ? variables.get(a.text) : null;
+      if (p.clase === 'punteroAEstructura') {
+        // &alumno, o un puntero a una estructura que se pasa tal cual.
+        let destino;
+        if (conAmpersand) destino = destinoDeEstructura(a, p.nombre, p.campos, p.tipo);
+        else if (deArreglo && deArreglo.puntero && deArreglo.aEstructura) destino = destinoDeEstructura(a, p.nombre, p.campos, p.tipo);
+        else if (a.type === 'identifier' && estructurasVivas.has(a.text)) throw new LlamadaSinAmpersand(def.nombre, p.nombre, texto, fila(a));
+        else return sinVerificar(a, 'un argumento que no es la direccion de una estructura para ' + p.nombre);
+        local.set(p.nombre, { puntero: true, parametro: true, aEstructura: p.campos, tipo: p.tipo, bytes: 8, destino });
+        return;
+      }
       if (p.clase === 'arreglo') {
         if (!deArreglo || !deArreglo.dims) sinVerificar(a, `un argumento que no es un arreglo para ${p.nombre}`);
         local.set(p.nombre, comoParametro(deArreglo));
