@@ -125,7 +125,6 @@
         "recursion-arreglos.json"
       ],
       "ocultas": [
-        "recursion-escribir.json",
         "recursion-arreglos.json"
       ]
     }
