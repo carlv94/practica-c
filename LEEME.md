@@ -1424,6 +1424,44 @@ rehacer). Están ocultas las dos últimas.
   y se pasa su dirección, así que el mismo caso sirve para una función por valor
   o por referencia.
 
+### Tablas de llamadas (recursión a mano)
+
+Una consigna con `"pila"` no lleva código para escribir: el alumno completa una
+tabla con una fila por llamada (en el celular, una tarjeta por llamada). Como las
+de opciones, muestra un programa completo (`archivo` y `codigo`) y no tiene
+"Ver una solución". La corrige `js/pila.js`; la pantalla la dibuja `dibujarPila`
+en `js/app.js`.
+
+```json
+"pila": {
+  "columnas": [ { "id": "ida", "titulo": "Ida", "tipo": "llamada" },
+                { "id": "vuelta", "titulo": "Vuelta", "tipo": "cuenta" } ],
+  "dadas": ["vuelta"],
+  "filas": [ { "llamada": "main", "ida": "factorial(3)", "vuelta": "6", "dadas": ["ida"] },
+             { "llamada": "factorial(3)", "ida": "3 * factorial(2)", "vuelta": "3 * 2" }, ... ],
+  "pistas": { "ida": "...", "vuelta": "..." },
+  "salida": { "titulo": "...", "esperada": "3 2 1 1 2 3", "pista": "..." }
+}
+```
+
+- **Tipos de columna**: `llamada` y `cuenta` se escriben como expresiones (números,
+  `+ - * / %`, paréntesis y llamadas); `texto` es lo que muestra el programa y se
+  compara sin espacios. En `cuenta`, mientras escribe, la pantalla muestra `= 24`
+  (sin decir si está bien).
+- **Se compara la estructura, no el resultado**: `4 * 6` y `4*6` y `4 x 6` valen igual
+  (`x`, `×` y `·` se leen como `*`; lo que sigue a un `=` no cuenta), pero `24` no. Los
+  operandos van en el orden del código: `6 * 4` da `PILA_ORDEN_DISTINTO`.
+- **`dadas`**: columnas que vienen escritas en todas las filas; una fila puede traer
+  las suyas. Las filas son fijas.
+- **Códigos**: `PILA_IDA_INCORRECTA`, `PILA_VUELTA_INCORRECTA`, `PILA_ORDEN_DISTINTO`,
+  `PILA_VUELTA_SIN_CUENTA` (escribió solo el resultado), `PILA_ARGUMENTO_SIN_CALCULAR`
+  (`factorial(3 - 1)`), `PILA_EXPRESION_ILEGIBLE`, `PILA_TEXTO_INCORRECTO`,
+  `PILA_SALIDA_INCORRECTA` y `PILA_CELDA_VACIA`. Cada error lleva la celda para marcarla.
+- **Las pruebas** comparan cada tabla con la ejecución real del programa
+  (`problemasDeLaTabla` en `pruebas/casos-pila.js`): lo que muestra `main`, que cada vuelta
+  use lo que devolvió la llamada de abajo y que cada ida nombre la llamada siguiente. La
+  respuesta del alumno es un JSON `{ "celdas": [[ida, vuelta], ...], "salida": "..." }`.
+
 ### Consignas de opciones
 
 En un enunciado, lo que va entre acentos graves (`nombre`, `"Maria"`, `1`) se

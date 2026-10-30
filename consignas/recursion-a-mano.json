@@ -1,0 +1,447 @@
+{
+  "id": "recursion-a-mano",
+  "titulo": "Seguir una recursión a mano",
+  "continua": false,
+  "dentroDeMain": true,
+  "descripcion": "Antes de escribir funciones recursivas, seguir a mano lo que pasa en cada llamada: qué queda esperando en la ida y qué se calcula en la vuelta.",
+  "cabecera": "#include <stdio.h>",
+  "consignas": [
+    {
+      "id": "rmano-ida",
+      "titulo": "La ida de una llamada recursiva",
+      "archivo": "int factorial(int n) {\n  if (n == 0) {\n    return 1;\n  }\n  return n * factorial(n - 1);\n}",
+      "codigo": "printf(\"%d\\n\", factorial(3));",
+      "enunciado": "La función `factorial` se llama a sí misma. `main` la llama con `3`, y cada llamada que se hace queda en la tabla. En la columna Ida, escriba qué hace cada llamada: su `return`, con `n` reemplazada por el valor que tiene en esa llamada, y con la llamada que queda esperando. La vuelta ya está escrita.",
+      "pila": {
+        "columnas": [
+          {
+            "id": "ida",
+            "titulo": "Ida",
+            "tipo": "llamada"
+          },
+          {
+            "id": "vuelta",
+            "titulo": "Vuelta",
+            "tipo": "cuenta"
+          }
+        ],
+        "dadas": [
+          "vuelta"
+        ],
+        "filas": [
+          {
+            "llamada": "main",
+            "ida": "factorial(3)",
+            "vuelta": "6",
+            "dadas": [
+              "ida"
+            ]
+          },
+          {
+            "llamada": "factorial(3)",
+            "ida": "3 * factorial(2)",
+            "vuelta": "3 * 2"
+          },
+          {
+            "llamada": "factorial(2)",
+            "ida": "2 * factorial(1)",
+            "vuelta": "2 * 1"
+          },
+          {
+            "llamada": "factorial(1)",
+            "ida": "1 * factorial(0)",
+            "vuelta": "1 * 1"
+          },
+          {
+            "llamada": "factorial(0)",
+            "ida": "1",
+            "vuelta": "1"
+          }
+        ],
+        "pistas": {
+          "ida": "Es la línea `return n * factorial(n - 1);` con `n` reemplazada por su valor en esa llamada. La llamada de abajo es la que sigue en la tabla; `factorial(0)` no llama a nadie: devuelve `1`."
+        }
+      },
+      "explicacion": "La ida va de arriba hacia abajo: cada llamada reemplaza su `n` y queda esperando el resultado de la de abajo, hasta llegar a `factorial(0)`, que ya no se llama a sí misma."
+    },
+    {
+      "id": "rmano-vuelta",
+      "titulo": "La vuelta de una llamada recursiva",
+      "archivo": "int factorial(int n) {\n  if (n == 0) {\n    return 1;\n  }\n  return n * factorial(n - 1);\n}",
+      "codigo": "printf(\"%d\\n\", factorial(3));",
+      "enunciado": "Es la misma llamada, `factorial(3)`, y esta vez la ida ya está escrita. En la columna Vuelta, escriba la cuenta que hace cada llamada cuando recibe lo que devolvió la de abajo: reemplace la llamada por su valor y escriba los operandos en el mismo orden que en el código. Mientras escribe, el sistema calcula el resultado. En `main` escriba el valor que recibe, y en la última llamada, lo que devuelve.",
+      "pila": {
+        "columnas": [
+          {
+            "id": "ida",
+            "titulo": "Ida",
+            "tipo": "llamada"
+          },
+          {
+            "id": "vuelta",
+            "titulo": "Vuelta",
+            "tipo": "cuenta"
+          }
+        ],
+        "dadas": [
+          "ida"
+        ],
+        "filas": [
+          {
+            "llamada": "main",
+            "ida": "factorial(3)",
+            "vuelta": "6"
+          },
+          {
+            "llamada": "factorial(3)",
+            "ida": "3 * factorial(2)",
+            "vuelta": "3 * 2"
+          },
+          {
+            "llamada": "factorial(2)",
+            "ida": "2 * factorial(1)",
+            "vuelta": "2 * 1"
+          },
+          {
+            "llamada": "factorial(1)",
+            "ida": "1 * factorial(0)",
+            "vuelta": "1 * 1"
+          },
+          {
+            "llamada": "factorial(0)",
+            "ida": "1",
+            "vuelta": "1"
+          }
+        ],
+        "pistas": {
+          "vuelta": "Es la cuenta de la ida, pero con el valor que devolvió la llamada de abajo en lugar de la llamada. Se empieza por abajo: `factorial(0)` devuelve `1`."
+        }
+      },
+      "explicacion": "La vuelta va de abajo hacia arriba: `factorial(0)` devuelve `1`, con eso `factorial(1)` calcula `1 * 1`, con eso `factorial(2)` calcula `2 * 1`, y así hasta `main`."
+    },
+    {
+      "id": "rmano-factorial",
+      "titulo": "Ida y vuelta de factorial(4)",
+      "archivo": "int factorial(int n) {\n  if (n == 0) {\n    return 1;\n  }\n  return n * factorial(n - 1);\n}",
+      "codigo": "printf(\"%d\\n\", factorial(4));",
+      "enunciado": "Ahora `main` llama a `factorial` con `4`. Complete las dos columnas. En la ida, escriba la cuenta con el valor de `n` y la llamada que queda esperando. En la vuelta, escriba la cuenta con el valor que devolvió la llamada de abajo, en el mismo orden que en el código.",
+      "pila": {
+        "columnas": [
+          {
+            "id": "ida",
+            "titulo": "Ida",
+            "tipo": "llamada"
+          },
+          {
+            "id": "vuelta",
+            "titulo": "Vuelta",
+            "tipo": "cuenta"
+          }
+        ],
+        "filas": [
+          {
+            "llamada": "main",
+            "ida": "factorial(4)",
+            "vuelta": "24",
+            "dadas": [
+              "ida"
+            ]
+          },
+          {
+            "llamada": "factorial(4)",
+            "ida": "4 * factorial(3)",
+            "vuelta": "4 * 6"
+          },
+          {
+            "llamada": "factorial(3)",
+            "ida": "3 * factorial(2)",
+            "vuelta": "3 * 2"
+          },
+          {
+            "llamada": "factorial(2)",
+            "ida": "2 * factorial(1)",
+            "vuelta": "2 * 1"
+          },
+          {
+            "llamada": "factorial(1)",
+            "ida": "1 * factorial(0)",
+            "vuelta": "1 * 1"
+          },
+          {
+            "llamada": "factorial(0)",
+            "ida": "1",
+            "vuelta": "1"
+          }
+        ],
+        "pistas": {
+          "ida": "Es la línea `return n * factorial(n - 1);` con `n` reemplazada por su valor en esa llamada.",
+          "vuelta": "Es la cuenta de la ida, con el valor que devolvió la llamada de abajo en lugar de la llamada. Se empieza por la última fila."
+        }
+      },
+      "explicacion": "Cada llamada espera a la de abajo, y recién cuando `factorial(0)` devuelve `1` se pueden resolver, una por una y de abajo hacia arriba, las demás: `factorial(4)` devuelve `24` a `main`."
+    },
+    {
+      "id": "rmano-q-primera",
+      "titulo": "¿Cuál termina primero?",
+      "archivo": "int factorial(int n) {\n  if (n == 0) {\n    return 1;\n  }\n  return n * factorial(n - 1);\n}",
+      "codigo": "printf(\"%d\\n\", factorial(4));",
+      "enunciado": "Con la tabla de `factorial(4)` a la vista, ¿cuál de estas llamadas termina primero, es decir, devuelve su valor antes que las demás?",
+      "opciones": [
+        {
+          "texto": "`factorial(4)`",
+          "codigo": "OPCION_TERMINA_LA_PRIMERA_EN_LLAMARSE",
+          "explicacion": "`factorial(4)` es la primera que se llama, pero la última que termina: para calcular su `return` necesita lo que devuelve `factorial(3)`, que a su vez espera a la de abajo."
+        },
+        {
+          "texto": "`factorial(0)`",
+          "correcta": true,
+          "explicacion": "`factorial(0)` es la única llamada que no se llama a sí misma: su `if` hace `return 1;` sin esperar a nadie. Con ese valor puede terminar `factorial(1)`, después `factorial(2)`, y así hasta `main`. Ese `if` es el caso base: frena las llamadas y empieza la vuelta."
+        },
+        {
+          "texto": "`factorial(1)`",
+          "codigo": "OPCION_TERMINA_LA_DE_UNO",
+          "explicacion": "`factorial(1)` todavía tiene que esperar: su `return` hace `1 * factorial(0)`, y no puede calcularlo hasta que `factorial(0)` devuelva su valor."
+        }
+      ]
+    },
+    {
+      "id": "rmano-suma",
+      "titulo": "Sumar los números hasta n",
+      "archivo": "int suma(int n) {\n  if (n == 0) {\n    return 0;\n  }\n  return n + suma(n - 1);\n}",
+      "codigo": "printf(\"%d\\n\", suma(4));",
+      "enunciado": "La función `suma` suma los números de `1` a `n`, y `main` la llama con `4`. Complete la ida y la vuelta de cada llamada. Esta vez la cuenta es una suma: los operandos van en el mismo orden que en el código.",
+      "pila": {
+        "columnas": [
+          {
+            "id": "ida",
+            "titulo": "Ida",
+            "tipo": "llamada"
+          },
+          {
+            "id": "vuelta",
+            "titulo": "Vuelta",
+            "tipo": "cuenta"
+          }
+        ],
+        "filas": [
+          {
+            "llamada": "main",
+            "ida": "suma(4)",
+            "vuelta": "10",
+            "dadas": [
+              "ida"
+            ]
+          },
+          {
+            "llamada": "suma(4)",
+            "ida": "4 + suma(3)",
+            "vuelta": "4 + 6"
+          },
+          {
+            "llamada": "suma(3)",
+            "ida": "3 + suma(2)",
+            "vuelta": "3 + 3"
+          },
+          {
+            "llamada": "suma(2)",
+            "ida": "2 + suma(1)",
+            "vuelta": "2 + 1"
+          },
+          {
+            "llamada": "suma(1)",
+            "ida": "1 + suma(0)",
+            "vuelta": "1 + 0"
+          },
+          {
+            "llamada": "suma(0)",
+            "ida": "0",
+            "vuelta": "0"
+          }
+        ],
+        "pistas": {
+          "ida": "Es la línea `return n + suma(n - 1);` con `n` reemplazada por su valor en esa llamada. En `suma(0)` el `if` devuelve `0`.",
+          "vuelta": "Es la cuenta de la ida, con el valor que devolvió la llamada de abajo en lugar de la llamada. Se empieza por la última fila."
+        }
+      },
+      "explicacion": "La estructura es la misma que la del factorial: la ida baja hasta el caso base, que ahora devuelve `0`, y la vuelta suma en cada llamada su `n` a lo que devolvió la de abajo."
+    },
+    {
+      "id": "rmano-potencia",
+      "titulo": "Una potencia",
+      "archivo": "int potencia(int base, int exp) {\n  if (exp == 0) {\n    return 1;\n  }\n  return base * potencia(base, exp - 1);\n}",
+      "codigo": "printf(\"%d\\n\", potencia(2, 3));",
+      "enunciado": "La función `potencia` calcula `base` elevada a `exp`, y `main` la llama con `2` y `3`. Ahora cada llamada tiene dos argumentos: fíjese en cuál cambia de una llamada a la siguiente y cuál queda igual. Complete la ida y la vuelta.",
+      "pila": {
+        "columnas": [
+          {
+            "id": "ida",
+            "titulo": "Ida",
+            "tipo": "llamada"
+          },
+          {
+            "id": "vuelta",
+            "titulo": "Vuelta",
+            "tipo": "cuenta"
+          }
+        ],
+        "filas": [
+          {
+            "llamada": "main",
+            "ida": "potencia(2, 3)",
+            "vuelta": "8",
+            "dadas": [
+              "ida"
+            ]
+          },
+          {
+            "llamada": "potencia(2, 3)",
+            "ida": "2 * potencia(2, 2)",
+            "vuelta": "2 * 4"
+          },
+          {
+            "llamada": "potencia(2, 2)",
+            "ida": "2 * potencia(2, 1)",
+            "vuelta": "2 * 2"
+          },
+          {
+            "llamada": "potencia(2, 1)",
+            "ida": "2 * potencia(2, 0)",
+            "vuelta": "2 * 1"
+          },
+          {
+            "llamada": "potencia(2, 0)",
+            "ida": "1",
+            "vuelta": "1"
+          }
+        ],
+        "pistas": {
+          "ida": "Es la línea `return base * potencia(base, exp - 1);` con `base` y `exp` reemplazados por sus valores en esa llamada.",
+          "vuelta": "Es la cuenta de la ida, con el valor que devolvió la llamada de abajo en lugar de la llamada. Se empieza por la última fila."
+        }
+      },
+      "explicacion": "`base` no cambia en ninguna llamada y `exp` baja de a uno hasta `0`, que es el caso base. En la vuelta, cada llamada multiplica `base` por lo que devolvió la de abajo."
+    },
+    {
+      "id": "rmano-cuenta",
+      "titulo": "Mostrar antes y después de llamar",
+      "archivo": "void cuenta(int n) {\n  if (n == 0) {\n    return;\n  }\n  printf(\"%d \", n);\n  cuenta(n - 1);\n  printf(\"%d \", n);\n}",
+      "codigo": "cuenta(3);",
+      "enunciado": "Esta función no devuelve nada: muestra `n` antes de llamarse a sí misma y otra vez al volver. `main` la llama con `3`. En cada llamada, escriba lo que muestra antes de llamar y lo que muestra al volver. Después, escriba todo lo que muestra el programa, en el orden en que lo muestra.",
+      "pila": {
+        "columnas": [
+          {
+            "id": "antes",
+            "titulo": "Muestra antes de llamar",
+            "tipo": "texto"
+          },
+          {
+            "id": "vuelta",
+            "titulo": "Muestra al volver",
+            "tipo": "texto"
+          }
+        ],
+        "filas": [
+          {
+            "llamada": "main",
+            "antes": "(nada)",
+            "vuelta": "(nada)",
+            "dadas": [
+              "antes",
+              "vuelta"
+            ]
+          },
+          {
+            "llamada": "cuenta(3)",
+            "antes": "3",
+            "vuelta": "3"
+          },
+          {
+            "llamada": "cuenta(2)",
+            "antes": "2",
+            "vuelta": "2"
+          },
+          {
+            "llamada": "cuenta(1)",
+            "antes": "1",
+            "vuelta": "1"
+          },
+          {
+            "llamada": "cuenta(0)",
+            "antes": "(nada)",
+            "vuelta": "(nada)",
+            "dadas": [
+              "antes",
+              "vuelta"
+            ]
+          }
+        ],
+        "pistas": {
+          "antes": "Es el primer `printf` de la función, con el valor de `n` en esa llamada.",
+          "vuelta": "Es el segundo `printf`, el que queda esperando hasta que la llamada de abajo termine."
+        },
+        "salida": {
+          "titulo": "Todo lo que muestra el programa, en orden:",
+          "esperada": "3 2 1 1 2 3",
+          "pista": "Se lee la columna de antes de arriba hacia abajo y, después, la de al volver de abajo hacia arriba."
+        }
+      },
+      "explicacion": "Lo que se muestra antes de llamar sale en el orden de la ida, de arriba hacia abajo; lo que se muestra al volver sale en el orden de la vuelta, de abajo hacia arriba. Por eso el programa muestra `3 2 1 1 2 3`."
+    },
+    {
+      "id": "rmano-digitos",
+      "titulo": "Contar dígitos",
+      "archivo": "int digitos(int n) {\n  if (n < 10) {\n    return 1;\n  }\n  return 1 + digitos(n / 10);\n}",
+      "codigo": "printf(\"%d\\n\", digitos(1234));",
+      "enunciado": "La función `digitos` cuenta cuántos dígitos tiene `n`, y `main` la llama con `1234`. En esta tabla, el argumento de cada llamada hay que calcularlo: escríbalo ya calculado, y recuerde que la división entre enteros descarta los decimales.",
+      "pila": {
+        "columnas": [
+          {
+            "id": "ida",
+            "titulo": "Ida",
+            "tipo": "llamada"
+          },
+          {
+            "id": "vuelta",
+            "titulo": "Vuelta",
+            "tipo": "cuenta"
+          }
+        ],
+        "filas": [
+          {
+            "llamada": "main",
+            "ida": "digitos(1234)",
+            "vuelta": "4",
+            "dadas": [
+              "ida"
+            ]
+          },
+          {
+            "llamada": "digitos(1234)",
+            "ida": "1 + digitos(123)",
+            "vuelta": "1 + 3"
+          },
+          {
+            "llamada": "digitos(123)",
+            "ida": "1 + digitos(12)",
+            "vuelta": "1 + 2"
+          },
+          {
+            "llamada": "digitos(12)",
+            "ida": "1 + digitos(1)",
+            "vuelta": "1 + 1"
+          },
+          {
+            "llamada": "digitos(1)",
+            "ida": "1",
+            "vuelta": "1"
+          }
+        ],
+        "pistas": {
+          "ida": "Es la línea `return 1 + digitos(n / 10);` con el argumento ya calculado: por ejemplo, con `n` valiendo `1234`, la llamada de abajo es `digitos(123)`. Si `n` es menor que `10`, devuelve `1`.",
+          "vuelta": "Es la cuenta de la ida, con el valor que devolvió la llamada de abajo en lugar de la llamada. Se empieza por la última fila."
+        }
+      },
+      "explicacion": "En cada llamada el argumento pierde un dígito, porque la división entre enteros descarta el último. Cuando queda uno solo, el `if` devuelve `1`, y la vuelta suma un `1` por cada dígito que se había sacado."
+    }
+  ]
+}

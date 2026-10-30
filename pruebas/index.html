@@ -29,6 +29,7 @@
       import { CASOS } from './casos.js';
       import { ejecutar } from '../js/simulador.js';
       import { CASOS_DEL_SIMULADOR, resultadoDelSimulador } from './casos-simulador.js';
+      import { problemasDeLaTabla } from './casos-pila.js';
 
       const salida = document.getElementById('salida');
       const lineas = [];
@@ -144,6 +145,32 @@
               return;
             }
 
+            // Una consigna con tabla de llamadas: la tabla modelo pasa, los textos estan bien
+            // escritos y lo que dice la tabla es lo que hace el programa.
+            if (consigna.pila) {
+              const programa = programaDeOpciones(s, i, previo);
+              anotar(
+                /int main\(\) \{/.test(programa) && /return 0;/.test(programa),
+                `programa de ${consigna.id}`,
+                programa
+              );
+              const r = corregirPaso(analizador, s, i, previo, respuestaDeReferencia(consigna));
+              anotar(r.correcto, `respuesta correcta de ${consigna.id}`, r.diagnosticos.map((d) => d.mensaje).join('\n'));
+              const textos = [consigna.enunciado, consigna.explicacion || '', consigna.pila.salida?.pista || '', ...Object.values(consigna.pila.pistas || {})];
+              anotar(textos.every(mensajeBienFormado), `textos de ${consigna.id}`, textos.filter((t) => !mensajeBienFormado(t)).join('\n'));
+              const arbol = analizador.parse(programa);
+              try {
+                const salida = ejecutar(arbol, () => null, null, null, null).salida;
+                const problemas = problemasDeLaTabla(consigna, salida);
+                anotar(!problemas.length, `la tabla de ${consigna.id} coincide con el programa`, problemas.join('\n'));
+              } catch (e) {
+                anotar(false, `el programa de ${consigna.id} corre`, e.message);
+              } finally {
+                arbol.delete();
+              }
+              return;
+            }
+
             const r = corregirPaso(analizador, s, i, previo, respuestaDeReferencia(consigna, recibidas));
             // La referencia es la respuesta modelo: correcta y sin nada que mejorar.
             anotar(
@@ -232,7 +259,7 @@
               const propio = partesPrevias(s, i, llegarHasta(s, i + 1)).main;
               const respuestas = s.consignas
                 .slice(origen, i)
-                .filter((c) => !c.opciones)
+                .filter((c) => !c.opciones && !c.pila)
                 .map((c) => respuestaDeReferencia(c, {}))
                 .filter((r) => r && !delOrigen.includes(r));
               const colada = respuestas.find((r) => propio.includes(r));

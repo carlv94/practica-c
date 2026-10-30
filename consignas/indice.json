@@ -113,6 +113,16 @@
       "ocultas": [
         "punteros-acceso.json"
       ]
+    },
+    {
+      "id": "recursividad",
+      "agrupar": true,
+      "oculto": true,
+      "titulo": "Recursividad",
+      "descripcion": "Funciones que se llaman a sí mismas: seguir las llamadas a mano y escribir las propias.",
+      "series": [
+        "recursion-a-mano.json"
+      ]
     }
   ]
 }
