@@ -831,6 +831,38 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
     return undefined;
   }
 
+  // Lo que vale una condicion (if, while, !, &&, ||, ?:): un puntero solo dice si
+  // apunta a algo (p) o es NULL (!p); cualquier otra cosa se evalua como siempre.
+  function comoVerdad(n) {
+    let x = n;
+    while (x.type === 'parenthesized_expression') x = x.namedChildren[0];
+    const v = x.type === 'identifier' ? variables.get(x.text) : null;
+    if (!v || !v.puntero) return evaluar(n);
+    if (v.destino === undefined) return sinVerificar(x, 'un puntero que todavia no apunta a nada, en una condicion');
+    return { v: v.destino ? 1 : 0, f: false };
+  }
+
+  // p == q, p != NULL: dos direcciones son iguales si son la misma posicion; lo que
+  // valen las variables a las que apuntan no cuenta. Devuelve null si no son direcciones.
+  function compararDirecciones(n, operador) {
+    const izquierda = comoPuntero(n.childForFieldName('left'));
+    if (!izquierda) return null;
+    let derecha = n.childForFieldName('right');
+    while (derecha.type === 'parenthesized_expression') derecha = derecha.namedChildren[0];
+    const otra = derecha.type === 'number_literal' && Number(derecha.text) === 0 ? { destino: null } : comoPuntero(derecha);
+    if (!otra) return sinVerificar(n, 'comparar un puntero con algo que no es una direccion');
+    const a = izquierda.destino;
+    const b = otra.destino;
+    if (a === undefined || b === undefined) return sinVerificar(n, 'un puntero que todavia no apunta a nada, en una comparacion');
+    const iguales =
+      a === null || b === null
+        ? a === b
+        : a.variable
+          ? a.variable === b.variable && a.indices.join() === b.indices.join()
+          : !b.variable && a.nombre === b.nombre;
+    return { v: iguales === (operador === '==') ? 1 : 0, f: false };
+  }
+
   // Una direccion corrida k lugares: solo dentro de un arreglo de una dimension.
   function mover(ptr, k, nodo) {
     if (!Number.isInteger(k)) return sinVerificar(nodo);
@@ -1244,7 +1276,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
       }
       case 'unary_expression': {
         const operador = n.childForFieldName('operator').text;
-        const a = evaluar(n.childForFieldName('argument'));
+        const a = operador === '!' ? comoVerdad(n.childForFieldName('argument')) : evaluar(n.childForFieldName('argument'));
         if (operador === '-') return { v: -a.v, f: a.f };
         if (operador === '+') return a;
         if (operador === '!') return { v: a.v === 0 ? 1 : 0, f: false };
@@ -1256,18 +1288,23 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
           const hijo = n.childForFieldName(lado);
           if (hijo && hijo.type === 'string_literal') throw new TextoComoLetra(hijo.text, fila(hijo));
         }
-        const izquierda = evaluar(n.childForFieldName('left'));
+        if (operador === '==' || operador === '!=') {
+          const deDirecciones = compararDirecciones(n, operador);
+          if (deDirecciones) return deDirecciones;
+        }
+        const conVerdad = operador === '&&' || operador === '||';
+        const izquierda = conVerdad ? comoVerdad(n.childForFieldName('left')) : evaluar(n.childForFieldName('left'));
         // && y || no evaluan el segundo lado si no hace falta
         if (operador === '&&') {
-          return { v: izquierda.v !== 0 && evaluar(n.childForFieldName('right')).v !== 0 ? 1 : 0, f: false };
+          return { v: izquierda.v !== 0 && comoVerdad(n.childForFieldName('right')).v !== 0 ? 1 : 0, f: false };
         }
         if (operador === '||') {
-          return { v: izquierda.v !== 0 || evaluar(n.childForFieldName('right')).v !== 0 ? 1 : 0, f: false };
+          return { v: izquierda.v !== 0 || comoVerdad(n.childForFieldName('right')).v !== 0 ? 1 : 0, f: false };
         }
         return aplicar(operador, izquierda, evaluar(n.childForFieldName('right')), n);
       }
       case 'conditional_expression': {
-        const condicion = evaluar(n.childForFieldName('condition'));
+        const condicion = comoVerdad(n.childForFieldName('condition'));
         return evaluar(n.childForFieldName(condicion.v !== 0 ? 'consequence' : 'alternative'));
       }
       case 'call_expression': {
@@ -1752,7 +1789,8 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
       if (p.clase === 'punteroAEstructura') {
         // &alumno, o un puntero a una estructura que se pasa tal cual.
         let destino;
-        if (conAmpersand) destino = destinoDeEstructura(a, p.nombre, p.campos, p.tipo);
+        if (a.text === 'NULL') destino = null;
+        else if (conAmpersand) destino = destinoDeEstructura(a, p.nombre, p.campos, p.tipo);
         else if (deArreglo && deArreglo.puntero && deArreglo.aEstructura) destino = destinoDeEstructura(a, p.nombre, p.campos, p.tipo);
         else if (a.type === 'identifier' && estructurasVivas.has(a.text)) throw new LlamadaSinAmpersand(def.nombre, p.nombre, texto, fila(a));
         else return sinVerificar(a, 'un argumento que no es la direccion de una estructura para ' + p.nombre);
@@ -1765,6 +1803,10 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
         return;
       }
       if (p.clase === 'referencia') {
+        if (a.text === 'NULL') {
+          local.set(p.nombre, { puntero: true, parametro: true, destino: null, flotante: p.flotante, tipo: p.tipo, bytes: p.bytes });
+          return;
+        }
         if (deArreglo && (deArreglo.dims || deArreglo.puntero)) {
           // Un puntero se copia (la funcion recibe la direccion); un arreglo es el mismo.
           local.set(p.nombre, deArreglo.puntero ? { ...deArreglo, parametro: true } : comoParametro(deArreglo));
@@ -1822,7 +1864,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
   // ---- sentencias: devuelven 'break', 'continue', 'return' o null ---------
 
   function condicion(n) {
-    return evaluar(n).v !== 0;
+    return comoVerdad(n).v !== 0;
   }
 
   function sentencia(n) {

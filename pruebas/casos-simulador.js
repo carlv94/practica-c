@@ -850,6 +850,76 @@ export const CASOS_DEL_SIMULADOR = [
     espera: { error: 'PunteroSinDestino' },
   },
   {
+    nombre: "NULL y direcciones: if (p != NULL) con un puntero que apunta",
+    codigo: conFunciones('', 'int n = 5;\nint *p = &n;\nint r = 0;\nif (p != NULL) {\n  r = 1;\n}'),
+    espera: { variables: { r: 1 } },
+  },
+  {
+    nombre: "NULL y direcciones: if (p != NULL) con NULL",
+    codigo: conFunciones('', 'int *p = NULL;\nint r = 0;\nif (p != NULL) {\n  r = 1;\n}'),
+    espera: { variables: { r: 0 } },
+  },
+  {
+    nombre: "NULL y direcciones: if (p == NULL) con NULL",
+    codigo: conFunciones('', 'int *p = NULL;\nint r = 0;\nif (p == NULL) {\n  r = 1;\n}'),
+    espera: { variables: { r: 1 } },
+  },
+  {
+    nombre: "NULL y direcciones: if (p) y if (!p)",
+    codigo: conFunciones('', 'int n = 5;\nint *p = &n;\nint *q = NULL;\nint r = 0;\nif (p) {\n  r = r + 1;\n}\nif (!q) {\n  r = r + 10;\n}\nif (q) {\n  r = r + 100;\n}'),
+    espera: { variables: { r: 11 } },
+  },
+  {
+    nombre: "NULL y direcciones: p && *p con NULL no llega al asterisco",
+    codigo: conFunciones('', 'int *p = NULL;\nint r = 0;\nif (p != NULL && *p > 0) {\n  r = 1;\n}'),
+    espera: { variables: { r: 0 } },
+  },
+  {
+    nombre: "NULL y direcciones: una condicion con un puntero que no apunta a nada no se sigue",
+    codigo: conFunciones('', 'int *p;\nint r = 0;\nif (p != NULL) {\n  r = 1;\n}'),
+    espera: { error: 'SinVerificar' },
+  },
+  {
+    nombre: "NULL y direcciones: p == q con el mismo destino",
+    codigo: conFunciones('', 'int n = 5;\nint *p = &n;\nint *q = &n;\nprintf("%d", p == q);'),
+    espera: { salida: '1' },
+  },
+  {
+    nombre: "NULL y direcciones: p == q con dos variables que valen lo mismo",
+    codigo: conFunciones('', 'int n = 5;\nint m = 5;\nint *p = &n;\nint *q = &m;\nprintf("%d %d %d", p == q, p != q, *p == *q);'),
+    espera: { salida: '0 1 1' },
+  },
+  {
+    nombre: "NULL y direcciones: dos posiciones de un arreglo",
+    codigo: conFunciones('', 'int v[3] = {1, 1, 1};\nint *p = &v[0];\nint *q = &v[1];\nint *r = v;\nprintf("%d %d", p == q, p == r);'),
+    espera: { salida: '0 1' },
+  },
+  {
+    nombre: "NULL y direcciones: comparar con 0",
+    codigo: conFunciones('', 'int *p = NULL;\nprintf("%d", p == 0);'),
+    espera: { salida: '1' },
+  },
+  {
+    nombre: "NULL y direcciones: pasar NULL a una funcion que lo comprueba",
+    codigo: conFunciones("void sumarUno(int *x) {\n  if (x != NULL) {\n    *x = *x + 1;\n  }\n}", 'int n = 5;\nsumarUno(&n);\nsumarUno(NULL);'),
+    espera: { variables: { n: 6 } },
+  },
+  {
+    nombre: "NULL y direcciones: pasar NULL a una funcion que no lo comprueba",
+    codigo: conFunciones("void sumarUno(int *x) {\n  *x = *x + 1;\n}", 'int n = 5;\nsumarUno(NULL);'),
+    espera: { error: 'PunteroSinDestino' },
+  },
+  {
+    nombre: "NULL y direcciones: pasar NULL a una funcion con un puntero a estructura",
+    codigo: conFunciones('void poner(TFecha *x) {\n  if (x != NULL) {\n    x->dia = 1;\n  }\n}', 'TFecha f;\nf.dia = 7;\nponer(NULL);'),
+    espera: { variables: { 'f.dia': 7 } },
+  },
+  {
+    nombre: "NULL y direcciones: pasar NULL a una funcion con un puntero a estructura, sin comprobar",
+    codigo: conFunciones('void poner(TFecha *x) {\n  x->dia = 1;\n}', 'TFecha f;\nponer(NULL);'),
+    espera: { error: 'PunteroSinDestino' },
+  },
+  {
     nombre: 'punteros a estructuras: un campo que no existe no se sigue',
     codigo: conFunciones('', 'TFecha f;\nTFecha *p = &f;\np->hora = 1;'),
     espera: { error: 'SinVerificar' },
