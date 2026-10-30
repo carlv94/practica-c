@@ -1,0 +1,341 @@
+{
+  "id": "punteros-estructuras",
+  "titulo": "Punteros a estructuras",
+  "continua": false,
+  "dentroDeMain": true,
+  "descripcion": "Llegar a los campos de una estructura a través de un puntero, con la flecha `->`, y cambiar la estructura de afuera desde una función.",
+  "cabecera": "#include <stdio.h>",
+  "consignas": [
+    {
+      "id": "pestr-apuntar",
+      "titulo": "Un puntero a una estructura",
+      "archivoDado": "typedef struct {\n  int legajo;\n  int edad;\n  float promedio;\n} TAlumno;",
+      "dado": "TAlumno alumno;",
+      "enunciado": "La estructura `TAlumno` y la variable `alumno` ya están declaradas. Declare un puntero `p` a `TAlumno` y hágalo apuntar a `alumno`.",
+      "dibujo": {
+        "titulo": "La memoria cuando `p` apunta a `alumno`:",
+        "memoria": [
+          {
+            "nombre": "alumno",
+            "estructura": [
+              {
+                "nombre": "legajo",
+                "valor": null
+              },
+              {
+                "nombre": "edad",
+                "valor": null
+              },
+              {
+                "nombre": "promedio",
+                "valor": null,
+                "tipo": "float"
+              }
+            ]
+          },
+          {
+            "nombre": "p",
+            "puntero": true,
+            "apunta": "alumno",
+            "tipo": "TAlumno"
+          }
+        ]
+      },
+      "requiere": [
+        {
+          "puntero": {
+            "tipo": "TAlumno",
+            "nombre": "p"
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "apunta": {
+                  "p": "alumno"
+                },
+                "visible": true
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "TAlumno *p = &alumno;"
+    },
+    {
+      "id": "pestr-q-punto",
+      "titulo": "El punto y el asterisco",
+      "archivo": "typedef struct {\n  int legajo;\n  int edad;\n  float promedio;\n} TAlumno;",
+      "enunciado": "`p` apunta a `alumno`. ¿Cuál de estas expresiones es la edad del alumno al que apunta `p`?",
+      "codigo": "TAlumno alumno;\nTAlumno *p;\n\nalumno.legajo = 20431;\nalumno.edad = 19;\nalumno.promedio = 8.5;\np = &alumno;",
+      "dibujo": {
+        "titulo": "La memoria:",
+        "memoria": [
+          {
+            "nombre": "alumno",
+            "estructura": [
+              {
+                "nombre": "legajo",
+                "valor": 20431
+              },
+              {
+                "nombre": "edad",
+                "valor": 19
+              },
+              {
+                "nombre": "promedio",
+                "valor": 8.5,
+                "tipo": "float"
+              }
+            ]
+          },
+          {
+            "nombre": "p",
+            "puntero": true,
+            "apunta": "alumno",
+            "tipo": "TAlumno"
+          }
+        ]
+      },
+      "opciones": [
+        {
+          "texto": "`*p.edad`",
+          "codigo": "OPCION_ASTERISCO_ANTES",
+          "explicacion": "No compila. El punto se resuelve antes que el `*`, así que C lee `*(p.edad)` y busca el campo `edad` en `p`, que es un puntero y no una estructura."
+        },
+        {
+          "texto": "`p.edad`",
+          "codigo": "OPCION_PUNTO_CON_PUNTERO",
+          "explicacion": "No compila. El punto se usa con estructuras y `p` es un puntero: antes de buscar el campo hay que llegar a la estructura a la que apunta, con `*`."
+        },
+        {
+          "texto": "`(*p).edad`",
+          "correcta": true,
+          "explicacion": "Con `*p` se llega a la estructura a la que apunta `p`, es decir a `alumno`, y los paréntesis hacen que eso ocurra antes de buscar el campo con el punto: `(*p).edad` es la edad de `alumno`, `19`. Sin los paréntesis el punto se resuelve primero y no compila."
+        }
+      ]
+    },
+    {
+      "id": "pestr-q-flecha",
+      "titulo": "La flecha",
+      "archivo": "typedef struct {\n  int legajo;\n  int edad;\n  float promedio;\n} TAlumno;",
+      "enunciado": "`p` sigue apuntando a `alumno`. ¿Cuál de estas expresiones vale lo mismo que `(*p).edad`?",
+      "codigo": "TAlumno alumno;\nTAlumno *p;\n\nalumno.legajo = 20431;\nalumno.edad = 19;\nalumno.promedio = 8.5;\np = &alumno;",
+      "dibujo": {
+        "titulo": "La memoria:",
+        "memoria": [
+          {
+            "nombre": "alumno",
+            "estructura": [
+              {
+                "nombre": "legajo",
+                "valor": 20431
+              },
+              {
+                "nombre": "edad",
+                "valor": 19
+              },
+              {
+                "nombre": "promedio",
+                "valor": 8.5,
+                "tipo": "float"
+              }
+            ]
+          },
+          {
+            "nombre": "p",
+            "puntero": true,
+            "apunta": "alumno",
+            "tipo": "TAlumno"
+          }
+        ]
+      },
+      "opciones": [
+        {
+          "texto": "`*p->edad`",
+          "codigo": "OPCION_ASTERISCO_DE_MAS",
+          "explicacion": "No compila. La flecha ya llega a la estructura y al campo, así que `p->edad` es la edad. Con el `*` de más C intenta usar esa edad como si fuera una dirección."
+        },
+        {
+          "texto": "`p->edad`",
+          "correcta": true,
+          "explicacion": "La flecha es la forma corta de `(*p).edad`: llega a la estructura a la que apunta `p` y de ahí al campo, así que vale `19`. La flecha se usa con punteros a estructuras; el punto, con las estructuras mismas, como en `alumno.edad`."
+        },
+        {
+          "texto": "`&p->edad`",
+          "codigo": "OPCION_DIRECCION_DEL_CAMPO",
+          "explicacion": "`&p->edad` es la dirección del campo `edad`, no su valor: el `&` se aplica al campo completo, `p->edad`."
+        }
+      ]
+    },
+    {
+      "id": "pestr-cumplir",
+      "titulo": "Cumplir años",
+      "en": "archivo",
+      "archivoDado": "typedef struct {\n  int legajo;\n  int edad;\n  float promedio;\n} TAlumno;",
+      "enunciado": "La estructura `TAlumno` ya está declarada. Escriba una función que reciba la dirección de un alumno y le sume uno a la edad, llegando al campo con `->`: si tenía `20` años, pasa a tener `21`. Póngale el nombre que quiera.",
+      "requiere": [
+        {
+          "funcion": {
+            "retorna": "void",
+            "parametros": [
+              {
+                "tipo": "estructura",
+                "referencia": true
+              }
+            ],
+            "capturar": "C"
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "antes": "TAlumno alumno;",
+                "datos": {
+                  "alumno.legajo": 20431,
+                  "alumno.edad": 20,
+                  "alumno.promedio": 8.5
+                },
+                "llama": "$C(&alumno)",
+                "queda": {
+                  "alumno.legajo": 20431,
+                  "alumno.edad": 21,
+                  "alumno.promedio": 8.5
+                },
+                "visible": true
+              },
+              {
+                "antes": "TAlumno alumno;",
+                "datos": {
+                  "alumno.legajo": 18560,
+                  "alumno.edad": 18,
+                  "alumno.promedio": 7.25
+                },
+                "llama": "$C(&alumno)",
+                "queda": {
+                  "alumno.legajo": 18560,
+                  "alumno.edad": 19,
+                  "alumno.promedio": 7.25
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "void cumplirAnios(TAlumno *a) {\n  a->edad = a->edad + 1;\n}"
+    },
+    {
+      "id": "pestr-llamar",
+      "titulo": "Llamarla con la dirección del alumno",
+      "archivoDado": "typedef struct {\n  int legajo;\n  int edad;\n  float promedio;\n} TAlumno;\n\nvoid cumplirAnios(TAlumno *a) {\n  a->edad = a->edad + 1;\n}",
+      "dado": "TAlumno alumno;\n\nalumno.legajo = 20431;\nalumno.edad = 20;\nalumno.promedio = 8.5;",
+      "enunciado": "La función `cumplirAnios` ya está definida: recibe la dirección de un alumno y le suma uno a la edad. Llámela para que `alumno` cumpla años.",
+      "requiere": [
+        {
+          "llamada": {
+            "funcion": "cumplirAnios",
+            "argumentos": [
+              "&alumno"
+            ]
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "queda": {
+                  "alumno.edad": 21
+                },
+                "visible": true
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "cumplirAnios(&alumno);"
+    },
+    {
+      "id": "pestr-leer",
+      "titulo": "Leer un alumno con un solo parámetro",
+      "en": "archivo",
+      "archivoDado": "typedef struct {\n  int legajo;\n  int edad;\n  float promedio;\n} TAlumno;",
+      "enunciado": "La estructura `TAlumno` ya está declarada. Escriba una función que reciba la dirección de un alumno y pida con `scanf` su legajo, su edad y su promedio, en ese orden, y los deje en el alumno. Póngale el nombre que quiera.",
+      "requiere": [
+        {
+          "funcion": {
+            "retorna": "void",
+            "parametros": [
+              {
+                "tipo": "estructura",
+                "referencia": true
+              }
+            ],
+            "capturar": "L"
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "antes": "TAlumno alumno;",
+                "llama": "$L(&alumno)",
+                "entrada": [
+                  20431,
+                  19,
+                  8.5
+                ],
+                "queda": {
+                  "alumno.legajo": 20431,
+                  "alumno.edad": 19,
+                  "alumno.promedio": 8.5
+                },
+                "visible": true
+              },
+              {
+                "antes": "TAlumno alumno;",
+                "llama": "$L(&alumno)",
+                "entrada": [
+                  18560,
+                  22,
+                  7.25
+                ],
+                "queda": {
+                  "alumno.legajo": 18560,
+                  "alumno.edad": 22,
+                  "alumno.promedio": 7.25
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "void leerAlumno(TAlumno *a) {\n  scanf(\"%d\", &a->legajo);\n  scanf(\"%d\", &a->edad);\n  scanf(\"%f\", &a->promedio);\n}"
+    },
+    {
+      "id": "pestr-q-tres",
+      "titulo": "Tres formas de leer un alumno",
+      "enunciado": "Hay tres versiones de `leerAlumno`, que dejan en `alumno` los datos que se escriben. En `main` se la llama así: `leerAlumno(&alumno);`. ¿Cuál de las tres versiones es?",
+      "codigo": "TAlumno alumno;\n\nleerAlumno(&alumno);",
+      "opciones": [
+        {
+          "texto": "`void leerAlumno(int *legajo, int *edad, float *promedio)`",
+          "codigo": "OPCION_TRES_PUNTEROS",
+          "explicacion": "Esa versión recibe tres direcciones, una por cada dato, y se la llama así: `leerAlumno(&legajo, &edad, &promedio);`."
+        },
+        {
+          "texto": "`TAlumno leerAlumno(void)`",
+          "codigo": "OPCION_DEVUELVE_LA_ESTRUCTURA",
+          "explicacion": "Esa versión no recibe nada: devuelve el alumno completo con `return` y quien la llama lo guarda, así: `alumno = leerAlumno();`."
+        },
+        {
+          "texto": "`void leerAlumno(TAlumno *a)`",
+          "correcta": true,
+          "explicacion": "Recibe la dirección de la estructura, así que se la llama con `&alumno`, y con esa única dirección llega a los tres campos con `->`. Las otras dos versiones se llaman distinto: `leerAlumno(&legajo, &edad, &promedio);` recibe tres direcciones y `alumno = leerAlumno();` recibe lo que la función devuelve."
+        }
+      ],
+      "archivo": "typedef struct {\n  int legajo;\n  int edad;\n  float promedio;\n} TAlumno;"
+    }
+  ]
+}

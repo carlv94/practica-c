@@ -1364,15 +1364,37 @@ variable" (`punteros-direcciones`, solo cuestionarios) y "Variables puntero"
   Los mensajes de los parámetros por referencia nombran al puntero. Un parámetro declarado
   con `*` sigue con sus mensajes de siempre (`PARAMETRO_SIN_ASTERISCO_AL_USARLO`).
 
-Las series 3 (`punteros-referencia`), 4 (`punteros-acceso`, "Dar el menor
-acceso"), 5 (`punteros-aritmetica`, "Arreglos y punteros") y 6
-(`punteros-arreglos`, "Arreglos que cambian dentro de una función") completan por
-ahora el grupo; las tres últimas están ocultas.
+El grupo tiene, en este orden, `punteros-direcciones`, `punteros-variables`,
+`punteros-referencia`, `punteros-aritmetica` ("Arreglos y punteros"),
+`punteros-arreglos` ("Arreglos que cambian dentro de una función"),
+`punteros-estructuras` ("Punteros a estructuras") y, al final,
+`punteros-acceso` ("Dar el menor acceso", a rehacer). Están ocultas las dos
+últimas.
 
 - **Memoria con arreglos**: una celda `{ "nombre": "v", "arreglo": [10, 20, 30] }`
   se dibuja como una celda por elemento (`v[0]`, `v[1]`, ...) con direcciones
   seguidas. Un puntero apunta a un elemento (`"apunta": "v[1]"`) o, con el nombre
   del arreglo (`"apunta": "v"`), al primero.
+- **Memoria con estructuras**: una celda `{ "nombre": "alumno", "estructura": [
+  { "nombre": "legajo", "valor": 20431 }, { "nombre": "promedio", "valor": 8.5,
+  "tipo": "float" } ] }` se dibuja como una celda por campo (`alumno.legajo`,
+  `alumno.promedio`), seguidas. Un puntero con `"apunta": "alumno"` llega al primer
+  campo, y `"tipo": "TAlumno"` en el puntero cambia lo que dice su etiqueta.
+- **Punteros a estructuras (simulador)**: `TAlumno *p = &alumno;`, `p = &alumno;`,
+  `p->campo`, `(*p).campo` y `&p->campo` (también en `scanf`), `p->a.b` con
+  estructuras de adentro, y un parámetro `TAlumno *a` al que se le pasa `&alumno`
+  (o un puntero que ya apunta a una estructura). Un puntero a una estructura guarda
+  `{ nombre, claves }`: el nombre de la variable y sus campos tal como son, no
+  copiados. Quedan sin verificar los arreglos de estructuras con punteros, `p++`
+  sobre ellos y los campos que son punteros. Errores nuevos: `PUNTO_CON_PUNTERO`
+  (`p.edad`, o `*p.edad`, que C lee como `*(p.edad)`) y `FLECHA_CON_VARIABLE` (`alumno->edad`)
+  también al ejecutar, además de en las reglas de campo; `LLAMADA_SIN_AMPERSAND`,
+  `PUNTERO_SIN_AMPERSAND`, `PUNTERO_TIPO_DISTINTO` y `PUNTERO_SIN_DESTINO` valen igual
+  que con números. La regla `funcion` acepta `{ "tipo": "estructura", "referencia": true }`
+  para un parámetro puntero a una estructura.
+- **`sigueDe` no arrastra el `archivoDado`** de la consigna de la que sigue (por
+  ejemplo, una estructura declarada ahí): si la que sigue la necesita, la repite o trae
+  todo en su propio `archivoDado`.
 - **`"deja": "arreglo"`** en la regla `funcion`: el error de devolver con
   `return` en una función `void` dice que el resultado se deja en el arreglo que
   recibe, no que se muestra con `printf`.

@@ -16,6 +16,7 @@ const referencia = serie('punteros-referencia');
 const acceso = serie('punteros-acceso');
 const aritmetica = serie('punteros-aritmetica');
 const arreglos = serie('punteros-arreglos');
+const estructuras = serie('punteros-estructuras');
 
 const FUNCION = (encabezado, cuerpo) => `${encabezado} {\n${cuerpo}\n}`;
 
@@ -419,4 +420,84 @@ export const CASOS_DE_PUNTEROS = [
     FUNCION('void contarLetras(char *texto)', "  char *p = texto;\n  int cantidad = 0;\n\n  while (*p != '\\0') {\n    cantidad++;\n    p++;\n  }\n  printf(\"%d\", cantidad);"),
     ['MUESTRA_EN_VEZ_DE_DEVOLVER']
   ),
+  // ===== Punteros a estructuras =====
+  // ---- 1: un puntero a una estructura ----
+  estructuras(1, 'declarar y apuntar juntos', 'TAlumno *p = &alumno;', 'ok', { mejoras: [] }),
+  estructuras(1, 'declarar y despues apuntar', 'TAlumno *p;\n\np = &alumno;'),
+  estructuras(1, 'sin apuntar', 'TAlumno *p;', ['PUNTERO_SIN_APUNTAR']),
+  estructuras(1, 'sin el ampersand', 'TAlumno *p = alumno;', ['PUNTERO_SIN_AMPERSAND']),
+  estructuras(1, 'sin el asterisco', 'TAlumno p = &alumno;', ['PUNTERO_FALTA_ASTERISCO']),
+  estructuras(1, 'otro nombre', 'TAlumno *q = &alumno;', ['PUNTERO_NOMBRE']),
+  estructuras(1, 'de otro tipo', 'int *p = &alumno;', ['PUNTERO_TIPO']),
+  // ---- 2: el punto y el asterisco ----
+  estructuras(2, 'con parentesis', '2'),
+  estructuras(2, 'el asterisco antes del punto', '0', ['OPCION_ASTERISCO_ANTES']),
+  estructuras(2, 'el punto con el puntero', '1', ['OPCION_PUNTO_CON_PUNTERO']),
+  // ---- 3: la flecha ----
+  estructuras(3, 'la flecha', '1'),
+  estructuras(3, 'con asterisco de mas', '0', ['OPCION_ASTERISCO_DE_MAS']),
+  estructuras(3, 'la direccion del campo', '2', ['OPCION_DIRECCION_DEL_CAMPO']),
+  // ---- 4: cumplir anios ----
+  estructuras(4, 'con la flecha', FUNCION('void cumplirAnios(TAlumno *a)', '  a->edad = a->edad + 1;'), 'ok', { mejoras: [] }),
+  estructuras(4, 'con +=', FUNCION('void cumplirAnios(TAlumno *a)', '  a->edad += 1;')),
+  estructuras(4, 'con ++', FUNCION('void cumplirAnios(TAlumno *a)', '  a->edad++;')),
+  estructuras(4, 'con asterisco y punto', FUNCION('void cumplirAnios(TAlumno *a)', '  (*a).edad = (*a).edad + 1;')),
+  estructuras(4, 'otro nombre', FUNCION('void sumarUnAnio(TAlumno *alumno)', '  alumno->edad = alumno->edad + 1;')),
+  estructuras(4, 'con el punto', FUNCION('void cumplirAnios(TAlumno *a)', '  a.edad = a.edad + 1;'), ['PUNTO_CON_PUNTERO'], {
+    dice: ['a->edad'],
+  }),
+  estructuras(4, 'el asterisco antes del punto', FUNCION('void cumplirAnios(TAlumno *a)', '  *a.edad = *a.edad + 1;'), ['PUNTO_CON_PUNTERO'], {
+    dice: ['(*a).edad'],
+  }),
+  estructuras(4, 'por valor', FUNCION('void cumplirAnios(TAlumno a)', '  a.edad = a.edad + 1;'), ['PARAMETRO_REFERENCIA_FALTA'], {
+    dice: ['TAlumno *a'],
+  }),
+  estructuras(4, 'suma dos', FUNCION('void cumplirAnios(TAlumno *a)', '  a->edad = a->edad + 2;'), ['RESULTADO_VALOR_DISTINTO']),
+  estructuras(4, 'otro campo', FUNCION('void cumplirAnios(TAlumno *a)', '  a->legajo = a->legajo + 1;'), ['RESULTADO_VALOR_DISTINTO']),
+  estructuras(4, 'devuelve la edad', FUNCION('int cumplirAnios(TAlumno *a)', '  return a->edad + 1;'), ['DEVUELVE_EN_VEZ_DE_MOSTRAR']),
+  // ---- 5: llamarla ----
+  estructuras(5, 'con la direccion', 'cumplirAnios(&alumno);', 'ok', { mejoras: [] }),
+  estructuras(5, 'sin el &', 'cumplirAnios(alumno);', ['LLAMADA_SIN_AMPERSAND'], { dice: ['hay que pasarle su dirección'] }),
+  estructuras(5, 'otra variable', 'cumplirAnios(&otro);', ['VARIABLE_DESCONOCIDA']),
+  // ---- 6: leer un alumno con un solo parametro ----
+  estructuras(
+    6,
+    'con la flecha',
+    FUNCION('void leerAlumno(TAlumno *a)', '  scanf("%d", &a->legajo);\n  scanf("%d", &a->edad);\n  scanf("%f", &a->promedio);'),
+    'ok',
+    { mejoras: [] }
+  ),
+  estructuras(
+    6,
+    'con asterisco y punto',
+    FUNCION('void leerAlumno(TAlumno *a)', '  scanf("%d", &(*a).legajo);\n  scanf("%d", &(*a).edad);\n  scanf("%f", &(*a).promedio);')
+  ),
+  estructuras(
+    6,
+    'sin el &',
+    FUNCION('void leerAlumno(TAlumno *a)', '  scanf("%d", a->legajo);\n  scanf("%d", &a->edad);\n  scanf("%f", &a->promedio);'),
+    ['AMPERSAND_FALTA']
+  ),
+  estructuras(
+    6,
+    'con el punto',
+    FUNCION('void leerAlumno(TAlumno *a)', '  scanf("%d", &a.legajo);\n  scanf("%d", &a.edad);\n  scanf("%f", &a.promedio);'),
+    ['PUNTO_CON_PUNTERO']
+  ),
+  estructuras(
+    6,
+    'en otro orden',
+    FUNCION('void leerAlumno(TAlumno *a)', '  scanf("%d", &a->edad);\n  scanf("%d", &a->legajo);\n  scanf("%f", &a->promedio);'),
+    ['RESULTADO_VALOR_DISTINTO']
+  ),
+  estructuras(
+    6,
+    'el promedio con %d',
+    FUNCION('void leerAlumno(TAlumno *a)', '  scanf("%d", &a->legajo);\n  scanf("%d", &a->edad);\n  scanf("%d", &a->promedio);'),
+    ['FORMATO_NO_CORRESPONDE_AL_TIPO']
+  ),
+  // ---- 7: tres formas de leer un alumno ----
+  estructuras(7, 'un solo puntero', '2'),
+  estructuras(7, 'tres punteros', '0', ['OPCION_TRES_PUNTEROS']),
+  estructuras(7, 'devuelve la estructura', '1', ['OPCION_DEVUELVE_LA_ESTRUCTURA']),
 ];
