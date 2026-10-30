@@ -1061,3 +1061,135 @@ form[hidden],
   font-size: 0.85rem;
   color: var(--suave);
 }
+
+/* Una consigna con tabla de llamadas: una fila por llamada. En el celular cada
+   llamada es una tarjeta con sus campos uno debajo del otro. */
+#pila {
+  margin: 0 0 12px;
+}
+
+table.pila {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 6px;
+}
+
+table.pila th {
+  text-align: left;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--suave);
+  padding: 0 8px 2px;
+}
+
+table.pila td {
+  padding: 8px;
+  background: var(--fondo);
+  border-top: 1px solid var(--borde);
+  border-bottom: 1px solid var(--borde);
+  vertical-align: top;
+}
+
+table.pila td:first-child {
+  border-left: 1px solid var(--borde);
+  border-radius: 6px 0 0 6px;
+}
+
+table.pila td:last-child {
+  border-right: 1px solid var(--borde);
+  border-radius: 0 6px 6px 0;
+}
+
+table.pila td.dada code {
+  color: var(--suave);
+}
+
+table.pila input,
+#pila .salida-pila input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  font: inherit;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  color: var(--texto);
+  background: var(--panel);
+  border: 1px solid var(--borde);
+  border-radius: 6px;
+}
+
+table.pila input:focus,
+#pila .salida-pila input:focus {
+  outline: 2px solid var(--acento);
+  outline-offset: 1px;
+}
+
+table.pila input.mal,
+#pila .salida-pila input.mal {
+  border-color: var(--error);
+  background: var(--error-fondo);
+}
+
+table.pila input:read-only {
+  border-color: var(--bien);
+}
+
+table.pila .vivo {
+  display: block;
+  min-height: 1.3em;
+  margin-top: 2px;
+  font-size: 0.9rem;
+  color: var(--suave);
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+#pila .salida-pila {
+  display: block;
+  margin-top: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--suave);
+}
+
+#pila .salida-pila span {
+  display: block;
+  margin-bottom: 4px;
+}
+
+@media (max-width: 640px) {
+  table.pila,
+  table.pila tbody,
+  table.pila tr,
+  table.pila td {
+    display: block;
+  }
+  table.pila thead {
+    position: absolute;
+    left: -9999px;
+  }
+  table.pila tr {
+    margin-bottom: 10px;
+    border: 1px solid var(--borde);
+    border-radius: 6px;
+    background: var(--fondo);
+    overflow: hidden;
+  }
+  table.pila td,
+  table.pila td:first-child,
+  table.pila td:last-child {
+    border: 0;
+    border-radius: 0;
+    padding: 6px 12px;
+  }
+  table.pila td.llamada {
+    background: var(--codigo);
+    font-weight: 600;
+  }
+  table.pila td:not(.llamada)::before {
+    content: attr(data-rotulo);
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--suave);
+    margin-bottom: 2px;
+  }
+}

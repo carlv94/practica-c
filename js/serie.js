@@ -32,6 +32,7 @@
 
 import { corregir, corregirOpcion } from './corrector.js';
 import { sustituir } from './enunciado.js';
+import { corregirPila, respuestaModelo } from './pila.js';
 
 const unir = (...partes) => partes.filter((p) => p && p.trim()).join('\n\n');
 // Lo que va dentro de main: una respuesta tras otra, sin lineas en blanco de por medio
@@ -215,6 +216,14 @@ export function corregirPaso(analizador, serie, indice, avance, respuesta) {
       diagnosticos: r.diagnosticos.map((d) => ({ ...d, mensaje: sustituir(d.mensaje, capturas) })),
     };
   }
+  // Una tabla de llamadas (recursion a mano): la respuesta es la tabla completa.
+  if (consigna.pila) {
+    const r = corregirPila(consigna, respuesta);
+    return {
+      ...r,
+      diagnosticos: r.diagnosticos.map((d) => ({ ...d, mensaje: sustituir(d.mensaje, capturas) })),
+    };
+  }
   const { archivo, main } = partesPrevias(serie, indice, avance);
   return corregir(analizador, consigna, {
     archivo,
@@ -242,7 +251,9 @@ export function corregirPaso(analizador, serie, indice, avance, respuesta) {
 export const respuestaDeReferencia = (consigna, capturas = {}) =>
   consigna.opciones
     ? String(consigna.opciones.findIndex((o) => o.correcta))
-    : sustituir(consigna.referencia, capturas);
+    : consigna.pila
+      ? respuestaModelo(consigna.pila)
+      : sustituir(consigna.referencia, capturas);
 
 // Si la serie pide buenas practicas, una respuesta puede ser excelente.
 export const pidePracticas = (serie) =>
@@ -283,7 +294,7 @@ function despuesDeBase(serie, indice, avance, respuesta, resultado) {
       capturas: capturasPrevias(serie, indice, avance),
     },
   };
-  if (consigna.opciones) {
+  if (consigna.opciones || consigna.pila) {
     if (!consigna.queda) return { ...avance, vistos };
     const capturas = capturasPrevias(serie, indice, avance);
     return {

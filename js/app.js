@@ -29,6 +29,7 @@ import {
 import { crearEditor, pintar } from './editor.js';
 import { enviarIntento, enviarInforme, numeroDeInforme, enviaEstadisticas, esLocal, esDocente } from './estadisticas.js';
 import { partesDeEnunciado, enunciadoEnDos, fichasDe, figuraDe, sustituir } from './enunciado.js';
+import { analizar, evaluar, mostrar, pilaComoTexto } from './pila.js';
 
 // La vista del docente: lista tambien las series y los grupos ocultos (en el
 // modo docente, o abriendo la pagina en esta PC).
@@ -219,6 +220,7 @@ function ordenDeOpciones(consigna) {
 // Lo que se muestra de una respuesta al final: el codigo escrito, o la opcion
 // elegida con los nombres que tenia entonces.
 function respuestaEscrita(consigna, hecha) {
+  if (consigna.pila) return pilaComoTexto(consigna, hecha.codigo);
   if (!consigna.opciones) return hecha.codigo;
   const opcion = consigna.opciones[Number(hecha.codigo)];
   const capturas = hecha.capturas || {};
@@ -269,6 +271,111 @@ function explicarLasDemas(consigna, capturas, elegida) {
     if (lugar === elegida || caja || !texto) continue;
     mensajeDeOpcion(lugar, 'explicacion', sustituir(texto, capturas));
   }
+}
+
+// ---- consignas con una tabla de llamadas (recursion a mano) ----------------------
+
+// Una fila por llamada. En una pantalla ancha es una tabla; en el celular cada
+// llamada es una tarjeta con sus campos uno debajo del otro.
+function dibujarPila(consigna) {
+  const pila = consigna.pila;
+  const caja = $('pila');
+  const esDada = (fila, columna) => (pila.dadas || []).includes(columna.id) || (fila.dadas || []).includes(columna.id);
+  const tabla = elemento('table', 'pila');
+  const cabeza = elemento('tr');
+  for (const titulo of ['Llamada', ...pila.columnas.map((c) => c.titulo)]) cabeza.appendChild(elemento('th', null, titulo));
+  tabla.appendChild(elemento('thead')).appendChild(cabeza);
+  const cuerpo = elemento('tbody');
+  pila.filas.forEach((fila, i) => {
+    const tr = elemento('tr');
+    const primera = elemento('td', 'llamada');
+    primera.dataset.rotulo = 'Llamada';
+    primera.appendChild(elemento('code', null, fila.llamada));
+    tr.appendChild(primera);
+    pila.columnas.forEach((columna, j) => {
+      const td = elemento('td');
+      td.dataset.rotulo = columna.titulo;
+      if (esDada(fila, columna)) {
+        td.classList.add('dada');
+        td.dataset.valor = fila[columna.id];
+        td.appendChild(elemento('code', null, fila[columna.id]));
+      } else {
+        const campo = document.createElement('input');
+        campo.type = 'text';
+        campo.autocomplete = 'off';
+        campo.autocapitalize = 'off';
+        campo.spellcheck = false;
+        campo.setAttribute('aria-label', `${columna.titulo} de ${fila.llamada}`);
+        campo.dataset.fila = i;
+        campo.dataset.columna = j;
+        td.appendChild(campo);
+        // El resultado de la cuenta, mientras la escribe.
+        if (columna.tipo === 'cuenta') td.appendChild(elemento('span', 'vivo'));
+      }
+      tr.appendChild(td);
+    });
+    cuerpo.appendChild(tr);
+  });
+  tabla.appendChild(cuerpo);
+  caja.replaceChildren(tabla);
+  if (pila.salida) {
+    const etiqueta = elemento('label', 'salida-pila');
+    etiqueta.appendChild(elemento('span', null, pila.salida.titulo));
+    const campo = document.createElement('input');
+    campo.type = 'text';
+    campo.id = 'pila-salida';
+    campo.autocomplete = 'off';
+    campo.spellcheck = false;
+    etiqueta.appendChild(campo);
+    caja.appendChild(etiqueta);
+  }
+}
+
+// Lo que hay en la tabla, como lo espera el corrector: todas las celdas, las
+// dadas con su texto.
+function respuestaDePila(consigna) {
+  const pila = consigna.pila;
+  const celdas = pila.filas.map((fila) => pila.columnas.map(() => ''));
+  for (const td of $('pila').querySelectorAll('td[data-rotulo]')) {
+    const tr = td.parentElement;
+    const j = [...tr.children].indexOf(td) - 1;
+    if (j < 0) continue;
+    const i = [...tr.parentElement.children].indexOf(tr);
+    celdas[i][j] = td.classList.contains('dada') ? td.dataset.valor : (td.querySelector('input')?.value ?? '');
+  }
+  const salida = $('pila-salida');
+  return JSON.stringify({ celdas, salida: salida ? salida.value : undefined });
+}
+
+// Cada cuenta muestra lo que da, apenas se puede calcular. No dice si esta bien.
+function alEscribirEnPila(evento) {
+  const campo = evento.target;
+  if (!(campo instanceof HTMLInputElement)) return;
+  campo.classList.remove('mal');
+  const vivo = campo.parentElement.querySelector('.vivo');
+  if (vivo) {
+    const arbol = analizar(campo.value);
+    const r = arbol && arbol.t !== 'num' ? evaluar(arbol) : null;
+    vivo.textContent = r ? '= ' + mostrar(r) : '';
+  }
+  alEscribir();
+}
+
+// Las celdas con error quedan marcadas; la marca se va al volver a escribir en ella.
+function marcarPila(consigna, diagnosticos) {
+  const tabla = $('pila');
+  for (const campo of tabla.querySelectorAll('input.mal')) campo.classList.remove('mal');
+  for (const d of diagnosticos) {
+    if (!d.celda) continue;
+    const campo = d.celda.salida
+      ? $('pila-salida')
+      : tabla.querySelector(`input[data-fila="${d.celda.fila}"][data-columna="${d.celda.columna}"]`);
+    if (campo) campo.classList.add('mal');
+  }
+}
+
+function bloquearPila() {
+  for (const campo of $('pila').querySelectorAll('input')) campo.readOnly = true;
 }
 
 // ---- la lista de series -------------------------------------------------------
@@ -441,18 +548,22 @@ function mostrarConsigna() {
 
   const termino = !consigna;
   const esCuestionario = Boolean(consigna?.opciones);
+  const esPila = Boolean(consigna?.pila);
+  // Sin editor: se responde eligiendo una opcion o completando una tabla.
+  const sinEditor = esCuestionario || esPila;
   const capturas = termino ? {} : capturasPrevias(serie, actual, avanceVisto);
   // Lo ya resuelto mas lo que esta consigna trae escrito.
   // En una consigna de opciones el codigo es un programa completo, de una sola
   // pieza: no hay un "codigo hasta aca" aparte.
-  const previo = termino || esCuestionario ? '' : codigoPrevio(serie, actual, avanceVisto);
-  const programa = !termino && esCuestionario ? programaDeOpciones(serie, actual, avanceVisto) : '';
+  const previo = termino || sinEditor ? '' : codigoPrevio(serie, actual, avanceVisto);
+  const programa = !termino && sinEditor ? programaDeOpciones(serie, actual, avanceVisto) : '';
   $('consigna').hidden = termino;
   $('bloque-contexto').hidden = !previo;
   $('bloque-respuesta').hidden = termino;
-  $('zona-codigo').hidden = esCuestionario;
+  $('zona-codigo').hidden = sinEditor;
   $('opciones').hidden = !esCuestionario;
-  $('atajo').hidden = esCuestionario;
+  $('pila').hidden = !esPila;
+  $('atajo').hidden = sinEditor;
   $('bloque-codigo').hidden = !programa;
   $('final').hidden = !termino;
   $('resultado').replaceChildren();
@@ -501,7 +612,7 @@ function mostrarConsigna() {
   // En una serie que mezcla definiciones y sentencias, se dice donde va lo que se escribe.
   const ambito = $('ambito');
   ambito.textContent =
-    esMixta(serie) && !esCuestionario
+    esMixta(serie) && !sinEditor
       ? enArchivo(consigna)
         ? consigna.despues
           ? 'Esta respuesta va arriba de todo, antes de main.'
@@ -512,9 +623,10 @@ function mostrarConsigna() {
   $('comprobar').hidden = false;
   $('siguiente').hidden = true;
   $('usar-anterior').hidden = true;
-  if (esCuestionario) {
+  if (sinEditor) {
     pintar($('codigo-consigna'), programa);
-    dibujarOpciones(consigna, capturas);
+    if (esCuestionario) dibujarOpciones(consigna, capturas);
+    else dibujarPila(consigna);
     $('ver-solucion').hidden = true;
     return;
   }
@@ -886,7 +998,8 @@ function comprobar() {
   const indice = repasando ?? hechas.length;
   const consigna = serie?.consignas[indice];
   const esCuestionario = Boolean(consigna?.opciones);
-  if (!consigna || (!esCuestionario && $('respuesta').readOnly)) return;
+  const esPila = Boolean(consigna?.pila);
+  if (!consigna || (!esCuestionario && !esPila && $('respuesta').readOnly)) return;
   pendiente = null;
   // En una de opciones la respuesta es el lugar de la opcion elegida.
   const elegida = esCuestionario ? document.querySelector('#opciones input:checked') : null;
@@ -894,7 +1007,7 @@ function comprobar() {
     mostrarResultado([mensaje('aviso', 'Elija una de las opciones para comprobar.')]);
     return;
   }
-  const respuesta = esCuestionario ? elegida.value : $('respuesta').value;
+  const respuesta = esCuestionario ? elegida.value : esPila ? respuestaDePila(consigna) : $('respuesta').value;
   let r;
   try {
     r = corregirPaso(analizador, serie, indice, avanceMostrado(), respuesta);
@@ -920,7 +1033,8 @@ function comprobar() {
     });
   }
   ofrecerInforme(consigna, esCuestionario, respuesta, r);
-  if (!esCuestionario) editor.marcar(r.diagnosticos);
+  if (esPila) marcarPila(consigna, r.diagnosticos);
+  else if (!esCuestionario) editor.marcar(r.diagnosticos);
 
   // En un cuestionario el mensaje de la opcion va debajo de ella.
   let cajas = r.diagnosticos.map((d) => mensaje(d.nivel, d.mensaje, d.linea, d.bloques));
@@ -961,6 +1075,7 @@ function comprobar() {
       cajas.unshift(mensaje('bien', pidePracticas(serie) ? 'Excelente.' : 'Correcto.'));
       $('respuesta').readOnly = true;
       for (const radio of document.querySelectorAll('#opciones input')) radio.disabled = true;
+      if (esPila) bloquearPila();
       $('comprobar').hidden = true;
       // "Ver una solucion" queda: con la respuesta bien, es otra forma de resolver lo mismo.
       $('siguiente').textContent = repasando != null ? 'Volver' : ultima ? 'Terminar' : 'Siguiente';
@@ -1026,11 +1141,11 @@ function ofrecerInforme(consigna, esCuestionario, respuesta, r) {
     resultado: r.correcto ? (r.mejorable ? 'mejorable' : 'correcto') : 'incorrecto',
     mensajes: recortar(mensajesComoTexto(r), MAX_MENSAJES),
     respuesta: recortar(
-      esCuestionario ? sustituir(consigna.opciones[Number(respuesta)].texto, capturas) : respuesta,
+      consigna.opciones ? sustituir(consigna.opciones[Number(respuesta)].texto, capturas) : respuesta,
       MAX_RESPUESTA
     ),
     previo: recortar(
-      esCuestionario ? programaDeOpciones(serie, indice, avanceVisto) : codigoPrevio(serie, indice, avanceVisto),
+      esCuestionario || consigna.pila ? programaDeOpciones(serie, indice, avanceVisto) : codigoPrevio(serie, indice, avanceVisto),
       MAX_PREVIO
     ),
   };
@@ -1154,7 +1269,7 @@ function siguiente() {
 function verSolucion() {
   const indice = repasando ?? hechas.length;
   const consigna = serie?.consignas[indice];
-  if (!consigna || consigna.opciones) return;
+  if (!consigna || consigna.opciones || consigna.pila) return;
   // La referencia nombra las cosas a su manera ("struct Puesto"): solo sirve
   // tal cual si el alumno viene siguiendo las referencias. Si no, se le
   // muestra como ejemplo y la adapta a sus nombres.
@@ -1295,6 +1410,7 @@ async function iniciar() {
   $('reiniciar').addEventListener('click', reiniciar);
   $('respuesta').addEventListener('keydown', teclaEnRespuesta);
   $('respuesta').addEventListener('input', alEscribir);
+  $('pila').addEventListener('input', alEscribirEnPila);
   // Cambiar la opcion elegida deja sin efecto lo que se habia dicho de la anterior.
   $('opciones').addEventListener('change', () => {
     pendiente = null;
