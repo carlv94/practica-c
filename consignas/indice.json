@@ -120,7 +120,13 @@
       "titulo": "Recursividad",
       "descripcion": "Funciones que se llaman a sí mismas: seguir las llamadas a mano y escribir las propias.",
       "series": [
-        "recursion-a-mano.json"
+        "recursion-a-mano.json",
+        "recursion-escribir.json",
+        "recursion-arreglos.json"
+      ],
+      "ocultas": [
+        "recursion-escribir.json",
+        "recursion-arreglos.json"
       ]
     }
   ]

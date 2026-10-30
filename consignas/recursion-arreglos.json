@@ -1,0 +1,452 @@
+{
+  "id": "recursion-arreglos",
+  "titulo": "Recursión con arreglos y cadenas",
+  "continua": false,
+  "dentroDeMain": true,
+  "descripcion": "Recorrer un arreglo o una cadena con una función recursiva: un índice o una cantidad que se acerca al caso base en cada llamada.",
+  "cabecera": "#include <stdio.h>",
+  "consignas": [
+    {
+      "id": "reca-sumar",
+      "titulo": "Sumar un arreglo",
+      "en": "archivo",
+      "enunciado": "Escriba una función recursiva que reciba un arreglo de enteros y su cantidad de elementos, y devuelva la suma de todos. Con `{1, 2, 3, 4}` y `4` devuelve `10`, y con `0` elementos devuelve `0`. Con `n` elementos, el último es `v[n - 1]`. Póngale el nombre que quiera.",
+      "requiere": [
+        {
+          "funcion": {
+            "retorna": "entero",
+            "parametros": [
+              {
+                "tipo": "entero",
+                "arreglo": true
+              },
+              {
+                "tipo": "entero"
+              }
+            ],
+            "recursiva": true,
+            "capturar": "S"
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "datos": {
+                  "v": [
+                    1,
+                    2,
+                    3,
+                    4
+                  ]
+                },
+                "llama": "$S(v, 4)",
+                "devuelve": 10,
+                "visible": true
+              },
+              {
+                "datos": {
+                  "v": [
+                    5
+                  ]
+                },
+                "llama": "$S(v, 1)",
+                "devuelve": 5
+              },
+              {
+                "datos": {
+                  "v": [
+                    3,
+                    -1,
+                    2
+                  ]
+                },
+                "llama": "$S(v, 3)",
+                "devuelve": 4
+              },
+              {
+                "datos": {
+                  "v": [
+                    9
+                  ]
+                },
+                "llama": "$S(v, 0)",
+                "devuelve": 0
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "int sumar(int v[], int n) {\n  if (n == 0) {\n    return 0;\n  }\n  return v[n - 1] + sumar(v, n - 1);\n}"
+    },
+    {
+      "id": "reca-esta",
+      "titulo": "Buscar un valor",
+      "en": "archivo",
+      "enunciado": "Escriba una función recursiva que reciba un arreglo de enteros, su cantidad de elementos y un valor, y devuelva `1` si el valor está en el arreglo y `0` si no. Póngale el nombre que quiera.",
+      "requiere": [
+        {
+          "funcion": {
+            "retorna": "entero",
+            "parametros": [
+              {
+                "tipo": "entero",
+                "arreglo": true
+              },
+              {
+                "tipo": "entero"
+              },
+              {
+                "tipo": "entero"
+              }
+            ],
+            "recursiva": true,
+            "capturar": "E"
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "datos": {
+                  "v": [
+                    4,
+                    7,
+                    9
+                  ]
+                },
+                "llama": "$E(v, 3, 7)",
+                "devuelve": 1,
+                "visible": true
+              },
+              {
+                "datos": {
+                  "v": [
+                    4,
+                    7,
+                    9
+                  ]
+                },
+                "llama": "$E(v, 3, 5)",
+                "devuelve": 0
+              },
+              {
+                "datos": {
+                  "v": [
+                    4,
+                    7,
+                    9
+                  ]
+                },
+                "llama": "$E(v, 3, 4)",
+                "devuelve": 1
+              },
+              {
+                "datos": {
+                  "v": [
+                    4,
+                    7,
+                    9
+                  ]
+                },
+                "llama": "$E(v, 0, 4)",
+                "devuelve": 0
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "int esta(int v[], int n, int valor) {\n  if (n == 0) {\n    return 0;\n  }\n  if (v[n - 1] == valor) {\n    return 1;\n  }\n  return esta(v, n - 1, valor);\n}"
+    },
+    {
+      "id": "reca-al-reves",
+      "titulo": "Mostrar un arreglo al revés",
+      "en": "archivo",
+      "enunciado": "Escriba una función recursiva que reciba un arreglo de enteros y su cantidad de elementos, y muestre con `printf` sus elementos de atrás hacia adelante, separados por un espacio. Con `{1, 2, 3}` muestra `3 2 1`. Póngale el nombre que quiera.",
+      "requiere": [
+        {
+          "funcion": {
+            "retorna": "void",
+            "parametros": [
+              {
+                "tipo": "entero",
+                "arreglo": true
+              },
+              {
+                "tipo": "entero"
+              }
+            ],
+            "recursiva": true,
+            "capturar": "M"
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "datos": {
+                  "v": [
+                    1,
+                    2,
+                    3
+                  ]
+                },
+                "llama": "$M(v, 3)",
+                "salida": "3 2 1",
+                "visible": true
+              },
+              {
+                "datos": {
+                  "v": [
+                    8
+                  ]
+                },
+                "llama": "$M(v, 1)",
+                "salida": "8"
+              },
+              {
+                "datos": {
+                  "v": [
+                    4,
+                    5,
+                    6,
+                    7
+                  ]
+                },
+                "llama": "$M(v, 4)",
+                "salida": "7 6 5 4"
+              },
+              {
+                "datos": {
+                  "v": [
+                    4
+                  ]
+                },
+                "llama": "$M(v, 0)",
+                "salida": ""
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "void mostrar(int v[], int n) {\n  if (n == 0) {\n    return;\n  }\n  printf(\"%d \", v[n - 1]);\n  mostrar(v, n - 1);\n}"
+    },
+    {
+      "id": "reca-largo",
+      "titulo": "El largo de una cadena",
+      "en": "archivo",
+      "enunciado": "Escriba una función recursiva que reciba una cadena y una posición `i`, y devuelva cuántas letras hay desde la posición `i` hasta el final de la cadena, sin contar el `'\\0'`. Se la llama con `0` para contar toda la cadena: con `\"hola\"` y `0` devuelve `4`, y con `2` devuelve `2`. Póngale el nombre que quiera.",
+      "requiere": [
+        {
+          "funcion": {
+            "retorna": "entero",
+            "parametros": [
+              {
+                "tipo": "caracter",
+                "arreglo": true
+              },
+              {
+                "tipo": "entero"
+              }
+            ],
+            "recursiva": true,
+            "capturar": "L"
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "datos": {
+                  "texto": "hola"
+                },
+                "llama": "$L(texto, 0)",
+                "devuelve": 4,
+                "visible": true
+              },
+              {
+                "datos": {
+                  "texto": "hola"
+                },
+                "llama": "$L(texto, 2)",
+                "devuelve": 2
+              },
+              {
+                "datos": {
+                  "texto": "sol"
+                },
+                "llama": "$L(texto, 0)",
+                "devuelve": 3
+              },
+              {
+                "datos": {
+                  "texto": "recursion"
+                },
+                "llama": "$L(texto, 0)",
+                "devuelve": 9
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "int largo(char s[], int i) {\n  if (s[i] == '\\0') {\n    return 0;\n  }\n  return 1 + largo(s, i + 1);\n}"
+    },
+    {
+      "id": "reca-contar",
+      "titulo": "Contar una letra",
+      "en": "archivo",
+      "enunciado": "Escriba una función recursiva que reciba una cadena, una posición `i` y una letra, y devuelva cuántas veces aparece la letra desde la posición `i` hasta el final de la cadena. Se la llama con `0` para recorrer toda la cadena: con `\"banana\"`, `0` y `'a'` devuelve `3`. Póngale el nombre que quiera.",
+      "requiere": [
+        {
+          "funcion": {
+            "retorna": "entero",
+            "parametros": [
+              {
+                "tipo": "caracter",
+                "arreglo": true
+              },
+              {
+                "tipo": "entero"
+              },
+              {
+                "tipo": "caracter"
+              }
+            ],
+            "recursiva": true,
+            "capturar": "C"
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "datos": {
+                  "texto": "banana"
+                },
+                "llama": "$C(texto, 0, 'a')",
+                "devuelve": 3,
+                "visible": true
+              },
+              {
+                "datos": {
+                  "texto": "banana"
+                },
+                "llama": "$C(texto, 0, 'n')",
+                "devuelve": 2
+              },
+              {
+                "datos": {
+                  "texto": "banana"
+                },
+                "llama": "$C(texto, 0, 'z')",
+                "devuelve": 0
+              },
+              {
+                "datos": {
+                  "texto": "banana"
+                },
+                "llama": "$C(texto, 3, 'a')",
+                "devuelve": 2
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "int contar(char s[], int i, char letra) {\n  if (s[i] == '\\0') {\n    return 0;\n  }\n  if (s[i] == letra) {\n    return 1 + contar(s, i + 1, letra);\n  }\n  return contar(s, i + 1, letra);\n}"
+    },
+    {
+      "id": "reca-q-ciclo",
+      "titulo": "Recursión o ciclo",
+      "archivo": "int sumarRecursiva(int v[], int n) {\n  if (n == 0) {\n    return 0;\n  }\n  return v[n - 1] + sumarRecursiva(v, n - 1);\n}\n\nint sumarConCiclo(int v[], int n) {\n  int total = 0;\n  for (int i = 0; i < n; i++) {\n    total = total + v[i];\n  }\n  return total;\n}",
+      "codigo": "int v[4] = {1, 2, 3, 4};\n\nprintf(\"%d %d\\n\", sumarRecursiva(v, 4), sumarConCiclo(v, 4));",
+      "enunciado": "Las dos funciones suman los elementos de un arreglo, una con recursión y otra con un ciclo. ¿Cuál de estas afirmaciones es cierta?",
+      "opciones": [
+        {
+          "texto": "La recursiva es siempre más rápida, porque no usa ninguna variable.",
+          "codigo": "OPCION_MAS_RAPIDA",
+          "explicacion": "La recursiva no es más rápida: cada llamada tiene que reservar su lugar en la memoria y guardar sus valores, lo que cuesta más que repetir un ciclo. Que no declare una variable como `total` no la hace más rápida."
+        },
+        {
+          "texto": "Las dos son iguales en todo: dan el mismo resultado y usan la misma memoria.",
+          "codigo": "OPCION_SIN_DIFERENCIA",
+          "explicacion": "Dan el mismo resultado, `10`, pero no usan la misma memoria: el ciclo usa unas pocas variables, y la recursiva deja una llamada pendiente por cada elemento, cada una con sus propios `v` y `n`."
+        },
+        {
+          "texto": "Dan el mismo resultado, pero la recursiva necesita memoria para cada llamada pendiente.",
+          "correcta": true,
+          "explicacion": "Las dos muestran `10 10`. La diferencia está en la memoria: el ciclo usa unas pocas variables, mientras que la recursiva deja una llamada esperando por cada elemento, y cada una guarda sus propios `v` y `n`. Con un arreglo muy grande esas llamadas pueden agotar la memoria y detener el programa. Por eso la recursión conviene cuando el problema se expresa naturalmente así, como en el palíndromo, y no cuando un ciclo simple alcanza."
+        }
+      ]
+    },
+    {
+      "id": "reca-palindromo",
+      "titulo": "Un palíndromo",
+      "en": "archivo",
+      "enunciado": "Una palabra es un palíndromo si se lee igual de izquierda a derecha que de derecha a izquierda, como `\"neuquen\"`. Escriba una función recursiva que reciba una cadena y dos posiciones, `i` y `j`, y devuelva `1` si las letras desde la posición `i` hasta la `j` forman un palíndromo y `0` si no. Se la llama con `0` y la posición de la última letra: con `\"neuquen\"`, `0` y `6` devuelve `1`. Compare la primera y la última letra, y siga con lo que queda en el medio. Póngale el nombre que quiera.",
+      "requiere": [
+        {
+          "funcion": {
+            "retorna": "entero",
+            "parametros": [
+              {
+                "tipo": "caracter",
+                "arreglo": true
+              },
+              {
+                "tipo": "entero"
+              },
+              {
+                "tipo": "entero"
+              }
+            ],
+            "recursiva": true,
+            "capturar": "P"
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "datos": {
+                  "texto": "neuquen"
+                },
+                "llama": "$P(texto, 0, 6)",
+                "devuelve": 1,
+                "visible": true
+              },
+              {
+                "datos": {
+                  "texto": "hola"
+                },
+                "llama": "$P(texto, 0, 3)",
+                "devuelve": 0
+              },
+              {
+                "datos": {
+                  "texto": "ana"
+                },
+                "llama": "$P(texto, 0, 2)",
+                "devuelve": 1
+              },
+              {
+                "datos": {
+                  "texto": "oso"
+                },
+                "llama": "$P(texto, 0, 2)",
+                "devuelve": 1
+              },
+              {
+                "datos": {
+                  "texto": "casa"
+                },
+                "llama": "$P(texto, 0, 3)",
+                "devuelve": 0
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "int esPalindromo(char s[], int i, int j) {\n  if (i >= j) {\n    return 1;\n  }\n  if (s[i] != s[j]) {\n    return 0;\n  }\n  return esPalindromo(s, i + 1, j - 1);\n}"
+    }
+  ]
+}

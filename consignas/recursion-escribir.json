@@ -1,0 +1,381 @@
+{
+  "id": "recursion-escribir",
+  "titulo": "Escribir funciones recursivas",
+  "continua": false,
+  "dentroDeMain": true,
+  "descripcion": "Escribir funciones que se llaman a sí mismas: pensar el caso base, el caso recursivo y cómo cada llamada se acerca al caso base.",
+  "cabecera": "#include <stdio.h>",
+  "consignas": [
+    {
+      "id": "rec-q-sin-base",
+      "titulo": "Una función sin caso base",
+      "archivo": "int suma(int n) {\n  return n + suma(n - 1);\n}",
+      "codigo": "printf(\"%d\\n\", suma(3));",
+      "enunciado": "La función `suma` debería sumar los números de `1` a `n`, pero se llama a sí misma sin ninguna condición. ¿Qué pasa al ejecutar este programa?",
+      "opciones": [
+        {
+          "texto": "Muestra `6`.",
+          "codigo": "OPCION_MUESTRA_SEIS",
+          "explicacion": "Para llegar a `6` la función tendría que dejar de llamarse al llegar a `0`, pero nada se lo indica: `suma(3)` llama a `suma(2)`, esta a `suma(1)`, y siguen `suma(0)`, `suma(-1)`... Ninguna llega a su `return`."
+        },
+        {
+          "texto": "La función se llama a sí misma sin parar y el programa no termina.",
+          "correcta": true,
+          "explicacion": "Falta el caso base: un `if` que haga `return` sin llamarse otra vez. Sin él, `suma(3)` llama a `suma(2)`, esta a `suma(1)`, y siguen `suma(0)`, `suma(-1)` y así sin terminar nunca: cada llamada queda esperando y ocupa memoria, hasta que se agota y el programa se detiene. La solución es un `if (n == 0)` que devuelva `0` antes de la llamada recursiva."
+        },
+        {
+          "texto": "No compila: una función no puede llamarse a sí misma.",
+          "codigo": "OPCION_NO_COMPILA",
+          "explicacion": "Sí compila: C permite que una función se llame a sí misma. El problema es que nada la detiene."
+        }
+      ]
+    },
+    {
+      "id": "rec-q-no-llega",
+      "titulo": "Un caso base que no se alcanza",
+      "archivo": "int suma(int n) {\n  if (n == 0) {\n    return 0;\n  }\n  return n + suma(n + 1);\n}",
+      "codigo": "printf(\"%d\\n\", suma(3));",
+      "enunciado": "Esta vez `suma` tiene su caso base, pero la llamada recursiva cambió. ¿Qué pasa al ejecutar este programa?",
+      "opciones": [
+        {
+          "texto": "Muestra `6`.",
+          "codigo": "OPCION_MUESTRA_SEIS",
+          "explicacion": "`suma(3)` no llama a `suma(2)`, sino a `suma(4)`, que llama a `suma(5)`: el número se aleja de `0` en lugar de acercarse, así que ninguna llamada llega a terminar para poder sumar."
+        },
+        {
+          "texto": "Muestra `0`, porque el caso base devuelve `0`.",
+          "codigo": "OPCION_MUESTRA_CERO",
+          "explicacion": "El caso base solo se ejecuta si `n` llega a valer `0`, y acá nunca llega: `n` vale `3`, `4`, `5`... Sin llegar al caso base no hay ningún valor que devolver."
+        },
+        {
+          "texto": "La función se llama a sí misma sin parar y el programa no termina.",
+          "correcta": true,
+          "explicacion": "Tener un caso base no alcanza: cada llamada tiene que acercarse a él. Acá `n + 1` aleja el argumento de `0`, así que la condición `n == 0` nunca se cumple y las llamadas no terminan. Para acercarse, la llamada tiene que ser `suma(n - 1)`."
+        }
+      ]
+    },
+    {
+      "id": "rec-suma",
+      "titulo": "Sumar los números hasta n",
+      "en": "archivo",
+      "enunciado": "Escriba una función recursiva que reciba un entero `n`, mayor o igual que `0`, y devuelva la suma de los números de `1` a `n`. Con `4` devuelve `10`, y con `0` devuelve `0`. Póngale el nombre que quiera. Piense primero cuál es el caso más simple, el que se puede responder sin llamar a la función.",
+      "requiere": [
+        {
+          "funcion": {
+            "retorna": "entero",
+            "parametros": [
+              {
+                "tipo": "entero"
+              }
+            ],
+            "recursiva": true,
+            "capturar": "S"
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "llama": "$S(4)",
+                "devuelve": 10,
+                "visible": true
+              },
+              {
+                "llama": "$S(0)",
+                "devuelve": 0
+              },
+              {
+                "llama": "$S(1)",
+                "devuelve": 1
+              },
+              {
+                "llama": "$S(10)",
+                "devuelve": 55
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "int suma(int n) {\n  if (n == 0) {\n    return 0;\n  }\n  return n + suma(n - 1);\n}"
+    },
+    {
+      "id": "rec-factorial",
+      "titulo": "El factorial",
+      "en": "archivo",
+      "enunciado": "Escriba una función recursiva que reciba un entero `n`, mayor o igual que `0`, y devuelva su factorial: el producto de los números de `1` a `n`. Con `5` devuelve `120`, y el factorial de `0` es `1`. Póngale el nombre que quiera.",
+      "requiere": [
+        {
+          "funcion": {
+            "retorna": "entero",
+            "parametros": [
+              {
+                "tipo": "entero"
+              }
+            ],
+            "recursiva": true,
+            "capturar": "F"
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "llama": "$F(5)",
+                "devuelve": 120,
+                "visible": true
+              },
+              {
+                "llama": "$F(0)",
+                "devuelve": 1
+              },
+              {
+                "llama": "$F(1)",
+                "devuelve": 1
+              },
+              {
+                "llama": "$F(3)",
+                "devuelve": 6
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "int factorial(int n) {\n  if (n == 0) {\n    return 1;\n  }\n  return n * factorial(n - 1);\n}"
+    },
+    {
+      "id": "rec-potencia",
+      "titulo": "Una potencia",
+      "en": "archivo",
+      "enunciado": "Escriba una función recursiva que reciba dos enteros, la base y el exponente (mayor o igual que `0`), y devuelva la base elevada al exponente, sin usar `pow`. Con `2` y `3` devuelve `8`, y cualquier número elevado a `0` es `1`. Póngale el nombre que quiera.",
+      "requiere": [
+        {
+          "funcion": {
+            "retorna": "entero",
+            "parametros": [
+              {
+                "tipo": "entero"
+              },
+              {
+                "tipo": "entero"
+              }
+            ],
+            "recursiva": true,
+            "capturar": "P"
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "llama": "$P(2, 3)",
+                "devuelve": 8,
+                "visible": true
+              },
+              {
+                "llama": "$P(5, 0)",
+                "devuelve": 1
+              },
+              {
+                "llama": "$P(3, 2)",
+                "devuelve": 9
+              },
+              {
+                "llama": "$P(2, 10)",
+                "devuelve": 1024
+              },
+              {
+                "llama": "$P(7, 1)",
+                "devuelve": 7
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "int potencia(int base, int exp) {\n  if (exp == 0) {\n    return 1;\n  }\n  return base * potencia(base, exp - 1);\n}"
+    },
+    {
+      "id": "rec-digitos",
+      "titulo": "Contar dígitos",
+      "en": "archivo",
+      "enunciado": "Escriba una función recursiva que reciba un entero `n`, mayor o igual que `0`, y devuelva cuántos dígitos tiene. Con `1234` devuelve `4`, y el `0` tiene un dígito. Sacarle el último dígito a un número es dividirlo por `10`. Póngale el nombre que quiera.",
+      "requiere": [
+        {
+          "funcion": {
+            "retorna": "entero",
+            "parametros": [
+              {
+                "tipo": "entero"
+              }
+            ],
+            "recursiva": true,
+            "capturar": "D"
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "llama": "$D(1234)",
+                "devuelve": 4,
+                "visible": true
+              },
+              {
+                "llama": "$D(7)",
+                "devuelve": 1
+              },
+              {
+                "llama": "$D(0)",
+                "devuelve": 1
+              },
+              {
+                "llama": "$D(10)",
+                "devuelve": 2
+              },
+              {
+                "llama": "$D(99999)",
+                "devuelve": 5
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "int digitos(int n) {\n  if (n < 10) {\n    return 1;\n  }\n  return 1 + digitos(n / 10);\n}"
+    },
+    {
+      "id": "rec-suma-digitos",
+      "titulo": "Sumar los dígitos",
+      "en": "archivo",
+      "enunciado": "Escriba una función recursiva que reciba un entero `n`, mayor o igual que `0`, y devuelva la suma de sus dígitos. Con `1234` devuelve `10`. El último dígito de un número es el resto de dividirlo por `10`. Póngale el nombre que quiera.",
+      "requiere": [
+        {
+          "funcion": {
+            "retorna": "entero",
+            "parametros": [
+              {
+                "tipo": "entero"
+              }
+            ],
+            "recursiva": true,
+            "capturar": "D"
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "llama": "$D(1234)",
+                "devuelve": 10,
+                "visible": true
+              },
+              {
+                "llama": "$D(7)",
+                "devuelve": 7
+              },
+              {
+                "llama": "$D(0)",
+                "devuelve": 0
+              },
+              {
+                "llama": "$D(505)",
+                "devuelve": 10
+              },
+              {
+                "llama": "$D(99)",
+                "devuelve": 18
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "int sumaDigitos(int n) {\n  if (n == 0) {\n    return 0;\n  }\n  return n % 10 + sumaDigitos(n / 10);\n}"
+    },
+    {
+      "id": "rec-mostrar-baja",
+      "titulo": "Mostrar de n a 1",
+      "en": "archivo",
+      "enunciado": "Escriba una función recursiva que reciba un entero `n`, mayor o igual que `0`, y muestre con `printf` los números de `n` a `1`, separados por un espacio. Con `3` muestra `3 2 1`, y con `0` no muestra nada. Póngale el nombre que quiera.",
+      "requiere": [
+        {
+          "funcion": {
+            "retorna": "void",
+            "parametros": [
+              {
+                "tipo": "entero"
+              }
+            ],
+            "recursiva": true,
+            "capturar": "M"
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "llama": "$M(3)",
+                "salida": "3 2 1",
+                "visible": true
+              },
+              {
+                "llama": "$M(0)",
+                "salida": ""
+              },
+              {
+                "llama": "$M(1)",
+                "salida": "1"
+              },
+              {
+                "llama": "$M(5)",
+                "salida": "5 4 3 2 1"
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "void mostrar(int n) {\n  if (n == 0) {\n    return;\n  }\n  printf(\"%d \", n);\n  mostrar(n - 1);\n}"
+    },
+    {
+      "id": "rec-mostrar-sube",
+      "titulo": "Mostrar de 1 a n",
+      "en": "archivo",
+      "enunciado": "Ahora que los muestre al revés: una función recursiva que reciba un entero `n`, mayor o igual que `0`, y muestre con `printf` los números de `1` a `n`, separados por un espacio. Con `3` muestra `1 2 3`. Fíjese en el orden en que se ejecutan el `printf` y la llamada recursiva. Póngale el nombre que quiera.",
+      "requiere": [
+        {
+          "funcion": {
+            "retorna": "void",
+            "parametros": [
+              {
+                "tipo": "entero"
+              }
+            ],
+            "recursiva": true,
+            "capturar": "M"
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "llama": "$M(3)",
+                "salida": "1 2 3",
+                "visible": true
+              },
+              {
+                "llama": "$M(0)",
+                "salida": ""
+              },
+              {
+                "llama": "$M(1)",
+                "salida": "1"
+              },
+              {
+                "llama": "$M(5)",
+                "salida": "1 2 3 4 5"
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "void mostrar(int n) {\n  if (n == 0) {\n    return;\n  }\n  mostrar(n - 1);\n  printf(\"%d \", n);\n}"
+    }
+  ]
+}
