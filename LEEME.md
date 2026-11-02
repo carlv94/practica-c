@@ -1459,7 +1459,8 @@ en `js/app.js`.
 - **Códigos**: `PILA_IDA_INCORRECTA`, `PILA_VUELTA_INCORRECTA`, `PILA_ORDEN_DISTINTO`,
   `PILA_VUELTA_SIN_CUENTA` (escribió solo el resultado), `PILA_ARGUMENTO_SIN_CALCULAR`
   (`factorial(3 - 1)`), `PILA_EXPRESION_ILEGIBLE`, `PILA_TEXTO_INCORRECTO`,
-  `PILA_SALIDA_INCORRECTA` y `PILA_CELDA_VACIA`. Cada error lleva la celda para marcarla.
+  `PILA_SALIDA_INCORRECTA`, `PILA_TOTAL_INCOMPLETO` y `PILA_CELDA_VACIA`. Cada error lleva la celda para marcarla.
+- **Columna `"total": true`** (solo en una columna `texto`): es todo lo que muestra esa llamada hasta terminar, con lo que muestran las de abajo. Se llena de abajo hacia arriba y la primera fila es lo que muestra el programa, así que la tabla no necesita el campo `"salida"`. Si lo que escribe el alumno está contenido en lo esperado (se dejó afuera lo de las llamadas de abajo), da `PILA_TOTAL_INCOMPLETO` en lugar de `PILA_TEXTO_INCORRECTO`. Las pruebas comprueban que la primera fila sea la salida real y que cada fila contenga a la de abajo. La usa "Mostrar antes y después de llamar".
 - **Las pruebas** comparan cada tabla con la ejecución real del programa
   (`problemasDeLaTabla` en `pruebas/casos-pila.js`): lo que muestra `main`, que cada vuelta
   use lo que devolvió la llamada de abajo y que cada ida nombre la llamada siguiente. La

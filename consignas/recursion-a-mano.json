@@ -330,7 +330,7 @@
       "titulo": "Mostrar antes y después de llamar",
       "archivo": "void cuenta(int n) {\n  if (n == 0) {\n    return;\n  }\n  printf(\"%d \", n);\n  cuenta(n - 1);\n  printf(\"%d \", n);\n}",
       "codigo": "cuenta(3);",
-      "enunciado": "Esta función no devuelve nada: muestra `n` antes de llamarse a sí misma y otra vez al volver. `main` la llama con `3`. En cada llamada, escriba lo que muestra antes de llamar y lo que muestra al volver. Después, escriba todo lo que muestra el programa, en el orden en que lo muestra.",
+      "enunciado": "Esta función no devuelve nada: muestra `n` antes de llamarse a sí misma y otra vez al volver. `main` la llama con `3`. En cada llamada, escriba lo que muestra antes de llamar y, en la otra columna, todo lo que muestra esa llamada hasta terminar: lo suyo de antes, lo que muestran las llamadas de abajo y lo suyo al volver. Conviene completar primero las filas de abajo.",
       "pila": {
         "columnas": [
           {
@@ -339,57 +339,44 @@
             "tipo": "texto"
           },
           {
-            "id": "vuelta",
-            "titulo": "Muestra al volver",
-            "tipo": "texto"
+            "id": "total",
+            "titulo": "Todo lo que muestra la llamada",
+            "tipo": "texto",
+            "total": true
           }
         ],
         "filas": [
           {
-            "llamada": "main",
-            "antes": "(nada)",
-            "vuelta": "(nada)",
-            "dadas": [
-              "antes",
-              "vuelta"
-            ]
-          },
-          {
             "llamada": "cuenta(3)",
             "antes": "3",
-            "vuelta": "3"
+            "total": "3 2 1 1 2 3"
           },
           {
             "llamada": "cuenta(2)",
             "antes": "2",
-            "vuelta": "2"
+            "total": "2 1 1 2"
           },
           {
             "llamada": "cuenta(1)",
             "antes": "1",
-            "vuelta": "1"
+            "total": "1 1"
           },
           {
             "llamada": "cuenta(0)",
             "antes": "(nada)",
-            "vuelta": "(nada)",
+            "total": "(nada)",
             "dadas": [
               "antes",
-              "vuelta"
+              "total"
             ]
           }
         ],
         "pistas": {
           "antes": "Es el primer `printf` de la función, con el valor de `n` en esa llamada.",
-          "vuelta": "Es el segundo `printf`, el que queda esperando hasta que la llamada de abajo termine."
-        },
-        "salida": {
-          "titulo": "Todo lo que muestra el programa, en orden:",
-          "esperada": "3 2 1 1 2 3",
-          "pista": "Se lee la columna de antes de arriba hacia abajo y, después, la de al volver de abajo hacia arriba."
+          "total": "Es lo que muestra antes de llamar, más todo lo que muestra la llamada de abajo, más lo que muestra al volver."
         }
       },
-      "explicacion": "Lo que se muestra antes de llamar sale en el orden de la ida, de arriba hacia abajo; lo que se muestra al volver sale en el orden de la vuelta, de abajo hacia arriba. Por eso el programa muestra `3 2 1 1 2 3`."
+      "explicacion": "Cada llamada muestra su `n`, después todo lo que muestra la llamada de abajo y, al volver, su `n` otra vez. Por eso `cuenta(1)` muestra `1 1`, `cuenta(2)` muestra `2 1 1 2` y `cuenta(3)`, la que llamó `main`, muestra `3 2 1 1 2 3`: eso es todo lo que muestra el programa."
     },
     {
       "id": "rmano-digitos",

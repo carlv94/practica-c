@@ -229,9 +229,13 @@ export function corregirPila(consigna, respuesta) {
       const esperado = fila[columna.id];
       if (columna.tipo === 'texto') {
         if (sinEspacios(escrito) !== sinEspacios(esperado)) {
+          // En la columna "total" lo habitual es dejar afuera lo que muestran las llamadas de abajo.
+          const incompleto = columna.total && sinEspacios(esperado).includes(sinEspacios(escrito));
           error(
-            'PILA_TEXTO_INCORRECTO',
-            `Lo que escribió para ${llamada} en «${columna.titulo}» no es lo que muestra el programa.${pista}`,
+            incompleto ? 'PILA_TOTAL_INCOMPLETO' : 'PILA_TEXTO_INCORRECTO',
+            incompleto
+              ? `Lo que escribió para ${llamada} en «${columna.titulo}» está incompleto: ahí va todo lo que muestra esa llamada hasta terminar, contando lo que muestran las llamadas de abajo.${pista}`
+              : `Lo que escribió para ${llamada} en «${columna.titulo}» no es lo que muestra el programa.${pista}`,
             donde
           );
         }

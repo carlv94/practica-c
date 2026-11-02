@@ -49,10 +49,9 @@ const POTENCIA = [
   ['1', '1'],
 ];
 const CUENTA = [
-  ['(nada)', '(nada)'],
-  ['3', '3'],
-  ['2', '2'],
-  ['1', '1'],
+  ['3', '3 2 1 1 2 3'],
+  ['2', '2 1 1 2'],
+  ['1', '1 1'],
   ['(nada)', '(nada)'],
 ];
 const DIGITOS = [
@@ -116,14 +115,18 @@ export const CASOS_DE_PILA = [
   serie(6, 'con el argumento sin calcular', tabla(con(POTENCIA, 1, 0, '2 * potencia(2, 3 - 1)')), ['PILA_ARGUMENTO_SIN_CALCULAR']),
   serie(6, 'bajando la base', tabla(con(POTENCIA, 1, 0, '2 * potencia(1, 3)')), ['PILA_IDA_INCORRECTA']),
   // ---- 7: mostrar antes y despues ----
-  serie(7, 'la tabla completa', tabla(CUENTA, '3 2 1 1 2 3')),
-  serie(7, 'la salida sin espacios', tabla(CUENTA, '321123')),
-  serie(7, 'la salida a medias', tabla(CUENTA, '3 2 1'), ['PILA_SALIDA_INCORRECTA']),
-  serie(7, 'sin la salida', tabla(CUENTA, ''), ['PILA_CELDA_VACIA']),
-  serie(7, 'lo que muestra antes equivocado', tabla(con(CUENTA, 2, 0, '1'), '3 2 1 1 2 3'), ['PILA_TEXTO_INCORRECTO'], {
+  serie(7, 'la tabla completa', tabla(CUENTA)),
+  serie(7, 'el total sin espacios', tabla(con(CUENTA, 0, 1, '321123'))),
+  serie(7, 'solo lo suyo al volver', tabla(con(CUENTA, 1, 1, '2')), ['PILA_TOTAL_INCOMPLETO'], {
+    dice: ['contando lo que muestran las llamadas de abajo'],
+  }),
+  serie(7, 'el total a medias', tabla(con(CUENTA, 0, 1, '3 2 1')), ['PILA_TOTAL_INCOMPLETO']),
+  serie(7, 'sin lo de afuera', tabla(con(CUENTA, 2, 1, '1')), ['PILA_TOTAL_INCOMPLETO']),
+  serie(7, 'un total en otro orden', tabla(con(CUENTA, 1, 1, '2 1 2 1')), ['PILA_TEXTO_INCORRECTO']),
+  serie(7, 'un total vacio', tabla(con(CUENTA, 0, 1, '')), ['PILA_CELDA_VACIA']),
+  serie(7, 'lo que muestra antes equivocado', tabla(con(CUENTA, 1, 0, '1')), ['PILA_TEXTO_INCORRECTO'], {
     dice: ['Muestra antes de llamar'],
   }),
-  serie(7, 'lo que muestra al volver equivocado', tabla(con(CUENTA, 1, 1, '(nada)'), '3 2 1 1 2 3'), ['PILA_TEXTO_INCORRECTO']),
   // ---- 8: digitos ----
   serie(8, 'la tabla completa', tabla(DIGITOS)),
   serie(8, 'con la division sin calcular', tabla(con(DIGITOS, 1, 0, '1 + digitos(1234 / 10)')), ['PILA_ARGUMENTO_SIN_CALCULAR']),
@@ -179,6 +182,21 @@ export function problemasDeLaTabla(consigna, salida) {
       if (i === filas.length - 1) return;
       if (!sinEspacios(fila[llamada.id]).includes(sinEspacios(filas[i + 1].llamada))) {
         problemas.push(`${fila.llamada}: la ida no nombra ${filas[i + 1].llamada}`);
+      }
+    });
+  }
+  // Una columna "total" es lo que muestra cada llamada hasta terminar: la de arriba es todo
+  // lo que muestra el programa, y cada una contiene lo que muestra la de abajo.
+  const total = columnas.find((c) => c.total);
+  if (total) {
+    const sinNada = (t) => (sinEspacios(t) === '(nada)' ? '' : sinEspacios(t));
+    if (sinNada(filas[0][total.id]) !== sinEspacios(salida)) {
+      problemas.push(`la primera fila muestra «${filas[0][total.id]}» y el programa muestra «${salida}»`);
+    }
+    filas.forEach((fila, i) => {
+      if (i === filas.length - 1) return;
+      if (!sinNada(fila[total.id]).includes(sinNada(filas[i + 1][total.id]))) {
+        problemas.push(`${fila.llamada}: lo que muestra no contiene lo que muestra ${filas[i + 1].llamada}`);
       }
     });
   }
