@@ -123,9 +123,6 @@
         "recursion-a-mano.json",
         "recursion-escribir.json",
         "recursion-arreglos.json"
-      ],
-      "ocultas": [
-        "recursion-arreglos.json"
       ]
     }
   ]
