@@ -80,20 +80,26 @@ export const CASOS_DE_RECURSION = [
   conArreglos(
     2,
     'devolviendo al encontrarlo',
-    FUNCION('int esta(int v[], int n, int valor)', '  if (n == 0) {\n    return 0;\n  }\n  if (v[n - 1] == valor) {\n    return 1;\n  }\n  return esta(v, n - 1, valor);'),
+    FUNCION('TBool esta(int v[], int n, int valor)', '  if (n == 0) {\n    return FALSO;\n  }\n  if (v[n - 1] == valor) {\n    return VERDADERO;\n  }\n  return esta(v, n - 1, valor);'),
     'ok',
     { mejoras: [] }
   ),
   conArreglos(
     2,
     'con || en la llamada',
-    FUNCION('int esta(int v[], int n, int valor)', '  if (n == 0) {\n    return 0;\n  }\n  return v[n - 1] == valor || esta(v, n - 1, valor);')
+    FUNCION('TBool esta(int v[], int n, int valor)', '  if (n == 0) {\n    return FALSO;\n  }\n  return v[n - 1] == valor || esta(v, n - 1, valor);')
   ),
   conArreglos(
     2,
     'el caso base devuelve uno',
-    FUNCION('int esta(int v[], int n, int valor)', '  if (n == 0) {\n    return 1;\n  }\n  if (v[n - 1] == valor) {\n    return 1;\n  }\n  return esta(v, n - 1, valor);'),
+    FUNCION('TBool esta(int v[], int n, int valor)', '  if (n == 0) {\n    return VERDADERO;\n  }\n  if (v[n - 1] == valor) {\n    return VERDADERO;\n  }\n  return esta(v, n - 1, valor);'),
     ['DEVUELVE_DISTINTO']
+  ),
+  conArreglos(
+    2,
+    'devolviendo numeros en lugar del enumerado',
+    FUNCION('TBool esta(int v[], int n, int valor)', '  if (n == 0) {\n    return 0;\n  }\n  if (v[n - 1] == valor) {\n    return 1;\n  }\n  return esta(v, n - 1, valor);'),
+    ['RETORNO_NUMERO_EN_ENUMERADO']
   ),
   // ---- 3: mostrar al reves ----
   conArreglos(3, 'mostrando antes de llamar', FUNCION('void mostrar(int v[], int n)', '  if (n == 0) {\n    return;\n  }\n  printf("%d ", v[n - 1]);\n  mostrar(v, n - 1);'), 'ok', { mejoras: [] }),
@@ -130,19 +136,19 @@ export const CASOS_DE_RECURSION = [
   conArreglos(
     7,
     'comparando los extremos',
-    FUNCION('int esPalindromo(char s[], int i, int j)', '  if (i >= j) {\n    return 1;\n  }\n  if (s[i] != s[j]) {\n    return 0;\n  }\n  return esPalindromo(s, i + 1, j - 1);'),
+    FUNCION('TBool esPalindromo(char s[], int i, int j)', '  if (i >= j) {\n    return VERDADERO;\n  }\n  if (s[i] != s[j]) {\n    return FALSO;\n  }\n  return esPalindromo(s, i + 1, j - 1);'),
     'ok',
     { mejoras: [] }
   ),
   conArreglos(
     7,
     'con una sola condicion',
-    FUNCION('int esPalindromo(char s[], int i, int j)', '  if (i >= j) {\n    return 1;\n  }\n  return s[i] == s[j] && esPalindromo(s, i + 1, j - 1);')
+    FUNCION('TBool esPalindromo(char s[], int i, int j)', '  if (i >= j) {\n    return VERDADERO;\n  }\n  return s[i] == s[j] && esPalindromo(s, i + 1, j - 1);')
   ),
   conArreglos(
     7,
     'sin comparar',
-    FUNCION('int esPalindromo(char s[], int i, int j)', '  if (i >= j) {\n    return 1;\n  }\n  return esPalindromo(s, i + 1, j - 1);'),
+    FUNCION('TBool esPalindromo(char s[], int i, int j)', '  if (i >= j) {\n    return VERDADERO;\n  }\n  return esPalindromo(s, i + 1, j - 1);'),
     ['DEVUELVE_DISTINTO']
   ),
 ];

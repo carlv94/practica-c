@@ -83,11 +83,12 @@
       "id": "reca-esta",
       "titulo": "Buscar un valor",
       "en": "archivo",
-      "enunciado": "Escriba una función recursiva que reciba un arreglo de enteros, su cantidad de elementos y un valor, y devuelva `1` si el valor está en el arreglo y `0` si no. Póngale el nombre que quiera.",
+      "archivoDado": "typedef enum {\n  FALSO,\n  VERDADERO\n} TBool;",
+      "enunciado": "El enumerado `TBool`, con los valores `FALSO` y `VERDADERO`, ya está declarado. Escriba una función recursiva que reciba un arreglo de enteros, su cantidad de elementos y un valor, y devuelva `VERDADERO` si el valor está en el arreglo y `FALSO` si no. Póngale el nombre que quiera.",
       "requiere": [
         {
           "funcion": {
-            "retorna": "entero",
+            "retorna": "enumerado",
             "parametros": [
               {
                 "tipo": "entero",
@@ -101,7 +102,8 @@
               }
             ],
             "recursiva": true,
-            "capturar": "E"
+            "capturar": "E",
+            "soloEnumeradores": true
           }
         },
         {
@@ -116,7 +118,7 @@
                   ]
                 },
                 "llama": "$E(v, 3, 7)",
-                "devuelve": 1,
+                "devuelve": "VERDADERO",
                 "visible": true
               },
               {
@@ -128,7 +130,7 @@
                   ]
                 },
                 "llama": "$E(v, 3, 5)",
-                "devuelve": 0
+                "devuelve": "FALSO"
               },
               {
                 "datos": {
@@ -139,7 +141,7 @@
                   ]
                 },
                 "llama": "$E(v, 3, 4)",
-                "devuelve": 1
+                "devuelve": "VERDADERO"
               },
               {
                 "datos": {
@@ -150,13 +152,13 @@
                   ]
                 },
                 "llama": "$E(v, 0, 4)",
-                "devuelve": 0
+                "devuelve": "FALSO"
               }
             ]
           }
         }
       ],
-      "referencia": "int esta(int v[], int n, int valor) {\n  if (n == 0) {\n    return 0;\n  }\n  if (v[n - 1] == valor) {\n    return 1;\n  }\n  return esta(v, n - 1, valor);\n}"
+      "referencia": "TBool esta(int v[], int n, int valor) {\n  if (n == 0) {\n    return FALSO;\n  }\n  if (v[n - 1] == valor) {\n    return VERDADERO;\n  }\n  return esta(v, n - 1, valor);\n}"
     },
     {
       "id": "reca-al-reves",
@@ -382,11 +384,12 @@
       "id": "reca-palindromo",
       "titulo": "Un palíndromo",
       "en": "archivo",
-      "enunciado": "Una palabra es un palíndromo si se lee igual de izquierda a derecha que de derecha a izquierda, como `\"neuquen\"`. Escriba una función recursiva que reciba una cadena y dos posiciones, `i` y `j`, y devuelva `1` si las letras desde la posición `i` hasta la `j` forman un palíndromo y `0` si no. Se la llama con `0` y la posición de la última letra: con `\"neuquen\"`, `0` y `6` devuelve `1`. Compare la primera y la última letra, y siga con lo que queda en el medio. Póngale el nombre que quiera.",
+      "archivoDado": "typedef enum {\n  FALSO,\n  VERDADERO\n} TBool;",
+      "enunciado": "El enumerado `TBool`, con los valores `FALSO` y `VERDADERO`, ya está declarado. Una palabra es un palíndromo si se lee igual de izquierda a derecha que de derecha a izquierda, como `\"neuquen\"`. Escriba una función recursiva que reciba una cadena y dos posiciones, `i` y `j`, y devuelva `VERDADERO` si las letras desde la posición `i` hasta la `j` forman un palíndromo y `FALSO` si no. Se la llama con `0` y la posición de la última letra: con `\"neuquen\"`, `0` y `6` devuelve `VERDADERO`. Compare la primera y la última letra, y siga con lo que queda en el medio. Póngale el nombre que quiera.",
       "requiere": [
         {
           "funcion": {
-            "retorna": "entero",
+            "retorna": "enumerado",
             "parametros": [
               {
                 "tipo": "caracter",
@@ -400,7 +403,8 @@
               }
             ],
             "recursiva": true,
-            "capturar": "P"
+            "capturar": "P",
+            "soloEnumeradores": true
           }
         },
         {
@@ -411,7 +415,7 @@
                   "texto": "neuquen"
                 },
                 "llama": "$P(texto, 0, 6)",
-                "devuelve": 1,
+                "devuelve": "VERDADERO",
                 "visible": true
               },
               {
@@ -419,34 +423,34 @@
                   "texto": "hola"
                 },
                 "llama": "$P(texto, 0, 3)",
-                "devuelve": 0
+                "devuelve": "FALSO"
               },
               {
                 "datos": {
                   "texto": "ana"
                 },
                 "llama": "$P(texto, 0, 2)",
-                "devuelve": 1
+                "devuelve": "VERDADERO"
               },
               {
                 "datos": {
                   "texto": "oso"
                 },
                 "llama": "$P(texto, 0, 2)",
-                "devuelve": 1
+                "devuelve": "VERDADERO"
               },
               {
                 "datos": {
                   "texto": "casa"
                 },
                 "llama": "$P(texto, 0, 3)",
-                "devuelve": 0
+                "devuelve": "FALSO"
               }
             ]
           }
         }
       ],
-      "referencia": "int esPalindromo(char s[], int i, int j) {\n  if (i >= j) {\n    return 1;\n  }\n  if (s[i] != s[j]) {\n    return 0;\n  }\n  return esPalindromo(s, i + 1, j - 1);\n}"
+      "referencia": "TBool esPalindromo(char s[], int i, int j) {\n  if (i >= j) {\n    return VERDADERO;\n  }\n  if (s[i] != s[j]) {\n    return FALSO;\n  }\n  return esPalindromo(s, i + 1, j - 1);\n}"
     }
   ]
 }
