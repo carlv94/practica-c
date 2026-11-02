@@ -214,6 +214,7 @@ export const CASOS_DE_FUNCIONES = [
   devolver(7, 'par con if', 'typedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\n' + FUNCION('TBool esPar(int n)', '  if (n % 2 == 0) {\n    return VERDADERO;\n  }\n  return FALSO;'), 'ok', { mejoras: [] }),
   devolver(7, 'par con return directo', 'typedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\n' + FUNCION('TBool esPar(int n)', '  return n % 2 == 0;')),
   devolver(7, 'par con if y else', 'typedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\n' + FUNCION('TBool esPar(int n)', '  if (n % 2 == 0) {\n    return VERDADERO;\n  } else {\n    return FALSO;\n  }')),
+  devolver(7, 'devuelve numeros en vez de los valores', 'typedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\n' + FUNCION('TBool esPar(int n)', '  if (n % 2 == 0) {\n    return 1;\n  }\n  return 0;'), ['RETORNO_NUMERO_EN_ENUMERADO']),
   devolver(7, 'al reves', 'typedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\n' + FUNCION('TBool esPar(int n)', '  if (n % 2 == 0) {\n    return FALSO;\n  }\n  return VERDADERO;'), ['DEVUELVE_DISTINTO'], {
     dice: ['VERDADERO'],
   }),

@@ -183,7 +183,7 @@ export function construirModelo(arbol, desde) {
     structs: [],
     // Las funciones definidas y los prototipos: { nombre, tipo, punteros,
     // parametros: [{ nombre, tipo, arreglo, punteros, fila }], retornos:
-    // [{ conValor, fila }], prototipo, posicion, fin, nuevo, fila }.
+    // [{ conValor, numero, fila }], prototipo, posicion, fin, nuevo, fila }.
     funciones: [],
     enums: [],
     switches: [],
@@ -431,6 +431,8 @@ export function construirModelo(arbol, desde) {
       if (x.type === 'return_statement') {
         retornos.push({
           conValor: x.namedChildren.some((h) => h.type !== 'comment'),
+          // Devuelve un numero escrito tal cual (return 1;).
+          numero: x.namedChildren.some((h) => h.type === 'number_literal'),
           fila: x.startPosition.row,
         });
       }

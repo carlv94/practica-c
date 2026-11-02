@@ -585,6 +585,8 @@ export function corregir(
   //                  "capturar": "F" } }
   // Un parametro "referencia" se declara con * (el que modifica lo de afuera), y
   // "arreglo": true es un arreglo (v[] o con *). "recursiva": true pide que se llame a si misma.
+  // Con "retorna": "enumerado", "soloEnumeradores": true pide que cada return use
+  // un valor del enumerado y no un numero.
 
   function reglaFuncion(regla, modelo) {
     const candidatas = modelo.funciones.filter((f) => f.nuevo && !f.prototipo && !NO_ES_DEL_ALUMNO.includes(f.nombre));
@@ -746,6 +748,18 @@ export function corregir(
         r.fila
       );
       return;
+    }
+    if (regla.soloEnumeradores && real.clase === 'enum') {
+      const r = f.retornos.find((x) => x.numero);
+      if (r) {
+        const valores = real.def.enumeradores.map((e) => BT + e.nombre + BT).join(' y ');
+        error(
+          'RETORNO_NUMERO_EN_ENUMERADO',
+          `La función devuelve un enumerado, así que el ${BT}return${BT} tiene que llevar uno de sus valores (${valores}) y no un número: así se lee qué significa lo que devuelve.`,
+          r.fila
+        );
+        return;
+      }
     }
     // Una funcion recursiva se llama a si misma.
     if (regla.recursiva && !f.recursiva) {

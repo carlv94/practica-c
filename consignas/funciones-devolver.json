@@ -230,6 +230,7 @@
         {
           "funcion": {
             "retorna": "enumerado",
+            "soloEnumeradores": true,
             "parametros": [
               {
                 "tipo": "entero"
