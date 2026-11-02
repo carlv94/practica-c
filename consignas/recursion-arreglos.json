@@ -237,7 +237,7 @@
       "id": "reca-largo",
       "titulo": "El largo de una cadena",
       "en": "archivo",
-      "enunciado": "Escriba una función recursiva que reciba una cadena y una posición `i`, y devuelva cuántas letras hay desde la posición `i` hasta el final de la cadena, sin contar el `'\\0'`. Se la llama con `0` para contar toda la cadena: con `\"hola\"` y `0` devuelve `4`, y con `2` devuelve `2`. Póngale el nombre que quiera.",
+      "enunciado": "Escriba una función recursiva que reciba una cadena y una posición `i`, y devuelva cuántas letras hay desde la posición `i` hasta el final de la cadena, sin contar el `'\\0'`. Se la llama con `0` para contar toda la cadena: con `\"banana\"` y `0` devuelve `6`, y con `2` devuelve `4`. Póngale el nombre que quiera.",
       "requiere": [
         {
           "funcion": {
@@ -260,18 +260,18 @@
             "casos": [
               {
                 "datos": {
-                  "texto": "hola"
+                  "texto": "banana"
                 },
                 "llama": "$L(texto, 0)",
-                "devuelve": 4,
+                "devuelve": 6,
                 "visible": true
               },
               {
                 "datos": {
-                  "texto": "hola"
+                  "texto": "banana"
                 },
                 "llama": "$L(texto, 2)",
-                "devuelve": 2
+                "devuelve": 4
               },
               {
                 "datos": {
