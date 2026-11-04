@@ -1,0 +1,147 @@
+{
+  "id": "tad-pila-h",
+  "titulo": "Escribir el archivo pila.h",
+  "continua": false,
+  "descripcion": "El tipo de una pila guarda sus elementos en un arreglo, así que el `.h` también define el tamaño de ese arreglo y las seis operaciones de la pila.",
+  "consignas": [
+    {
+      "id": "tadp-q-max",
+      "titulo": "Dónde se define MAX",
+      "programa": "/* pila.h */\n#ifndef PILA_H\n#define PILA_H\n\ntypedef struct {\n  int datos[MAX];\n  int tope;\n} TPila;\n\nint llena(TPila p);\n\n#endif\n\n/* pila.c */\n#include \"pila.h\"\n\n#define MAX 8\n\nint llena(TPila p) {\n  return p.tope == MAX;\n}",
+      "enunciado": "El tipo `TPila` guarda sus elementos en un arreglo de tamaño `MAX`. En este programa, `MAX` se define en `pila.c`. ¿Qué pasa al compilar?",
+      "opciones": [
+        {
+          "texto": "Compila, pero dentro del tipo `MAX` vale 0.",
+          "codigo": "OPCION_MAX_VALE_CERO",
+          "explicacion": "Una constante que todavía no se definió no vale 0: es un nombre desconocido, y el compilador se detiene con un error al encontrarlo en `datos[MAX]`."
+        },
+        {
+          "texto": "No compila: `MAX` se usa en el `.h` antes de que se defina.",
+          "correcta": true,
+          "explicacion": "En `pila.c`, `#include \"pila.h\"` está antes que `#define MAX 8`, así que el compilador lee primero el `.h` completo. Cuando procesa `datos[MAX]` todavía no sabe qué es `MAX` y da error. La constante se debe definir en el `.h`, antes de la declaración del tipo, para que el tipo pueda usarla; así también la ven `pila.c` (que la necesita en `llena`) y quien use el TAD."
+        },
+        {
+          "texto": "Compila: `pila.c` incluye el `.h`, así que `MAX` ya está definido.",
+          "codigo": "OPCION_MAX_YA_DEFINIDO",
+          "explicacion": "Es al revés: `MAX` se define en el `.c`, después del `#include`. El `.h` se lee antes, y en ese momento `MAX` no existe. Lo que el `.h` necesita tiene que estar en el propio `.h`."
+        }
+      ]
+    },
+    {
+      "id": "tadp-h",
+      "titulo": "El archivo de la pila",
+      "escribe": "pila.h",
+      "enunciado": "Escriba `pila.h`, el archivo que describe el TAD pila. Una pila guarda hasta 8 números enteros en un arreglo `datos` y lleva en un campo `tope` cuántos tiene guardados. El tamaño del arreglo es la constante `MAX`, que vale 8, y el tipo se llama `TPila`. Tiene seis operaciones: `inicializar` la deja vacía y `apilar` agrega un número arriba (las dos reciben la pila por referencia y no devuelven nada; `apilar` recibe además el número); `desapilar` saca el de arriba y lo devuelve (recibe la pila por referencia); `cima` devuelve el de arriba sin sacarlo, y `vacia` y `llena` devuelven un entero que dice si la pila no tiene elementos o si no entra ninguno más (esas tres reciben la pila por valor). Use las guardas de inclusión `PILA_H`.",
+      "requiere": [
+        {
+          "encabezado": {
+            "guarda": "PILA_H"
+          }
+        },
+        {
+          "struct": {
+            "capturar": "S",
+            "campos": [
+              {
+                "nombre": "datos",
+                "tipo": "entero",
+                "arreglo": 8,
+                "constante": "MAX"
+              },
+              {
+                "nombre": "tope",
+                "tipo": "entero"
+              }
+            ]
+          }
+        },
+        {
+          "alias": {
+            "de": "$S",
+            "nombre": "TPila",
+            "capturar": "T"
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "inicializar",
+            "retorna": "void",
+            "parametros": [
+              {
+                "tipo": "estructura",
+                "referencia": true
+              }
+            ]
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "apilar",
+            "retorna": "void",
+            "parametros": [
+              {
+                "tipo": "estructura",
+                "referencia": true
+              },
+              {
+                "tipo": "entero"
+              }
+            ]
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "desapilar",
+            "retorna": "entero",
+            "parametros": [
+              {
+                "tipo": "estructura",
+                "referencia": true
+              }
+            ]
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "cima",
+            "retorna": "entero",
+            "parametros": [
+              {
+                "tipo": "estructura"
+              }
+            ]
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "vacia",
+            "retorna": "entero",
+            "parametros": [
+              {
+                "tipo": "estructura"
+              }
+            ]
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "llena",
+            "retorna": "entero",
+            "parametros": [
+              {
+                "tipo": "estructura"
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "#ifndef PILA_H\n#define PILA_H\n\n#define MAX 8\n\ntypedef struct {\n  int datos[MAX];\n  int tope;\n} TPila;\n\nvoid inicializar(TPila *p);\nvoid apilar(TPila *p, int x);\nint desapilar(TPila *p);\nint cima(TPila p);\nint vacia(TPila p);\nint llena(TPila p);\n\n#endif"
+    }
+  ]
+}

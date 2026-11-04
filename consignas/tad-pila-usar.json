@@ -1,0 +1,264 @@
+{
+  "id": "tad-pila-usar",
+  "titulo": "Usar una pila",
+  "continua": false,
+  "descripcion": "Una pila guarda datos y los entrega en el orden inverso al que entraron: el último en entrar es el primero en salir. Se usa con sus operaciones, sin saber cómo está guardada.",
+  "consignas": [
+    {
+      "id": "tadp-q-orden",
+      "titulo": "El orden de salida",
+      "programa": "/* pila.h */\n#ifndef PILA_H\n#define PILA_H\n\n#define MAX 8\n\ntypedef struct {\n  int datos[MAX];\n  int tope;\n} TPila;\n\nvoid inicializar(TPila *p);\nvoid apilar(TPila *p, int x);\nint desapilar(TPila *p);\nint cima(TPila p);\nint vacia(TPila p);\nint llena(TPila p);\n\n#endif\n\n/* main.c */\n#include <stdio.h>\n#include \"pila.h\"\n\nint main() {\n  TPila p;\n\n  inicializar(&p);\n  apilar(&p, 1);\n  apilar(&p, 2);\n  apilar(&p, 3);\n  while (!vacia(p)) {\n    printf(\"%d \", desapilar(&p));\n  }\n  return 0;\n}",
+      "enunciado": "El archivo `pila.h` declara el tipo `TPila` y sus operaciones. El archivo `main.c` las usa. ¿Qué muestra el programa?",
+      "opciones": [
+        {
+          "texto": "Muestra `1 2 3`: sale primero lo que entró primero.",
+          "codigo": "OPCION_PILA_PRIMERO_QUE_ENTRA",
+          "explicacion": "Eso es lo que hace una cola, no una pila. En una pila `desapilar` saca siempre el elemento de arriba, el último que se apiló: acá, el `3`."
+        },
+        {
+          "texto": "Muestra `3 2 1`: sale primero lo que entró último.",
+          "correcta": true,
+          "explicacion": "`apilar` agrega un elemento arriba y `desapilar` saca el de arriba, así que los elementos salen en el orden inverso al que entraron: el último en entrar es el primero en salir. El ciclo `while (!vacia(p))` repite `desapilar` hasta que la pila queda vacía, y por eso muestra los tres. Esa propiedad hace que una pila sirva, por ejemplo, para invertir una secuencia."
+        },
+        {
+          "texto": "Muestra solo `3`: `desapilar` vacía toda la pila.",
+          "codigo": "OPCION_PILA_SACA_TODO",
+          "explicacion": "`desapilar` saca un solo elemento, el de arriba. La pila se vacía recién después de tres llamadas, y el ciclo `while (!vacia(p))` las repite hasta lograrlo."
+        }
+      ]
+    },
+    {
+      "id": "tadp-usar-invertir",
+      "titulo": "Invertir tres números",
+      "escribe": "main.c",
+      "inicializa": "inicializar",
+      "archivos": [
+        {
+          "nombre": "pila.h",
+          "codigo": "#ifndef PILA_H\n#define PILA_H\n\n#define MAX 8\n\ntypedef struct {\n  int datos[MAX];\n  int tope;\n} TPila;\n\nvoid inicializar(TPila *p);\nvoid apilar(TPila *p, int x);\nint desapilar(TPila *p);\nint cima(TPila p);\nint vacia(TPila p);\nint llena(TPila p);\n\n#endif"
+        },
+        {
+          "nombre": "pila.c",
+          "codigo": "#include \"pila.h\"\n\nvoid inicializar(TPila *p) {\n  p->tope = 0;\n}\n\nvoid apilar(TPila *p, int x) {\n  p->datos[p->tope] = x;\n  p->tope = p->tope + 1;\n}\n\nint desapilar(TPila *p) {\n  p->tope = p->tope - 1;\n  return p->datos[p->tope];\n}\n\nint cima(TPila p) {\n  return p.datos[p.tope - 1];\n}\n\nint vacia(TPila p) {\n  return p.tope == 0;\n}\n\nint llena(TPila p) {\n  return p.tope == MAX;\n}",
+          "oculto": true
+        }
+      ],
+      "usoIncorrecto": "Una operación de la pila se salió de los límites de su arreglo, que guarda hasta 8 números: se apiló en una pila llena o se desapiló una pila vacía. Antes de `apilar` conviene preguntar con `llena`, y antes de `desapilar`, con `vacia`.",
+      "enunciado": "El archivo `pila.h` declara el tipo `TPila` y seis operaciones: `inicializar` la deja vacía, `apilar` agrega un número arriba, `desapilar` saca el de arriba y lo devuelve, `cima` devuelve el de arriba sin sacarlo, `vacia` dice si no tiene elementos y `llena` si no entra ninguno más. Escriba `main.c`: lea con `scanf` tres números enteros, guárdelos en una pila y muéstrelos con `printf` en orden inverso al de lectura, separados por un espacio. Use solo las operaciones del `.h`.",
+      "requiere": [
+        {
+          "incluyeLocal": "pila.h"
+        },
+        {
+          "soloOperaciones": "TPila"
+        },
+        {
+          "usaOperaciones": [
+            "inicializar",
+            "apilar",
+            "desapilar"
+          ]
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "entrada": [
+                  4,
+                  8,
+                  15
+                ],
+                "muestra": [
+                  15,
+                  8,
+                  4
+                ],
+                "separadas": true
+              },
+              {
+                "entrada": [
+                  1,
+                  2,
+                  3
+                ],
+                "muestra": [
+                  3,
+                  2,
+                  1
+                ],
+                "separadas": true
+              },
+              {
+                "entrada": [
+                  5,
+                  5,
+                  9
+                ],
+                "muestra": [
+                  9,
+                  5,
+                  5
+                ],
+                "separadas": true
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "#include <stdio.h>\n#include \"pila.h\"\n\nint main() {\n  TPila p;\n  int n;\n\n  inicializar(&p);\n  for (int i = 0; i < 3; i++) {\n    scanf(\"%d\", &n);\n    apilar(&p, n);\n  }\n  for (int i = 0; i < 3; i++) {\n    printf(\"%d \", desapilar(&p));\n  }\n  return 0;\n}"
+    },
+    {
+      "id": "tadp-usar-binario",
+      "titulo": "De decimal a binario",
+      "escribe": "main.c",
+      "inicializa": "inicializar",
+      "archivos": [
+        {
+          "nombre": "pila.h",
+          "codigo": "#ifndef PILA_H\n#define PILA_H\n\n#define MAX 8\n\ntypedef struct {\n  int datos[MAX];\n  int tope;\n} TPila;\n\nvoid inicializar(TPila *p);\nvoid apilar(TPila *p, int x);\nint desapilar(TPila *p);\nint cima(TPila p);\nint vacia(TPila p);\nint llena(TPila p);\n\n#endif"
+        },
+        {
+          "nombre": "pila.c",
+          "codigo": "#include \"pila.h\"\n\nvoid inicializar(TPila *p) {\n  p->tope = 0;\n}\n\nvoid apilar(TPila *p, int x) {\n  p->datos[p->tope] = x;\n  p->tope = p->tope + 1;\n}\n\nint desapilar(TPila *p) {\n  p->tope = p->tope - 1;\n  return p->datos[p->tope];\n}\n\nint cima(TPila p) {\n  return p.datos[p.tope - 1];\n}\n\nint vacia(TPila p) {\n  return p.tope == 0;\n}\n\nint llena(TPila p) {\n  return p.tope == MAX;\n}",
+          "oculto": true
+        }
+      ],
+      "usoIncorrecto": "Una operación de la pila se salió de los límites de su arreglo, que guarda hasta 8 números: se apiló en una pila llena o se desapiló una pila vacía. Antes de `apilar` conviene preguntar con `llena`, y antes de `desapilar`, con `vacia`.",
+      "enunciado": "Con el mismo `pila.h`, escriba `main.c`: lea con `scanf` un número entero mayor que cero y menor que 256, y muestre con `printf` su representación en binario, sin espacios entre los dígitos. Divida el número por 2 mientras sea mayor que cero y apile cada resto; al terminar, desapile todos y muéstrelos. Use solo las operaciones del `.h`.",
+      "requiere": [
+        {
+          "incluyeLocal": "pila.h"
+        },
+        {
+          "soloOperaciones": "TPila"
+        },
+        {
+          "usaOperaciones": [
+            "inicializar",
+            "apilar",
+            "desapilar",
+            "vacia"
+          ]
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "entrada": [
+                  6
+                ],
+                "salida": "110"
+              },
+              {
+                "entrada": [
+                  1
+                ],
+                "salida": "1"
+              },
+              {
+                "entrada": [
+                  13
+                ],
+                "salida": "1101"
+              },
+              {
+                "entrada": [
+                  8
+                ],
+                "salida": "1000"
+              },
+              {
+                "entrada": [
+                  255
+                ],
+                "salida": "11111111"
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "#include <stdio.h>\n#include \"pila.h\"\n\nint main() {\n  TPila bits;\n  int n;\n\n  inicializar(&bits);\n  scanf(\"%d\", &n);\n  while (n > 0) {\n    apilar(&bits, n % 2);\n    n = n / 2;\n  }\n  while (!vacia(bits)) {\n    printf(\"%d\", desapilar(&bits));\n  }\n  return 0;\n}"
+    },
+    {
+      "id": "tadp-usar-pasar",
+      "titulo": "Pasar de una pila a otra",
+      "escribe": "main.c",
+      "inicializa": "inicializar",
+      "archivos": [
+        {
+          "nombre": "pila.h",
+          "codigo": "#ifndef PILA_H\n#define PILA_H\n\n#define MAX 8\n\ntypedef struct {\n  int datos[MAX];\n  int tope;\n} TPila;\n\nvoid inicializar(TPila *p);\nvoid apilar(TPila *p, int x);\nint desapilar(TPila *p);\nint cima(TPila p);\nint vacia(TPila p);\nint llena(TPila p);\n\n#endif"
+        },
+        {
+          "nombre": "pila.c",
+          "codigo": "#include \"pila.h\"\n\nvoid inicializar(TPila *p) {\n  p->tope = 0;\n}\n\nvoid apilar(TPila *p, int x) {\n  p->datos[p->tope] = x;\n  p->tope = p->tope + 1;\n}\n\nint desapilar(TPila *p) {\n  p->tope = p->tope - 1;\n  return p->datos[p->tope];\n}\n\nint cima(TPila p) {\n  return p.datos[p.tope - 1];\n}\n\nint vacia(TPila p) {\n  return p.tope == 0;\n}\n\nint llena(TPila p) {\n  return p.tope == MAX;\n}",
+          "oculto": true
+        }
+      ],
+      "usoIncorrecto": "Una operación de la pila se salió de los límites de su arreglo, que guarda hasta 8 números: se apiló en una pila llena o se desapiló una pila vacía. Antes de `apilar` conviene preguntar con `llena`, y antes de `desapilar`, con `vacia`.",
+      "enunciado": "Con el mismo `pila.h`, escriba `main.c` con dos pilas, `a` y `b`. Lea con `scanf` tres números enteros y apílelos en `a`. Después pase todos los elementos de `a` a `b`: desapile de una y apile en la otra hasta que `a` quede vacía. Al final desapile los elementos de `b` y muéstrelos con `printf`, separados por un espacio. Cada variable de tipo `TPila` es una pila propia. Use solo las operaciones del `.h`.",
+      "requiere": [
+        {
+          "incluyeLocal": "pila.h"
+        },
+        {
+          "soloOperaciones": "TPila"
+        },
+        {
+          "usaOperaciones": [
+            "inicializar",
+            "apilar",
+            "desapilar",
+            "vacia"
+          ]
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "entrada": [
+                  4,
+                  8,
+                  15
+                ],
+                "muestra": [
+                  4,
+                  8,
+                  15
+                ],
+                "separadas": true
+              },
+              {
+                "entrada": [
+                  1,
+                  2,
+                  3
+                ],
+                "muestra": [
+                  1,
+                  2,
+                  3
+                ],
+                "separadas": true
+              },
+              {
+                "entrada": [
+                  7,
+                  7,
+                  2
+                ],
+                "muestra": [
+                  7,
+                  7,
+                  2
+                ],
+                "separadas": true
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "#include <stdio.h>\n#include \"pila.h\"\n\nint main() {\n  TPila a;\n  TPila b;\n  int n;\n\n  inicializar(&a);\n  inicializar(&b);\n  for (int i = 0; i < 3; i++) {\n    scanf(\"%d\", &n);\n    apilar(&a, n);\n  }\n  while (!vacia(a)) {\n    n = desapilar(&a);\n    apilar(&b, n);\n  }\n  while (!vacia(b)) {\n    printf(\"%d \", desapilar(&b));\n  }\n  return 0;\n}"
+    }
+  ]
+}

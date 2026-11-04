@@ -79,6 +79,66 @@ const FRACCION_C = lineas(
   '}'
 );
 
+const usarPila = serie('tad-pila-usar');
+const pilaH = serie('tad-pila-h');
+const pilaC = serie('tad-pila-c');
+
+// main.c de las pilas con lo que va adentro de main.
+const MAIN_PILA = (...cuerpo) =>
+  lineas('#include <stdio.h>', '#include "pila.h"', '', 'int main() {', ...cuerpo.map((l) => (l ? '  ' + l : l)), '  return 0;', '}');
+
+const PILA_H = lineas(
+  '#ifndef PILA_H',
+  '#define PILA_H',
+  '',
+  '#define MAX 8',
+  '',
+  'typedef struct {',
+  '  int datos[MAX];',
+  '  int tope;',
+  '} TPila;',
+  '',
+  'void inicializar(TPila *p);',
+  'void apilar(TPila *p, int x);',
+  'int desapilar(TPila *p);',
+  'int cima(TPila p);',
+  'int vacia(TPila p);',
+  'int llena(TPila p);',
+  '',
+  '#endif'
+);
+const HP = (cambio) => cambio(PILA_H);
+
+const PILA_C = lineas(
+  '#include "pila.h"',
+  '',
+  'void inicializar(TPila *p) {',
+  '  p->tope = 0;',
+  '}',
+  '',
+  'void apilar(TPila *p, int x) {',
+  '  p->datos[p->tope] = x;',
+  '  p->tope = p->tope + 1;',
+  '}',
+  '',
+  'int desapilar(TPila *p) {',
+  '  p->tope = p->tope - 1;',
+  '  return p->datos[p->tope];',
+  '}',
+  '',
+  'int cima(TPila p) {',
+  '  return p.datos[p.tope - 1];',
+  '}',
+  '',
+  'int vacia(TPila p) {',
+  '  return p.tope == 0;',
+  '}',
+  '',
+  'int llena(TPila p) {',
+  '  return p.tope == MAX;',
+  '}'
+);
+
 export const CASOS_DE_TAD = [
   // ===== Usar un TAD =====
   // ---- 1: tocar los campos ----
@@ -423,4 +483,375 @@ export const CASOS_DE_TAD = [
     ['DEVUELVE_DISTINTO']
   ),
   escribirC(2, 'sin incluir el encabezado', FRACCION_C.replace('#include "fraccion.h"\n', ''), ['INCLUDE_PROPIO_FALTA']),
+  // ===== Usar una pila =====
+  // ---- 1: el orden de salida ----
+  usarPila(1, 'sale primero lo que entro ultimo', '1'),
+  usarPila(1, 'sale primero lo que entro primero', '0', ['OPCION_PILA_PRIMERO_QUE_ENTRA']),
+  usarPila(1, 'desapilar vacia la pila', '2', ['OPCION_PILA_SACA_TODO']),
+  // ---- 2: invertir tres numeros ----
+  usarPila(
+    2,
+    'con dos ciclos',
+    MAIN_PILA(
+      'TPila p;',
+      'int n;',
+      '',
+      'inicializar(&p);',
+      'for (int i = 0; i < 3; i++) {',
+      '  scanf("%d", &n);',
+      '  apilar(&p, n);',
+      '}',
+      'for (int i = 0; i < 3; i++) {',
+      '  printf("%d ", desapilar(&p));',
+      '}'
+    )
+  ),
+  usarPila(
+    2,
+    'sin ciclos',
+    MAIN_PILA(
+      'TPila p;',
+      'int a;',
+      'int b;',
+      'int c;',
+      '',
+      'inicializar(&p);',
+      'scanf("%d %d %d", &a, &b, &c);',
+      'apilar(&p, a);',
+      'apilar(&p, b);',
+      'apilar(&p, c);',
+      'printf("%d ", desapilar(&p));',
+      'printf("%d ", desapilar(&p));',
+      'printf("%d", desapilar(&p));'
+    )
+  ),
+  usarPila(
+    2,
+    'desapilando hasta que este vacia',
+    MAIN_PILA(
+      'TPila p;',
+      'int n;',
+      '',
+      'inicializar(&p);',
+      'for (int i = 0; i < 3; i++) {',
+      '  scanf("%d", &n);',
+      '  apilar(&p, n);',
+      '}',
+      'while (!vacia(p)) {',
+      '  printf("%d ", desapilar(&p));',
+      '}'
+    )
+  ),
+  usarPila(
+    2,
+    'mostrando solo dos',
+    MAIN_PILA(
+      'TPila p;',
+      'int n;',
+      '',
+      'inicializar(&p);',
+      'for (int i = 0; i < 3; i++) {',
+      '  scanf("%d", &n);',
+      '  apilar(&p, n);',
+      '}',
+      'printf("%d ", desapilar(&p));',
+      'printf("%d", desapilar(&p));'
+    ),
+    ['MUESTRA_DISTINTA']
+  ),
+  usarPila(
+    2,
+    'tocando los campos',
+    MAIN_PILA(
+      'TPila p;',
+      'int n;',
+      '',
+      'inicializar(&p);',
+      'for (int i = 0; i < 3; i++) {',
+      '  scanf("%d", &n);',
+      '  apilar(&p, n);',
+      '}',
+      'for (int i = p.tope - 1; i >= 0; i--) {',
+      '  printf("%d ", p.datos[i]);',
+      '}'
+    ),
+    ['TAD_ACCESO_DIRECTO', 'TAD_OPERACION_SIN_USAR'],
+    { dice: ['desapilar'] }
+  ),
+  usarPila(
+    2,
+    'sin inicializar la pila',
+    MAIN_PILA(
+      'TPila p;',
+      'int n;',
+      '',
+      'for (int i = 0; i < 3; i++) {',
+      '  scanf("%d", &n);',
+      '  apilar(&p, n);',
+      '}',
+      'for (int i = 0; i < 3; i++) {',
+      '  printf("%d ", desapilar(&p));',
+      '}'
+    ),
+    ['TAD_OPERACION_SIN_USAR'],
+    { dice: ['inicializar'] }
+  ),
+  usarPila(
+    2,
+    'apilando de mas',
+    MAIN_PILA(
+      'TPila p;',
+      '',
+      'inicializar(&p);',
+      'for (int i = 0; i < 9; i++) {',
+      '  apilar(&p, i);',
+      '}',
+      'while (!vacia(p)) {',
+      '  printf("%d ", desapilar(&p));',
+      '}'
+    ),
+    ['TAD_USO_INCORRECTO'],
+    { dice: ['llena'] }
+  ),
+  usarPila(
+    2,
+    'desapilando de mas',
+    MAIN_PILA(
+      'TPila p;',
+      '',
+      'inicializar(&p);',
+      'apilar(&p, 1);',
+      'apilar(&p, 2);',
+      'for (int i = 0; i < 3; i++) {',
+      '  printf("%d ", desapilar(&p));',
+      '}'
+    ),
+    ['TAD_USO_INCORRECTO'],
+    { dice: ['vacia'] }
+  ),
+  usarPila(
+    2,
+    'sin incluir el encabezado',
+    lineas('#include <stdio.h>', '', 'int main() {', '  TPila p;', '', '  inicializar(&p);', '  apilar(&p, 1);', '  printf("%d", desapilar(&p));', '  return 0;', '}'),
+    ['INCLUDE_PROPIO_FALTA']
+  ),
+  // ---- 3: de decimal a binario ----
+  usarPila(
+    3,
+    'con un ciclo hasta que este vacia',
+    MAIN_PILA(
+      'TPila bits;',
+      'int n;',
+      '',
+      'inicializar(&bits);',
+      'scanf("%d", &n);',
+      'while (n > 0) {',
+      '  apilar(&bits, n % 2);',
+      '  n = n / 2;',
+      '}',
+      'while (!vacia(bits)) {',
+      '  printf("%d", desapilar(&bits));',
+      '}'
+    )
+  ),
+  usarPila(
+    3,
+    'sin tocar la entrada',
+    MAIN_PILA(
+      'TPila bits;',
+      'int n;',
+      'int resto;',
+      '',
+      'inicializar(&bits);',
+      'scanf("%d", &n);',
+      'while (n != 0) {',
+      '  resto = n % 2;',
+      '  apilar(&bits, resto);',
+      '  n = n / 2;',
+      '}',
+      'while (!vacia(bits)) {',
+      '  printf("%d", desapilar(&bits));',
+      '}'
+    )
+  ),
+  usarPila(
+    3,
+    'mostrando los restos sin la pila',
+    MAIN_PILA(
+      'TPila bits;',
+      'int n;',
+      '',
+      'inicializar(&bits);',
+      'scanf("%d", &n);',
+      'while (n > 0) {',
+      '  apilar(&bits, n % 2);',
+      '  printf("%d", n % 2);',
+      '  n = n / 2;',
+      '}'
+    ),
+    ['TAD_OPERACION_SIN_USAR']
+  ),
+  usarPila(
+    3,
+    'tocando el tope',
+    MAIN_PILA(
+      'TPila bits;',
+      'int n;',
+      '',
+      'inicializar(&bits);',
+      'scanf("%d", &n);',
+      'while (n > 0) {',
+      '  apilar(&bits, n % 2);',
+      '  n = n / 2;',
+      '}',
+      'while (bits.tope > 0) {',
+      '  printf("%d", desapilar(&bits));',
+      '}'
+    ),
+    ['TAD_ACCESO_DIRECTO', 'TAD_OPERACION_SIN_USAR']
+  ),
+  // ---- 4: pasar de una pila a otra ----
+  usarPila(
+    4,
+    'pasando con una variable',
+    MAIN_PILA(
+      'TPila a;',
+      'TPila b;',
+      'int n;',
+      '',
+      'inicializar(&a);',
+      'inicializar(&b);',
+      'for (int i = 0; i < 3; i++) {',
+      '  scanf("%d", &n);',
+      '  apilar(&a, n);',
+      '}',
+      'while (!vacia(a)) {',
+      '  n = desapilar(&a);',
+      '  apilar(&b, n);',
+      '}',
+      'while (!vacia(b)) {',
+      '  printf("%d ", desapilar(&b));',
+      '}'
+    )
+  ),
+  usarPila(
+    4,
+    'pasando sin variable',
+    MAIN_PILA(
+      'TPila a;',
+      'TPila b;',
+      'int n;',
+      '',
+      'inicializar(&a);',
+      'inicializar(&b);',
+      'for (int i = 0; i < 3; i++) {',
+      '  scanf("%d", &n);',
+      '  apilar(&a, n);',
+      '}',
+      'while (!vacia(a)) {',
+      '  apilar(&b, desapilar(&a));',
+      '}',
+      'while (!vacia(b)) {',
+      '  printf("%d ", desapilar(&b));',
+      '}'
+    )
+  ),
+  usarPila(
+    4,
+    'mostrando los de la primera pila',
+    MAIN_PILA(
+      'TPila a;',
+      'TPila b;',
+      'int n;',
+      '',
+      'inicializar(&a);',
+      'inicializar(&b);',
+      'for (int i = 0; i < 3; i++) {',
+      '  scanf("%d", &n);',
+      '  apilar(&a, n);',
+      '}',
+      'while (!vacia(a)) {',
+      '  printf("%d ", desapilar(&a));',
+      '}'
+    ),
+    ['MUESTRA_DISTINTA']
+  ),
+  usarPila(
+    4,
+    'sin inicializar la segunda pila',
+    MAIN_PILA(
+      'TPila a;',
+      'TPila b;',
+      'int n;',
+      '',
+      'inicializar(&a);',
+      'for (int i = 0; i < 3; i++) {',
+      '  scanf("%d", &n);',
+      '  apilar(&a, n);',
+      '}',
+      'while (!vacia(a)) {',
+      '  apilar(&b, desapilar(&a));',
+      '}',
+      'while (!vacia(b)) {',
+      '  printf("%d ", desapilar(&b));',
+      '}'
+    ),
+    ['TAD_SIN_INICIALIZAR'],
+    { dice: ['inicializar'] }
+  ),
+
+  // ===== Escribir pila.h =====
+  // ---- 1: donde se define MAX ----
+  pilaH(1, 'se define antes del tipo', '1'),
+  pilaH(1, 'vale cero', '0', ['OPCION_MAX_VALE_CERO']),
+  pilaH(1, 'ya esta definido', '2', ['OPCION_MAX_YA_DEFINIDO']),
+  // ---- 2: el archivo de la pila ----
+  pilaH(2, 'completo', PILA_H),
+  pilaH(2, 'sin guardas', HP((t) => t.replace('#ifndef PILA_H\n#define PILA_H\n\n', '').replace('\n\n#endif', '')), ['ENCABEZADO_SIN_GUARDA']),
+  pilaH(2, 'con otro nombre de guarda', HP((t) => t.replaceAll('PILA_H', 'PILA')), ['ENCABEZADO_GUARDA_NOMBRE'], { dice: ['PILA_H'] }),
+  pilaH(2, 'el tamano con un numero', HP((t) => t.replace('datos[MAX]', 'datos[8]')), ['CAMPO_ARREGLO_SIN_CONSTANTE'], { dice: ['MAX'] }),
+  pilaH(2, 'sin definir MAX', HP((t) => t.replace('#define MAX 8\n\n', '')), ['CONSTANTE_SIN_DEFINIR']),
+  pilaH(2, 'MAX de menos', HP((t) => t.replace('#define MAX 8', '#define MAX 4')), ['ARREGLO_CHICO']),
+  pilaH(2, 'MAX de mas', HP((t) => t.replace('#define MAX 8', '#define MAX 16')), ['ARREGLO_GRANDE']),
+  pilaH(2, 'datos no es un arreglo', HP((t) => t.replace('int datos[MAX];', 'int datos;')), ['CAMPO_NO_ES_ARREGLO']),
+  pilaH(2, 'datos es una tabla', HP((t) => t.replace('int datos[MAX];', 'int datos[MAX][2];')), ['CAMPO_ARREGLO_DIMENSIONES']),
+  pilaH(2, 'datos de otro tipo', HP((t) => t.replace('int datos[MAX];', 'float datos[MAX];')), ['CAMPO_TIPO']),
+  pilaH(2, 'sin el tope', HP((t) => t.replace('  int tope;\n', '')), ['CAMPO_FALTA']),
+  pilaH(2, 'el tope con otro nombre', HP((t) => t.replace('int tope;', 'int cantidad;')), ['CAMPO_FALTA']),
+  pilaH(2, 'con el cuerpo de una funcion', HP((t) => t.replace('int llena(TPila p);', 'int llena(TPila p) {\n  return p.tope == MAX;\n}')), ['ENCABEZADO_CON_CUERPO', 'PROTOTIPO_FALTA']),
+  pilaH(2, 'con algo afuera', HP((t) => t + '\n\nvoid vaciar(TPila *p);'), ['ENCABEZADO_FUERA_DE_LA_GUARDA']),
+  pilaH(2, 'sin un prototipo', HP((t) => t.replace('int llena(TPila p);\n', '')), ['PROTOTIPO_FALTA']),
+  pilaH(2, 'apilar sin el numero', HP((t) => t.replace('void apilar(TPila *p, int x);', 'void apilar(TPila *p);')), ['PARAMETROS_CANTIDAD']),
+  pilaH(2, 'apilar con la pila por valor', HP((t) => t.replace('void apilar(TPila *p, int x);', 'void apilar(TPila p, int x);')), ['PARAMETRO_REFERENCIA_FALTA']),
+  pilaH(2, 'desapilar no devuelve nada', HP((t) => t.replace('int desapilar(TPila *p);', 'void desapilar(TPila *p);')), ['FUNCION_TIPO_RETORNO']),
+  pilaH(2, 'vacia con la pila por referencia', HP((t) => t.replace('int vacia(TPila p);', 'int vacia(TPila *p);')), ['PARAMETRO_ASTERISCO_DE_MAS']),
+
+  // ===== Escribir pila.c =====
+  pilaC(1, 'completa', PILA_C),
+  pilaC(1, 'desapilar con otra cuenta', PILA_C.replace('p->tope = p->tope - 1;', 'p->tope--;')),
+  pilaC(1, 'sin incluir el encabezado', PILA_C.replace('#include "pila.h"\n\n', ''), ['INCLUDE_PROPIO_FALTA']),
+  pilaC(1, 'repitiendo el tipo', PILA_C.replace('#include "pila.h"\n', '#include "pila.h"\n\ntypedef struct {\n  int datos[MAX];\n  int tope;\n} TPila;\n'), ['TIPO_REPETIDO_EN_EL_C']),
+  pilaC(
+    1,
+    'sin definir una operacion',
+    PILA_C.replace('\nint llena(TPila p) {\n  return p.tope == MAX;\n}', ''),
+    ['PROTOTIPO_SIN_DEFINICION']
+  ),
+  pilaC(1, 'apilar con otra firma', PILA_C.replace('void apilar(TPila *p, int x) {', 'int apilar(TPila *p, int x) {'), ['FIRMA_DISTINTA_DEL_PROTOTIPO']),
+  pilaC(1, 'inicializar no deja el tope en cero', PILA_C.replace('  p->tope = 0;\n', ''), ['VARIABLE_SIN_VALOR']),
+  pilaC(
+    1,
+    'apilar sin sumar al tope',
+    PILA_C.replace('  p->tope = p->tope + 1;\n', ''),
+    ['DEVUELVE_DISTINTO']
+  ),
+  pilaC(
+    1,
+    'desapilar devuelve el de abajo',
+    PILA_C.replace('  return p->datos[p->tope];', '  return p->datos[0];'),
+    ['DEVUELVE_DISTINTO']
+  ),
+  pilaC(1, 'cima devuelve la posicion del tope', PILA_C.replace('return p.datos[p.tope - 1];', 'return p.datos[p.tope];'), ['VARIABLE_SIN_VALOR'], { dice: ['`p.datos[2]`'] }),
+  pilaC(1, 'llena con la pila a medias', PILA_C.replace('return p.tope == MAX;', 'return p.tope == MAX - 1;'), ['DEVUELVE_DISTINTO']),
+  pilaC(1, 'vacia al reves', PILA_C.replace('return p.tope == 0;', 'return p.tope != 0;'), ['DEVUELVE_DISTINTO']),
 ];

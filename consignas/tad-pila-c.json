@@ -1,0 +1,105 @@
+{
+  "id": "tad-pila-c",
+  "titulo": "Escribir el archivo pila.c",
+  "continua": false,
+  "descripcion": "El `.c` de la pila implementa sus seis operaciones sobre el arreglo y el tope que declara el `.h`.",
+  "consignas": [
+    {
+      "id": "tadp-c",
+      "titulo": "La implementación de la pila",
+      "escribe": "pila.c",
+      "archivos": [
+        {
+          "nombre": "pila.h",
+          "codigo": "#ifndef PILA_H\n#define PILA_H\n\n#define MAX 8\n\ntypedef struct {\n  int datos[MAX];\n  int tope;\n} TPila;\n\nvoid inicializar(TPila *p);\nvoid apilar(TPila *p, int x);\nint desapilar(TPila *p);\nint cima(TPila p);\nint vacia(TPila p);\nint llena(TPila p);\n\n#endif"
+        }
+      ],
+      "enunciado": "El archivo `pila.h` ya está escrito. Escriba `pila.c`, que define sus seis operaciones. Los elementos se guardan en `datos` desde la posición 0, y `tope` es la cantidad de elementos que hay: vale 0 si la pila está vacía y es la posición donde va el próximo. `inicializar` deja la pila vacía, `apilar` guarda el número en esa posición y suma uno al tope, `desapilar` resta uno al tope y devuelve el elemento que quedó arriba, `cima` devuelve el elemento de arriba sin sacarlo, `vacia` devuelve 1 si no hay elementos y 0 si hay, y `llena` devuelve 1 si no entra ninguno más y 0 si entra. No olvide incluir el `.h`.",
+      "requiere": [
+        {
+          "incluyeLocal": "pila.h"
+        },
+        {
+          "sinTipos": true
+        },
+        {
+          "defineTodo": true
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "antes": "TPila p;\ninicializar(&p);",
+                "llama": "vacia(p)",
+                "devuelve": 1,
+                "contexto": "Después de inicializar una pila",
+                "visible": true
+              },
+              {
+                "antes": "TPila p;\ninicializar(&p);\napilar(&p, 4);",
+                "llama": "vacia(p)",
+                "devuelve": 0,
+                "contexto": "Después de apilar un número"
+              },
+              {
+                "antes": "TPila p;\ninicializar(&p);\napilar(&p, 4);\napilar(&p, 7);",
+                "llama": "cima(p)",
+                "devuelve": 7,
+                "contexto": "Después de apilar 4 y 7"
+              },
+              {
+                "antes": "TPila p;\ninicializar(&p);\napilar(&p, 4);\napilar(&p, 7);",
+                "llama": "desapilar(&p)",
+                "devuelve": 7,
+                "contexto": "Después de apilar 4 y 7"
+              },
+              {
+                "antes": "TPila p;\ninicializar(&p);\napilar(&p, 4);\napilar(&p, 7);\ndesapilar(&p);",
+                "llama": "cima(p)",
+                "devuelve": 4,
+                "contexto": "Después de apilar 4 y 7 y desapilar una vez"
+              },
+              {
+                "antes": "TPila p;\ninicializar(&p);\napilar(&p, 4);\ndesapilar(&p);",
+                "llama": "vacia(p)",
+                "devuelve": 1,
+                "contexto": "Después de apilar un número y desapilarlo"
+              },
+              {
+                "antes": "TPila p;\ninicializar(&p);\napilar(&p, 1);\napilar(&p, 2);\napilar(&p, 3);\ndesapilar(&p);",
+                "llama": "desapilar(&p)",
+                "devuelve": 2,
+                "contexto": "Después de apilar 1, 2 y 3 y desapilar una vez"
+              },
+              {
+                "antes": "TPila p;\ninicializar(&p);\napilar(&p, 1);\napilar(&p, 2);\napilar(&p, 3);",
+                "llama": "llena(p)",
+                "devuelve": 0,
+                "contexto": "Con tres números apilados"
+              },
+              {
+                "antes": "TPila p;\ninicializar(&p);\napilar(&p, 1);\napilar(&p, 2);\napilar(&p, 3);\napilar(&p, 4);\napilar(&p, 5);\napilar(&p, 6);\napilar(&p, 7);\napilar(&p, 8);",
+                "llama": "llena(p)",
+                "devuelve": 1,
+                "contexto": "Con ocho números apilados"
+              },
+              {
+                "antes": "TPila p;\ninicializar(&p);\napilar(&p, 1);\napilar(&p, 2);\napilar(&p, 3);\napilar(&p, 4);\napilar(&p, 5);\napilar(&p, 6);\napilar(&p, 7);\napilar(&p, 8);",
+                "llama": "cima(p)",
+                "devuelve": 8,
+                "contexto": "Con ocho números apilados"
+              },
+              {
+                "antes": "TPila p;\ninicializar(&p);\napilar(&p, 4);\napilar(&p, 7);\ninicializar(&p);",
+                "llama": "vacia(p)",
+                "devuelve": 1,
+                "contexto": "Después de apilar dos números y volver a inicializar la pila"
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "#include \"pila.h\"\n\nvoid inicializar(TPila *p) {\n  p->tope = 0;\n}\n\nvoid apilar(TPila *p, int x) {\n  p->datos[p->tope] = x;\n  p->tope = p->tope + 1;\n}\n\nint desapilar(TPila *p) {\n  p->tope = p->tope - 1;\n  return p->datos[p->tope];\n}\n\nint cima(TPila p) {\n  return p.datos[p.tope - 1];\n}\n\nint vacia(TPila p) {\n  return p.tope == 0;\n}\n\nint llena(TPila p) {\n  return p.tope == MAX;\n}"
+    }
+  ]
+}
