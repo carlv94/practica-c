@@ -322,7 +322,7 @@ export function corregir(
       nivel,
       codigo,
       mensaje,
-      linea: fila == null ? null : fila - filaBase + 1,
+      linea: fila == null || fila < filaBase ? null : fila - filaBase + 1,
       ...(bloques ? { bloques } : {}),
     });
   }
@@ -385,7 +385,9 @@ export function corregir(
     }
 
     const modelo = construirModelo(arbol, desde);
-    revisarNombres(modelo, error);
+    // En el .c el tipo ya viene en el .h: repetirlo lo dice la regla "sinTipos", con su explicacion.
+    const sinTipos = consigna.requiere.some((r) => r.sinTipos);
+    revisarNombres(modelo, sinTipos ? (codigo, ...resto) => (['ALIAS_REDEFINIDO', 'STRUCT_REDEFINIDA'].includes(codigo) ? undefined : error(codigo, ...resto)) : error);
     revisarFunciones(modelo, error, consigna.requiere.some((r) => r.llamada), enArchivo && Boolean(arriba || despues));
     revisarConversiones(modelo, error);
     revisarRedefiniciones(modelo, error, practicas.includes('constantes') ? mejora : null);
@@ -432,6 +434,12 @@ export function corregir(
     if (regla.union) return reglaStruct(regla.union, modelo, true);
     if (regla.funcion) return reglaFuncion(regla.funcion, modelo);
     if (regla.prototipo) return reglaPrototipo(regla.prototipo, modelo);
+    if (regla.encabezado) return reglaEncabezado(regla.encabezado, modelo);
+    if (regla.incluyeLocal) return reglaIncluyeLocal(regla.incluyeLocal, modelo);
+    if (regla.sinTipos) return reglaSinTipos(modelo);
+    if (regla.defineTodo) return reglaDefineTodo(modelo);
+    if (regla.soloOperaciones) return reglaSoloOperaciones(regla.soloOperaciones, modelo);
+    if (regla.usaOperaciones) return reglaUsaOperaciones(regla.usaOperaciones, modelo);
     if (regla.sinGlobales) return reglaSinGlobales(modelo);
     if (regla.global) return reglaGlobal(regla.global, modelo);
     if (regla.enum) return reglaEnum(regla.enum, modelo);
@@ -585,11 +593,23 @@ export function corregir(
   //                  "capturar": "F" } }
   // Un parametro "referencia" se declara con * (el que modifica lo de afuera), y
   // "arreglo": true es un arreglo (v[] o con *). "recursiva": true pide que se llame a si misma.
+  // Con "prototipo": true se comprueba el prototipo (el encabezado terminado en ;, como
+  // el de un .h) y no la definicion: no se mira el return.
   // Con "retorna": "enumerado", "soloEnumeradores": true pide que cada return use
   // un valor del enumerado y no un numero.
 
   function reglaFuncion(regla, modelo) {
-    const candidatas = modelo.funciones.filter((f) => f.nuevo && !f.prototipo && !NO_ES_DEL_ALUMNO.includes(f.nombre));
+    const candidatas = modelo.funciones.filter(
+      (f) => f.nuevo && Boolean(f.prototipo) === Boolean(regla.prototipo) && !NO_ES_DEL_ALUMNO.includes(f.nombre)
+    );
+    const pedidoNombre = regla.nombre ? valorDe(regla.nombre) : null;
+    if (regla.prototipo && !candidatas.some((c) => !pedidoNombre || c.nombre === pedidoNombre)) {
+      error(
+        'PROTOTIPO_FALTA',
+        `Falta el prototipo${pedidoNombre ? ` de ${BT}${pedidoNombre}${BT}` : ''}: es el encabezado de la función (el tipo que devuelve, el nombre y los parámetros) terminado en ${BT};${BT}, sin el cuerpo.`
+      );
+      return;
+    }
     if (!candidatas.length) {
       error(
         'FUNCION_FALTA',
@@ -597,7 +617,6 @@ export function corregir(
       );
       return;
     }
-    const pedidoNombre = regla.nombre ? valorDe(regla.nombre) : null;
     const f = (pedidoNombre && candidatas.find((c) => c.nombre === pedidoNombre)) || candidatas[candidatas.length - 1];
     if (pedidoNombre && f.nombre !== pedidoNombre) {
       error('FUNCION_NOMBRE', `La consigna pide que la función se llame ${BT}${pedidoNombre}${BT}, y acá se llama ${BT}${f.nombre}${BT}.`, f.fila);
@@ -730,6 +749,11 @@ export function corregir(
       }
     }
 
+    // Un prototipo no tiene cuerpo: no hay return que mirar.
+    if (regla.prototipo) {
+      if (regla.capturar) nuevas[regla.capturar] = f.nombre;
+      return;
+    }
     // El return.
     const conValor = f.retornos.some((r) => r.conValor);
     if (regla.retorna && regla.retorna !== 'void' && !conValor) {
@@ -873,6 +897,182 @@ export function corregir(
         p.fila
       );
     }
+  }
+
+  // ---- los archivos de un TAD: el .h, el .c y quien lo usa ------------------------
+
+  // El encabezado (.h): todo va entre las guardas de inclusion y solo hay
+  // declaraciones (el tipo y los prototipos), nunca el cuerpo de una funcion.
+  //   { "encabezado": { "guarda": "CONTADOR_H" } }
+  function reglaEncabezado(regla, modelo) {
+    const raiz = arbol.rootNode;
+    const propios = raiz.namedChildren.filter((n) => n.startIndex >= desde && n.type !== 'comment');
+    const guarda = propios.find((n) => n.type === 'preproc_ifdef');
+    const abre = guarda && guarda.child(0) ? guarda.child(0).text : '';
+    if (!guarda || abre !== '#ifndef') {
+      error(
+        'ENCABEZADO_SIN_GUARDA',
+        `Al archivo ${BT}.h${BT} le faltan las guardas de inclusión: empieza con ${BT}#ifndef NOMBRE_H${BT} y ${BT}#define NOMBRE_H${BT}, y termina con ${BT}#endif${BT}. Sin ellas, si dos archivos incluyen el mismo encabezado, el tipo se declara dos veces y el programa no compila.`,
+        propios[0] ? propios[0].startPosition.row : undefined
+      );
+      return;
+    }
+    const nombre = guarda.childForFieldName('name') ? guarda.childForFieldName('name').text : '';
+    // El primero es el nombre de la guarda; el resto, lo que protege.
+    const cuerpo = guarda.namedChildren.filter((n) => n.type !== 'comment').slice(1);
+    const define = cuerpo[0];
+    const definido = define && define.type === 'preproc_def' && define.childForFieldName('name') ? define.childForFieldName('name').text : '';
+    if (definido !== nombre) {
+      error(
+        'ENCABEZADO_GUARDA_INCOMPLETA',
+        `Después de ${BT}#ifndef ${nombre}${BT} tiene que ir ${BT}#define ${nombre}${BT}, con el mismo nombre: así el contenido del archivo se incluye una sola vez.`,
+        guarda.startPosition.row
+      );
+      return;
+    }
+    if (regla.guarda && nombre !== regla.guarda) {
+      error(
+        'ENCABEZADO_GUARDA_NOMBRE',
+        `La consigna pide que la guarda se llame ${BT}${regla.guarda}${BT}: es el nombre del archivo en mayúsculas, con el punto cambiado por un guion bajo.`,
+        guarda.startPosition.row
+      );
+      return;
+    }
+    const afuera = propios.find((n) => n !== guarda);
+    if (afuera) {
+      error(
+        'ENCABEZADO_FUERA_DE_LA_GUARDA',
+        `Todo lo del archivo ${BT}.h${BT} va entre ${BT}#ifndef${BT} y ${BT}#endif${BT}. Esto quedó afuera.`,
+        afuera.startPosition.row
+      );
+      return;
+    }
+    const conCuerpo = modelo.funciones.find((f) => f.nuevo && !f.prototipo);
+    if (conCuerpo) {
+      error(
+        'ENCABEZADO_CON_CUERPO',
+        `El archivo ${BT}.h${BT} solo declara las funciones, con su prototipo: ${BT}${conCuerpo.nombre}${BT} se define, con su cuerpo, en el archivo ${BT}.c${BT}.`,
+        conCuerpo.fila
+      );
+      return;
+    }
+    const variable = modelo.variables.find((v) => v.nuevo && !v.local);
+    if (variable) {
+      error(
+        'ENCABEZADO_CON_VARIABLE',
+        `En el archivo ${BT}.h${BT} no se declaran variables: ${BT}${variable.nombre}${BT} crearía una copia en cada archivo que lo incluya. Acá van el tipo y los prototipos; las variables se declaran donde se usan.`,
+        variable.fila
+      );
+    }
+  }
+
+  // El archivo que incluye a otro propio, con comillas: #include "contador.h". Y
+  // nunca un .c.
+  //   { "incluyeLocal": "contador.h" }
+  function reglaIncluyeLocal(pedido, modelo) {
+    const propios = modelo.includes.filter((i) => i.nuevo);
+    const deUnC = propios.find((i) => /\.c$/i.test(i.ruta));
+    if (deUnC) {
+      error(
+        'INCLUYE_UN_C',
+        `Se incluye el archivo ${BT}.h${BT}, no el ${BT}.c${BT}: el ${BT}.h${BT} dice qué hay y el ${BT}.c${BT} se compila aparte. Incluir un ${BT}.c${BT} repite todo su código.`,
+        deUnC.fila
+      );
+      return;
+    }
+    if (propios.some((i) => i.ruta === pedido && !i.sistema)) return;
+    const conMenor = propios.find((i) => i.ruta === pedido && i.sistema);
+    if (conMenor) {
+      error(
+        'INCLUDE_PROPIO_CON_MENOR_MAYOR',
+        `Los encabezados propios se incluyen con comillas: ${BT}#include "${pedido}"${BT}. Con ${BT}<>${BT} el compilador lo busca entre los de la biblioteca estándar.`,
+        conMenor.fila
+      );
+      return;
+    }
+    error(
+      'INCLUDE_PROPIO_FALTA',
+      `Falta ${BT}#include "${pedido}"${BT}: sin él este archivo no conoce el tipo ni los prototipos que declara el encabezado.`
+    );
+  }
+
+  // En el .c no se vuelve a declarar el tipo: ya viene en el .h.
+  //   { "sinTipos": true }
+  function reglaSinTipos(modelo) {
+    const repetido = [...modelo.aliases, ...modelo.structs, ...modelo.enums].find((t) => t.nuevo);
+    if (!repetido) return;
+    error(
+      'TIPO_REPETIDO_EN_EL_C',
+      `El tipo ya está declarado en el archivo ${BT}.h${BT}, que se incluye con ${BT}#include${BT}. Volver a declararlo acá lo repite: en el ${BT}.c${BT} van solo las funciones.`,
+      repetido.fila
+    );
+  }
+
+  // El .c define todo lo que el .h declara, con la misma firma.
+  //   { "defineTodo": true }
+  function reglaDefineTodo(modelo) {
+    const declaradas = modelo.funciones.filter((f) => !f.nuevo && f.prototipo);
+    const mismo = (a, b) => {
+      const ra = resolver(a.tipo, modelo);
+      const rb = resolver(b.tipo, modelo);
+      return mismoTipo(ra, rb) && a.punteros === b.punteros && (a.arreglo || []).length === (b.arreglo || []).length;
+    };
+    const faltan = [];
+    for (const p of declaradas) {
+      const d = modelo.funciones.find((f) => f.nuevo && !f.prototipo && f.nombre === p.nombre);
+      if (!d) {
+        faltan.push(p.nombre);
+        continue;
+      }
+      if (!mismo(p, d) || p.parametros.length !== d.parametros.length || p.parametros.some((x, i) => !mismo(x, d.parametros[i]))) {
+        error(
+          'FIRMA_DISTINTA_DEL_PROTOTIPO',
+          `${BT}${p.nombre}${BT} no se define como la declara el archivo ${BT}.h${BT}: el tipo que devuelve, los parámetros y su orden tienen que ser los mismos.`,
+          d.fila
+        );
+        return;
+      }
+    }
+    if (faltan.length) {
+      error(
+        'PROTOTIPO_SIN_DEFINICION',
+        `El archivo ${BT}.h${BT} declara ${enLista(faltan)}${faltan.length === 1 ? ' y falta definirla' : ' y falta definirlas'}: cada prototipo necesita su función, con su cuerpo, en el ${BT}.c${BT}.`
+      );
+    }
+  }
+
+  // Quien usa un TAD no mira adentro: no accede a los campos de su estructura.
+  //   { "soloOperaciones": "TContador" }
+  function reglaSoloOperaciones(tipo, modelo) {
+    const def = estructuraDeTipo({ clase: 'nombre', nombre: tipo }, modelo);
+    if (!def) return;
+    const parametros = modelo.funciones.filter((f) => f.nuevo).flatMap((f) => f.parametros);
+    const declarada = (nombre) => modelo.variables.findLast((v) => v.nombre === nombre) || parametros.findLast((p) => p.nombre === nombre);
+    for (const c of modelo.camposUsados) {
+      if (!c.nuevo) continue;
+      const nombre = /^[A-Za-z_]\w*/.exec(c.variable);
+      const v = nombre && declarada(nombre[0]);
+      if (!v || estructuraDeTipo(v.tipo, modelo) !== def) continue;
+      const operaciones = modelo.funciones.filter((f) => !f.nuevo && f.prototipo).map((f) => f.nombre);
+      error(
+        'TAD_ACCESO_DIRECTO',
+        `${BT}${c.variable}.${c.campo}${BT} entra a los campos de ${BT}${tipo}${BT}. Quien usa un tipo abstracto no sabe cómo está hecho por dentro: todo lo hace con sus operaciones${operaciones.length ? ` (${enLista(operaciones)})` : ''}. Así, si cambia la forma de guardar los datos, este código sigue funcionando.`,
+        c.fila
+      );
+      return;
+    }
+  }
+
+  // Quien usa un TAD llama a las operaciones que la consigna nombra.
+  //   { "usaOperaciones": ["inicializar", "contar"] }
+  function reglaUsaOperaciones(nombres, modelo) {
+    const llamadas = modelo.llamadas.filter((l) => l.nuevo);
+    const faltan = nombres.filter((n) => !llamadas.some((l) => l.funcion === n));
+    if (!faltan.length) return;
+    error(
+      'TAD_OPERACION_SIN_USAR',
+      `La consigna pide usar ${enLista(faltan)}, y el programa no ${faltan.length === 1 ? 'la llama' : 'las llama'}: un tipo abstracto se usa con sus operaciones.`
+    );
   }
 
   // ---- struct ---------------------------------------------------------------
@@ -3119,6 +3319,12 @@ export function corregir(
           `${conContexto}\`${e.texto}\` no tiene el valor: en una unión todos los miembros comparten el mismo lugar, y lo último que se guardó fue en \`${e.vigente}\`. Solo se puede leer el miembro en el que se guardó el valor.`,
           e.fila
         );
+      } else if (e instanceof SinValor && consigna.inicializa && e.fila != null && e.fila < filaBase) {
+        // El valor que falta se usa en un archivo que la consigna ya traia: el TAD no se inicializo.
+        error(
+          'TAD_SIN_INICIALIZAR',
+          `${conContexto}Falta llamar a ${BT}${consigna.inicializa}${BT} antes de las demás operaciones: es la que deja el tipo listo para usar, y sin ella sus campos no tienen ningún valor.`
+        );
       } else if (e instanceof SinValor) {
         error(
           'VARIABLE_SIN_VALOR',
@@ -4081,7 +4287,7 @@ export function corregir(
         if (!hecha) return;
         // Una estructura devuelta se compara campo por campo: "devuelve": { "cociente": 3, "resto": 2 }.
         if (llamada && caso.devuelve && typeof caso.devuelve === 'object') {
-          const con = caso.visible || !caso.datos ? '' : `${conLosValores(caso.vistos || caso.datos)}, `;
+          const con = caso.contexto ? `${caso.contexto}, ` : caso.visible || !caso.datos ? '' : `${conLosValores(caso.vistos || caso.datos)}, `;
           const pedidos = Object.keys(caso.devuelve);
           for (const [campo, esperado] of Object.entries(caso.devuelve)) {
             const v = hecha.variables.get(`__devuelve.${campo}`);
@@ -4127,7 +4333,7 @@ export function corregir(
               ? caso.devuelve.codePointAt(0)
               : caso.devuelve;
           if (Math.abs(dio.valor - debe) > 1e-9) {
-            const con = caso.visible || !caso.datos ? '' : `${conLosValores(caso.vistos || caso.datos)}, `;
+            const con = caso.contexto ? `${caso.contexto}, ` : caso.visible || !caso.datos ? '' : `${conLosValores(caso.vistos || caso.datos)}, `;
             const decir = (v) =>
               enumerador
                 ? (modelo.constantes.find((c) => c.clase === 'enum' && valorDeDimension(c.valor, modelo) === v)?.nombre ?? v)

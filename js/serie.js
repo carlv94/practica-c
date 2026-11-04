@@ -85,6 +85,12 @@ export const capturasPrevias = (serie, indice, avance) => {
 // Si la respuesta de la consigna va fuera de main.
 export const enArchivo = (consigna) => consigna.en === 'archivo';
 
+// Los archivos de un proyecto (pila.h, pila.c, main.c): la consigna dice cual
+// escribe el alumno ("escribe") y trae los otros ya escritos ("archivos"). Los
+// que lleva "oculto": true cuentan para corregir, pero no se le muestran.
+const archivosDeLaConsigna = (consigna) => consigna.archivos || [];
+export const archivosVisibles = (consigna) => archivosDeLaConsigna(consigna).filter((a) => !a.oculto);
+
 // Una serie mezcla las dos zonas cuando sus sentencias van dentro de main y
 // alguna de sus consignas pide una definicion fuera de ella, o su cabecera
 // trae una (una estructura ya declarada, ademas del #include).
@@ -104,6 +110,7 @@ export function partesPrevias(serie, indice, avance) {
       avance.base,
       archivoPrevio(serie, indice, avance),
       consigna.archivoDado,
+      ...archivosDeLaConsigna(consigna).map((a) => a.codigo),
       afuera ? consigna.dado : ''
     ),
     main: unirEnMain(
@@ -186,8 +193,11 @@ function marco(serie, indice, avance) {
 // dejaron las consignas anteriores, si continua.
 export function programaDeOpciones(serie, indice, avance) {
   const consigna = serie.consignas[indice];
-  if (consigna.codigo == null) return '';
   const capturas = capturasPrevias(serie, indice, avance);
+  // "programa": el texto completo, tal cual (varios archivos, cada uno con su nombre en un
+  // comentario). No se reacomoda: armar() subiria todos los # arriba de todo.
+  if (consigna.programa != null) return sustituir(consigna.programa, capturas);
+  if (consigna.codigo == null) return '';
   const archivo = unir(
     serie.cabecera,
     avance.base,

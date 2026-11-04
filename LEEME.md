@@ -1466,6 +1466,64 @@ en `js/app.js`.
   use lo que devolvió la llamada de abajo y que cada ida nombre la llamada siguiente. La
   respuesta del alumno es un JSON `{ "celdas": [[ida, vuelta], ...], "salida": "..." }`.
 
+### Archivos de un proyecto (TAD: `.h`, `.c` y `main.c`)
+
+Una consigna puede ser un archivo de un proyecto de varios. Dice cuál escribe el
+alumno y trae los otros ya escritos; la serie no lleva `dentroDeMain`, así que
+la respuesta es un archivo completo.
+
+```json
+{
+  "id": "tad-usar-contar",
+  "escribe": "main.c",
+  "inicializa": "inicializar",
+  "archivos": [
+    { "nombre": "contador.h", "codigo": "#ifndef CONTADOR_H\n..." },
+    { "nombre": "contador.c", "codigo": "#include \"contador.h\"\n...", "oculto": true }
+  ],
+  "requiere": [ ... ]
+}
+```
+
+- **`escribe`** es el nombre del archivo de la respuesta: la pantalla dice "Su
+  respuesta: main.c". **`archivos`** se muestran cada uno con su nombre, salvo los
+  que llevan `"oculto": true` (la implementación como caja negra): esos cuentan
+  para corregir y para ejecutar, pero el alumno no los ve. Se arman en orden
+  delante de la respuesta, como un solo programa, así que un `.h` va antes que el
+  `.c` y que `main`. Los `#include "x.h"` no se expanden: el `.h` ya está arriba.
+- **Los números de línea** de los mensajes son los del archivo del alumno. Un error
+  que ocurre en un archivo oculto no lleva línea.
+- **`inicializa`**: la operación que deja el tipo listo (`inicializar`). Si al ejecutar
+  el cliente se usa un valor sin darlo, y el valor falta en un archivo que la
+  consigna traía, el error es `TAD_SIN_INICIALIZAR` en lugar de `VARIABLE_SIN_VALOR`.
+- **Reglas** (en `requiere`):
+  - `{ "encabezado": { "guarda": "CONTADOR_H" } }`: el `.h` va entre `#ifndef`,
+    `#define` (con el mismo nombre) y `#endif`, y solo trae declaraciones. Errores:
+    `ENCABEZADO_SIN_GUARDA`, `ENCABEZADO_GUARDA_INCOMPLETA`, `ENCABEZADO_GUARDA_NOMBRE`,
+    `ENCABEZADO_FUERA_DE_LA_GUARDA`, `ENCABEZADO_CON_CUERPO`, `ENCABEZADO_CON_VARIABLE`.
+  - `{ "funcion": { "prototipo": true, "nombre": "crear", "retorna": ..., "parametros": [...] } }`:
+    la regla `funcion` aplicada a un prototipo (no se mira el `return`). Falta: `PROTOTIPO_FALTA`.
+  - `{ "incluyeLocal": "contador.h" }`: `#include "contador.h"` con comillas
+    (`INCLUDE_PROPIO_FALTA`, `INCLUDE_PROPIO_CON_MENOR_MAYOR`); incluir un `.c` es
+    `INCLUYE_UN_C`.
+  - `{ "sinTipos": true }`: el `.c` no vuelve a declarar el tipo (`TIPO_REPETIDO_EN_EL_C`).
+  - `{ "defineTodo": true }`: el `.c` define cada prototipo del `.h`, con la misma
+    firma (`PROTOTIPO_SIN_DEFINICION`, `FIRMA_DISTINTA_DEL_PROTOTIPO`).
+  - `{ "soloOperaciones": "TContador" }`: quien usa el TAD no accede a los campos
+    de su estructura (`TAD_ACCESO_DIRECTO`, que nombra las operaciones del `.h`).
+  - `{ "usaOperaciones": ["inicializar", "contar"] }`: el programa llama a esas
+    operaciones (`TAD_OPERACION_SIN_USAR`).
+- **Probar el `.c`**: un caso de `ejecuta` con `antes` (lo que se hace antes de
+  probar: `TContador c; inicializar(&c); contar(&c);`), `llama` y `devuelve`. El caso puede
+  traer `contexto` ("Después de inicializar un contador y contar tres veces"), que encabeza el
+  mensaje de `DEVUELVE_DISTINTO` para que el alumno sepa en qué escenario falló.
+- Cada consigna es independiente: lo que el alumno escribió en una no pasa a la
+  siguiente; los otros archivos los trae la consigna.
+- **Cuestionarios con varios archivos**: en lugar de `archivo` y `codigo` llevan
+  `"programa"`, el texto completo tal cual, con el nombre de cada archivo en un
+  comentario (`/* main.c */`). No se reacomoda: con `archivo` y `codigo` la pantalla
+  sube todas las líneas que empiezan con `#` (los `#include`, las guardas) arriba de todo.
+
 ### Consignas de opciones
 
 En un enunciado, lo que va entre acentos graves (`nombre`, `"Maria"`, `1`) se

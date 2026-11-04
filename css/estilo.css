@@ -601,6 +601,22 @@ pre {
   opacity: 0.8;
 }
 
+/* Los archivos que trae una consigna (el .h, el .c), cada uno con su nombre. */
+#archivos .archivo {
+  margin-bottom: 12px;
+}
+
+#archivos .archivo-nombre {
+  margin: 0 0 4px;
+  font-family: Consolas, "Cascadia Mono", Menlo, monospace;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+#archivos pre {
+  opacity: 0.85;
+}
+
 .clave {
   color: var(--c-clave);
 }

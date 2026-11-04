@@ -16,6 +16,7 @@ import { cargarAnalizador } from './analizador.js';
 import {
   inicio,
   codigoPrevio,
+  archivosVisibles,
   enArchivo,
   esMixta,
   programaDeOpciones,
@@ -560,6 +561,20 @@ function mostrarConsigna() {
   const programa = !termino && sinEditor ? programaDeOpciones(serie, actual, avanceVisto) : '';
   $('consigna').hidden = termino;
   $('bloque-contexto').hidden = !previo;
+  // Los archivos que trae la consigna, cada uno con su nombre; y cual escribe el alumno.
+  const archivos = termino || sinEditor ? [] : archivosVisibles(consigna);
+  $('bloque-archivos').hidden = !archivos.length;
+  $('archivos').replaceChildren(
+    ...archivos.map((a) => {
+      const caja = elemento('div', 'archivo');
+      caja.appendChild(elemento('p', 'archivo-nombre', a.nombre));
+      const codigo = elemento('pre');
+      pintar(codigo, a.codigo);
+      caja.appendChild(codigo);
+      return caja;
+    })
+  );
+  $('etiqueta-respuesta').textContent = consigna?.escribe ? `Su respuesta: ${consigna.escribe}` : 'Su respuesta';
   $('bloque-respuesta').hidden = termino;
   $('zona-codigo').hidden = sinEditor;
   $('opciones').hidden = !esCuestionario;
