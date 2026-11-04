@@ -29,6 +29,7 @@ import { CASOS_DE_AMBITO } from './casos-ambito.js';
 import { CASOS_DE_PUNTEROS } from './casos-punteros.js';
 import { CASOS_DE_PILA } from './casos-pila.js';
 import { CASOS_DE_RECURSION } from './casos-recursion.js';
+import { CASOS_DE_TAD } from './casos-tad.js';
 import { CASOS_DE_DECLARAR_ESTRUCTURAS } from './casos-estructuras-declarar.js';
 
 // Las sentencias de la serie de cadenas.
@@ -1415,5 +1416,6 @@ export const CASOS = [
   ...CASOS_DE_PUNTEROS,
   ...CASOS_DE_PILA,
   ...CASOS_DE_RECURSION,
+  ...CASOS_DE_TAD,
   ...CASOS_DE_DECLARAR_ESTRUCTURAS,
 ];

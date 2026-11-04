@@ -124,6 +124,18 @@
         "recursion-escribir.json",
         "recursion-arreglos.json"
       ]
+    },
+    {
+      "id": "tad",
+      "agrupar": true,
+      "titulo": "Tipos abstractos de datos",
+      "descripcion": "Un tipo definido por lo que se puede hacer con él y no por cómo está guardado: el archivo `.h` con sus operaciones, el `.c` que las implementa y el programa que las usa.",
+      "oculto": true,
+      "series": [
+        "tad-usar.json",
+        "tad-escribir-h.json",
+        "tad-escribir-c.json"
+      ]
     }
   ]
 }

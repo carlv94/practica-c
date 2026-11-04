@@ -1,0 +1,202 @@
+{
+  "id": "tad-escribir-h",
+  "titulo": "Escribir el archivo .h",
+  "continua": false,
+  "descripcion": "El archivo `.h` es lo que un TAD ofrece: el tipo y la lista de sus operaciones, con sus guardas de inclusión, sin el cuerpo de las funciones.",
+  "consignas": [
+    {
+      "id": "tadh-q-donde",
+      "titulo": "Qué va en cada archivo",
+      "programa": "/* contador.h */\n#ifndef CONTADOR_H\n#define CONTADOR_H\n\ntypedef struct {\n  int valor;\n} TContador;\n\nvoid inicializar(TContador *c);\nvoid contar(TContador *c);\nint obtener(TContador c);\n\n#endif\n\n/* contador.c */\n#include \"contador.h\"\n\nvoid inicializar(TContador *c) {\n  c->valor = 0;\n}\n\nvoid contar(TContador *c) {\n  c->valor = c->valor + 1;\n}\n\nint obtener(TContador c) {\n  return c.valor;\n}",
+      "enunciado": "Un TAD se reparte en dos archivos, `contador.h` y `contador.c`. ¿Qué va en cada uno?",
+      "opciones": [
+        {
+          "texto": "El `.h` lleva el cuerpo de las funciones y el `.c`, la declaración del tipo.",
+          "codigo": "OPCION_TADH_AL_REVES",
+          "explicacion": "Es al revés: el `.h` es lo que se ofrece a quien usa el TAD, así que lleva el tipo y los prototipos. El cuerpo de las funciones es cómo está hecho por dentro y va en el `.c`."
+        },
+        {
+          "texto": "El `.h` lleva el tipo y los prototipos de las operaciones; el `.c`, el cuerpo de cada función.",
+          "correcta": true,
+          "explicacion": "El `.h` es lo que se ofrece a quien usa el TAD: el tipo y la lista de operaciones, o sea sus prototipos. El `.c` es cómo está hecho: el cuerpo de cada función. Quien usa el TAD incluye solo el `.h` y el `.c` se compila aparte; por eso se puede cambiar la implementación sin tocar a quien lo usa."
+        },
+        {
+          "texto": "Los dos llevan lo mismo: se copia todo en cada uno.",
+          "codigo": "OPCION_TADH_COPIA",
+          "explicacion": "Copiar lo mismo en los dos archivos repetiría las declaraciones y el programa no compilaría. Cada archivo tiene su papel: el `.h` dice qué hay y el `.c` dice cómo se hace. El `.c` solo incluye el `.h` con `#include \"contador.h\"`."
+        }
+      ]
+    },
+    {
+      "id": "tadh-q-guardas",
+      "titulo": "Para qué sirven las guardas",
+      "programa": "/* contador.h */\ntypedef struct {\n  int valor;\n} TContador;\n\nvoid inicializar(TContador *c);\n\n/* estadistica.h */\n#include \"contador.h\"\n\nint promedio(TContador c);\n\n/* main.c */\n#include \"contador.h\"\n#include \"estadistica.h\"",
+      "enunciado": "`main.c` incluye `contador.h` y también `estadistica.h`, que a su vez incluye `contador.h`. El archivo `contador.h` no tiene guardas de inclusión. ¿Qué pasa al compilar `main.c`?",
+      "opciones": [
+        {
+          "texto": "Nada: el compilador ignora la segunda vez que ve el mismo archivo.",
+          "codigo": "OPCION_GUARDAS_SE_IGNORA",
+          "explicacion": "El compilador no ignora nada por su cuenta: `#include` copia el contenido del archivo cada vez que aparece. Para que la segunda copia se salte hacen falta las guardas."
+        },
+        {
+          "texto": "El tipo `TContador` queda declarado dos veces y no compila.",
+          "correcta": true,
+          "explicacion": "`#include` copia el contenido del archivo cada vez que aparece, y `main.c` recibe el `typedef` de `TContador` dos veces: una directa y otra a través de `estadistica.h`. Declarar dos veces el mismo tipo es un error. Las guardas lo evitan: `#ifndef CONTADOR_H`, `#define CONTADOR_H` y `#endif` hacen que la segunda vez el contenido se salte, porque `CONTADOR_H` ya está definido."
+        },
+        {
+          "texto": "Compila, pero `main.c` termina con dos tipos `TContador` distintos.",
+          "codigo": "OPCION_GUARDAS_DOS_TIPOS",
+          "explicacion": "No llega a compilar: el compilador se detiene al encontrar el nombre `TContador` declarado por segunda vez. No se generan dos tipos distintos; hay un error."
+        }
+      ]
+    },
+    {
+      "id": "tadh-contador",
+      "titulo": "El archivo del contador",
+      "escribe": "contador.h",
+      "enunciado": "Escriba `contador.h`, el archivo que describe el TAD contador. Un contador guarda un número entero en un campo `valor`, y el tipo se llama `TContador`. Tiene tres operaciones: `inicializar` deja el contador en cero (recibe el contador por referencia y no devuelve nada), `contar` le suma uno (recibe el contador por referencia y no devuelve nada) y `obtener` devuelve su valor entero (recibe el contador por valor). Use las guardas de inclusión `CONTADOR_H`.",
+      "requiere": [
+        {
+          "encabezado": {
+            "guarda": "CONTADOR_H"
+          }
+        },
+        {
+          "struct": {
+            "capturar": "S",
+            "campos": [
+              {
+                "nombre": "valor",
+                "tipo": "entero"
+              }
+            ]
+          }
+        },
+        {
+          "alias": {
+            "de": "$S",
+            "nombre": "TContador",
+            "capturar": "T"
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "inicializar",
+            "retorna": "void",
+            "parametros": [
+              {
+                "tipo": "estructura",
+                "referencia": true
+              }
+            ]
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "contar",
+            "retorna": "void",
+            "parametros": [
+              {
+                "tipo": "estructura",
+                "referencia": true
+              }
+            ]
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "obtener",
+            "retorna": "entero",
+            "parametros": [
+              {
+                "tipo": "estructura"
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "#ifndef CONTADOR_H\n#define CONTADOR_H\n\ntypedef struct {\n  int valor;\n} TContador;\n\nvoid inicializar(TContador *c);\nvoid contar(TContador *c);\nint obtener(TContador c);\n\n#endif"
+    },
+    {
+      "id": "tadh-fraccion",
+      "titulo": "El archivo de la fracción",
+      "escribe": "fraccion.h",
+      "enunciado": "Escriba `fraccion.h` para el TAD fracción. Una fracción guarda un numerador y un denominador, enteros, en los campos `numerador` y `denominador`, y el tipo se llama `TFraccion`. Tiene tres operaciones: `crear` recibe el numerador y el denominador y devuelve la fracción; `sumar` recibe dos fracciones y devuelve su suma; `mostrar` recibe una fracción y la muestra en pantalla, sin devolver nada. Las fracciones se pasan por valor. Use las guardas de inclusión `FRACCION_H`.",
+      "requiere": [
+        {
+          "encabezado": {
+            "guarda": "FRACCION_H"
+          }
+        },
+        {
+          "struct": {
+            "capturar": "S",
+            "campos": [
+              {
+                "nombre": "numerador",
+                "tipo": "entero"
+              },
+              {
+                "nombre": "denominador",
+                "tipo": "entero"
+              }
+            ]
+          }
+        },
+        {
+          "alias": {
+            "de": "$S",
+            "nombre": "TFraccion",
+            "capturar": "T"
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "crear",
+            "retorna": "estructura",
+            "parametros": [
+              {
+                "tipo": "entero"
+              },
+              {
+                "tipo": "entero"
+              }
+            ]
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "sumar",
+            "retorna": "estructura",
+            "parametros": [
+              {
+                "tipo": "estructura"
+              },
+              {
+                "tipo": "estructura"
+              }
+            ]
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "mostrar",
+            "retorna": "void",
+            "parametros": [
+              {
+                "tipo": "estructura"
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "#ifndef FRACCION_H\n#define FRACCION_H\n\ntypedef struct {\n  int numerador;\n  int denominador;\n} TFraccion;\n\nTFraccion crear(int numerador, int denominador);\nTFraccion sumar(TFraccion a, TFraccion b);\nvoid mostrar(TFraccion f);\n\n#endif"
+    }
+  ]
+}

@@ -1,0 +1,191 @@
+{
+  "id": "tad-usar",
+  "titulo": "Usar un TAD",
+  "continua": false,
+  "descripcion": "Un tipo abstracto de datos se usa con sus operaciones, sin mirar cómo está guardado por dentro: el archivo `.h` dice qué se puede hacer y el programa lo usa.",
+  "consignas": [
+    {
+      "id": "tad-q-por-dentro",
+      "titulo": "Tocar los campos",
+      "programa": "/* contador.h */\n#ifndef CONTADOR_H\n#define CONTADOR_H\n\ntypedef struct {\n  int valor;\n} TContador;\n\nvoid inicializar(TContador *c);\nvoid contar(TContador *c);\nint obtener(TContador c);\n\n#endif\n\n/* main.c */\n#include <stdio.h>\n#include \"contador.h\"\n\nint main() {\n  TContador c;\n\n  inicializar(&c);\n  contar(&c);\n  contar(&c);\n  c.valor = c.valor + 10;\n  printf(\"%d\", obtener(c));\n  return 0;\n}",
+      "enunciado": "El archivo `contador.h` declara el tipo `TContador` y tres operaciones: `inicializar`, `contar` y `obtener`. El archivo `main.c` las usa. ¿Cuál de estas afirmaciones sobre el programa es correcta?",
+      "opciones": [
+        {
+          "texto": "Muestra `12`. Funciona: `valor` es un campo como cualquier otro.",
+          "codigo": "OPCION_TAD_CAMPO_COMUN",
+          "explicacion": "Muestra `12`, pero que funcione no significa que esté bien. `TContador` es un tipo abstracto: se define por lo que se puede hacer con él, no por cómo está guardado. Este contador solo sabe contar de a uno, y ese `12` es un valor que dos llamadas a `contar` nunca producen."
+        },
+        {
+          "texto": "Muestra `12`. Funciona, pero se salta las operaciones del TAD.",
+          "correcta": true,
+          "explicacion": "Compila y muestra `12`: C no impide tocar los campos. Pero un tipo abstracto se usa solo con sus operaciones, por dos razones. Primero, el contador solo puede crecer de a uno con `contar`; tocar el campo permite saltarse esa regla (acá, sumar `10` de golpe) y dejarlo en un estado que las operaciones nunca producirían. Segundo, quien usa el TAD no tiene que saber cómo está guardado: si mañana el contador se guarda de otra forma, `c.valor` deja de significar lo mismo y el programa se rompe, mientras que `contar(&c)` seguiría funcionando."
+        },
+        {
+          "texto": "No compila: los campos de un TAD no se pueden tocar desde afuera.",
+          "codigo": "OPCION_TAD_NO_COMPILA",
+          "explicacion": "Sí compila: en C nada impide acceder a los campos de una estructura. Respetar la abstracción es una disciplina de quien programa, no algo que el compilador obligue: por eso hay que acostumbrarse a usar solo las operaciones."
+        }
+      ]
+    },
+    {
+      "id": "tad-usar-contar",
+      "titulo": "Contar con el contador",
+      "escribe": "main.c",
+      "archivos": [
+        {
+          "nombre": "contador.h",
+          "codigo": "#ifndef CONTADOR_H\n#define CONTADOR_H\n\ntypedef struct {\n  int valor;\n} TContador;\n\nvoid inicializar(TContador *c);\nvoid contar(TContador *c);\nint obtener(TContador c);\n\n#endif"
+        },
+        {
+          "nombre": "contador.c",
+          "codigo": "#include \"contador.h\"\n\nvoid inicializar(TContador *c) {\n  c->valor = 0;\n}\n\nvoid contar(TContador *c) {\n  c->valor = c->valor + 1;\n}\n\nint obtener(TContador c) {\n  return c.valor;\n}",
+          "oculto": true
+        }
+      ],
+      "enunciado": "El archivo `contador.h` declara el tipo `TContador` y tres operaciones: `inicializar` deja el contador en cero, `contar` le suma uno y `obtener` devuelve su valor. Escriba `main.c`: declare un contador, inicialícelo, cuente tres veces y muestre su valor con `printf`. Use solo las operaciones del `.h`. (En este curso `inicializar` recibe una variable que ya existe y la deja lista para usar; el nombre `crear` se reserva para las funciones que devuelven la estructura.)",
+      "requiere": [
+        {
+          "incluyeLocal": "contador.h"
+        },
+        {
+          "soloOperaciones": "TContador"
+        },
+        {
+          "usaOperaciones": [
+            "inicializar",
+            "contar",
+            "obtener"
+          ]
+        },
+        {
+          "ejecuta": {
+            "muestra": [
+              3
+            ]
+          }
+        }
+      ],
+      "referencia": "#include <stdio.h>\n#include \"contador.h\"\n\nint main() {\n  TContador c;\n\n  inicializar(&c);\n  contar(&c);\n  contar(&c);\n  contar(&c);\n  printf(\"%d\", obtener(c));\n  return 0;\n}",
+      "inicializa": "inicializar"
+    },
+    {
+      "id": "tad-usar-pares",
+      "titulo": "Contar los pares",
+      "escribe": "main.c",
+      "inicializa": "inicializar",
+      "archivos": [
+        {
+          "nombre": "contador.h",
+          "codigo": "#ifndef CONTADOR_H\n#define CONTADOR_H\n\ntypedef struct {\n  int valor;\n} TContador;\n\nvoid inicializar(TContador *c);\nvoid contar(TContador *c);\nint obtener(TContador c);\n\n#endif"
+        },
+        {
+          "nombre": "contador.c",
+          "codigo": "#include \"contador.h\"\n\nvoid inicializar(TContador *c) {\n  c->valor = 0;\n}\n\nvoid contar(TContador *c) {\n  c->valor = c->valor + 1;\n}\n\nint obtener(TContador c) {\n  return c.valor;\n}",
+          "oculto": true
+        }
+      ],
+      "enunciado": "Con el mismo `contador.h`, escriba `main.c`: lea con `scanf` cinco números enteros y use un `TContador` para contar cuántos son pares, llamando a `contar` por cada uno. Al final muestre la cantidad con `printf`. Use solo las operaciones del `.h`.",
+      "requiere": [
+        {
+          "incluyeLocal": "contador.h"
+        },
+        {
+          "soloOperaciones": "TContador"
+        },
+        {
+          "usaOperaciones": [
+            "inicializar",
+            "contar",
+            "obtener"
+          ]
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "entrada": [
+                  3,
+                  8,
+                  5,
+                  6,
+                  2
+                ],
+                "muestra": [
+                  3
+                ]
+              },
+              {
+                "entrada": [
+                  1,
+                  3,
+                  5,
+                  7,
+                  9
+                ],
+                "muestra": [
+                  0
+                ]
+              },
+              {
+                "entrada": [
+                  2,
+                  4,
+                  6,
+                  8,
+                  10
+                ],
+                "muestra": [
+                  5
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "#include <stdio.h>\n#include \"contador.h\"\n\nint main() {\n  TContador pares;\n  int n;\n\n  inicializar(&pares);\n  for (int i = 0; i < 5; i++) {\n    scanf(\"%d\", &n);\n    if (n % 2 == 0) {\n      contar(&pares);\n    }\n  }\n  printf(\"%d\", obtener(pares));\n  return 0;\n}"
+    },
+    {
+      "id": "tad-usar-dos",
+      "titulo": "Dos contadores",
+      "escribe": "main.c",
+      "inicializa": "inicializar",
+      "archivos": [
+        {
+          "nombre": "contador.h",
+          "codigo": "#ifndef CONTADOR_H\n#define CONTADOR_H\n\ntypedef struct {\n  int valor;\n} TContador;\n\nvoid inicializar(TContador *c);\nvoid contar(TContador *c);\nint obtener(TContador c);\n\n#endif"
+        },
+        {
+          "nombre": "contador.c",
+          "codigo": "#include \"contador.h\"\n\nvoid inicializar(TContador *c) {\n  c->valor = 0;\n}\n\nvoid contar(TContador *c) {\n  c->valor = c->valor + 1;\n}\n\nint obtener(TContador c) {\n  return c.valor;\n}",
+          "oculto": true
+        }
+      ],
+      "enunciado": "Escriba `main.c` con dos contadores, `a` y `b`. Cuente cinco veces con `a` y dos veces con `b` (puede usar un ciclo para cada uno), y muestre con un solo `printf` los valores de los dos, `a` primero, separados por un espacio. Cada variable de tipo `TContador` es un contador propio. Use solo las operaciones del `.h`.",
+      "requiere": [
+        {
+          "incluyeLocal": "contador.h"
+        },
+        {
+          "soloOperaciones": "TContador"
+        },
+        {
+          "usaOperaciones": [
+            "inicializar",
+            "contar",
+            "obtener"
+          ]
+        },
+        {
+          "ejecuta": {
+            "muestra": [
+              5,
+              2
+            ],
+            "separadas": true
+          }
+        }
+      ],
+      "referencia": "#include <stdio.h>\n#include \"contador.h\"\n\nint main() {\n  TContador a;\n  TContador b;\n\n  inicializar(&a);\n  inicializar(&b);\n  for (int i = 0; i < 5; i++) {\n    contar(&a);\n  }\n  for (int i = 0; i < 2; i++) {\n    contar(&b);\n  }\n  printf(\"%d %d\", obtener(a), obtener(b));\n  return 0;\n}"
+    }
+  ]
+}

@@ -1,0 +1,426 @@
+// Casos de las series de tipos abstractos de datos: usar un TAD, escribir el .h
+// y escribir el .c. Mismo formato que casos.js.
+
+const serie = (id) => (paso, nombre, respuesta, espera = 'ok', extra = {}) => ({
+  serie: id,
+  paso,
+  nombre,
+  respuesta,
+  espera,
+  ...extra,
+});
+
+const usar = serie('tad-usar');
+const escribirH = serie('tad-escribir-h');
+const escribirC = serie('tad-escribir-c');
+
+const lineas = (...l) => l.join('\n');
+
+// main.c con lo que va adentro de main.
+const MAIN = (...cuerpo) =>
+  lineas('#include <stdio.h>', '#include "contador.h"', '', 'int main() {', ...cuerpo.map((l) => (l ? '  ' + l : l)), '  return 0;', '}');
+
+const CONTADOR_H = lineas(
+  '#ifndef CONTADOR_H',
+  '#define CONTADOR_H',
+  '',
+  'typedef struct {',
+  '  int valor;',
+  '} TContador;',
+  '',
+  'void inicializar(TContador *c);',
+  'void contar(TContador *c);',
+  'int obtener(TContador c);',
+  '',
+  '#endif'
+);
+
+// El .h del contador con una parte cambiada.
+const H = (cambio) => cambio(CONTADOR_H);
+
+const CONTADOR_C = lineas(
+  '#include "contador.h"',
+  '',
+  'void inicializar(TContador *c) {',
+  '  c->valor = 0;',
+  '}',
+  '',
+  'void contar(TContador *c) {',
+  '  c->valor = c->valor + 1;',
+  '}',
+  '',
+  'int obtener(TContador c) {',
+  '  return c.valor;',
+  '}'
+);
+
+const FRACCION_C = lineas(
+  '#include <stdio.h>',
+  '#include "fraccion.h"',
+  '',
+  'TFraccion crear(int numerador, int denominador) {',
+  '  TFraccion f;',
+  '',
+  '  f.numerador = numerador;',
+  '  f.denominador = denominador;',
+  '  return f;',
+  '}',
+  '',
+  'TFraccion sumar(TFraccion a, TFraccion b) {',
+  '  TFraccion r;',
+  '',
+  '  r.numerador = a.numerador * b.denominador + b.numerador * a.denominador;',
+  '  r.denominador = a.denominador * b.denominador;',
+  '  return r;',
+  '}',
+  '',
+  'void mostrar(TFraccion f) {',
+  '  printf("%d/%d", f.numerador, f.denominador);',
+  '}'
+);
+
+export const CASOS_DE_TAD = [
+  // ===== Usar un TAD =====
+  // ---- 1: tocar los campos ----
+  usar(1, 'se salta las operaciones', '1'),
+  usar(1, 'el campo es comun', '0', ['OPCION_TAD_CAMPO_COMUN']),
+  usar(1, 'no compila', '2', ['OPCION_TAD_NO_COMPILA']),
+  // ---- 2: contar con el contador ----
+  usar(2, 'tres llamadas', MAIN('TContador c;', '', 'inicializar(&c);', 'contar(&c);', 'contar(&c);', 'contar(&c);', 'printf("%d", obtener(c));')),
+  usar(
+    2,
+    'con un ciclo',
+    MAIN('TContador c;', '', 'inicializar(&c);', 'for (int i = 0; i < 3; i++) {', '  contar(&c);', '}', 'printf("%d", obtener(c));')
+  ),
+  usar(
+    2,
+    'tocando el campo',
+    MAIN('TContador c;', '', 'inicializar(&c);', 'contar(&c);', 'c.valor = c.valor + 2;', 'printf("%d", obtener(c));'),
+    ['TAD_ACCESO_DIRECTO'],
+    { dice: ['inicializar', 'contar', 'obtener'] }
+  ),
+  usar(
+    2,
+    'mostrando el campo',
+    MAIN('TContador c;', '', 'inicializar(&c);', 'contar(&c);', 'contar(&c);', 'contar(&c);', 'printf("%d", c.valor);'),
+    ['TAD_ACCESO_DIRECTO', 'TAD_OPERACION_SIN_USAR']
+  ),
+  usar(
+    2,
+    'el encabezado entre menor y mayor',
+    lineas('#include <stdio.h>', '#include <contador.h>', '', 'int main() {', '  TContador c;', '', '  inicializar(&c);', '  contar(&c);', '  printf("%d", obtener(c));', '  return 0;', '}'),
+    ['INCLUDE_PROPIO_CON_MENOR_MAYOR']
+  ),
+  usar(
+    2,
+    'incluyendo el .c',
+    lineas('#include <stdio.h>', '#include "contador.c"', '', 'int main() {', '  TContador c;', '', '  inicializar(&c);', '  contar(&c);', '  printf("%d", obtener(c));', '  return 0;', '}'),
+    ['INCLUYE_UN_C']
+  ),
+  usar(
+    2,
+    'sin incluir el encabezado',
+    lineas('#include <stdio.h>', '', 'int main() {', '  TContador c;', '', '  inicializar(&c);', '  contar(&c);', '  printf("%d", obtener(c));', '  return 0;', '}'),
+    ['INCLUDE_PROPIO_FALTA']
+  ),
+  usar(
+    2,
+    'sin inicializar el contador',
+    MAIN('TContador c;', '', 'contar(&c);', 'contar(&c);', 'contar(&c);', 'printf("%d", obtener(c));'),
+    ['TAD_OPERACION_SIN_USAR'],
+    { dice: ['inicializar'] }
+  ),
+  usar(2, 'contando de menos', MAIN('TContador c;', '', 'inicializar(&c);', 'contar(&c);', 'contar(&c);', 'printf("%d", obtener(c));'), ['MUESTRA_DISTINTA']),
+  usar(
+    2,
+    'sin las operaciones',
+    lineas('#include <stdio.h>', '#include "contador.h"', '', 'int main() {', '  TContador c;', '', '  printf("3");', '  return 0;', '}'),
+    ['TAD_OPERACION_SIN_USAR']
+  ),
+  // ---- 3: contar los pares ----
+  usar(
+    3,
+    'con un ciclo',
+    MAIN(
+      'TContador pares;',
+      'int n;',
+      '',
+      'inicializar(&pares);',
+      'for (int i = 0; i < 5; i++) {',
+      '  scanf("%d", &n);',
+      '  if (n % 2 == 0) {',
+      '    contar(&pares);',
+      '  }',
+      '}',
+      'printf("%d", obtener(pares));'
+    )
+  ),
+  usar(
+    3,
+    'contando los impares',
+    MAIN(
+      'TContador c;',
+      'int n;',
+      '',
+      'inicializar(&c);',
+      'for (int i = 0; i < 5; i++) {',
+      '  scanf("%d", &n);',
+      '  if (n % 2 != 0) {',
+      '    contar(&c);',
+      '  }',
+      '}',
+      'printf("%d", obtener(c));'
+    ),
+    ['MUESTRA_DISTINTA']
+  ),
+  usar(
+    3,
+    'con un entero y sin el contador',
+    MAIN(
+      'int cuenta = 0;',
+      'int n;',
+      '',
+      'for (int i = 0; i < 5; i++) {',
+      '  scanf("%d", &n);',
+      '  if (n % 2 == 0) {',
+      '    cuenta++;',
+      '  }',
+      '}',
+      'printf("%d", cuenta);'
+    ),
+    ['TAD_OPERACION_SIN_USAR']
+  ),
+  // ---- 4: dos contadores ----
+  usar(
+    4,
+    'dos contadores',
+    MAIN(
+      'TContador a;',
+      'TContador b;',
+      '',
+      'inicializar(&a);',
+      'inicializar(&b);',
+      'for (int i = 0; i < 5; i++) {',
+      '  contar(&a);',
+      '}',
+      'for (int i = 0; i < 2; i++) {',
+      '  contar(&b);',
+      '}',
+      'printf("%d %d", obtener(a), obtener(b));'
+    )
+  ),
+  // Dos for seguidos con su propia i son validos; la misma variable declarada dos veces en el mismo bloque, no.
+  usar(
+    4,
+    'la misma variable dos veces en el mismo bloque',
+    MAIN(
+      'TContador a;',
+      'TContador b;',
+      'int i;',
+      'int i;',
+      '',
+      'inicializar(&a);',
+      'inicializar(&b);',
+      'for (i = 0; i < 5; i++) {',
+      '  contar(&a);',
+      '}',
+      'for (i = 0; i < 2; i++) {',
+      '  contar(&b);',
+      '}',
+      'printf("%d %d", obtener(a), obtener(b));'
+    ),
+    ['VARIABLE_REDEFINIDA']
+  ),
+  usar(
+    4,
+    'sin inicializar el segundo',
+    MAIN(
+      'TContador a;',
+      'TContador b;',
+      '',
+      'inicializar(&a);',
+      'for (int i = 0; i < 5; i++) {',
+      '  contar(&a);',
+      '}',
+      'for (int i = 0; i < 2; i++) {',
+      '  contar(&b);',
+      '}',
+      'printf("%d %d", obtener(a), obtener(b));'
+    ),
+    ['TAD_SIN_INICIALIZAR'],
+    { dice: ['Falta llamar a `inicializar`'] }
+  ),
+  usar(
+    4,
+    'en el orden contrario',
+    MAIN(
+      'TContador a;',
+      'TContador b;',
+      '',
+      'inicializar(&a);',
+      'inicializar(&b);',
+      'for (int i = 0; i < 5; i++) {',
+      '  contar(&a);',
+      '}',
+      'for (int i = 0; i < 2; i++) {',
+      '  contar(&b);',
+      '}',
+      'printf("%d %d", obtener(b), obtener(a));'
+    ),
+    ['MUESTRA_DISTINTA']
+  ),
+  usar(
+    4,
+    'con un solo contador',
+    MAIN('TContador a;', '', 'inicializar(&a);', 'for (int i = 0; i < 7; i++) {', '  contar(&a);', '}', 'printf("%d %d", obtener(a), obtener(a));'),
+    ['MUESTRA_DISTINTA']
+  ),
+
+  // ===== Escribir el archivo .h =====
+  // ---- 1: que va en cada archivo ----
+  escribirH(1, 'el tipo y los prototipos', '1'),
+  escribirH(1, 'al reves', '0', ['OPCION_TADH_AL_REVES']),
+  escribirH(1, 'lo mismo en los dos', '2', ['OPCION_TADH_COPIA']),
+  // ---- 2: para que sirven las guardas ----
+  escribirH(2, 'se declara dos veces', '1'),
+  escribirH(2, 'se ignora', '0', ['OPCION_GUARDAS_SE_IGNORA']),
+  escribirH(2, 'dos tipos distintos', '2', ['OPCION_GUARDAS_DOS_TIPOS']),
+  // ---- 3: el archivo del contador ----
+  escribirH(3, 'completo', CONTADOR_H),
+  escribirH(3, 'sin guardas', H((t) => t.replace('#ifndef CONTADOR_H\n#define CONTADOR_H\n\n', '').replace('\n\n#endif', '')), ['ENCABEZADO_SIN_GUARDA']),
+  escribirH(3, 'con un define distinto', H((t) => t.replace('#define CONTADOR_H', '#define CONTADOR')), ['ENCABEZADO_GUARDA_INCOMPLETA']),
+  escribirH(
+    3,
+    'con otro nombre de guarda',
+    H((t) => t.replaceAll('CONTADOR_H', 'CONTADOR')),
+    ['ENCABEZADO_GUARDA_NOMBRE'],
+    { dice: ['CONTADOR_H'] }
+  ),
+  escribirH(
+    3,
+    'con el cuerpo de una funcion',
+    H((t) => t.replace('int obtener(TContador c);', 'int obtener(TContador c) {\n  return c.valor;\n}')),
+    ['ENCABEZADO_CON_CUERPO', 'PROTOTIPO_FALTA']
+  ),
+  escribirH(3, 'con una variable', H((t) => t.replace('void inicializar', 'TContador general;\n\nvoid inicializar')), ['ENCABEZADO_CON_VARIABLE']),
+  escribirH(3, 'con algo afuera', H((t) => t + '\n\nvoid reiniciar(TContador *c);'), ['ENCABEZADO_FUERA_DE_LA_GUARDA']),
+  escribirH(3, 'sin un prototipo', H((t) => t.replace('int obtener(TContador c);\n', '')), ['PROTOTIPO_FALTA']),
+  escribirH(3, 'inicializar devuelve un entero', H((t) => t.replace('void inicializar', 'int inicializar')), ['FUNCION_TIPO_RETORNO']),
+  escribirH(3, 'contar con el contador por valor', H((t) => t.replace('void contar(TContador *c);', 'void contar(TContador c);')), ['PARAMETRO_REFERENCIA_FALTA']),
+  escribirH(3, 'contar con un numero de mas', H((t) => t.replace('void contar(TContador *c);', 'void contar(TContador *c, int n);')), ['PARAMETROS_CANTIDAD']),
+  escribirH(3, 'el campo con otro nombre', H((t) => t.replace('int valor;', 'int cuenta;')), ['CAMPO_FALTA']),
+  // ---- 4: el archivo de la fraccion ----
+  escribirH(
+    4,
+    'completo',
+    lineas(
+      '#ifndef FRACCION_H',
+      '#define FRACCION_H',
+      '',
+      'typedef struct {',
+      '  int numerador;',
+      '  int denominador;',
+      '} TFraccion;',
+      '',
+      'TFraccion crear(int numerador, int denominador);',
+      'TFraccion sumar(TFraccion a, TFraccion b);',
+      'void mostrar(TFraccion f);',
+      '',
+      '#endif'
+    )
+  ),
+  escribirH(
+    4,
+    'mostrar devuelve un entero',
+    lineas(
+      '#ifndef FRACCION_H',
+      '#define FRACCION_H',
+      '',
+      'typedef struct {',
+      '  int numerador;',
+      '  int denominador;',
+      '} TFraccion;',
+      '',
+      'TFraccion crear(int numerador, int denominador);',
+      'TFraccion sumar(TFraccion a, TFraccion b);',
+      'int mostrar(TFraccion f);',
+      '',
+      '#endif'
+    ),
+    ['FUNCION_TIPO_RETORNO']
+  ),
+  escribirH(
+    4,
+    'sumar con tres fracciones',
+    lineas(
+      '#ifndef FRACCION_H',
+      '#define FRACCION_H',
+      '',
+      'typedef struct {',
+      '  int numerador;',
+      '  int denominador;',
+      '} TFraccion;',
+      '',
+      'TFraccion crear(int numerador, int denominador);',
+      'TFraccion sumar(TFraccion a, TFraccion b, TFraccion c);',
+      'void mostrar(TFraccion f);',
+      '',
+      '#endif'
+    ),
+    ['PARAMETROS_CANTIDAD']
+  ),
+
+  // ===== Escribir el archivo .c =====
+  // ---- 1: el contador ----
+  escribirC(1, 'completo', CONTADOR_C),
+  escribirC(1, 'contar con otra cuenta', CONTADOR_C.replace('c->valor = c->valor + 1;', 'c->valor++;')),
+  escribirC(1, 'sin incluir el encabezado', CONTADOR_C.replace('#include "contador.h"\n\n', ''), ['INCLUDE_PROPIO_FALTA']),
+  escribirC(1, 'incluyendo con menor y mayor', CONTADOR_C.replace('"contador.h"', '<contador.h>'), ['INCLUDE_PROPIO_CON_MENOR_MAYOR']),
+  escribirC(
+    1,
+    'repitiendo el tipo',
+    CONTADOR_C.replace('#include "contador.h"\n', '#include "contador.h"\n\ntypedef struct {\n  int valor;\n} TContador;\n'),
+    ['TIPO_REPETIDO_EN_EL_C']
+  ),
+  escribirC(
+    1,
+    'sin definir una operacion',
+    lineas('#include "contador.h"', '', 'void inicializar(TContador *c) {', '  c->valor = 0;', '}', '', 'int obtener(TContador c) {', '  return c.valor;', '}'),
+    ['PROTOTIPO_SIN_DEFINICION'],
+    { dice: ['contar'] }
+  ),
+  escribirC(
+    1,
+    'con otra firma',
+    CONTADOR_C.replace('void contar(TContador *c)', 'void contar(TContador *c, int n)').replace('c->valor + 1', 'c->valor + n'),
+    ['FIRMA_DISTINTA_DEL_PROTOTIPO']
+  ),
+  escribirC(
+    1,
+    'contar deja siempre uno',
+    CONTADOR_C.replace('c->valor = c->valor + 1;', 'c->valor = 1;'),
+    ['DEVUELVE_DISTINTO'],
+    { dice: ['Después de inicializar un contador y contar tres veces'] }
+  ),
+  escribirC(1, 'inicializar no deja el valor en cero', CONTADOR_C.replace('  c->valor = 0;\n', ''), ['VARIABLE_SIN_VALOR']),
+  // ---- 2: la fraccion ----
+  escribirC(2, 'completa', FRACCION_C),
+  escribirC(
+    2,
+    'sumar sin cruzar',
+    FRACCION_C.replace(
+      'r.numerador = a.numerador * b.denominador + b.numerador * a.denominador;',
+      'r.numerador = a.numerador + b.numerador;'
+    ).replace('r.denominador = a.denominador * b.denominador;', 'r.denominador = a.denominador + b.denominador;'),
+    ['DEVUELVE_DISTINTO'],
+    { dice: ['Al sumar 1/2 y 1/3'] }
+  ),
+  escribirC(2, 'mostrar con otro separador', FRACCION_C.replace('"%d/%d"', '"%d-%d"'), ['MUESTRA_DISTINTA']),
+  escribirC(
+    2,
+    'crear con los campos al reves',
+    FRACCION_C.replace('f.numerador = numerador;', 'f.numerador = denominador;').replace('f.denominador = denominador;', 'f.denominador = numerador;'),
+    ['DEVUELVE_DISTINTO']
+  ),
+  escribirC(2, 'sin incluir el encabezado', FRACCION_C.replace('#include "fraccion.h"\n', ''), ['INCLUDE_PROPIO_FALTA']),
+];

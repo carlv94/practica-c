@@ -1,0 +1,127 @@
+{
+  "id": "tad-escribir-c",
+  "titulo": "Escribir el archivo .c",
+  "continua": false,
+  "descripcion": "El archivo `.c` implementa las operaciones que declara el `.h`: incluye su encabezado y define cada función, sin volver a declarar el tipo.",
+  "consignas": [
+    {
+      "id": "tadc-contador",
+      "titulo": "La implementación del contador",
+      "escribe": "contador.c",
+      "archivos": [
+        {
+          "nombre": "contador.h",
+          "codigo": "#ifndef CONTADOR_H\n#define CONTADOR_H\n\ntypedef struct {\n  int valor;\n} TContador;\n\nvoid inicializar(TContador *c);\nvoid contar(TContador *c);\nint obtener(TContador c);\n\n#endif"
+        }
+      ],
+      "enunciado": "El archivo `contador.h` ya está escrito. Escriba `contador.c`, que define sus tres operaciones: `inicializar` deja el valor en cero, `contar` le suma uno y `obtener` devuelve el valor. No olvide incluir el `.h`.",
+      "requiere": [
+        {
+          "incluyeLocal": "contador.h"
+        },
+        {
+          "sinTipos": true
+        },
+        {
+          "defineTodo": true
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "antes": "TContador c;\ninicializar(&c);",
+                "llama": "obtener(c)",
+                "devuelve": 0,
+                "contexto": "Después de inicializar un contador",
+                "visible": true
+              },
+              {
+                "antes": "TContador c;\ninicializar(&c);\ncontar(&c);",
+                "llama": "obtener(c)",
+                "devuelve": 1,
+                "contexto": "Después de inicializar un contador y contar una vez"
+              },
+              {
+                "antes": "TContador c;\ninicializar(&c);\ncontar(&c);\ncontar(&c);\ncontar(&c);",
+                "llama": "obtener(c)",
+                "devuelve": 3,
+                "contexto": "Después de inicializar un contador y contar tres veces"
+              },
+              {
+                "antes": "TContador c;\ninicializar(&c);\ncontar(&c);\ncontar(&c);\ninicializar(&c);",
+                "llama": "obtener(c)",
+                "devuelve": 0,
+                "contexto": "Después de contar dos veces y volver a inicializar el contador"
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "#include \"contador.h\"\n\nvoid inicializar(TContador *c) {\n  c->valor = 0;\n}\n\nvoid contar(TContador *c) {\n  c->valor = c->valor + 1;\n}\n\nint obtener(TContador c) {\n  return c.valor;\n}"
+    },
+    {
+      "id": "tadc-fraccion",
+      "titulo": "La implementación de la fracción",
+      "escribe": "fraccion.c",
+      "archivos": [
+        {
+          "nombre": "fraccion.h",
+          "codigo": "#ifndef FRACCION_H\n#define FRACCION_H\n\ntypedef struct {\n  int numerador;\n  int denominador;\n} TFraccion;\n\nTFraccion crear(int numerador, int denominador);\nTFraccion sumar(TFraccion a, TFraccion b);\nvoid mostrar(TFraccion f);\n\n#endif"
+        }
+      ],
+      "enunciado": "El archivo `fraccion.h` ya está escrito. Escriba `fraccion.c`: `crear` arma la fracción con el numerador y el denominador que recibe, `sumar` devuelve la suma de dos fracciones, sin simplificar (`a/b + c/d` da `(a*d + c*b) / (b*d)`), y `mostrar` la muestra con `printf` como `numerador/denominador`, por ejemplo `3/4`.",
+      "requiere": [
+        {
+          "incluyeLocal": "fraccion.h"
+        },
+        {
+          "sinTipos": true
+        },
+        {
+          "defineTodo": true
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "antes": "",
+                "llama": "crear(1, 2)",
+                "devuelve": {
+                  "numerador": 1,
+                  "denominador": 2
+                },
+                "contexto": "Al crear la fracción 1/2",
+                "visible": true
+              },
+              {
+                "antes": "TFraccion a = crear(1, 2);\nTFraccion b = crear(1, 3);",
+                "llama": "sumar(a, b)",
+                "devuelve": {
+                  "numerador": 5,
+                  "denominador": 6
+                },
+                "contexto": "Al sumar 1/2 y 1/3"
+              },
+              {
+                "antes": "TFraccion a = crear(1, 2);\nTFraccion b = crear(1, 4);",
+                "llama": "sumar(a, b)",
+                "devuelve": {
+                  "numerador": 6,
+                  "denominador": 8
+                },
+                "contexto": "Al sumar 1/2 y 1/4"
+              },
+              {
+                "antes": "TFraccion f = crear(3, 4);",
+                "llama": "mostrar(f)",
+                "salida": "3/4",
+                "contexto": "Al mostrar la fracción 3/4"
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "#include <stdio.h>\n#include \"fraccion.h\"\n\nTFraccion crear(int numerador, int denominador) {\n  TFraccion f;\n\n  f.numerador = numerador;\n  f.denominador = denominador;\n  return f;\n}\n\nTFraccion sumar(TFraccion a, TFraccion b) {\n  TFraccion r;\n\n  r.numerador = a.numerador * b.denominador + b.numerador * a.denominador;\n  r.denominador = a.denominador * b.denominador;\n  return r;\n}\n\nvoid mostrar(TFraccion f) {\n  printf(\"%d/%d\", f.numerador, f.denominador);\n}"
+    }
+  ]
+}
