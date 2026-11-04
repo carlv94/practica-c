@@ -6686,7 +6686,9 @@ function revisarRedefiniciones(modelo, error, mejora) {
         w.nombre === v.nombre &&
         w.local === v.local &&
         w.indice < v.indice &&
-        (!v.local || funcionDe(w) === funcionDe(v))
+        (!v.local || funcionDe(w) === funcionDe(v)) &&
+        // Dos bloques seguidos (un for y otro for) no se pisan: cada i vale en el suyo.
+        (!w.ambito || (w.ambito[0] <= v.indice && v.indice < w.ambito[1]))
     );
     if (!antes) continue;
     error(

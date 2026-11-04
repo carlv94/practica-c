@@ -8,7 +8,7 @@
 //   enum:     { id, etiqueta, enumeradores: [{ nombre, valor, explicito, fila }], nuevo, fila }
 //   alias:    { nombre, tipo, arreglo, punteros, nuevo, fila }
 //   switch:   { condicion, casos: [{ valor, vacio, cierra, fila }], conDefault, posicion, fin, nuevo, fila }
-//   variable: { nombre, tipo, arreglo, punteros, local, esConst, inicializada, inicial, nuevo, fila }
+//   variable: { nombre, tipo, arreglo, punteros, local, esConst, inicializada, inicial, ambito, nuevo, fila }
 //   constante: { nombre, valor, clase: 'define' | 'enum', nuevo, fila }
 //
 // "arreglo" son las dimensiones como estan escritas (['20'], ['MAX']), y lo
@@ -495,8 +495,12 @@ export function construirModelo(arbol, desde) {
             continue;
           }
           if (!d.nombre || d.esFuncion) continue;
+          // Donde vale: el bloque (o el for, si es de su inicio) que la contiene.
+          let encierra = n.parent;
+          while (encierra && !['compound_statement', 'for_statement', 'translation_unit'].includes(encierra.type)) encierra = encierra.parent;
           destino.push({
             ...d,
+            ambito: encierra ? [encierra.startIndex, encierra.endIndex] : null,
             tipo,
             local,
             esConst,
