@@ -29,9 +29,10 @@ export class SinVerificar extends Error {}
 export class FueraDeRango extends Error {
   // "escrito" es si el indice es un numero escrito: notas[6]. "dimension" es
   // cual de los indices (0 es la fila) y "dimensiones", cuantos tiene el arreglo.
-  constructor(nombre, indice, tamano, fila, escrito = false, dimension = 0, dimensiones = 1) {
+  // "arreglo" es el arreglo tal como se lo escribe (pilas[1].datos), si es un campo.
+  constructor(nombre, indice, tamano, fila, escrito = false, dimension = 0, dimensiones = 1, arreglo = null) {
     super(`${nombre}[${indice}] fuera de rango`);
-    Object.assign(this, { nombre, indice, tamano, fila, escrito, dimension, dimensiones });
+    Object.assign(this, { nombre, indice, tamano, fila, escrito, dimension, dimensiones, arreglo });
   }
 }
 
@@ -52,9 +53,11 @@ const DE_LA_BIBLIOTECA = ['NULL', 'EOF', 'stdin', 'stdout', 'stderr', 'RAND_MAX'
 
 // Una variable (o una posicion) que se usa sin que nadie le haya dado un valor.
 export class SinValor extends Error {
-  constructor(nombre, fila) {
+  // "escrito" es la posicion tal como se la escribe (p.datos[2], pilas[1].datos[2]) cuando
+  // es la de un campo que es un arreglo; sin el, se la deduce del nombre.
+  constructor(nombre, fila, escrito = null) {
     super(`${nombre} sin valor`);
-    Object.assign(this, { nombre, fila });
+    Object.assign(this, { nombre, fila, escrito });
   }
 }
 
@@ -317,8 +320,9 @@ const PASOS_MAXIMOS = 100000;
 
 // Las estructuras definidas en el programa, por su etiqueta y por su alias:
 //   Map { 'Alumno' => [{ nombre, texto, soportado }], 'TAlumno' => [...] }
-// Un campo es "soportado" si es un numero o una letra suelta. Las cadenas y lo
-// demas no se siguen: tocarlos deja la verificacion sin hacer.
+// Un campo es "soportado" si es un numero o una letra suelta, o un arreglo de
+// numeros ("arreglo": los nodos de sus tamanos). Las cadenas y lo demas no se
+// siguen: tocarlos deja la verificacion sin hacer.
 function recogerEstructuras(arbol) {
   const porNombre = new Map();
   const camposDe = (cuerpo) => {
@@ -331,8 +335,13 @@ function recogerEstructuras(arbol) {
         if (d === tipo || !['field_identifier', 'array_declarator', 'pointer_declarator'].includes(d.type)) continue;
         let nombre = d;
         let simple = true;
+        // Los tamanos de un campo que es un arreglo (int datos[MAX]), del ultimo al primero.
+        const tamanos = [];
+        let soloArreglo = true;
         while (nombre && nombre.type !== 'field_identifier') {
           simple = false;
+          if (nombre.type === 'array_declarator') tamanos.unshift(nombre.childForFieldName('size'));
+          else soloArreglo = false;
           nombre = nombre.childForFieldName('declarator');
         }
         if (!nombre) continue;
@@ -350,6 +359,8 @@ function recogerEstructuras(arbol) {
           nombre: nombre.text,
           texto: tipo.text,
           soportado: simple && numerico,
+          // Un arreglo de numeros dentro de la estructura (las letras son cadenas, que no se siguen).
+          arreglo: !simple && soloArreglo && numerico && !/char/.test(tipo.text) && tamanos.every(Boolean) ? tamanos : null,
           estructura: deEstructura || null,
         });
       }
@@ -512,6 +523,12 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
       return { variable, nombre: n.text, indices: [] };
     }
     if (n.type === 'subscript_expression') {
+      // p.datos[i], pilas[k].datos[i]: un arreglo que es un campo se sigue con todos sus indices juntos.
+      let raiz = n.childForFieldName('argument');
+      while (raiz && ['subscript_expression', 'parenthesized_expression'].includes(raiz.type)) {
+        raiz = raiz.type === 'subscript_expression' ? raiz.childForFieldName('argument') : raiz.namedChildren[0];
+      }
+      if (raiz && raiz.type === 'field_expression') return posicionDeCampo(n);
       const base = posicion(n.childForFieldName('argument'));
       // p[i] con p un puntero: lo mismo que *(p + i).
       if (base.variable && base.variable.puntero) {
@@ -662,14 +679,18 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
         const tamano = variable.dims ? variable.dims[k] : undefined;
         if (tamano === undefined) sinVerificar(n);
         if (!Number.isInteger(indice.v) || indice.v < 0 || indice.v >= tamano) {
+          // Un indice del arreglo que es el campo se informa con el campo (p.datos); los de la variable, con ella.
+          const propias = variable.dimsDeLaVariable ?? variable.dims.length;
+          const deLaVariable = k < propias;
           throw new FueraDeRango(
-            nombreBase,
+            deLaVariable ? nombreBase : clave,
             indice.v,
             tamano,
             fila(n),
             p.indice.type === 'number_literal',
-            k,
-            variable.dims.length
+            deLaVariable ? k : k - propias,
+            deLaVariable ? propias : variable.dims.length - propias,
+            deLaVariable ? null : comoSeEscribe(clave, posiciones.slice(0, propias))
           );
         }
         posiciones.push(indice.v);
@@ -920,15 +941,24 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
     let dato = variable.datos;
     for (const i of indices) dato = dato[i];
     if (dato === undefined) {
-      throw faltaValor(variable, `${nombre}${indices.map((i) => `[${i}]`).join('')}`, indices.join(','), n);
+      const propias = variable.dimsDeLaVariable ?? variable.dims.length;
+      const escrito = propias < variable.dims.length ? comoSeEscribe(nombre, indices.slice(0, propias), indices.slice(propias)) : null;
+      throw faltaValor(variable, `${nombre}${indices.map((i) => `[${i}]`).join('')}`, indices.join(','), n, escrito);
     }
     return { v: dato, f: variable.flotante };
   }
 
+  // Un arreglo que es un campo, tal como se lo escribe: "pilas.datos" con el indice 1 de la
+  // variable y el 2 del campo es pilas[1].datos[2].
+  function comoSeEscribe(clave, deLaVariable, deLCampo = []) {
+    const base = clave.split('.')[0];
+    return base + deLaVariable.map((i) => `[${i}]`).join('') + clave.slice(base.length) + deLCampo.map((i) => `[${i}]`).join('');
+  }
+
   // Sin valor porque nadie se lo dio, o porque otro miembro de la union lo piso.
-  function faltaValor(variable, nombre, lugar, n) {
+  function faltaValor(variable, nombre, lugar, n, escrito = null) {
     const vigente = variable.pisado && variable.pisado.get(lugar);
-    if (!vigente) return new SinValor(nombre, fila(n));
+    if (!vigente) return new SinValor(nombre, fila(n), escrito);
     return new MiembroNoVigente(n.text, nombre.split('.').pop().replace(/\[.*$/, ''), vigente, fila(n));
   }
 
@@ -1563,7 +1593,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
     for (const campo of campos) {
       const clave = `${prefijo}.${campo.nombre}`;
       const deEnum = !campo.soportado && Boolean(campo.estructura) && tiposEnum.has(campo.estructura);
-      if (!campo.soportado && !deEnum) {
+      if (!campo.soportado && !deEnum && !campo.arreglo) {
         const dentro = campo.estructura ? definiciones.get(campo.estructura) : null;
         if (dentro) crearCampos(clave, dentro, dims, d, nivel + 1);
         continue;
@@ -1572,7 +1602,13 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
       const flotante = /float|double/.test(textoCampo);
       const tipoCampo = /double/.test(textoCampo) ? 'double' : flotante ? 'float' : /char/.test(textoCampo) ? 'char' : 'int';
       const bytes = bytesDe(textoCampo);
-      if (!dims.length) {
+      // Un campo que es un arreglo agrega sus tamanos a los de la variable: p.datos[i] con
+      // "TPila p" es un arreglo de una dimension, y pilas[k].datos[i] uno de dos.
+      const propias = campo.arreglo ? campo.arreglo.map((tamano) => evaluar(tamano).v) : [];
+      if (propias.some((k) => !Number.isInteger(k) || k < 0)) sinVerificar(d, 'un campo arreglo sin tamano conocido');
+      if (propias.length && enUnion) sinVerificar(d, 'un arreglo dentro de una union');
+      const dimsDelCampo = [...dims, ...propias];
+      if (!dimsDelCampo.length) {
         const dado = prueba && typeof prueba[clave] === 'number' ? prueba[clave] : undefined;
         variables.set(clave, {
           flotante,
@@ -1583,11 +1619,11 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
         });
         continue;
       }
-      let datos = sinLista(dims);
+      let datos = sinLista(dimsDelCampo);
       if (prueba && Array.isArray(prueba[clave])) {
         const forma = (x) => (Array.isArray(x) ? [x.length, ...forma(x[0])] : []);
         const otraForma = forma(prueba[clave]);
-        if (otraForma.length !== dims.length || otraForma.some((k, i) => k !== dims[i])) {
+        if (otraForma.length !== dimsDelCampo.length || otraForma.some((k, i) => k !== dimsDelCampo[i])) {
           sinVerificar(d, 'valores de otro tamano');
         }
         // Un null es una posicion sin valor (el miembro de una union que no es el vigente).
@@ -1595,7 +1631,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
           Array.isArray(x) ? x.map(copia) : x === null ? undefined : flotante ? x : Math.trunc(x);
         datos = copia(prueba[clave]);
       }
-      variables.set(clave, { flotante, tipo: tipoCampo, bytes, dims: [...dims], datos, union: enUnion });
+      variables.set(clave, { flotante, tipo: tipoCampo, bytes, dims: dimsDelCampo, datos, union: enUnion, dimsDeLaVariable: dims.length });
     }
     if (enUnion) anotarPisados(enUnion, dims);
   }

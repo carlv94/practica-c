@@ -257,6 +257,11 @@ Las reglas de `requiere`:
   `{ "nombre", "tipo" }`, y el tipo es `cadena` (arreglo de `char` de cualquier
   dimensión), `entero`, `real` o `caracter`. Un campo de más avisa pero no
   invalida.
+  Un campo que es un arreglo de números lleva además `"arreglo": 8` (un arreglo
+  de una dimensión y 8 elementos, escritos como número o con una constante que
+  valga 8) y, si hace falta, `"constante": "MAX"` (el tamaño se escribe con esa
+  constante). Errores: `CAMPO_NO_ES_ARREGLO`, `CAMPO_ARREGLO_DIMENSIONES`,
+  `CAMPO_ARREGLO_SIN_CONSTANTE`, `ARREGLO_CHICO` y `ARREGLO_GRANDE`.
 - `{ "variable": { "tipo": "$S" } }` — una variable de ese tipo, global o
   local. El tipo es una captura (`$S`), un tipo de C (`int`) o una categoría
   (`entero`, `real`, `caracter`). Opcionales:
@@ -781,6 +786,11 @@ coincidencia). Los nombres de los mensajes salen como los escribe el alumno
 - El simulador sigue un enumerado como un `int` (también un campo de una
   estructura y un cast `(TTurno) opcion`) y el `switch` con `case`, `default` y
   `break` (sin `break` pasa al caso que sigue).
+- El simulador sigue un arreglo de números dentro de una estructura (`int
+  datos[MAX]` en una pila): `p.datos[i]` y `p->datos[p->tope]` son un arreglo de
+  una dimensión, y `pilas[k].datos[i]` uno de dos. Una estructura que se pasa o se
+  asigna por valor copia también su arreglo. Un arreglo de `char` dentro de una
+  estructura (una cadena) sigue sin verificarse.
 - En todas las series: un caso con sentencias y sin `break` que no es el último
   es `SWITCH_SIN_BREAK`; un número suelto donde va el nombre del enumerado
   (`turno = 1`, `turno == 2`, `case 0:`) es la mejora `ENUM_CON_NUMERO`; leer con
@@ -1496,6 +1506,11 @@ la respuesta es un archivo completo.
 - **`inicializa`**: la operación que deja el tipo listo (`inicializar`). Si al ejecutar
   el cliente se usa un valor sin darlo, y el valor falta en un archivo que la
   consigna traía, el error es `TAD_SIN_INICIALIZAR` en lugar de `VARIABLE_SIN_VALOR`.
+- **`usoIncorrecto`**: el texto con que se avisa que una operación del TAD se
+  salió de su arreglo (apilar en una pila llena, desapilar una vacía) cuando el
+  error ocurre en un archivo que la consigna traía. El código es
+  `TAD_USO_INCORRECTO`. Sin este campo el mensaje es el general
+  `INDICE_FUERA_DE_RANGO`, que habla de un arreglo que el alumno no escribió.
 - **Reglas** (en `requiere`):
   - `{ "encabezado": { "guarda": "CONTADOR_H" } }`: el `.h` va entre `#ifndef`,
     `#define` (con el mismo nombre) y `#endif`, y solo trae declaraciones. Errores:

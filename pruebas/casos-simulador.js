@@ -60,6 +60,10 @@ typedef struct {
   TTipo tipo;
   TMedida medida;
 } TLectura;
+typedef struct {
+  int datos[MAX];
+  int tope;
+} TPila;
 `;
 
 // Los enumeradores, con el valor que les da la cabecera.
@@ -953,6 +957,57 @@ export const CASOS_DEL_SIMULADOR = [
     nombre: 'punteros a estructuras: un campo que no existe no se sigue',
     codigo: conFunciones('', 'TFecha f;\nTFecha *p = &f;\np->hora = 1;'),
     espera: { error: 'SinVerificar' },
+  },
+  {
+    nombre: "arreglo en una estructura: se escribe y se lee por el campo",
+    codigo: con("TPila p;\nint i;\np.tope = 0;\nfor (i = 0; i < MAX; i++) {\n  p.datos[i] = i * 3;\n  p.tope++;\n}\nprintf(\"%d %d\", p.datos[2], p.tope);"),
+    espera: { variables: { 'p.datos': [0, 3, 6], 'p.tope': 3 }, salida: '6 3' },
+  },
+  {
+    nombre: "arreglo en una estructura: con datos de prueba",
+    codigo: con("TPila p;\nint total = 0;\nint i;\nfor (i = 0; i < p.tope; i++) {\n  total += p.datos[i];\n}"),
+    prueba: { 'p.datos': [4, 5, 6], 'p.tope': 2 },
+    espera: { variables: { total: 9 } },
+  },
+  {
+    nombre: "arreglo en una estructura: una pila con funciones y puntero",
+    codigo: conFunciones("void inicializar(TPila *p) {\n  p->tope = 0;\n}\nvoid apilar(TPila *p, int x) {\n  p->datos[p->tope] = x;\n  p->tope++;\n}\nint desapilar(TPila *p) {\n  p->tope--;\n  return p->datos[p->tope];\n}\nint cima(TPila p) {\n  return p.datos[p.tope - 1];\n}", "TPila p;\ninicializar(&p);\napilar(&p, 4);\napilar(&p, 7);\nint a = desapilar(&p);\nint b = cima(p);\nprintf(\"%d %d\", a, b);"),
+    espera: { variables: { a: 7, b: 4, 'p.tope': 1 }, salida: '7 4' },
+  },
+  {
+    nombre: "arreglo en una estructura: la copia por valor no cambia la original",
+    codigo: conFunciones("void inicializar(TPila *p) {\n  p->tope = 0;\n}\nvoid apilar(TPila *p, int x) {\n  p->datos[p->tope] = x;\n  p->tope++;\n}\nint desapilar(TPila *p) {\n  p->tope--;\n  return p->datos[p->tope];\n}\nint cima(TPila p) {\n  return p.datos[p.tope - 1];\n}", "TPila p;\nTPila q;\ninicializar(&p);\napilar(&p, 4);\nq = p;\napilar(&q, 9);\nprintf(\"%d %d\", p.tope, q.tope);"),
+    espera: { variables: { 'p.datos': [4, null, null], 'q.datos': [4, 9, null] }, salida: '1 2' },
+  },
+  {
+    nombre: "arreglo en una estructura: una funcion que recibe la pila por valor trabaja con una copia",
+    codigo: conFunciones("int sacar(TPila p) {\n  p.tope--;\n  return p.datos[p.tope];\n}", "TPila p;\np.tope = 1;\np.datos[0] = 8;\nint x = sacar(p);"),
+    espera: { variables: { x: 8, 'p.tope': 1 } },
+  },
+  {
+    nombre: "arreglo en una estructura: dentro de un arreglo de estructuras",
+    codigo: con("TPila pilas[2];\npilas[0].datos[0] = 1;\npilas[1].datos[0] = 5;\npilas[1].datos[2] = 6;"),
+    espera: { variables: { 'pilas.datos': [[1, null, null], [5, null, 6]] } },
+  },
+  {
+    nombre: "arreglo en una estructura: apilar de mas sale del arreglo",
+    codigo: conFunciones("void inicializar(TPila *p) {\n  p->tope = 0;\n}\nvoid apilar(TPila *p, int x) {\n  p->datos[p->tope] = x;\n  p->tope++;\n}\nint desapilar(TPila *p) {\n  p->tope--;\n  return p->datos[p->tope];\n}\nint cima(TPila p) {\n  return p.datos[p.tope - 1];\n}", "TPila p;\ninicializar(&p);\napilar(&p, 1);\napilar(&p, 2);\napilar(&p, 3);\napilar(&p, 4);"),
+    espera: { error: 'FueraDeRango' },
+  },
+  {
+    nombre: "arreglo en una estructura: la posicion no existe",
+    codigo: con("TPila p;\np.datos[3] = 1;"),
+    espera: { error: 'FueraDeRango' },
+  },
+  {
+    nombre: "arreglo en una estructura: sin inicializar el tope",
+    codigo: conFunciones("void inicializar(TPila *p) {\n  p->tope = 0;\n}\nvoid apilar(TPila *p, int x) {\n  p->datos[p->tope] = x;\n  p->tope++;\n}\nint desapilar(TPila *p) {\n  p->tope--;\n  return p->datos[p->tope];\n}\nint cima(TPila p) {\n  return p.datos[p.tope - 1];\n}", "TPila p;\napilar(&p, 1);"),
+    espera: { error: 'SinValor' },
+  },
+  {
+    nombre: "arreglo en una estructura: una posicion que nunca se escribio",
+    codigo: con("TPila p;\nint x;\np.datos[0] = 1;\nx = p.datos[1];"),
+    espera: { error: 'SinValor' },
   },
 ];
 

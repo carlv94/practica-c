@@ -1255,6 +1255,45 @@ export function corregir(
     if (!categoria) {
       throw new Error(`La consigna "${consigna.id}" pide un tipo que no conozco: ${esperado.tipo}`);
     }
+    // Un campo que es un arreglo de numeros: "arreglo": 8, con el tamano escrito como
+    // numero o con una constante que valga 8; con "constante": "MAX" tiene que ser esa.
+    if (esperado.arreglo != null) {
+      const pide = typeof esperado.arreglo === 'number' ? `un arreglo de ${esperado.arreglo} elementos` : 'un arreglo';
+      if (campo.punteros) {
+        error('CAMPO_ES_PUNTERO', `\`${n}\` tiene que ser ${pide}: sobra el \`*\`.`, campo.fila);
+      } else if (!campo.arreglo.length) {
+        error(
+          'CAMPO_NO_ES_ARREGLO',
+          `\`${n}\` guarda un solo valor. La consigna pide ${pide}: falta indicar cuántos elementos tiene, entre corchetes.`,
+          campo.fila
+        );
+      } else if (campo.arreglo.length > 1) {
+        error(
+          'CAMPO_ARREGLO_DIMENSIONES',
+          `\`${n}\` tiene ${campo.arreglo.length} dimensiones: eso es una tabla. La consigna pide ${pide}, de una sola dimensión.`,
+          campo.fila
+        );
+      } else if (!base || !categoria.es(base)) {
+        error('CAMPO_TIPO', `Los elementos de \`${n}\` tienen que ser ${categoria.pideVarios}. ${declarado}`, campo.fila);
+      } else if (!campo.arreglo[0].trim()) {
+        error('ARREGLO_SIN_DIMENSION', `A \`${n}\` le falta la cantidad de elementos entre los corchetes.`, campo.fila);
+      } else if (esperado.constante && campo.arreglo[0].trim() !== esperado.constante) {
+        error(
+          'CAMPO_ARREGLO_SIN_CONSTANTE',
+          `El tamaño de \`${n}\` se escribe con la constante \`${esperado.constante}\`, no con un número: así el tamaño se cambia en un solo lugar.`,
+          campo.fila
+        );
+      } else {
+        const tiene = typeof esperado.arreglo === 'number' ? valorDeDimension(campo.arreglo[0], modelo) : null;
+        const elementos = (k) => (k === 1 ? '1 elemento' : `${k} elementos`);
+        if (tiene != null && tiene < esperado.arreglo) {
+          error('ARREGLO_CHICO', `\`${n}\` puede guardar ${elementos(tiene)} y hay que guardar ${esperado.arreglo}: no alcanza.`, campo.fila);
+        } else if (tiene != null && tiene > esperado.arreglo) {
+          error('ARREGLO_GRANDE', `\`${n}\` puede guardar ${elementos(tiene)} y la consigna pide ${esperado.arreglo}: sobra espacio.`, campo.fila);
+        }
+      }
+      return;
+    }
     if (campo.arreglo.length) {
       error(
         'CAMPO_ES_ARREGLO',
@@ -3301,7 +3340,10 @@ export function corregir(
     try {
       return ejecutar(propio || arbol, constante, entrada, pruebaSimulada, modelo.desde);
     } catch (e) {
-      if (e instanceof FueraDeRango) {
+      if (e instanceof FueraDeRango && consigna.usoIncorrecto && e.fila != null && e.fila < filaBase) {
+        // Se sale del arreglo un archivo que la consigna ya traia: el programa uso mal una operacion del TAD.
+        error('TAD_USO_INCORRECTO', `${conContexto}${consigna.usoIncorrecto}`);
+      } else if (e instanceof FueraDeRango) {
         // Con el numero escrito ya lo dijo la revision general.
         if (!diagnosticos.some((d) => d.codigo === 'INDICE_FUERA_DE_RANGO')) {
           // En una tabla, el primer indice cuenta filas y el segundo columnas.
@@ -3309,7 +3351,7 @@ export function corregir(
             e.dimensiones !== 2 ? ['posición', 'posiciones'] : e.dimension === 0 ? ['fila', 'filas'] : ['columna', 'columnas'];
           error(
             'INDICE_FUERA_DE_RANGO',
-            `${conContexto}\`${arregloDe(e.nombre)}\` tiene ${e.tamano} ${plural}, numeradas de 0 a ${e.tamano - 1}${e.escrito ? ': ' : ', y '}${e.escrito ? `la ${singular} ${e.indice} no existe.` : `el ciclo llega hasta la ${singular} ${e.indice}, que no existe.`}`,
+            `${conContexto}\`${e.arreglo ?? arregloDe(e.nombre)}\` tiene ${e.tamano} ${plural}, numeradas de 0 a ${e.tamano - 1}${e.escrito ? ': ' : ', y '}${e.escrito ? `la ${singular} ${e.indice} no existe.` : `el ciclo llega hasta la ${singular} ${e.indice}, que no existe.`}`,
             e.fila
           );
         }
@@ -3328,7 +3370,7 @@ export function corregir(
       } else if (e instanceof SinValor) {
         error(
           'VARIABLE_SIN_VALOR',
-          `${conContexto}\`${comoLoEscribio(e.nombre)}\` todavía no tiene un valor cuando se usa: hay que dárselo antes.`,
+          `${conContexto}\`${e.escrito ?? comoLoEscribio(e.nombre)}\` todavía no tiene un valor cuando se usa: hay que dárselo antes.`,
           e.fila
         );
       } else if (e instanceof RecursionSinFin) {
