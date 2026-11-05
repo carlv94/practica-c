@@ -29,7 +29,7 @@
     },
     {
       "id": "tadp-usar-invertir",
-      "titulo": "Invertir tres números",
+      "titulo": "Mostrar tres números en orden inverso",
       "escribe": "main.c",
       "inicializa": "inicializar",
       "archivos": [
@@ -44,7 +44,7 @@
         }
       ],
       "usoIncorrecto": "Una operación de la pila se salió de los límites de su arreglo, que guarda hasta 8 números: se apiló en una pila llena o se desapiló una pila vacía. Antes de `apilar` conviene preguntar con `llena`, y antes de `desapilar`, con `vacia`.",
-      "enunciado": "El archivo `pila.h` declara el tipo `TPila` y seis operaciones: `inicializar` la deja vacía, `apilar` agrega un número arriba, `desapilar` saca el de arriba y lo devuelve, `cima` devuelve el de arriba sin sacarlo, `vacia` dice si no tiene elementos y `llena` si no entra ninguno más. Escriba `main.c`: lea con `scanf` tres números enteros, guárdelos en una pila y muéstrelos con `printf` en orden inverso al de lectura, separados por un espacio. Use solo las operaciones del `.h`.",
+      "enunciado": "El archivo `pila.h` declara el tipo `TPila` y seis operaciones: `inicializar` la deja vacía, `apilar` agrega un número arriba, `desapilar` saca el de arriba y lo devuelve, `cima` devuelve el de arriba sin sacarlo, `vacia` dice si no tiene elementos y `llena` si no entra ninguno más. Escriba `main.c`: lea con `scanf` tres números enteros, guárdelos en una pila y muéstrelos con `printf` en orden inverso al de lectura, separados por un espacio. Por ejemplo, si se ingresan `12`, `305` y `7`, el programa muestra `7 305 12`. Use solo las operaciones del `.h`.",
       "requiere": [
         {
           "incluyeLocal": "pila.h"
@@ -124,7 +124,7 @@
         }
       ],
       "usoIncorrecto": "Una operación de la pila se salió de los límites de su arreglo, que guarda hasta 8 números: se apiló en una pila llena o se desapiló una pila vacía. Antes de `apilar` conviene preguntar con `llena`, y antes de `desapilar`, con `vacia`.",
-      "enunciado": "Con el mismo `pila.h`, escriba `main.c`: lea con `scanf` un número entero mayor que cero y menor que 256, y muestre con `printf` su representación en binario, sin espacios entre los dígitos. Divida el número por 2 mientras sea mayor que cero y apile cada resto; al terminar, desapile todos y muéstrelos. Use solo las operaciones del `.h`.",
+      "enunciado": "Con el mismo `pila.h`, escriba `main.c`: lea con `scanf` un número entero mayor que cero y menor que 256, y muestre con `printf` su representación en binario, sin espacios entre los dígitos. Divida el número por 2 mientras sea mayor que cero y apile cada resto; al terminar, desapile todos y muéstrelos. Por ejemplo, si se ingresa `10`, el programa muestra `1010`. Use solo las operaciones del `.h`.",
       "requiere": [
         {
           "incluyeLocal": "pila.h"
@@ -196,7 +196,7 @@
         }
       ],
       "usoIncorrecto": "Una operación de la pila se salió de los límites de su arreglo, que guarda hasta 8 números: se apiló en una pila llena o se desapiló una pila vacía. Antes de `apilar` conviene preguntar con `llena`, y antes de `desapilar`, con `vacia`.",
-      "enunciado": "Con el mismo `pila.h`, escriba `main.c` con dos pilas, `a` y `b`. Lea con `scanf` tres números enteros y apílelos en `a`. Después pase todos los elementos de `a` a `b`: desapile de una y apile en la otra hasta que `a` quede vacía. Al final desapile los elementos de `b` y muéstrelos con `printf`, separados por un espacio. Cada variable de tipo `TPila` es una pila propia. Use solo las operaciones del `.h`.",
+      "enunciado": "Con el mismo `pila.h`, escriba `main.c` con dos pilas, `a` y `b`. Lea con `scanf` tres números enteros y apílelos en `a`. Después pase todos los elementos de `a` a `b`: desapile de una y apile en la otra hasta que `a` quede vacía. Al final desapile los elementos de `b` y muéstrelos con `printf`, separados por un espacio. Por ejemplo, si se ingresan `4`, `8` y `15`, el programa muestra `4 8 15`. Cada variable de tipo `TPila` es una pila propia. Use solo las operaciones del `.h`.",
       "requiere": [
         {
           "incluyeLocal": "pila.h"
