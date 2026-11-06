@@ -141,8 +141,7 @@
         "tad-fecha.json"
       ],
       "ocultas": [
-        "tad-representacion.json",
-        "tad-fecha.json"
+        "tad-representacion.json"
       ]
     }
   ]
