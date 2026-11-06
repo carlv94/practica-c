@@ -84,6 +84,7 @@ const pilaH = serie('tad-pila-h');
 const pilaC = serie('tad-pila-c');
 const repr = serie('tad-representacion');
 const fecha = serie('tad-fecha');
+const ampliar = serie('tad-ampliar');
 
 // main.c de las pilas con lo que va adentro de main.
 const MAIN_PILA = (...cuerpo) =>
@@ -269,6 +270,57 @@ const FECHA_C = lineas(
   '',
   'void mostrar(TFecha f) {',
   '  printf("%d/%d/%d", f.dia, f.mes, f.anio);',
+  '}'
+);
+
+// El .h y el .c de la fecha con sumarMeses y sumarAnios agregados.
+const AMPLIADO_H = FECHA_H.replace(
+  'void mostrar(TFecha f);',
+  'TFecha sumarMeses(TFecha f, int n);\nTFecha sumarAnios(TFecha f, int n);\nvoid mostrar(TFecha f);'
+);
+
+const AMPLIADO_C = lineas(
+  FECHA_C,
+  '',
+  'TFecha sumarMeses(TFecha f, int n) {',
+  '  f.mes = f.mes + n;',
+  '  while (f.mes > 12) {',
+  '    f.mes = f.mes - 12;',
+  '    f.anio = f.anio + 1;',
+  '  }',
+  '  if (f.dia > diasDelMes(f)) {',
+  '    f.dia = diasDelMes(f);',
+  '  }',
+  '  return f;',
+  '}',
+  '',
+  'TFecha sumarAnios(TFecha f, int n) {',
+  '  f.anio = f.anio + n;',
+  '  if (f.dia > diasDelMes(f)) {',
+  '    f.dia = diasDelMes(f);',
+  '  }',
+  '  return f;',
+  '}'
+);
+
+const AMPLIADO_MAIN = lineas(
+  '#include <stdio.h>',
+  '#include "fecha.h"',
+  '',
+  'int main() {',
+  '  int dia, mes, anio, meses, anios;',
+  '  TFecha f;',
+  '',
+  '  scanf("%d", &dia);',
+  '  scanf("%d", &mes);',
+  '  scanf("%d", &anio);',
+  '  scanf("%d", &meses);',
+  '  scanf("%d", &anios);',
+  '  f = crear(dia, mes, anio);',
+  '  f = sumarMeses(f, meses);',
+  '  f = sumarAnios(f, anios);',
+  '  mostrar(f);',
+  '  return 0;',
   '}'
 );
 
@@ -1089,4 +1141,24 @@ export const CASOS_DE_TAD = [
   fecha(3, 'el main sin preguntar si es bisiesto', FECHA_MAIN.replace(/  if \(esBisiesto[\s\S]*?  \}\n/, '  printf("\\nbisiesto");\n'), ['TAD_OPERACION_SIN_USAR']),
   fecha(3, 'el main que arma la fecha a mano', FECHA_MAIN.replace('f = crear(dia, mes, anio);', 'f.dia = dia;\n  f.mes = mes;\n  f.anio = anio;'), ['TAD_ACCESO_DIRECTO', 'TAD_OPERACION_SIN_USAR']),
   fecha(3, 'el main sin sumar dias', FECHA_MAIN.replace('  f = sumarDias(f, n);\n', ''), ['TAD_OPERACION_SIN_USAR']),
+  // ===== Ampliar el TAD (agregar operaciones a la fecha) =====
+  ampliar(1, 'fecha.h y fecha.c', '2'),
+  ampliar(1, 'solo el .h', '0', ['OPCION_AMPLIAR_SOLO_H']),
+  ampliar(1, 'solo el .c', '1', ['OPCION_AMPLIAR_SOLO_C']),
+  ampliar(1, 'los tres', '3', ['OPCION_AMPLIAR_LOS_TRES']),
+  ampliar(2, 'el .h ampliado', AMPLIADO_H),
+  ampliar(2, 'el .h sin tocar', FECHA_H, ['PROTOTIPO_FALTA']),
+  ampliar(2, 'solo sumarMeses', AMPLIADO_H.replace('TFecha sumarAnios(TFecha f, int n);\n', ''), ['PROTOTIPO_FALTA']),
+  ampliar(2, 'sumarAnios sin la cantidad', AMPLIADO_H.replace('TFecha sumarAnios(TFecha f, int n);', 'TFecha sumarAnios(TFecha f);'), ['PARAMETROS_CANTIDAD']),
+  ampliar(2, 'los prototipos despues del endif', FECHA_H.replace('\n#endif', '\n#endif\n\nTFecha sumarMeses(TFecha f, int n);\nTFecha sumarAnios(TFecha f, int n);'), ['ENCABEZADO_FUERA_DE_LA_GUARDA']),
+  ampliar(3, 'el .c ampliado', AMPLIADO_C),
+  ampliar(3, 'sin las definiciones nuevas', FECHA_C, ['PROTOTIPO_SIN_DEFINICION']),
+  ampliar(3, 'sumarMeses con if en vez de while', AMPLIADO_C.replace('while (f.mes > 12) {', 'if (f.mes > 12) {'), ['DEVUELVE_DISTINTO']),
+  ampliar(3, 'sumarMeses sin ajustar el dia', AMPLIADO_C.replace('  f.mes = f.mes + n;\n  while (f.mes > 12) {\n    f.mes = f.mes - 12;\n    f.anio = f.anio + 1;\n  }\n  if (f.dia > diasDelMes(f)) {\n    f.dia = diasDelMes(f);\n  }', '  f.mes = f.mes + n;\n  while (f.mes > 12) {\n    f.mes = f.mes - 12;\n    f.anio = f.anio + 1;\n  }'), ['DEVUELVE_DISTINTO']),
+  ampliar(3, 'sumarAnios sin ajustar el dia', AMPLIADO_C.replace('  f.anio = f.anio + n;\n  if (f.dia > diasDelMes(f)) {\n    f.dia = diasDelMes(f);\n  }', '  f.anio = f.anio + n;'), ['DEVUELVE_DISTINTO']),
+  ampliar(3, 'rompiendo una operacion de antes', AMPLIADO_C.replace(' || f.anio % 400 == 0', ''), ['DEVUELVE_DISTINTO']),
+  ampliar(3, 'sin incluir el encabezado', AMPLIADO_C.replace('#include "fecha.h"\n', ''), ['INCLUDE_PROPIO_FALTA']),
+  ampliar(4, 'el main correcto', AMPLIADO_MAIN),
+  ampliar(4, 'el main sin sumar anios', AMPLIADO_MAIN.replace('  f = sumarAnios(f, anios);\n', ''), ['TAD_OPERACION_SIN_USAR']),
+  ampliar(4, 'el main que toca el mes', AMPLIADO_MAIN.replace('  f = sumarMeses(f, meses);', '  f = sumarMeses(f, meses);\n  f.mes = f.mes + 0;'), ['TAD_ACCESO_DIRECTO']),
 ];

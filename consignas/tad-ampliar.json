@@ -1,0 +1,445 @@
+{
+  "id": "tad-ampliar",
+  "titulo": "Ampliar el TAD",
+  "continua": true,
+  "descripcion": "Agregar operaciones a un TAD que ya existe: se declaran en el `.h`, se definen en el `.c`, y lo que ya funcionaba no se toca.",
+  "consignas": [
+    {
+      "id": "tada-q-archivos",
+      "titulo": "Qué archivos cambian",
+      "archivos": [
+        {
+          "nombre": "fecha.h",
+          "codigo": "#ifndef FECHA_H\n#define FECHA_H\n\ntypedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\ntypedef struct {\n  int dia;\n  int mes;\n  int anio;\n} TFecha;\n\nTFecha crear(int dia, int mes, int anio);\nTBool esBisiesto(TFecha f);\nint diasDelMes(TFecha f);\nTFecha sumarDias(TFecha f, int n);\nvoid mostrar(TFecha f);\n\n#endif"
+        },
+        {
+          "nombre": "fecha.c",
+          "codigo": "#include <stdio.h>\n#include \"fecha.h\"\n\nTFecha crear(int dia, int mes, int anio) {\n  TFecha f;\n\n  f.dia = dia;\n  f.mes = mes;\n  f.anio = anio;\n  return f;\n}\n\nTBool esBisiesto(TFecha f) {\n  if ((f.anio % 4 == 0 && f.anio % 100 != 0) || f.anio % 400 == 0) {\n    return VERDADERO;\n  }\n  return FALSO;\n}\n\nint diasDelMes(TFecha f) {\n  int dias;\n\n  if (f.mes == 2) {\n    if (esBisiesto(f) == VERDADERO) {\n      dias = 29;\n    } else {\n      dias = 28;\n    }\n  } else if (f.mes == 4 || f.mes == 6 || f.mes == 9 || f.mes == 11) {\n    dias = 30;\n  } else {\n    dias = 31;\n  }\n  return dias;\n}\n\nTFecha sumarDias(TFecha f, int n) {\n  for (int i = 0; i < n; i++) {\n    f.dia = f.dia + 1;\n    if (f.dia > diasDelMes(f)) {\n      f.dia = 1;\n      f.mes = f.mes + 1;\n      if (f.mes > 12) {\n        f.mes = 1;\n        f.anio = f.anio + 1;\n      }\n    }\n  }\n  return f;\n}\n\nvoid mostrar(TFecha f) {\n  printf(\"%d/%d/%d\", f.dia, f.mes, f.anio);\n}"
+        },
+        {
+          "nombre": "main.c",
+          "codigo": "#include <stdio.h>\n#include \"fecha.h\"\n\nint main() {\n  int dia, mes, anio, n;\n  TFecha f;\n\n  scanf(\"%d\", &dia);\n  scanf(\"%d\", &mes);\n  scanf(\"%d\", &anio);\n  scanf(\"%d\", &n);\n  f = crear(dia, mes, anio);\n  f = sumarDias(f, n);\n  mostrar(f);\n  if (esBisiesto(f) == VERDADERO) {\n    printf(\"\\nbisiesto\");\n  } else {\n    printf(\"\\nno bisiesto\");\n  }\n  return 0;\n}"
+        }
+      ],
+      "enunciado": "Se quiere agregar al TAD una operación nueva, `sumarMeses`, que suma una cantidad de meses a una fecha. Por ahora el `main.c` no la necesita. ¿Qué archivos hay que modificar para agregarla?",
+      "opciones": [
+        {
+          "texto": "Solo `fecha.h`.",
+          "codigo": "OPCION_AMPLIAR_SOLO_H",
+          "explicacion": "En `fecha.h` se declara la operación, pero declararla no alcanza: falta su código, que va en `fecha.c`. Si solo se agrega el prototipo, el programa no se puede armar porque la función no está definida en ningún lado."
+        },
+        {
+          "texto": "Solo `fecha.c`.",
+          "codigo": "OPCION_AMPLIAR_SOLO_C",
+          "explicacion": "En `fecha.c` va el código de la operación, pero quien usa el TAD solo conoce lo que dice `fecha.h`. Sin el prototipo en el `.h`, la operación existe pero nadie puede llamarla: no forma parte de lo que el TAD ofrece."
+        },
+        {
+          "texto": "`fecha.h` y `fecha.c`.",
+          "correcta": true,
+          "explicacion": "Una operación nueva se declara en `fecha.h`, para que quien use el TAD la conozca, y se define en `fecha.c`, que es donde está su código. `main.c` no cambia: lo que ya hacía sigue funcionando igual, y solo habría que tocarlo si quisiera usar la operación nueva. Es lo contrario de cambiar la representación: allí cambiaba solo el `.c` porque la interfaz seguía igual; acá la interfaz crece, y por eso también cambia el `.h`."
+        },
+        {
+          "texto": "Los tres archivos.",
+          "codigo": "OPCION_AMPLIAR_LOS_TRES",
+          "explicacion": "`main.c` no necesita cambios: todo lo que usa sigue existiendo y funcionando igual. Agregar una operación no rompe a quien ya usaba el TAD; solo habría que tocar `main.c` si quisiera usar la operación nueva, y por ahora no la necesita. Hay que modificar `fecha.h` (para declararla) y `fecha.c` (para definirla)."
+        }
+      ]
+    },
+    {
+      "id": "tada-h",
+      "titulo": "Declarar las operaciones nuevas",
+      "escribe": "fecha.h",
+      "comienza": "#ifndef FECHA_H\n#define FECHA_H\n\ntypedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\ntypedef struct {\n  int dia;\n  int mes;\n  int anio;\n} TFecha;\n\nTFecha crear(int dia, int mes, int anio);\nTBool esBisiesto(TFecha f);\nint diasDelMes(TFecha f);\nTFecha sumarDias(TFecha f, int n);\nvoid mostrar(TFecha f);\n\n#endif",
+      "enunciado": "El archivo `fecha.h` ya está escrito y lo ve en el editor. Agréguele dos operaciones, que reciben la fecha por valor y devuelven la fecha que resulta:\n- `sumarMeses`: recibe una fecha y una cantidad de meses, y devuelve la fecha con esos meses sumados.\n- `sumarAnios`: recibe una fecha y una cantidad de años, y devuelve la fecha con esos años sumados.\n\nLas declaraciones nuevas van antes del `#endif`. Lo que ya estaba no se cambia.",
+      "requiere": [
+        {
+          "encabezado": {
+            "guarda": "FECHA_H"
+          }
+        },
+        {
+          "struct": {
+            "capturar": "S",
+            "campos": [
+              {
+                "nombre": "dia",
+                "tipo": "entero"
+              },
+              {
+                "nombre": "mes",
+                "tipo": "entero"
+              },
+              {
+                "nombre": "anio",
+                "tipo": "entero"
+              }
+            ]
+          }
+        },
+        {
+          "alias": {
+            "de": "$S",
+            "nombre": "TFecha",
+            "capturar": "T"
+          }
+        },
+        {
+          "enum": {
+            "enumeradores": [
+              "FALSO",
+              "VERDADERO"
+            ],
+            "capturar": "E"
+          }
+        },
+        {
+          "alias": {
+            "de": "$E",
+            "nombre": "TBool",
+            "capturar": "B"
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "crear",
+            "retorna": "estructura",
+            "parametros": [
+              {
+                "tipo": "entero"
+              },
+              {
+                "tipo": "entero"
+              },
+              {
+                "tipo": "entero"
+              }
+            ]
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "esBisiesto",
+            "retorna": "enumerado",
+            "parametros": [
+              {
+                "tipo": "estructura"
+              }
+            ]
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "diasDelMes",
+            "retorna": "entero",
+            "parametros": [
+              {
+                "tipo": "estructura"
+              }
+            ]
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "sumarDias",
+            "retorna": "estructura",
+            "parametros": [
+              {
+                "tipo": "estructura"
+              },
+              {
+                "tipo": "entero"
+              }
+            ]
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "mostrar",
+            "retorna": "void",
+            "parametros": [
+              {
+                "tipo": "estructura"
+              }
+            ]
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "sumarMeses",
+            "retorna": "estructura",
+            "parametros": [
+              {
+                "tipo": "estructura"
+              },
+              {
+                "tipo": "entero"
+              }
+            ]
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "sumarAnios",
+            "retorna": "estructura",
+            "parametros": [
+              {
+                "tipo": "estructura"
+              },
+              {
+                "tipo": "entero"
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "#ifndef FECHA_H\n#define FECHA_H\n\ntypedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\ntypedef struct {\n  int dia;\n  int mes;\n  int anio;\n} TFecha;\n\nTFecha crear(int dia, int mes, int anio);\nTBool esBisiesto(TFecha f);\nint diasDelMes(TFecha f);\nTFecha sumarDias(TFecha f, int n);\nTFecha sumarMeses(TFecha f, int n);\nTFecha sumarAnios(TFecha f, int n);\nvoid mostrar(TFecha f);\n\n#endif"
+    },
+    {
+      "id": "tada-c",
+      "titulo": "Definir las operaciones nuevas",
+      "escribe": "fecha.c",
+      "comienza": "#include <stdio.h>\n#include \"fecha.h\"\n\nTFecha crear(int dia, int mes, int anio) {\n  TFecha f;\n\n  f.dia = dia;\n  f.mes = mes;\n  f.anio = anio;\n  return f;\n}\n\nTBool esBisiesto(TFecha f) {\n  if ((f.anio % 4 == 0 && f.anio % 100 != 0) || f.anio % 400 == 0) {\n    return VERDADERO;\n  }\n  return FALSO;\n}\n\nint diasDelMes(TFecha f) {\n  int dias;\n\n  if (f.mes == 2) {\n    if (esBisiesto(f) == VERDADERO) {\n      dias = 29;\n    } else {\n      dias = 28;\n    }\n  } else if (f.mes == 4 || f.mes == 6 || f.mes == 9 || f.mes == 11) {\n    dias = 30;\n  } else {\n    dias = 31;\n  }\n  return dias;\n}\n\nTFecha sumarDias(TFecha f, int n) {\n  for (int i = 0; i < n; i++) {\n    f.dia = f.dia + 1;\n    if (f.dia > diasDelMes(f)) {\n      f.dia = 1;\n      f.mes = f.mes + 1;\n      if (f.mes > 12) {\n        f.mes = 1;\n        f.anio = f.anio + 1;\n      }\n    }\n  }\n  return f;\n}\n\nvoid mostrar(TFecha f) {\n  printf(\"%d/%d/%d\", f.dia, f.mes, f.anio);\n}",
+      "enunciado": "Con su `fecha.h` ampliado (lo ve arriba, en su pestaña), complete `fecha.c`: ya define las cinco operaciones de antes y está en el editor. Agréguele la definición de las dos nuevas, al final:\n- `sumarMeses`: suma `n` meses a la fecha y pasa al año siguiente cuando se pasa de diciembre (puede ser más de una vez). Si el día no existe en el mes que resulta, queda el último día de ese mes: el 31/1/2024 más un mes es el 29/2/2024.\n- `sumarAnios`: suma `n` años a la fecha. Si el día no existe en el año que resulta, queda el último día del mes: el 29/2/2024 más un año es el 28/2/2025.\n\nUse `diasDelMes` para ajustar el día, y suponga que `n` no es negativo. Lo que ya estaba escrito no se cambia.",
+      "requiere": [
+        {
+          "incluyeLocal": "fecha.h"
+        },
+        {
+          "sinTipos": true
+        },
+        {
+          "defineTodo": true
+        },
+        {
+          "funcion": {
+            "nombre": "esBisiesto",
+            "retorna": "enumerado",
+            "soloEnumeradores": true,
+            "parametros": [
+              {
+                "tipo": "estructura"
+              }
+            ]
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "antes": "TFecha f = crear(31, 1, 2024);",
+                "llama": "sumarMeses(f, 1)",
+                "devuelve": {
+                  "dia": 29,
+                  "mes": 2,
+                  "anio": 2024
+                },
+                "contexto": "Al sumar 1 mes al 31/1/2024",
+                "visible": true
+              },
+              {
+                "antes": "TFecha f = crear(15, 3, 2024);",
+                "llama": "sumarMeses(f, 2)",
+                "devuelve": {
+                  "dia": 15,
+                  "mes": 5,
+                  "anio": 2024
+                },
+                "contexto": "Al sumar 2 meses al 15/3/2024"
+              },
+              {
+                "antes": "TFecha f = crear(15, 11, 2023);",
+                "llama": "sumarMeses(f, 3)",
+                "devuelve": {
+                  "dia": 15,
+                  "mes": 2,
+                  "anio": 2024
+                },
+                "contexto": "Al sumar 3 meses al 15/11/2023 (pasa al año siguiente)"
+              },
+              {
+                "antes": "TFecha f = crear(31, 1, 2023);",
+                "llama": "sumarMeses(f, 1)",
+                "devuelve": {
+                  "dia": 28,
+                  "mes": 2,
+                  "anio": 2023
+                },
+                "contexto": "Al sumar 1 mes al 31/1/2023 (febrero tiene 28 días)"
+              },
+              {
+                "antes": "TFecha f = crear(31, 3, 2024);",
+                "llama": "sumarMeses(f, 12)",
+                "devuelve": {
+                  "dia": 31,
+                  "mes": 3,
+                  "anio": 2025
+                },
+                "contexto": "Al sumar 12 meses al 31/3/2024"
+              },
+              {
+                "antes": "TFecha f = crear(31, 1, 2024);",
+                "llama": "sumarMeses(f, 24)",
+                "devuelve": {
+                  "dia": 31,
+                  "mes": 1,
+                  "anio": 2026
+                },
+                "contexto": "Al sumar 24 meses al 31/1/2024 (dos años)"
+              },
+              {
+                "antes": "TFecha f = crear(7, 6, 2024);",
+                "llama": "sumarMeses(f, 0)",
+                "devuelve": {
+                  "dia": 7,
+                  "mes": 6,
+                  "anio": 2024
+                },
+                "contexto": "Al sumar 0 meses"
+              },
+              {
+                "antes": "TFecha f = crear(5, 3, 2024);",
+                "llama": "sumarAnios(f, 3)",
+                "devuelve": {
+                  "dia": 5,
+                  "mes": 3,
+                  "anio": 2027
+                },
+                "contexto": "Al sumar 3 años al 5/3/2024",
+                "visible": true
+              },
+              {
+                "antes": "TFecha f = crear(29, 2, 2024);",
+                "llama": "sumarAnios(f, 1)",
+                "devuelve": {
+                  "dia": 28,
+                  "mes": 2,
+                  "anio": 2025
+                },
+                "contexto": "Al sumar 1 año al 29/2/2024 (2025 no es bisiesto)"
+              },
+              {
+                "antes": "TFecha f = crear(29, 2, 2024);",
+                "llama": "sumarAnios(f, 4)",
+                "devuelve": {
+                  "dia": 29,
+                  "mes": 2,
+                  "anio": 2028
+                },
+                "contexto": "Al sumar 4 años al 29/2/2024 (2028 es bisiesto)"
+              },
+              {
+                "antes": "TFecha f = crear(7, 6, 2024);",
+                "llama": "sumarAnios(f, 0)",
+                "devuelve": {
+                  "dia": 7,
+                  "mes": 6,
+                  "anio": 2024
+                },
+                "contexto": "Al sumar 0 años"
+              },
+              {
+                "antes": "TFecha f = crear(28, 2, 2024);",
+                "llama": "sumarDias(f, 2)",
+                "devuelve": {
+                  "dia": 1,
+                  "mes": 3,
+                  "anio": 2024
+                },
+                "contexto": "Las operaciones de antes siguen funcionando: sumar 2 días al 28/2/2024"
+              },
+              {
+                "antes": "TFecha f = crear(1, 1, 2000);",
+                "llama": "esBisiesto(f)",
+                "devuelve": "VERDADERO",
+                "contexto": "Las operaciones de antes siguen funcionando: 2000 es bisiesto"
+              },
+              {
+                "antes": "TFecha f = crear(1, 2, 2023);",
+                "llama": "diasDelMes(f)",
+                "devuelve": 28,
+                "contexto": "Las operaciones de antes siguen funcionando: febrero de 2023"
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "#include <stdio.h>\n#include \"fecha.h\"\n\nTFecha crear(int dia, int mes, int anio) {\n  TFecha f;\n\n  f.dia = dia;\n  f.mes = mes;\n  f.anio = anio;\n  return f;\n}\n\nTBool esBisiesto(TFecha f) {\n  if ((f.anio % 4 == 0 && f.anio % 100 != 0) || f.anio % 400 == 0) {\n    return VERDADERO;\n  }\n  return FALSO;\n}\n\nint diasDelMes(TFecha f) {\n  int dias;\n\n  if (f.mes == 2) {\n    if (esBisiesto(f) == VERDADERO) {\n      dias = 29;\n    } else {\n      dias = 28;\n    }\n  } else if (f.mes == 4 || f.mes == 6 || f.mes == 9 || f.mes == 11) {\n    dias = 30;\n  } else {\n    dias = 31;\n  }\n  return dias;\n}\n\nTFecha sumarDias(TFecha f, int n) {\n  for (int i = 0; i < n; i++) {\n    f.dia = f.dia + 1;\n    if (f.dia > diasDelMes(f)) {\n      f.dia = 1;\n      f.mes = f.mes + 1;\n      if (f.mes > 12) {\n        f.mes = 1;\n        f.anio = f.anio + 1;\n      }\n    }\n  }\n  return f;\n}\n\nvoid mostrar(TFecha f) {\n  printf(\"%d/%d/%d\", f.dia, f.mes, f.anio);\n}\n\nTFecha sumarMeses(TFecha f, int n) {\n  f.mes = f.mes + n;\n  while (f.mes > 12) {\n    f.mes = f.mes - 12;\n    f.anio = f.anio + 1;\n  }\n  if (f.dia > diasDelMes(f)) {\n    f.dia = diasDelMes(f);\n  }\n  return f;\n}\n\nTFecha sumarAnios(TFecha f, int n) {\n  f.anio = f.anio + n;\n  if (f.dia > diasDelMes(f)) {\n    f.dia = diasDelMes(f);\n  }\n  return f;\n}"
+    },
+    {
+      "id": "tada-main",
+      "titulo": "Usar las operaciones nuevas",
+      "escribe": "main.c",
+      "enunciado": "Con su `fecha.h` y su `fecha.c` ampliados, escriba `main.c`: lea con `scanf` el día, el mes y el año de una fecha, y después una cantidad de meses y una cantidad de años. Arme la fecha, súmele primero los meses y después los años, y muestre el resultado con `mostrar`. Por ejemplo, si se ingresan `31`, `1`, `2024`, `1` y `1`, el programa muestra `28/2/2025`. Use solo las operaciones del `.h`.",
+      "requiere": [
+        {
+          "incluyeLocal": "fecha.h"
+        },
+        {
+          "soloOperaciones": "TFecha"
+        },
+        {
+          "usaOperaciones": [
+            "crear",
+            "sumarMeses",
+            "sumarAnios",
+            "mostrar"
+          ]
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "entrada": [
+                  31,
+                  1,
+                  2024,
+                  1,
+                  1
+                ],
+                "salida": "28/2/2025"
+              },
+              {
+                "entrada": [
+                  15,
+                  6,
+                  2023,
+                  8,
+                  2
+                ],
+                "salida": "15/2/2026"
+              },
+              {
+                "entrada": [
+                  29,
+                  2,
+                  2024,
+                  0,
+                  4
+                ],
+                "salida": "29/2/2028"
+              },
+              {
+                "entrada": [
+                  10,
+                  10,
+                  2022,
+                  0,
+                  0
+                ],
+                "salida": "10/10/2022"
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "#include <stdio.h>\n#include \"fecha.h\"\n\nint main() {\n  int dia, mes, anio, meses, anios;\n  TFecha f;\n\n  scanf(\"%d\", &dia);\n  scanf(\"%d\", &mes);\n  scanf(\"%d\", &anio);\n  scanf(\"%d\", &meses);\n  scanf(\"%d\", &anios);\n  f = crear(dia, mes, anio);\n  f = sumarMeses(f, meses);\n  f = sumarAnios(f, anios);\n  mostrar(f);\n  return 0;\n}"
+    }
+  ]
+}
