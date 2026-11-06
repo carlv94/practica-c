@@ -17,7 +17,7 @@
           "codigo": "#include <stdio.h>\n#include \"contador.h\"\n\nint main() {\n  TContador c;\n\n  inicializar(&c);\n  contar(&c);\n  contar(&c);\n  c.valor = c.valor + 10;\n  printf(\"%d\", obtener(c));\n  return 0;\n}"
         }
       ],
-      "enunciado": "El archivo `contador.h` declara el tipo `TContador` y tres operaciones: `inicializar`, `contar` y `obtener`. El archivo `main.c` las usa. ¿Cuál de estas afirmaciones sobre el programa es correcta?",
+      "enunciado": "El archivo `contador.h` declara el tipo `TContador` y tres operaciones:\n- `inicializar`: deja el contador en cero.\n- `contar`: le suma uno.\n- `obtener`: devuelve su valor.\n\nEl archivo `main.c` las usa. ¿Cuál de estas afirmaciones sobre el programa es correcta?",
       "opciones": [
         {
           "texto": "Muestra `12`. Funciona: `valor` es un campo como cualquier otro.",
