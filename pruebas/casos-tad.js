@@ -83,6 +83,7 @@ const usarPila = serie('tad-pila-usar');
 const pilaH = serie('tad-pila-h');
 const pilaC = serie('tad-pila-c');
 const repr = serie('tad-representacion');
+const fecha = serie('tad-fecha');
 
 // main.c de las pilas con lo que va adentro de main.
 const MAIN_PILA = (...cuerpo) =>
@@ -187,6 +188,93 @@ const REPR_C = lineas(
   '    return VERDADERO;',
   '  }',
   '  return FALSO;',
+  '}'
+);
+
+const FECHA_H = lineas(
+  '#ifndef FECHA_H',
+  '#define FECHA_H',
+  '',
+  'typedef struct {',
+  '  int dia;',
+  '  int mes;',
+  '  int anio;',
+  '} TFecha;',
+  '',
+  'TFecha crear(int dia, int mes, int anio);',
+  'int diasDelMes(int mes, int anio);',
+  'TFecha sumarDias(TFecha f, int n);',
+  'void mostrar(TFecha f);',
+  '',
+  '#endif'
+);
+
+const FECHA_C = lineas(
+  '#include <stdio.h>',
+  '#include "fecha.h"',
+  '',
+  'TFecha crear(int dia, int mes, int anio) {',
+  '  TFecha f;',
+  '',
+  '  f.dia = dia;',
+  '  f.mes = mes;',
+  '  f.anio = anio;',
+  '  return f;',
+  '}',
+  '',
+  'int diasDelMes(int mes, int anio) {',
+  '  int dias;',
+  '',
+  '  if (mes == 2) {',
+  '    if ((anio % 4 == 0 && anio % 100 != 0) || anio % 400 == 0) {',
+  '      dias = 29;',
+  '    } else {',
+  '      dias = 28;',
+  '    }',
+  '  } else if (mes == 4 || mes == 6 || mes == 9 || mes == 11) {',
+  '    dias = 30;',
+  '  } else {',
+  '    dias = 31;',
+  '  }',
+  '  return dias;',
+  '}',
+  '',
+  'TFecha sumarDias(TFecha f, int n) {',
+  '  for (int i = 0; i < n; i++) {',
+  '    f.dia = f.dia + 1;',
+  '    if (f.dia > diasDelMes(f.mes, f.anio)) {',
+  '      f.dia = 1;',
+  '      f.mes = f.mes + 1;',
+  '      if (f.mes > 12) {',
+  '        f.mes = 1;',
+  '        f.anio = f.anio + 1;',
+  '      }',
+  '    }',
+  '  }',
+  '  return f;',
+  '}',
+  '',
+  'void mostrar(TFecha f) {',
+  '  printf("%d/%d/%d", f.dia, f.mes, f.anio);',
+  '}'
+);
+
+const FECHA_MAIN = lineas(
+  '#include <stdio.h>',
+  '#include "fecha.h"',
+  '',
+  'int main() {',
+  '  int dia, mes, anio, n;',
+  '  TFecha f;',
+  '',
+  '  scanf("%d", &dia);',
+  '  scanf("%d", &mes);',
+  '  scanf("%d", &anio);',
+  '  scanf("%d", &n);',
+  '  f = crear(dia, mes, anio);',
+  '  f = sumarDias(f, n);',
+  '  mostrar(f);',
+  '  return 0;',
   '}'
 );
 
@@ -959,4 +1047,20 @@ export const CASOS_DE_TAD = [
   repr(2, 'vacia devuelve numeros', REPR_C.replace('if (p.tope == -1) {\n    return VERDADERO;\n  }\n  return FALSO;', 'if (p.tope == -1) {\n    return 1;\n  }\n  return 0;'), ['RETORNO_NUMERO_EN_ENUMERADO']),
   repr(2, 'sin incluir el encabezado', REPR_C.replace('#include "pila.h"\n\n', ''), ['INCLUDE_PROPIO_FALTA']),
   repr(2, 'repitiendo el tipo', REPR_C.replace('#include "pila.h"\n', '#include "pila.h"\n\ntypedef struct {\n  int datos[MAX];\n  int tope;\n} TPila;\n'), ['TIPO_REPETIDO_EN_EL_C']),
+  // ===== Un TAD completo: la fecha (tres archivos encadenados) =====
+  fecha(1, 'el .h correcto', FECHA_H),
+  fecha(1, 'el .h sin las guardas', FECHA_H.replace('#ifndef FECHA_H\n#define FECHA_H\n\n', '').replace('\n\n#endif', ''), ['ENCABEZADO_SIN_GUARDA']),
+  fecha(1, 'diasDelMes sin el anio', FECHA_H.replace('int diasDelMes(int mes, int anio);', 'int diasDelMes(int mes);'), ['PARAMETROS_CANTIDAD']),
+  fecha(1, 'sumarDias sin la cantidad', FECHA_H.replace('TFecha sumarDias(TFecha f, int n);', 'TFecha sumarDias(TFecha f);'), ['PARAMETROS_CANTIDAD']),
+  fecha(1, 'sin mostrar', FECHA_H.replace('void mostrar(TFecha f);\n', ''), ['PROTOTIPO_FALTA']),
+  fecha(2, 'el .c correcto', FECHA_C),
+  fecha(2, 'sin incluir el encabezado', FECHA_C.replace('#include "fecha.h"\n', ''), ['INCLUDE_PROPIO_FALTA']),
+  fecha(2, 'repitiendo el tipo', FECHA_C.replace('#include "fecha.h"\n', '#include "fecha.h"\n\ntypedef struct {\n  int dia;\n  int mes;\n  int anio;\n} TFecha;\n'), ['TIPO_REPETIDO_EN_EL_C']),
+  fecha(2, 'bisiesto solo por multiplo de 4', FECHA_C.replace('(anio % 4 == 0 && anio % 100 != 0) || anio % 400 == 0', 'anio % 4 == 0'), ['DEVUELVE_DISTINTO']),
+  fecha(2, 'sumarDias que no cambia de anio', FECHA_C.replace('        f.anio = f.anio + 1;\n', ''), ['DEVUELVE_DISTINTO']),
+  fecha(2, 'sumarDias que no pasa al mes siguiente', FECHA_C.replace('      f.mes = f.mes + 1;\n', ''), ['DEVUELVE_DISTINTO']),
+  fecha(2, 'mostrar con otro formato', FECHA_C.replace('"%d/%d/%d"', '"%d-%d-%d"'), ['MUESTRA_DISTINTA']),
+  fecha(3, 'el main correcto', FECHA_MAIN),
+  fecha(3, 'el main que arma la fecha a mano', FECHA_MAIN.replace('f = crear(dia, mes, anio);', 'f.dia = dia;\n  f.mes = mes;\n  f.anio = anio;'), ['TAD_ACCESO_DIRECTO', 'TAD_OPERACION_SIN_USAR']),
+  fecha(3, 'el main sin sumar dias', FECHA_MAIN.replace('  f = sumarDias(f, n);\n', ''), ['TAD_OPERACION_SIN_USAR']),
 ];

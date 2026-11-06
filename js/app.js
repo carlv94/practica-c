@@ -21,6 +21,7 @@ import {
   esMixta,
   programaDeOpciones,
   capturasPrevias,
+  escritosPrevios,
   respuestaDeReferencia,
   corregirPaso,
   despuesDe,
@@ -165,10 +166,13 @@ function archivosParaBajar(consigna) {
   if (!consigna?.escribe || consigna.opciones || consigna.pila) return null;
   if ((consigna.archivos || []).some((a) => a.oculto)) return null;
   return [
-    ...archivosVisibles(consigna).map((a) => ({ nombre: a.nombre, texto: a.codigo })),
+    ...[...yaEscritos, ...archivosVisibles(consigna)].map((a) => ({ nombre: a.nombre, texto: a.codigo })),
     { nombre: consigna.escribe, texto: $('respuesta').value },
   ];
 }
+
+// Los archivos que el alumno escribio antes en la cadena de la consigna que se ve.
+let yaEscritos = [];
 
 function bajarArchivos() {
   const consigna = serie?.consignas[repasando ?? hechas.length];
@@ -626,12 +630,16 @@ function mostrarConsigna() {
   // Lo ya resuelto mas lo que esta consigna trae escrito.
   // En una consigna de opciones el codigo es un programa completo, de una sola
   // pieza: no hay un "codigo hasta aca" aparte.
-  const previo = termino || sinEditor ? '' : codigoPrevio(serie, actual, avanceVisto);
+  // Lo que el alumno escribio como archivos (con nombre) se ve en pestanas, no
+  // otra vez como "codigo hasta aca".
+  yaEscritos = termino || sinEditor ? [] : escritosPrevios(serie, actual, avanceVisto);
+  const previo = termino || sinEditor || yaEscritos.length ? '' : codigoPrevio(serie, actual, avanceVisto);
   const programa = !termino && sinEditor ? programaDeOpciones(serie, actual, avanceVisto) : '';
   $('consigna').hidden = termino;
   $('bloque-contexto').hidden = !previo;
   // Los archivos que trae la consigna, cada uno con su nombre; y cual escribe el alumno.
-  const archivos = termino || sinEditor ? [] : archivosVisibles(consigna);
+  // Los que escribio el alumno en las consignas anteriores van primero.
+  const archivos = termino || sinEditor ? [] : [...yaEscritos, ...archivosVisibles(consigna)];
   $('bloque-archivos').hidden = !archivos.length;
   dibujarArchivos(archivos);
   $('etiqueta-respuesta').textContent = consigna?.escribe ? `Su respuesta: ${consigna.escribe}` : 'Su respuesta';

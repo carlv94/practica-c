@@ -1485,6 +1485,15 @@ comprimir (`js/descarga.js`, armado a mano con CRC32) con un `LEEME.txt` que dic
 cómo compilarlos con `gcc`. Si algún archivo va oculto (caja negra) no se ofrece,
 porque el proyecto no se podría armar.
 
+### Una cadena de archivos (serie `tad-fecha`)
+
+Con `"continua": true` en la serie y `escribe` en cada consigna, el alumno escribe
+`fecha.h`, luego `fecha.c` y por último `main.c`, cada uno sobre el anterior. El
+corrector sigue viendo un solo programa (lo anterior queda en `contexto`); el
+avance guarda además `escritos` ([{ nombre, codigo }], `escritosPrevios` en
+`js/serie.js`) para mostrar esos archivos en pestañas, sin repetirlos como "El
+código hasta acá", y para el botón de descarga.
+
 ### Archivos ya escritos en pestañas
 
 Si una consigna trae dos o más archivos a la vista, se muestran en pestañas de

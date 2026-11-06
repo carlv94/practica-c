@@ -137,10 +137,12 @@
         "tad-pila-usar.json",
         "tad-pila-h.json",
         "tad-pila-c.json",
-        "tad-representacion.json"
+        "tad-representacion.json",
+        "tad-fecha.json"
       ],
       "ocultas": [
-        "tad-representacion.json"
+        "tad-representacion.json",
+        "tad-fecha.json"
       ]
     }
   ]

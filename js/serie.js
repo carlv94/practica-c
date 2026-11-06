@@ -39,7 +39,11 @@ const unir = (...partes) => partes.filter((p) => p && p.trim()).join('\n\n');
 // (las que el alumno escribio dentro de la suya se quedan).
 const unirEnMain = (...partes) => partes.filter((p) => p && p.trim()).join('\n');
 
-export const inicio = () => ({ contexto: '', archivo: '', capturas: {}, base: '', avisados: [], vistos: {} });
+// "escritos": los archivos que el alumno escribio en las consignas anteriores de
+// la cadena ({ nombre, codigo }, solo las que dicen "escribe"). El corrector no
+// los necesita (el codigo ya esta en "contexto"): son para mostrarlos, uno por
+// pestana, y para bajarlos.
+export const inicio = () => ({ contexto: '', archivo: '', capturas: {}, base: '', avisados: [], vistos: {}, escritos: [] });
 
 // Si la consigna "indice" ve el codigo (y los nombres capturados) de las
 // anteriores. Por defecto no: cada consigna es un programa nuevo. La que
@@ -76,6 +80,8 @@ export const archivoPrevio = (serie, indice, avance) => {
   if (origen) return origen.archivo;
   return continuaLaAnterior(serie, indice) ? avance.archivo || '' : '';
 };
+export const escritosPrevios = (serie, indice, avance) =>
+  continuaLaAnterior(serie, indice) ? avance.escritos || [] : [];
 export const capturasPrevias = (serie, indice, avance) => {
   const origen = visto(serie, indice, avance);
   if (origen) return origen.capturas;
@@ -333,5 +339,8 @@ function despuesDeBase(serie, indice, avance, respuesta, resultado) {
     capturas: resultado.capturas,
     base: avance.base,
     vistos,
+    escritos: consigna.escribe
+      ? [...escritosPrevios(serie, indice, avance), { nombre: consigna.escribe, codigo: respuesta.trim() }]
+      : escritosPrevios(serie, indice, avance),
   };
 }
