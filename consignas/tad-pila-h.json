@@ -7,7 +7,7 @@
     {
       "id": "tadp-q-max",
       "titulo": "Dónde se define MAX",
-      "programa": "/* pila.h */\n#ifndef PILA_H\n#define PILA_H\n\ntypedef struct {\n  int datos[MAX];\n  int tope;\n} TPila;\n\nint llena(TPila p);\n\n#endif\n\n/* pila.c */\n#include \"pila.h\"\n\n#define MAX 8\n\nint llena(TPila p) {\n  return p.tope == MAX;\n}",
+      "programa": "/* pila.h */\n#ifndef PILA_H\n#define PILA_H\n\ntypedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\ntypedef struct {\n  int datos[MAX];\n  int tope;\n} TPila;\n\nTBool llena(TPila p);\n\n#endif\n\n/* pila.c */\n#include \"pila.h\"\n\n#define MAX 8\n\nTBool llena(TPila p) {\n  if (p.tope == MAX) {\n    return VERDADERO;\n  }\n  return FALSO;\n}",
       "enunciado": "El tipo `TPila` guarda sus elementos en un arreglo de tamaño `MAX`. En este programa, `MAX` se define en `pila.c`. ¿Qué pasa al compilar?",
       "opciones": [
         {
@@ -31,7 +31,7 @@
       "id": "tadp-h",
       "titulo": "El archivo de la pila",
       "escribe": "pila.h",
-      "enunciado": "Escriba `pila.h`, el archivo que describe el TAD pila. Una pila guarda hasta 8 números enteros en un arreglo `datos` y lleva en un campo `tope` cuántos tiene guardados. El tamaño del arreglo es la constante `MAX`, que vale 8, y el tipo se llama `TPila`. Tiene seis operaciones: `inicializar` la deja vacía y `apilar` agrega un número arriba (las dos reciben la pila por referencia y no devuelven nada; `apilar` recibe además el número); `desapilar` saca el de arriba y lo devuelve (recibe la pila por referencia); `cima` devuelve el de arriba sin sacarlo, y `vacia` y `llena` devuelven un entero que dice si la pila no tiene elementos o si no entra ninguno más (esas tres reciben la pila por valor). Use las guardas de inclusión `PILA_H`.",
+      "enunciado": "Escriba `pila.h`, el archivo que describe el TAD pila. Una pila guarda hasta 8 números enteros en un arreglo `datos` y lleva en un campo `tope` cuántos tiene guardados. El tamaño del arreglo es la constante `MAX`, que vale 8, y el tipo se llama `TPila`. Tiene seis operaciones: `inicializar` la deja vacía y `apilar` agrega un número arriba (las dos reciben la pila por referencia y no devuelven nada; `apilar` recibe además el número); `desapilar` saca el de arriba y lo devuelve (recibe la pila por referencia); `cima` devuelve el de arriba sin sacarlo, y `vacia` y `llena` devuelven un `TBool` que dice si la pila no tiene elementos o si no entra ninguno más (esas tres reciben la pila por valor). Declare también el enumerado `TBool`, con los valores `FALSO` y `VERDADERO` (en ese orden). Use las guardas de inclusión `PILA_H`.",
       "requiere": [
         {
           "encabezado": {
@@ -60,6 +60,22 @@
             "de": "$S",
             "nombre": "TPila",
             "capturar": "T"
+          }
+        },
+        {
+          "enum": {
+            "enumeradores": [
+              "FALSO",
+              "VERDADERO"
+            ],
+            "capturar": "E"
+          }
+        },
+        {
+          "alias": {
+            "de": "$E",
+            "nombre": "TBool",
+            "capturar": "B"
           }
         },
         {
@@ -120,7 +136,7 @@
           "funcion": {
             "prototipo": true,
             "nombre": "vacia",
-            "retorna": "entero",
+            "retorna": "enumerado",
             "parametros": [
               {
                 "tipo": "estructura"
@@ -132,7 +148,7 @@
           "funcion": {
             "prototipo": true,
             "nombre": "llena",
-            "retorna": "entero",
+            "retorna": "enumerado",
             "parametros": [
               {
                 "tipo": "estructura"
@@ -141,7 +157,7 @@
           }
         }
       ],
-      "referencia": "#ifndef PILA_H\n#define PILA_H\n\n#define MAX 8\n\ntypedef struct {\n  int datos[MAX];\n  int tope;\n} TPila;\n\nvoid inicializar(TPila *p);\nvoid apilar(TPila *p, int x);\nint desapilar(TPila *p);\nint cima(TPila p);\nint vacia(TPila p);\nint llena(TPila p);\n\n#endif"
+      "referencia": "#ifndef PILA_H\n#define PILA_H\n\n#define MAX 8\n\ntypedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\ntypedef struct {\n  int datos[MAX];\n  int tope;\n} TPila;\n\nvoid inicializar(TPila *p);\nvoid apilar(TPila *p, int x);\nint desapilar(TPila *p);\nint cima(TPila p);\nTBool vacia(TPila p);\nTBool llena(TPila p);\n\n#endif"
     }
   ]
 }

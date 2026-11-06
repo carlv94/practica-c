@@ -7,7 +7,7 @@
     {
       "id": "tadp-q-orden",
       "titulo": "El orden de salida",
-      "programa": "/* pila.h */\n#ifndef PILA_H\n#define PILA_H\n\n#define MAX 8\n\ntypedef struct {\n  int datos[MAX];\n  int tope;\n} TPila;\n\nvoid inicializar(TPila *p);\nvoid apilar(TPila *p, int x);\nint desapilar(TPila *p);\nint cima(TPila p);\nint vacia(TPila p);\nint llena(TPila p);\n\n#endif\n\n/* main.c */\n#include <stdio.h>\n#include \"pila.h\"\n\nint main() {\n  TPila p;\n\n  inicializar(&p);\n  apilar(&p, 1);\n  apilar(&p, 2);\n  apilar(&p, 3);\n  while (!vacia(p)) {\n    printf(\"%d \", desapilar(&p));\n  }\n  return 0;\n}",
+      "programa": "/* pila.h */\n#ifndef PILA_H\n#define PILA_H\n\n#define MAX 8\n\ntypedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\ntypedef struct {\n  int datos[MAX];\n  int tope;\n} TPila;\n\nvoid inicializar(TPila *p);\nvoid apilar(TPila *p, int x);\nint desapilar(TPila *p);\nint cima(TPila p);\nTBool vacia(TPila p);\nTBool llena(TPila p);\n\n#endif\n\n/* main.c */\n#include <stdio.h>\n#include \"pila.h\"\n\nint main() {\n  TPila p;\n\n  inicializar(&p);\n  apilar(&p, 1);\n  apilar(&p, 2);\n  apilar(&p, 3);\n  while (!vacia(p)) {\n    printf(\"%d \", desapilar(&p));\n  }\n  return 0;\n}",
       "enunciado": "El archivo `pila.h` declara el tipo `TPila` y sus operaciones. El archivo `main.c` las usa. ¿Qué muestra el programa?",
       "opciones": [
         {
@@ -35,16 +35,16 @@
       "archivos": [
         {
           "nombre": "pila.h",
-          "codigo": "#ifndef PILA_H\n#define PILA_H\n\n#define MAX 8\n\ntypedef struct {\n  int datos[MAX];\n  int tope;\n} TPila;\n\nvoid inicializar(TPila *p);\nvoid apilar(TPila *p, int x);\nint desapilar(TPila *p);\nint cima(TPila p);\nint vacia(TPila p);\nint llena(TPila p);\n\n#endif"
+          "codigo": "#ifndef PILA_H\n#define PILA_H\n\n#define MAX 8\n\ntypedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\ntypedef struct {\n  int datos[MAX];\n  int tope;\n} TPila;\n\nvoid inicializar(TPila *p);\nvoid apilar(TPila *p, int x);\nint desapilar(TPila *p);\nint cima(TPila p);\nTBool vacia(TPila p);\nTBool llena(TPila p);\n\n#endif"
         },
         {
           "nombre": "pila.c",
-          "codigo": "#include \"pila.h\"\n\nvoid inicializar(TPila *p) {\n  p->tope = 0;\n}\n\nvoid apilar(TPila *p, int x) {\n  p->datos[p->tope] = x;\n  p->tope = p->tope + 1;\n}\n\nint desapilar(TPila *p) {\n  p->tope = p->tope - 1;\n  return p->datos[p->tope];\n}\n\nint cima(TPila p) {\n  return p.datos[p.tope - 1];\n}\n\nint vacia(TPila p) {\n  return p.tope == 0;\n}\n\nint llena(TPila p) {\n  return p.tope == MAX;\n}",
+          "codigo": "#include \"pila.h\"\n\nvoid inicializar(TPila *p) {\n  p->tope = 0;\n}\n\nvoid apilar(TPila *p, int x) {\n  p->datos[p->tope] = x;\n  p->tope = p->tope + 1;\n}\n\nint desapilar(TPila *p) {\n  p->tope = p->tope - 1;\n  return p->datos[p->tope];\n}\n\nint cima(TPila p) {\n  return p.datos[p.tope - 1];\n}\n\nTBool vacia(TPila p) {\n  if (p.tope == 0) {\n    return VERDADERO;\n  }\n  return FALSO;\n}\n\nTBool llena(TPila p) {\n  if (p.tope == MAX) {\n    return VERDADERO;\n  }\n  return FALSO;\n}",
           "oculto": true
         }
       ],
       "usoIncorrecto": "Una operación de la pila se salió de los límites de su arreglo, que guarda hasta 8 números: se apiló en una pila llena o se desapiló una pila vacía. Antes de `apilar` conviene preguntar con `llena`, y antes de `desapilar`, con `vacia`.",
-      "enunciado": "El archivo `pila.h` declara el tipo `TPila` y seis operaciones: `inicializar` la deja vacía, `apilar` agrega un número arriba, `desapilar` saca el de arriba y lo devuelve, `cima` devuelve el de arriba sin sacarlo, `vacia` dice si no tiene elementos y `llena` si no entra ninguno más. Escriba `main.c`: lea con `scanf` tres números enteros, guárdelos en una pila y muéstrelos con `printf` en orden inverso al de lectura, separados por un espacio. Por ejemplo, si se ingresan `12`, `305` y `7`, el programa muestra `7 305 12`. Use solo las operaciones del `.h`.",
+      "enunciado": "El archivo `pila.h` declara el tipo `TPila` y seis operaciones: `inicializar` la deja vacía, `apilar` agrega un número arriba, `desapilar` saca el de arriba y lo devuelve, `cima` devuelve el de arriba sin sacarlo, `vacia` dice si no tiene elementos y `llena` si no entra ninguno más (las dos devuelven un `TBool`, un enumerado con los valores `FALSO` y `VERDADERO`). Escriba `main.c`: lea con `scanf` tres números enteros, guárdelos en una pila y muéstrelos con `printf` en orden inverso al de lectura, separados por un espacio. Por ejemplo, si se ingresan `12`, `305` y `7`, el programa muestra `7 305 12`. Use solo las operaciones del `.h`.",
       "requiere": [
         {
           "incluyeLocal": "pila.h"
@@ -115,11 +115,11 @@
       "archivos": [
         {
           "nombre": "pila.h",
-          "codigo": "#ifndef PILA_H\n#define PILA_H\n\n#define MAX 8\n\ntypedef struct {\n  int datos[MAX];\n  int tope;\n} TPila;\n\nvoid inicializar(TPila *p);\nvoid apilar(TPila *p, int x);\nint desapilar(TPila *p);\nint cima(TPila p);\nint vacia(TPila p);\nint llena(TPila p);\n\n#endif"
+          "codigo": "#ifndef PILA_H\n#define PILA_H\n\n#define MAX 8\n\ntypedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\ntypedef struct {\n  int datos[MAX];\n  int tope;\n} TPila;\n\nvoid inicializar(TPila *p);\nvoid apilar(TPila *p, int x);\nint desapilar(TPila *p);\nint cima(TPila p);\nTBool vacia(TPila p);\nTBool llena(TPila p);\n\n#endif"
         },
         {
           "nombre": "pila.c",
-          "codigo": "#include \"pila.h\"\n\nvoid inicializar(TPila *p) {\n  p->tope = 0;\n}\n\nvoid apilar(TPila *p, int x) {\n  p->datos[p->tope] = x;\n  p->tope = p->tope + 1;\n}\n\nint desapilar(TPila *p) {\n  p->tope = p->tope - 1;\n  return p->datos[p->tope];\n}\n\nint cima(TPila p) {\n  return p.datos[p.tope - 1];\n}\n\nint vacia(TPila p) {\n  return p.tope == 0;\n}\n\nint llena(TPila p) {\n  return p.tope == MAX;\n}",
+          "codigo": "#include \"pila.h\"\n\nvoid inicializar(TPila *p) {\n  p->tope = 0;\n}\n\nvoid apilar(TPila *p, int x) {\n  p->datos[p->tope] = x;\n  p->tope = p->tope + 1;\n}\n\nint desapilar(TPila *p) {\n  p->tope = p->tope - 1;\n  return p->datos[p->tope];\n}\n\nint cima(TPila p) {\n  return p.datos[p.tope - 1];\n}\n\nTBool vacia(TPila p) {\n  if (p.tope == 0) {\n    return VERDADERO;\n  }\n  return FALSO;\n}\n\nTBool llena(TPila p) {\n  if (p.tope == MAX) {\n    return VERDADERO;\n  }\n  return FALSO;\n}",
           "oculto": true
         }
       ],
@@ -187,11 +187,11 @@
       "archivos": [
         {
           "nombre": "pila.h",
-          "codigo": "#ifndef PILA_H\n#define PILA_H\n\n#define MAX 8\n\ntypedef struct {\n  int datos[MAX];\n  int tope;\n} TPila;\n\nvoid inicializar(TPila *p);\nvoid apilar(TPila *p, int x);\nint desapilar(TPila *p);\nint cima(TPila p);\nint vacia(TPila p);\nint llena(TPila p);\n\n#endif"
+          "codigo": "#ifndef PILA_H\n#define PILA_H\n\n#define MAX 8\n\ntypedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\ntypedef struct {\n  int datos[MAX];\n  int tope;\n} TPila;\n\nvoid inicializar(TPila *p);\nvoid apilar(TPila *p, int x);\nint desapilar(TPila *p);\nint cima(TPila p);\nTBool vacia(TPila p);\nTBool llena(TPila p);\n\n#endif"
         },
         {
           "nombre": "pila.c",
-          "codigo": "#include \"pila.h\"\n\nvoid inicializar(TPila *p) {\n  p->tope = 0;\n}\n\nvoid apilar(TPila *p, int x) {\n  p->datos[p->tope] = x;\n  p->tope = p->tope + 1;\n}\n\nint desapilar(TPila *p) {\n  p->tope = p->tope - 1;\n  return p->datos[p->tope];\n}\n\nint cima(TPila p) {\n  return p.datos[p.tope - 1];\n}\n\nint vacia(TPila p) {\n  return p.tope == 0;\n}\n\nint llena(TPila p) {\n  return p.tope == MAX;\n}",
+          "codigo": "#include \"pila.h\"\n\nvoid inicializar(TPila *p) {\n  p->tope = 0;\n}\n\nvoid apilar(TPila *p, int x) {\n  p->datos[p->tope] = x;\n  p->tope = p->tope + 1;\n}\n\nint desapilar(TPila *p) {\n  p->tope = p->tope - 1;\n  return p->datos[p->tope];\n}\n\nint cima(TPila p) {\n  return p.datos[p.tope - 1];\n}\n\nTBool vacia(TPila p) {\n  if (p.tope == 0) {\n    return VERDADERO;\n  }\n  return FALSO;\n}\n\nTBool llena(TPila p) {\n  if (p.tope == MAX) {\n    return VERDADERO;\n  }\n  return FALSO;\n}",
           "oculto": true
         }
       ],

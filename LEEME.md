@@ -1524,6 +1524,8 @@ la respuesta es un archivo completo.
   - `{ "sinTipos": true }`: el `.c` no vuelve a declarar el tipo (`TIPO_REPETIDO_EN_EL_C`).
   - `{ "defineTodo": true }`: el `.c` define cada prototipo del `.h`, con la misma
     firma (`PROTOTIPO_SIN_DEFINICION`, `FIRMA_DISTINTA_DEL_PROTOTIPO`).
+    Con `defineTodo`, una regla `funcion` por nombre que busca una operación sin
+    definir no la confunde con otra: deja el aviso a `defineTodo`.
   - `{ "soloOperaciones": "TContador" }`: quien usa el TAD no accede a los campos
     de su estructura (`TAD_ACCESO_DIRECTO`, que nombra las operaciones del `.h`).
   - `{ "usaOperaciones": ["inicializar", "contar"] }`: el programa llama a esas

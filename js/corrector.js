@@ -617,6 +617,16 @@ export function corregir(
       );
       return;
     }
+    // Una operacion que el .h declara y falta definir la avisa "defineTodo": acá
+    // no se la confunde con otra funcion que tiene otro nombre.
+    if (
+      pedidoNombre &&
+      !candidatas.some((c) => c.nombre === pedidoNombre) &&
+      (consigna.requiere || []).some((r) => r.defineTodo) &&
+      modelo.funciones.some((g) => g.prototipo && g.nombre === pedidoNombre)
+    ) {
+      return;
+    }
     const f = (pedidoNombre && candidatas.find((c) => c.nombre === pedidoNombre)) || candidatas[candidatas.length - 1];
     if (pedidoNombre && f.nombre !== pedidoNombre) {
       error('FUNCION_NOMBRE', `La consigna pide que la función se llame ${BT}${pedidoNombre}${BT}, y acá se llama ${BT}${f.nombre}${BT}.`, f.fila);

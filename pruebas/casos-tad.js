@@ -93,6 +93,11 @@ const PILA_H = lineas(
   '',
   '#define MAX 8',
   '',
+  'typedef enum {',
+  '  FALSO,',
+  '  VERDADERO',
+  '} TBool;',
+  '',
   'typedef struct {',
   '  int datos[MAX];',
   '  int tope;',
@@ -102,8 +107,8 @@ const PILA_H = lineas(
   'void apilar(TPila *p, int x);',
   'int desapilar(TPila *p);',
   'int cima(TPila p);',
-  'int vacia(TPila p);',
-  'int llena(TPila p);',
+  'TBool vacia(TPila p);',
+  'TBool llena(TPila p);',
   '',
   '#endif'
 );
@@ -130,12 +135,18 @@ const PILA_C = lineas(
   '  return p.datos[p.tope - 1];',
   '}',
   '',
-  'int vacia(TPila p) {',
-  '  return p.tope == 0;',
+  'TBool vacia(TPila p) {',
+  '  if (p.tope == 0) {',
+  '    return VERDADERO;',
+  '  }',
+  '  return FALSO;',
   '}',
   '',
-  'int llena(TPila p) {',
-  '  return p.tope == MAX;',
+  'TBool llena(TPila p) {',
+  '  if (p.tope == MAX) {',
+  '    return VERDADERO;',
+  '  }',
+  '  return FALSO;',
   '}'
 );
 
@@ -508,6 +519,25 @@ export const CASOS_DE_TAD = [
   ),
   usarPila(
     2,
+    'preguntando con VERDADERO y FALSO',
+    MAIN_PILA(
+      'TPila p;',
+      'int n;',
+      '',
+      'inicializar(&p);',
+      'for (int i = 0; i < 3; i++) {',
+      '  scanf("%d", &n);',
+      '  if (llena(p) == FALSO) {',
+      '    apilar(&p, n);',
+      '  }',
+      '}',
+      'while (vacia(p) == FALSO) {',
+      '  printf("%d ", desapilar(&p));',
+      '}'
+    )
+  ),
+  usarPila(
+    2,
     'sin ciclos',
     MAIN_PILA(
       'TPila p;',
@@ -818,13 +848,17 @@ export const CASOS_DE_TAD = [
   pilaH(2, 'datos de otro tipo', HP((t) => t.replace('int datos[MAX];', 'float datos[MAX];')), ['CAMPO_TIPO']),
   pilaH(2, 'sin el tope', HP((t) => t.replace('  int tope;\n', '')), ['CAMPO_FALTA']),
   pilaH(2, 'el tope con otro nombre', HP((t) => t.replace('int tope;', 'int cantidad;')), ['CAMPO_FALTA']),
-  pilaH(2, 'con el cuerpo de una funcion', HP((t) => t.replace('int llena(TPila p);', 'int llena(TPila p) {\n  return p.tope == MAX;\n}')), ['ENCABEZADO_CON_CUERPO', 'PROTOTIPO_FALTA']),
+  pilaH(2, 'sin el enumerado', HP((t) => t.replace('typedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\n', '').replaceAll('TBool', 'int')), ['ENUM_FALTA']),
+  pilaH(2, 'el enumerado al reves', HP((t) => t.replace('  FALSO,\n  VERDADERO', '  VERDADERO,\n  FALSO')), ['ENUMERADOR_ORDEN']),
+  pilaH(2, 'vacia devuelve un entero', HP((t) => t.replace('TBool vacia(TPila p);', 'int vacia(TPila p);')), ['FUNCION_TIPO_RETORNO'], { dice: ['un enumerado'] }),
+  pilaH(2, 'llena devuelve un entero', HP((t) => t.replace('TBool llena(TPila p);', 'int llena(TPila p);')), ['FUNCION_TIPO_RETORNO'], { dice: ['un enumerado'] }),
+  pilaH(2, 'con el cuerpo de una funcion', HP((t) => t.replace('TBool llena(TPila p);', 'TBool llena(TPila p) {\n  return VERDADERO;\n}')), ['ENCABEZADO_CON_CUERPO', 'PROTOTIPO_FALTA']),
   pilaH(2, 'con algo afuera', HP((t) => t + '\n\nvoid vaciar(TPila *p);'), ['ENCABEZADO_FUERA_DE_LA_GUARDA']),
-  pilaH(2, 'sin un prototipo', HP((t) => t.replace('int llena(TPila p);\n', '')), ['PROTOTIPO_FALTA']),
+  pilaH(2, 'sin un prototipo', HP((t) => t.replace('TBool llena(TPila p);\n', '')), ['PROTOTIPO_FALTA']),
   pilaH(2, 'apilar sin el numero', HP((t) => t.replace('void apilar(TPila *p, int x);', 'void apilar(TPila *p);')), ['PARAMETROS_CANTIDAD']),
   pilaH(2, 'apilar con la pila por valor', HP((t) => t.replace('void apilar(TPila *p, int x);', 'void apilar(TPila p, int x);')), ['PARAMETRO_REFERENCIA_FALTA']),
   pilaH(2, 'desapilar no devuelve nada', HP((t) => t.replace('int desapilar(TPila *p);', 'void desapilar(TPila *p);')), ['FUNCION_TIPO_RETORNO']),
-  pilaH(2, 'vacia con la pila por referencia', HP((t) => t.replace('int vacia(TPila p);', 'int vacia(TPila *p);')), ['PARAMETRO_ASTERISCO_DE_MAS']),
+  pilaH(2, 'vacia con la pila por referencia', HP((t) => t.replace('TBool vacia(TPila p);', 'TBool vacia(TPila *p);')), ['PARAMETRO_ASTERISCO_DE_MAS']),
 
   // ===== Escribir pila.c =====
   pilaC(1, 'completa', PILA_C),
@@ -834,8 +868,25 @@ export const CASOS_DE_TAD = [
   pilaC(
     1,
     'sin definir una operacion',
-    PILA_C.replace('\nint llena(TPila p) {\n  return p.tope == MAX;\n}', ''),
+    PILA_C.replace('\n\nTBool llena(TPila p) {\n  if (p.tope == MAX) {\n    return VERDADERO;\n  }\n  return FALSO;\n}', ''),
     ['PROTOTIPO_SIN_DEFINICION']
+  ),
+  pilaC(
+    1,
+    'vacia devuelve numeros',
+    PILA_C.replace('if (p.tope == 0) {\n    return VERDADERO;\n  }\n  return FALSO;', 'if (p.tope == 0) {\n    return 1;\n  }\n  return 0;'),
+    ['RETORNO_NUMERO_EN_ENUMERADO']
+  ),
+  pilaC(
+    1,
+    'llena devuelve numeros',
+    PILA_C.replace('if (p.tope == MAX) {\n    return VERDADERO;\n  }\n  return FALSO;', 'if (p.tope == MAX) {\n    return 1;\n  }\n  return 0;'),
+    ['RETORNO_NUMERO_EN_ENUMERADO']
+  ),
+  pilaC(
+    1,
+    'vacia con un return directo',
+    PILA_C.replace('if (p.tope == 0) {\n    return VERDADERO;\n  }\n  return FALSO;', 'return p.tope == 0;')
   ),
   pilaC(1, 'apilar con otra firma', PILA_C.replace('void apilar(TPila *p, int x) {', 'int apilar(TPila *p, int x) {'), ['FIRMA_DISTINTA_DEL_PROTOTIPO']),
   pilaC(1, 'inicializar no deja el tope en cero', PILA_C.replace('  p->tope = 0;\n', ''), ['VARIABLE_SIN_VALOR']),
@@ -852,6 +903,6 @@ export const CASOS_DE_TAD = [
     ['DEVUELVE_DISTINTO']
   ),
   pilaC(1, 'cima devuelve la posicion del tope', PILA_C.replace('return p.datos[p.tope - 1];', 'return p.datos[p.tope];'), ['VARIABLE_SIN_VALOR'], { dice: ['`p.datos[2]`'] }),
-  pilaC(1, 'llena con la pila a medias', PILA_C.replace('return p.tope == MAX;', 'return p.tope == MAX - 1;'), ['DEVUELVE_DISTINTO']),
-  pilaC(1, 'vacia al reves', PILA_C.replace('return p.tope == 0;', 'return p.tope != 0;'), ['DEVUELVE_DISTINTO']),
+  pilaC(1, 'llena con la pila a medias', PILA_C.replace('if (p.tope == MAX) {', 'if (p.tope == MAX - 1) {'), ['DEVUELVE_DISTINTO']),
+  pilaC(1, 'vacia al reves', PILA_C.replace('if (p.tope == 0) {', 'if (p.tope != 0) {'), ['DEVUELVE_DISTINTO']),
 ];
