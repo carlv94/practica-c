@@ -82,6 +82,7 @@ const FRACCION_C = lineas(
 const usarPila = serie('tad-pila-usar');
 const pilaH = serie('tad-pila-h');
 const pilaC = serie('tad-pila-c');
+const repr = serie('tad-representacion');
 
 // main.c de las pilas con lo que va adentro de main.
 const MAIN_PILA = (...cuerpo) =>
@@ -144,6 +145,45 @@ const PILA_C = lineas(
   '',
   'TBool llena(TPila p) {',
   '  if (p.tope == MAX) {',
+  '    return VERDADERO;',
+  '  }',
+  '  return FALSO;',
+  '}'
+);
+
+const REPR_C = lineas(
+  '#include "pila.h"',
+  '',
+  'void inicializar(TPila *p) {',
+  '  p->tope = -1;',
+  '}',
+  '',
+  'void apilar(TPila *p, int x) {',
+  '  p->tope = p->tope + 1;',
+  '  p->datos[p->tope] = x;',
+  '}',
+  '',
+  'int desapilar(TPila *p) {',
+  '  int x;',
+  '',
+  '  x = p->datos[p->tope];',
+  '  p->tope = p->tope - 1;',
+  '  return x;',
+  '}',
+  '',
+  'int cima(TPila p) {',
+  '  return p.datos[p.tope];',
+  '}',
+  '',
+  'TBool vacia(TPila p) {',
+  '  if (p.tope == -1) {',
+  '    return VERDADERO;',
+  '  }',
+  '  return FALSO;',
+  '}',
+  '',
+  'TBool llena(TPila p) {',
+  '  if (p.tope == MAX - 1) {',
   '    return VERDADERO;',
   '  }',
   '  return FALSO;',
@@ -905,4 +945,18 @@ export const CASOS_DE_TAD = [
   pilaC(1, 'cima devuelve la posicion del tope', PILA_C.replace('return p.datos[p.tope - 1];', 'return p.datos[p.tope];'), ['VARIABLE_SIN_VALOR'], { dice: ['`p.datos[2]`'] }),
   pilaC(1, 'llena con la pila a medias', PILA_C.replace('if (p.tope == MAX) {', 'if (p.tope == MAX - 1) {'), ['DEVUELVE_DISTINTO']),
   pilaC(1, 'vacia al reves', PILA_C.replace('if (p.tope == 0) {', 'if (p.tope != 0) {'), ['DEVUELVE_DISTINTO']),
+  // ===== Cambiar la representacion =====
+  repr(1, 'solo el .c', '0'),
+  repr(1, 'el .c y el main', '1', ['OPCION_REPR_TAMBIEN_MAIN']),
+  repr(1, 'el .h y el .c', '2', ['OPCION_REPR_TAMBIEN_H']),
+  repr(2, 'con el tope en -1', REPR_C),
+  repr(2, 'con otra cuenta al desapilar', REPR_C.replace('  x = p->datos[p->tope];\n  p->tope = p->tope - 1;\n  return x;', '  x = p->datos[p->tope];\n  p->tope--;\n  return x;')),
+  repr(2, 'con la cuenta de antes (el tope cuenta elementos)', PILA_C, ['DEVUELVE_DISTINTO'], { dice: ['p.tope'] }),
+  repr(2, 'inicializar deja el tope en cero', REPR_C.replace('p->tope = -1;', 'p->tope = 0;'), ['DEVUELVE_DISTINTO']),
+  repr(2, 'vacia sigue mirando el cero', REPR_C.replace('if (p.tope == -1) {', 'if (p.tope == 0) {'), ['DEVUELVE_DISTINTO']),
+  repr(2, 'llena sigue mirando MAX', REPR_C.replace('if (p.tope == MAX - 1) {', 'if (p.tope == MAX) {'), ['DEVUELVE_DISTINTO']),
+  repr(2, 'cima devuelve la posicion de abajo', REPR_C.replace('return p.datos[p.tope];', 'return p.datos[p.tope - 1];'), ['DEVUELVE_DISTINTO']),
+  repr(2, 'vacia devuelve numeros', REPR_C.replace('if (p.tope == -1) {\n    return VERDADERO;\n  }\n  return FALSO;', 'if (p.tope == -1) {\n    return 1;\n  }\n  return 0;'), ['RETORNO_NUMERO_EN_ENUMERADO']),
+  repr(2, 'sin incluir el encabezado', REPR_C.replace('#include "pila.h"\n\n', ''), ['INCLUDE_PROPIO_FALTA']),
+  repr(2, 'repitiendo el tipo', REPR_C.replace('#include "pila.h"\n', '#include "pila.h"\n\ntypedef struct {\n  int datos[MAX];\n  int tope;\n} TPila;\n'), ['TIPO_REPETIDO_EN_EL_C']),
 ];

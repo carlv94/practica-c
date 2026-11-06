@@ -136,7 +136,11 @@
         "tad-escribir-c.json",
         "tad-pila-usar.json",
         "tad-pila-h.json",
-        "tad-pila-c.json"
+        "tad-pila-c.json",
+        "tad-representacion.json"
+      ],
+      "ocultas": [
+        "tad-representacion.json"
       ]
     }
   ]

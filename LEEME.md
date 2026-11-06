@@ -1534,6 +1534,9 @@ la respuesta es un archivo completo.
   probar: `TContador c; inicializar(&c); contar(&c);`), `llama` y `devuelve`. El caso puede
   traer `contexto` ("Después de inicializar un contador y contar tres veces"), que encabeza el
   mensaje de `DEVUELVE_DISTINTO` para que el alumno sepa en qué escenario falló.
+  `llama` también puede ser una expresión sin llamada, como `p.tope`, que se evalúa
+  tal cual después de `antes`: así una consigna exige cómo se usa un campo (la serie
+  `tad-representacion` pide el tope en -1) cuando el comportamiento solo no lo distingue.
 - Cada consigna es independiente: lo que el alumno escribió en una no pasa a la
   siguiente; los otros archivos los trae la consigna.
 - **Cuestionarios con varios archivos**: en lugar de `archivo` y `codigo` llevan

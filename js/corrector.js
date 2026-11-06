@@ -3608,8 +3608,10 @@ export function corregir(
   // __devuelve. Por esa funcion empieza el simulador.
   function armarLlamada(modelo, llama, prueba, antes = '') {
     const m = /^\s*([A-Za-z_]\w*)\s*\(/.exec(llama);
-    if (!m) throw new Error(`no se entiende "${llama}"`);
-    const f = modelo.funciones.findLast((x) => !x.prototipo && x.nombre === m[1]);
+    // Sin llamada ("p.tope" despues de preparar una pila): una expresion que se
+    // evalua tal cual, y lo que da es un entero.
+    if (!m && !/^\s*[A-Za-z_]\w*(\s*(\.|->|\[)\s*[A-Za-z_0-9]+\]?)*\s*;?\s*$/.test(llama)) throw new Error(`no se entiende "${llama}"`);
+    const f = m ? modelo.funciones.findLast((x) => !x.prototipo && x.nombre === m[1]) : null;
     const lineas = [];
     // Declaraciones que el caso trae escritas (una estructura: sus campos salen de los datos).
     if (antes) lineas.push(...antes.split('\n').map((l) => `  ${l}`));
@@ -3650,7 +3652,7 @@ export function corregir(
       llamada = `${llamada.slice(0, abre)}(${args.join(', ')})`;
     }
     const devuelve = f ? textoDeTipo(f.tipo) : 'int';
-    if (f && !(f.tipo.clase === 'primitivo' && f.tipo.nombre === 'void' && !f.punteros)) {
+    if (!m || (f && !(f.tipo.clase === 'primitivo' && f.tipo.nombre === 'void' && !f.punteros))) {
       lineas.push(`  ${devuelve} __devuelve;`);
       lineas.push(`  __devuelve = ${llamada};`);
     } else {
@@ -4324,7 +4326,10 @@ export function corregir(
         // Con "llama", se prueba una funcion: se la llama con esos argumentos y,
         // con "devuelve", lo que da tiene que ser eso.
         const llamada = caso.llama ? valorDe(caso.llama) : null;
-        if (llamada && !modelo.funciones.some((x) => !x.prototipo && x.nombre === /^\s*([A-Za-z_]\w*)/.exec(llamada)[1])) {
+        // (Si no empieza con una llamada, como "p.tope" despues de preparar una pila,
+        // es una expresion que se evalua tal cual.)
+        const nombreLlamado = llamada && /^\s*([A-Za-z_]\w*)\s*\(/.exec(llamada);
+        if (nombreLlamado && !modelo.funciones.some((x) => !x.prototipo && x.nombre === nombreLlamado[1])) {
           // Si ya se dijo que la funcion se llama de otra manera, con eso alcanza.
           if (diagnosticos.some((d) => d.codigo === 'FUNCION_NOMBRE')) return;
           error('FUNCION_FALTA', 'No encontré la definición de la función que pide la consigna.');

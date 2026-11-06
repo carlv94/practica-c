@@ -1,0 +1,170 @@
+{
+  "id": "tad-representacion",
+  "titulo": "Cambiar la representación",
+  "continua": false,
+  "descripcion": "Un TAD se puede guardar de otra manera sin que quien lo usa se entere: cambia el `.c`, y el `.h` y el programa que lo usa quedan igual.",
+  "consignas": [
+    {
+      "id": "tadr-q-archivos",
+      "titulo": "Qué archivos cambian",
+      "programa": "/* pila.h */\n#ifndef PILA_H\n#define PILA_H\n\n#define MAX 8\n\ntypedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\ntypedef struct {\n  int datos[MAX];\n  int tope;\n} TPila;\n\nvoid inicializar(TPila *p);\nvoid apilar(TPila *p, int x);\nint desapilar(TPila *p);\nint cima(TPila p);\nTBool vacia(TPila p);\nTBool llena(TPila p);\n\n#endif\n\n/* main.c */\n#include <stdio.h>\n#include \"pila.h\"\n\nint main() {\n  TPila p;\n\n  inicializar(&p);\n  apilar(&p, 1);\n  apilar(&p, 2);\n  apilar(&p, 3);\n  while (!vacia(p)) {\n    printf(\"%d \", desapilar(&p));\n  }\n  return 0;\n}",
+      "enunciado": "La pila guarda en `tope` la cantidad de elementos que tiene, y vale 0 si está vacía. Se decide cambiar la representación: ahora `tope` va a guardar la posición del elemento de arriba, así que vale -1 si la pila está vacía. El tipo sigue siendo el mismo, con los mismos campos, y las seis operaciones conservan sus nombres y sus parámetros. ¿Qué archivos hay que modificar?",
+      "opciones": [
+        {
+          "texto": "Solo `pila.c`.",
+          "correcta": true,
+          "explicacion": "Lo que cambió es el significado de `tope`, y eso lo usan solo las operaciones, que están en `pila.c`: `inicializar`, `apilar`, `desapilar`, `cima`, `vacia` y `llena` se reescriben con la nueva convención. `pila.h` no cambia, porque el tipo, los campos y las firmas de las funciones son los mismos. Y `main.c` no cambia, porque usa la pila únicamente a través de las operaciones y nunca mira `tope`: sigue preguntando `vacia(p)` y no le importa si internamente la pila vacía tiene 0 o -1. Esa es la ventaja de un TAD: se puede cambiar cómo se guarda sin tocar a quien lo usa."
+        },
+        {
+          "texto": "`pila.c` y `main.c`.",
+          "codigo": "OPCION_REPR_TAMBIEN_MAIN",
+          "explicacion": "`main.c` no necesita cambios: no lee ni escribe `tope`, usa solo las operaciones. Pregunta `vacia(p)` y la operación se ocupa de saber si `tope` vale 0 o -1. Si `main.c` tuviera que cambiar, la pila no estaría bien encapsulada. Lo único que hay que modificar es `pila.c`."
+        },
+        {
+          "texto": "`pila.h` y `pila.c`.",
+          "codigo": "OPCION_REPR_TAMBIEN_H",
+          "explicacion": "`pila.h` declara el tipo y las firmas de las operaciones, y nada de eso cambia: `tope` sigue siendo un `int` y las funciones se llaman y reciben lo mismo. Cambia solo lo que significa el valor de `tope`, y eso se decide en el cuerpo de las funciones, que está en `pila.c`."
+        }
+      ]
+    },
+    {
+      "id": "tadr-c",
+      "titulo": "La pila con el tope en -1",
+      "escribe": "pila.c",
+      "archivos": [
+        {
+          "nombre": "pila.h",
+          "codigo": "#ifndef PILA_H\n#define PILA_H\n\n#define MAX 8\n\ntypedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\ntypedef struct {\n  int datos[MAX];\n  int tope;\n} TPila;\n\nvoid inicializar(TPila *p);\nvoid apilar(TPila *p, int x);\nint desapilar(TPila *p);\nint cima(TPila p);\nTBool vacia(TPila p);\nTBool llena(TPila p);\n\n#endif"
+        }
+      ],
+      "enunciado": "El archivo `pila.h` no cambia: declara el mismo tipo y las mismas seis operaciones, con los mismos nombres y parámetros. Lo que cambia es cómo se guardan los datos: ahora `tope` es la posición del elemento de arriba, así que vale -1 si la pila está vacía, 0 con un elemento, 1 con dos, y así hasta `MAX - 1` con la pila llena. Escriba `pila.c` con esa convención: `inicializar` deja el tope en -1, `apilar` suma uno al tope y guarda el número en esa posición, `desapilar` devuelve el elemento de arriba y resta uno al tope, `cima` devuelve el elemento de arriba sin sacarlo, `vacia` devuelve `VERDADERO` si no hay elementos y `FALSO` si hay, y `llena` devuelve `VERDADERO` si no entra ninguno más y `FALSO` si entra. No olvide incluir el `.h`.",
+      "requiere": [
+        {
+          "incluyeLocal": "pila.h"
+        },
+        {
+          "sinTipos": true
+        },
+        {
+          "defineTodo": true
+        },
+        {
+          "funcion": {
+            "nombre": "vacia",
+            "retorna": "enumerado",
+            "soloEnumeradores": true,
+            "parametros": [
+              {
+                "tipo": "estructura"
+              }
+            ]
+          }
+        },
+        {
+          "funcion": {
+            "nombre": "llena",
+            "retorna": "enumerado",
+            "soloEnumeradores": true,
+            "parametros": [
+              {
+                "tipo": "estructura"
+              }
+            ]
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "antes": "TPila p;\ninicializar(&p);",
+                "llama": "p.tope",
+                "devuelve": -1,
+                "contexto": "Después de inicializar una pila",
+                "visible": true
+              },
+              {
+                "antes": "TPila p;\ninicializar(&p);\napilar(&p, 4);",
+                "llama": "p.tope",
+                "devuelve": 0,
+                "contexto": "Después de apilar un número"
+              },
+              {
+                "antes": "TPila p;\ninicializar(&p);\napilar(&p, 4);\napilar(&p, 7);\napilar(&p, 9);",
+                "llama": "p.tope",
+                "devuelve": 2,
+                "contexto": "Después de apilar 4, 7 y 9"
+              },
+              {
+                "antes": "TPila p;\ninicializar(&p);",
+                "llama": "vacia(p)",
+                "devuelve": "VERDADERO",
+                "contexto": "Después de inicializar una pila"
+              },
+              {
+                "antes": "TPila p;\ninicializar(&p);\napilar(&p, 4);",
+                "llama": "vacia(p)",
+                "devuelve": "FALSO",
+                "contexto": "Después de apilar un número"
+              },
+              {
+                "antes": "TPila p;\ninicializar(&p);\napilar(&p, 4);\napilar(&p, 7);",
+                "llama": "cima(p)",
+                "devuelve": 7,
+                "contexto": "Después de apilar 4 y 7"
+              },
+              {
+                "antes": "TPila p;\ninicializar(&p);\napilar(&p, 4);\napilar(&p, 7);",
+                "llama": "desapilar(&p)",
+                "devuelve": 7,
+                "contexto": "Después de apilar 4 y 7"
+              },
+              {
+                "antes": "TPila p;\ninicializar(&p);\napilar(&p, 4);\napilar(&p, 7);\ndesapilar(&p);",
+                "llama": "cima(p)",
+                "devuelve": 4,
+                "contexto": "Después de apilar 4 y 7 y desapilar una vez"
+              },
+              {
+                "antes": "TPila p;\ninicializar(&p);\napilar(&p, 4);\ndesapilar(&p);",
+                "llama": "vacia(p)",
+                "devuelve": "VERDADERO",
+                "contexto": "Después de apilar un número y desapilarlo"
+              },
+              {
+                "antes": "TPila p;\ninicializar(&p);\napilar(&p, 1);\napilar(&p, 2);\napilar(&p, 3);\ndesapilar(&p);",
+                "llama": "desapilar(&p)",
+                "devuelve": 2,
+                "contexto": "Después de apilar 1, 2 y 3 y desapilar una vez"
+              },
+              {
+                "antes": "TPila p;\ninicializar(&p);\napilar(&p, 1);\napilar(&p, 2);\napilar(&p, 3);",
+                "llama": "llena(p)",
+                "devuelve": "FALSO",
+                "contexto": "Con tres números apilados"
+              },
+              {
+                "antes": "TPila p;\ninicializar(&p);\napilar(&p, 1);\napilar(&p, 2);\napilar(&p, 3);\napilar(&p, 4);\napilar(&p, 5);\napilar(&p, 6);\napilar(&p, 7);\napilar(&p, 8);",
+                "llama": "llena(p)",
+                "devuelve": "VERDADERO",
+                "contexto": "Con ocho números apilados"
+              },
+              {
+                "antes": "TPila p;\ninicializar(&p);\napilar(&p, 1);\napilar(&p, 2);\napilar(&p, 3);\napilar(&p, 4);\napilar(&p, 5);\napilar(&p, 6);\napilar(&p, 7);\napilar(&p, 8);",
+                "llama": "cima(p)",
+                "devuelve": 8,
+                "contexto": "Con ocho números apilados"
+              },
+              {
+                "antes": "TPila p;\ninicializar(&p);\napilar(&p, 4);\napilar(&p, 7);\ninicializar(&p);",
+                "llama": "vacia(p)",
+                "devuelve": "VERDADERO",
+                "contexto": "Después de apilar dos números y volver a inicializar la pila"
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "#include \"pila.h\"\n\nvoid inicializar(TPila *p) {\n  p->tope = -1;\n}\n\nvoid apilar(TPila *p, int x) {\n  p->tope = p->tope + 1;\n  p->datos[p->tope] = x;\n}\n\nint desapilar(TPila *p) {\n  int x;\n\n  x = p->datos[p->tope];\n  p->tope = p->tope - 1;\n  return x;\n}\n\nint cima(TPila p) {\n  return p.datos[p.tope];\n}\n\nTBool vacia(TPila p) {\n  if (p.tope == -1) {\n    return VERDADERO;\n  }\n  return FALSO;\n}\n\nTBool llena(TPila p) {\n  if (p.tope == MAX - 1) {\n    return VERDADERO;\n  }\n  return FALSO;\n}"
+    }
+  ]
+}
