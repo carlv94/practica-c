@@ -27,6 +27,7 @@ import {
   pidePracticas,
   continuaLaAnterior,
 } from './serie.js';
+import { descargar } from './descarga.js';
 import { crearEditor, pintar } from './editor.js';
 import { enviarIntento, enviarInforme, numeroDeInforme, enviaEstadisticas, esLocal, esDocente } from './estadisticas.js';
 import { partesDeEnunciado, enunciadoEnDos, fichasDe, figuraDe, sustituir } from './enunciado.js';
@@ -154,6 +155,25 @@ function elemento(etiqueta, clase, texto) {
   if (clase) e.className = clase;
   if (texto != null) e.textContent = texto;
   return e;
+}
+
+// Los archivos que se pueden bajar de la consigna actual: los que trae a la
+// vista mas el que escribe el alumno, tal como esta en el editor. Si algun
+// archivo va oculto (el .c de una caja negra), el proyecto no se puede armar y
+// no se ofrece nada.
+function archivosParaBajar(consigna) {
+  if (!consigna?.escribe || consigna.opciones || consigna.pila) return null;
+  if ((consigna.archivos || []).some((a) => a.oculto)) return null;
+  return [
+    ...archivosVisibles(consigna).map((a) => ({ nombre: a.nombre, texto: a.codigo })),
+    { nombre: consigna.escribe, texto: $('respuesta').value },
+  ];
+}
+
+function bajarArchivos() {
+  const consigna = serie?.consignas[repasando ?? hechas.length];
+  const archivos = archivosParaBajar(consigna);
+  if (archivos) descargar(`${serie.id}-${consigna.id}`, archivos);
 }
 
 // Los archivos ya escritos, de solo lectura. Con uno solo se muestra con su
@@ -620,6 +640,7 @@ function mostrarConsigna() {
   $('opciones').hidden = !esCuestionario;
   $('pila').hidden = !esPila;
   $('atajo').hidden = sinEditor;
+  $('descargar').hidden = !archivosParaBajar(consigna);
   $('bloque-codigo').hidden = !programa;
   $('final').hidden = !termino;
   $('resultado').replaceChildren();
@@ -1463,6 +1484,7 @@ async function iniciar() {
     $('respuesta').focus({ preventScroll: true });
   });
   $('ver-solucion').addEventListener('click', verSolucion);
+  $('descargar').addEventListener('click', bajarArchivos);
   $('reiniciar').addEventListener('click', reiniciar);
   $('respuesta').addEventListener('keydown', teclaEnRespuesta);
   $('respuesta').addEventListener('input', alEscribir);

@@ -1476,6 +1476,20 @@ en `js/app.js`.
   use lo que devolvió la llamada de abajo y que cada ida nombre la llamada siguiente. La
   respuesta del alumno es un JSON `{ "celdas": [[ida, vuelta], ...], "salida": "..." }`.
 
+### Descargar los archivos
+
+Toda consigna con `escribe` (y sin archivos `oculto`) muestra el botón
+"Descargar archivos": baja los archivos que trae a la vista más el del alumno tal
+como está en el editor. Uno solo se baja tal cual; varios, en un `.zip` sin
+comprimir (`js/descarga.js`, armado a mano con CRC32) con un `LEEME.txt` que dice
+cómo compilarlos con `gcc`. Si algún archivo va oculto (caja negra) no se ofrece,
+porque el proyecto no se podría armar.
+
+### Archivos ya escritos en pestañas
+
+Si una consigna trae dos o más archivos a la vista, se muestran en pestañas de
+solo lectura (una por archivo, con su nombre); con uno solo, como antes.
+
 ### Archivos de un proyecto (TAD: `.h`, `.c` y `main.c`)
 
 Una consigna puede ser un archivo de un proyecto de varios. Dice cuál escribe el
