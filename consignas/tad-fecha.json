@@ -8,7 +8,7 @@
       "id": "tadf-h",
       "titulo": "El archivo de la fecha",
       "escribe": "fecha.h",
-      "enunciado": "En esta serie va a armar un TAD completo, de a un archivo por vez: `fecha.h`, `fecha.c` y `main.c`. Empiece por `fecha.h`. Una fecha guarda el día, el mes y el año, enteros, en los campos `dia`, `mes` y `anio`, y el tipo se llama `TFecha`. Tiene cuatro operaciones: `crear` recibe el día, el mes y el año y devuelve la fecha; `diasDelMes` recibe una fecha y devuelve cuántos días tiene el mes de esa fecha (el año importa por febrero); `sumarDias` recibe una fecha y una cantidad de días y devuelve la fecha que resulta de sumarlos; `mostrar` recibe una fecha y la muestra en pantalla, sin devolver nada. Las fechas se pasan por valor. Use las guardas de inclusión `FECHA_H`.",
+      "enunciado": "En esta serie va a armar un TAD completo, de a un archivo por vez: `fecha.h`, `fecha.c` y `main.c`. Empiece por `fecha.h`. Una fecha guarda el día, el mes y el año, enteros, en los campos `dia`, `mes` y `anio`, y el tipo se llama `TFecha`. Tiene cinco operaciones: `crear` recibe el día, el mes y el año y devuelve la fecha; `esBisiesto` recibe una fecha y dice si su año es bisiesto (devuelve un `TBool`, un enumerado con los valores `FALSO` y `VERDADERO`, en ese orden, que también se declara en este archivo); `diasDelMes` recibe una fecha y devuelve cuántos días tiene el mes de esa fecha (el año importa por febrero); `sumarDias` recibe una fecha y una cantidad de días y devuelve la fecha que resulta de sumarlos; `mostrar` recibe una fecha y la muestra en pantalla, sin devolver nada. Las fechas se pasan por valor. Use las guardas de inclusión `FECHA_H`.",
       "requiere": [
         {
           "encabezado": {
@@ -42,6 +42,22 @@
           }
         },
         {
+          "enum": {
+            "enumeradores": [
+              "FALSO",
+              "VERDADERO"
+            ],
+            "capturar": "E"
+          }
+        },
+        {
+          "alias": {
+            "de": "$E",
+            "nombre": "TBool",
+            "capturar": "B"
+          }
+        },
+        {
           "funcion": {
             "prototipo": true,
             "nombre": "crear",
@@ -55,6 +71,18 @@
               },
               {
                 "tipo": "entero"
+              }
+            ]
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "esBisiesto",
+            "retorna": "enumerado",
+            "parametros": [
+              {
+                "tipo": "estructura"
               }
             ]
           }
@@ -99,13 +127,13 @@
           }
         }
       ],
-      "referencia": "#ifndef FECHA_H\n#define FECHA_H\n\ntypedef struct {\n  int dia;\n  int mes;\n  int anio;\n} TFecha;\n\nTFecha crear(int dia, int mes, int anio);\nint diasDelMes(TFecha f);\nTFecha sumarDias(TFecha f, int n);\nvoid mostrar(TFecha f);\n\n#endif"
+      "referencia": "#ifndef FECHA_H\n#define FECHA_H\n\ntypedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\ntypedef struct {\n  int dia;\n  int mes;\n  int anio;\n} TFecha;\n\nTFecha crear(int dia, int mes, int anio);\nTBool esBisiesto(TFecha f);\nint diasDelMes(TFecha f);\nTFecha sumarDias(TFecha f, int n);\nvoid mostrar(TFecha f);\n\n#endif"
     },
     {
       "id": "tadf-c",
       "titulo": "La implementación de la fecha",
       "escribe": "fecha.c",
-      "enunciado": "Ahora escriba `fecha.c`, que define las cuatro operaciones del `fecha.h` que acaba de escribir (lo ve arriba, en su pestaña). `crear` arma la fecha con el día, el mes y el año que recibe. `diasDelMes` devuelve 31 o 30 según el mes de la fecha y, para febrero, 28 o 29: un año es bisiesto si es múltiplo de 4, salvo los múltiplos de 100 que no lo son de 400. `sumarDias` avanza la fecha de a un día, `n` veces, y pasa al mes siguiente (y al año siguiente después de diciembre) cuando el día se pasa de los que tiene el mes; use `diasDelMes` y suponga que `n` no es negativo. `mostrar` muestra la fecha con `printf` como `dia/mes/anio`, por ejemplo `5/3/2024`. No olvide incluir el `.h`.",
+      "enunciado": "Ahora escriba `fecha.c`, que define las cinco operaciones del `fecha.h` que acaba de escribir (lo ve arriba, en su pestaña). `crear` arma la fecha con el día, el mes y el año que recibe. `esBisiesto` devuelve `VERDADERO` si el año de la fecha es bisiesto y `FALSO` si no: un año es bisiesto si es múltiplo de 4, salvo los múltiplos de 100 que no lo son de 400. `diasDelMes` devuelve 31 o 30 según el mes de la fecha y, para febrero, 28 o 29 (use `esBisiesto`). `sumarDias` avanza la fecha de a un día, `n` veces, y pasa al mes siguiente (y al año siguiente después de diciembre) cuando el día se pasa de los que tiene el mes; use `diasDelMes` y suponga que `n` no es negativo. `mostrar` muestra la fecha con `printf` como `dia/mes/anio`, por ejemplo `5/3/2024`. No olvide incluir el `.h`.",
       "requiere": [
         {
           "incluyeLocal": "fecha.h"
@@ -115,6 +143,18 @@
         },
         {
           "defineTodo": true
+        },
+        {
+          "funcion": {
+            "nombre": "esBisiesto",
+            "retorna": "enumerado",
+            "soloEnumeradores": true,
+            "parametros": [
+              {
+                "tipo": "estructura"
+              }
+            ]
+          }
         },
         {
           "ejecuta": {
@@ -129,6 +169,30 @@
                 },
                 "contexto": "Al crear la fecha 5/3/2024",
                 "visible": true
+              },
+              {
+                "antes": "TFecha f = crear(1, 1, 2023);",
+                "llama": "esBisiesto(f)",
+                "devuelve": "FALSO",
+                "contexto": "El año 2023 (no es múltiplo de 4)"
+              },
+              {
+                "antes": "TFecha f = crear(1, 1, 2024);",
+                "llama": "esBisiesto(f)",
+                "devuelve": "VERDADERO",
+                "contexto": "El año 2024 (múltiplo de 4)"
+              },
+              {
+                "antes": "TFecha f = crear(1, 1, 1900);",
+                "llama": "esBisiesto(f)",
+                "devuelve": "FALSO",
+                "contexto": "El año 1900 (múltiplo de 100, no de 400)"
+              },
+              {
+                "antes": "TFecha f = crear(1, 1, 2000);",
+                "llama": "esBisiesto(f)",
+                "devuelve": "VERDADERO",
+                "contexto": "El año 2000 (múltiplo de 400)"
               },
               {
                 "antes": "TFecha f = crear(1, 4, 2023);",
@@ -257,13 +321,13 @@
           }
         }
       ],
-      "referencia": "#include <stdio.h>\n#include \"fecha.h\"\n\nTFecha crear(int dia, int mes, int anio) {\n  TFecha f;\n\n  f.dia = dia;\n  f.mes = mes;\n  f.anio = anio;\n  return f;\n}\n\nint diasDelMes(TFecha f) {\n  int dias;\n\n  if (f.mes == 2) {\n    if ((f.anio % 4 == 0 && f.anio % 100 != 0) || f.anio % 400 == 0) {\n      dias = 29;\n    } else {\n      dias = 28;\n    }\n  } else if (f.mes == 4 || f.mes == 6 || f.mes == 9 || f.mes == 11) {\n    dias = 30;\n  } else {\n    dias = 31;\n  }\n  return dias;\n}\n\nTFecha sumarDias(TFecha f, int n) {\n  for (int i = 0; i < n; i++) {\n    f.dia = f.dia + 1;\n    if (f.dia > diasDelMes(f)) {\n      f.dia = 1;\n      f.mes = f.mes + 1;\n      if (f.mes > 12) {\n        f.mes = 1;\n        f.anio = f.anio + 1;\n      }\n    }\n  }\n  return f;\n}\n\nvoid mostrar(TFecha f) {\n  printf(\"%d/%d/%d\", f.dia, f.mes, f.anio);\n}"
+      "referencia": "#include <stdio.h>\n#include \"fecha.h\"\n\nTFecha crear(int dia, int mes, int anio) {\n  TFecha f;\n\n  f.dia = dia;\n  f.mes = mes;\n  f.anio = anio;\n  return f;\n}\n\nTBool esBisiesto(TFecha f) {\n  if ((f.anio % 4 == 0 && f.anio % 100 != 0) || f.anio % 400 == 0) {\n    return VERDADERO;\n  }\n  return FALSO;\n}\n\nint diasDelMes(TFecha f) {\n  int dias;\n\n  if (f.mes == 2) {\n    if (esBisiesto(f) == VERDADERO) {\n      dias = 29;\n    } else {\n      dias = 28;\n    }\n  } else if (f.mes == 4 || f.mes == 6 || f.mes == 9 || f.mes == 11) {\n    dias = 30;\n  } else {\n    dias = 31;\n  }\n  return dias;\n}\n\nTFecha sumarDias(TFecha f, int n) {\n  for (int i = 0; i < n; i++) {\n    f.dia = f.dia + 1;\n    if (f.dia > diasDelMes(f)) {\n      f.dia = 1;\n      f.mes = f.mes + 1;\n      if (f.mes > 12) {\n        f.mes = 1;\n        f.anio = f.anio + 1;\n      }\n    }\n  }\n  return f;\n}\n\nvoid mostrar(TFecha f) {\n  printf(\"%d/%d/%d\", f.dia, f.mes, f.anio);\n}"
     },
     {
       "id": "tadf-main",
       "titulo": "Usar la fecha",
       "escribe": "main.c",
-      "enunciado": "Con su `fecha.h` y su `fecha.c`, escriba `main.c`: lea con `scanf` el día, el mes y el año de una fecha, y después una cantidad de días. Arme la fecha, súmele esos días y muestre el resultado con `printf` mediante `mostrar`. Por ejemplo, si se ingresan `28`, `2`, `2024` y `2`, el programa muestra `1/3/2024`. Use solo las operaciones del `.h`.",
+      "enunciado": "Con su `fecha.h` y su `fecha.c`, escriba `main.c`: lea con `scanf` el día, el mes y el año de una fecha, y después una cantidad de días. Arme la fecha, súmele esos días y muestre el resultado con `mostrar`. Después, en otra línea, muestre `bisiesto` o `no bisiesto` según el año de la fecha resultante, preguntándolo con `esBisiesto`. Por ejemplo, si se ingresan `28`, `2`, `2024` y `2`, el programa muestra `1/3/2024` y debajo `bisiesto`. Use solo las operaciones del `.h`.",
       "requiere": [
         {
           "incluyeLocal": "fecha.h"
@@ -275,7 +339,8 @@
           "usaOperaciones": [
             "crear",
             "sumarDias",
-            "mostrar"
+            "mostrar",
+            "esBisiesto"
           ]
         },
         {
@@ -288,7 +353,7 @@
                   2024,
                   2
                 ],
-                "salida": "1/3/2024"
+                "salida": "1/3/2024\nbisiesto"
               },
               {
                 "entrada": [
@@ -297,7 +362,7 @@
                   2023,
                   1
                 ],
-                "salida": "1/1/2024"
+                "salida": "1/1/2024\nbisiesto"
               },
               {
                 "entrada": [
@@ -306,7 +371,16 @@
                   2022,
                   0
                 ],
-                "salida": "15/8/2022"
+                "salida": "15/8/2022\nno bisiesto"
+              },
+              {
+                "entrada": [
+                  31,
+                  12,
+                  2022,
+                  1
+                ],
+                "salida": "1/1/2023\nno bisiesto"
               },
               {
                 "entrada": [
@@ -315,13 +389,13 @@
                   2023,
                   365
                 ],
-                "salida": "1/1/2024"
+                "salida": "1/1/2024\nbisiesto"
               }
             ]
           }
         }
       ],
-      "referencia": "#include <stdio.h>\n#include \"fecha.h\"\n\nint main() {\n  int dia, mes, anio, n;\n  TFecha f;\n\n  scanf(\"%d\", &dia);\n  scanf(\"%d\", &mes);\n  scanf(\"%d\", &anio);\n  scanf(\"%d\", &n);\n  f = crear(dia, mes, anio);\n  f = sumarDias(f, n);\n  mostrar(f);\n  return 0;\n}"
+      "referencia": "#include <stdio.h>\n#include \"fecha.h\"\n\nint main() {\n  int dia, mes, anio, n;\n  TFecha f;\n\n  scanf(\"%d\", &dia);\n  scanf(\"%d\", &mes);\n  scanf(\"%d\", &anio);\n  scanf(\"%d\", &n);\n  f = crear(dia, mes, anio);\n  f = sumarDias(f, n);\n  mostrar(f);\n  if (esBisiesto(f) == VERDADERO) {\n    printf(\"\\nbisiesto\");\n  } else {\n    printf(\"\\nno bisiesto\");\n  }\n  return 0;\n}"
     }
   ]
 }
