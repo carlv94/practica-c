@@ -7,7 +7,16 @@
     {
       "id": "tadh-q-donde",
       "titulo": "Qué va en cada archivo",
-      "programa": "/* contador.h */\n#ifndef CONTADOR_H\n#define CONTADOR_H\n\ntypedef struct {\n  int valor;\n} TContador;\n\nvoid inicializar(TContador *c);\nvoid contar(TContador *c);\nint obtener(TContador c);\n\n#endif\n\n/* contador.c */\n#include \"contador.h\"\n\nvoid inicializar(TContador *c) {\n  c->valor = 0;\n}\n\nvoid contar(TContador *c) {\n  c->valor = c->valor + 1;\n}\n\nint obtener(TContador c) {\n  return c.valor;\n}",
+      "archivos": [
+        {
+          "nombre": "contador.h",
+          "codigo": "#ifndef CONTADOR_H\n#define CONTADOR_H\n\ntypedef struct {\n  int valor;\n} TContador;\n\nvoid inicializar(TContador *c);\nvoid contar(TContador *c);\nint obtener(TContador c);\n\n#endif"
+        },
+        {
+          "nombre": "contador.c",
+          "codigo": "#include \"contador.h\"\n\nvoid inicializar(TContador *c) {\n  c->valor = 0;\n}\n\nvoid contar(TContador *c) {\n  c->valor = c->valor + 1;\n}\n\nint obtener(TContador c) {\n  return c.valor;\n}"
+        }
+      ],
       "enunciado": "Un TAD se reparte en dos archivos, `contador.h` y `contador.c`. ¿Qué va en cada uno?",
       "opciones": [
         {
@@ -30,7 +39,20 @@
     {
       "id": "tadh-q-guardas",
       "titulo": "Para qué sirven las guardas",
-      "programa": "/* contador.h */\ntypedef struct {\n  int valor;\n} TContador;\n\nvoid inicializar(TContador *c);\n\n/* estadistica.h */\n#include \"contador.h\"\n\nint promedio(TContador c);\n\n/* main.c */\n#include \"contador.h\"\n#include \"estadistica.h\"",
+      "archivos": [
+        {
+          "nombre": "contador.h",
+          "codigo": "typedef struct {\n  int valor;\n} TContador;\n\nvoid inicializar(TContador *c);"
+        },
+        {
+          "nombre": "estadistica.h",
+          "codigo": "#include \"contador.h\"\n\nint promedio(TContador c);"
+        },
+        {
+          "nombre": "main.c",
+          "codigo": "#include \"contador.h\"\n#include \"estadistica.h\""
+        }
+      ],
       "enunciado": "`main.c` incluye `contador.h` y también `estadistica.h`, que a su vez incluye `contador.h`. El archivo `contador.h` no tiene guardas de inclusión. ¿Qué pasa al compilar `main.c`?",
       "opciones": [
         {

@@ -6,24 +6,37 @@
   "consignas": [
     {
       "id": "tadr-q-archivos",
-      "titulo": "Qué archivos cambian",
-      "programa": "/* pila.h */\n#ifndef PILA_H\n#define PILA_H\n\n#define MAX 8\n\ntypedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\ntypedef struct {\n  int datos[MAX];\n  int tope;\n} TPila;\n\nvoid inicializar(TPila *p);\nvoid apilar(TPila *p, int x);\nint desapilar(TPila *p);\nint cima(TPila p);\nTBool vacia(TPila p);\nTBool llena(TPila p);\n\n#endif\n\n/* main.c */\n#include <stdio.h>\n#include \"pila.h\"\n\nint main() {\n  TPila p;\n\n  inicializar(&p);\n  apilar(&p, 1);\n  apilar(&p, 2);\n  apilar(&p, 3);\n  while (!vacia(p)) {\n    printf(\"%d \", desapilar(&p));\n  }\n  return 0;\n}",
-      "enunciado": "La pila guarda en `tope` la cantidad de elementos que tiene, y vale 0 si está vacía. Se decide cambiar la representación: ahora `tope` va a guardar la posición del elemento de arriba, así que vale -1 si la pila está vacía. El tipo sigue siendo el mismo, con los mismos campos, y las seis operaciones conservan sus nombres y sus parámetros. ¿Qué archivos hay que modificar?",
+      "titulo": "Qué archivo cambia",
+      "archivos": [
+        {
+          "nombre": "pila.h",
+          "codigo": "#ifndef PILA_H\n#define PILA_H\n\n#define MAX 8\n\ntypedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\ntypedef struct {\n  int datos[MAX];\n  int tope;\n} TPila;\n\nvoid inicializar(TPila *p);\nvoid apilar(TPila *p, int x);\nint desapilar(TPila *p);\nint cima(TPila p);\nTBool vacia(TPila p);\nTBool llena(TPila p);\n\n#endif"
+        },
+        {
+          "nombre": "pila.c",
+          "codigo": "#include \"pila.h\"\n\nvoid inicializar(TPila *p) {\n  p->tope = 0;\n}\n\nvoid apilar(TPila *p, int x) {\n  p->datos[p->tope] = x;\n  p->tope = p->tope + 1;\n}\n\nint desapilar(TPila *p) {\n  p->tope = p->tope - 1;\n  return p->datos[p->tope];\n}\n\nint cima(TPila p) {\n  return p.datos[p.tope - 1];\n}\n\nTBool vacia(TPila p) {\n  if (p.tope == 0) {\n    return VERDADERO;\n  }\n  return FALSO;\n}\n\nTBool llena(TPila p) {\n  if (p.tope == MAX) {\n    return VERDADERO;\n  }\n  return FALSO;\n}"
+        },
+        {
+          "nombre": "main.c",
+          "codigo": "#include <stdio.h>\n#include \"pila.h\"\n\nint main() {\n  TPila p;\n\n  inicializar(&p);\n  apilar(&p, 1);\n  apilar(&p, 2);\n  apilar(&p, 3);\n  while (!vacia(p)) {\n    printf(\"%d \", desapilar(&p));\n  }\n  return 0;\n}"
+        }
+      ],
+      "enunciado": "La pila guarda en `tope` la cantidad de elementos que tiene, y vale 0 si está vacía. Se decide cambiar la representación: ahora `tope` va a guardar la posición del elemento de arriba, así que vale -1 si la pila está vacía. El tipo sigue siendo el mismo, con los mismos campos, y las seis operaciones conservan sus nombres y sus parámetros. ¿Cuál es el único archivo que hay que modificar?",
       "opciones": [
         {
-          "texto": "Solo `pila.c`.",
+          "texto": "`pila.h`.",
+          "codigo": "OPCION_REPR_SOLO_H",
+          "explicacion": "`pila.h` declara el tipo y las firmas de las operaciones, y nada de eso cambia: `tope` sigue siendo un `int` y las funciones se llaman y reciben lo mismo. Lo que cambia es qué significa el valor de `tope`, y eso se decide en el cuerpo de las funciones, que está en `pila.c`."
+        },
+        {
+          "texto": "`pila.c`.",
           "correcta": true,
           "explicacion": "Lo que cambió es el significado de `tope`, y eso lo usan solo las operaciones, que están en `pila.c`: `inicializar`, `apilar`, `desapilar`, `cima`, `vacia` y `llena` se reescriben con la nueva convención. `pila.h` no cambia, porque el tipo, los campos y las firmas de las funciones son los mismos. Y `main.c` no cambia, porque usa la pila únicamente a través de las operaciones y nunca mira `tope`: sigue preguntando `vacia(p)` y no le importa si internamente la pila vacía tiene 0 o -1. Esa es la ventaja de un TAD: se puede cambiar cómo se guarda sin tocar a quien lo usa."
         },
         {
-          "texto": "`pila.c` y `main.c`.",
-          "codigo": "OPCION_REPR_TAMBIEN_MAIN",
-          "explicacion": "`main.c` no necesita cambios: no lee ni escribe `tope`, usa solo las operaciones. Pregunta `vacia(p)` y la operación se ocupa de saber si `tope` vale 0 o -1. Si `main.c` tuviera que cambiar, la pila no estaría bien encapsulada. Lo único que hay que modificar es `pila.c`."
-        },
-        {
-          "texto": "`pila.h` y `pila.c`.",
-          "codigo": "OPCION_REPR_TAMBIEN_H",
-          "explicacion": "`pila.h` declara el tipo y las firmas de las operaciones, y nada de eso cambia: `tope` sigue siendo un `int` y las funciones se llaman y reciben lo mismo. Cambia solo lo que significa el valor de `tope`, y eso se decide en el cuerpo de las funciones, que está en `pila.c`."
+          "texto": "`main.c`.",
+          "codigo": "OPCION_REPR_SOLO_MAIN",
+          "explicacion": "`main.c` no lee ni escribe `tope`: usa la pila solo con sus operaciones. Pregunta `vacia(p)` y la operación se ocupa de saber si `tope` vale 0 o -1. Si `main.c` tuviera que cambiar, la pila no estaría bien encapsulada. El archivo que cambia es `pila.c`."
         }
       ]
     },

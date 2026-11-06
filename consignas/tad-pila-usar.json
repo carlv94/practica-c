@@ -7,7 +7,16 @@
     {
       "id": "tadp-q-orden",
       "titulo": "El orden de salida",
-      "programa": "/* pila.h */\n#ifndef PILA_H\n#define PILA_H\n\n#define MAX 8\n\ntypedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\ntypedef struct {\n  int datos[MAX];\n  int tope;\n} TPila;\n\nvoid inicializar(TPila *p);\nvoid apilar(TPila *p, int x);\nint desapilar(TPila *p);\nint cima(TPila p);\nTBool vacia(TPila p);\nTBool llena(TPila p);\n\n#endif\n\n/* main.c */\n#include <stdio.h>\n#include \"pila.h\"\n\nint main() {\n  TPila p;\n\n  inicializar(&p);\n  apilar(&p, 1);\n  apilar(&p, 2);\n  apilar(&p, 3);\n  while (!vacia(p)) {\n    printf(\"%d \", desapilar(&p));\n  }\n  return 0;\n}",
+      "archivos": [
+        {
+          "nombre": "pila.h",
+          "codigo": "#ifndef PILA_H\n#define PILA_H\n\n#define MAX 8\n\ntypedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\ntypedef struct {\n  int datos[MAX];\n  int tope;\n} TPila;\n\nvoid inicializar(TPila *p);\nvoid apilar(TPila *p, int x);\nint desapilar(TPila *p);\nint cima(TPila p);\nTBool vacia(TPila p);\nTBool llena(TPila p);\n\n#endif"
+        },
+        {
+          "nombre": "main.c",
+          "codigo": "#include <stdio.h>\n#include \"pila.h\"\n\nint main() {\n  TPila p;\n\n  inicializar(&p);\n  apilar(&p, 1);\n  apilar(&p, 2);\n  apilar(&p, 3);\n  while (!vacia(p)) {\n    printf(\"%d \", desapilar(&p));\n  }\n  return 0;\n}"
+        }
+      ],
       "enunciado": "El archivo `pila.h` declara el tipo `TPila` y sus operaciones. El archivo `main.c` las usa. ¿Qué muestra el programa?",
       "opciones": [
         {

@@ -639,8 +639,10 @@ function mostrarConsigna() {
   $('bloque-contexto').hidden = !previo;
   // Los archivos que trae la consigna, cada uno con su nombre; y cual escribe el alumno.
   // Los que escribio el alumno en las consignas anteriores van primero.
-  const archivos = termino || sinEditor ? [] : [...yaEscritos, ...archivosVisibles(consigna)];
+  // Un cuestionario trae sus archivos para leerlos (uno por pestana); una consigna con editor, los ya escritos.
+  const archivos = termino || esPila ? [] : [...yaEscritos, ...archivosVisibles(consigna)];
   $('bloque-archivos').hidden = !archivos.length;
+  $('titulo-archivos').textContent = esCuestionario ? 'Los archivos' : 'Los archivos ya escritos';
   dibujarArchivos(archivos);
   $('etiqueta-respuesta').textContent = consigna?.escribe ? `Su respuesta: ${consigna.escribe}` : 'Su respuesta';
   $('bloque-respuesta').hidden = termino;

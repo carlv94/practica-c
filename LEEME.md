@@ -1485,6 +1485,13 @@ comprimir (`js/descarga.js`, armado a mano con CRC32) con un `LEEME.txt` que dic
 cómo compilarlos con `gcc`. Si algún archivo va oculto (caja negra) no se ofrece,
 porque el proyecto no se podría armar.
 
+### Cuestionarios con varios archivos
+
+Un cuestionario puede traer `archivos` ([{ nombre, codigo }]) en lugar de
+`programa`: se ven en pestañas ("Los archivos"), uno por vez. `programa` queda para
+el texto de un solo archivo. Las opciones nombran un archivo cada una para que su
+forma no delate la respuesta.
+
 ### Una cadena de archivos (serie `tad-fecha`)
 
 Con `"continua": true` en la serie y `escribe` en cada consigna, el alumno escribe

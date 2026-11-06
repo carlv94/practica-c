@@ -7,7 +7,16 @@
     {
       "id": "tadp-q-max",
       "titulo": "Dónde se define MAX",
-      "programa": "/* pila.h */\n#ifndef PILA_H\n#define PILA_H\n\ntypedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\ntypedef struct {\n  int datos[MAX];\n  int tope;\n} TPila;\n\nTBool llena(TPila p);\n\n#endif\n\n/* pila.c */\n#include \"pila.h\"\n\n#define MAX 8\n\nTBool llena(TPila p) {\n  if (p.tope == MAX) {\n    return VERDADERO;\n  }\n  return FALSO;\n}",
+      "archivos": [
+        {
+          "nombre": "pila.h",
+          "codigo": "#ifndef PILA_H\n#define PILA_H\n\ntypedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\ntypedef struct {\n  int datos[MAX];\n  int tope;\n} TPila;\n\nTBool llena(TPila p);\n\n#endif"
+        },
+        {
+          "nombre": "pila.c",
+          "codigo": "#include \"pila.h\"\n\n#define MAX 8\n\nTBool llena(TPila p) {\n  if (p.tope == MAX) {\n    return VERDADERO;\n  }\n  return FALSO;\n}"
+        }
+      ],
       "enunciado": "El tipo `TPila` guarda sus elementos en un arreglo de tamaño `MAX`. En este programa, `MAX` se define en `pila.c`. ¿Qué pasa al compilar?",
       "opciones": [
         {

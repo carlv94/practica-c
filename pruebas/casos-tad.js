@@ -1034,9 +1034,9 @@ export const CASOS_DE_TAD = [
   pilaC(1, 'llena con la pila a medias', PILA_C.replace('if (p.tope == MAX) {', 'if (p.tope == MAX - 1) {'), ['DEVUELVE_DISTINTO']),
   pilaC(1, 'vacia al reves', PILA_C.replace('if (p.tope == 0) {', 'if (p.tope != 0) {'), ['DEVUELVE_DISTINTO']),
   // ===== Cambiar la representacion =====
-  repr(1, 'solo el .c', '0'),
-  repr(1, 'el .c y el main', '1', ['OPCION_REPR_TAMBIEN_MAIN']),
-  repr(1, 'el .h y el .c', '2', ['OPCION_REPR_TAMBIEN_H']),
+  repr(1, 'solo el .c', '1'),
+  repr(1, 'solo el main', '2', ['OPCION_REPR_SOLO_MAIN']),
+  repr(1, 'solo el .h', '0', ['OPCION_REPR_SOLO_H']),
   repr(2, 'con el tope en -1', REPR_C),
   repr(2, 'con otra cuenta al desapilar', REPR_C.replace('  x = p->datos[p->tope];\n  p->tope = p->tope - 1;\n  return x;', '  x = p->datos[p->tope];\n  p->tope--;\n  return x;')),
   repr(2, 'con la cuenta de antes (el tope cuenta elementos)', PILA_C, ['DEVUELVE_DISTINTO'], { dice: ['p.tope'] }),
