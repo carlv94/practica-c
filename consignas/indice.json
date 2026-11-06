@@ -137,11 +137,6 @@
         "tad-pila-usar.json",
         "tad-pila-h.json",
         "tad-pila-c.json"
-      ],
-      "ocultas": [
-        "tad-pila-usar.json",
-        "tad-pila-h.json",
-        "tad-pila-c.json"
       ]
     }
   ]
