@@ -8,7 +8,7 @@
       "id": "tadf-h",
       "titulo": "El archivo de la fecha",
       "escribe": "fecha.h",
-      "enunciado": "En esta serie va a armar un TAD completo, de a un archivo por vez: `fecha.h`, `fecha.c` y `main.c`. Empiece por `fecha.h`. Una fecha guarda el día, el mes y el año, enteros, en los campos `dia`, `mes` y `anio`, y el tipo se llama `TFecha`. Tiene cuatro operaciones: `crear` recibe el día, el mes y el año y devuelve la fecha; `diasDelMes` recibe un mes y un año y devuelve cuántos días tiene ese mes (el año importa por febrero); `sumarDias` recibe una fecha y una cantidad de días y devuelve la fecha que resulta de sumarlos; `mostrar` recibe una fecha y la muestra en pantalla, sin devolver nada. Las fechas se pasan por valor. Use las guardas de inclusión `FECHA_H`.",
+      "enunciado": "En esta serie va a armar un TAD completo, de a un archivo por vez: `fecha.h`, `fecha.c` y `main.c`. Empiece por `fecha.h`. Una fecha guarda el día, el mes y el año, enteros, en los campos `dia`, `mes` y `anio`, y el tipo se llama `TFecha`. Tiene cuatro operaciones: `crear` recibe el día, el mes y el año y devuelve la fecha; `diasDelMes` recibe una fecha y devuelve cuántos días tiene el mes de esa fecha (el año importa por febrero); `sumarDias` recibe una fecha y una cantidad de días y devuelve la fecha que resulta de sumarlos; `mostrar` recibe una fecha y la muestra en pantalla, sin devolver nada. Las fechas se pasan por valor. Use las guardas de inclusión `FECHA_H`.",
       "requiere": [
         {
           "encabezado": {
@@ -66,10 +66,7 @@
             "retorna": "entero",
             "parametros": [
               {
-                "tipo": "entero"
-              },
-              {
-                "tipo": "entero"
+                "tipo": "estructura"
               }
             ]
           }
@@ -102,13 +99,13 @@
           }
         }
       ],
-      "referencia": "#ifndef FECHA_H\n#define FECHA_H\n\ntypedef struct {\n  int dia;\n  int mes;\n  int anio;\n} TFecha;\n\nTFecha crear(int dia, int mes, int anio);\nint diasDelMes(int mes, int anio);\nTFecha sumarDias(TFecha f, int n);\nvoid mostrar(TFecha f);\n\n#endif"
+      "referencia": "#ifndef FECHA_H\n#define FECHA_H\n\ntypedef struct {\n  int dia;\n  int mes;\n  int anio;\n} TFecha;\n\nTFecha crear(int dia, int mes, int anio);\nint diasDelMes(TFecha f);\nTFecha sumarDias(TFecha f, int n);\nvoid mostrar(TFecha f);\n\n#endif"
     },
     {
       "id": "tadf-c",
       "titulo": "La implementación de la fecha",
       "escribe": "fecha.c",
-      "enunciado": "Ahora escriba `fecha.c`, que define las cuatro operaciones del `fecha.h` que acaba de escribir (lo ve arriba, en su pestaña). `crear` arma la fecha con el día, el mes y el año que recibe. `diasDelMes` devuelve 31 o 30 según el mes y, para febrero, 28 o 29: un año es bisiesto si es múltiplo de 4, salvo los múltiplos de 100 que no lo son de 400. `sumarDias` avanza la fecha de a un día, `n` veces, y pasa al mes siguiente (y al año siguiente después de diciembre) cuando el día se pasa de los que tiene el mes; use `diasDelMes` y suponga que `n` no es negativo. `mostrar` muestra la fecha con `printf` como `dia/mes/anio`, por ejemplo `5/3/2024`. No olvide incluir el `.h`.",
+      "enunciado": "Ahora escriba `fecha.c`, que define las cuatro operaciones del `fecha.h` que acaba de escribir (lo ve arriba, en su pestaña). `crear` arma la fecha con el día, el mes y el año que recibe. `diasDelMes` devuelve 31 o 30 según el mes de la fecha y, para febrero, 28 o 29: un año es bisiesto si es múltiplo de 4, salvo los múltiplos de 100 que no lo son de 400. `sumarDias` avanza la fecha de a un día, `n` veces, y pasa al mes siguiente (y al año siguiente después de diciembre) cuando el día se pasa de los que tiene el mes; use `diasDelMes` y suponga que `n` no es negativo. `mostrar` muestra la fecha con `printf` como `dia/mes/anio`, por ejemplo `5/3/2024`. No olvide incluir el `.h`.",
       "requiere": [
         {
           "incluyeLocal": "fecha.h"
@@ -134,38 +131,38 @@
                 "visible": true
               },
               {
-                "antes": "",
-                "llama": "diasDelMes(4, 2023)",
+                "antes": "TFecha f = crear(1, 4, 2023);",
+                "llama": "diasDelMes(f)",
                 "devuelve": 30,
                 "contexto": "Los días de abril"
               },
               {
-                "antes": "",
-                "llama": "diasDelMes(1, 2023)",
+                "antes": "TFecha f = crear(1, 1, 2023);",
+                "llama": "diasDelMes(f)",
                 "devuelve": 31,
                 "contexto": "Los días de enero"
               },
               {
-                "antes": "",
-                "llama": "diasDelMes(2, 2023)",
+                "antes": "TFecha f = crear(1, 2, 2023);",
+                "llama": "diasDelMes(f)",
                 "devuelve": 28,
                 "contexto": "Los días de febrero de un año común"
               },
               {
-                "antes": "",
-                "llama": "diasDelMes(2, 2024)",
+                "antes": "TFecha f = crear(1, 2, 2024);",
+                "llama": "diasDelMes(f)",
                 "devuelve": 29,
                 "contexto": "Los días de febrero de un año bisiesto (múltiplo de 4)"
               },
               {
-                "antes": "",
-                "llama": "diasDelMes(2, 1900)",
+                "antes": "TFecha f = crear(1, 2, 1900);",
+                "llama": "diasDelMes(f)",
                 "devuelve": 28,
                 "contexto": "Los días de febrero de 1900 (múltiplo de 100, no de 400)"
               },
               {
-                "antes": "",
-                "llama": "diasDelMes(2, 2000)",
+                "antes": "TFecha f = crear(1, 2, 2000);",
+                "llama": "diasDelMes(f)",
                 "devuelve": 29,
                 "contexto": "Los días de febrero de 2000 (múltiplo de 400)"
               },
@@ -260,7 +257,7 @@
           }
         }
       ],
-      "referencia": "#include <stdio.h>\n#include \"fecha.h\"\n\nTFecha crear(int dia, int mes, int anio) {\n  TFecha f;\n\n  f.dia = dia;\n  f.mes = mes;\n  f.anio = anio;\n  return f;\n}\n\nint diasDelMes(int mes, int anio) {\n  int dias;\n\n  if (mes == 2) {\n    if ((anio % 4 == 0 && anio % 100 != 0) || anio % 400 == 0) {\n      dias = 29;\n    } else {\n      dias = 28;\n    }\n  } else if (mes == 4 || mes == 6 || mes == 9 || mes == 11) {\n    dias = 30;\n  } else {\n    dias = 31;\n  }\n  return dias;\n}\n\nTFecha sumarDias(TFecha f, int n) {\n  for (int i = 0; i < n; i++) {\n    f.dia = f.dia + 1;\n    if (f.dia > diasDelMes(f.mes, f.anio)) {\n      f.dia = 1;\n      f.mes = f.mes + 1;\n      if (f.mes > 12) {\n        f.mes = 1;\n        f.anio = f.anio + 1;\n      }\n    }\n  }\n  return f;\n}\n\nvoid mostrar(TFecha f) {\n  printf(\"%d/%d/%d\", f.dia, f.mes, f.anio);\n}"
+      "referencia": "#include <stdio.h>\n#include \"fecha.h\"\n\nTFecha crear(int dia, int mes, int anio) {\n  TFecha f;\n\n  f.dia = dia;\n  f.mes = mes;\n  f.anio = anio;\n  return f;\n}\n\nint diasDelMes(TFecha f) {\n  int dias;\n\n  if (f.mes == 2) {\n    if ((f.anio % 4 == 0 && f.anio % 100 != 0) || f.anio % 400 == 0) {\n      dias = 29;\n    } else {\n      dias = 28;\n    }\n  } else if (f.mes == 4 || f.mes == 6 || f.mes == 9 || f.mes == 11) {\n    dias = 30;\n  } else {\n    dias = 31;\n  }\n  return dias;\n}\n\nTFecha sumarDias(TFecha f, int n) {\n  for (int i = 0; i < n; i++) {\n    f.dia = f.dia + 1;\n    if (f.dia > diasDelMes(f)) {\n      f.dia = 1;\n      f.mes = f.mes + 1;\n      if (f.mes > 12) {\n        f.mes = 1;\n        f.anio = f.anio + 1;\n      }\n    }\n  }\n  return f;\n}\n\nvoid mostrar(TFecha f) {\n  printf(\"%d/%d/%d\", f.dia, f.mes, f.anio);\n}"
     },
     {
       "id": "tadf-main",
