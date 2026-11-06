@@ -617,6 +617,33 @@ pre {
   opacity: 0.85;
 }
 
+/* Pestanas de solo lectura: una por archivo ya escrito. */
+#archivos .pestanas {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+}
+
+#archivos .pestana {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--suave);
+  border-bottom: 0;
+  border-radius: 6px 6px 0 0;
+  background: var(--fondo);
+  color: inherit;
+  font: 600 0.95rem Consolas, "Cascadia Mono", Menlo, monospace;
+  cursor: pointer;
+}
+
+#archivos .pestana[aria-selected="true"] {
+  background: var(--codigo);
+}
+
+#archivos .pestanas + pre {
+  border-top-left-radius: 0;
+}
+
 .clave {
   color: var(--c-clave);
 }

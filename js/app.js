@@ -156,6 +156,55 @@ function elemento(etiqueta, clase, texto) {
   return e;
 }
 
+// Los archivos ya escritos, de solo lectura. Con uno solo se muestra con su
+// nombre; con varios, una pestana por archivo (se ve uno por vez: en el
+// celular apilarlos empujaba el editor muy abajo). Abre primero el primero.
+function dibujarArchivos(archivos) {
+  const contenedor = $('archivos');
+  if (archivos.length < 2) {
+    contenedor.replaceChildren(
+      ...archivos.map((a) => {
+        const caja = elemento('div', 'archivo');
+        caja.appendChild(elemento('p', 'archivo-nombre', a.nombre));
+        const codigo = elemento('pre');
+        pintar(codigo, a.codigo);
+        caja.appendChild(codigo);
+        return caja;
+      })
+    );
+    return;
+  }
+  const lista = elemento('div', 'pestanas');
+  lista.setAttribute('role', 'tablist');
+  lista.setAttribute('aria-label', 'Archivos ya escritos');
+  const codigo = elemento('pre');
+  codigo.setAttribute('role', 'tabpanel');
+  const botones = archivos.map((a, i) => {
+    const b = elemento('button', 'pestana', a.nombre);
+    b.type = 'button';
+    b.setAttribute('role', 'tab');
+    b.addEventListener('click', () => abrir(i));
+    b.addEventListener('keydown', (e) => {
+      const paso = { ArrowRight: 1, ArrowLeft: -1 }[e.key];
+      if (!paso) return;
+      e.preventDefault();
+      abrir((i + paso + archivos.length) % archivos.length, true);
+    });
+    return b;
+  });
+  function abrir(i, enfocar) {
+    botones.forEach((b, j) => {
+      b.setAttribute('aria-selected', String(i === j));
+      b.tabIndex = i === j ? 0 : -1;
+    });
+    pintar(codigo, archivos[i].codigo);
+    if (enfocar) botones[i].focus();
+  }
+  lista.append(...botones);
+  contenedor.replaceChildren(lista, codigo);
+  abrir(0);
+}
+
 // Las respuestas guardadas de una serie que siguen valiendo, con el contexto
 // y las capturas que dejan.
 function recorrer(s) {
@@ -564,16 +613,7 @@ function mostrarConsigna() {
   // Los archivos que trae la consigna, cada uno con su nombre; y cual escribe el alumno.
   const archivos = termino || sinEditor ? [] : archivosVisibles(consigna);
   $('bloque-archivos').hidden = !archivos.length;
-  $('archivos').replaceChildren(
-    ...archivos.map((a) => {
-      const caja = elemento('div', 'archivo');
-      caja.appendChild(elemento('p', 'archivo-nombre', a.nombre));
-      const codigo = elemento('pre');
-      pintar(codigo, a.codigo);
-      caja.appendChild(codigo);
-      return caja;
-    })
-  );
+  dibujarArchivos(archivos);
   $('etiqueta-respuesta').textContent = consigna?.escribe ? `Su respuesta: ${consigna.escribe}` : 'Su respuesta';
   $('bloque-respuesta').hidden = termino;
   $('zona-codigo').hidden = sinEditor;
