@@ -235,3 +235,39 @@ export function partesDeEnunciado(enunciado, capturas) {
   if (hasta < enunciado.length) partes.push({ texto: enunciado.slice(hasta) });
   return partes;
 }
+
+// Las lineas que empiezan con "- " forman una lista; lo demas es texto. Parte el
+// enunciado en bloques [{ texto }, { items: [...] }], sin las lineas en blanco que
+// quedan pegadas a una lista (la lista ya se separa del texto por si sola).
+export function bloquesDeEnunciado(enunciado) {
+  const bloques = [];
+  let texto = [];
+  let items = [];
+  const cerrarTexto = () => {
+    if (texto.length) bloques.push({ texto: texto.join('\n') });
+    texto = [];
+  };
+  const cerrarLista = () => {
+    if (items.length) bloques.push({ items });
+    items = [];
+  };
+  for (const linea of enunciado.split('\n')) {
+    if (/^- /.test(linea)) {
+      cerrarTexto();
+      items.push(linea.slice(2));
+    } else {
+      cerrarLista();
+      texto.push(linea);
+    }
+  }
+  cerrarTexto();
+  cerrarLista();
+  // Una linea en blanco entre el texto y una lista sobra.
+  return bloques
+    .map((b, i) => {
+      if (!b.texto) return b;
+      const pegado = (bloques[i - 1] && bloques[i - 1].items) || (bloques[i + 1] && bloques[i + 1].items);
+      return pegado ? { texto: b.texto.replace(/^\n+|\n+$/g, '') } : b;
+    })
+    .filter((b) => b.items || b.texto);
+}

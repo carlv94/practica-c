@@ -1485,6 +1485,14 @@ comprimir (`js/descarga.js`, armado a mano con CRC32) con un `LEEME.txt` que dic
 cómo compilarlos con `gcc`. Si algún archivo va oculto (caja negra) no se ofrece,
 porque el proyecto no se podría armar.
 
+### Listas en el enunciado
+
+Las líneas del enunciado que empiezan con `- ` se muestran como lista (con
+sangría en las líneas que continúan: `bloquesDeEnunciado` en `js/enunciado.js`).
+Se usa para enumerar las operaciones de un TAD, una por línea con la forma
+"- nombre: qué hace."; el texto de la lista va pegado a la línea que la presenta y
+una línea en blanco la separa de lo que sigue.
+
 ### Cuestionarios con varios archivos
 
 Un cuestionario puede traer `archivos` ([{ nombre, codigo }]) en lugar de

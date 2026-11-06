@@ -296,6 +296,23 @@ section[hidden] {
   white-space: pre-line;
 }
 
+/* Una lista del enunciado (las operaciones de un TAD): cada una en su renglon,
+   y las lineas que continuan quedan con sangria bajo el texto, no bajo la marca. */
+.lista-enunciado {
+  margin: 8px 0;
+  padding-left: 1.4em;
+  white-space: normal;
+}
+
+.lista-enunciado li {
+  margin: 4px 0;
+}
+
+#enunciado-cierre .lista-enunciado:last-child,
+#enunciado .lista-enunciado:last-child {
+  margin-bottom: 0;
+}
+
 .ficha {
   border: 1px solid var(--borde);
   border-radius: 5px;

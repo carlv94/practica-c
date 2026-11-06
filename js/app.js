@@ -31,7 +31,7 @@ import {
 import { descargar } from './descarga.js';
 import { crearEditor, pintar } from './editor.js';
 import { enviarIntento, enviarInforme, numeroDeInforme, enviaEstadisticas, esLocal, esDocente } from './estadisticas.js';
-import { partesDeEnunciado, enunciadoEnDos, fichasDe, figuraDe, sustituir } from './enunciado.js';
+import { bloquesDeEnunciado, partesDeEnunciado, enunciadoEnDos, fichasDe, figuraDe, sustituir } from './enunciado.js';
 import { analizar, evaluar, mostrar, pilaComoTexto } from './pila.js';
 
 // La vista del docente: lista tambien las series y los grupos ocultos (en el
@@ -682,10 +682,22 @@ function mostrarConsigna() {
     partesDeEnunciado(texto, capturas).map((parte) =>
       parte.nombre ? elemento('code', null, parte.nombre) : conCodigo(parte.texto)
     );
+  // El texto, con las lineas que empiezan con "- " como lista.
+  const enBloques = (texto) =>
+    bloquesDeEnunciado(texto).map((bloque) => {
+      if (!bloque.items) {
+        const trozo = elemento('span');
+        trozo.append(...enParrafo(bloque.texto));
+        return trozo;
+      }
+      const lista = elemento('ul', 'lista-enunciado');
+      for (const item of bloque.items) lista.appendChild(elemento('li')).append(...enParrafo(item));
+      return lista;
+    });
   const { antes, despues } = enunciadoEnDos(consigna);
-  $('enunciado').replaceChildren(...enParrafo(antes));
+  $('enunciado').replaceChildren(...enBloques(antes));
   dibujarFicha(consigna.ficha);
-  $('enunciado-cierre').replaceChildren(...enParrafo(despues));
+  $('enunciado-cierre').replaceChildren(...enBloques(despues));
   $('enunciado-cierre').hidden = !despues;
   // Un ejemplo antes del enunciado: lo que se hacia hasta ahora, para compararlo.
   const ejemplo = consigna.ejemplo;

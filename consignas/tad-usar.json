@@ -51,7 +51,7 @@
           "oculto": true
         }
       ],
-      "enunciado": "El archivo `contador.h` declara el tipo `TContador` y tres operaciones: `inicializar` deja el contador en cero, `contar` le suma uno y `obtener` devuelve su valor. Escriba `main.c`: declare un contador, inicialícelo, cuente tres veces y muestre su valor con `printf`. Use solo las operaciones del `.h`. (En este curso `inicializar` recibe una variable que ya existe y la deja lista para usar; el nombre `crear` se reserva para las funciones que devuelven la estructura.)",
+      "enunciado": "El archivo `contador.h` declara el tipo `TContador` y tres operaciones:\n- `inicializar`: deja el contador en cero.\n- `contar`: le suma uno.\n- `obtener`: devuelve su valor.\n\nEscriba `main.c`: declare un contador, inicialícelo, cuente tres veces y muestre su valor con `printf`. Use solo las operaciones del `.h`. (En este curso `inicializar` recibe una variable que ya existe y la deja lista para usar; el nombre `crear` se reserva para las funciones que devuelven la estructura.)",
       "requiere": [
         {
           "incluyeLocal": "contador.h"

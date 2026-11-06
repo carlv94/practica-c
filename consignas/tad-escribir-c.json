@@ -14,7 +14,7 @@
           "codigo": "#ifndef CONTADOR_H\n#define CONTADOR_H\n\ntypedef struct {\n  int valor;\n} TContador;\n\nvoid inicializar(TContador *c);\nvoid contar(TContador *c);\nint obtener(TContador c);\n\n#endif"
         }
       ],
-      "enunciado": "El archivo `contador.h` ya está escrito. Escriba `contador.c`, que define sus tres operaciones: `inicializar` deja el valor en cero, `contar` le suma uno y `obtener` devuelve el valor. No olvide incluir el `.h`.",
+      "enunciado": "El archivo `contador.h` ya está escrito. Escriba `contador.c`, que define sus tres operaciones:\n- `inicializar`: deja el valor en cero.\n- `contar`: le suma uno.\n- `obtener`: devuelve el valor.\n\nNo olvide incluir el `.h`.",
       "requiere": [
         {
           "incluyeLocal": "contador.h"
@@ -69,7 +69,7 @@
           "codigo": "#ifndef FRACCION_H\n#define FRACCION_H\n\ntypedef struct {\n  int numerador;\n  int denominador;\n} TFraccion;\n\nTFraccion crear(int numerador, int denominador);\nTFraccion sumar(TFraccion a, TFraccion b);\nvoid mostrar(TFraccion f);\n\n#endif"
         }
       ],
-      "enunciado": "El archivo `fraccion.h` ya está escrito. Escriba `fraccion.c`: `crear` arma la fracción con el numerador y el denominador que recibe, `sumar` devuelve la suma de dos fracciones, sin simplificar (`a/b + c/d` da `(a*d + c*b) / (b*d)`), y `mostrar` la muestra con `printf` como `numerador/denominador`, por ejemplo `3/4`.",
+      "enunciado": "El archivo `fraccion.h` ya está escrito. Escriba `fraccion.c`, que define sus tres operaciones:\n- `crear`: arma la fracción con el numerador y el denominador que recibe.\n- `sumar`: devuelve la suma de dos fracciones, sin simplificar (`a/b + c/d` da `(a*d + c*b) / (b*d)`).\n- `mostrar`: la muestra con `printf` como `numerador/denominador`, por ejemplo `3/4`.",
       "requiere": [
         {
           "incluyeLocal": "fraccion.h"

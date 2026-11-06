@@ -76,7 +76,7 @@
       "id": "tadh-contador",
       "titulo": "El archivo del contador",
       "escribe": "contador.h",
-      "enunciado": "Escriba `contador.h`, el archivo que describe el TAD contador. Un contador guarda un número entero en un campo `valor`, y el tipo se llama `TContador`. Tiene tres operaciones: `inicializar` deja el contador en cero (recibe el contador por referencia y no devuelve nada), `contar` le suma uno (recibe el contador por referencia y no devuelve nada) y `obtener` devuelve su valor entero (recibe el contador por valor). Use las guardas de inclusión `CONTADOR_H`.",
+      "enunciado": "Escriba `contador.h`, el archivo que describe el TAD contador. Un contador guarda un número entero en un campo `valor`, y el tipo se llama `TContador`. Tiene tres operaciones:\n- `inicializar`: deja el contador en cero. Recibe el contador por referencia y no devuelve nada.\n- `contar`: le suma uno. Recibe el contador por referencia y no devuelve nada.\n- `obtener`: devuelve su valor entero. Recibe el contador por valor.\n\nUse las guardas de inclusión `CONTADOR_H`.",
       "requiere": [
         {
           "encabezado": {
@@ -146,7 +146,7 @@
       "id": "tadh-fraccion",
       "titulo": "El archivo de la fracción",
       "escribe": "fraccion.h",
-      "enunciado": "Escriba `fraccion.h` para el TAD fracción. Una fracción guarda un numerador y un denominador, enteros, en los campos `numerador` y `denominador`, y el tipo se llama `TFraccion`. Tiene tres operaciones: `crear` recibe el numerador y el denominador y devuelve la fracción; `sumar` recibe dos fracciones y devuelve su suma; `mostrar` recibe una fracción y la muestra en pantalla, sin devolver nada. Las fracciones se pasan por valor. Use las guardas de inclusión `FRACCION_H`.",
+      "enunciado": "Escriba `fraccion.h` para el TAD fracción. Una fracción guarda un numerador y un denominador, enteros, en los campos `numerador` y `denominador`, y el tipo se llama `TFraccion`. Tiene tres operaciones:\n- `crear`: recibe el numerador y el denominador y devuelve la fracción.\n- `sumar`: recibe dos fracciones y devuelve su suma.\n- `mostrar`: recibe una fracción y la muestra en pantalla, sin devolver nada.\n\nLas fracciones se pasan por valor. Use las guardas de inclusión `FRACCION_H`.",
       "requiere": [
         {
           "encabezado": {
