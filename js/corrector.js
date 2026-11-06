@@ -4331,7 +4331,8 @@ export function corregir(
         const nombreLlamado = llamada && /^\s*([A-Za-z_]\w*)\s*\(/.exec(llamada);
         if (nombreLlamado && !modelo.funciones.some((x) => !x.prototipo && x.nombre === nombreLlamado[1])) {
           // Si ya se dijo que la funcion se llama de otra manera, con eso alcanza.
-          if (diagnosticos.some((d) => d.codigo === 'FUNCION_NOMBRE')) return;
+          // Y si el .h declara la funcion y falta definirla, tambien: lo dice defineTodo.
+          if (diagnosticos.some((d) => d.codigo === 'FUNCION_NOMBRE' || d.codigo === 'PROTOTIPO_SIN_DEFINICION')) return;
           error('FUNCION_FALTA', 'No encontré la definición de la función que pide la consigna.');
           return;
         }

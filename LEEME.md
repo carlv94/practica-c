@@ -1485,6 +1485,15 @@ comprimir (`js/descarga.js`, armado a mano con CRC32) con un `LEEME.txt` que dic
 cómo compilarlos con `gcc`. Si algún archivo va oculto (caja negra) no se ofrece,
 porque el proyecto no se podría armar.
 
+### Ampliar un archivo: `comienza`
+
+Una consigna con `escribe` puede traer `"comienza": "texto"`: el editor arranca con
+ese texto (el archivo ya hecho) y el alumno lo completa. La respuesta es el archivo
+entero, como en cualquier consigna de escribir un `.h` o un `.c`; lo guardado o el
+borrador tienen prioridad sobre `comienza`. La serie `tad-ampliar` lo usa para agregar
+`sumarMeses` y `sumarAnios` a `fecha.h` y `fecha.c`, con casos que comprueban que lo
+de antes sigue funcionando.
+
 ### Listas en el enunciado
 
 Las líneas del enunciado que empiezan con `- ` se muestran como lista (con

@@ -729,7 +729,9 @@ function mostrarConsigna() {
     $('ver-solucion').hidden = true;
     return;
   }
-  editor.poner(textoGuardado);
+  // Una consigna que amplia un archivo ya hecho lo trae escrito en el editor
+  // ("comienza"); lo guardado (o el borrador) tiene prioridad.
+  editor.poner(textoGuardado || consigna.comienza || '');
   $('respuesta').readOnly = false;
   $('ver-solucion').hidden = false;
   // Repasando, se puede traer lo que se habia respondido.
