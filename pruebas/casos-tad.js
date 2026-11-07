@@ -85,6 +85,9 @@ const pilaC = serie('tad-pila-c');
 const repr = serie('tad-representacion');
 const fecha = serie('tad-fecha');
 const ampliar = serie('tad-ampliar');
+const usarCola = serie('tad-cola-usar');
+const colaH = serie('tad-cola-h');
+const colaC = serie('tad-cola-c');
 
 // main.c de las pilas con lo que va adentro de main.
 const MAIN_PILA = (...cuerpo) =>
@@ -186,6 +189,78 @@ const REPR_C = lineas(
   '',
   'TBool llena(TPila p) {',
   '  if (p.tope == MAX - 1) {',
+  '    return VERDADERO;',
+  '  }',
+  '  return FALSO;',
+  '}'
+);
+
+// main.c de las colas con lo que va adentro de main.
+const MAIN_COLA = (...cuerpo) =>
+  lineas('#include <stdio.h>', '#include "cola.h"', '', 'int main() {', ...cuerpo.map((l) => (l ? '  ' + l : l)), '  return 0;', '}');
+
+const COLA_H = lineas(
+  '#ifndef COLA_H',
+  '#define COLA_H',
+  '',
+  '#define MAX 8',
+  '',
+  'typedef enum {',
+  '  FALSO,',
+  '  VERDADERO',
+  '} TBool;',
+  '',
+  'typedef struct {',
+  '  int datos[MAX];',
+  '  int inicio;',
+  '  int fin;',
+  '} TCola;',
+  '',
+  'void inicializar(TCola *c);',
+  'void encolar(TCola *c, int x);',
+  'int desencolar(TCola *c);',
+  'int primero(TCola c);',
+  'TBool vacia(TCola c);',
+  'TBool llena(TCola c);',
+  '',
+  '#endif'
+);
+const HC = (cambio) => cambio(COLA_H);
+
+const COLA_C = lineas(
+  '#include "cola.h"',
+  '',
+  'void inicializar(TCola *c) {',
+  '  c->inicio = 0;',
+  '  c->fin = 0;',
+  '}',
+  '',
+  'void encolar(TCola *c, int x) {',
+  '  c->datos[c->fin] = x;',
+  '  c->fin = c->fin + 1;',
+  '}',
+  '',
+  'int desencolar(TCola *c) {',
+  '  int x;',
+  '',
+  '  x = c->datos[c->inicio];',
+  '  c->inicio = c->inicio + 1;',
+  '  return x;',
+  '}',
+  '',
+  'int primero(TCola c) {',
+  '  return c.datos[c.inicio];',
+  '}',
+  '',
+  'TBool vacia(TCola c) {',
+  '  if (c.inicio == c.fin) {',
+  '    return VERDADERO;',
+  '  }',
+  '  return FALSO;',
+  '}',
+  '',
+  'TBool llena(TCola c) {',
+  '  if (c.fin == MAX) {',
   '    return VERDADERO;',
   '  }',
   '  return FALSO;',
@@ -1161,4 +1236,324 @@ export const CASOS_DE_TAD = [
   ampliar(4, 'el main correcto', AMPLIADO_MAIN),
   ampliar(4, 'el main sin sumar anios', AMPLIADO_MAIN.replace('  f = sumarAnios(f, anios);\n', ''), ['TAD_OPERACION_SIN_USAR']),
   ampliar(4, 'el main que toca el mes', AMPLIADO_MAIN.replace('  f = sumarMeses(f, meses);', '  f = sumarMeses(f, meses);\n  f.mes = f.mes + 0;'), ['TAD_ACCESO_DIRECTO']),
+  // ===== Usar una cola =====
+  usarCola(1, 'sale primero lo que entro primero', '1'),
+  usarCola(1, 'sale primero lo que entro ultimo', '0', ['OPCION_COLA_COMO_PILA']),
+  usarCola(1, 'desencolar vacia la cola', '2', ['OPCION_COLA_SACA_TODO']),
+  usarCola(
+    2,
+    'con dos ciclos',
+    MAIN_COLA(
+      'TCola c;',
+      'int n;',
+      '',
+      'inicializar(&c);',
+      'for (int i = 0; i < 3; i++) {',
+      '  scanf("%d", &n);',
+      '  encolar(&c, n);',
+      '}',
+      'for (int i = 0; i < 3; i++) {',
+      '  printf("%d ", desencolar(&c));',
+      '}'
+    )
+  ),
+  usarCola(
+    2,
+    'con un ciclo hasta que este vacia',
+    MAIN_COLA(
+      'TCola c;',
+      'int n;',
+      '',
+      'inicializar(&c);',
+      'for (int i = 0; i < 3; i++) {',
+      '  scanf("%d", &n);',
+      '  encolar(&c, n);',
+      '}',
+      'while (!vacia(c)) {',
+      '  printf("%d ", desencolar(&c));',
+      '}'
+    )
+  ),
+  usarCola(
+    2,
+    'mostrando sin sacar de la cola',
+    MAIN_COLA(
+      'TCola c;',
+      'int n;',
+      '',
+      'inicializar(&c);',
+      'for (int i = 0; i < 3; i++) {',
+      '  scanf("%d", &n);',
+      '  encolar(&c, n);',
+      '  printf("%d ", n);',
+      '}'
+    ),
+    ['TAD_OPERACION_SIN_USAR'],
+    { dice: ['desencolar'] }
+  ),
+  usarCola(
+    2,
+    'mirando los datos por dentro',
+    MAIN_COLA(
+      'TCola c;',
+      'int n;',
+      '',
+      'inicializar(&c);',
+      'for (int i = 0; i < 3; i++) {',
+      '  scanf("%d", &n);',
+      '  encolar(&c, n);',
+      '}',
+      'for (int i = c.inicio; i < c.fin; i++) {',
+      '  printf("%d ", c.datos[i]);',
+      '}'
+    ),
+    ['TAD_ACCESO_DIRECTO', 'TAD_OPERACION_SIN_USAR'],
+    { dice: ['desencolar'] }
+  ),
+  usarCola(
+    2,
+    'sin inicializar la cola',
+    MAIN_COLA(
+      'TCola c;',
+      'int n;',
+      '',
+      'for (int i = 0; i < 3; i++) {',
+      '  scanf("%d", &n);',
+      '  encolar(&c, n);',
+      '}',
+      'for (int i = 0; i < 3; i++) {',
+      '  printf("%d ", desencolar(&c));',
+      '}'
+    ),
+    ['TAD_OPERACION_SIN_USAR'],
+    { dice: ['inicializar'] }
+  ),
+  usarCola(
+    2,
+    'encolando de mas',
+    MAIN_COLA(
+      'TCola c;',
+      '',
+      'inicializar(&c);',
+      'for (int i = 0; i < 9; i++) {',
+      '  encolar(&c, i);',
+      '}',
+      'while (!vacia(c)) {',
+      '  printf("%d ", desencolar(&c));',
+      '}'
+    ),
+    ['TAD_USO_INCORRECTO'],
+    { dice: ['llena'] }
+  ),
+  usarCola(
+    2,
+    'desencolando de mas',
+    MAIN_COLA(
+      'TCola c;',
+      '',
+      'inicializar(&c);',
+      'encolar(&c, 1);',
+      'encolar(&c, 2);',
+      'for (int i = 0; i < 3; i++) {',
+      '  printf("%d ", desencolar(&c));',
+      '}'
+    ),
+    ['TAD_USO_INCORRECTO'],
+    { dice: ['vacia'] }
+  ),
+  usarCola(
+    2,
+    'sin incluir el encabezado',
+    lineas('#include <stdio.h>', '', 'int main() {', '  TCola c;', '', '  inicializar(&c);', '  encolar(&c, 1);', '  printf("%d", desencolar(&c));', '  return 0;', '}'),
+    ['INCLUDE_PROPIO_FALTA']
+  ),
+  // ---- 3: solo los pares ----
+  usarCola(
+    3,
+    'guardando solo los pares',
+    MAIN_COLA(
+      'TCola pares;',
+      'int n;',
+      '',
+      'inicializar(&pares);',
+      'for (int i = 0; i < 5; i++) {',
+      '  scanf("%d", &n);',
+      '  if (n % 2 == 0) {',
+      '    encolar(&pares, n);',
+      '  }',
+      '}',
+      'while (!vacia(pares)) {',
+      '  printf("%d ", desencolar(&pares));',
+      '}'
+    )
+  ),
+  usarCola(
+    3,
+    'guardando todos',
+    MAIN_COLA(
+      'TCola c;',
+      'int n;',
+      '',
+      'inicializar(&c);',
+      'for (int i = 0; i < 5; i++) {',
+      '  scanf("%d", &n);',
+      '  encolar(&c, n);',
+      '}',
+      'while (!vacia(c)) {',
+      '  printf("%d ", desencolar(&c));',
+      '}'
+    ),
+    ['MUESTRA_DISTINTA']
+  ),
+  usarCola(
+    3,
+    'guardando los impares',
+    MAIN_COLA(
+      'TCola c;',
+      'int n;',
+      '',
+      'inicializar(&c);',
+      'for (int i = 0; i < 5; i++) {',
+      '  scanf("%d", &n);',
+      '  if (n % 2 != 0) {',
+      '    encolar(&c, n);',
+      '  }',
+      '}',
+      'while (!vacia(c)) {',
+      '  printf("%d ", desencolar(&c));',
+      '}'
+    ),
+    ['MUESTRA_DISTINTA']
+  ),
+  // ---- 4: pasar de una cola a otra ----
+  usarCola(
+    4,
+    'pasando con una variable',
+    MAIN_COLA(
+      'TCola a;',
+      'TCola b;',
+      'int n;',
+      '',
+      'inicializar(&a);',
+      'inicializar(&b);',
+      'for (int i = 0; i < 3; i++) {',
+      '  scanf("%d", &n);',
+      '  encolar(&a, n);',
+      '}',
+      'while (!vacia(a)) {',
+      '  n = desencolar(&a);',
+      '  encolar(&b, 2 * n);',
+      '}',
+      'while (!vacia(b)) {',
+      '  printf("%d ", desencolar(&b));',
+      '}'
+    )
+  ),
+  usarCola(
+    4,
+    'pasando sin variable',
+    MAIN_COLA(
+      'TCola a;',
+      'TCola b;',
+      'int n;',
+      '',
+      'inicializar(&a);',
+      'inicializar(&b);',
+      'for (int i = 0; i < 3; i++) {',
+      '  scanf("%d", &n);',
+      '  encolar(&a, n);',
+      '}',
+      'while (!vacia(a)) {',
+      '  encolar(&b, 2 * desencolar(&a));',
+      '}',
+      'while (!vacia(b)) {',
+      '  printf("%d ", desencolar(&b));',
+      '}'
+    )
+  ),
+  usarCola(
+    4,
+    'sin inicializar la segunda cola',
+    MAIN_COLA(
+      'TCola a;',
+      'TCola b;',
+      'int n;',
+      '',
+      'inicializar(&a);',
+      'for (int i = 0; i < 3; i++) {',
+      '  scanf("%d", &n);',
+      '  encolar(&a, n);',
+      '}',
+      'while (!vacia(a)) {',
+      '  encolar(&b, desencolar(&a));',
+      '}',
+      'while (!vacia(b)) {',
+      '  printf("%d ", desencolar(&b));',
+      '}'
+    ),
+    ['TAD_SIN_INICIALIZAR'],
+    { dice: ['inicializar'] }
+  ),
+  usarCola(
+    4,
+    'mostrando los de la primera cola',
+    MAIN_COLA(
+      'TCola a;',
+      'TCola b;',
+      'int n;',
+      '',
+      'inicializar(&a);',
+      'inicializar(&b);',
+      'for (int i = 0; i < 3; i++) {',
+      '  scanf("%d", &n);',
+      '  encolar(&a, n);',
+      '}',
+      'while (!vacia(a)) {',
+      '  printf("%d ", desencolar(&a));',
+      '}'
+    ),
+    ['MUESTRA_DISTINTA']
+  ),
+  // ===== Escribir cola.h =====
+  colaH(1, 'inicio 1 y fin 3', '1'),
+  colaH(1, 'inicio 0 y fin 3', '0', ['OPCION_COLA_INICIO_CERO']),
+  colaH(1, 'inicio 1 y fin 2', '2', ['OPCION_COLA_FIN_DE_MENOS']),
+  colaH(2, 'completo', COLA_H),
+  colaH(2, 'sin guardas', HC((t) => t.replace('#ifndef COLA_H\n#define COLA_H\n\n', '').replace('\n\n#endif', '')), ['ENCABEZADO_SIN_GUARDA']),
+  colaH(2, 'con otro nombre de guarda', HC((t) => t.replaceAll('COLA_H', 'COLA')), ['ENCABEZADO_GUARDA_NOMBRE'], { dice: ['COLA_H'] }),
+  colaH(2, 'el tamano con un numero', HC((t) => t.replace('datos[MAX]', 'datos[8]')), ['CAMPO_ARREGLO_SIN_CONSTANTE'], { dice: ['MAX'] }),
+  colaH(2, 'sin definir MAX', HC((t) => t.replace('#define MAX 8\n\n', '')), ['CONSTANTE_SIN_DEFINIR']),
+  colaH(2, 'MAX de menos', HC((t) => t.replace('#define MAX 8', '#define MAX 4')), ['ARREGLO_CHICO']),
+  colaH(2, 'sin el inicio', HC((t) => t.replace('  int inicio;\n', '')), ['CAMPO_FALTA']),
+  colaH(2, 'sin el fin', HC((t) => t.replace('  int fin;\n', '')), ['CAMPO_FALTA']),
+  colaH(2, 'el fin con otro nombre', HC((t) => t.replace('int fin;', 'int final;')), ['CAMPO_NOMBRE']),
+  colaH(2, 'con un solo indice', HC((t) => t.replace('  int inicio;\n  int fin;', '  int tope;')), ['CAMPO_FALTA']),
+  colaH(2, 'sin el enumerado', HC((t) => t.replace('typedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\n', '').replaceAll('TBool', 'int')), ['ENUM_FALTA']),
+  colaH(2, 'vacia devuelve un entero', HC((t) => t.replace('TBool vacia(TCola c);', 'int vacia(TCola c);')), ['FUNCION_TIPO_RETORNO'], { dice: ['un enumerado'] }),
+  colaH(2, 'con algo afuera', HC((t) => t + '\n\nvoid vaciar(TCola *c);'), ['ENCABEZADO_FUERA_DE_LA_GUARDA']),
+  colaH(2, 'sin un prototipo', HC((t) => t.replace('TBool llena(TCola c);\n', '')), ['PROTOTIPO_FALTA']),
+  colaH(2, 'encolar sin el numero', HC((t) => t.replace('void encolar(TCola *c, int x);', 'void encolar(TCola *c);')), ['PARAMETROS_CANTIDAD']),
+  colaH(2, 'encolar con la cola por valor', HC((t) => t.replace('void encolar(TCola *c, int x);', 'void encolar(TCola c, int x);')), ['PARAMETRO_REFERENCIA_FALTA']),
+  colaH(2, 'desencolar no devuelve nada', HC((t) => t.replace('int desencolar(TCola *c);', 'void desencolar(TCola *c);')), ['FUNCION_TIPO_RETORNO']),
+  colaH(2, 'vacia con la cola por referencia', HC((t) => t.replace('TBool vacia(TCola c);', 'TBool vacia(TCola *c);')), ['PARAMETRO_ASTERISCO_DE_MAS']),
+  // ===== Escribir cola.c =====
+  colaC(1, 'completa', COLA_C),
+  colaC(1, 'desencolar con otra cuenta', COLA_C.replace('c->inicio = c->inicio + 1;', 'c->inicio++;')),
+  colaC(1, 'vacia con un return directo', COLA_C.replace('if (c.inicio == c.fin) {\n    return VERDADERO;\n  }\n  return FALSO;', 'return c.inicio == c.fin;')),
+  colaC(1, 'sin incluir el encabezado', COLA_C.replace('#include "cola.h"\n\n', ''), ['INCLUDE_PROPIO_FALTA']),
+  colaC(1, 'repitiendo el tipo', COLA_C.replace('#include "cola.h"\n', '#include "cola.h"\n\ntypedef struct {\n  int datos[MAX];\n  int inicio;\n  int fin;\n} TCola;\n'), ['TIPO_REPETIDO_EN_EL_C']),
+  colaC(1, 'sin definir una operacion', COLA_C.replace('\n\nTBool llena(TCola c) {\n  if (c.fin == MAX) {\n    return VERDADERO;\n  }\n  return FALSO;\n}', ''), ['PROTOTIPO_SIN_DEFINICION']),
+  colaC(1, 'vacia devuelve numeros', COLA_C.replace('if (c.inicio == c.fin) {\n    return VERDADERO;\n  }\n  return FALSO;', 'if (c.inicio == c.fin) {\n    return 1;\n  }\n  return 0;'), ['RETORNO_NUMERO_EN_ENUMERADO']),
+  colaC(1, 'encolar con otra firma', COLA_C.replace('void encolar(TCola *c, int x) {', 'int encolar(TCola *c, int x) {'), ['FIRMA_DISTINTA_DEL_PROTOTIPO']),
+  colaC(1, 'inicializar no deja el inicio en cero', COLA_C.replace('  c->inicio = 0;\n', ''), ['VARIABLE_SIN_VALOR']),
+  colaC(1, 'inicializar no deja el fin en cero', COLA_C.replace('  c->fin = 0;\n', ''), ['VARIABLE_SIN_VALOR']),
+  colaC(1, 'encolar sin avanzar el fin', COLA_C.replace('  c->fin = c->fin + 1;\n', ''), ['DEVUELVE_DISTINTO']),
+  colaC(1, 'desencolar sin avanzar el inicio', COLA_C.replace('  c->inicio = c->inicio + 1;\n', ''), ['DEVUELVE_DISTINTO']),
+  colaC(1, 'desencolar devuelve el ultimo', COLA_C.replace('x = c->datos[c->inicio];', 'x = c->datos[c->fin - 1];'), ['DEVUELVE_DISTINTO']),
+  colaC(1, 'primero devuelve el ultimo', COLA_C.replace('return c.datos[c.inicio];', 'return c.datos[c.fin - 1];'), ['DEVUELVE_DISTINTO']),
+  colaC(1, 'vacia al reves', COLA_C.replace('if (c.inicio == c.fin) {', 'if (c.inicio != c.fin) {'), ['DEVUELVE_DISTINTO']),
+  colaC(1, 'vacia mirando solo el fin', COLA_C.replace('if (c.inicio == c.fin) {', 'if (c.fin == 0) {'), ['DEVUELVE_DISTINTO']),
+  colaC(1, 'llena con la cola a medias', COLA_C.replace('if (c.fin == MAX) {', 'if (c.fin == MAX - 1) {'), ['DEVUELVE_DISTINTO']),
+  colaC(2, 'llena', '1'),
+  colaC(2, 'hay lugar', '0', ['OPCION_COLA_HAY_LUGAR']),
 ];

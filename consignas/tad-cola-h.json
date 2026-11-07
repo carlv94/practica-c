@@ -1,0 +1,180 @@
+{
+  "id": "tad-cola-h",
+  "titulo": "Escribir el archivo cola.h",
+  "continua": false,
+  "descripcion": "El tipo de una cola guarda sus elementos en un arreglo y lleva dos índices, `inicio` y `fin`, porque se entra por un extremo y se sale por el otro.",
+  "consignas": [
+    {
+      "id": "tadq-q-indices",
+      "titulo": "Los dos índices",
+      "archivos": [
+        {
+          "nombre": "cola.h",
+          "codigo": "#ifndef COLA_H\n#define COLA_H\n\n#define MAX 8\n\ntypedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\ntypedef struct {\n  int datos[MAX];\n  int inicio;\n  int fin;\n} TCola;\n\nvoid inicializar(TCola *c);\nvoid encolar(TCola *c, int x);\nint desencolar(TCola *c);\nint primero(TCola c);\nTBool vacia(TCola c);\nTBool llena(TCola c);\n\n#endif"
+        },
+        {
+          "nombre": "cola.c",
+          "codigo": "#include \"cola.h\"\n\nvoid inicializar(TCola *c) {\n  c->inicio = 0;\n  c->fin = 0;\n}\n\nvoid encolar(TCola *c, int x) {\n  c->datos[c->fin] = x;\n  c->fin = c->fin + 1;\n}\n\nint desencolar(TCola *c) {\n  int x;\n\n  x = c->datos[c->inicio];\n  c->inicio = c->inicio + 1;\n  return x;\n}\n\nint primero(TCola c) {\n  return c.datos[c.inicio];\n}\n\nTBool vacia(TCola c) {\n  if (c.inicio == c.fin) {\n    return VERDADERO;\n  }\n  return FALSO;\n}\n\nTBool llena(TCola c) {\n  if (c.fin == MAX) {\n    return VERDADERO;\n  }\n  return FALSO;\n}"
+        },
+        {
+          "nombre": "main.c",
+          "codigo": "#include \"cola.h\"\n\nint main() {\n  TCola c;\n\n  inicializar(&c);\n  encolar(&c, 5);\n  encolar(&c, 6);\n  encolar(&c, 7);\n  desencolar(&c);\n  return 0;\n}"
+        }
+      ],
+      "enunciado": "El tipo `TCola` lleva dos índices del arreglo: `inicio` y `fin`. Al terminar `main`, ¿cuánto valen `inicio` y `fin` dentro de `c`?",
+      "opciones": [
+        {
+          "texto": "`inicio` vale 0 y `fin` vale 3.",
+          "codigo": "OPCION_COLA_INICIO_CERO",
+          "explicacion": "`fin` vale 3, pero `inicio` no: es la posición del elemento que sale primero, y `desencolar` la avanza al sacar uno. Como se desencoló una vez, el `5` salió y el primero ahora es el `6`, que está en la posición 1."
+        },
+        {
+          "texto": "`inicio` vale 1 y `fin` vale 3.",
+          "correcta": true,
+          "explicacion": "`fin` es la posición donde va el próximo elemento: se encolaron el 5, el 6 y el 7 en las posiciones 0, 1 y 2, así que vale 3. `inicio` es la posición del elemento que sale primero: arranca en 0 y `desencolar` la avanza a 1 al sacar el 5. Los datos no se mueven, solo avanza el índice. Una pila necesitaba un solo número, `tope`, porque entra y sale por el mismo extremo; una cola entra por un extremo y sale por el otro, y por eso lleva dos."
+        },
+        {
+          "texto": "`inicio` vale 1 y `fin` vale 2.",
+          "codigo": "OPCION_COLA_FIN_DE_MENOS",
+          "explicacion": "`fin` no es la posición del último elemento encolado, sino la del próximo lugar libre: tras encolar tres números vale 3. Y `desencolar` no lo modifica: solo avanza `inicio`."
+        }
+      ]
+    },
+    {
+      "id": "tadq-h",
+      "titulo": "El archivo de la cola",
+      "escribe": "cola.h",
+      "enunciado": "Escriba `cola.h`, el archivo que describe el TAD cola. Una cola guarda hasta 8 números enteros en un arreglo `datos` y lleva dos campos: `inicio`, la posición del elemento que sale primero, y `fin`, la posición donde va el próximo que entre. El tamaño del arreglo es la constante `MAX`, que vale 8, y el tipo se llama `TCola`. Declare también el enumerado `TBool`, con los valores `FALSO` y `VERDADERO` (en ese orden). Tiene seis operaciones:\n- `inicializar`: la deja vacía. Recibe la cola por referencia y no devuelve nada.\n- `encolar`: agrega un número al final. Recibe la cola por referencia y el número, y no devuelve nada.\n- `desencolar`: saca el del principio y lo devuelve. Recibe la cola por referencia.\n- `primero`: devuelve el del principio sin sacarlo. Recibe la cola por valor.\n- `vacia`: devuelve un `TBool` que dice si la cola no tiene elementos. Recibe la cola por valor.\n- `llena`: devuelve un `TBool` que dice si no entra ninguno más. Recibe la cola por valor.\n\nUse las guardas de inclusión `COLA_H`.",
+      "requiere": [
+        {
+          "encabezado": {
+            "guarda": "COLA_H"
+          }
+        },
+        {
+          "struct": {
+            "capturar": "S",
+            "campos": [
+              {
+                "nombre": "datos",
+                "tipo": "entero",
+                "arreglo": 8,
+                "constante": "MAX"
+              },
+              {
+                "nombre": "inicio",
+                "tipo": "entero"
+              },
+              {
+                "nombre": "fin",
+                "tipo": "entero"
+              }
+            ]
+          }
+        },
+        {
+          "alias": {
+            "de": "$S",
+            "nombre": "TCola",
+            "capturar": "T"
+          }
+        },
+        {
+          "enum": {
+            "enumeradores": [
+              "FALSO",
+              "VERDADERO"
+            ],
+            "capturar": "E"
+          }
+        },
+        {
+          "alias": {
+            "de": "$E",
+            "nombre": "TBool",
+            "capturar": "B"
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "inicializar",
+            "retorna": "void",
+            "parametros": [
+              {
+                "tipo": "estructura",
+                "referencia": true
+              }
+            ]
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "encolar",
+            "retorna": "void",
+            "parametros": [
+              {
+                "tipo": "estructura",
+                "referencia": true
+              },
+              {
+                "tipo": "entero"
+              }
+            ]
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "desencolar",
+            "retorna": "entero",
+            "parametros": [
+              {
+                "tipo": "estructura",
+                "referencia": true
+              }
+            ]
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "primero",
+            "retorna": "entero",
+            "parametros": [
+              {
+                "tipo": "estructura"
+              }
+            ]
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "vacia",
+            "retorna": "enumerado",
+            "parametros": [
+              {
+                "tipo": "estructura"
+              }
+            ]
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "llena",
+            "retorna": "enumerado",
+            "parametros": [
+              {
+                "tipo": "estructura"
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "#ifndef COLA_H\n#define COLA_H\n\n#define MAX 8\n\ntypedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\ntypedef struct {\n  int datos[MAX];\n  int inicio;\n  int fin;\n} TCola;\n\nvoid inicializar(TCola *c);\nvoid encolar(TCola *c, int x);\nint desencolar(TCola *c);\nint primero(TCola c);\nTBool vacia(TCola c);\nTBool llena(TCola c);\n\n#endif"
+    }
+  ]
+}

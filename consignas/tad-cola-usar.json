@@ -1,0 +1,301 @@
+{
+  "id": "tad-cola-usar",
+  "titulo": "Usar una cola",
+  "continua": false,
+  "descripcion": "Una cola guarda datos y los entrega en el mismo orden en que entraron: el primero en entrar es el primero en salir. Se usa con sus operaciones, sin saber cómo está guardada.",
+  "consignas": [
+    {
+      "id": "tadq-q-orden",
+      "titulo": "El orden de salida",
+      "archivos": [
+        {
+          "nombre": "cola.h",
+          "codigo": "#ifndef COLA_H\n#define COLA_H\n\n#define MAX 8\n\ntypedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\ntypedef struct {\n  int datos[MAX];\n  int inicio;\n  int fin;\n} TCola;\n\nvoid inicializar(TCola *c);\nvoid encolar(TCola *c, int x);\nint desencolar(TCola *c);\nint primero(TCola c);\nTBool vacia(TCola c);\nTBool llena(TCola c);\n\n#endif"
+        },
+        {
+          "nombre": "main.c",
+          "codigo": "#include <stdio.h>\n#include \"cola.h\"\n\nint main() {\n  TCola c;\n\n  inicializar(&c);\n  encolar(&c, 1);\n  encolar(&c, 2);\n  encolar(&c, 3);\n  while (!vacia(c)) {\n    printf(\"%d \", desencolar(&c));\n  }\n  return 0;\n}"
+        }
+      ],
+      "enunciado": "El archivo `cola.h` declara el tipo `TCola` y sus operaciones. El archivo `main.c` las usa. ¿Qué muestra el programa?",
+      "opciones": [
+        {
+          "texto": "Muestra `3 2 1`: sale primero lo que entró último.",
+          "codigo": "OPCION_COLA_COMO_PILA",
+          "explicacion": "Eso es lo que hace una pila, no una cola. En una cola `desencolar` saca siempre el elemento que lleva más tiempo esperando, el primero que se encoló: acá, el `1`."
+        },
+        {
+          "texto": "Muestra `1 2 3`: sale primero lo que entró primero.",
+          "correcta": true,
+          "explicacion": "`encolar` agrega un elemento al final y `desencolar` saca el del principio, así que los elementos salen en el mismo orden en que entraron: el primero en entrar es el primero en salir. El ciclo `while (!vacia(c))` repite `desencolar` hasta que la cola queda vacía, y por eso muestra los tres. Es el orden de una fila de espera, y por eso una cola sirve, por ejemplo, para atender turnos."
+        },
+        {
+          "texto": "Muestra solo `1`: `desencolar` vacía toda la cola.",
+          "codigo": "OPCION_COLA_SACA_TODO",
+          "explicacion": "`desencolar` saca un solo elemento, el del principio. La cola se vacía recién después de tres llamadas, y el ciclo `while (!vacia(c))` las repite hasta lograrlo."
+        }
+      ]
+    },
+    {
+      "id": "tadq-usar-turnos",
+      "titulo": "Atender tres turnos",
+      "escribe": "main.c",
+      "inicializa": "inicializar",
+      "archivos": [
+        {
+          "nombre": "cola.h",
+          "codigo": "#ifndef COLA_H\n#define COLA_H\n\n#define MAX 8\n\ntypedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\ntypedef struct {\n  int datos[MAX];\n  int inicio;\n  int fin;\n} TCola;\n\nvoid inicializar(TCola *c);\nvoid encolar(TCola *c, int x);\nint desencolar(TCola *c);\nint primero(TCola c);\nTBool vacia(TCola c);\nTBool llena(TCola c);\n\n#endif"
+        },
+        {
+          "nombre": "cola.c",
+          "codigo": "#include \"cola.h\"\n\nvoid inicializar(TCola *c) {\n  c->inicio = 0;\n  c->fin = 0;\n}\n\nvoid encolar(TCola *c, int x) {\n  c->datos[c->fin] = x;\n  c->fin = c->fin + 1;\n}\n\nint desencolar(TCola *c) {\n  int x;\n\n  x = c->datos[c->inicio];\n  c->inicio = c->inicio + 1;\n  return x;\n}\n\nint primero(TCola c) {\n  return c.datos[c.inicio];\n}\n\nTBool vacia(TCola c) {\n  if (c.inicio == c.fin) {\n    return VERDADERO;\n  }\n  return FALSO;\n}\n\nTBool llena(TCola c) {\n  if (c.fin == MAX) {\n    return VERDADERO;\n  }\n  return FALSO;\n}",
+          "oculto": true
+        }
+      ],
+      "usoIncorrecto": "Una operación de la cola se salió de los límites de su arreglo, que guarda hasta 8 números: se encoló en una cola llena o se desencoló una cola vacía. Antes de `encolar` conviene preguntar con `llena`, y antes de `desencolar`, con `vacia`.",
+      "enunciado": "El archivo `cola.h` declara el tipo `TCola` y seis operaciones:\n- `inicializar`: la deja vacía.\n- `encolar`: agrega un número al final.\n- `desencolar`: saca el del principio y lo devuelve.\n- `primero`: devuelve el del principio sin sacarlo.\n- `vacia`: devuelve un `TBool` que dice si no tiene elementos.\n- `llena`: devuelve un `TBool` que dice si no entra ninguno más.\n\n`TBool` es un enumerado con los valores `FALSO` y `VERDADERO`. Escriba `main.c`: lea con `scanf` tres números enteros, guárdelos en una cola y muéstrelos con `printf` a medida que salen de ella, separados por un espacio. Por ejemplo, si se ingresan `12`, `305` y `7`, el programa muestra `12 305 7`. Use solo las operaciones del `.h`.",
+      "requiere": [
+        {
+          "incluyeLocal": "cola.h"
+        },
+        {
+          "soloOperaciones": "TCola"
+        },
+        {
+          "usaOperaciones": [
+            "inicializar",
+            "encolar",
+            "desencolar"
+          ]
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "entrada": [
+                  4,
+                  8,
+                  15
+                ],
+                "muestra": [
+                  4,
+                  8,
+                  15
+                ],
+                "separadas": true
+              },
+              {
+                "entrada": [
+                  3,
+                  2,
+                  1
+                ],
+                "muestra": [
+                  3,
+                  2,
+                  1
+                ],
+                "separadas": true
+              },
+              {
+                "entrada": [
+                  5,
+                  5,
+                  9
+                ],
+                "muestra": [
+                  5,
+                  5,
+                  9
+                ],
+                "separadas": true
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "#include <stdio.h>\n#include \"cola.h\"\n\nint main() {\n  TCola c;\n  int n;\n\n  inicializar(&c);\n  for (int i = 0; i < 3; i++) {\n    scanf(\"%d\", &n);\n    encolar(&c, n);\n  }\n  for (int i = 0; i < 3; i++) {\n    printf(\"%d \", desencolar(&c));\n  }\n  return 0;\n}"
+    },
+    {
+      "id": "tadq-usar-pares",
+      "titulo": "Solo los pares",
+      "escribe": "main.c",
+      "inicializa": "inicializar",
+      "archivos": [
+        {
+          "nombre": "cola.h",
+          "codigo": "#ifndef COLA_H\n#define COLA_H\n\n#define MAX 8\n\ntypedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\ntypedef struct {\n  int datos[MAX];\n  int inicio;\n  int fin;\n} TCola;\n\nvoid inicializar(TCola *c);\nvoid encolar(TCola *c, int x);\nint desencolar(TCola *c);\nint primero(TCola c);\nTBool vacia(TCola c);\nTBool llena(TCola c);\n\n#endif"
+        },
+        {
+          "nombre": "cola.c",
+          "codigo": "#include \"cola.h\"\n\nvoid inicializar(TCola *c) {\n  c->inicio = 0;\n  c->fin = 0;\n}\n\nvoid encolar(TCola *c, int x) {\n  c->datos[c->fin] = x;\n  c->fin = c->fin + 1;\n}\n\nint desencolar(TCola *c) {\n  int x;\n\n  x = c->datos[c->inicio];\n  c->inicio = c->inicio + 1;\n  return x;\n}\n\nint primero(TCola c) {\n  return c.datos[c.inicio];\n}\n\nTBool vacia(TCola c) {\n  if (c.inicio == c.fin) {\n    return VERDADERO;\n  }\n  return FALSO;\n}\n\nTBool llena(TCola c) {\n  if (c.fin == MAX) {\n    return VERDADERO;\n  }\n  return FALSO;\n}",
+          "oculto": true
+        }
+      ],
+      "usoIncorrecto": "Una operación de la cola se salió de los límites de su arreglo, que guarda hasta 8 números: se encoló en una cola llena o se desencoló una cola vacía. Antes de `encolar` conviene preguntar con `llena`, y antes de `desencolar`, con `vacia`.",
+      "enunciado": "Con el mismo `cola.h`, escriba `main.c`: lea con `scanf` cinco números enteros y guarde en una cola solo los pares. Al terminar de leer, saque todos los elementos de la cola y muéstrelos con `printf`, separados por un espacio. Por ejemplo, si se ingresan `7`, `4`, `5`, `10` y `6`, el programa muestra `4 10 6`. Use solo las operaciones del `.h`.",
+      "requiere": [
+        {
+          "incluyeLocal": "cola.h"
+        },
+        {
+          "soloOperaciones": "TCola"
+        },
+        {
+          "usaOperaciones": [
+            "inicializar",
+            "encolar",
+            "desencolar",
+            "vacia"
+          ]
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "entrada": [
+                  7,
+                  4,
+                  5,
+                  10,
+                  6
+                ],
+                "muestra": [
+                  4,
+                  10,
+                  6
+                ],
+                "separadas": true
+              },
+              {
+                "entrada": [
+                  2,
+                  4,
+                  6,
+                  8,
+                  10
+                ],
+                "muestra": [
+                  2,
+                  4,
+                  6,
+                  8,
+                  10
+                ],
+                "separadas": true
+              },
+              {
+                "entrada": [
+                  1,
+                  2,
+                  3,
+                  5,
+                  7
+                ],
+                "muestra": [
+                  2
+                ],
+                "separadas": true
+              },
+              {
+                "entrada": [
+                  9,
+                  3,
+                  6,
+                  5,
+                  1
+                ],
+                "muestra": [
+                  6
+                ],
+                "separadas": true
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "#include <stdio.h>\n#include \"cola.h\"\n\nint main() {\n  TCola pares;\n  int n;\n\n  inicializar(&pares);\n  for (int i = 0; i < 5; i++) {\n    scanf(\"%d\", &n);\n    if (n % 2 == 0) {\n      encolar(&pares, n);\n    }\n  }\n  while (!vacia(pares)) {\n    printf(\"%d \", desencolar(&pares));\n  }\n  return 0;\n}"
+    },
+    {
+      "id": "tadq-usar-pasar",
+      "titulo": "Pasar de una cola a otra",
+      "escribe": "main.c",
+      "inicializa": "inicializar",
+      "archivos": [
+        {
+          "nombre": "cola.h",
+          "codigo": "#ifndef COLA_H\n#define COLA_H\n\n#define MAX 8\n\ntypedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\ntypedef struct {\n  int datos[MAX];\n  int inicio;\n  int fin;\n} TCola;\n\nvoid inicializar(TCola *c);\nvoid encolar(TCola *c, int x);\nint desencolar(TCola *c);\nint primero(TCola c);\nTBool vacia(TCola c);\nTBool llena(TCola c);\n\n#endif"
+        },
+        {
+          "nombre": "cola.c",
+          "codigo": "#include \"cola.h\"\n\nvoid inicializar(TCola *c) {\n  c->inicio = 0;\n  c->fin = 0;\n}\n\nvoid encolar(TCola *c, int x) {\n  c->datos[c->fin] = x;\n  c->fin = c->fin + 1;\n}\n\nint desencolar(TCola *c) {\n  int x;\n\n  x = c->datos[c->inicio];\n  c->inicio = c->inicio + 1;\n  return x;\n}\n\nint primero(TCola c) {\n  return c.datos[c.inicio];\n}\n\nTBool vacia(TCola c) {\n  if (c.inicio == c.fin) {\n    return VERDADERO;\n  }\n  return FALSO;\n}\n\nTBool llena(TCola c) {\n  if (c.fin == MAX) {\n    return VERDADERO;\n  }\n  return FALSO;\n}",
+          "oculto": true
+        }
+      ],
+      "usoIncorrecto": "Una operación de la cola se salió de los límites de su arreglo, que guarda hasta 8 números: se encoló en una cola llena o se desencoló una cola vacía. Antes de `encolar` conviene preguntar con `llena`, y antes de `desencolar`, con `vacia`.",
+      "enunciado": "Con el mismo `cola.h`, escriba `main.c` con dos colas, `a` y `b`. Lea con `scanf` tres números enteros y encólelos en `a`. Después pase todos los elementos de `a` a `b`, encolando en `b` el doble de cada uno: desencole de `a` y encole en `b` hasta que `a` quede vacía. Al final desencole los elementos de `b` y muéstrelos con `printf`, separados por un espacio. Cada variable de tipo `TCola` es una cola propia. Use solo las operaciones del `.h`.",
+      "requiere": [
+        {
+          "incluyeLocal": "cola.h"
+        },
+        {
+          "soloOperaciones": "TCola"
+        },
+        {
+          "usaOperaciones": [
+            "inicializar",
+            "encolar",
+            "desencolar",
+            "vacia"
+          ]
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "entrada": [
+                  4,
+                  8,
+                  15
+                ],
+                "muestra": [
+                  8,
+                  16,
+                  30
+                ],
+                "separadas": true
+              },
+              {
+                "entrada": [
+                  1,
+                  2,
+                  3
+                ],
+                "muestra": [
+                  2,
+                  4,
+                  6
+                ],
+                "separadas": true
+              },
+              {
+                "entrada": [
+                  7,
+                  7,
+                  2
+                ],
+                "muestra": [
+                  14,
+                  14,
+                  4
+                ],
+                "separadas": true
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "#include <stdio.h>\n#include \"cola.h\"\n\nint main() {\n  TCola a;\n  TCola b;\n  int n;\n\n  inicializar(&a);\n  inicializar(&b);\n  for (int i = 0; i < 3; i++) {\n    scanf(\"%d\", &n);\n    encolar(&a, n);\n  }\n  while (!vacia(a)) {\n    n = desencolar(&a);\n    encolar(&b, 2 * n);\n  }\n  while (!vacia(b)) {\n    printf(\"%d \", desencolar(&b));\n  }\n  return 0;\n}"
+    }
+  ]
+}

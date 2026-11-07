@@ -137,6 +137,9 @@
         "tad-pila-usar.json",
         "tad-pila-h.json",
         "tad-pila-c.json",
+        "tad-cola-usar.json",
+        "tad-cola-h.json",
+        "tad-cola-c.json",
         "tad-representacion.json",
         "tad-fecha.json",
         "tad-ampliar.json"

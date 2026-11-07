@@ -1,0 +1,178 @@
+{
+  "id": "tad-cola-c",
+  "titulo": "Escribir el archivo cola.c",
+  "continua": false,
+  "descripcion": "El `.c` de la cola implementa sus seis operaciones sobre el arreglo y los dos índices que declara el `.h`. Una cola así guardada tiene una limitación que conviene conocer.",
+  "consignas": [
+    {
+      "id": "tadq-c",
+      "titulo": "La implementación de la cola",
+      "escribe": "cola.c",
+      "archivos": [
+        {
+          "nombre": "cola.h",
+          "codigo": "#ifndef COLA_H\n#define COLA_H\n\n#define MAX 8\n\ntypedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\ntypedef struct {\n  int datos[MAX];\n  int inicio;\n  int fin;\n} TCola;\n\nvoid inicializar(TCola *c);\nvoid encolar(TCola *c, int x);\nint desencolar(TCola *c);\nint primero(TCola c);\nTBool vacia(TCola c);\nTBool llena(TCola c);\n\n#endif"
+        }
+      ],
+      "enunciado": "El archivo `cola.h` ya está escrito. Escriba `cola.c`, que define sus seis operaciones. Los elementos se guardan en `datos` desde la posición 0. `inicio` es la posición del elemento que sale primero y `fin` es la posición donde va el próximo; los dos valen 0 cuando la cola está vacía. Las operaciones hacen lo siguiente:\n- `inicializar`: deja la cola vacía.\n- `encolar`: guarda el número en la posición `fin` y suma uno a `fin`.\n- `desencolar`: devuelve el elemento de la posición `inicio` y suma uno a `inicio`.\n- `primero`: devuelve el elemento de la posición `inicio` sin sacarlo.\n- `vacia`: devuelve `VERDADERO` si no hay elementos y `FALSO` si hay.\n- `llena`: devuelve `VERDADERO` si no entra ninguno más y `FALSO` si entra.\n\nNo olvide incluir el `.h`.",
+      "requiere": [
+        {
+          "incluyeLocal": "cola.h"
+        },
+        {
+          "sinTipos": true
+        },
+        {
+          "defineTodo": true
+        },
+        {
+          "funcion": {
+            "nombre": "vacia",
+            "retorna": "enumerado",
+            "soloEnumeradores": true,
+            "parametros": [
+              {
+                "tipo": "estructura"
+              }
+            ]
+          }
+        },
+        {
+          "funcion": {
+            "nombre": "llena",
+            "retorna": "enumerado",
+            "soloEnumeradores": true,
+            "parametros": [
+              {
+                "tipo": "estructura"
+              }
+            ]
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "antes": "TCola c;\ninicializar(&c);",
+                "llama": "vacia(c)",
+                "devuelve": "VERDADERO",
+                "contexto": "Después de inicializar una cola",
+                "visible": true
+              },
+              {
+                "antes": "TCola c;\ninicializar(&c);\nencolar(&c, 4);",
+                "llama": "vacia(c)",
+                "devuelve": "FALSO",
+                "contexto": "Después de encolar un número"
+              },
+              {
+                "antes": "TCola c;\ninicializar(&c);\nencolar(&c, 4);\nencolar(&c, 7);",
+                "llama": "primero(c)",
+                "devuelve": 4,
+                "contexto": "Después de encolar 4 y 7"
+              },
+              {
+                "antes": "TCola c;\ninicializar(&c);\nencolar(&c, 4);\nencolar(&c, 7);",
+                "llama": "desencolar(&c)",
+                "devuelve": 4,
+                "contexto": "Después de encolar 4 y 7"
+              },
+              {
+                "antes": "TCola c;\ninicializar(&c);\nencolar(&c, 4);\nencolar(&c, 7);\ndesencolar(&c);",
+                "llama": "primero(c)",
+                "devuelve": 7,
+                "contexto": "Después de encolar 4 y 7 y desencolar una vez"
+              },
+              {
+                "antes": "TCola c;\ninicializar(&c);\nencolar(&c, 4);\ndesencolar(&c);",
+                "llama": "vacia(c)",
+                "devuelve": "VERDADERO",
+                "contexto": "Después de encolar un número y sacarlo"
+              },
+              {
+                "antes": "TCola c;\ninicializar(&c);\nencolar(&c, 1);\nencolar(&c, 2);\ndesencolar(&c);\ndesencolar(&c);",
+                "llama": "vacia(c)",
+                "devuelve": "VERDADERO",
+                "contexto": "Después de encolar 1 y 2 y desencolar dos veces"
+              },
+              {
+                "antes": "TCola c;\ninicializar(&c);\nencolar(&c, 1);\nencolar(&c, 2);\nencolar(&c, 3);\ndesencolar(&c);",
+                "llama": "desencolar(&c)",
+                "devuelve": 2,
+                "contexto": "Después de encolar 1, 2 y 3 y desencolar una vez"
+              },
+              {
+                "antes": "TCola c;\ninicializar(&c);\nencolar(&c, 1);\nencolar(&c, 2);\nencolar(&c, 3);\ndesencolar(&c);\ndesencolar(&c);",
+                "llama": "vacia(c)",
+                "devuelve": "FALSO",
+                "contexto": "Después de encolar 1, 2 y 3 y desencolar dos veces"
+              },
+              {
+                "antes": "TCola c;\ninicializar(&c);\nencolar(&c, 1);\nencolar(&c, 2);\nencolar(&c, 3);",
+                "llama": "llena(c)",
+                "devuelve": "FALSO",
+                "contexto": "Con tres números encolados"
+              },
+              {
+                "antes": "TCola c;\ninicializar(&c);\nencolar(&c, 1);\nencolar(&c, 2);\nencolar(&c, 3);\nencolar(&c, 4);\nencolar(&c, 5);\nencolar(&c, 6);\nencolar(&c, 7);\nencolar(&c, 8);",
+                "llama": "llena(c)",
+                "devuelve": "VERDADERO",
+                "contexto": "Con ocho números encolados"
+              },
+              {
+                "antes": "TCola c;\ninicializar(&c);\nencolar(&c, 1);\nencolar(&c, 2);\nencolar(&c, 3);\nencolar(&c, 4);\nencolar(&c, 5);\nencolar(&c, 6);\nencolar(&c, 7);\nencolar(&c, 8);",
+                "llama": "primero(c)",
+                "devuelve": 1,
+                "contexto": "Con ocho números encolados"
+              },
+              {
+                "antes": "TCola c;\ninicializar(&c);\nencolar(&c, 4);\nencolar(&c, 7);\ninicializar(&c);",
+                "llama": "vacia(c)",
+                "devuelve": "VERDADERO",
+                "contexto": "Después de encolar dos números y volver a inicializar la cola"
+              },
+              {
+                "antes": "TCola c;\ninicializar(&c);\nencolar(&c, 4);\nencolar(&c, 7);\ndesencolar(&c);\ninicializar(&c);\nencolar(&c, 9);",
+                "llama": "primero(c)",
+                "devuelve": 9,
+                "contexto": "Después de usar la cola, volver a inicializarla y encolar un número"
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "#include \"cola.h\"\n\nvoid inicializar(TCola *c) {\n  c->inicio = 0;\n  c->fin = 0;\n}\n\nvoid encolar(TCola *c, int x) {\n  c->datos[c->fin] = x;\n  c->fin = c->fin + 1;\n}\n\nint desencolar(TCola *c) {\n  int x;\n\n  x = c->datos[c->inicio];\n  c->inicio = c->inicio + 1;\n  return x;\n}\n\nint primero(TCola c) {\n  return c.datos[c.inicio];\n}\n\nTBool vacia(TCola c) {\n  if (c.inicio == c.fin) {\n    return VERDADERO;\n  }\n  return FALSO;\n}\n\nTBool llena(TCola c) {\n  if (c.fin == MAX) {\n    return VERDADERO;\n  }\n  return FALSO;\n}"
+    },
+    {
+      "id": "tadq-q-llena",
+      "titulo": "Una cola con lugar libre",
+      "archivos": [
+        {
+          "nombre": "cola.h",
+          "codigo": "#ifndef COLA_H\n#define COLA_H\n\n#define MAX 8\n\ntypedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\ntypedef struct {\n  int datos[MAX];\n  int inicio;\n  int fin;\n} TCola;\n\nvoid inicializar(TCola *c);\nvoid encolar(TCola *c, int x);\nint desencolar(TCola *c);\nint primero(TCola c);\nTBool vacia(TCola c);\nTBool llena(TCola c);\n\n#endif"
+        },
+        {
+          "nombre": "cola.c",
+          "codigo": "#include \"cola.h\"\n\nvoid inicializar(TCola *c) {\n  c->inicio = 0;\n  c->fin = 0;\n}\n\nvoid encolar(TCola *c, int x) {\n  c->datos[c->fin] = x;\n  c->fin = c->fin + 1;\n}\n\nint desencolar(TCola *c) {\n  int x;\n\n  x = c->datos[c->inicio];\n  c->inicio = c->inicio + 1;\n  return x;\n}\n\nint primero(TCola c) {\n  return c.datos[c.inicio];\n}\n\nTBool vacia(TCola c) {\n  if (c.inicio == c.fin) {\n    return VERDADERO;\n  }\n  return FALSO;\n}\n\nTBool llena(TCola c) {\n  if (c.fin == MAX) {\n    return VERDADERO;\n  }\n  return FALSO;\n}"
+        },
+        {
+          "nombre": "main.c",
+          "codigo": "#include <stdio.h>\n#include \"cola.h\"\n\nint main() {\n  TCola c;\n\n  inicializar(&c);\n  for (int i = 1; i <= 8; i++) {\n    encolar(&c, i);\n  }\n  for (int i = 0; i < 5; i++) {\n    desencolar(&c);\n  }\n  if (llena(c) == VERDADERO) {\n    printf(\"llena\");\n  } else {\n    printf(\"hay lugar\");\n  }\n  return 0;\n}"
+        }
+      ],
+      "enunciado": "La cola de `cola.c` guarda hasta 8 números. El programa encola ocho y desencola cinco. ¿Qué muestra?",
+      "opciones": [
+        {
+          "texto": "Muestra `hay lugar`.",
+          "codigo": "OPCION_COLA_HAY_LUGAR",
+          "explicacion": "Es lo que uno esperaría: quedan 5 posiciones libres al principio del arreglo. Pero `llena` no cuenta lugares libres: pregunta si `fin` llegó a `MAX`, y `fin` solo avanza, nunca retrocede, así que sigue valiendo 8."
+        },
+        {
+          "texto": "Muestra `llena`.",
+          "correcta": true,
+          "explicacion": "Se encolaron ocho números, así que `fin` llegó a 8, que es `MAX`; desencolar avanza `inicio`, pero no hace retroceder `fin`. El programa no tiene ningún error: desencolar cinco veces de ocho es válido y quedan 3 elementos. Pero las posiciones 0 a 4 quedaron libres y esta cola no las vuelve a usar: `llena` dice VERDADERO y ya no se puede encolar. Es una limitación real de guardar una cola de esta manera. Se resuelve haciendo que los índices, al llegar al final, vuelvan al principio del arreglo, como si fuera un círculo: es la cola circular, que se estudia más adelante."
+        }
+      ]
+    }
+  ]
+}
