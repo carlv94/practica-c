@@ -3371,6 +3371,9 @@ export function corregir(
           `${conContexto}\`${e.texto}\` no tiene el valor: en una unión todos los miembros comparten el mismo lugar, y lo último que se guardó fue en \`${e.vigente}\`. Solo se puede leer el miembro en el que se guardó el valor.`,
           e.fila
         );
+      } else if (e instanceof SinValor && consigna.usoIncorrecto && e.escrito?.includes('[') && e.fila != null && e.fila < filaBase) {
+        // Se lee un lugar del arreglo del TAD que nunca se escribio (sacar de una cola vacia): es un mal uso, no una falta de inicializar.
+        error('TAD_USO_INCORRECTO', `${conContexto}${consigna.usoIncorrecto}`);
       } else if (e instanceof SinValor && consigna.inicializa && e.fila != null && e.fila < filaBase) {
         // El valor que falta se usa en un archivo que la consigna ya traia: el TAD no se inicializo.
         error(
