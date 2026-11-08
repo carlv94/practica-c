@@ -144,7 +144,9 @@
         "tad-fecha.json",
         "tad-ampliar.json",
         "tad-punto.json",
-        "tad-punto-usar.json"
+        "tad-punto-usar.json",
+        "tad-cuenta.json",
+        "tad-cuenta-usar.json"
       ]
     }
   ]

@@ -90,6 +90,8 @@ const colaH = serie('tad-cola-h');
 const colaC = serie('tad-cola-c');
 const punto = serie('tad-punto');
 const puntoUsar = serie('tad-punto-usar');
+const cuenta = serie('tad-cuenta');
+const cuentaUsar = serie('tad-cuenta-usar');
 
 // main.c de las pilas con lo que va adentro de main.
 const MAIN_PILA = (...cuerpo) =>
@@ -410,6 +412,177 @@ const CERCANOS = MAIN_PU(
     'printf(" ");',
     'mostrar(pts[b]);',
     'printf(" %.2f", menor);',
+  ]
+);
+
+// Serie de la cuenta bancaria.
+const CUENTA_H = lineas(
+  '#ifndef CUENTA_H',
+  '#define CUENTA_H',
+  '',
+  'typedef enum {',
+  '  OK,',
+  '  SALDO_INSUFICIENTE',
+  '} TResultado;',
+  '',
+  'typedef struct {',
+  '  int numero;',
+  '  double saldo;',
+  '} TCuenta;',
+  '',
+  'TCuenta crear(int numero);',
+  'void depositar(TCuenta *c, double monto);',
+  'TResultado retirar(TCuenta *c, double monto);',
+  'double obtenerSaldo(TCuenta c);',
+  'int obtenerNumero(TCuenta c);',
+  '',
+  '#endif'
+);
+const HCU = (cambio) => cambio(CUENTA_H);
+
+const CUENTA_C = lineas(
+  '#include "cuenta.h"',
+  '',
+  'TCuenta crear(int numero) {',
+  '  TCuenta c;',
+  '',
+  '  c.numero = numero;',
+  '  c.saldo = 0;',
+  '  return c;',
+  '}',
+  '',
+  'void depositar(TCuenta *c, double monto) {',
+  '  c->saldo = c->saldo + monto;',
+  '}',
+  '',
+  'TResultado retirar(TCuenta *c, double monto) {',
+  '  if (monto > c->saldo) {',
+  '    return SALDO_INSUFICIENTE;',
+  '  }',
+  '  c->saldo = c->saldo - monto;',
+  '  return OK;',
+  '}',
+  '',
+  'double obtenerSaldo(TCuenta c) {',
+  '  return c.saldo;',
+  '}',
+  '',
+  'int obtenerNumero(TCuenta c) {',
+  '  return c.numero;',
+  '}'
+);
+
+const MAIN_MOV = lineas(
+  '#include <stdio.h>',
+  '#include "cuenta.h"',
+  '',
+  'int main() {',
+  '  TCuenta c;',
+  '  double monto;',
+  '  int numero;',
+  '  int tipo;',
+  '  int n;',
+  '',
+  '  scanf("%d", &numero);',
+  '  scanf("%d", &n);',
+  '  c = crear(numero);',
+  '  for (int i = 0; i < n; i++) {',
+  '    scanf("%d", &tipo);',
+  '    scanf("%lf", &monto);',
+  '    if (tipo == 1) {',
+  '      depositar(&c, monto);',
+  '    } else {',
+  '      if (retirar(&c, monto) == SALDO_INSUFICIENTE) {',
+  '        printf("Saldo insuficiente\\n");',
+  '      }',
+  '    }',
+  '  }',
+  '  printf("Cuenta %d: %.2f", obtenerNumero(c), obtenerSaldo(c));',
+  '  return 0;',
+  '}'
+);
+
+const MAIN_TRANSF = lineas(
+  '#include <stdio.h>',
+  '#include "cuenta.h"',
+  '',
+  'int main() {',
+  '  TCuenta origen;',
+  '  TCuenta destino;',
+  '  double saldo;',
+  '  double monto;',
+  '  int numero;',
+  '',
+  '  scanf("%d", &numero);',
+  '  origen = crear(numero);',
+  '  scanf("%lf", &saldo);',
+  '  depositar(&origen, saldo);',
+  '  scanf("%d", &numero);',
+  '  destino = crear(numero);',
+  '  scanf("%lf", &saldo);',
+  '  depositar(&destino, saldo);',
+  '  scanf("%lf", &monto);',
+  '  if (retirar(&origen, monto) == OK) {',
+  '    depositar(&destino, monto);',
+  '    printf("Transferencia realizada\\n");',
+  '  } else {',
+  '    printf("Saldo insuficiente\\n");',
+  '  }',
+  '  printf("Cuenta %d: %.2f\\n", obtenerNumero(origen), obtenerSaldo(origen));',
+  '  printf("Cuenta %d: %.2f", obtenerNumero(destino), obtenerSaldo(destino));',
+  '  return 0;',
+  '}'
+);
+
+// main.c de las consignas con un arreglo de cuentas: declaraciones, lectura y lo que sigue.
+const MAIN_CUENTAS = (decl, despues) =>
+  lineas(
+    '#include <stdio.h>',
+    '#include "cuenta.h"',
+    '',
+    '#define MAX 10',
+    '',
+    'int main() {',
+    '  TCuenta cuentas[MAX];',
+    '  double saldo;',
+    ...decl.map((l) => '  ' + l),
+    '  int numero;',
+    '  int n;',
+    '',
+    '  scanf("%d", &n);',
+    '  for (int i = 0; i < n; i++) {',
+    '    scanf("%d", &numero);',
+    '    scanf("%lf", &saldo);',
+    '    cuentas[i] = crear(numero);',
+    '    depositar(&cuentas[i], saldo);',
+    '  }',
+    ...despues.map((l) => (l ? '  ' + l : l)),
+    '  return 0;',
+    '}'
+  );
+const CUOTA_LEER = ['scanf("%lf", &cuota);'];
+const CUOTA_COBRAR = [
+  'for (int i = 0; i < n; i++) {',
+  '  if (retirar(&cuentas[i], cuota) == OK) {',
+  '    cobradas++;',
+  '  } else {',
+  '    printf("Cuenta %d no pudo pagar\\n", obtenerNumero(cuentas[i]));',
+  '  }',
+  '}',
+  'printf("Cobradas: %d", cobradas);',
+];
+const MAIN_CUOTA = MAIN_CUENTAS(['double cuota;', 'int cobradas = 0;'], [...CUOTA_LEER, ...CUOTA_COBRAR]);
+const MAIN_MAYOR = MAIN_CUENTAS(
+  ['double total = 0;', 'int mayor = 0;'],
+  [
+    'for (int i = 0; i < n; i++) {',
+    '  total = total + obtenerSaldo(cuentas[i]);',
+    '  if (obtenerSaldo(cuentas[i]) > obtenerSaldo(cuentas[mayor])) {',
+    '    mayor = i;',
+    '  }',
+    '}',
+    'printf("Mayor: Cuenta %d\\n", obtenerNumero(cuentas[mayor]));',
+    'printf("Total: %.2f", total);',
   ]
 );
 
@@ -1901,6 +2074,114 @@ export const CASOS_DE_TAD = [
         'printf(" %.2f", distancia(pts[mejor], origen()));',
       ]
     ).replace('  scanf("%d", &n);', '  scanf("%d", &n);'),
+    ['MUESTRA_DISTINTA']
+  ),
+  // ===== La cuenta bancaria =====
+  cuenta(1, 'completo', CUENTA_H),
+  cuenta(1, 'sin guardas', HCU((t) => t.replace('#ifndef CUENTA_H\n#define CUENTA_H\n\n', '').replace('\n\n#endif', '')), ['ENCABEZADO_SIN_GUARDA']),
+  cuenta(1, 'con otro nombre de guarda', HCU((t) => t.replaceAll('CUENTA_H', 'CUENTA')), ['ENCABEZADO_GUARDA_NOMBRE'], { dice: ['CUENTA_H'] }),
+  cuenta(1, 'el saldo entero', HCU((t) => t.replace('double saldo;', 'int saldo;')), ['CAMPO_TIPO']),
+  cuenta(1, 'sin el numero', HCU((t) => t.replace('  int numero;\n', '')), ['CAMPO_FALTA']),
+  cuenta(1, 'el saldo con otro nombre', HCU((t) => t.replace('double saldo;', 'double dinero;')), ['CAMPO_FALTA']),
+  cuenta(1, 'sin un prototipo', HCU((t) => t.replace('int obtenerNumero(TCuenta c);\n', '')), ['PROTOTIPO_FALTA']),
+  cuenta(1, 'crear sin el numero', HCU((t) => t.replace('TCuenta crear(int numero);', 'TCuenta crear();')), ['PARAMETROS_CANTIDAD']),
+  cuenta(1, 'depositar con la cuenta por valor', HCU((t) => t.replace('void depositar(TCuenta *c, double monto);', 'void depositar(TCuenta c, double monto);')), ['PARAMETRO_REFERENCIA_FALTA']),
+  cuenta(1, 'retirar devuelve un entero', HCU((t) => t.replace('TResultado retirar', 'int retirar')), ['FUNCION_TIPO_RETORNO']),
+  cuenta(1, 'obtenerSaldo devuelve un entero', HCU((t) => t.replace('double obtenerSaldo', 'int obtenerSaldo')), ['FUNCION_TIPO_RETORNO']),
+  cuenta(1, 'el monto entero', HCU((t) => t.replace('void depositar(TCuenta *c, double monto);', 'void depositar(TCuenta *c, int monto);')), ['PARAMETRO_TIPO']),
+  cuenta(1, 'con algo afuera', HCU((t) => t + '\n\nvoid cerrar(TCuenta *c);'), ['ENCABEZADO_FUERA_DE_LA_GUARDA']),
+  cuenta(2, 'completa', CUENTA_C),
+  cuenta(2, 'sin incluir el encabezado', CUENTA_C.replace('#include "cuenta.h"\n', ''), ['INCLUDE_PROPIO_FALTA']),
+  cuenta(2, 'retirar siempre resta', CUENTA_C.replace('  if (monto > c->saldo) {\n    return SALDO_INSUFICIENTE;\n  }\n', ''), ['DEVUELVE_DISTINTO']),
+  cuenta(2, 'retirar no deja retirar todo el saldo', CUENTA_C.replace('monto > c->saldo', 'monto >= c->saldo'), ['DEVUELVE_DISTINTO']),
+  cuenta(
+    2,
+    'retirar resta aunque no alcance',
+    CUENTA_C.replace('  if (monto > c->saldo) {\n    return SALDO_INSUFICIENTE;\n  }\n  c->saldo = c->saldo - monto;\n  return OK;', '  c->saldo = c->saldo - monto;\n  if (c->saldo < 0) {\n    return SALDO_INSUFICIENTE;\n  }\n  return OK;'),
+    ['DEVUELVE_DISTINTO']
+  ),
+  cuenta(2, 'retirar devuelve numeros', CUENTA_C.replace('return SALDO_INSUFICIENTE;', 'return 1;').replace('return OK;', 'return 0;'), ['RETORNO_NUMERO_EN_ENUMERADO']),
+  cuenta(
+    2,
+    'retirar muestra el mensaje',
+    CUENTA_C.replace('#include "cuenta.h"', '#include <stdio.h>\n#include "cuenta.h"').replace('    return SALDO_INSUFICIENTE;', '    printf("Saldo insuficiente");\n    return SALDO_INSUFICIENTE;'),
+    ['MUESTRA_DISTINTA']
+  ),
+  cuenta(2, 'crear con un saldo inicial', CUENTA_C.replace('c.saldo = 0;', 'c.saldo = 100;'), ['DEVUELVE_DISTINTO']),
+  cuenta(2, 'crear con el numero cruzado', CUENTA_C.replace('c.numero = numero;', 'c.numero = 0;'), ['DEVUELVE_DISTINTO']),
+  cuenta(2, 'depositar resta', CUENTA_C.replace('c->saldo = c->saldo + monto;', 'c->saldo = c->saldo - monto;'), ['DEVUELVE_DISTINTO']),
+  cuenta(2, 'depositar reemplaza el saldo', CUENTA_C.replace('c->saldo = c->saldo + monto;', 'c->saldo = monto;'), ['DEVUELVE_DISTINTO']),
+  cuenta(2, 'obtenerNumero devuelve el saldo', CUENTA_C.replace('return c.numero;', 'return c.saldo;'), ['DEVUELVE_DISTINTO']),
+  cuenta(2, 'sin definir una operacion', CUENTA_C.replace('\n\nint obtenerNumero(TCuenta c) {\n  return c.numero;\n}', ''), ['PROTOTIPO_SIN_DEFINICION']),
+  cuenta(3, 'porque la cuenta no sabe quien la usa', '1'),
+  cuenta(3, 'porque printf solo va en main', '0', ['OPCION_PRINTF_SOLO_EN_MAIN']),
+  cuenta(3, 'porque es mas rapido', '2', ['OPCION_ENUM_MAS_RAPIDO']),
+  cuenta(4, 'el main correcto', MAIN_MOV),
+  cuenta(4, 'sin avisar que no alcanza', MAIN_MOV.replace('      if (retirar(&c, monto) == SALDO_INSUFICIENTE) {\n        printf("Saldo insuficiente\\n");\n      }', '      retirar(&c, monto);'), ['MUESTRA_DISTINTA']),
+  cuenta(4, 'con otro mensaje', MAIN_MOV.replace('Saldo insuficiente', 'No alcanza'), ['MUESTRA_DISTINTA']),
+  cuenta(4, 'el saldo con un decimal', MAIN_MOV.replace('%.2f', '%.1f'), ['MUESTRA_DISTINTA']),
+  cuenta(4, 'avisando con OK', MAIN_MOV.replace('if (retirar(&c, monto) == SALDO_INSUFICIENTE) {', 'if (retirar(&c, monto) != OK) {')),
+  cuenta(4, 'sin el numero de cuenta', MAIN_MOV.replace('"Cuenta %d: %.2f", obtenerNumero(c), obtenerSaldo(c)', '"Cuenta %d: %.2f", numero, obtenerSaldo(c)'), ['TAD_OPERACION_SIN_USAR']),
+  cuenta(4, 'tocando el saldo', MAIN_MOV.replace('obtenerSaldo(c)', 'c.saldo'), ['TAD_ACCESO_DIRECTO', 'TAD_OPERACION_SIN_USAR']),
+  cuenta(
+    4,
+    'restando el retiro a mano',
+    MAIN_MOV.replace('      if (retirar(&c, monto) == SALDO_INSUFICIENTE) {', '      c.saldo = c.saldo - monto;\n      if (retirar(&c, 0) == SALDO_INSUFICIENTE) {'),
+    ['TAD_ACCESO_DIRECTO']
+  ),
+  cuentaUsar(2, 'el deposito sin retiro', '1'),
+  cuentaUsar(2, 'queda en deuda', '0', ['OPCION_SALDO_NEGATIVO']),
+  cuentaUsar(2, 'retira lo que hay', '2', ['OPCION_RETIRA_LO_QUE_HAY']),
+  cuentaUsar(1, 'la transferencia correcta', MAIN_TRANSF),
+  cuentaUsar(
+    1,
+    'depositando aunque el retiro no se pudo',
+    MAIN_TRANSF.replace('  if (retirar(&origen, monto) == OK) {\n    depositar(&destino, monto);\n    printf("Transferencia realizada\\n");\n  } else {\n    printf("Saldo insuficiente\\n");\n  }', '  if (retirar(&origen, monto) == OK) {\n    printf("Transferencia realizada\\n");\n  } else {\n    printf("Saldo insuficiente\\n");\n  }\n  depositar(&destino, monto);'),
+    ['MUESTRA_DISTINTA']
+  ),
+  cuentaUsar(
+    1,
+    'sin mirar el resultado de retirar',
+    MAIN_TRANSF.replace('  if (retirar(&origen, monto) == OK) {\n    depositar(&destino, monto);\n    printf("Transferencia realizada\\n");\n  } else {\n    printf("Saldo insuficiente\\n");\n  }', '  retirar(&origen, monto);\n  depositar(&destino, monto);\n  printf("Transferencia realizada\\n");'),
+    ['MUESTRA_DISTINTA']
+  ),
+  cuentaUsar(
+    1,
+    'preguntando el saldo antes de retirar',
+    MAIN_TRANSF.replace('if (retirar(&origen, monto) == OK) {', 'if (obtenerSaldo(origen) >= monto) {\n    retirar(&origen, monto);')
+  ),
+  cuentaUsar(1, 'mostrando los saldos al reves', MAIN_TRANSF.replace('obtenerSaldo(origen));\n  printf("Cuenta %d: %.2f", obtenerNumero(destino), obtenerSaldo(destino)', 'obtenerSaldo(destino));\n  printf("Cuenta %d: %.2f", obtenerNumero(destino), obtenerSaldo(origen)'), ['MUESTRA_DISTINTA']),
+  cuentaUsar(1, 'tocando los saldos', MAIN_TRANSF.replace('obtenerSaldo(destino)', 'destino.saldo'), ['TAD_ACCESO_DIRECTO']),
+  cuentaUsar(3, 'la cuota correcta', MAIN_CUOTA),
+  cuentaUsar(3, 'sin el aviso de la cuenta que no pago', MAIN_CUOTA.replace('    printf("Cuenta %d no pudo pagar\\n", obtenerNumero(cuentas[i]));', '    cobradas = cobradas;'), ['TAD_OPERACION_SIN_USAR']),
+  cuentaUsar(3, 'contando las que no pagaron', MAIN_CUOTA.replace('printf("Cobradas: %d", cobradas);', 'printf("Cobradas: %d", n - cobradas);'), ['MUESTRA_DISTINTA']),
+  cuentaUsar(3, 'contando todas', MAIN_CUOTA.replace('    cobradas++;', '    cobradas++;\n  }\n  if (retirar(&cuentas[i], 0) == SALDO_INSUFICIENTE) {\n    cobradas = cobradas;'), ['MUESTRA_DISTINTA']),
+  cuentaUsar(
+    3,
+    'cobrando a las que pueden con el saldo',
+    MAIN_CUOTA.replace('if (retirar(&cuentas[i], cuota) == OK) {', 'if (obtenerSaldo(cuentas[i]) > cuota) {\n    retirar(&cuentas[i], cuota);'),
+    ['MUESTRA_DISTINTA']
+  ),
+  cuentaUsar(3, 'tocando el saldo', MAIN_CUOTA.replace('retirar(&cuentas[i], cuota) == OK', 'cuentas[i].saldo >= cuota'), ['TAD_ACCESO_DIRECTO', 'TAD_OPERACION_SIN_USAR']),
+  cuentaUsar(4, 'la mayor correcta', MAIN_MAYOR),
+  cuentaUsar(4, 'con el que llega despues en un empate', MAIN_MAYOR.replace('obtenerSaldo(cuentas[i]) > obtenerSaldo(cuentas[mayor])', 'obtenerSaldo(cuentas[i]) >= obtenerSaldo(cuentas[mayor])'), ['MUESTRA_DISTINTA']),
+  cuentaUsar(4, 'mostrando la posicion y no el numero', MAIN_MAYOR.replace('obtenerNumero(cuentas[mayor])', 'mayor'), ['TAD_OPERACION_SIN_USAR']),
+  cuentaUsar(4, 'sin sumar el ultimo saldo', MAIN_MAYOR.replace('for (int i = 0; i < n; i++) {\n    total', 'for (int i = 0; i < n - 1; i++) {\n    total'), ['MUESTRA_DISTINTA']),
+  cuentaUsar(4, 'mostrando el saldo de la mayor', MAIN_MAYOR.replace('"Mayor: Cuenta %d\\n", obtenerNumero(cuentas[mayor])', '"Mayor: Cuenta %d\\n", (int)obtenerSaldo(cuentas[mayor])'), ['TAD_OPERACION_SIN_USAR']),
+  cuenta(4, 'con un mensaje para pedir el numero', MAIN_MOV.replace('  scanf("%d", &numero);', '  printf("Numero de cuenta: ");\n  scanf("%d", &numero);'), ['MUESTRA_DISTINTA']),
+  cuenta(4, 'con un mensaje para pedir cada movimiento', MAIN_MOV.replace('    scanf("%d", &tipo);', '    printf("Tipo: ");\n    scanf("%d", &tipo);'), ['MUESTRA_DISTINTA']),
+  cuentaUsar(1, 'con un mensaje para pedir el monto', MAIN_TRANSF.replace('  scanf("%lf", &monto);', '  printf("Monto: ");\n  scanf("%lf", &monto);'), ['MUESTRA_DISTINTA']),
+  cuentaUsar(
+    1,
+    'reemplazando el saldo del destino en vez de sumarle',
+    MAIN_TRANSF.replace('    depositar(&destino, monto);', '    destino = crear(obtenerNumero(destino));\n    depositar(&destino, monto);'),
+    ['MUESTRA_DISTINTA']
+  ),
+  cuentaUsar(1, 'sin cargar el saldo inicial del destino', MAIN_TRANSF.replace('  depositar(&destino, saldo);\n', ''), ['MUESTRA_DISTINTA']),
+  cuentaUsar(
+    1,
+    'cargando el saldo inicial del destino a la cuenta de origen',
+    MAIN_TRANSF.replace('  depositar(&destino, saldo);\n', '  depositar(&origen, saldo);\n'),
     ['MUESTRA_DISTINTA']
   ),
 ];

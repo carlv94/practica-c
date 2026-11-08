@@ -1,0 +1,324 @@
+{
+  "id": "tad-cuenta-usar",
+  "titulo": "Usar la cuenta bancaria",
+  "continua": false,
+  "descripcion": "Con la cuenta ya hecha, se usa solo por sus operaciones y mirando siempre el resultado de retirar: una transferencia entre dos cuentas y un arreglo de cuentas al que se le cobra una cuota.",
+  "consignas": [
+    {
+      "id": "tadcu-u-transferir",
+      "titulo": "Transferir entre dos cuentas",
+      "escribe": "main.c",
+      "archivos": [
+        {
+          "nombre": "cuenta.h",
+          "codigo": "#ifndef CUENTA_H\n#define CUENTA_H\n\ntypedef enum {\n  OK,\n  SALDO_INSUFICIENTE\n} TResultado;\n\ntypedef struct {\n  int numero;\n  double saldo;\n} TCuenta;\n\nTCuenta crear(int numero);\nvoid depositar(TCuenta *c, double monto);\nTResultado retirar(TCuenta *c, double monto);\ndouble obtenerSaldo(TCuenta c);\nint obtenerNumero(TCuenta c);\n\n#endif"
+        },
+        {
+          "nombre": "cuenta.c",
+          "codigo": "#include \"cuenta.h\"\n\nTCuenta crear(int numero) {\n  TCuenta c;\n\n  c.numero = numero;\n  c.saldo = 0;\n  return c;\n}\n\nvoid depositar(TCuenta *c, double monto) {\n  c->saldo = c->saldo + monto;\n}\n\nTResultado retirar(TCuenta *c, double monto) {\n  if (monto > c->saldo) {\n    return SALDO_INSUFICIENTE;\n  }\n  c->saldo = c->saldo - monto;\n  return OK;\n}\n\ndouble obtenerSaldo(TCuenta c) {\n  return c.saldo;\n}\n\nint obtenerNumero(TCuenta c) {\n  return c.numero;\n}",
+          "oculto": true
+        }
+      ],
+      "enunciado": "El archivo `cuenta.h` declara el tipo `TCuenta` y cinco operaciones:\n- `crear`: devuelve una cuenta con el número que recibe y el saldo en cero.\n- `depositar`: suma un monto al saldo de la cuenta.\n- `retirar`: resta un monto al saldo, si alcanza, y devuelve un `TResultado` que dice si pudo hacerlo.\n- `obtenerSaldo`: devuelve el saldo de la cuenta.\n- `obtenerNumero`: devuelve el número de la cuenta.\n\n`TResultado` es un enumerado con los valores `OK` y `SALDO_INSUFICIENTE`.\n\nEscriba `main.c`, que transfiere dinero de una cuenta a otra. Lea con `scanf`, en este orden:\n- el número de la cuenta de origen\n- el saldo inicial de la cuenta de origen\n- el número de la cuenta de destino\n- el saldo inicial de la cuenta de destino\n- el monto a transferir\n\nCree cada cuenta con `crear` y cárguele su saldo inicial con `depositar`. Después transfiera el monto de la cuenta de origen a la de destino. Solo se puede hacer si la cuenta de origen tiene saldo suficiente; si no alcanza, ninguna de las dos cuentas cambia.\n\nMuestre un primer renglón con `Transferencia realizada` o `Saldo insuficiente` y, después, cada una en su renglón, las dos cuentas como `Cuenta N: S`, con el saldo con dos decimales: primero la de origen y después la de destino. Por ejemplo, si se ingresan:\n- `1` (número de la cuenta de origen)\n- `100` (saldo inicial de la cuenta de origen)\n- `2` (número de la cuenta de destino)\n- `50` (saldo inicial de la cuenta de destino)\n- `30` (monto a transferir)\n\nel programa muestra:\n`Transferencia realizada`\n`Cuenta 1: 70.00`\n`Cuenta 2: 80.00`\nUse solo las operaciones del `.h`.\n! No use `printf` para mostrar mensajes que pidan los datos: léalos directamente con `scanf`.",
+      "requiere": [
+        {
+          "incluyeLocal": "cuenta.h"
+        },
+        {
+          "soloOperaciones": "TCuenta"
+        },
+        {
+          "usaOperaciones": [
+            "crear",
+            "depositar",
+            "retirar",
+            "obtenerSaldo",
+            "obtenerNumero"
+          ]
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "entrada": [
+                  1,
+                  100,
+                  2,
+                  50,
+                  30
+                ],
+                "salida": "Transferencia realizada\nCuenta 1: 70.00\nCuenta 2: 80.00"
+              },
+              {
+                "entrada": [
+                  1,
+                  100,
+                  2,
+                  0,
+                  100
+                ],
+                "salida": "Transferencia realizada\nCuenta 1: 0.00\nCuenta 2: 100.00"
+              },
+              {
+                "entrada": [
+                  1,
+                  50,
+                  2,
+                  20,
+                  80
+                ],
+                "salida": "Saldo insuficiente\nCuenta 1: 50.00\nCuenta 2: 20.00"
+              },
+              {
+                "entrada": [
+                  3,
+                  0,
+                  4,
+                  10,
+                  5
+                ],
+                "salida": "Saldo insuficiente\nCuenta 3: 0.00\nCuenta 4: 10.00"
+              },
+              {
+                "entrada": [
+                  10,
+                  75.5,
+                  20,
+                  10.25,
+                  25.25
+                ],
+                "salida": "Transferencia realizada\nCuenta 10: 50.25\nCuenta 20: 35.50"
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "#include <stdio.h>\n#include \"cuenta.h\"\n\nint main() {\n  TCuenta origen;\n  TCuenta destino;\n  double saldo;\n  double monto;\n  int numero;\n\n  scanf(\"%d\", &numero);\n  origen = crear(numero);\n  scanf(\"%lf\", &saldo);\n  depositar(&origen, saldo);\n  scanf(\"%d\", &numero);\n  destino = crear(numero);\n  scanf(\"%lf\", &saldo);\n  depositar(&destino, saldo);\n  scanf(\"%lf\", &monto);\n  if (retirar(&origen, monto) == OK) {\n    depositar(&destino, monto);\n    printf(\"Transferencia realizada\\n\");\n  } else {\n    printf(\"Saldo insuficiente\\n\");\n  }\n  printf(\"Cuenta %d: %.2f\\n\", obtenerNumero(origen), obtenerSaldo(origen));\n  printf(\"Cuenta %d: %.2f\", obtenerNumero(destino), obtenerSaldo(destino));\n  return 0;\n}"
+    },
+    {
+      "id": "tadcu-u-q-ignorar",
+      "titulo": "Retirar sin mirar el resultado",
+      "archivos": [
+        {
+          "nombre": "cuenta.h",
+          "codigo": "#ifndef CUENTA_H\n#define CUENTA_H\n\ntypedef enum {\n  OK,\n  SALDO_INSUFICIENTE\n} TResultado;\n\ntypedef struct {\n  int numero;\n  double saldo;\n} TCuenta;\n\nTCuenta crear(int numero);\nvoid depositar(TCuenta *c, double monto);\nTResultado retirar(TCuenta *c, double monto);\ndouble obtenerSaldo(TCuenta c);\nint obtenerNumero(TCuenta c);\n\n#endif"
+        },
+        {
+          "nombre": "main.c",
+          "codigo": "#include <stdio.h>\n#include \"cuenta.h\"\n\nint main() {\n  TCuenta a = crear(1);\n  TCuenta b = crear(2);\n\n  depositar(&a, 50);\n  retirar(&a, 80);\n  depositar(&b, 80);\n  printf(\"%.2f %.2f\", obtenerSaldo(a), obtenerSaldo(b));\n  return 0;\n}"
+        }
+      ],
+      "enunciado": "El archivo `cuenta.h` declara el tipo `TCuenta` y sus operaciones, y `main.c` las usa para pasar 80 de la cuenta `a` a la cuenta `b`, como en la consigna anterior, pero sin mirar lo que devuelve `retirar`. La cuenta `a` tiene 50. ¿Qué muestra el programa?",
+      "opciones": [
+        {
+          "texto": "Muestra `-30.00 80.00`: la cuenta `a` queda en deuda.",
+          "codigo": "OPCION_SALDO_NEGATIVO",
+          "explicacion": "Eso pasaría si `retirar` no controlara el saldo, pero justamente lo controla: cuando no alcanza, no resta nada. La cuenta `a` queda con lo que tenía."
+        },
+        {
+          "texto": "Muestra `50.00 80.00`: el retiro no se hizo, pero el depósito sí.",
+          "correcta": true,
+          "explicacion": "`retirar(&a, 80)` no puede hacerse porque `a` solo tiene 50: no resta nada y devuelve `SALDO_INSUFICIENTE`. Como el `main` no mira ese resultado, el programa sigue y deposita 80 en `b` igual: de la nada aparecieron 80. Para una transferencia hay que depositar en el destino solo si el retiro devolvió `OK`."
+        },
+        {
+          "texto": "Muestra `0.00 80.00`: `retirar` saca todo lo que haya.",
+          "codigo": "OPCION_RETIRA_LO_QUE_HAY",
+          "explicacion": "`retirar` retira el monto completo o no retira nada. Si el saldo no alcanza, lo deja como estaba y lo avisa con `SALDO_INSUFICIENTE`; no entrega una parte."
+        }
+      ]
+    },
+    {
+      "id": "tadcu-u-cuota",
+      "titulo": "Cobrar una cuota",
+      "escribe": "main.c",
+      "archivos": [
+        {
+          "nombre": "cuenta.h",
+          "codigo": "#ifndef CUENTA_H\n#define CUENTA_H\n\ntypedef enum {\n  OK,\n  SALDO_INSUFICIENTE\n} TResultado;\n\ntypedef struct {\n  int numero;\n  double saldo;\n} TCuenta;\n\nTCuenta crear(int numero);\nvoid depositar(TCuenta *c, double monto);\nTResultado retirar(TCuenta *c, double monto);\ndouble obtenerSaldo(TCuenta c);\nint obtenerNumero(TCuenta c);\n\n#endif"
+        },
+        {
+          "nombre": "cuenta.c",
+          "codigo": "#include \"cuenta.h\"\n\nTCuenta crear(int numero) {\n  TCuenta c;\n\n  c.numero = numero;\n  c.saldo = 0;\n  return c;\n}\n\nvoid depositar(TCuenta *c, double monto) {\n  c->saldo = c->saldo + monto;\n}\n\nTResultado retirar(TCuenta *c, double monto) {\n  if (monto > c->saldo) {\n    return SALDO_INSUFICIENTE;\n  }\n  c->saldo = c->saldo - monto;\n  return OK;\n}\n\ndouble obtenerSaldo(TCuenta c) {\n  return c.saldo;\n}\n\nint obtenerNumero(TCuenta c) {\n  return c.numero;\n}",
+          "oculto": true
+        }
+      ],
+      "enunciado": "Con el mismo `cuenta.h`, escriba `main.c`, que cobra una cuota a varias cuentas. Lea con `scanf`, en este orden:\n- la cantidad de cuentas `n`, a lo sumo 10\n- de cada cuenta, su número y su saldo, en ese orden (el saldo puede tener decimales)\n- la cuota, que puede tener decimales\n\nGuarde las cuentas en un arreglo, creando cada una con `crear` y depositándole su saldo. Después cóbrele la cuota a todas las cuentas con `retirar`.\n\nPor cada cuenta que no pueda pagar muestre en un renglón `Cuenta N no pudo pagar`, con su número, y al final muestre `Cobradas: ` seguido de la cantidad de cuentas que sí pagaron. Por ejemplo, si se ingresan:\n- `3` (cantidad de cuentas)\n- `101 50` (número y saldo de la primera cuenta)\n- `102 20` (número y saldo de la segunda cuenta)\n- `103 30` (número y saldo de la tercera cuenta)\n- `30` (cuota)\n\nel programa muestra:\n`Cuenta 102 no pudo pagar`\n`Cobradas: 2`\nUse solo las operaciones del `.h`.\n! No use `printf` para mostrar mensajes que pidan los datos: léalos directamente con `scanf`.",
+      "requiere": [
+        {
+          "incluyeLocal": "cuenta.h"
+        },
+        {
+          "soloOperaciones": "TCuenta"
+        },
+        {
+          "usaOperaciones": [
+            "crear",
+            "depositar",
+            "retirar",
+            "obtenerNumero"
+          ]
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "entrada": [
+                  3,
+                  101,
+                  50,
+                  102,
+                  20,
+                  103,
+                  30,
+                  30
+                ],
+                "salida": "Cuenta 102 no pudo pagar\nCobradas: 2"
+              },
+              {
+                "entrada": [
+                  2,
+                  1,
+                  100,
+                  2,
+                  100,
+                  40
+                ],
+                "salida": "Cobradas: 2"
+              },
+              {
+                "entrada": [
+                  2,
+                  1,
+                  10,
+                  2,
+                  5,
+                  20
+                ],
+                "salida": "Cuenta 1 no pudo pagar\nCuenta 2 no pudo pagar\nCobradas: 0"
+              },
+              {
+                "entrada": [
+                  1,
+                  9,
+                  25.5,
+                  25.5
+                ],
+                "salida": "Cobradas: 1"
+              },
+              {
+                "entrada": [
+                  4,
+                  11,
+                  5,
+                  12,
+                  60,
+                  13,
+                  5,
+                  14,
+                  60,
+                  60
+                ],
+                "salida": "Cuenta 11 no pudo pagar\nCuenta 13 no pudo pagar\nCobradas: 2"
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "#include <stdio.h>\n#include \"cuenta.h\"\n\n#define MAX 10\n\nint main() {\n  TCuenta cuentas[MAX];\n  double saldo;\n  double cuota;\n  int numero;\n  int cobradas = 0;\n  int n;\n\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%d\", &numero);\n    scanf(\"%lf\", &saldo);\n    cuentas[i] = crear(numero);\n    depositar(&cuentas[i], saldo);\n  }\n  scanf(\"%lf\", &cuota);\n  for (int i = 0; i < n; i++) {\n    if (retirar(&cuentas[i], cuota) == OK) {\n      cobradas++;\n    } else {\n      printf(\"Cuenta %d no pudo pagar\\n\", obtenerNumero(cuentas[i]));\n    }\n  }\n  printf(\"Cobradas: %d\", cobradas);\n  return 0;\n}"
+    },
+    {
+      "id": "tadcu-u-mayor",
+      "titulo": "La cuenta con más saldo",
+      "escribe": "main.c",
+      "archivos": [
+        {
+          "nombre": "cuenta.h",
+          "codigo": "#ifndef CUENTA_H\n#define CUENTA_H\n\ntypedef enum {\n  OK,\n  SALDO_INSUFICIENTE\n} TResultado;\n\ntypedef struct {\n  int numero;\n  double saldo;\n} TCuenta;\n\nTCuenta crear(int numero);\nvoid depositar(TCuenta *c, double monto);\nTResultado retirar(TCuenta *c, double monto);\ndouble obtenerSaldo(TCuenta c);\nint obtenerNumero(TCuenta c);\n\n#endif"
+        },
+        {
+          "nombre": "cuenta.c",
+          "codigo": "#include \"cuenta.h\"\n\nTCuenta crear(int numero) {\n  TCuenta c;\n\n  c.numero = numero;\n  c.saldo = 0;\n  return c;\n}\n\nvoid depositar(TCuenta *c, double monto) {\n  c->saldo = c->saldo + monto;\n}\n\nTResultado retirar(TCuenta *c, double monto) {\n  if (monto > c->saldo) {\n    return SALDO_INSUFICIENTE;\n  }\n  c->saldo = c->saldo - monto;\n  return OK;\n}\n\ndouble obtenerSaldo(TCuenta c) {\n  return c.saldo;\n}\n\nint obtenerNumero(TCuenta c) {\n  return c.numero;\n}",
+          "oculto": true
+        }
+      ],
+      "enunciado": "Con el mismo `cuenta.h`, escriba `main.c`, que busca la cuenta con más saldo. Lea con `scanf`, en este orden:\n- la cantidad de cuentas `n`, a lo sumo 10\n- de cada cuenta, su número y su saldo, en ese orden (el saldo puede tener decimales)\n\nGuarde las cuentas en un arreglo, creando cada una con `crear` y depositándole su saldo.\n\nAl final muestre en un renglón `Mayor: Cuenta ` seguido del número de la cuenta con más saldo (si hay dos con el mismo saldo, la que se leyó primero) y en otro renglón `Total: ` seguido de la suma de todos los saldos, con dos decimales. Por ejemplo, si se ingresan:\n- `3` (cantidad de cuentas)\n- `101 50` (número y saldo de la primera cuenta)\n- `102 350.5` (número y saldo de la segunda cuenta)\n- `103 120` (número y saldo de la tercera cuenta)\n\nel programa muestra:\n`Mayor: Cuenta 102`\n`Total: 520.50`\nUse solo las operaciones del `.h`.\n! No use `printf` para mostrar mensajes que pidan los datos: léalos directamente con `scanf`.",
+      "requiere": [
+        {
+          "incluyeLocal": "cuenta.h"
+        },
+        {
+          "soloOperaciones": "TCuenta"
+        },
+        {
+          "usaOperaciones": [
+            "crear",
+            "depositar",
+            "obtenerSaldo",
+            "obtenerNumero"
+          ]
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "entrada": [
+                  3,
+                  101,
+                  50,
+                  102,
+                  350.5,
+                  103,
+                  120
+                ],
+                "salida": "Mayor: Cuenta 102\nTotal: 520.50"
+              },
+              {
+                "entrada": [
+                  1,
+                  5,
+                  10
+                ],
+                "salida": "Mayor: Cuenta 5\nTotal: 10.00"
+              },
+              {
+                "entrada": [
+                  3,
+                  1,
+                  100,
+                  2,
+                  100,
+                  3,
+                  50
+                ],
+                "salida": "Mayor: Cuenta 1\nTotal: 250.00"
+              },
+              {
+                "entrada": [
+                  3,
+                  1,
+                  10,
+                  2,
+                  20,
+                  3,
+                  30.5
+                ],
+                "salida": "Mayor: Cuenta 3\nTotal: 60.50"
+              },
+              {
+                "entrada": [
+                  2,
+                  8,
+                  0,
+                  9,
+                  0
+                ],
+                "salida": "Mayor: Cuenta 8\nTotal: 0.00"
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "#include <stdio.h>\n#include \"cuenta.h\"\n\n#define MAX 10\n\nint main() {\n  TCuenta cuentas[MAX];\n  double saldo;\n  double total = 0;\n  int numero;\n  int mayor = 0;\n  int n;\n\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%d\", &numero);\n    scanf(\"%lf\", &saldo);\n    cuentas[i] = crear(numero);\n    depositar(&cuentas[i], saldo);\n    total = total + obtenerSaldo(cuentas[i]);\n    if (obtenerSaldo(cuentas[i]) > obtenerSaldo(cuentas[mayor])) {\n      mayor = i;\n    }\n  }\n  printf(\"Mayor: Cuenta %d\\n\", obtenerNumero(cuentas[mayor]));\n  printf(\"Total: %.2f\", total);\n  return 0;\n}"
+    }
+  ]
+}
