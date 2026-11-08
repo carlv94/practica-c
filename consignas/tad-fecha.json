@@ -327,7 +327,7 @@
       "id": "tadf-main",
       "titulo": "Usar la fecha",
       "escribe": "main.c",
-      "enunciado": "Con su `fecha.h` y su `fecha.c`, escriba `main.c`: lea con `scanf` el día, el mes y el año de una fecha, y después una cantidad de días. Arme la fecha, súmele esos días y muestre el resultado con `mostrar`. Después, en otra línea, muestre `bisiesto` o `no bisiesto` según el año de la fecha resultante, preguntándolo con `esBisiesto`. Por ejemplo, si se ingresan `28`, `2`, `2024` y `2`, el programa muestra `1/3/2024` y debajo `bisiesto`. Use solo las operaciones del `.h`.",
+      "enunciado": "Con su `fecha.h` y su `fecha.c`, escriba `main.c`: lea con `scanf` el día, el mes y el año de una fecha, y después una cantidad de días. Arme la fecha, súmele esos días y muestre el resultado con `mostrar`. Después, en otra línea, muestre `bisiesto` o `no bisiesto` según el año de la fecha resultante, preguntándolo con `esBisiesto`. Por ejemplo, si se ingresan `28`, `2`, `2024` y `2`, el programa muestra `1/3/2024` y debajo `bisiesto`. Use solo las operaciones del `.h`.\n! No use `printf` para mostrar mensajes que pidan los datos: léalos directamente con `scanf`.",
       "requiere": [
         {
           "incluyeLocal": "fecha.h"

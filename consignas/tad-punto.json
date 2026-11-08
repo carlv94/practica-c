@@ -409,7 +409,7 @@
           ]
         }
       },
-      "enunciado": "Con su `punto.h` y su `punto.c`, escriba `main.c`: lea con `scanf` la cantidad de puntos `n` (a lo sumo 10) y después, de cada punto, primero la coordenada `x` y luego la coordenada `y`, que pueden tener decimales. Guarde los puntos en un arreglo, armando cada uno con `crear`. Al final, muestre con `mostrar` el punto más alejado del origen; si hay dos igual de alejados, el que se leyó primero. Por ejemplo, si se ingresan los puntos `(1, 1)`, `(3, 4)` y `(-2, 2)`, el programa muestra `(3.00, 4.00)`. Use solo las operaciones del `.h`.",
+      "enunciado": "Con su `punto.h` y su `punto.c`, escriba `main.c`: lea con `scanf` la cantidad de puntos `n` (a lo sumo 10) y después, de cada punto, primero la coordenada `x` y luego la coordenada `y`, que pueden tener decimales. Guarde los puntos en un arreglo, armando cada uno con `crear`. Al final, muestre con `mostrar` el punto más alejado del origen; si hay dos igual de alejados, el que se leyó primero. Por ejemplo, si se ingresan los puntos `(1, 1)`, `(3, 4)` y `(-2, 2)`, el programa muestra `(3.00, 4.00)`. Use solo las operaciones del `.h`.\n! No use `printf` para mostrar mensajes que pidan los datos: léalos directamente con `scanf`.",
       "requiere": [
         {
           "incluyeLocal": "punto.h"

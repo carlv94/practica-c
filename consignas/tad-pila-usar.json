@@ -133,7 +133,7 @@
         }
       ],
       "usoIncorrecto": "Una operación de la pila se salió de los límites de su arreglo, que guarda hasta 8 números: se apiló en una pila llena o se desapiló una pila vacía. Antes de `apilar` conviene preguntar con `llena`, y antes de `desapilar`, con `vacia`.",
-      "enunciado": "Con el mismo `pila.h`, escriba `main.c`: lea con `scanf` un número entero mayor que cero y menor que 256, y muestre con `printf` su representación en binario, sin espacios entre los dígitos. Divida el número por 2 mientras sea mayor que cero y apile cada resto; al terminar, desapile todos y muéstrelos. Por ejemplo, si se ingresa `10`, el programa muestra `1010`. Use solo las operaciones del `.h`.",
+      "enunciado": "Con el mismo `pila.h`, escriba `main.c`: lea con `scanf` un número entero mayor que cero y menor que 256, y muestre con `printf` su representación en binario, sin espacios entre los dígitos. Divida el número por 2 mientras sea mayor que cero y apile cada resto; al terminar, desapile todos y muéstrelos. Por ejemplo, si se ingresa `10`, el programa muestra `1010`. Use solo las operaciones del `.h`.\n! No use `printf` para mostrar mensajes que pidan los datos: léalos directamente con `scanf`.",
       "requiere": [
         {
           "incluyeLocal": "pila.h"

@@ -376,7 +376,7 @@
       "id": "tada-main",
       "titulo": "Usar las operaciones nuevas",
       "escribe": "main.c",
-      "enunciado": "Con su `fecha.h` y su `fecha.c` ampliados, escriba `main.c`: lea con `scanf` el día, el mes y el año de una fecha, y después una cantidad de meses y una cantidad de años. Arme la fecha, súmele primero los meses y después los años, y muestre el resultado con `mostrar`. Por ejemplo, si se ingresan `31`, `1`, `2024`, `1` y `1`, el programa muestra `28/2/2025`. Use solo las operaciones del `.h`.",
+      "enunciado": "Con su `fecha.h` y su `fecha.c` ampliados, escriba `main.c`: lea con `scanf` el día, el mes y el año de una fecha, y después una cantidad de meses y una cantidad de años. Arme la fecha, súmele primero los meses y después los años, y muestre el resultado con `mostrar`. Por ejemplo, si se ingresan `31`, `1`, `2024`, `1` y `1`, el programa muestra `28/2/2025`. Use solo las operaciones del `.h`.\n! No use `printf` para mostrar mensajes que pidan los datos: léalos directamente con `scanf`.",
       "requiere": [
         {
           "incluyeLocal": "fecha.h"
