@@ -82,13 +82,15 @@ export function armarZip(archivos) {
 export function leeme(archivos) {
   const nombres = archivos.map((a) => a.nombre);
   const fuentes = nombres.filter((n) => n.endsWith('.c'));
+  // Con math.h (sqrt, pow) gcc necesita la biblioteca matematica al final: -lm.
+  const matematica = archivos.some((a) => /#include\s*<math\.h>/.test(a.texto || '')) ? ' -lm' : '';
   const lineas = ['Archivos de la práctica de C', ''];
   if (fuentes.length && nombres.includes('main.c')) {
     lineas.push('Para compilar y ejecutar (con gcc instalado), desde esta carpeta:', '');
-    lineas.push('  gcc -Wall -o programa ' + fuentes.join(' '), '  ./programa', '');
+    lineas.push('  gcc -Wall -o programa ' + fuentes.join(' ') + matematica, '  ./programa', '');
   } else if (fuentes.length) {
     lineas.push('Estos archivos no tienen una función main: escriba un main.c que los use y compile con:', '');
-    lineas.push('  gcc -Wall -o programa main.c ' + fuentes.join(' '), '');
+    lineas.push('  gcc -Wall -o programa main.c ' + fuentes.join(' ') + matematica, '');
   }
   lineas.push('El simulador de la página es más permisivo que un compilador real:');
   lineas.push('si gcc muestra advertencias, vale la pena corregirlas.');

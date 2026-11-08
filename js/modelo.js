@@ -199,6 +199,7 @@ export function construirModelo(arbol, desde) {
     ifs: [],
     includes: [],
     comparaciones: [],
+    xor: [],
     sizeofs: [],
     contenidos: [],
     avances: [],
@@ -569,6 +570,8 @@ export function construirModelo(arbol, desde) {
         const operador = n.childForFieldName('operator')?.text;
         const izquierda = n.childForFieldName('left');
         const derecha = n.childForFieldName('right');
+        // El ^ de C es un operador de bits, no la potencia.
+        if (operador === '^') modelo.xor.push({ nuevo: n.startIndex >= desde, fila: n.startPosition.row });
         if ((operador === '==' || operador === '!=') && izquierda && derecha) {
           modelo.comparaciones.push({
             operador,

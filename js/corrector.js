@@ -171,7 +171,7 @@ const DE_LA_BIBLIOTECA = [
 
 // La biblioteca que hay que agregar para usar una funcion, en las reglas que la
 // controlan (hoy solo la de resultado).
-const BIBLIOTECA_DE = { pow: 'math.h' };
+const BIBLIOTECA_DE = { pow: 'math.h', sqrt: 'math.h' };
 
 // El plural de un nombre de nivel: curso -> cursos, parcial -> parciales.
 const enPlural = (s) => (/[aeiou]$/i.test(s) ? `${s}s` : /ón$/i.test(s) ? `${s.slice(0, -2)}ones` : `${s}es`);
@@ -390,6 +390,15 @@ export function corregir(
     revisarNombres(modelo, sinTipos ? (codigo, ...resto) => (['ALIAS_REDEFINIDO', 'STRUCT_REDEFINIDA'].includes(codigo) ? undefined : error(codigo, ...resto)) : error);
     revisarFunciones(modelo, error, consigna.requiere.some((r) => r.llamada), enArchivo && Boolean(arriba || despues));
     revisarConversiones(modelo, error);
+    // El ^ no es la potencia: es un operador de bits y con decimales ni compila.
+    const conXor = modelo.xor.find((o) => o.nuevo);
+    if (conXor) {
+      error(
+        'OPERADOR_XOR_COMO_POTENCIA',
+        'En C, `^` no es la potencia: es un operador que trabaja con los bits de los enteros, y con números con decimales ni siquiera compila. Para elevar al cuadrado multiplique el valor por sí mismo (`x * x`), o use `pow(x, 2)` de `math.h`.',
+        filaBase + conXor.fila
+      );
+    }
     revisarRedefiniciones(modelo, error, practicas.includes('constantes') ? mejora : null);
     // Cuando la consigna pide los caracteres de a uno, o vaciar la cadena,
     // aconsejarle una funcion de la biblioteca seria mandarlo a otra cosa.
@@ -3699,7 +3708,20 @@ export function corregir(
   // numero suelto habiendo una constante que vale eso.
   function notasYMejoras(regla, modelo) {
     // pow da lo mismo que el producto, y es una forma valida: se avisa una vez.
-    const conPow = modelo.llamadas.find((l) => l.nuevo && l.funcion === 'pow');
+    // Solo cuando lo que se eleva es un entero: con decimales (pow(dx, 2) con un double) la nota no corresponde.
+    const baseEntera = (l) => {
+      const base = l.argumentos[0];
+      if (!base) return false;
+      if (base.clase === 'numero') return Number.isInteger(base.valor);
+      if (base.clase !== 'nombre') return false;
+      const real = (t) => t && t.clase === 'primitivo' && esReal(t.nombre);
+      const declaradas = [
+        ...modelo.variables.filter((v) => v.nombre === base.nombre).map((v) => v.tipo),
+        ...modelo.funciones.flatMap((f) => f.parametros.filter((p) => p.nombre === base.nombre).map((p) => p.tipo)),
+      ];
+      return !declaradas.some(real);
+    };
+    const conPow = modelo.llamadas.find((l) => l.nuevo && l.funcion === 'pow' && baseEntera(l));
     if (conPow && !avisados.includes('USO_DE_POW')) {
       nota(
         'USO_DE_POW',
