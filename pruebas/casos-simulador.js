@@ -64,6 +64,10 @@ typedef struct {
   int datos[MAX];
   int tope;
 } TPila;
+typedef struct {
+  double x;
+  double y;
+} TPunto;
 `;
 
 // Los enumeradores, con el valor que les da la cabecera.
@@ -1008,6 +1012,76 @@ export const CASOS_DEL_SIMULADOR = [
     nombre: "arreglo en una estructura: una posicion que nunca se escribio",
     codigo: con("TPila p;\nint x;\np.datos[0] = 1;\nx = p.datos[1];"),
     espera: { error: 'SinValor' },
+  },
+  {
+    nombre: 'sqrt: una raiz exacta',
+    codigo: con('double d = sqrt(25.0);'),
+    espera: { variables: { d: 5 } },
+  },
+  {
+    nombre: 'sqrt: de un entero',
+    codigo: con('int n = 9;\ndouble d = sqrt(n);'),
+    espera: { variables: { d: 3 } },
+  },
+  {
+    nombre: 'sqrt: de un numero negativo no se sigue',
+    codigo: con('double d = sqrt(-4.0);'),
+    espera: { error: 'SinVerificar' },
+  },
+  {
+    nombre: 'estructura como argumento: un elemento de un arreglo de estructuras',
+    codigo: conFunciones("TPunto crear(double x, double y) {\n  TPunto p;\n  p.x = x;\n  p.y = y;\n  return p;\n}\nTPunto origen() {\n  return crear(0, 0);\n}\ndouble distancia(TPunto a, TPunto b) {\n  double dx = a.x - b.x;\n  double dy = a.y - b.y;\n  return sqrt(dx * dx + dy * dy);\n}\nvoid correr(TPunto a) {\n  a.x = 99;\n}", "TPunto pts[2];\npts[0] = crear(0, 0);\npts[1] = crear(6, 8);\ndouble d = distancia(pts[0], pts[1]);"),
+    espera: { variables: { d: 10 } },
+  },
+  {
+    nombre: 'estructura como argumento: el elemento se copia, el original no cambia',
+    codigo: conFunciones("TPunto crear(double x, double y) {\n  TPunto p;\n  p.x = x;\n  p.y = y;\n  return p;\n}\nTPunto origen() {\n  return crear(0, 0);\n}\ndouble distancia(TPunto a, TPunto b) {\n  double dx = a.x - b.x;\n  double dy = a.y - b.y;\n  return sqrt(dx * dx + dy * dy);\n}\nvoid correr(TPunto a) {\n  a.x = 99;\n}", "TPunto pts[2];\npts[0] = crear(0, 0);\npts[1] = crear(6, 8);\ncorrer(pts[1]);"),
+    espera: { variables: { 'pts.x': [0, 6] } },
+  },
+  {
+    nombre: 'estructura como argumento: con el indice de un ciclo',
+    codigo: conFunciones("TPunto crear(double x, double y) {\n  TPunto p;\n  p.x = x;\n  p.y = y;\n  return p;\n}\nTPunto origen() {\n  return crear(0, 0);\n}\ndouble distancia(TPunto a, TPunto b) {\n  double dx = a.x - b.x;\n  double dy = a.y - b.y;\n  return sqrt(dx * dx + dy * dy);\n}\nvoid correr(TPunto a) {\n  a.x = 99;\n}", "TPunto pts[2];\npts[0] = crear(0, 0);\npts[1] = crear(6, 8);\ndouble t = 0;\nfor (int i = 0; i < 2; i++) {\n  t = t + distancia(pts[i], origen());\n}"),
+    espera: { variables: { t: 10 } },
+  },
+  {
+    nombre: 'estructura como argumento: un elemento que no existe',
+    codigo: conFunciones("TPunto crear(double x, double y) {\n  TPunto p;\n  p.x = x;\n  p.y = y;\n  return p;\n}\nTPunto origen() {\n  return crear(0, 0);\n}\ndouble distancia(TPunto a, TPunto b) {\n  double dx = a.x - b.x;\n  double dy = a.y - b.y;\n  return sqrt(dx * dx + dy * dy);\n}\nvoid correr(TPunto a) {\n  a.x = 99;\n}", "TPunto pts[2];\npts[0] = crear(0, 0);\npts[1] = crear(6, 8);\ndouble d = distancia(pts[0], pts[2]);"),
+    espera: { error: 'FueraDeRango' },
+  },
+  {
+    nombre: 'estructura como argumento: un elemento sin valores',
+    codigo: conFunciones("TPunto crear(double x, double y) {\n  TPunto p;\n  p.x = x;\n  p.y = y;\n  return p;\n}\nTPunto origen() {\n  return crear(0, 0);\n}\ndouble distancia(TPunto a, TPunto b) {\n  double dx = a.x - b.x;\n  double dy = a.y - b.y;\n  return sqrt(dx * dx + dy * dy);\n}\nvoid correr(TPunto a) {\n  a.x = 99;\n}", "TPunto pts[2];\npts[0] = crear(0, 0);\ndouble d = distancia(pts[0], pts[1]);"),
+    espera: { error: 'SinValor' },
+  },
+  {
+    nombre: 'estructura como argumento: lo que devuelve otra funcion',
+    codigo: conFunciones("TPunto crear(double x, double y) {\n  TPunto p;\n  p.x = x;\n  p.y = y;\n  return p;\n}\nTPunto origen() {\n  return crear(0, 0);\n}\ndouble distancia(TPunto a, TPunto b) {\n  double dx = a.x - b.x;\n  double dy = a.y - b.y;\n  return sqrt(dx * dx + dy * dy);\n}\nvoid correr(TPunto a) {\n  a.x = 99;\n}", "double d = distancia(crear(3, 4), origen());"),
+    espera: { variables: { d: 5 } },
+  },
+  {
+    nombre: "arreglo de estructuras: guardar lo que devuelve una funcion en cada elemento",
+    codigo: conFunciones("TPunto crear(double x, double y) {\n  TPunto p;\n  p.x = x;\n  p.y = y;\n  return p;\n}", "TPunto pts[3];\nfor (int i = 0; i < 3; i++) {\n  pts[i] = crear(i, i * 2);\n}"),
+    espera: { variables: { 'pts.x': [0, 1, 2], 'pts.y': [0, 2, 4] } },
+  },
+  {
+    nombre: "arreglo de estructuras: copiar un elemento en otro",
+    codigo: conFunciones("TPunto crear(double x, double y) {\n  TPunto p;\n  p.x = x;\n  p.y = y;\n  return p;\n}", "TPunto pts[2];\npts[0] = crear(1, 2);\npts[1] = pts[0];\npts[0].x = 7;"),
+    espera: { variables: { 'pts.x': [7, 1], 'pts.y': [2, 2] } },
+  },
+  {
+    nombre: "arreglo de estructuras: copiar un elemento en una variable",
+    codigo: conFunciones("TPunto crear(double x, double y) {\n  TPunto p;\n  p.x = x;\n  p.y = y;\n  return p;\n}", "TPunto pts[2];\nTPunto p;\npts[0] = crear(1, 2);\npts[1] = crear(3, 4);\np = pts[1];\np.x = 9;"),
+    espera: { variables: { 'pts.x': [1, 3], 'p.x': 9, 'p.y': 4 } },
+  },
+  {
+    nombre: "arreglo de estructuras: guardar en un elemento que no existe",
+    codigo: conFunciones("TPunto crear(double x, double y) {\n  TPunto p;\n  p.x = x;\n  p.y = y;\n  return p;\n}", "TPunto pts[2];\npts[2] = crear(1, 2);"),
+    espera: { error: 'FueraDeRango' },
+  },
+  {
+    nombre: 'arreglo de estructuras: declarar una variable con un elemento',
+    codigo: conFunciones("TPunto crear(double x, double y) {\n  TPunto p;\n  p.x = x;\n  p.y = y;\n  return p;\n}", "TPunto pts[2];\npts[0] = crear(1, 2);\npts[1] = crear(3, 4);\nTPunto m = pts[1];\nm.x = 9;"),
+    espera: { variables: { 'pts.x': [1, 3], 'm.x': 9, 'm.y': 4 } },
   },
 ];
 

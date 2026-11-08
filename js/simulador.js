@@ -1356,6 +1356,11 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
         if (funcion && funcion.type === 'identifier' && definidas.has(funcion.text)) {
           return llamarFuncion(definidas.get(funcion.text), lista, n);
         }
+        if (funcion && funcion.text === 'sqrt' && lista.length === 1) {
+          const raiz = Math.sqrt(evaluar(lista[0]).v);
+          if (!Number.isFinite(raiz)) return sinVerificar(n, 'una raiz que no se sabe calcular');
+          return { v: raiz, f: true };
+        }
         if (!funcion || funcion.text !== 'pow' || lista.length !== 2) return sinVerificar(n);
         const base = evaluar(lista[0]);
         const exponente = evaluar(lista[1]);
@@ -1400,6 +1405,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
         if (operador === '=' && izquierda.type === 'identifier' && estructurasVivas.has(izquierda.text)) {
           let copia = null;
           if (nodoDerecha.type === 'identifier' && estructurasVivas.has(nodoDerecha.text)) copia = camposCopiados(nodoDerecha.text);
+          else if (nodoDerecha.type === 'subscript_expression') copia = elementoCopiado(nodoDerecha);
           else if (nodoDerecha.type === 'call_expression') {
             const devuelta = evaluar(nodoDerecha);
             if (!devuelta.estructura) sinVerificar(n, 'una estructura que no se sabe seguir');
@@ -1407,6 +1413,16 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
           }
           if (copia) {
             volcarCampos(izquierda.text, copia);
+            return { v: 0, f: false };
+          }
+        }
+        // Guardar una estructura en un elemento de un arreglo de estructuras: "pts[i] = crear(1, 2);".
+        if (operador === '=' && izquierda.type === 'subscript_expression') {
+          const baseIzquierda = izquierda.childForFieldName('argument');
+          if (baseIzquierda && baseIzquierda.type === 'identifier' && estructurasVivas.has(baseIzquierda.text)) {
+            const copia = estructuraDe(nodoDerecha);
+            if (!copia) sinVerificar(n, 'una estructura que no se sabe seguir');
+            if (!asignarElemento(izquierda, copia)) sinVerificar(n, 'un arreglo de estructuras que no se sabe seguir');
             return { v: 0, f: false };
           }
         }
@@ -1517,7 +1533,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
       if (d.type === 'init_declarator') {
         declarador = d.childForFieldName('declarator');
         inicial = d.childForFieldName('value');
-        if (declarador.type !== 'pointer_declarator' && (!inicial || !['call_expression', 'identifier'].includes(inicial.type))) {
+        if (declarador.type !== 'pointer_declarator' && (!inicial || !['call_expression', 'identifier', 'subscript_expression'].includes(inicial.type))) {
           sinVerificar(d, 'una estructura con valores iniciales');
         }
       }
@@ -1547,7 +1563,9 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
           ? estructurasVivas.has(inicial.text)
             ? camposCopiados(inicial.text)
             : sinVerificar(inicial)
-          : evaluar(inicial).estructura
+          : inicial.type === 'subscript_expression'
+            ? elementoCopiado(inicial)
+            : evaluar(inicial).estructura
         : null;
       if (inicial && !copia) sinVerificar(inicial);
       estructurasVivas.set(nombre.text, campos);
@@ -1568,6 +1586,61 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
       copia.set(clave.slice(nombre.length), { ...v, datos: v.datos ? structuredClone(v.datos) : v.datos });
     }
     return copia;
+  }
+
+  // Un elemento de un arreglo de estructuras (pts[i]): sus campos se copian como los de una variable.
+  // Cada campo es un arreglo cuya primera dimension es la del arreglo de estructuras.
+  function lugarDeElemento(a) {
+    const base = a.childForFieldName('argument');
+    const nodoIndice = a.childForFieldName('index') || a.childForFieldName('indices');
+    if (!base || base.type !== 'identifier' || !estructurasVivas.has(base.text) || !nodoIndice) return null;
+    const claves = [];
+    for (let ambito = variables; ambito; ambito = ambito.padre) claves.push(...Map.prototype.keys.call(ambito));
+    const propias = [...new Set(claves)].filter((c) => c.startsWith(base.text + '.'));
+    const campos = propias.map((c) => [c, variables.get(c)]);
+    // Solo un arreglo de una dimension de estructuras, sin uniones.
+    if (!campos.length || campos.some(([, v]) => !v.dims || v.dimsDeLaVariable !== 1 || v.union)) return null;
+    const indice = evaluar(nodoIndice);
+    const tamano = campos[0][1].dims[0];
+    if (!Number.isInteger(indice.v) || indice.v < 0 || indice.v >= tamano) {
+      throw new FueraDeRango(base.text, indice.v, tamano, fila(a), nodoIndice.type === 'number_literal', 0, 1);
+    }
+    return { nombre: base.text, indice: indice.v, campos };
+  }
+
+  function elementoCopiado(a) {
+    const lugar = lugarDeElemento(a);
+    if (!lugar) return null;
+    const copia = new Map();
+    for (const [clave, v] of lugar.campos) {
+      const elemento = v.datos[lugar.indice];
+      const { dimsDeLaVariable, ...resto } = v;
+      const sufijo = clave.slice(lugar.nombre.length);
+      if (v.dims.length === 1) copia.set(sufijo, { ...resto, dims: undefined, datos: undefined, valor: elemento });
+      else copia.set(sufijo, { ...resto, dims: v.dims.slice(1), datos: structuredClone(elemento) });
+    }
+    return copia;
+  }
+
+  // pts[i] = otra estructura: los campos copiados pasan a ser los del elemento.
+  function asignarElemento(a, copia) {
+    const lugar = lugarDeElemento(a);
+    if (!lugar) return false;
+    for (const [clave, v] of lugar.campos) {
+      const nuevo = copia.get(clave.slice(lugar.nombre.length));
+      if (!nuevo) continue;
+      if (v.dims.length === 1) v.datos[lugar.indice] = nuevo.valor;
+      else v.datos[lugar.indice] = structuredClone(nuevo.datos);
+    }
+    return true;
+  }
+
+  // La estructura que dice un nodo: una variable, un elemento de un arreglo, o lo que devuelve una funcion.
+  function estructuraDe(nodo) {
+    if (nodo.type === 'identifier' && estructurasVivas.has(nodo.text)) return camposCopiados(nodo.text);
+    if (nodo.type === 'subscript_expression') return elementoCopiado(nodo);
+    if (nodo.type === 'call_expression') return evaluar(nodo).estructura || null;
+    return null;
   }
 
   // Lo copiado pasa a ser los campos de otra variable de la misma estructura.
@@ -1823,9 +1896,10 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
       const texto = a.text.replace(/\s+/g, ' ').trim();
       if (p.clase === 'estructura') {
         // Por valor: cada campo de la estructura de afuera se copia con el nombre del parametro.
-        const origen = a.type === 'identifier' ? a.text : null;
-        if (!origen || !estructurasVivas.has(origen)) sinVerificar(a, `un argumento que no es una estructura para ${p.nombre}`);
-        for (const [sufijo, v] of camposCopiados(origen)) local.set(p.nombre + sufijo, v);
+        // La estructura puede ser una variable, un elemento de un arreglo (pts[i]) o lo que devuelve otra funcion.
+        const copia = estructuraDe(a);
+        if (!copia) sinVerificar(a, `un argumento que no es una estructura para ${p.nombre}`);
+        for (const [sufijo, v] of copia) local.set(p.nombre + sufijo, v);
         estructurasDeLocal.set(p.nombre, p.campos);
         return;
       }
