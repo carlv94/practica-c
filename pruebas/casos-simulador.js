@@ -1083,6 +1083,31 @@ export const CASOS_DEL_SIMULADOR = [
     codigo: conFunciones("TPunto crear(double x, double y) {\n  TPunto p;\n  p.x = x;\n  p.y = y;\n  return p;\n}", "TPunto pts[2];\npts[0] = crear(1, 2);\npts[1] = crear(3, 4);\nTPunto m = pts[1];\nm.x = 9;"),
     espera: { variables: { 'pts.x': [1, 3], 'm.x': 9, 'm.y': 4 } },
   },
+  {
+    nombre: "puntero a un elemento de un arreglo de estructuras: cambia solo ese elemento",
+    codigo: conFunciones("void mover(TPunto *p, double dx) {\n  p->x = p->x + dx;\n}", "TPunto pts[MAX];\nint i;\nfor (i = 0; i < MAX; i++) {\n  pts[i].x = i;\n  pts[i].y = 0;\n}\nmover(&pts[1], 10);\nprintf(\"%.0f %.0f %.0f\", pts[0].x, pts[1].x, pts[2].x);"),
+    espera: {"salida":"0 11 2"},
+  },
+  {
+    nombre: "puntero a un elemento de un arreglo de estructuras: el indice es una variable de un ciclo",
+    codigo: conFunciones("void mover(TPunto *p, double dx) {\n  p->x = p->x + dx;\n}", "TPunto pts[MAX];\nint i;\nfor (i = 0; i < MAX; i++) {\n  pts[i].x = 1;\n  pts[i].y = 0;\n}\nfor (i = 0; i < MAX; i++) {\n  mover(&pts[i], i);\n}\nprintf(\"%.0f %.0f %.0f\", pts[0].x, pts[1].x, pts[2].x);"),
+    espera: {"salida":"1 2 3"},
+  },
+  {
+    nombre: "puntero a un elemento de un arreglo de estructuras: se lee a traves del puntero",
+    codigo: conFunciones("double leerY(TPunto *p) {\n  return p->y;\n}", "TPunto pts[MAX];\nint i;\nfor (i = 0; i < MAX; i++) {\n  pts[i].x = 0;\n  pts[i].y = i * 2;\n}\nprintf(\"%.0f\", leerY(&pts[2]));"),
+    espera: {"salida":"4"},
+  },
+  {
+    nombre: "puntero a un elemento de un arreglo de estructuras: con un arreglo adentro (una pila por elemento)",
+    codigo: conFunciones("void apilar(TPila *p, int x) {\n  p->datos[p->tope] = x;\n  p->tope++;\n}", "TPila ps[MAX];\nint i;\nfor (i = 0; i < MAX; i++) {\n  ps[i].tope = 0;\n}\napilar(&ps[1], 4);\napilar(&ps[1], 7);\napilar(&ps[2], 9);\nprintf(\"%d %d %d\", ps[0].tope, ps[1].tope, ps[1].datos[1]);"),
+    espera: {"salida":"0 2 7"},
+  },
+  {
+    nombre: "puntero a un elemento de un arreglo de estructuras: una posicion fuera del arreglo",
+    codigo: conFunciones("void mover(TPunto *p, double dx) {\n  p->x = p->x + dx;\n}", "TPunto pts[MAX];\nmover(&pts[5], 1);"),
+    espera: {"error":"FueraDeRango"},
+  },
 ];
 
 // Corre un caso y dice si salio lo esperado. "ejecutar" es la funcion del

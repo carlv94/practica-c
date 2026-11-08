@@ -671,10 +671,14 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
         return sinVerificar(n, `el campo ${clave}`);
       }
     }
-    const posiciones = [];
+    // Un puntero a un elemento de un arreglo de estructuras (&cuentas[i]): el primer
+    // indice del campo ya esta dado, es la posicion a la que apunta.
+    const desfase = alEstructura && puntero.destino.elemento != null ? 1 : 0;
+    const posiciones = desfase ? [puntero.destino.elemento] : [];
     partes
       .filter((p) => p.indice)
-      .forEach((p, k) => {
+      .forEach((p, k0) => {
+        const k = k0 + desfase;
         const indice = evaluar(p.indice);
         const tamano = variable.dims ? variable.dims[k] : undefined;
         if (tamano === undefined) sinVerificar(n);
@@ -780,6 +784,17 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
     const texto = nodo.text.replace(/s+/g, ' ').trim();
     if (nodo.type === 'pointer_expression' && /^&/.test(nodo.text.trimStart())) {
       const objetivo = nodo.childForFieldName('argument') || nodo.namedChildren[nodo.namedChildren.length - 1];
+      // &cuentas[i]: un elemento de un arreglo de estructuras. Los campos son los arreglos
+      // del arreglo completo, y "elemento" es la posicion a la que apunta.
+      if (objetivo.type === 'subscript_expression') {
+        const lugar = lugarDeElemento(objetivo);
+        if (!lugar) return sinVerificar(nodo, 'la direccion de un elemento que no se sabe seguir');
+        if (!mismaEstructura(estructurasVivas.get(lugar.nombre), campos)) {
+          throw new PunteroTipoDistinto(nombre, tipo, 'otra estructura', texto, fila(nodo));
+        }
+        const claves = new Map(lugar.campos.map(([clave, v]) => [clave.slice(lugar.nombre.length + 1), v]));
+        return { nombre: lugar.nombre, claves, elemento: lugar.indice };
+      }
       if (objetivo.type !== 'identifier') return sinVerificar(nodo);
       if (estructurasVivas.has(objetivo.text)) {
         if (!mismaEstructura(estructurasVivas.get(objetivo.text), campos)) {
