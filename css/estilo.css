@@ -309,6 +309,22 @@ section[hidden] {
 }
 
 /* Una formula del enunciado: en su renglon, con sangria, y sin partirse (si no entra, se desplaza). */
+/* Una advertencia del enunciado: un recuadro ambar con borde grueso y la palabra
+   "Atención" en negrita (no depende solo del color). */
+.advertencia-enunciado {
+  margin: 10px 0;
+  padding: 8px 12px;
+  border: 1px solid var(--aviso);
+  border-left-width: 5px;
+  border-radius: 6px;
+  background: var(--aviso-fondo);
+}
+
+.advertencia-rotulo {
+  color: var(--aviso);
+  margin-right: 4px;
+}
+
 .formula-enunciado {
   margin: 6px 0 6px 1.4em;
   white-space: nowrap;

@@ -1292,7 +1292,8 @@ El plan de la reestructuración está en la memoria del proyecto
 - **El simulador** sigue las funciones del programa: ámbito propio, parámetros
   por valor (una copia), `return`, recursión (con tope) y variables globales.
   Un arreglo pasado es el mismo arreglo. Sabe un **subconjunto mínimo de
-  punteros**: `&variable` (o `&arreglo[i]`) al llamar, un parámetro declarado con
+  punteros**: `&variable` (o `&arreglo[i]`, también con un arreglo de estructuras: `&cuentas[i]`,
+  que apunta a ese elemento) al llamar, un parámetro declarado con
   `*` y `*x` adentro; nada de aritmética de punteros. Entra por `practica`
   (o `main`); las funciones se conocen aunque estén definidas después.
 - **Errores de la receta `&` / `*`**, todos con la fórmula completa
@@ -1496,6 +1497,19 @@ costado). Cada línea es una fórmula. Se escriben con los símbolos de Unicode 
 "Si los puntos son (x₁, y₁) y (x₂, y₂):
 > distancia = √((x₂ − x₁)² + (y₂ − y₁)²)
 > punto medio = ..."
+```
+
+### Advertencias en el enunciado
+
+Una línea del enunciado que empieza con `! ` se muestra como una advertencia: un recuadro
+ámbar (los colores de los avisos, también en modo oscuro) con la palabra **Atención:** y el
+texto. Varias líneas seguidas con `! ` forman un solo recuadro. Va donde se la escriba;
+conviene al final del enunciado. Se reserva para las trampas (si todo es una advertencia,
+ninguna resalta), por ejemplo que el corrector compara toda la salida y un `printf` que
+pide un dato la haría fallar:
+
+```
+"... Use solo las operaciones del `.h`.\n! No use `printf` para mostrar mensajes que pidan los datos: léalos directamente con `scanf`."
 ```
 
 ### Un plano en el dibujo

@@ -296,13 +296,16 @@ export function partesDeEnunciado(enunciado, capturas) {
 }
 
 // Las lineas que empiezan con "- " forman una lista; las que empiezan con "> " son
-// una formula, cada una en su renglon; lo demas es texto. Parte el enunciado en
-// bloques [{ texto }, { items: [...] }, { formula }], sin las lineas en blanco que
-// quedan pegadas a una lista o a una formula (ya se separan del texto por si solas).
+// una formula, cada una en su renglon; las que empiezan con "! " son una
+// advertencia (varias seguidas, una sola); lo demas es texto. Parte el enunciado en
+// bloques [{ texto }, { items: [...] }, { formula }, { advertencia }], sin las
+// lineas en blanco que quedan pegadas a una lista, una formula o una advertencia
+// (ya se separan del texto por si solas).
 export function bloquesDeEnunciado(enunciado) {
   const bloques = [];
   let texto = [];
   let items = [];
+  let aviso = [];
   const cerrarTexto = () => {
     if (texto.length) bloques.push({ texto: texto.join('\n') });
     texto = [];
@@ -311,28 +314,40 @@ export function bloquesDeEnunciado(enunciado) {
     if (items.length) bloques.push({ items });
     items = [];
   };
+  const cerrarAviso = () => {
+    if (aviso.length) bloques.push({ advertencia: aviso.join(' ') });
+    aviso = [];
+  };
   for (const linea of enunciado.split('\n')) {
-    if (/^> /.test(linea)) {
+    if (/^! /.test(linea)) {
       cerrarTexto();
       cerrarLista();
+      aviso.push(linea.slice(2));
+    } else if (/^> /.test(linea)) {
+      cerrarTexto();
+      cerrarLista();
+      cerrarAviso();
       bloques.push({ formula: linea.slice(2) });
     } else if (/^- /.test(linea)) {
       cerrarTexto();
+      cerrarAviso();
       items.push(linea.slice(2));
     } else {
       cerrarLista();
+      cerrarAviso();
       texto.push(linea);
     }
   }
   cerrarTexto();
   cerrarLista();
+  cerrarAviso();
   // Una linea en blanco entre el texto y una lista sobra.
   return bloques
     .map((b, i) => {
       if (!b.texto) return b;
-      const aparte = (o) => o && (o.items || o.formula);
+      const aparte = (o) => o && (o.items || o.formula || o.advertencia);
       const pegado = aparte(bloques[i - 1]) || aparte(bloques[i + 1]);
       return pegado ? { texto: b.texto.replace(/^\n+|\n+$/g, '') } : b;
     })
-    .filter((b) => b.items || b.formula || b.texto);
+    .filter((b) => b.items || b.formula || b.advertencia || b.texto);
 }

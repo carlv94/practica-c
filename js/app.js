@@ -687,6 +687,13 @@ function mostrarConsigna() {
   const enBloques = (texto) =>
     bloquesDeEnunciado(texto).map((bloque) => {
       if (bloque.formula) return elemento('div', 'formula-enunciado', bloque.formula);
+      if (bloque.advertencia) {
+        // Un recuadro aparte, con la palabra "Atención" (el color solo no alcanza).
+        const aviso = elemento('div', 'advertencia-enunciado');
+        aviso.setAttribute('role', 'note');
+        aviso.append(elemento('strong', 'advertencia-rotulo', 'Atención:'), ' ', ...enParrafo(bloque.advertencia));
+        return aviso;
+      }
       if (!bloque.items) {
         const trozo = elemento('span');
         trozo.append(...enParrafo(bloque.texto));

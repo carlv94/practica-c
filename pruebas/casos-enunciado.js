@@ -33,6 +33,36 @@ export const CASOS_DE_ENUNCIADO = [
     bloques: [{ items: ['uno', 'dos'] }, { texto: 'La formula:' }, { formula: 'x \u00B2' }, { texto: 'Fin.' }],
   },
   {
+    nombre: 'una advertencia al final, sin la linea en blanco que sobra',
+    enunciado: 'Texto.\n\n! Cuidado con `x`.',
+    bloques: [{ texto: 'Texto.' }, { advertencia: 'Cuidado con `x`.' }],
+  },
+  {
+    nombre: 'varias lineas de advertencia seguidas son una sola',
+    enunciado: '! Uno.\n! Dos.',
+    bloques: [{ advertencia: 'Uno. Dos.' }],
+  },
+  {
+    nombre: 'una advertencia entre una lista y un texto',
+    enunciado: '- a\n! Ojo.\nFin.',
+    bloques: [{ items: ['a'] }, { advertencia: 'Ojo.' }, { texto: 'Fin.' }],
+  },
+  {
+    nombre: 'una advertencia pegada a una formula',
+    enunciado: '> a\n! Ojo.',
+    bloques: [{ formula: 'a' }, { advertencia: 'Ojo.' }],
+  },
+  {
+    nombre: 'dos advertencias separadas por un texto',
+    enunciado: '! Uno.\nEntre.\n! Dos.',
+    bloques: [{ advertencia: 'Uno.' }, { texto: 'Entre.' }, { advertencia: 'Dos.' }],
+  },
+  {
+    nombre: 'un signo de exclamacion en medio de una linea no es una advertencia',
+    enunciado: 'Ojo! Cuidado.\n!Pegado.',
+    bloques: [{ texto: 'Ojo! Cuidado.\n!Pegado.' }],
+  },
+  {
     nombre: 'un mayor que en medio de una linea no es una formula',
     enunciado: 'Si a > b se muestra a.',
     bloques: [{ texto: 'Si a > b se muestra a.' }],
