@@ -146,7 +146,11 @@
         "tad-punto.json",
         "tad-punto-usar.json",
         "tad-cuenta.json",
-        "tad-cuenta-usar.json"
+        "tad-cuenta-usar.json",
+        "tad-conjunto.json",
+        "tad-conjunto-usar.json",
+        "tad-conjunto-ampliar.json",
+        "tad-conjunto-completar.json"
       ]
     }
   ]

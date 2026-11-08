@@ -1,0 +1,347 @@
+{
+  "id": "tad-conjunto-usar",
+  "titulo": "Usar el conjunto",
+  "continua": false,
+  "descripcion": "Con el conjunto ya hecho, se usa solo por sus operaciones: responder consultas, ordenar sin repetidos recorriendo los candidatos y buscar lo que dos conjuntos tienen en común.",
+  "consignas": [
+    {
+      "id": "tadcj-u-consultas",
+      "titulo": "Responder consultas",
+      "escribe": "main.c",
+      "inicializa": "inicializar",
+      "archivos": [
+        {
+          "nombre": "conjunto.h",
+          "codigo": "#ifndef CONJUNTO_H\n#define CONJUNTO_H\n\n#define MAX 10\n\ntypedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\ntypedef struct {\n  int elementos[MAX];\n  int cantidad;\n} TConjunto;\n\nvoid inicializar(TConjunto *c);\nvoid agregar(TConjunto *c, int x);\nTBool pertenece(TConjunto c, int x);\nint cardinal(TConjunto c);\n\n#endif"
+        },
+        {
+          "nombre": "conjunto.c",
+          "codigo": "#include \"conjunto.h\"\n\nvoid inicializar(TConjunto *c) {\n  c->cantidad = 0;\n}\n\nTBool pertenece(TConjunto c, int x) {\n  for (int i = 0; i < c.cantidad; i++) {\n    if (c.elementos[i] == x) {\n      return VERDADERO;\n    }\n  }\n  return FALSO;\n}\n\nvoid agregar(TConjunto *c, int x) {\n  if (pertenece(*c, x) == FALSO) {\n    c->elementos[c->cantidad] = x;\n    c->cantidad = c->cantidad + 1;\n  }\n}\n\nint cardinal(TConjunto c) {\n  return c.cantidad;\n}",
+          "oculto": true
+        }
+      ],
+      "usoIncorrecto": "Una operación del conjunto se salió de los límites de su arreglo, que guarda hasta 10 números: se agregó un número nuevo a un conjunto lleno. Antes de `agregar` conviene preguntar con `cardinal` si todavía hay lugar.",
+      "enunciado": "El archivo `conjunto.h` declara el tipo `TConjunto` y cuatro operaciones:\n- `inicializar`: lo deja vacío.\n- `agregar`: agrega un número; si ya estaba, no hace nada.\n- `pertenece`: devuelve un `TBool` que dice si un número está en el conjunto.\n- `cardinal`: devuelve cuántos elementos tiene el conjunto.\n\n`TBool` es un enumerado con los valores `FALSO` y `VERDADERO`. Un conjunto guarda hasta 10 números y no repite ninguno.\n\nEscriba `main.c`. Lea con `scanf`, en este orden:\n- la cantidad de números `n`, a lo sumo 10\n- los `n` números, que se guardan en un conjunto\n- la cantidad de consultas `q`\n- las `q` consultas, que son números\n\nPor cada consulta muestre en un renglón `Pertenece` si el número está en el conjunto o `No pertenece` si no está. Por ejemplo, si se ingresan:\n- `4` (cantidad de números)\n- `6`, `8`, `6` y `5` (los números)\n- `3` (cantidad de consultas)\n- `8`, `9` y `5` (las consultas)\n\nel programa muestra:\n`Pertenece`\n`No pertenece`\n`Pertenece`\nUse solo las operaciones del `.h`.\n! No use `printf` para mostrar mensajes que pidan los datos: léalos directamente con `scanf`.",
+      "requiere": [
+        {
+          "incluyeLocal": "conjunto.h"
+        },
+        {
+          "soloOperaciones": "TConjunto"
+        },
+        {
+          "usaOperaciones": [
+            "inicializar",
+            "agregar",
+            "pertenece"
+          ]
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "entrada": [
+                  4,
+                  6,
+                  8,
+                  6,
+                  5,
+                  3,
+                  8,
+                  9,
+                  5
+                ],
+                "salida": "Pertenece\nNo pertenece\nPertenece"
+              },
+              {
+                "entrada": [
+                  1,
+                  7,
+                  1,
+                  7
+                ],
+                "salida": "Pertenece"
+              },
+              {
+                "entrada": [
+                  3,
+                  1,
+                  2,
+                  3,
+                  2,
+                  4,
+                  1
+                ],
+                "salida": "No pertenece\nPertenece"
+              },
+              {
+                "entrada": [
+                  0,
+                  2,
+                  1,
+                  2
+                ],
+                "salida": "No pertenece\nNo pertenece"
+              },
+              {
+                "entrada": [
+                  3,
+                  5,
+                  5,
+                  5,
+                  2,
+                  5,
+                  6
+                ],
+                "salida": "Pertenece\nNo pertenece"
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "#include <stdio.h>\n#include \"conjunto.h\"\n\nint main() {\n  TConjunto c;\n  int n;\n  int q;\n  int x;\n\n  inicializar(&c);\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%d\", &x);\n    agregar(&c, x);\n  }\n  scanf(\"%d\", &q);\n  for (int i = 0; i < q; i++) {\n    scanf(\"%d\", &x);\n    if (pertenece(c, x) == VERDADERO) {\n      printf(\"Pertenece\\n\");\n    } else {\n      printf(\"No pertenece\\n\");\n    }\n  }\n  return 0;\n}"
+    },
+    {
+      "id": "tadcj-u-ordenados",
+      "titulo": "Ordenados y sin repetidos",
+      "escribe": "main.c",
+      "inicializa": "inicializar",
+      "archivos": [
+        {
+          "nombre": "conjunto.h",
+          "codigo": "#ifndef CONJUNTO_H\n#define CONJUNTO_H\n\n#define MAX 10\n\ntypedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\ntypedef struct {\n  int elementos[MAX];\n  int cantidad;\n} TConjunto;\n\nvoid inicializar(TConjunto *c);\nvoid agregar(TConjunto *c, int x);\nTBool pertenece(TConjunto c, int x);\nint cardinal(TConjunto c);\n\n#endif"
+        },
+        {
+          "nombre": "conjunto.c",
+          "codigo": "#include \"conjunto.h\"\n\nvoid inicializar(TConjunto *c) {\n  c->cantidad = 0;\n}\n\nTBool pertenece(TConjunto c, int x) {\n  for (int i = 0; i < c.cantidad; i++) {\n    if (c.elementos[i] == x) {\n      return VERDADERO;\n    }\n  }\n  return FALSO;\n}\n\nvoid agregar(TConjunto *c, int x) {\n  if (pertenece(*c, x) == FALSO) {\n    c->elementos[c->cantidad] = x;\n    c->cantidad = c->cantidad + 1;\n  }\n}\n\nint cardinal(TConjunto c) {\n  return c.cantidad;\n}",
+          "oculto": true
+        }
+      ],
+      "usoIncorrecto": "Una operación del conjunto se salió de los límites de su arreglo, que guarda hasta 10 números: se agregó un número nuevo a un conjunto lleno. Antes de `agregar` conviene preguntar con `cardinal` si todavía hay lugar.",
+      "enunciado": "Con el mismo `conjunto.h`, escriba `main.c`. Lea con `scanf`, en este orden:\n- la cantidad de números `n`, a lo sumo 10\n- los `n` números, todos entre 1 y 20, que se guardan en un conjunto\n\nMuestre con `printf`, separados por un espacio y de menor a mayor, los números del conjunto, sin repetir ninguno. Un conjunto no tiene un orden que se pueda consultar: para mostrarlos ordenados, recorra los números del 1 al 20 y muestre los que pertenecen. Por ejemplo, si se ingresan:\n- `6` (cantidad de números)\n- `9`, `3`, `9`, `15`, `3` y `1` (los números)\n\nel programa muestra `1 3 9 15`.\nUse solo las operaciones del `.h`.",
+      "requiere": [
+        {
+          "incluyeLocal": "conjunto.h"
+        },
+        {
+          "soloOperaciones": "TConjunto"
+        },
+        {
+          "usaOperaciones": [
+            "inicializar",
+            "agregar",
+            "pertenece"
+          ]
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "entrada": [
+                  6,
+                  9,
+                  3,
+                  9,
+                  15,
+                  3,
+                  1
+                ],
+                "muestra": [
+                  1,
+                  3,
+                  9,
+                  15
+                ],
+                "separadas": true
+              },
+              {
+                "entrada": [
+                  1,
+                  20
+                ],
+                "muestra": [
+                  20
+                ],
+                "separadas": true
+              },
+              {
+                "entrada": [
+                  5,
+                  5,
+                  4,
+                  3,
+                  2,
+                  1
+                ],
+                "muestra": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "separadas": true
+              },
+              {
+                "entrada": [
+                  4,
+                  7,
+                  7,
+                  7,
+                  7
+                ],
+                "muestra": [
+                  7
+                ],
+                "separadas": true
+              },
+              {
+                "entrada": [
+                  10,
+                  20,
+                  19,
+                  18,
+                  17,
+                  16,
+                  15,
+                  14,
+                  13,
+                  12,
+                  11
+                ],
+                "muestra": [
+                  11,
+                  12,
+                  13,
+                  14,
+                  15,
+                  16,
+                  17,
+                  18,
+                  19,
+                  20
+                ],
+                "separadas": true
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "#include <stdio.h>\n#include \"conjunto.h\"\n\nint main() {\n  TConjunto c;\n  int n;\n  int x;\n\n  inicializar(&c);\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%d\", &x);\n    agregar(&c, x);\n  }\n  for (int i = 1; i <= 20; i++) {\n    if (pertenece(c, i) == VERDADERO) {\n      printf(\"%d \", i);\n    }\n  }\n  return 0;\n}"
+    },
+    {
+      "id": "tadcj-u-ambos",
+      "titulo": "En los dos conjuntos",
+      "escribe": "main.c",
+      "inicializa": "inicializar",
+      "archivos": [
+        {
+          "nombre": "conjunto.h",
+          "codigo": "#ifndef CONJUNTO_H\n#define CONJUNTO_H\n\n#define MAX 10\n\ntypedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\ntypedef struct {\n  int elementos[MAX];\n  int cantidad;\n} TConjunto;\n\nvoid inicializar(TConjunto *c);\nvoid agregar(TConjunto *c, int x);\nTBool pertenece(TConjunto c, int x);\nint cardinal(TConjunto c);\n\n#endif"
+        },
+        {
+          "nombre": "conjunto.c",
+          "codigo": "#include \"conjunto.h\"\n\nvoid inicializar(TConjunto *c) {\n  c->cantidad = 0;\n}\n\nTBool pertenece(TConjunto c, int x) {\n  for (int i = 0; i < c.cantidad; i++) {\n    if (c.elementos[i] == x) {\n      return VERDADERO;\n    }\n  }\n  return FALSO;\n}\n\nvoid agregar(TConjunto *c, int x) {\n  if (pertenece(*c, x) == FALSO) {\n    c->elementos[c->cantidad] = x;\n    c->cantidad = c->cantidad + 1;\n  }\n}\n\nint cardinal(TConjunto c) {\n  return c.cantidad;\n}",
+          "oculto": true
+        }
+      ],
+      "usoIncorrecto": "Una operación del conjunto se salió de los límites de su arreglo, que guarda hasta 10 números: se agregó un número nuevo a un conjunto lleno. Antes de `agregar` conviene preguntar con `cardinal` si todavía hay lugar.",
+      "enunciado": "Con el mismo `conjunto.h`, escriba `main.c` con dos conjuntos, `a` y `b`. Lea con `scanf`, en este orden:\n- la cantidad de números de `a`, a lo sumo 10\n- los números de `a`, todos entre 1 y 20\n- la cantidad de números de `b`, a lo sumo 10\n- los números de `b`, todos entre 1 y 20\n\nMuestre con `printf`, separados por un espacio y de menor a mayor, los números que están en `a` y también en `b`. Para mostrar los números use solo las operaciones del conjunto, sin mirar el arreglo `elementos`. Se supone que `a` y `b` tienen al menos un número en común. Por ejemplo, si se ingresan:\n- `4` (cantidad de números de `a`)\n- `2`, `8`, `11` y `14` (los números de `a`)\n- `4` (cantidad de números de `b`)\n- `5`, `8`, `14` y `17` (los números de `b`)\n\nel programa muestra `8 14`.\nUse solo las operaciones del `.h`.",
+      "requiere": [
+        {
+          "incluyeLocal": "conjunto.h"
+        },
+        {
+          "soloOperaciones": "TConjunto"
+        },
+        {
+          "usaOperaciones": [
+            "inicializar",
+            "agregar",
+            "pertenece"
+          ]
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "entrada": [
+                  4,
+                  2,
+                  8,
+                  11,
+                  14,
+                  4,
+                  5,
+                  8,
+                  14,
+                  17
+                ],
+                "muestra": [
+                  8,
+                  14
+                ],
+                "separadas": true
+              },
+              {
+                "entrada": [
+                  3,
+                  1,
+                  2,
+                  3,
+                  3,
+                  3,
+                  2,
+                  9
+                ],
+                "muestra": [
+                  2,
+                  3
+                ],
+                "separadas": true
+              },
+              {
+                "entrada": [
+                  2,
+                  10,
+                  20,
+                  1,
+                  20
+                ],
+                "muestra": [
+                  20
+                ],
+                "separadas": true
+              },
+              {
+                "entrada": [
+                  5,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  5,
+                  5,
+                  4,
+                  3,
+                  2,
+                  1
+                ],
+                "muestra": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "separadas": true
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "#include <stdio.h>\n#include \"conjunto.h\"\n\nint main() {\n  TConjunto a;\n  TConjunto b;\n  int n;\n  int x;\n\n  inicializar(&a);\n  inicializar(&b);\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%d\", &x);\n    agregar(&a, x);\n  }\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%d\", &x);\n    agregar(&b, x);\n  }\n  for (int i = 1; i <= 20; i++) {\n    if (pertenece(a, i) == VERDADERO && pertenece(b, i) == VERDADERO) {\n      printf(\"%d \", i);\n    }\n  }\n  return 0;\n}"
+    }
+  ]
+}

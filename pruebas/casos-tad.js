@@ -92,6 +92,10 @@ const punto = serie('tad-punto');
 const puntoUsar = serie('tad-punto-usar');
 const cuenta = serie('tad-cuenta');
 const cuentaUsar = serie('tad-cuenta-usar');
+const conjunto = serie('tad-conjunto');
+const conjuntoUsar = serie('tad-conjunto-usar');
+const conjuntoAmpliar = serie('tad-conjunto-ampliar');
+const conjuntoCompletar = serie('tad-conjunto-completar');
 
 // main.c de las pilas con lo que va adentro de main.
 const MAIN_PILA = (...cuerpo) =>
@@ -585,6 +589,20 @@ const MAIN_MAYOR = MAIN_CUENTAS(
     'printf("Total: %.2f", total);',
   ]
 );
+
+// Series del conjunto de enteros (los archivos tal como los dejan las referencias).
+const CONJ_H = "#ifndef CONJUNTO_H\n#define CONJUNTO_H\n\n#define MAX 10\n\ntypedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\ntypedef struct {\n  int elementos[MAX];\n  int cantidad;\n} TConjunto;\n\nvoid inicializar(TConjunto *c);\nvoid agregar(TConjunto *c, int x);\nTBool pertenece(TConjunto c, int x);\nint cardinal(TConjunto c);\n\n#endif";
+const CONJ_C = "#include \"conjunto.h\"\n\nvoid inicializar(TConjunto *c) {\n  c->cantidad = 0;\n}\n\nTBool pertenece(TConjunto c, int x) {\n  for (int i = 0; i < c.cantidad; i++) {\n    if (c.elementos[i] == x) {\n      return VERDADERO;\n    }\n  }\n  return FALSO;\n}\n\nvoid agregar(TConjunto *c, int x) {\n  if (pertenece(*c, x) == FALSO) {\n    c->elementos[c->cantidad] = x;\n    c->cantidad = c->cantidad + 1;\n  }\n}\n\nint cardinal(TConjunto c) {\n  return c.cantidad;\n}";
+const CONJ_MAIN = "#include <stdio.h>\n#include \"conjunto.h\"\n\nint main() {\n  TConjunto c;\n  int n;\n  int x;\n\n  inicializar(&c);\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%d\", &x);\n    agregar(&c, x);\n  }\n  printf(\"Distintos: %d\", cardinal(c));\n  return 0;\n}";
+const CONJ_CONSULTAS = "#include <stdio.h>\n#include \"conjunto.h\"\n\nint main() {\n  TConjunto c;\n  int n;\n  int q;\n  int x;\n\n  inicializar(&c);\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%d\", &x);\n    agregar(&c, x);\n  }\n  scanf(\"%d\", &q);\n  for (int i = 0; i < q; i++) {\n    scanf(\"%d\", &x);\n    if (pertenece(c, x) == VERDADERO) {\n      printf(\"Pertenece\\n\");\n    } else {\n      printf(\"No pertenece\\n\");\n    }\n  }\n  return 0;\n}";
+const CONJ_ORDENADOS = "#include <stdio.h>\n#include \"conjunto.h\"\n\nint main() {\n  TConjunto c;\n  int n;\n  int x;\n\n  inicializar(&c);\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%d\", &x);\n    agregar(&c, x);\n  }\n  for (int i = 1; i <= 20; i++) {\n    if (pertenece(c, i) == VERDADERO) {\n      printf(\"%d \", i);\n    }\n  }\n  return 0;\n}";
+const CONJ_AMBOS = "#include <stdio.h>\n#include \"conjunto.h\"\n\nint main() {\n  TConjunto a;\n  TConjunto b;\n  int n;\n  int x;\n\n  inicializar(&a);\n  inicializar(&b);\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%d\", &x);\n    agregar(&a, x);\n  }\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%d\", &x);\n    agregar(&b, x);\n  }\n  for (int i = 1; i <= 20; i++) {\n    if (pertenece(a, i) == VERDADERO && pertenece(b, i) == VERDADERO) {\n      printf(\"%d \", i);\n    }\n  }\n  return 0;\n}";
+const CONJ_H_AMPLIADO = "#ifndef CONJUNTO_H\n#define CONJUNTO_H\n\n#define MAX 10\n\ntypedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\ntypedef struct {\n  int elementos[MAX];\n  int cantidad;\n} TConjunto;\n\nvoid inicializar(TConjunto *c);\nvoid agregar(TConjunto *c, int x);\nTBool pertenece(TConjunto c, int x);\nint cardinal(TConjunto c);\nvoid eliminar(TConjunto *c, int x);\nTConjunto unir(TConjunto a, TConjunto b);\n\n#endif";
+const CONJ_C_AMPLIADO = "#include \"conjunto.h\"\n\nvoid inicializar(TConjunto *c) {\n  c->cantidad = 0;\n}\n\nTBool pertenece(TConjunto c, int x) {\n  for (int i = 0; i < c.cantidad; i++) {\n    if (c.elementos[i] == x) {\n      return VERDADERO;\n    }\n  }\n  return FALSO;\n}\n\nvoid agregar(TConjunto *c, int x) {\n  if (pertenece(*c, x) == FALSO) {\n    c->elementos[c->cantidad] = x;\n    c->cantidad = c->cantidad + 1;\n  }\n}\n\nint cardinal(TConjunto c) {\n  return c.cantidad;\n}\n\nvoid eliminar(TConjunto *c, int x) {\n  for (int i = 0; i < c->cantidad; i++) {\n    if (c->elementos[i] == x) {\n      c->elementos[i] = c->elementos[c->cantidad - 1];\n      c->cantidad = c->cantidad - 1;\n      return;\n    }\n  }\n}\n\nTConjunto unir(TConjunto a, TConjunto b) {\n  TConjunto r = a;\n\n  for (int i = 0; i < b.cantidad; i++) {\n    agregar(&r, b.elementos[i]);\n  }\n  return r;\n}";
+const CONJ_MAIN_AMPLIADO = "#include <stdio.h>\n#include \"conjunto.h\"\n\nint main() {\n  TConjunto a;\n  TConjunto b;\n  TConjunto u;\n  int n;\n  int x;\n\n  inicializar(&a);\n  inicializar(&b);\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%d\", &x);\n    agregar(&a, x);\n  }\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%d\", &x);\n    agregar(&b, x);\n  }\n  u = unir(a, b);\n  scanf(\"%d\", &x);\n  eliminar(&u, x);\n  for (int i = 1; i <= 20; i++) {\n    if (pertenece(u, i) == VERDADERO) {\n      printf(\"%d \", i);\n    }\n  }\n  return 0;\n}";
+const CONJ_H_COMPLETO = "#ifndef CONJUNTO_H\n#define CONJUNTO_H\n\n#define MAX 10\n\ntypedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\ntypedef struct {\n  int elementos[MAX];\n  int cantidad;\n} TConjunto;\n\nvoid inicializar(TConjunto *c);\nvoid agregar(TConjunto *c, int x);\nTBool pertenece(TConjunto c, int x);\nint cardinal(TConjunto c);\nvoid eliminar(TConjunto *c, int x);\nTConjunto unir(TConjunto a, TConjunto b);\nTConjunto intersectar(TConjunto a, TConjunto b);\nTConjunto restar(TConjunto a, TConjunto b);\n\n#endif";
+const CONJ_C_COMPLETO = "#include \"conjunto.h\"\n\nvoid inicializar(TConjunto *c) {\n  c->cantidad = 0;\n}\n\nTBool pertenece(TConjunto c, int x) {\n  for (int i = 0; i < c.cantidad; i++) {\n    if (c.elementos[i] == x) {\n      return VERDADERO;\n    }\n  }\n  return FALSO;\n}\n\nvoid agregar(TConjunto *c, int x) {\n  if (pertenece(*c, x) == FALSO) {\n    c->elementos[c->cantidad] = x;\n    c->cantidad = c->cantidad + 1;\n  }\n}\n\nint cardinal(TConjunto c) {\n  return c.cantidad;\n}\n\nvoid eliminar(TConjunto *c, int x) {\n  for (int i = 0; i < c->cantidad; i++) {\n    if (c->elementos[i] == x) {\n      c->elementos[i] = c->elementos[c->cantidad - 1];\n      c->cantidad = c->cantidad - 1;\n      return;\n    }\n  }\n}\n\nTConjunto unir(TConjunto a, TConjunto b) {\n  TConjunto r = a;\n\n  for (int i = 0; i < b.cantidad; i++) {\n    agregar(&r, b.elementos[i]);\n  }\n  return r;\n}\n\nTConjunto intersectar(TConjunto a, TConjunto b) {\n  TConjunto r;\n\n  inicializar(&r);\n  for (int i = 0; i < a.cantidad; i++) {\n    if (pertenece(b, a.elementos[i]) == VERDADERO) {\n      agregar(&r, a.elementos[i]);\n    }\n  }\n  return r;\n}\n\nTConjunto restar(TConjunto a, TConjunto b) {\n  TConjunto r;\n\n  inicializar(&r);\n  for (int i = 0; i < a.cantidad; i++) {\n    if (pertenece(b, a.elementos[i]) == FALSO) {\n      agregar(&r, a.elementos[i]);\n    }\n  }\n  return r;\n}";
+const CONJ_MAIN_COMPLETO = "#include <stdio.h>\n#include \"conjunto.h\"\n\nint main() {\n  TConjunto a;\n  TConjunto b;\n  TConjunto u;\n  TConjunto i;\n  TConjunto r;\n  int n;\n  int x;\n\n  inicializar(&a);\n  inicializar(&b);\n  scanf(\"%d\", &n);\n  for (int k = 0; k < n; k++) {\n    scanf(\"%d\", &x);\n    agregar(&a, x);\n  }\n  scanf(\"%d\", &n);\n  for (int k = 0; k < n; k++) {\n    scanf(\"%d\", &x);\n    agregar(&b, x);\n  }\n  u = unir(a, b);\n  i = intersectar(a, b);\n  r = restar(a, b);\n  for (int k = 1; k <= 20; k++) {\n    if (pertenece(u, k) == VERDADERO) {\n      printf(\"%d \", k);\n    }\n  }\n  printf(\"\\n\");\n  for (int k = 1; k <= 20; k++) {\n    if (pertenece(i, k) == VERDADERO) {\n      printf(\"%d \", k);\n    }\n  }\n  printf(\"\\n\");\n  for (int k = 1; k <= 20; k++) {\n    if (pertenece(r, k) == VERDADERO) {\n      printf(\"%d \", k);\n    }\n  }\n  return 0;\n}";
 
 const FECHA_H = lineas(
   '#ifndef FECHA_H',
@@ -2184,4 +2202,98 @@ export const CASOS_DE_TAD = [
     MAIN_TRANSF.replace('  depositar(&destino, saldo);\n', '  depositar(&origen, saldo);\n'),
     ['MUESTRA_DISTINTA']
   ),
+  // ===== El conjunto =====
+  conjunto(1, 'completo', CONJ_H),
+  conjunto(1, 'sin guardas', CONJ_H.replace('#ifndef CONJUNTO_H\n#define CONJUNTO_H\n\n', '').replace('\n\n#endif', ''), ['ENCABEZADO_SIN_GUARDA']),
+  conjunto(1, 'con otro nombre de guarda', CONJ_H.replaceAll('CONJUNTO_H', 'CONJUNTO'), ['ENCABEZADO_GUARDA_NOMBRE'], { dice: ['CONJUNTO_H'] }),
+  conjunto(1, 'sin la cantidad', CONJ_H.replace('  int cantidad;\n', ''), ['CAMPO_FALTA']),
+  conjunto(1, 'la cantidad con decimales', CONJ_H.replace('int cantidad;', 'double cantidad;'), ['CAMPO_TIPO']),
+  conjunto(1, 'pertenece devuelve un entero', CONJ_H.replace('TBool pertenece', 'int pertenece'), ['FUNCION_TIPO_RETORNO']),
+  conjunto(1, 'agregar con el conjunto por valor', CONJ_H.replace('void agregar(TConjunto *c, int x);', 'void agregar(TConjunto c, int x);'), ['PARAMETRO_REFERENCIA_FALTA']),
+  conjunto(1, 'sin un prototipo', CONJ_H.replace('int cardinal(TConjunto c);\n', ''), ['PROTOTIPO_FALTA']),
+  conjunto(1, 'con algo afuera', CONJ_H + '\n\nvoid vaciar(TConjunto *c);', ['ENCABEZADO_FUERA_DE_LA_GUARDA']),
+  conjunto(2, 'completo', CONJ_C),
+  conjunto(2, 'sin incluir el encabezado', CONJ_C.replace('#include "conjunto.h"\n', ''), ['INCLUDE_PROPIO_FALTA']),
+  conjunto(
+    2,
+    'agregar sin mirar si ya estaba',
+    CONJ_C.replace("  if (pertenece(*c, x) == FALSO) {\n    c->elementos[c->cantidad] = x;\n    c->cantidad = c->cantidad + 1;\n  }", '  c->elementos[c->cantidad] = x;\n  c->cantidad = c->cantidad + 1;'),
+    ['DEVUELVE_DISTINTO']
+  ),
+  conjunto(2, 'agregar sin sumar a la cantidad', CONJ_C.replace('    c->cantidad = c->cantidad + 1;\n', ''), ['DEVUELVE_DISTINTO']),
+  conjunto(2, 'agregar que suma la cantidad sin guardar', CONJ_C.replace('    c->elementos[c->cantidad] = x;\n', ''), ['VARIABLE_SIN_VALOR']),
+  conjunto(2, 'pertenece solo mira el primero', CONJ_C.replace('i < c.cantidad', 'i < 1'), ['VARIABLE_SIN_VALOR']),
+  conjunto(2, 'pertenece siempre falso', CONJ_C.replace('      return VERDADERO;', '      return FALSO;'), ['DEVUELVE_DISTINTO']),
+  conjunto(2, 'pertenece devuelve numeros', CONJ_C.replace('return VERDADERO;', 'return 1;').replace('return FALSO;', 'return 0;'), ['RETORNO_NUMERO_EN_ENUMERADO']),
+  conjunto(2, 'cardinal devuelve el maximo', CONJ_C.replace('return c.cantidad;', 'return MAX;'), ['DEVUELVE_DISTINTO']),
+  conjunto(2, 'inicializar sin dejarlo vacio', CONJ_C.replace('  c->cantidad = 0;', '  c->cantidad = 1;'), ['DEVUELVE_DISTINTO']),
+  conjunto(2, 'sin definir una operacion', CONJ_C.replace('\n\nint cardinal(TConjunto c) {\n  return c.cantidad;\n}', ''), ['PROTOTIPO_SIN_DEFINICION']),
+  conjunto(3, 'porque se saltea la comprobacion', '1'),
+  conjunto(3, 'porque main no ve el arreglo', '0', ['OPCION_CONJUNTO_NO_VE']),
+  conjunto(3, 'porque es mas lento', '2', ['OPCION_CONJUNTO_MAS_LENTO']),
+  conjunto(4, 'el main correcto', CONJ_MAIN),
+  conjunto(4, 'contando los numeros leidos en vez de los distintos', CONJ_MAIN.replace('cardinal(c)', 'n'), ['TAD_OPERACION_SIN_USAR']),
+  conjunto(4, 'sin la etiqueta', CONJ_MAIN.replace('Distintos: %d', '%d'), ['MUESTRA_DISTINTA']),
+  conjunto(4, 'leyendo un numero de mas', CONJ_MAIN.replace('  printf("Distintos', '  scanf("%d", &x);\n  printf("Distintos'), ['LECTURA_DE_MAS']),
+  conjunto(4, 'con un mensaje para pedir los datos', CONJ_MAIN.replace('  scanf("%d", &n);', '  printf("Cantidad: ");\n  scanf("%d", &n);'), ['MUESTRA_DISTINTA']),
+  conjunto(4, 'mirando la cantidad del conjunto', CONJ_MAIN.replace('cardinal(c)', 'c.cantidad'), ['TAD_ACCESO_DIRECTO', 'TAD_OPERACION_SIN_USAR']),
+  conjunto(
+    4,
+    'agregando en el arreglo sin la operacion',
+    CONJ_MAIN.replace('    agregar(&c, x);', '    c.elementos[c.cantidad] = x;\n    c.cantidad++;'),
+    ['TAD_ACCESO_DIRECTO', 'TAD_OPERACION_SIN_USAR']
+  ),
+  conjuntoUsar(1, 'las consultas correctas', CONJ_CONSULTAS),
+  conjuntoUsar(1, 'con las respuestas al reves', CONJ_CONSULTAS.replace('== VERDADERO', '== FALSO'), ['MUESTRA_DISTINTA']),
+  conjuntoUsar(1, 'sin pasar por el conjunto', CONJ_CONSULTAS.replace('    agregar(&c, x);', '    x = x;'), ['TAD_OPERACION_SIN_USAR']),
+  conjuntoUsar(1, 'con un mensaje para pedir los datos', CONJ_CONSULTAS.replace('  scanf("%d", &q);', '  printf("Consultas: ");\n  scanf("%d", &q);'), ['MUESTRA_DISTINTA']),
+  conjuntoUsar(2, 'los ordenados correctos', CONJ_ORDENADOS),
+  conjuntoUsar(2, 'sin el 20', CONJ_ORDENADOS.replace('i <= 20', 'i < 20'), ['MUESTRA_FALTA']),
+  conjuntoUsar(
+    2,
+    'de mayor a menor',
+    CONJ_ORDENADOS.replace('for (int i = 1; i <= 20; i++) {\n    if (pertenece(c, i)', 'for (int i = 20; i >= 1; i--) {\n    if (pertenece(c, i)'),
+    ['MUESTRA_DISTINTA']
+  ),
+  conjuntoUsar(2, 'solo hasta el 10', CONJ_ORDENADOS.replace('i <= 20', 'i <= 10'), ['MUESTRA_DISTINTA']),
+  conjuntoUsar(3, 'los comunes correctos', CONJ_AMBOS),
+  conjuntoUsar(3, 'los que estan en alguno', CONJ_AMBOS.replace('&&', '||'), ['MUESTRA_DISTINTA']),
+  conjuntoUsar(3, 'cargando todo en un solo conjunto', CONJ_AMBOS.replace('    agregar(&b, x);', '    agregar(&a, x);'), ['MUESTRA_FALTA']),
+  conjuntoAmpliar(1, 'completo', CONJ_H_AMPLIADO),
+  conjuntoAmpliar(1, 'sin declarar unir', CONJ_H_AMPLIADO.replace('TConjunto unir(TConjunto a, TConjunto b);\n', ''), ['PROTOTIPO_FALTA']),
+  conjuntoAmpliar(1, 'eliminar con el conjunto por valor', CONJ_H_AMPLIADO.replace('void eliminar(TConjunto *c, int x);', 'void eliminar(TConjunto c, int x);'), ['PARAMETRO_REFERENCIA_FALTA']),
+  conjuntoAmpliar(1, 'unir devuelve un entero', CONJ_H_AMPLIADO.replace('TConjunto unir', 'int unir'), ['FUNCION_TIPO_RETORNO']),
+  conjuntoAmpliar(2, 'completo', CONJ_C_AMPLIADO),
+  conjuntoAmpliar(2, 'eliminar sin restar a la cantidad', CONJ_C_AMPLIADO.replace('      c->cantidad = c->cantidad - 1;\n', ''), ['DEVUELVE_DISTINTO']),
+  conjuntoAmpliar(2, 'eliminar que borra siempre el ultimo', CONJ_C_AMPLIADO.replace('    if (c->elementos[i] == x) {', '    if (c->elementos[i] != x) {'), ['DEVUELVE_DISTINTO']),
+  conjuntoAmpliar(
+    2,
+    'unir sin mirar los repetidos',
+    CONJ_C_AMPLIADO.replace('    agregar(&r, b.elementos[i]);', '    r.elementos[r.cantidad] = b.elementos[i];\n    r.cantidad = r.cantidad + 1;'),
+    ['DEVUELVE_DISTINTO']
+  ),
+  conjuntoAmpliar(2, 'unir que devuelve solo a', CONJ_C_AMPLIADO.replace('  return r;', '  return a;'), ['DEVUELVE_DISTINTO']),
+  conjuntoAmpliar(3, 'el main correcto', CONJ_MAIN_AMPLIADO),
+  conjuntoAmpliar(3, 'sin eliminar', CONJ_MAIN_AMPLIADO.replace('  eliminar(&u, x);\n', ''), ['TAD_OPERACION_SIN_USAR']),
+  conjuntoAmpliar(3, 'eliminando antes de unir', CONJ_MAIN_AMPLIADO.replace('  u = unir(a, b);\n  scanf("%d", &x);\n  eliminar(&u, x);', '  scanf("%d", &x);\n  eliminar(&a, x);\n  u = unir(a, b);'), ['MUESTRA_DISTINTA']),
+  conjuntoCompletar(1, 'completo', CONJ_H_COMPLETO),
+  conjuntoCompletar(1, 'sin declarar restar', CONJ_H_COMPLETO.replace('TConjunto restar(TConjunto a, TConjunto b);\n', ''), ['PROTOTIPO_FALTA']),
+  conjuntoCompletar(1, 'intersectar con un solo conjunto', CONJ_H_COMPLETO.replace('TConjunto intersectar(TConjunto a, TConjunto b);', 'TConjunto intersectar(TConjunto a);'), ['PARAMETROS_CANTIDAD']),
+  conjuntoCompletar(2, 'completo', CONJ_C_COMPLETO),
+  conjuntoCompletar(
+    2,
+    'intersectar que devuelve la union',
+    CONJ_C_COMPLETO.replace('    if (pertenece(b, a.elementos[i]) == VERDADERO) {\n      agregar(&r, a.elementos[i]);\n    }', '    agregar(&r, a.elementos[i]);\n    agregar(&r, b.elementos[i]);'),
+    ['DEVUELVE_DISTINTO']
+  ),
+  conjuntoCompletar(2, 'restar que se queda con los que estan en b', CONJ_C_COMPLETO.replace('== FALSO) {\n      agregar(&r, a.elementos[i]);', '== VERDADERO) {\n      agregar(&r, a.elementos[i]);'), ['DEVUELVE_DISTINTO']),
+  conjuntoCompletar(
+    2,
+    'restar con los conjuntos cruzados',
+    CONJ_C_COMPLETO.replace('    if (pertenece(b, a.elementos[i]) == FALSO) {\n      agregar(&r, a.elementos[i]);', '    if (pertenece(a, b.elementos[i]) == FALSO) {\n      agregar(&r, b.elementos[i]);').replace('i < a.cantidad; i++) {\n    if (pertenece(a, b', 'i < b.cantidad; i++) {\n    if (pertenece(a, b'),
+    ['DEVUELVE_DISTINTO']
+  ),
+  conjuntoCompletar(3, 'el main correcto', CONJ_MAIN_COMPLETO),
+  conjuntoCompletar(3, 'con los renglones cambiados', CONJ_MAIN_COMPLETO.replace('pertenece(u, k)', 'pertenece(r, k)').replace('pertenece(r, k) == VERDADERO) {\n      printf("%d ", k);\n    }\n  }\n  return 0;', 'pertenece(u, k) == VERDADERO) {\n      printf("%d ", k);\n    }\n  }\n  return 0;'), ['MUESTRA_DISTINTA']),
+  conjuntoCompletar(3, 'sin usar restar', CONJ_MAIN_COMPLETO.replace('  r = restar(a, b);\n', '  r = i;\n'), ['TAD_OPERACION_SIN_USAR']),
 ];

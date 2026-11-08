@@ -1,0 +1,379 @@
+{
+  "id": "tad-conjunto",
+  "titulo": "Un TAD con una regla: el conjunto",
+  "continua": true,
+  "descripcion": "Un TAD que cuida una regla propia: un conjunto de números enteros no repite ningún elemento. Se escribe el `.h`, el `.c` (donde una operación se apoya en otra) y un programa que lo usa.",
+  "consignas": [
+    {
+      "id": "tadcj-h",
+      "titulo": "El archivo del conjunto",
+      "escribe": "conjunto.h",
+      "enunciado": "Escriba `conjunto.h`, el archivo que describe el TAD conjunto de números enteros. Un conjunto guarda hasta 10 números en un arreglo `elementos` y lleva un campo `cantidad` con cuántos hay, en ese orden. El tamaño del arreglo es la constante `MAX`, que vale 10, y el tipo se llama `TConjunto`. Declare también el enumerado `TBool`, con los valores `FALSO` y `VERDADERO` (en ese orden). Tiene cuatro operaciones:\n- `inicializar`: lo deja vacío. Recibe el conjunto por referencia y no devuelve nada.\n- `agregar`: agrega un número al conjunto. Recibe el conjunto por referencia y el número, y no devuelve nada.\n- `pertenece`: devuelve un `TBool` que dice si el número está en el conjunto. Recibe el conjunto por valor y el número.\n- `cardinal`: devuelve cuántos elementos tiene el conjunto. Recibe el conjunto por valor.\n\nUse las guardas de inclusión `CONJUNTO_H`.",
+      "requiere": [
+        {
+          "encabezado": {
+            "guarda": "CONJUNTO_H"
+          }
+        },
+        {
+          "struct": {
+            "capturar": "S",
+            "campos": [
+              {
+                "nombre": "elementos",
+                "tipo": "entero",
+                "arreglo": 10,
+                "constante": "MAX"
+              },
+              {
+                "nombre": "cantidad",
+                "tipo": "entero"
+              }
+            ]
+          }
+        },
+        {
+          "alias": {
+            "de": "$S",
+            "nombre": "TConjunto",
+            "capturar": "T"
+          }
+        },
+        {
+          "enum": {
+            "enumeradores": [
+              "FALSO",
+              "VERDADERO"
+            ],
+            "capturar": "E"
+          }
+        },
+        {
+          "alias": {
+            "de": "$E",
+            "nombre": "TBool",
+            "capturar": "B"
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "inicializar",
+            "retorna": "void",
+            "parametros": [
+              {
+                "tipo": "estructura",
+                "referencia": true
+              }
+            ]
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "agregar",
+            "retorna": "void",
+            "parametros": [
+              {
+                "tipo": "estructura",
+                "referencia": true
+              },
+              {
+                "tipo": "entero"
+              }
+            ]
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "pertenece",
+            "retorna": "enumerado",
+            "parametros": [
+              {
+                "tipo": "estructura"
+              },
+              {
+                "tipo": "entero"
+              }
+            ]
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "cardinal",
+            "retorna": "entero",
+            "parametros": [
+              {
+                "tipo": "estructura"
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "#ifndef CONJUNTO_H\n#define CONJUNTO_H\n\n#define MAX 10\n\ntypedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\ntypedef struct {\n  int elementos[MAX];\n  int cantidad;\n} TConjunto;\n\nvoid inicializar(TConjunto *c);\nvoid agregar(TConjunto *c, int x);\nTBool pertenece(TConjunto c, int x);\nint cardinal(TConjunto c);\n\n#endif"
+    },
+    {
+      "id": "tadcj-c",
+      "titulo": "La implementación del conjunto",
+      "escribe": "conjunto.c",
+      "enunciado": "Ahora escriba `conjunto.c`, que define las cuatro operaciones del `conjunto.h` que acaba de escribir (lo ve arriba, en su pestaña). Los elementos se guardan en `elementos` desde la posición 0 y `cantidad` dice cuántos hay: vale 0 cuando el conjunto está vacío. Un conjunto no tiene números repetidos. Las operaciones hacen lo siguiente:\n- `inicializar`: deja el conjunto vacío.\n- `pertenece`: devuelve `VERDADERO` si el número está entre los elementos y `FALSO` si no.\n- `agregar`: si el número no está, lo guarda en la posición `cantidad` y suma uno a `cantidad`; si ya está, no cambia nada.\n- `cardinal`: devuelve cuántos elementos hay.\n\nSe supone que `agregar` no se usa con el conjunto lleno. No olvide incluir el `.h`.",
+      "requiere": [
+        {
+          "incluyeLocal": "conjunto.h"
+        },
+        {
+          "sinTipos": true
+        },
+        {
+          "defineTodo": true
+        },
+        {
+          "funcion": {
+            "nombre": "pertenece",
+            "retorna": "enumerado",
+            "soloEnumeradores": true,
+            "parametros": [
+              {
+                "tipo": "estructura"
+              },
+              {
+                "tipo": "entero"
+              }
+            ]
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "antes": "TConjunto c;\ninicializar(&c);",
+                "llama": "cardinal(c)",
+                "devuelve": 0,
+                "contexto": "Con un conjunto recién inicializado",
+                "visible": true
+              },
+              {
+                "antes": "TConjunto c;\ninicializar(&c);\nagregar(&c, 4);",
+                "llama": "cardinal(c)",
+                "devuelve": 1,
+                "contexto": "Después de agregar el 4"
+              },
+              {
+                "antes": "TConjunto c;\ninicializar(&c);\nagregar(&c, 4);\nagregar(&c, 7);\nagregar(&c, 9);",
+                "llama": "cardinal(c)",
+                "devuelve": 3,
+                "contexto": "Después de agregar 4, 7 y 9"
+              },
+              {
+                "antes": "TConjunto c;\ninicializar(&c);\nagregar(&c, 4);\nagregar(&c, 4);",
+                "llama": "cardinal(c)",
+                "devuelve": 1,
+                "contexto": "Después de agregar dos veces el 4",
+                "visible": true
+              },
+              {
+                "antes": "TConjunto c;\ninicializar(&c);\nagregar(&c, 4);\nagregar(&c, 7);\nagregar(&c, 4);\nagregar(&c, 9);\nagregar(&c, 7);\nagregar(&c, 4);",
+                "llama": "cardinal(c)",
+                "devuelve": 3,
+                "contexto": "Después de agregar 4, 7, 4, 9, 7 y 4 (con repetidos)"
+              },
+              {
+                "antes": "TConjunto c;\ninicializar(&c);\nagregar(&c, 1);\nagregar(&c, 2);\nagregar(&c, 3);\nagregar(&c, 4);\nagregar(&c, 5);\nagregar(&c, 6);\nagregar(&c, 7);\nagregar(&c, 8);\nagregar(&c, 9);\nagregar(&c, 10);",
+                "llama": "cardinal(c)",
+                "devuelve": 10,
+                "contexto": "Con el conjunto lleno: del 1 al 10"
+              },
+              {
+                "antes": "TConjunto c;\ninicializar(&c);\nagregar(&c, 1);\nagregar(&c, 2);\nagregar(&c, 3);\nagregar(&c, 4);\nagregar(&c, 5);\nagregar(&c, 6);\nagregar(&c, 7);\nagregar(&c, 8);\nagregar(&c, 9);\nagregar(&c, 10);\nagregar(&c, 10);\nagregar(&c, 1);",
+                "llama": "cardinal(c)",
+                "devuelve": 10,
+                "contexto": "Con el conjunto lleno y repitiendo dos que ya estaban"
+              },
+              {
+                "antes": "TConjunto c;\ninicializar(&c);",
+                "llama": "pertenece(c, 5)",
+                "devuelve": "FALSO",
+                "contexto": "Un conjunto vacío no tiene el 5",
+                "visible": true
+              },
+              {
+                "antes": "TConjunto c;\ninicializar(&c);\nagregar(&c, 4);\nagregar(&c, 7);\nagregar(&c, 9);",
+                "llama": "pertenece(c, 7)",
+                "devuelve": "VERDADERO",
+                "contexto": "El 7 en el conjunto {4, 7, 9}",
+                "visible": true
+              },
+              {
+                "antes": "TConjunto c;\ninicializar(&c);\nagregar(&c, 4);\nagregar(&c, 7);\nagregar(&c, 9);",
+                "llama": "pertenece(c, 4)",
+                "devuelve": "VERDADERO",
+                "contexto": "El 4 (el primero) en el conjunto {4, 7, 9}"
+              },
+              {
+                "antes": "TConjunto c;\ninicializar(&c);\nagregar(&c, 4);\nagregar(&c, 7);\nagregar(&c, 9);",
+                "llama": "pertenece(c, 9)",
+                "devuelve": "VERDADERO",
+                "contexto": "El 9 (el último) en el conjunto {4, 7, 9}"
+              },
+              {
+                "antes": "TConjunto c;\ninicializar(&c);\nagregar(&c, 4);\nagregar(&c, 7);\nagregar(&c, 9);",
+                "llama": "pertenece(c, 5)",
+                "devuelve": "FALSO",
+                "contexto": "El 5 en el conjunto {4, 7, 9}"
+              },
+              {
+                "antes": "TConjunto c;\ninicializar(&c);\nagregar(&c, 4);\nagregar(&c, 7);\nagregar(&c, 4);",
+                "llama": "pertenece(c, 4)",
+                "devuelve": "VERDADERO",
+                "contexto": "El 4 en un conjunto al que se lo agregó dos veces"
+              },
+              {
+                "antes": "TConjunto c;\ninicializar(&c);\nagregar(&c, 0);\nagregar(&c, 3);",
+                "llama": "pertenece(c, 0)",
+                "devuelve": "VERDADERO",
+                "contexto": "El 0 en el conjunto {0, 3}"
+              },
+              {
+                "antes": "TConjunto c;\ninicializar(&c);\nagregar(&c, -2);\nagregar(&c, 3);",
+                "llama": "pertenece(c, -2)",
+                "devuelve": "VERDADERO",
+                "contexto": "El -2 en el conjunto {-2, 3}"
+              },
+              {
+                "antes": "TConjunto c;\ninicializar(&c);\nagregar(&c, 1);\nagregar(&c, 2);\nagregar(&c, 3);\nagregar(&c, 4);\nagregar(&c, 5);\nagregar(&c, 6);\nagregar(&c, 7);\nagregar(&c, 8);\nagregar(&c, 9);\nagregar(&c, 10);",
+                "llama": "pertenece(c, 10)",
+                "devuelve": "VERDADERO",
+                "contexto": "El 10 en un conjunto lleno"
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "#include \"conjunto.h\"\n\nvoid inicializar(TConjunto *c) {\n  c->cantidad = 0;\n}\n\nTBool pertenece(TConjunto c, int x) {\n  for (int i = 0; i < c.cantidad; i++) {\n    if (c.elementos[i] == x) {\n      return VERDADERO;\n    }\n  }\n  return FALSO;\n}\n\nvoid agregar(TConjunto *c, int x) {\n  if (pertenece(*c, x) == FALSO) {\n    c->elementos[c->cantidad] = x;\n    c->cantidad = c->cantidad + 1;\n  }\n}\n\nint cardinal(TConjunto c) {\n  return c.cantidad;\n}"
+    },
+    {
+      "id": "tadcj-q-directo",
+      "titulo": "Por qué no escribir directo en el arreglo",
+      "enunciado": "Un compañero necesita agregar un número a un conjunto en su `main.c`. En lugar de llamar a `agregar`, escribe directamente el número en el arreglo `elementos`, en la posición `cantidad`, y después le suma uno a `cantidad`. ¿Por qué no conviene?",
+      "opciones": [
+        {
+          "texto": "Porque `main.c` no puede ver el arreglo `elementos`.",
+          "codigo": "OPCION_CONJUNTO_NO_VE",
+          "explicacion": "Sí puede verlo: el tipo `TConjunto` está declarado en `conjunto.h`, que `main.c` incluye, así que conoce todos sus campos. Que pueda no significa que convenga: el `.h` muestra los campos porque el compilador los necesita, no para que se usen."
+        },
+        {
+          "texto": "Porque se saltea la comprobación de `agregar`.",
+          "correcta": true,
+          "explicacion": "La regla de un conjunto, que ningún número esté dos veces, la cuida `agregar`: antes de guardar pregunta con `pertenece`. Quien escribe en el arreglo por su cuenta se salta esa comprobación y puede dejar repetidos, y entonces `cardinal` cuenta de más y `pertenece` y las demás operaciones dejan de ser confiables. Con las operaciones, la regla se cumple siempre; sin ellas, depende de que cada programa se acuerde de cumplirla. Además, si algún día cambiara la forma de guardar los elementos, ese `main.c` dejaría de funcionar."
+        },
+        {
+          "texto": "Porque escribir en el arreglo es más lento que llamar a `agregar`.",
+          "codigo": "OPCION_CONJUNTO_MAS_LENTO",
+          "explicacion": "No es una cuestión de velocidad: escribir directo hace menos trabajo, no más, y la diferencia sería insignificante."
+        }
+      ]
+    },
+    {
+      "id": "tadcj-main",
+      "titulo": "Contar los distintos",
+      "escribe": "main.c",
+      "inicializa": "inicializar",
+      "enunciado": "Con su `conjunto.h` y su `conjunto.c`, escriba `main.c`. Lea con `scanf`, en este orden:\n- la cantidad de números `n`, a lo sumo 10\n- los `n` números, que se guardan en un conjunto\n\nMuestre `Distintos: ` seguido de cuántos números distintos tiene el conjunto. Por ejemplo, si se ingresan:\n- `5` (cantidad de números)\n- `4`, `7`, `4`, `9` y `7` (los números)\n\nel programa muestra `Distintos: 3`.\nUse solo las operaciones del `.h`.\n! No use `printf` para mostrar mensajes que pidan los datos: léalos directamente con `scanf`.",
+      "requiere": [
+        {
+          "incluyeLocal": "conjunto.h"
+        },
+        {
+          "soloOperaciones": "TConjunto"
+        },
+        {
+          "usaOperaciones": [
+            "inicializar",
+            "agregar",
+            "cardinal"
+          ]
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "entrada": [
+                  5,
+                  4,
+                  7,
+                  4,
+                  9,
+                  7
+                ],
+                "salida": "Distintos: 3"
+              },
+              {
+                "entrada": [
+                  3,
+                  1,
+                  2,
+                  3
+                ],
+                "salida": "Distintos: 3"
+              },
+              {
+                "entrada": [
+                  1,
+                  8
+                ],
+                "salida": "Distintos: 1"
+              },
+              {
+                "entrada": [
+                  4,
+                  6,
+                  6,
+                  6,
+                  6
+                ],
+                "salida": "Distintos: 1"
+              },
+              {
+                "entrada": [
+                  10,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8,
+                  9,
+                  10
+                ],
+                "salida": "Distintos: 10"
+              },
+              {
+                "entrada": [
+                  0
+                ],
+                "salida": "Distintos: 0"
+              },
+              {
+                "entrada": [
+                  6,
+                  2,
+                  2,
+                  5,
+                  5,
+                  2,
+                  5
+                ],
+                "salida": "Distintos: 2"
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "#include <stdio.h>\n#include \"conjunto.h\"\n\nint main() {\n  TConjunto c;\n  int n;\n  int x;\n\n  inicializar(&c);\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%d\", &x);\n    agregar(&c, x);\n  }\n  printf(\"Distintos: %d\", cardinal(c));\n  return 0;\n}"
+    }
+  ]
+}

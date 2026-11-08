@@ -1,0 +1,535 @@
+{
+  "id": "tad-conjunto-ampliar",
+  "titulo": "Ampliar el conjunto: eliminar y unir",
+  "continua": true,
+  "descripcion": "Agregar al conjunto dos operaciones nuevas: sacar un elemento y unir dos conjuntos. La unión se apoya en las operaciones que el conjunto ya tiene.",
+  "consignas": [
+    {
+      "id": "tadcja-h",
+      "titulo": "Declarar eliminar y unir",
+      "escribe": "conjunto.h",
+      "comienza": "#ifndef CONJUNTO_H\n#define CONJUNTO_H\n\n#define MAX 10\n\ntypedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\ntypedef struct {\n  int elementos[MAX];\n  int cantidad;\n} TConjunto;\n\nvoid inicializar(TConjunto *c);\nvoid agregar(TConjunto *c, int x);\nTBool pertenece(TConjunto c, int x);\nint cardinal(TConjunto c);\n\n#endif",
+      "enunciado": "El archivo `conjunto.h` ya está escrito y lo ve en el editor. Agréguele dos operaciones:\n- `eliminar`: saca un número del conjunto; si no estaba, no hace nada. Recibe el conjunto por referencia y el número, y no devuelve nada.\n- `unir`: recibe dos conjuntos por valor y devuelve un conjunto nuevo con los números que están en alguno de los dos. No cambia los conjuntos que recibe.\n\nLo que ya estaba no se cambia.\n! Las declaraciones nuevas van antes del `#endif`.",
+      "requiere": [
+        {
+          "encabezado": {
+            "guarda": "CONJUNTO_H"
+          }
+        },
+        {
+          "struct": {
+            "capturar": "S",
+            "campos": [
+              {
+                "nombre": "elementos",
+                "tipo": "entero",
+                "arreglo": 10,
+                "constante": "MAX"
+              },
+              {
+                "nombre": "cantidad",
+                "tipo": "entero"
+              }
+            ]
+          }
+        },
+        {
+          "alias": {
+            "de": "$S",
+            "nombre": "TConjunto",
+            "capturar": "T"
+          }
+        },
+        {
+          "enum": {
+            "enumeradores": [
+              "FALSO",
+              "VERDADERO"
+            ],
+            "capturar": "E"
+          }
+        },
+        {
+          "alias": {
+            "de": "$E",
+            "nombre": "TBool",
+            "capturar": "B"
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "inicializar",
+            "retorna": "void",
+            "parametros": [
+              {
+                "tipo": "estructura",
+                "referencia": true
+              }
+            ]
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "agregar",
+            "retorna": "void",
+            "parametros": [
+              {
+                "tipo": "estructura",
+                "referencia": true
+              },
+              {
+                "tipo": "entero"
+              }
+            ]
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "pertenece",
+            "retorna": "enumerado",
+            "parametros": [
+              {
+                "tipo": "estructura"
+              },
+              {
+                "tipo": "entero"
+              }
+            ]
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "cardinal",
+            "retorna": "entero",
+            "parametros": [
+              {
+                "tipo": "estructura"
+              }
+            ]
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "eliminar",
+            "retorna": "void",
+            "parametros": [
+              {
+                "tipo": "estructura",
+                "referencia": true
+              },
+              {
+                "tipo": "entero"
+              }
+            ]
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "unir",
+            "retorna": "estructura",
+            "parametros": [
+              {
+                "tipo": "estructura"
+              },
+              {
+                "tipo": "estructura"
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "#ifndef CONJUNTO_H\n#define CONJUNTO_H\n\n#define MAX 10\n\ntypedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\ntypedef struct {\n  int elementos[MAX];\n  int cantidad;\n} TConjunto;\n\nvoid inicializar(TConjunto *c);\nvoid agregar(TConjunto *c, int x);\nTBool pertenece(TConjunto c, int x);\nint cardinal(TConjunto c);\nvoid eliminar(TConjunto *c, int x);\nTConjunto unir(TConjunto a, TConjunto b);\n\n#endif"
+    },
+    {
+      "id": "tadcja-c",
+      "titulo": "Definir eliminar y unir",
+      "escribe": "conjunto.c",
+      "comienza": "#include \"conjunto.h\"\n\nvoid inicializar(TConjunto *c) {\n  c->cantidad = 0;\n}\n\nTBool pertenece(TConjunto c, int x) {\n  for (int i = 0; i < c.cantidad; i++) {\n    if (c.elementos[i] == x) {\n      return VERDADERO;\n    }\n  }\n  return FALSO;\n}\n\nvoid agregar(TConjunto *c, int x) {\n  if (pertenece(*c, x) == FALSO) {\n    c->elementos[c->cantidad] = x;\n    c->cantidad = c->cantidad + 1;\n  }\n}\n\nint cardinal(TConjunto c) {\n  return c.cantidad;\n}",
+      "dibujo": {
+        "titulo": "La unión de `a` y `b`: todo lo que está en alguno de los dos (lo resaltado):",
+        "venn": {
+          "a": [
+            1,
+            2,
+            3,
+            5
+          ],
+          "b": [
+            3,
+            5,
+            6,
+            7
+          ],
+          "resaltar": "union"
+        }
+      },
+      "enunciado": "Con su `conjunto.h` ampliado (lo ve arriba, en su pestaña), complete `conjunto.c`: ya define las cuatro operaciones de antes y está en el editor. Agréguele la definición de las dos nuevas, al final:\n- `eliminar`: si el número está en el conjunto, lo saca y el conjunto queda con un elemento menos; si no está, no cambia nada. El orden en que quedan los demás elementos no importa: un conjunto no tiene un orden.\n- `unir`: devuelve un conjunto con los números de `a` y los de `b`, sin repetir ninguno. Se supone que el resultado no tiene más de 10 elementos.\n\nPuede apoyarse en las operaciones que el conjunto ya tiene. Lo que ya estaba escrito no se cambia.",
+      "requiere": [
+        {
+          "incluyeLocal": "conjunto.h"
+        },
+        {
+          "sinTipos": true
+        },
+        {
+          "defineTodo": true
+        },
+        {
+          "funcion": {
+            "nombre": "pertenece",
+            "retorna": "enumerado",
+            "soloEnumeradores": true,
+            "parametros": [
+              {
+                "tipo": "estructura"
+              },
+              {
+                "tipo": "entero"
+              }
+            ]
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "antes": "TConjunto c;\ninicializar(&c);\nagregar(&c, 4);\nagregar(&c, 7);\nagregar(&c, 9);\neliminar(&c, 7);",
+                "llama": "cardinal(c)",
+                "devuelve": 2,
+                "contexto": "Después de eliminar el 7 de {4, 7, 9}",
+                "visible": true
+              },
+              {
+                "antes": "TConjunto c;\ninicializar(&c);\nagregar(&c, 4);\nagregar(&c, 7);\nagregar(&c, 9);\neliminar(&c, 7);",
+                "llama": "pertenece(c, 7)",
+                "devuelve": "FALSO",
+                "contexto": "El 7 después de eliminarlo de {4, 7, 9}",
+                "visible": true
+              },
+              {
+                "antes": "TConjunto c;\ninicializar(&c);\nagregar(&c, 4);\nagregar(&c, 7);\nagregar(&c, 9);\neliminar(&c, 7);",
+                "llama": "pertenece(c, 4)",
+                "devuelve": "VERDADERO",
+                "contexto": "El 4 después de eliminar el 7 de {4, 7, 9}"
+              },
+              {
+                "antes": "TConjunto c;\ninicializar(&c);\nagregar(&c, 4);\nagregar(&c, 7);\nagregar(&c, 9);\neliminar(&c, 7);",
+                "llama": "pertenece(c, 9)",
+                "devuelve": "VERDADERO",
+                "contexto": "El 9 después de eliminar el 7 de {4, 7, 9}"
+              },
+              {
+                "antes": "TConjunto c;\ninicializar(&c);\nagregar(&c, 4);\nagregar(&c, 7);\nagregar(&c, 9);\neliminar(&c, 4);",
+                "llama": "pertenece(c, 4)",
+                "devuelve": "FALSO",
+                "contexto": "El 4 (el primero) después de eliminarlo de {4, 7, 9}"
+              },
+              {
+                "antes": "TConjunto c;\ninicializar(&c);\nagregar(&c, 4);\nagregar(&c, 7);\nagregar(&c, 9);\neliminar(&c, 4);",
+                "llama": "pertenece(c, 9)",
+                "devuelve": "VERDADERO",
+                "contexto": "El 9 después de eliminar el 4 de {4, 7, 9}"
+              },
+              {
+                "antes": "TConjunto c;\ninicializar(&c);\nagregar(&c, 4);\nagregar(&c, 7);\nagregar(&c, 9);\neliminar(&c, 9);",
+                "llama": "pertenece(c, 9)",
+                "devuelve": "FALSO",
+                "contexto": "El 9 (el último) después de eliminarlo de {4, 7, 9}"
+              },
+              {
+                "antes": "TConjunto c;\ninicializar(&c);\nagregar(&c, 4);\nagregar(&c, 7);\nagregar(&c, 9);\neliminar(&c, 9);",
+                "llama": "cardinal(c)",
+                "devuelve": 2,
+                "contexto": "Después de eliminar el 9 (el último) de {4, 7, 9}"
+              },
+              {
+                "antes": "TConjunto c;\ninicializar(&c);\nagregar(&c, 4);\nagregar(&c, 7);\nagregar(&c, 9);\neliminar(&c, 5);",
+                "llama": "cardinal(c)",
+                "devuelve": 3,
+                "contexto": "Después de eliminar el 5, que no está, de {4, 7, 9}"
+              },
+              {
+                "antes": "TConjunto c;\ninicializar(&c);\neliminar(&c, 5);",
+                "llama": "cardinal(c)",
+                "devuelve": 0,
+                "contexto": "Después de eliminar el 5 de un conjunto vacío"
+              },
+              {
+                "antes": "TConjunto c;\ninicializar(&c);\nagregar(&c, 6);\neliminar(&c, 6);",
+                "llama": "cardinal(c)",
+                "devuelve": 0,
+                "contexto": "Después de eliminar el único elemento"
+              },
+              {
+                "antes": "TConjunto c;\ninicializar(&c);\nagregar(&c, 6);\neliminar(&c, 6);",
+                "llama": "pertenece(c, 6)",
+                "devuelve": "FALSO",
+                "contexto": "El único elemento después de eliminarlo"
+              },
+              {
+                "antes": "TConjunto c;\ninicializar(&c);\nagregar(&c, 1);\nagregar(&c, 2);\nagregar(&c, 3);\neliminar(&c, 2);\neliminar(&c, 2);",
+                "llama": "cardinal(c)",
+                "devuelve": 2,
+                "contexto": "Después de eliminar dos veces el mismo número"
+              },
+              {
+                "antes": "TConjunto c;\ninicializar(&c);\nagregar(&c, 1);\nagregar(&c, 2);\nagregar(&c, 3);\neliminar(&c, 2);\nagregar(&c, 2);",
+                "llama": "cardinal(c)",
+                "devuelve": 3,
+                "contexto": "Después de eliminar el 2 y volver a agregarlo"
+              },
+              {
+                "antes": "TConjunto c;\ninicializar(&c);\nagregar(&c, 1);\nagregar(&c, 2);\nagregar(&c, 3);\nagregar(&c, 4);\nagregar(&c, 5);\nagregar(&c, 6);\nagregar(&c, 7);\nagregar(&c, 8);\nagregar(&c, 9);\nagregar(&c, 10);\neliminar(&c, 5);\nagregar(&c, 11);",
+                "llama": "cardinal(c)",
+                "devuelve": 10,
+                "contexto": "Con el conjunto lleno: eliminar el 5 y agregar el 11"
+              },
+              {
+                "antes": "TConjunto a;\ninicializar(&a);\nagregar(&a, 1);\nagregar(&a, 2);\nagregar(&a, 3);\nagregar(&a, 5);\nTConjunto b;\ninicializar(&b);\nagregar(&b, 3);\nagregar(&b, 5);\nagregar(&b, 6);\nagregar(&b, 7);",
+                "llama": "cardinal(unir(a, b))",
+                "devuelve": 6,
+                "contexto": "El cardinal de la unión de {1, 2, 3, 5} y {3, 5, 6, 7}",
+                "visible": true
+              },
+              {
+                "antes": "TConjunto a;\ninicializar(&a);\nagregar(&a, 1);\nagregar(&a, 2);\nagregar(&a, 3);\nagregar(&a, 5);\nTConjunto b;\ninicializar(&b);\nagregar(&b, 3);\nagregar(&b, 5);\nagregar(&b, 6);\nagregar(&b, 7);",
+                "llama": "pertenece(unir(a, b), 1)",
+                "devuelve": "VERDADERO",
+                "contexto": "El 1 (solo de a) en la unión",
+                "visible": true
+              },
+              {
+                "antes": "TConjunto a;\ninicializar(&a);\nagregar(&a, 1);\nagregar(&a, 2);\nagregar(&a, 3);\nagregar(&a, 5);\nTConjunto b;\ninicializar(&b);\nagregar(&b, 3);\nagregar(&b, 5);\nagregar(&b, 6);\nagregar(&b, 7);",
+                "llama": "pertenece(unir(a, b), 3)",
+                "devuelve": "VERDADERO",
+                "contexto": "El 3 (de los dos) en la unión"
+              },
+              {
+                "antes": "TConjunto a;\ninicializar(&a);\nagregar(&a, 1);\nagregar(&a, 2);\nagregar(&a, 3);\nagregar(&a, 5);\nTConjunto b;\ninicializar(&b);\nagregar(&b, 3);\nagregar(&b, 5);\nagregar(&b, 6);\nagregar(&b, 7);",
+                "llama": "pertenece(unir(a, b), 6)",
+                "devuelve": "VERDADERO",
+                "contexto": "El 6 (solo de b) en la unión"
+              },
+              {
+                "antes": "TConjunto a;\ninicializar(&a);\nagregar(&a, 1);\nagregar(&a, 2);\nagregar(&a, 3);\nagregar(&a, 5);\nTConjunto b;\ninicializar(&b);\nagregar(&b, 3);\nagregar(&b, 5);\nagregar(&b, 6);\nagregar(&b, 7);",
+                "llama": "pertenece(unir(a, b), 9)",
+                "devuelve": "FALSO",
+                "contexto": "El 9 (de ninguno) en la unión"
+              },
+              {
+                "antes": "TConjunto a;\ninicializar(&a);\nTConjunto b;\ninicializar(&b);\nagregar(&b, 3);\nagregar(&b, 4);\nagregar(&b, 5);",
+                "llama": "cardinal(unir(a, b))",
+                "devuelve": 3,
+                "contexto": "La unión de un conjunto vacío y {3, 4, 5}"
+              },
+              {
+                "antes": "TConjunto a;\ninicializar(&a);\nagregar(&a, 3);\nagregar(&a, 4);\nagregar(&a, 5);\nTConjunto b;\ninicializar(&b);",
+                "llama": "cardinal(unir(a, b))",
+                "devuelve": 3,
+                "contexto": "La unión de {3, 4, 5} y un conjunto vacío"
+              },
+              {
+                "antes": "TConjunto a;\ninicializar(&a);\nTConjunto b;\ninicializar(&b);",
+                "llama": "cardinal(unir(a, b))",
+                "devuelve": 0,
+                "contexto": "La unión de dos conjuntos vacíos"
+              },
+              {
+                "antes": "TConjunto a;\ninicializar(&a);\nagregar(&a, 1);\nagregar(&a, 2);\nTConjunto b;\ninicializar(&b);\nagregar(&b, 3);\nagregar(&b, 4);",
+                "llama": "cardinal(unir(a, b))",
+                "devuelve": 4,
+                "contexto": "La unión de dos conjuntos sin nada en común"
+              },
+              {
+                "antes": "TConjunto a;\ninicializar(&a);\nagregar(&a, 1);\nagregar(&a, 2);\nagregar(&a, 3);\nTConjunto b;\ninicializar(&b);\nagregar(&b, 1);\nagregar(&b, 2);\nagregar(&b, 3);",
+                "llama": "cardinal(unir(a, b))",
+                "devuelve": 3,
+                "contexto": "La unión de dos conjuntos iguales"
+              },
+              {
+                "antes": "TConjunto a;\ninicializar(&a);\nagregar(&a, 1);\nagregar(&a, 2);\nagregar(&a, 3);\nagregar(&a, 4);\nagregar(&a, 5);\nTConjunto b;\ninicializar(&b);\nagregar(&b, 4);\nagregar(&b, 5);",
+                "llama": "cardinal(unir(a, b))",
+                "devuelve": 5,
+                "contexto": "La unión de {1, 2, 3, 4, 5} y {4, 5}"
+              },
+              {
+                "antes": "TConjunto a;\ninicializar(&a);\nagregar(&a, 1);\nagregar(&a, 2);\nagregar(&a, 3);\nagregar(&a, 5);\nTConjunto b;\ninicializar(&b);\nagregar(&b, 3);\nagregar(&b, 5);\nagregar(&b, 6);\nagregar(&b, 7);",
+                "llama": "cardinal(unir(b, a))",
+                "devuelve": 6,
+                "contexto": "La unión con los conjuntos al revés"
+              },
+              {
+                "antes": "TConjunto a;\ninicializar(&a);\nagregar(&a, 1);\nagregar(&a, 2);\nagregar(&a, 3);\nagregar(&a, 5);\nTConjunto b;\ninicializar(&b);\nagregar(&b, 3);\nagregar(&b, 5);\nagregar(&b, 6);\nagregar(&b, 7);\nTConjunto u = unir(a, b);",
+                "llama": "cardinal(a)",
+                "devuelve": 4,
+                "contexto": "El conjunto a después de unirlo: no cambia"
+              },
+              {
+                "antes": "TConjunto a;\ninicializar(&a);\nagregar(&a, 1);\nagregar(&a, 2);\nagregar(&a, 3);\nagregar(&a, 5);\nTConjunto b;\ninicializar(&b);\nagregar(&b, 3);\nagregar(&b, 5);\nagregar(&b, 6);\nagregar(&b, 7);\nTConjunto u = unir(a, b);",
+                "llama": "pertenece(b, 1)",
+                "devuelve": "FALSO",
+                "contexto": "El conjunto b después de unirlo: no cambia"
+              },
+              {
+                "antes": "TConjunto a;\ninicializar(&a);\nagregar(&a, 1);\nagregar(&a, 2);\nagregar(&a, 3);\nagregar(&a, 5);\nTConjunto b;\ninicializar(&b);\nagregar(&b, 3);\nagregar(&b, 5);\nagregar(&b, 6);\nagregar(&b, 7);\nTConjunto u = unir(a, b);\nagregar(&u, 9);",
+                "llama": "cardinal(a)",
+                "devuelve": 4,
+                "contexto": "Agregarle algo a la unión no cambia a"
+              },
+              {
+                "antes": "TConjunto c;\ninicializar(&c);",
+                "llama": "cardinal(c)",
+                "devuelve": 0,
+                "contexto": "Las operaciones de antes siguen funcionando: con un conjunto recién inicializado"
+              },
+              {
+                "antes": "TConjunto c;\ninicializar(&c);\nagregar(&c, 4);\nagregar(&c, 4);",
+                "llama": "cardinal(c)",
+                "devuelve": 1,
+                "contexto": "Las operaciones de antes siguen funcionando: después de agregar dos veces el 4"
+              },
+              {
+                "antes": "TConjunto c;\ninicializar(&c);\nagregar(&c, 4);\nagregar(&c, 7);\nagregar(&c, 9);",
+                "llama": "pertenece(c, 7)",
+                "devuelve": "VERDADERO",
+                "contexto": "Las operaciones de antes siguen funcionando: el 7 en el conjunto {4, 7, 9}"
+              },
+              {
+                "antes": "TConjunto c;\ninicializar(&c);\nagregar(&c, 4);\nagregar(&c, 7);\nagregar(&c, 9);",
+                "llama": "pertenece(c, 5)",
+                "devuelve": "FALSO",
+                "contexto": "Las operaciones de antes siguen funcionando: el 5 en el conjunto {4, 7, 9}"
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "#include \"conjunto.h\"\n\nvoid inicializar(TConjunto *c) {\n  c->cantidad = 0;\n}\n\nTBool pertenece(TConjunto c, int x) {\n  for (int i = 0; i < c.cantidad; i++) {\n    if (c.elementos[i] == x) {\n      return VERDADERO;\n    }\n  }\n  return FALSO;\n}\n\nvoid agregar(TConjunto *c, int x) {\n  if (pertenece(*c, x) == FALSO) {\n    c->elementos[c->cantidad] = x;\n    c->cantidad = c->cantidad + 1;\n  }\n}\n\nint cardinal(TConjunto c) {\n  return c.cantidad;\n}\n\nvoid eliminar(TConjunto *c, int x) {\n  for (int i = 0; i < c->cantidad; i++) {\n    if (c->elementos[i] == x) {\n      c->elementos[i] = c->elementos[c->cantidad - 1];\n      c->cantidad = c->cantidad - 1;\n      return;\n    }\n  }\n}\n\nTConjunto unir(TConjunto a, TConjunto b) {\n  TConjunto r = a;\n\n  for (int i = 0; i < b.cantidad; i++) {\n    agregar(&r, b.elementos[i]);\n  }\n  return r;\n}"
+    },
+    {
+      "id": "tadcja-main",
+      "titulo": "Usar eliminar y unir",
+      "escribe": "main.c",
+      "inicializa": "inicializar",
+      "enunciado": "Con su `conjunto.h` y su `conjunto.c` ampliados, escriba `main.c` con dos conjuntos, `a` y `b`. Lea con `scanf`, en este orden:\n- la cantidad de números de `a`\n- los números de `a`\n- la cantidad de números de `b`\n- los números de `b`\n- un número `x`\n\nTodos los números están entre 1 y 20, y la unión no tiene más de 10 elementos. Arme la unión de `a` y `b` y elimine de ella el número `x`. Muestre con `printf`, separados por un espacio y de menor a mayor, los números que quedan en la unión. Para mostrar los números use solo las operaciones del conjunto, sin mirar el arreglo `elementos`. Por ejemplo, si se ingresan:\n- `3` (cantidad de números de `a`)\n- `2`, `5` y `8` (los números de `a`)\n- `3` (cantidad de números de `b`)\n- `5`, `8` y `11` (los números de `b`)\n- `8` (el número que se elimina)\n\nel programa muestra `2 5 11`.\nUse solo las operaciones del `.h`.",
+      "requiere": [
+        {
+          "incluyeLocal": "conjunto.h"
+        },
+        {
+          "soloOperaciones": "TConjunto"
+        },
+        {
+          "usaOperaciones": [
+            "inicializar",
+            "agregar",
+            "unir",
+            "eliminar",
+            "pertenece"
+          ]
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "entrada": [
+                  3,
+                  2,
+                  5,
+                  8,
+                  3,
+                  5,
+                  8,
+                  11,
+                  8
+                ],
+                "muestra": [
+                  2,
+                  5,
+                  11
+                ],
+                "separadas": true
+              },
+              {
+                "entrada": [
+                  2,
+                  1,
+                  2,
+                  2,
+                  2,
+                  3,
+                  9
+                ],
+                "muestra": [
+                  1,
+                  2,
+                  3
+                ],
+                "separadas": true
+              },
+              {
+                "entrada": [
+                  2,
+                  4,
+                  6,
+                  1,
+                  4,
+                  4
+                ],
+                "muestra": [
+                  6
+                ],
+                "separadas": true
+              },
+              {
+                "entrada": [
+                  1,
+                  20,
+                  1,
+                  1,
+                  1
+                ],
+                "muestra": [
+                  20
+                ],
+                "separadas": true
+              },
+              {
+                "entrada": [
+                  4,
+                  1,
+                  2,
+                  3,
+                  4,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8,
+                  4
+                ],
+                "muestra": [
+                  1,
+                  2,
+                  3,
+                  5,
+                  6,
+                  7,
+                  8
+                ],
+                "separadas": true
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "#include <stdio.h>\n#include \"conjunto.h\"\n\nint main() {\n  TConjunto a;\n  TConjunto b;\n  TConjunto u;\n  int n;\n  int x;\n\n  inicializar(&a);\n  inicializar(&b);\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%d\", &x);\n    agregar(&a, x);\n  }\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%d\", &x);\n    agregar(&b, x);\n  }\n  u = unir(a, b);\n  scanf(\"%d\", &x);\n  eliminar(&u, x);\n  for (int i = 1; i <= 20; i++) {\n    if (pertenece(u, i) == VERDADERO) {\n      printf(\"%d \", i);\n    }\n  }\n  return 0;\n}"
+    }
+  ]
+}

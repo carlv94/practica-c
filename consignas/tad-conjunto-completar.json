@@ -1,0 +1,613 @@
+{
+  "id": "tad-conjunto-completar",
+  "titulo": "Completar el conjunto: intersectar y restar",
+  "continua": true,
+  "descripcion": "Las dos operaciones que faltan para tener un conjunto completo: la intersección y la diferencia, que se arman con lo que el conjunto ya sabe hacer.",
+  "consignas": [
+    {
+      "id": "tadcjc-h",
+      "titulo": "Declarar intersectar y restar",
+      "escribe": "conjunto.h",
+      "comienza": "#ifndef CONJUNTO_H\n#define CONJUNTO_H\n\n#define MAX 10\n\ntypedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\ntypedef struct {\n  int elementos[MAX];\n  int cantidad;\n} TConjunto;\n\nvoid inicializar(TConjunto *c);\nvoid agregar(TConjunto *c, int x);\nTBool pertenece(TConjunto c, int x);\nint cardinal(TConjunto c);\nvoid eliminar(TConjunto *c, int x);\nTConjunto unir(TConjunto a, TConjunto b);\n\n#endif",
+      "enunciado": "El archivo `conjunto.h` ya está escrito y lo ve en el editor. Agréguele dos operaciones más, que reciben dos conjuntos por valor y devuelven un conjunto nuevo:\n- `intersectar`: devuelve los números que están en los dos conjuntos.\n- `restar`: devuelve los números del primer conjunto que no están en el segundo.\n\nNinguna cambia los conjuntos que recibe. Lo que ya estaba no se cambia.\n! Las declaraciones nuevas van antes del `#endif`.",
+      "requiere": [
+        {
+          "encabezado": {
+            "guarda": "CONJUNTO_H"
+          }
+        },
+        {
+          "struct": {
+            "capturar": "S",
+            "campos": [
+              {
+                "nombre": "elementos",
+                "tipo": "entero",
+                "arreglo": 10,
+                "constante": "MAX"
+              },
+              {
+                "nombre": "cantidad",
+                "tipo": "entero"
+              }
+            ]
+          }
+        },
+        {
+          "alias": {
+            "de": "$S",
+            "nombre": "TConjunto",
+            "capturar": "T"
+          }
+        },
+        {
+          "enum": {
+            "enumeradores": [
+              "FALSO",
+              "VERDADERO"
+            ],
+            "capturar": "E"
+          }
+        },
+        {
+          "alias": {
+            "de": "$E",
+            "nombre": "TBool",
+            "capturar": "B"
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "inicializar",
+            "retorna": "void",
+            "parametros": [
+              {
+                "tipo": "estructura",
+                "referencia": true
+              }
+            ]
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "agregar",
+            "retorna": "void",
+            "parametros": [
+              {
+                "tipo": "estructura",
+                "referencia": true
+              },
+              {
+                "tipo": "entero"
+              }
+            ]
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "pertenece",
+            "retorna": "enumerado",
+            "parametros": [
+              {
+                "tipo": "estructura"
+              },
+              {
+                "tipo": "entero"
+              }
+            ]
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "cardinal",
+            "retorna": "entero",
+            "parametros": [
+              {
+                "tipo": "estructura"
+              }
+            ]
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "eliminar",
+            "retorna": "void",
+            "parametros": [
+              {
+                "tipo": "estructura",
+                "referencia": true
+              },
+              {
+                "tipo": "entero"
+              }
+            ]
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "unir",
+            "retorna": "estructura",
+            "parametros": [
+              {
+                "tipo": "estructura"
+              },
+              {
+                "tipo": "estructura"
+              }
+            ]
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "intersectar",
+            "retorna": "estructura",
+            "parametros": [
+              {
+                "tipo": "estructura"
+              },
+              {
+                "tipo": "estructura"
+              }
+            ]
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "restar",
+            "retorna": "estructura",
+            "parametros": [
+              {
+                "tipo": "estructura"
+              },
+              {
+                "tipo": "estructura"
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "#ifndef CONJUNTO_H\n#define CONJUNTO_H\n\n#define MAX 10\n\ntypedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\ntypedef struct {\n  int elementos[MAX];\n  int cantidad;\n} TConjunto;\n\nvoid inicializar(TConjunto *c);\nvoid agregar(TConjunto *c, int x);\nTBool pertenece(TConjunto c, int x);\nint cardinal(TConjunto c);\nvoid eliminar(TConjunto *c, int x);\nTConjunto unir(TConjunto a, TConjunto b);\nTConjunto intersectar(TConjunto a, TConjunto b);\nTConjunto restar(TConjunto a, TConjunto b);\n\n#endif"
+    },
+    {
+      "id": "tadcjc-c",
+      "titulo": "Definir intersectar y restar",
+      "escribe": "conjunto.c",
+      "comienza": "#include \"conjunto.h\"\n\nvoid inicializar(TConjunto *c) {\n  c->cantidad = 0;\n}\n\nTBool pertenece(TConjunto c, int x) {\n  for (int i = 0; i < c.cantidad; i++) {\n    if (c.elementos[i] == x) {\n      return VERDADERO;\n    }\n  }\n  return FALSO;\n}\n\nvoid agregar(TConjunto *c, int x) {\n  if (pertenece(*c, x) == FALSO) {\n    c->elementos[c->cantidad] = x;\n    c->cantidad = c->cantidad + 1;\n  }\n}\n\nint cardinal(TConjunto c) {\n  return c.cantidad;\n}\n\nvoid eliminar(TConjunto *c, int x) {\n  for (int i = 0; i < c->cantidad; i++) {\n    if (c->elementos[i] == x) {\n      c->elementos[i] = c->elementos[c->cantidad - 1];\n      c->cantidad = c->cantidad - 1;\n      return;\n    }\n  }\n}\n\nTConjunto unir(TConjunto a, TConjunto b) {\n  TConjunto r = a;\n\n  for (int i = 0; i < b.cantidad; i++) {\n    agregar(&r, b.elementos[i]);\n  }\n  return r;\n}",
+      "dibujo": [
+        {
+          "titulo": "La intersección de `a` y `b`: lo que está en los dos (lo resaltado):",
+          "venn": {
+            "a": [
+              1,
+              2,
+              3,
+              5
+            ],
+            "b": [
+              3,
+              5,
+              6,
+              7
+            ],
+            "resaltar": "interseccion"
+          }
+        },
+        {
+          "titulo": "`a` menos `b`: lo que está en `a` y no en `b` (lo resaltado):",
+          "venn": {
+            "a": [
+              1,
+              2,
+              3,
+              5
+            ],
+            "b": [
+              3,
+              5,
+              6,
+              7
+            ],
+            "resaltar": "diferencia"
+          }
+        }
+      ],
+      "enunciado": "Con su `conjunto.h` completo (lo ve arriba, en su pestaña), complete `conjunto.c`: ya define las seis operaciones de antes y está en el editor. Agréguele la definición de las dos nuevas, al final:\n- `intersectar`: devuelve un conjunto con los números que están en `a` y también en `b`.\n- `restar`: devuelve un conjunto con los números de `a` que no están en `b`. El orden importa: `restar(a, b)` no es lo mismo que `restar(b, a)`.\n\nLos dibujos muestran, para `a` = {1, 2, 3, 5} y `b` = {3, 5, 6, 7}, qué tiene que devolver cada una. Lo que ya estaba escrito no se cambia.",
+      "requiere": [
+        {
+          "incluyeLocal": "conjunto.h"
+        },
+        {
+          "sinTipos": true
+        },
+        {
+          "defineTodo": true
+        },
+        {
+          "funcion": {
+            "nombre": "pertenece",
+            "retorna": "enumerado",
+            "soloEnumeradores": true,
+            "parametros": [
+              {
+                "tipo": "estructura"
+              },
+              {
+                "tipo": "entero"
+              }
+            ]
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "antes": "TConjunto a;\ninicializar(&a);\nagregar(&a, 1);\nagregar(&a, 2);\nagregar(&a, 3);\nagregar(&a, 5);\nTConjunto b;\ninicializar(&b);\nagregar(&b, 3);\nagregar(&b, 5);\nagregar(&b, 6);\nagregar(&b, 7);",
+                "llama": "cardinal(intersectar(a, b))",
+                "devuelve": 2,
+                "contexto": "El cardinal de la intersección de {1, 2, 3, 5} y {3, 5, 6, 7}",
+                "visible": true
+              },
+              {
+                "antes": "TConjunto a;\ninicializar(&a);\nagregar(&a, 1);\nagregar(&a, 2);\nagregar(&a, 3);\nagregar(&a, 5);\nTConjunto b;\ninicializar(&b);\nagregar(&b, 3);\nagregar(&b, 5);\nagregar(&b, 6);\nagregar(&b, 7);",
+                "llama": "pertenece(intersectar(a, b), 3)",
+                "devuelve": "VERDADERO",
+                "contexto": "El 3 (de los dos) en la intersección",
+                "visible": true
+              },
+              {
+                "antes": "TConjunto a;\ninicializar(&a);\nagregar(&a, 1);\nagregar(&a, 2);\nagregar(&a, 3);\nagregar(&a, 5);\nTConjunto b;\ninicializar(&b);\nagregar(&b, 3);\nagregar(&b, 5);\nagregar(&b, 6);\nagregar(&b, 7);",
+                "llama": "pertenece(intersectar(a, b), 5)",
+                "devuelve": "VERDADERO",
+                "contexto": "El 5 (de los dos) en la intersección"
+              },
+              {
+                "antes": "TConjunto a;\ninicializar(&a);\nagregar(&a, 1);\nagregar(&a, 2);\nagregar(&a, 3);\nagregar(&a, 5);\nTConjunto b;\ninicializar(&b);\nagregar(&b, 3);\nagregar(&b, 5);\nagregar(&b, 6);\nagregar(&b, 7);",
+                "llama": "pertenece(intersectar(a, b), 1)",
+                "devuelve": "FALSO",
+                "contexto": "El 1 (solo de a) en la intersección"
+              },
+              {
+                "antes": "TConjunto a;\ninicializar(&a);\nagregar(&a, 1);\nagregar(&a, 2);\nagregar(&a, 3);\nagregar(&a, 5);\nTConjunto b;\ninicializar(&b);\nagregar(&b, 3);\nagregar(&b, 5);\nagregar(&b, 6);\nagregar(&b, 7);",
+                "llama": "pertenece(intersectar(a, b), 6)",
+                "devuelve": "FALSO",
+                "contexto": "El 6 (solo de b) en la intersección"
+              },
+              {
+                "antes": "TConjunto a;\ninicializar(&a);\nagregar(&a, 1);\nagregar(&a, 2);\nTConjunto b;\ninicializar(&b);\nagregar(&b, 3);\nagregar(&b, 4);",
+                "llama": "cardinal(intersectar(a, b))",
+                "devuelve": 0,
+                "contexto": "La intersección de dos conjuntos sin nada en común"
+              },
+              {
+                "antes": "TConjunto a;\ninicializar(&a);\nTConjunto b;\ninicializar(&b);\nagregar(&b, 3);\nagregar(&b, 4);\nagregar(&b, 5);",
+                "llama": "cardinal(intersectar(a, b))",
+                "devuelve": 0,
+                "contexto": "La intersección de un conjunto vacío y {3, 4, 5}"
+              },
+              {
+                "antes": "TConjunto a;\ninicializar(&a);\nagregar(&a, 3);\nagregar(&a, 4);\nagregar(&a, 5);\nTConjunto b;\ninicializar(&b);",
+                "llama": "cardinal(intersectar(a, b))",
+                "devuelve": 0,
+                "contexto": "La intersección de {3, 4, 5} y un conjunto vacío"
+              },
+              {
+                "antes": "TConjunto a;\ninicializar(&a);\nagregar(&a, 1);\nagregar(&a, 2);\nagregar(&a, 3);\nTConjunto b;\ninicializar(&b);\nagregar(&b, 1);\nagregar(&b, 2);\nagregar(&b, 3);",
+                "llama": "cardinal(intersectar(a, b))",
+                "devuelve": 3,
+                "contexto": "La intersección de dos conjuntos iguales"
+              },
+              {
+                "antes": "TConjunto a;\ninicializar(&a);\nagregar(&a, 1);\nagregar(&a, 2);\nagregar(&a, 3);\nagregar(&a, 4);\nagregar(&a, 5);\nTConjunto b;\ninicializar(&b);\nagregar(&b, 4);\nagregar(&b, 5);",
+                "llama": "cardinal(intersectar(a, b))",
+                "devuelve": 2,
+                "contexto": "La intersección de {1, 2, 3, 4, 5} y {4, 5}"
+              },
+              {
+                "antes": "TConjunto a;\ninicializar(&a);\nagregar(&a, 1);\nagregar(&a, 2);\nagregar(&a, 3);\nagregar(&a, 5);\nTConjunto b;\ninicializar(&b);\nagregar(&b, 3);\nagregar(&b, 5);\nagregar(&b, 6);\nagregar(&b, 7);",
+                "llama": "cardinal(intersectar(b, a))",
+                "devuelve": 2,
+                "contexto": "La intersección con los conjuntos al revés"
+              },
+              {
+                "antes": "TConjunto a;\ninicializar(&a);\nagregar(&a, 1);\nagregar(&a, 2);\nagregar(&a, 3);\nagregar(&a, 5);\nTConjunto b;\ninicializar(&b);\nagregar(&b, 3);\nagregar(&b, 5);\nagregar(&b, 6);\nagregar(&b, 7);\nTConjunto i = intersectar(a, b);",
+                "llama": "cardinal(a)",
+                "devuelve": 4,
+                "contexto": "El conjunto a después de intersectarlo: no cambia"
+              },
+              {
+                "antes": "TConjunto a;\ninicializar(&a);\nagregar(&a, 1);\nagregar(&a, 2);\nagregar(&a, 3);\nagregar(&a, 5);\nTConjunto b;\ninicializar(&b);\nagregar(&b, 3);\nagregar(&b, 5);\nagregar(&b, 6);\nagregar(&b, 7);\nTConjunto i = intersectar(a, b);",
+                "llama": "cardinal(b)",
+                "devuelve": 4,
+                "contexto": "El conjunto b después de intersectarlo: no cambia"
+              },
+              {
+                "antes": "TConjunto a;\ninicializar(&a);\nagregar(&a, 1);\nagregar(&a, 2);\nagregar(&a, 3);\nagregar(&a, 5);\nTConjunto b;\ninicializar(&b);\nagregar(&b, 3);\nagregar(&b, 5);\nagregar(&b, 6);\nagregar(&b, 7);\nTConjunto i = intersectar(a, b);\nagregar(&i, 9);",
+                "llama": "cardinal(i)",
+                "devuelve": 3,
+                "contexto": "Agregarle un número a la intersección"
+              },
+              {
+                "antes": "TConjunto a;\ninicializar(&a);\nagregar(&a, 1);\nagregar(&a, 2);\nagregar(&a, 3);\nagregar(&a, 5);\nTConjunto b;\ninicializar(&b);\nagregar(&b, 3);\nagregar(&b, 5);\nagregar(&b, 6);\nagregar(&b, 7);",
+                "llama": "cardinal(restar(a, b))",
+                "devuelve": 2,
+                "contexto": "El cardinal de {1, 2, 3, 5} menos {3, 5, 6, 7}",
+                "visible": true
+              },
+              {
+                "antes": "TConjunto a;\ninicializar(&a);\nagregar(&a, 1);\nagregar(&a, 2);\nagregar(&a, 3);\nagregar(&a, 5);\nTConjunto b;\ninicializar(&b);\nagregar(&b, 3);\nagregar(&b, 5);\nagregar(&b, 6);\nagregar(&b, 7);",
+                "llama": "pertenece(restar(a, b), 1)",
+                "devuelve": "VERDADERO",
+                "contexto": "El 1 (solo de a) en a menos b",
+                "visible": true
+              },
+              {
+                "antes": "TConjunto a;\ninicializar(&a);\nagregar(&a, 1);\nagregar(&a, 2);\nagregar(&a, 3);\nagregar(&a, 5);\nTConjunto b;\ninicializar(&b);\nagregar(&b, 3);\nagregar(&b, 5);\nagregar(&b, 6);\nagregar(&b, 7);",
+                "llama": "pertenece(restar(a, b), 2)",
+                "devuelve": "VERDADERO",
+                "contexto": "El 2 (solo de a) en a menos b"
+              },
+              {
+                "antes": "TConjunto a;\ninicializar(&a);\nagregar(&a, 1);\nagregar(&a, 2);\nagregar(&a, 3);\nagregar(&a, 5);\nTConjunto b;\ninicializar(&b);\nagregar(&b, 3);\nagregar(&b, 5);\nagregar(&b, 6);\nagregar(&b, 7);",
+                "llama": "pertenece(restar(a, b), 3)",
+                "devuelve": "FALSO",
+                "contexto": "El 3 (de los dos) en a menos b"
+              },
+              {
+                "antes": "TConjunto a;\ninicializar(&a);\nagregar(&a, 1);\nagregar(&a, 2);\nagregar(&a, 3);\nagregar(&a, 5);\nTConjunto b;\ninicializar(&b);\nagregar(&b, 3);\nagregar(&b, 5);\nagregar(&b, 6);\nagregar(&b, 7);",
+                "llama": "pertenece(restar(a, b), 6)",
+                "devuelve": "FALSO",
+                "contexto": "El 6 (solo de b) en a menos b"
+              },
+              {
+                "antes": "TConjunto a;\ninicializar(&a);\nagregar(&a, 1);\nagregar(&a, 2);\nagregar(&a, 3);\nagregar(&a, 5);\nTConjunto b;\ninicializar(&b);\nagregar(&b, 3);\nagregar(&b, 5);\nagregar(&b, 6);\nagregar(&b, 7);",
+                "llama": "cardinal(restar(b, a))",
+                "devuelve": 2,
+                "contexto": "El cardinal de b menos a: {3, 5, 6, 7} menos {1, 2, 3, 5}"
+              },
+              {
+                "antes": "TConjunto a;\ninicializar(&a);\nagregar(&a, 1);\nagregar(&a, 2);\nagregar(&a, 3);\nagregar(&a, 5);\nTConjunto b;\ninicializar(&b);\nagregar(&b, 3);\nagregar(&b, 5);\nagregar(&b, 6);\nagregar(&b, 7);",
+                "llama": "pertenece(restar(b, a), 6)",
+                "devuelve": "VERDADERO",
+                "contexto": "El 6 en b menos a"
+              },
+              {
+                "antes": "TConjunto a;\ninicializar(&a);\nagregar(&a, 1);\nagregar(&a, 2);\nagregar(&a, 3);\nagregar(&a, 5);\nTConjunto b;\ninicializar(&b);\nagregar(&b, 3);\nagregar(&b, 5);\nagregar(&b, 6);\nagregar(&b, 7);",
+                "llama": "pertenece(restar(b, a), 1)",
+                "devuelve": "FALSO",
+                "contexto": "El 1 en b menos a"
+              },
+              {
+                "antes": "TConjunto a;\ninicializar(&a);\nagregar(&a, 1);\nagregar(&a, 2);\nTConjunto b;\ninicializar(&b);\nagregar(&b, 3);\nagregar(&b, 4);",
+                "llama": "cardinal(restar(a, b))",
+                "devuelve": 2,
+                "contexto": "a menos b con dos conjuntos sin nada en común"
+              },
+              {
+                "antes": "TConjunto a;\ninicializar(&a);\nTConjunto b;\ninicializar(&b);\nagregar(&b, 3);\nagregar(&b, 4);\nagregar(&b, 5);",
+                "llama": "cardinal(restar(a, b))",
+                "devuelve": 0,
+                "contexto": "Un conjunto vacío menos {3, 4, 5}"
+              },
+              {
+                "antes": "TConjunto a;\ninicializar(&a);\nagregar(&a, 3);\nagregar(&a, 4);\nagregar(&a, 5);\nTConjunto b;\ninicializar(&b);",
+                "llama": "cardinal(restar(a, b))",
+                "devuelve": 3,
+                "contexto": "{3, 4, 5} menos un conjunto vacío"
+              },
+              {
+                "antes": "TConjunto a;\ninicializar(&a);\nagregar(&a, 1);\nagregar(&a, 2);\nagregar(&a, 3);\nTConjunto b;\ninicializar(&b);\nagregar(&b, 1);\nagregar(&b, 2);\nagregar(&b, 3);",
+                "llama": "cardinal(restar(a, b))",
+                "devuelve": 0,
+                "contexto": "Un conjunto menos sí mismo"
+              },
+              {
+                "antes": "TConjunto a;\ninicializar(&a);\nagregar(&a, 4);\nagregar(&a, 5);\nTConjunto b;\ninicializar(&b);\nagregar(&b, 1);\nagregar(&b, 2);\nagregar(&b, 3);\nagregar(&b, 4);\nagregar(&b, 5);",
+                "llama": "cardinal(restar(a, b))",
+                "devuelve": 0,
+                "contexto": "{4, 5} menos {1, 2, 3, 4, 5}"
+              },
+              {
+                "antes": "TConjunto a;\ninicializar(&a);\nagregar(&a, 1);\nagregar(&a, 2);\nagregar(&a, 3);\nagregar(&a, 5);\nTConjunto b;\ninicializar(&b);\nagregar(&b, 3);\nagregar(&b, 5);\nagregar(&b, 6);\nagregar(&b, 7);\nTConjunto r = restar(a, b);",
+                "llama": "cardinal(a)",
+                "devuelve": 4,
+                "contexto": "El conjunto a después de restarle b: no cambia"
+              },
+              {
+                "antes": "TConjunto a;\ninicializar(&a);\nagregar(&a, 1);\nagregar(&a, 2);\nagregar(&a, 3);\nagregar(&a, 5);\nTConjunto b;\ninicializar(&b);\nagregar(&b, 3);\nagregar(&b, 5);\nagregar(&b, 6);\nagregar(&b, 7);\nTConjunto r = restar(a, b);",
+                "llama": "cardinal(b)",
+                "devuelve": 4,
+                "contexto": "El conjunto b después de restarlo: no cambia"
+              },
+              {
+                "antes": "TConjunto a;\ninicializar(&a);\nagregar(&a, 1);\nagregar(&a, 2);\nagregar(&a, 3);\nagregar(&a, 5);\nTConjunto b;\ninicializar(&b);\nagregar(&b, 3);\nagregar(&b, 5);\nagregar(&b, 6);\nagregar(&b, 7);",
+                "llama": "cardinal(unir(a, b))",
+                "devuelve": 6,
+                "contexto": "Las operaciones de antes siguen funcionando: la unión de {1, 2, 3, 5} y {3, 5, 6, 7}"
+              },
+              {
+                "antes": "TConjunto c;\ninicializar(&c);\nagregar(&c, 4);\nagregar(&c, 7);\nagregar(&c, 9);\neliminar(&c, 7);",
+                "llama": "cardinal(c)",
+                "devuelve": 2,
+                "contexto": "Las operaciones de antes siguen funcionando: eliminar el 7 de {4, 7, 9}"
+              },
+              {
+                "antes": "TConjunto c;\ninicializar(&c);",
+                "llama": "cardinal(c)",
+                "devuelve": 0,
+                "contexto": "Las operaciones de antes siguen funcionando: con un conjunto recién inicializado"
+              },
+              {
+                "antes": "TConjunto c;\ninicializar(&c);\nagregar(&c, 4);\nagregar(&c, 4);",
+                "llama": "cardinal(c)",
+                "devuelve": 1,
+                "contexto": "Las operaciones de antes siguen funcionando: después de agregar dos veces el 4"
+              },
+              {
+                "antes": "TConjunto c;\ninicializar(&c);\nagregar(&c, 4);\nagregar(&c, 7);\nagregar(&c, 9);",
+                "llama": "pertenece(c, 7)",
+                "devuelve": "VERDADERO",
+                "contexto": "Las operaciones de antes siguen funcionando: el 7 en el conjunto {4, 7, 9}"
+              },
+              {
+                "antes": "TConjunto c;\ninicializar(&c);\nagregar(&c, 4);\nagregar(&c, 7);\nagregar(&c, 9);",
+                "llama": "pertenece(c, 5)",
+                "devuelve": "FALSO",
+                "contexto": "Las operaciones de antes siguen funcionando: el 5 en el conjunto {4, 7, 9}"
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "#include \"conjunto.h\"\n\nvoid inicializar(TConjunto *c) {\n  c->cantidad = 0;\n}\n\nTBool pertenece(TConjunto c, int x) {\n  for (int i = 0; i < c.cantidad; i++) {\n    if (c.elementos[i] == x) {\n      return VERDADERO;\n    }\n  }\n  return FALSO;\n}\n\nvoid agregar(TConjunto *c, int x) {\n  if (pertenece(*c, x) == FALSO) {\n    c->elementos[c->cantidad] = x;\n    c->cantidad = c->cantidad + 1;\n  }\n}\n\nint cardinal(TConjunto c) {\n  return c.cantidad;\n}\n\nvoid eliminar(TConjunto *c, int x) {\n  for (int i = 0; i < c->cantidad; i++) {\n    if (c->elementos[i] == x) {\n      c->elementos[i] = c->elementos[c->cantidad - 1];\n      c->cantidad = c->cantidad - 1;\n      return;\n    }\n  }\n}\n\nTConjunto unir(TConjunto a, TConjunto b) {\n  TConjunto r = a;\n\n  for (int i = 0; i < b.cantidad; i++) {\n    agregar(&r, b.elementos[i]);\n  }\n  return r;\n}\n\nTConjunto intersectar(TConjunto a, TConjunto b) {\n  TConjunto r;\n\n  inicializar(&r);\n  for (int i = 0; i < a.cantidad; i++) {\n    if (pertenece(b, a.elementos[i]) == VERDADERO) {\n      agregar(&r, a.elementos[i]);\n    }\n  }\n  return r;\n}\n\nTConjunto restar(TConjunto a, TConjunto b) {\n  TConjunto r;\n\n  inicializar(&r);\n  for (int i = 0; i < a.cantidad; i++) {\n    if (pertenece(b, a.elementos[i]) == FALSO) {\n      agregar(&r, a.elementos[i]);\n    }\n  }\n  return r;\n}"
+    },
+    {
+      "id": "tadcjc-main",
+      "titulo": "Usar todas las operaciones",
+      "escribe": "main.c",
+      "inicializa": "inicializar",
+      "enunciado": "Con su `conjunto.h` y su `conjunto.c` completos, escriba `main.c` con dos conjuntos, `a` y `b`. Lea con `scanf`, en este orden:\n- la cantidad de números de `a`\n- los números de `a`\n- la cantidad de números de `b`\n- los números de `b`\n\nTodos los números están entre 1 y 20, y la unión no tiene más de 10 elementos. Muestre con `printf` tres renglones, con los números separados por un espacio y de menor a mayor: primero la unión de `a` y `b`, después la intersección y por último `a` menos `b`. Para mostrar los números use solo las operaciones del conjunto, sin mirar el arreglo `elementos`. Se supone que ninguno de los tres queda vacío. Por ejemplo, si se ingresan:\n- `4` (cantidad de números de `a`)\n- `1`, `2`, `3` y `5` (los números de `a`)\n- `4` (cantidad de números de `b`)\n- `3`, `5`, `6` y `7` (los números de `b`)\n\nel programa muestra:\n`1 2 3 5 6 7`\n`3 5`\n`1 2`\nUse solo las operaciones del `.h`.",
+      "requiere": [
+        {
+          "incluyeLocal": "conjunto.h"
+        },
+        {
+          "soloOperaciones": "TConjunto"
+        },
+        {
+          "usaOperaciones": [
+            "inicializar",
+            "agregar",
+            "unir",
+            "intersectar",
+            "restar",
+            "pertenece"
+          ]
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "entrada": [
+                  4,
+                  1,
+                  2,
+                  3,
+                  5,
+                  4,
+                  3,
+                  5,
+                  6,
+                  7
+                ],
+                "muestraEnFilas": [
+                  [
+                    1,
+                    2,
+                    3,
+                    5,
+                    6,
+                    7
+                  ],
+                  [
+                    3,
+                    5
+                  ],
+                  [
+                    1,
+                    2
+                  ]
+                ]
+              },
+              {
+                "entrada": [
+                  3,
+                  2,
+                  4,
+                  6,
+                  3,
+                  4,
+                  6,
+                  8
+                ],
+                "muestraEnFilas": [
+                  [
+                    2,
+                    4,
+                    6,
+                    8
+                  ],
+                  [
+                    4,
+                    6
+                  ],
+                  [
+                    2
+                  ]
+                ]
+              },
+              {
+                "entrada": [
+                  2,
+                  1,
+                  5,
+                  3,
+                  5,
+                  9,
+                  12
+                ],
+                "muestraEnFilas": [
+                  [
+                    1,
+                    5,
+                    9,
+                    12
+                  ],
+                  [
+                    5
+                  ],
+                  [
+                    1
+                  ]
+                ]
+              },
+              {
+                "entrada": [
+                  3,
+                  10,
+                  11,
+                  12,
+                  2,
+                  11,
+                  12
+                ],
+                "muestraEnFilas": [
+                  [
+                    10,
+                    11,
+                    12
+                  ],
+                  [
+                    11,
+                    12
+                  ],
+                  [
+                    10
+                  ]
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "#include <stdio.h>\n#include \"conjunto.h\"\n\nint main() {\n  TConjunto a;\n  TConjunto b;\n  TConjunto u;\n  TConjunto i;\n  TConjunto r;\n  int n;\n  int x;\n\n  inicializar(&a);\n  inicializar(&b);\n  scanf(\"%d\", &n);\n  for (int k = 0; k < n; k++) {\n    scanf(\"%d\", &x);\n    agregar(&a, x);\n  }\n  scanf(\"%d\", &n);\n  for (int k = 0; k < n; k++) {\n    scanf(\"%d\", &x);\n    agregar(&b, x);\n  }\n  u = unir(a, b);\n  i = intersectar(a, b);\n  r = restar(a, b);\n  for (int k = 1; k <= 20; k++) {\n    if (pertenece(u, k) == VERDADERO) {\n      printf(\"%d \", k);\n    }\n  }\n  printf(\"\\n\");\n  for (int k = 1; k <= 20; k++) {\n    if (pertenece(i, k) == VERDADERO) {\n      printf(\"%d \", k);\n    }\n  }\n  printf(\"\\n\");\n  for (int k = 1; k <= 20; k++) {\n    if (pertenece(r, k) == VERDADERO) {\n      printf(\"%d \", k);\n    }\n  }\n  return 0;\n}"
+    }
+  ]
+}
