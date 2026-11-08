@@ -236,9 +236,10 @@ export function partesDeEnunciado(enunciado, capturas) {
   return partes;
 }
 
-// Las lineas que empiezan con "- " forman una lista; lo demas es texto. Parte el
-// enunciado en bloques [{ texto }, { items: [...] }], sin las lineas en blanco que
-// quedan pegadas a una lista (la lista ya se separa del texto por si sola).
+// Las lineas que empiezan con "- " forman una lista; las que empiezan con "> " son
+// una formula, cada una en su renglon; lo demas es texto. Parte el enunciado en
+// bloques [{ texto }, { items: [...] }, { formula }], sin las lineas en blanco que
+// quedan pegadas a una lista o a una formula (ya se separan del texto por si solas).
 export function bloquesDeEnunciado(enunciado) {
   const bloques = [];
   let texto = [];
@@ -252,7 +253,11 @@ export function bloquesDeEnunciado(enunciado) {
     items = [];
   };
   for (const linea of enunciado.split('\n')) {
-    if (/^- /.test(linea)) {
+    if (/^> /.test(linea)) {
+      cerrarTexto();
+      cerrarLista();
+      bloques.push({ formula: linea.slice(2) });
+    } else if (/^- /.test(linea)) {
       cerrarTexto();
       items.push(linea.slice(2));
     } else {
@@ -266,8 +271,9 @@ export function bloquesDeEnunciado(enunciado) {
   return bloques
     .map((b, i) => {
       if (!b.texto) return b;
-      const pegado = (bloques[i - 1] && bloques[i - 1].items) || (bloques[i + 1] && bloques[i + 1].items);
+      const aparte = (o) => o && (o.items || o.formula);
+      const pegado = aparte(bloques[i - 1]) || aparte(bloques[i + 1]);
       return pegado ? { texto: b.texto.replace(/^\n+|\n+$/g, '') } : b;
     })
-    .filter((b) => b.items || b.texto);
+    .filter((b) => b.items || b.formula || b.texto);
 }

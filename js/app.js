@@ -632,7 +632,8 @@ function mostrarConsigna() {
   // pieza: no hay un "codigo hasta aca" aparte.
   // Lo que el alumno escribio como archivos (con nombre) se ve en pestanas, no
   // otra vez como "codigo hasta aca".
-  yaEscritos = termino || sinEditor ? [] : escritosPrevios(serie, actual, avanceVisto);
+  // Tambien en un cuestionario que sigue a esos archivos: se ve lo que el alumno escribio.
+  yaEscritos = termino ? [] : escritosPrevios(serie, actual, avanceVisto);
   const previo = termino || sinEditor || yaEscritos.length ? '' : codigoPrevio(serie, actual, avanceVisto);
   const programa = !termino && sinEditor ? programaDeOpciones(serie, actual, avanceVisto) : '';
   $('consigna').hidden = termino;
@@ -642,7 +643,7 @@ function mostrarConsigna() {
   // Un cuestionario trae sus archivos para leerlos (uno por pestana); una consigna con editor, los ya escritos.
   const archivos = termino || esPila ? [] : [...yaEscritos, ...archivosVisibles(consigna)];
   $('bloque-archivos').hidden = !archivos.length;
-  $('titulo-archivos').textContent = esCuestionario ? 'Los archivos' : 'Los archivos ya escritos';
+  $('titulo-archivos').textContent = esCuestionario && !yaEscritos.length ? 'Los archivos' : 'Los archivos ya escritos';
   dibujarArchivos(archivos);
   $('etiqueta-respuesta').textContent = consigna?.escribe ? `Su respuesta: ${consigna.escribe}` : 'Su respuesta';
   $('bloque-respuesta').hidden = termino;
@@ -685,6 +686,7 @@ function mostrarConsigna() {
   // El texto, con las lineas que empiezan con "- " como lista.
   const enBloques = (texto) =>
     bloquesDeEnunciado(texto).map((bloque) => {
+      if (bloque.formula) return elemento('div', 'formula-enunciado', bloque.formula);
       if (!bloque.items) {
         const trozo = elemento('span');
         trozo.append(...enParrafo(bloque.texto));

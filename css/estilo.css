@@ -308,6 +308,13 @@ section[hidden] {
   margin: 4px 0;
 }
 
+/* Una formula del enunciado: en su renglon, con sangria, y sin partirse (si no entra, se desplaza). */
+.formula-enunciado {
+  margin: 6px 0 6px 1.4em;
+  white-space: nowrap;
+  overflow-x: auto;
+}
+
 #enunciado-cierre .lista-enunciado:last-child,
 #enunciado .lista-enunciado:last-child {
   margin-bottom: 0;

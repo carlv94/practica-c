@@ -25,7 +25,8 @@
         programaDeOpciones,
         partesPrevias,
       } from '../js/serie.js';
-      import { marcasDe, partesDeEnunciado, fichasDe } from '../js/enunciado.js';
+      import { marcasDe, partesDeEnunciado, fichasDe, bloquesDeEnunciado } from '../js/enunciado.js';
+      import { CASOS_DE_ENUNCIADO, resultadoDelEnunciado } from './casos-enunciado.js';
       import { CASOS } from './casos.js';
       import { ejecutar } from '../js/simulador.js';
       import { CASOS_DEL_SIMULADOR, resultadoDelSimulador } from './casos-simulador.js';
@@ -46,7 +47,8 @@
       function mensajeBienFormado(mensaje) {
         const partes = mensaje.split('`');
         if (partes.length % 2 === 0) return false;
-        return partes.every((p, i) => i % 2 === 0 || !['', 'y', 'o', 'e', 'u'].includes(p.trim()));
+        // Un `y` pegado a los acentos es un nombre (la coordenada y): solo un conector con espacios es un simbolo perdido.
+        return partes.every((p, i) => i % 2 === 0 || (p.trim() !== '' && ![' y ', ' o ', ' e ', ' u '].includes(p)));
       }
 
       const codigos = (resultado, nivel) =>
@@ -314,6 +316,11 @@
             abiertas[1].destacar === true &&
             abiertas[0].destacar === false;
           anotar(bien, 'ficha de un arreglo: una por elemento', JSON.stringify(abiertas));
+        }
+
+        for (const caso of CASOS_DE_ENUNCIADO) {
+          const r = resultadoDelEnunciado(bloquesDeEnunciado, caso);
+          anotar(r.bien, `enunciado: ${caso.nombre}`, r.detalle);
         }
 
         for (const caso of CASOS_DEL_SIMULADOR) {

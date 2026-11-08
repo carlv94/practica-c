@@ -1485,6 +1485,20 @@ comprimir (`js/descarga.js`, armado a mano con CRC32) con un `LEEME.txt` que dic
 cómo compilarlos con `gcc`. Si algún archivo va oculto (caja negra) no se ofrece,
 porque el proyecto no se podría armar.
 
+### Fórmulas en el enunciado
+
+Una línea del enunciado que empieza con `> ` se muestra como una fórmula: en su propio
+renglón, con sangría y sin partirse (si no entra en la pantalla, se desplaza hacia el
+costado). Cada línea es una fórmula. Se escriben con los símbolos de Unicode (`x₁`, `²`,
+`√`, `−`), sin etiqueta, para no gastar espacio en el celular:
+
+```
+"la distancia entre ellos es:
+> √((x₂ − x₁)² + (y₂ − y₁)²)
+y el punto medio es:
+> ..."
+```
+
 ### Ampliar un archivo: `comienza`
 
 Una consigna con `escribe` puede traer `"comienza": "texto"`: el editor arranca con
