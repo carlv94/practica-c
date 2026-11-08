@@ -142,7 +142,8 @@
         "tad-cola-c.json",
         "tad-representacion.json",
         "tad-fecha.json",
-        "tad-ampliar.json"
+        "tad-ampliar.json",
+        "tad-punto.json"
       ]
     }
   ]

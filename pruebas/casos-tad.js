@@ -88,6 +88,7 @@ const ampliar = serie('tad-ampliar');
 const usarCola = serie('tad-cola-usar');
 const colaH = serie('tad-cola-h');
 const colaC = serie('tad-cola-c');
+const punto = serie('tad-punto');
 
 // main.c de las pilas con lo que va adentro de main.
 const MAIN_PILA = (...cuerpo) =>
@@ -265,6 +266,92 @@ const COLA_C = lineas(
   '  }',
   '  return FALSO;',
   '}'
+);
+
+const PUNTO_H = lineas(
+  '#ifndef PUNTO_H',
+  '#define PUNTO_H',
+  '',
+  'typedef struct {',
+  '  double x;',
+  '  double y;',
+  '} TPunto;',
+  '',
+  'TPunto crear(double x, double y);',
+  'TPunto origen();',
+  'double distancia(TPunto a, TPunto b);',
+  'TPunto puntoMedio(TPunto a, TPunto b);',
+  'void mostrar(TPunto p);',
+  '',
+  '#endif'
+);
+const HPU = (cambio) => cambio(PUNTO_H);
+
+const PUNTO_C = lineas(
+  '#include <stdio.h>',
+  '#include <math.h>',
+  '#include "punto.h"',
+  '',
+  'TPunto crear(double x, double y) {',
+  '  TPunto p;',
+  '',
+  '  p.x = x;',
+  '  p.y = y;',
+  '  return p;',
+  '}',
+  '',
+  'TPunto origen() {',
+  '  return crear(0, 0);',
+  '}',
+  '',
+  'double distancia(TPunto a, TPunto b) {',
+  '  double dx = a.x - b.x;',
+  '  double dy = a.y - b.y;',
+  '',
+  '  return sqrt(dx * dx + dy * dy);',
+  '}',
+  '',
+  'TPunto puntoMedio(TPunto a, TPunto b) {',
+  '  return crear((a.x + b.x) / 2, (a.y + b.y) / 2);',
+  '}',
+  '',
+  'void mostrar(TPunto p) {',
+  '  printf("(%.2f, %.2f)", p.x, p.y);',
+  '}'
+);
+
+// main.c del punto con lo que va adentro de main (el arreglo y la lectura ya estan).
+const MAIN_PUNTO = (...cuerpo) =>
+  lineas(
+    '#include <stdio.h>',
+    '#include "punto.h"',
+    '',
+    '#define MAX 10',
+    '',
+    'int main() {',
+    '  TPunto pts[MAX];',
+    '  double x, y;',
+    '  int n;',
+    '',
+    '  scanf("%d", &n);',
+    '  for (int i = 0; i < n; i++) {',
+    '    scanf("%lf", &x);',
+    '    scanf("%lf", &y);',
+    '    pts[i] = crear(x, y);',
+    '  }',
+    ...cuerpo.map((l) => (l ? '  ' + l : l)),
+    '  return 0;',
+    '}'
+  );
+const PUNTO_MAIN = MAIN_PUNTO(
+  'TPunto masLejano = pts[0];',
+  '',
+  'for (int i = 1; i < n; i++) {',
+  '  if (distancia(pts[i], origen()) > distancia(masLejano, origen())) {',
+  '    masLejano = pts[i];',
+  '  }',
+  '}',
+  'mostrar(masLejano);'
 );
 
 const FECHA_H = lineas(
@@ -1556,4 +1643,136 @@ export const CASOS_DE_TAD = [
   colaC(1, 'llena con la cola a medias', COLA_C.replace('if (c.fin == MAX) {', 'if (c.fin == MAX - 1) {'), ['DEVUELVE_DISTINTO']),
   colaC(2, 'llena', '1'),
   colaC(2, 'hay lugar', '0', ['OPCION_COLA_HAY_LUGAR']),
+  // ===== Un TAD con decimales: el punto =====
+  punto(3, 'porque punto.c es el que llama a sqrt', '1'),
+  punto(3, 'porque un .h no puede incluir bibliotecas', '0', ['OPCION_MATH_H_NO_PUEDE']),
+  punto(3, 'porque sqrt solo se usa en archivos .c', '2', ['OPCION_MATH_SQRT_SOLO_C']),
+  punto(1, 'completo', PUNTO_H),
+  punto(1, 'sin guardas', HPU((t) => t.replace('#ifndef PUNTO_H\n#define PUNTO_H\n\n', '').replace('\n\n#endif', '')), ['ENCABEZADO_SIN_GUARDA']),
+  punto(1, 'con otro nombre de guarda', HPU((t) => t.replaceAll('PUNTO_H', 'PUNTO')), ['ENCABEZADO_GUARDA_NOMBRE'], { dice: ['PUNTO_H'] }),
+  punto(1, 'las coordenadas enteras', HPU((t) => t.replace('double x;', 'int x;').replace('double y;', 'int y;')), ['CAMPO_TIPO']),
+  punto(1, 'sin la coordenada y', HPU((t) => t.replace('  double y;\n', '')), ['CAMPO_FALTA']),
+  punto(1, 'la coordenada con otro nombre', HPU((t) => t.replace('double y;', 'double z;')), ['CAMPO_NOMBRE']),
+  punto(1, 'sin un prototipo', HPU((t) => t.replace('void mostrar(TPunto p);\n', '')), ['PROTOTIPO_FALTA']),
+  punto(1, 'origen con un parametro', HPU((t) => t.replace('TPunto origen();', 'TPunto origen(int x);')), ['PARAMETROS_CANTIDAD']),
+  punto(1, 'distancia devuelve un entero', HPU((t) => t.replace('double distancia', 'int distancia')), ['FUNCION_TIPO_RETORNO']),
+  punto(1, 'puntoMedio devuelve un decimal', HPU((t) => t.replace('TPunto puntoMedio', 'double puntoMedio')), ['FUNCION_TIPO_RETORNO']),
+  punto(1, 'crear con coordenadas enteras', HPU((t) => t.replace('TPunto crear(double x, double y);', 'TPunto crear(int x, int y);')), ['PARAMETRO_TIPO']),
+  punto(1, 'distancia con un solo punto', HPU((t) => t.replace('double distancia(TPunto a, TPunto b);', 'double distancia(TPunto a);')), ['PARAMETROS_CANTIDAD']),
+  punto(1, 'con algo afuera', HPU((t) => t + '\n\nvoid vaciar(TPunto *p);'), ['ENCABEZADO_FUERA_DE_LA_GUARDA']),
+  punto(2, 'completa', PUNTO_C),
+  punto(2, 'sin incluir math.h', PUNTO_C.replace('#include <math.h>\n', ''), ['INCLUDE_FALTA_PARA_FUNCION'], { dice: ['math.h'] }),
+  punto(2, 'sin incluir el encabezado', PUNTO_C.replace('#include "punto.h"\n', ''), ['INCLUDE_PROPIO_FALTA']),
+  punto(
+    2,
+    'distancia con pow',
+    PUNTO_C.replace('return sqrt(dx * dx + dy * dy);', 'return sqrt(pow(dx, 2) + pow(dy, 2));'),
+    'ok',
+    { notas: [] }
+  ),
+  punto(
+    2,
+    'distancia con pow, sin variables intermedias',
+    PUNTO_C.replace(/  double dx[\s\S]*?return sqrt\(dx \* dx \+ dy \* dy\);/, '  return sqrt(pow(b.x - a.x, 2) + pow(b.y - a.y, 2));'),
+    'ok',
+    { notas: [] }
+  ),
+  punto(
+    2,
+    'distancia con el ^ de C',
+    PUNTO_C.replace('return sqrt(dx * dx + dy * dy);', 'return sqrt(dx ^ 2 + dy ^ 2);'),
+    ['OPERADOR_XOR_COMO_POTENCIA'],
+    { dice: ['pow(x, 2)'] }
+  ),
+  punto(2, 'distancia sin la raiz', PUNTO_C.replace('return sqrt(dx * dx + dy * dy);', 'return dx * dx + dy * dy;'), ['DEVUELVE_DISTINTO']),
+  punto(2, 'distancia con una sola coordenada', PUNTO_C.replace('return sqrt(dx * dx + dy * dy);', 'return sqrt(dx * dx);'), ['DEVUELVE_DISTINTO']),
+  punto(2, 'puntoMedio sin dividir', PUNTO_C.replace('(a.x + b.x) / 2, (a.y + b.y) / 2', 'a.x + b.x, a.y + b.y'), ['DEVUELVE_DISTINTO']),
+  punto(2, 'puntoMedio con division entera', PUNTO_C.replace('(a.x + b.x) / 2, (a.y + b.y) / 2', '(int)(a.x + b.x) / 2, (int)(a.y + b.y) / 2'), ['DEVUELVE_DISTINTO']),
+  punto(2, 'origen en otro lugar', PUNTO_C.replace('return crear(0, 0);', 'return crear(1, 1);'), ['DEVUELVE_DISTINTO']),
+  punto(2, 'crear con las coordenadas cruzadas', PUNTO_C.replace('p.x = x;', 'p.x = y;').replace('p.y = y;', 'p.y = x;'), ['DEVUELVE_DISTINTO']),
+  punto(2, 'mostrar con un decimal', PUNTO_C.replace('%.2f, %.2f', '%.1f, %.1f'), ['MUESTRA_DISTINTA']),
+  punto(2, 'mostrar sin parentesis', PUNTO_C.replace('"(%.2f, %.2f)"', '"%.2f, %.2f"'), ['MUESTRA_DISTINTA']),
+  punto(2, 'sin definir una operacion', PUNTO_C.replace('\n\nvoid mostrar(TPunto p) {\n  printf("(%.2f, %.2f)", p.x, p.y);\n}', ''), ['PROTOTIPO_SIN_DEFINICION']),
+  punto(4, 'el main correcto', PUNTO_MAIN),
+  punto(
+    4,
+    'guardando la posicion del mas lejano',
+    MAIN_PUNTO(
+      'int mejor = 0;',
+      '',
+      'for (int i = 1; i < n; i++) {',
+      '  if (distancia(pts[i], origen()) > distancia(pts[mejor], origen())) {',
+      '    mejor = i;',
+      '  }',
+      '}',
+      'mostrar(pts[mejor]);'
+    )
+  ),
+  punto(
+    4,
+    'guardando la mayor distancia',
+    MAIN_PUNTO(
+      'int mejor = 0;',
+      'double mayor = distancia(pts[0], origen());',
+      '',
+      'for (int i = 1; i < n; i++) {',
+      '  if (distancia(pts[i], origen()) > mayor) {',
+      '    mayor = distancia(pts[i], origen());',
+      '    mejor = i;',
+      '  }',
+      '}',
+      'mostrar(pts[mejor]);'
+    )
+  ),
+  punto(
+    4,
+    'con el que llega despues en un empate',
+    PUNTO_MAIN.replace('> distancia(masLejano, origen())', '>= distancia(masLejano, origen())'),
+    ['MUESTRA_DISTINTA']
+  ),
+  punto(
+    4,
+    'mostrando el ultimo punto',
+    MAIN_PUNTO('mostrar(pts[n - 1]);'),
+    ['TAD_OPERACION_SIN_USAR']
+  ),
+  punto(
+    4,
+    'el mas cercano en vez del mas lejano',
+    PUNTO_MAIN.replace('> distancia(masLejano, origen())', '< distancia(masLejano, origen())'),
+    ['MUESTRA_DISTINTA']
+  ),
+  punto(
+    4,
+    'sin usar el origen',
+    PUNTO_MAIN.replace('distancia(pts[i], origen()) > distancia(masLejano, origen())', 'distancia(pts[i], crear(0, 0)) > distancia(masLejano, crear(0, 0))'),
+    ['TAD_OPERACION_SIN_USAR']
+  ),
+  punto(
+    4,
+    'mirando las coordenadas',
+    MAIN_PUNTO(
+      'TPunto masLejano = pts[0];',
+      '',
+      'for (int i = 1; i < n; i++) {',
+      '  if (pts[i].x * pts[i].x + pts[i].y * pts[i].y > masLejano.x * masLejano.x + masLejano.y * masLejano.y) {',
+      '    masLejano = pts[i];',
+      '  }',
+      '}',
+      'mostrar(masLejano);'
+    ),
+    ['TAD_ACCESO_DIRECTO', 'TAD_OPERACION_SIN_USAR']
+  ),
+  punto(
+    4,
+    'armando los puntos a mano',
+    PUNTO_MAIN.replace('    pts[i] = crear(x, y);', '    pts[i].x = x;\n    pts[i].y = y;'),
+    ['TAD_ACCESO_DIRECTO', 'TAD_OPERACION_SIN_USAR']
+  ),
+  punto(
+    4,
+    'sin mostrar con la operacion',
+    PUNTO_MAIN.replace('mostrar(masLejano);', 'printf("(%.2f, %.2f)", masLejano.x, masLejano.y);'),
+    ['TAD_ACCESO_DIRECTO', 'TAD_OPERACION_SIN_USAR']
+  ),
 ];
