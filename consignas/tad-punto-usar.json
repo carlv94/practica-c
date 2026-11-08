@@ -1,0 +1,510 @@
+{
+  "id": "tad-punto-usar",
+  "titulo": "Usar el punto con un arreglo",
+  "continua": false,
+  "descripcion": "Con el punto ya hecho, se lo usa solo por sus operaciones para calcular cosas sobre un arreglo de puntos: recorrerlo, compararlo con el origen y revisar todos sus pares.",
+  "consignas": [
+    {
+      "id": "tadpu-u-perimetro",
+      "titulo": "El perímetro de una poligonal",
+      "escribe": "main.c",
+      "archivos": [
+        {
+          "nombre": "punto.h",
+          "codigo": "#ifndef PUNTO_H\n#define PUNTO_H\n\ntypedef struct {\n  double x;\n  double y;\n} TPunto;\n\nTPunto crear(double x, double y);\nTPunto origen();\ndouble distancia(TPunto a, TPunto b);\nTPunto puntoMedio(TPunto a, TPunto b);\nvoid mostrar(TPunto p);\n\n#endif"
+        },
+        {
+          "nombre": "punto.c",
+          "codigo": "#include <stdio.h>\n#include <math.h>\n#include \"punto.h\"\n\nTPunto crear(double x, double y) {\n  TPunto p;\n\n  p.x = x;\n  p.y = y;\n  return p;\n}\n\nTPunto origen() {\n  return crear(0, 0);\n}\n\ndouble distancia(TPunto a, TPunto b) {\n  double dx = a.x - b.x;\n  double dy = a.y - b.y;\n\n  return sqrt(dx * dx + dy * dy);\n}\n\nTPunto puntoMedio(TPunto a, TPunto b) {\n  return crear((a.x + b.x) / 2, (a.y + b.y) / 2);\n}\n\nvoid mostrar(TPunto p) {\n  printf(\"(%.2f, %.2f)\", p.x, p.y);\n}",
+          "oculto": true
+        }
+      ],
+      "dibujo": {
+        "titulo": "Los puntos del ejemplo, unidos en el orden en que se leyeron (la longitud de cada tramo está sobre él):",
+        "plano": {
+          "puntos": [
+            {
+              "en": [
+                1,
+                1
+              ],
+              "rotulo": "1: (1, 1)",
+              "lado": "abajo"
+            },
+            {
+              "en": [
+                4,
+                5
+              ],
+              "rotulo": "2: (4, 5)",
+              "lado": "izquierda"
+            },
+            {
+              "en": [
+                8,
+                5
+              ],
+              "rotulo": "3: (8, 5)",
+              "lado": "abajo"
+            }
+          ],
+          "segmentos": [
+            {
+              "desde": [
+                1,
+                1
+              ],
+              "hasta": [
+                4,
+                5
+              ],
+              "rotulo": "5"
+            },
+            {
+              "desde": [
+                4,
+                5
+              ],
+              "hasta": [
+                8,
+                5
+              ],
+              "rotulo": "4"
+            }
+          ]
+        }
+      },
+      "enunciado": "El archivo `punto.h` declara el tipo `TPunto` y cinco operaciones:\n- `crear`: devuelve el punto con las dos coordenadas que recibe.\n- `origen`: devuelve el punto `(0, 0)`.\n- `distancia`: devuelve la distancia entre dos puntos, un número con decimales.\n- `puntoMedio`: devuelve el punto medio entre dos puntos.\n- `mostrar`: muestra el punto con `printf` como `(x, y)`, con dos decimales en cada coordenada.\n\nUna poligonal es la línea que une cada punto con el siguiente, en el orden en que se leyeron. Su perímetro es la suma de las distancias entre cada punto y el siguiente; no se cierra, es decir, el último punto no se une con el primero.\n\nEscriba `main.c`: lea con `scanf` la cantidad de puntos `n` (a lo sumo 10) y después, de cada punto, primero la coordenada `x` y luego la coordenada `y`, que pueden tener decimales. Guarde los puntos en un arreglo, armando cada uno con `crear`. Al final, muestre con `printf` el perímetro de la poligonal con dos decimales. Por ejemplo, si se ingresan los puntos `(1, 1)`, `(4, 5)` y `(8, 5)`, el programa muestra `9.00` (la suma de `5` y `4`). Use solo las operaciones del `.h`.",
+      "requiere": [
+        {
+          "incluyeLocal": "punto.h"
+        },
+        {
+          "soloOperaciones": "TPunto"
+        },
+        {
+          "usaOperaciones": [
+            "crear",
+            "distancia"
+          ]
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "entrada": [
+                  3,
+                  1,
+                  1,
+                  4,
+                  5,
+                  8,
+                  5
+                ],
+                "salida": "9.00"
+              },
+              {
+                "entrada": [
+                  3,
+                  1,
+                  1,
+                  4,
+                  5,
+                  7,
+                  5
+                ],
+                "salida": "8.00"
+              },
+              {
+                "entrada": [
+                  3,
+                  0,
+                  0,
+                  3,
+                  4,
+                  3,
+                  0
+                ],
+                "salida": "9.00"
+              },
+              {
+                "entrada": [
+                  2,
+                  0,
+                  0,
+                  6,
+                  8
+                ],
+                "salida": "10.00"
+              },
+              {
+                "entrada": [
+                  1,
+                  5,
+                  5
+                ],
+                "salida": "0.00"
+              },
+              {
+                "entrada": [
+                  4,
+                  0,
+                  0,
+                  3,
+                  0,
+                  3,
+                  3,
+                  0,
+                  3
+                ],
+                "salida": "9.00"
+              },
+              {
+                "entrada": [
+                  3,
+                  0,
+                  0,
+                  3,
+                  4,
+                  8,
+                  16
+                ],
+                "salida": "18.00"
+              },
+              {
+                "entrada": [
+                  3,
+                  1.5,
+                  2,
+                  1.5,
+                  6,
+                  4.5,
+                  10
+                ],
+                "salida": "9.00"
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "#include <stdio.h>\n#include \"punto.h\"\n\n#define MAX 10\n\nint main() {\n  TPunto pts[MAX];\n  double x, y;\n  double total = 0;\n  int n;\n\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%lf\", &x);\n    scanf(\"%lf\", &y);\n    pts[i] = crear(x, y);\n  }\n  for (int i = 0; i < n - 1; i++) {\n    total = total + distancia(pts[i], pts[i + 1]);\n  }\n  printf(\"%.2f\", total);\n  return 0;\n}"
+    },
+    {
+      "id": "tadpu-u-radio",
+      "titulo": "Puntos dentro de una circunferencia",
+      "escribe": "main.c",
+      "archivos": [
+        {
+          "nombre": "punto.h",
+          "codigo": "#ifndef PUNTO_H\n#define PUNTO_H\n\ntypedef struct {\n  double x;\n  double y;\n} TPunto;\n\nTPunto crear(double x, double y);\nTPunto origen();\ndouble distancia(TPunto a, TPunto b);\nTPunto puntoMedio(TPunto a, TPunto b);\nvoid mostrar(TPunto p);\n\n#endif"
+        },
+        {
+          "nombre": "punto.c",
+          "codigo": "#include <stdio.h>\n#include <math.h>\n#include \"punto.h\"\n\nTPunto crear(double x, double y) {\n  TPunto p;\n\n  p.x = x;\n  p.y = y;\n  return p;\n}\n\nTPunto origen() {\n  return crear(0, 0);\n}\n\ndouble distancia(TPunto a, TPunto b) {\n  double dx = a.x - b.x;\n  double dy = a.y - b.y;\n\n  return sqrt(dx * dx + dy * dy);\n}\n\nTPunto puntoMedio(TPunto a, TPunto b) {\n  return crear((a.x + b.x) / 2, (a.y + b.y) / 2);\n}\n\nvoid mostrar(TPunto p) {\n  printf(\"(%.2f, %.2f)\", p.x, p.y);\n}",
+          "oculto": true
+        }
+      ],
+      "dibujo": {
+        "titulo": "La circunferencia de radio `5` y los puntos del ejemplo (rellenos: cuentan; huecos: no):",
+        "plano": {
+          "circulo": {
+            "centro": [
+              0,
+              0
+            ],
+            "radio": 5
+          },
+          "puntos": [
+            {
+              "en": [
+                1,
+                1
+              ],
+              "estilo": "dentro"
+            },
+            {
+              "en": [
+                3,
+                4
+              ],
+              "estilo": "dentro"
+            },
+            {
+              "en": [
+                6,
+                8
+              ],
+              "estilo": "fuera"
+            },
+            {
+              "en": [
+                -3,
+                0
+              ],
+              "estilo": "dentro"
+            }
+          ]
+        }
+      },
+      "enunciado": "Con las mismas operaciones de `punto.h`, escriba `main.c`: lea con `scanf` la cantidad de puntos `n` (a lo sumo 10) y después, de cada punto, primero la coordenada `x` y luego la coordenada `y`, que pueden tener decimales. Guarde los puntos en un arreglo, armando cada uno con `crear`. Después lea el radio `r` de una circunferencia con centro en el origen, un número con decimales. Al final, muestre con `printf` cuántos de los puntos están dentro de la circunferencia: los que están a una distancia del origen menor o igual que `r`. Por ejemplo, si se ingresan los puntos `(1, 1)`, `(3, 4)`, `(6, 8)` y `(-3, 0)`, y el radio `5`, el programa muestra `3`. Use solo las operaciones del `.h`.",
+      "requiere": [
+        {
+          "incluyeLocal": "punto.h"
+        },
+        {
+          "soloOperaciones": "TPunto"
+        },
+        {
+          "usaOperaciones": [
+            "crear",
+            "origen",
+            "distancia"
+          ]
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "entrada": [
+                  4,
+                  1,
+                  1,
+                  3,
+                  4,
+                  6,
+                  8,
+                  -3,
+                  0,
+                  5
+                ],
+                "salida": "3"
+              },
+              {
+                "entrada": [
+                  3,
+                  6,
+                  8,
+                  5,
+                  12,
+                  0,
+                  0,
+                  10
+                ],
+                "salida": "2"
+              },
+              {
+                "entrada": [
+                  2,
+                  5,
+                  5,
+                  -6,
+                  6,
+                  1
+                ],
+                "salida": "0"
+              },
+              {
+                "entrada": [
+                  1,
+                  0,
+                  0,
+                  0
+                ],
+                "salida": "1"
+              },
+              {
+                "entrada": [
+                  3,
+                  1,
+                  1,
+                  2,
+                  2,
+                  3,
+                  3,
+                  10
+                ],
+                "salida": "3"
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "#include <stdio.h>\n#include \"punto.h\"\n\n#define MAX 10\n\nint main() {\n  TPunto pts[MAX];\n  double x, y, r;\n  int cantidad = 0;\n  int n;\n\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%lf\", &x);\n    scanf(\"%lf\", &y);\n    pts[i] = crear(x, y);\n  }\n  scanf(\"%lf\", &r);\n  for (int i = 0; i < n; i++) {\n    if (distancia(pts[i], origen()) <= r) {\n      cantidad++;\n    }\n  }\n  printf(\"%d\", cantidad);\n  return 0;\n}"
+    },
+    {
+      "id": "tadpu-u-cercanos",
+      "titulo": "El par de puntos más cercano",
+      "escribe": "main.c",
+      "archivos": [
+        {
+          "nombre": "punto.h",
+          "codigo": "#ifndef PUNTO_H\n#define PUNTO_H\n\ntypedef struct {\n  double x;\n  double y;\n} TPunto;\n\nTPunto crear(double x, double y);\nTPunto origen();\ndouble distancia(TPunto a, TPunto b);\nTPunto puntoMedio(TPunto a, TPunto b);\nvoid mostrar(TPunto p);\n\n#endif"
+        },
+        {
+          "nombre": "punto.c",
+          "codigo": "#include <stdio.h>\n#include <math.h>\n#include \"punto.h\"\n\nTPunto crear(double x, double y) {\n  TPunto p;\n\n  p.x = x;\n  p.y = y;\n  return p;\n}\n\nTPunto origen() {\n  return crear(0, 0);\n}\n\ndouble distancia(TPunto a, TPunto b) {\n  double dx = a.x - b.x;\n  double dy = a.y - b.y;\n\n  return sqrt(dx * dx + dy * dy);\n}\n\nTPunto puntoMedio(TPunto a, TPunto b) {\n  return crear((a.x + b.x) / 2, (a.y + b.y) / 2);\n}\n\nvoid mostrar(TPunto p) {\n  printf(\"(%.2f, %.2f)\", p.x, p.y);\n}",
+          "oculto": true
+        }
+      ],
+      "dibujo": {
+        "titulo": "Los puntos del ejemplo; el par más cercano está resaltado, con su distancia:",
+        "plano": {
+          "puntos": [
+            {
+              "en": [
+                8,
+                6
+              ],
+              "estilo": "resaltado",
+              "lado": "abajo"
+            },
+            {
+              "en": [
+                2,
+                3
+              ]
+            },
+            {
+              "en": [
+                11,
+                10
+              ],
+              "estilo": "resaltado"
+            },
+            {
+              "en": [
+                14,
+                3
+              ]
+            }
+          ],
+          "segmentos": [
+            {
+              "desde": [
+                8,
+                6
+              ],
+              "hasta": [
+                11,
+                10
+              ],
+              "rotulo": "5",
+              "estilo": "resaltado"
+            }
+          ]
+        }
+      },
+      "enunciado": "Con las mismas operaciones de `punto.h`, escriba `main.c`: lea con `scanf` la cantidad de puntos `n` (entre 2 y 10) y después, de cada punto, primero la coordenada `x` y luego la coordenada `y`, que pueden tener decimales. Guarde los puntos en un arreglo, armando cada uno con `crear`. Al final, busque el par de puntos que están más cerca entre sí, comparando cada punto con todos los que se leyeron después de él. Muestre los dos puntos con `mostrar`, en el orden en que se leyeron y separados por un espacio, y a continuación, después de otro espacio, la distancia entre ellos con dos decimales. Si hay dos pares igual de cercanos, el que se encuentra primero. Por ejemplo, si se ingresan los puntos `(8, 6)`, `(2, 3)`, `(11, 10)` y `(14, 3)`, el programa muestra `(8.00, 6.00) (11.00, 10.00) 5.00`. Use solo las operaciones del `.h`.",
+      "requiere": [
+        {
+          "incluyeLocal": "punto.h"
+        },
+        {
+          "soloOperaciones": "TPunto"
+        },
+        {
+          "usaOperaciones": [
+            "crear",
+            "distancia",
+            "mostrar"
+          ]
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "entrada": [
+                  4,
+                  8,
+                  6,
+                  2,
+                  3,
+                  11,
+                  10,
+                  14,
+                  3
+                ],
+                "salida": "(8.00, 6.00) (11.00, 10.00) 5.00"
+              },
+              {
+                "entrada": [
+                  4,
+                  0,
+                  0,
+                  10,
+                  10,
+                  3,
+                  4,
+                  20,
+                  0
+                ],
+                "salida": "(0.00, 0.00) (3.00, 4.00) 5.00"
+              },
+              {
+                "entrada": [
+                  2,
+                  1,
+                  1,
+                  4,
+                  5
+                ],
+                "salida": "(1.00, 1.00) (4.00, 5.00) 5.00"
+              },
+              {
+                "entrada": [
+                  3,
+                  0,
+                  0,
+                  3,
+                  4,
+                  6,
+                  8
+                ],
+                "salida": "(0.00, 0.00) (3.00, 4.00) 5.00"
+              },
+              {
+                "entrada": [
+                  4,
+                  0,
+                  0,
+                  20,
+                  0,
+                  40,
+                  0,
+                  43,
+                  4
+                ],
+                "salida": "(40.00, 0.00) (43.00, 4.00) 5.00"
+              },
+              {
+                "entrada": [
+                  3,
+                  10,
+                  10,
+                  0,
+                  0,
+                  10,
+                  10
+                ],
+                "salida": "(10.00, 10.00) (10.00, 10.00) 0.00"
+              },
+              {
+                "entrada": [
+                  3,
+                  0.5,
+                  0.5,
+                  0.5,
+                  2.5,
+                  7,
+                  7
+                ],
+                "salida": "(0.50, 0.50) (0.50, 2.50) 2.00"
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "#include <stdio.h>\n#include \"punto.h\"\n\n#define MAX 10\n\nint main() {\n  TPunto pts[MAX];\n  double x, y;\n  double menor;\n  int a = 0;\n  int b = 1;\n  int n;\n\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%lf\", &x);\n    scanf(\"%lf\", &y);\n    pts[i] = crear(x, y);\n  }\n  menor = distancia(pts[0], pts[1]);\n  for (int i = 0; i < n; i++) {\n    for (int j = i + 1; j < n; j++) {\n      if (distancia(pts[i], pts[j]) < menor) {\n        menor = distancia(pts[i], pts[j]);\n        a = i;\n        b = j;\n      }\n    }\n  }\n  mostrar(pts[a]);\n  printf(\" \");\n  mostrar(pts[b]);\n  printf(\" %.2f\", menor);\n  return 0;\n}"
+    }
+  ]
+}

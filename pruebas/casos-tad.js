@@ -89,6 +89,7 @@ const usarCola = serie('tad-cola-usar');
 const colaH = serie('tad-cola-h');
 const colaC = serie('tad-cola-c');
 const punto = serie('tad-punto');
+const puntoUsar = serie('tad-punto-usar');
 
 // main.c de las pilas con lo que va adentro de main.
 const MAIN_PILA = (...cuerpo) =>
@@ -352,6 +353,64 @@ const PUNTO_MAIN = MAIN_PUNTO(
   '  }',
   '}',
   'mostrar(masLejano);'
+);
+
+// Serie "Usar el punto con un arreglo": main.c con las declaraciones y lo que sigue a la lectura.
+const MAIN_PU = (decl, despues) =>
+  lineas(
+    '#include <stdio.h>',
+    '#include "punto.h"',
+    '',
+    '#define MAX 10',
+    '',
+    'int main() {',
+    '  TPunto pts[MAX];',
+    ...decl.map((l) => '  ' + l),
+    '',
+    '  scanf("%d", &n);',
+    '  for (int i = 0; i < n; i++) {',
+    '    scanf("%lf", &x);',
+    '    scanf("%lf", &y);',
+    '    pts[i] = crear(x, y);',
+    '  }',
+    ...despues.map((l) => (l ? '  ' + l : l)),
+    '  return 0;',
+    '}'
+  );
+const PERIMETRO = MAIN_PU(
+  ['double x, y;', 'double total = 0;', 'int n;'],
+  ['for (int i = 0; i < n - 1; i++) {', '  total = total + distancia(pts[i], pts[i + 1]);', '}', 'printf("%.2f", total);']
+);
+const RADIO = MAIN_PU(
+  ['double x, y, r;', 'int cantidad = 0;', 'int n;'],
+  [
+    'scanf("%lf", &r);',
+    'for (int i = 0; i < n; i++) {',
+    '  if (distancia(pts[i], origen()) <= r) {',
+    '    cantidad++;',
+    '  }',
+    '}',
+    'printf("%d", cantidad);',
+  ]
+);
+const CERCANOS = MAIN_PU(
+  ['double x, y;', 'double menor;', 'int a = 0;', 'int b = 1;', 'int n;'],
+  [
+    'menor = distancia(pts[0], pts[1]);',
+    'for (int i = 0; i < n; i++) {',
+    '  for (int j = i + 1; j < n; j++) {',
+    '    if (distancia(pts[i], pts[j]) < menor) {',
+    '      menor = distancia(pts[i], pts[j]);',
+    '      a = i;',
+    '      b = j;',
+    '    }',
+    '  }',
+    '}',
+    'mostrar(pts[a]);',
+    'printf(" ");',
+    'mostrar(pts[b]);',
+    'printf(" %.2f", menor);',
+  ]
 );
 
 const FECHA_H = lineas(
@@ -1774,5 +1833,74 @@ export const CASOS_DE_TAD = [
     'sin mostrar con la operacion',
     PUNTO_MAIN.replace('mostrar(masLejano);', 'printf("(%.2f, %.2f)", masLejano.x, masLejano.y);'),
     ['TAD_ACCESO_DIRECTO', 'TAD_OPERACION_SIN_USAR']
+  ),
+  // ===== Usar el punto con un arreglo =====
+  puntoUsar(1, 'el perimetro correcto', PERIMETRO),
+  puntoUsar(
+    1,
+    'cerrando la poligonal',
+    PERIMETRO.replace('printf("%.2f", total);', 'total = total + distancia(pts[n - 1], pts[0]);\n  printf("%.2f", total);'),
+    ['MUESTRA_DISTINTA']
+  ),
+  puntoUsar(1, 'con un solo decimal', PERIMETRO.replace('%.2f', '%.1f'), ['MUESTRA_DISTINTA']),
+  puntoUsar(1, 'sin la ultima distancia', PERIMETRO.replace('i < n - 1', 'i < n - 2'), ['MUESTRA_DISTINTA']),
+  puntoUsar(
+    1,
+    'armando los puntos a mano',
+    PERIMETRO.replace('    pts[i] = crear(x, y);', '    pts[i].x = x;\n    pts[i].y = y;'),
+    ['TAD_ACCESO_DIRECTO', 'TAD_OPERACION_SIN_USAR']
+  ),
+  puntoUsar(2, 'el conteo correcto', RADIO),
+  puntoUsar(2, 'con menor estricto', RADIO.replace('<= r', '< r'), ['MUESTRA_DISTINTA']),
+  puntoUsar(2, 'contando los de afuera', RADIO.replace('<= r', '> r'), ['MUESTRA_DISTINTA']),
+  puntoUsar(2, 'sin usar el origen', RADIO.replace('origen()', 'crear(0, 0)'), ['TAD_OPERACION_SIN_USAR']),
+  puntoUsar(
+    2,
+    'calculando la distancia a mano',
+    RADIO.replace('distancia(pts[i], origen()) <= r', 'pts[i].x * pts[i].x + pts[i].y * pts[i].y <= r * r'),
+    ['TAD_ACCESO_DIRECTO', 'TAD_OPERACION_SIN_USAR']
+  ),
+  puntoUsar(3, 'el par mas cercano correcto', CERCANOS),
+  puntoUsar(3, 'con el que llega despues en un empate', CERCANOS.replace('< menor', '<= menor'), ['MUESTRA_DISTINTA']),
+  puntoUsar(
+    3,
+    'solo los puntos consecutivos',
+    CERCANOS.replace(
+      'for (int i = 0; i < n; i++) {\n    for (int j = i + 1; j < n; j++) {\n      if (distancia(pts[i], pts[j]) < menor) {\n        menor = distancia(pts[i], pts[j]);\n        a = i;\n        b = j;\n      }\n    }\n  }',
+      'for (int i = 0; i < n - 1; i++) {\n    if (distancia(pts[i], pts[i + 1]) < menor) {\n      menor = distancia(pts[i], pts[i + 1]);\n      a = i;\n      b = i + 1;\n    }\n  }'
+    ),
+    ['MUESTRA_DISTINTA']
+  ),
+  puntoUsar(3, 'sin la distancia', CERCANOS.replace('printf(" %.2f", menor);', 'printf(" ");'), ['MUESTRA_DISTINTA']),
+  puntoUsar(
+    3,
+    'los puntos en el orden contrario',
+    CERCANOS.replace('mostrar(pts[a]);', 'mostrar(pts[b]);').replace('mostrar(pts[b]);\n  printf(" %.2f"', 'mostrar(pts[a]);\n  printf(" %.2f"'),
+    ['MUESTRA_DISTINTA']
+  ),
+  puntoUsar(
+    3,
+    'sin mostrar con la operacion',
+    CERCANOS.replace('mostrar(pts[a]);', 'printf("(%.2f, %.2f)", pts[a].x, pts[a].y);'),
+    ['TAD_ACCESO_DIRECTO']
+  ),
+  puntoUsar(
+    3,
+    'el punto mas cercano al origen en vez del par mas cercano',
+    MAIN_PU(
+      ['double x, y;', 'int mejor = 0;', 'int n;'],
+      [
+        'for (int i = 1; i < n; i++) {',
+        '  if (distancia(pts[i], origen()) < distancia(pts[mejor], origen())) {',
+        '    mejor = i;',
+        '  }',
+        '}',
+        'mostrar(pts[mejor]);',
+        'printf(" ");',
+        'mostrar(pts[mejor]);',
+        'printf(" %.2f", distancia(pts[mejor], origen()));',
+      ]
+    ).replace('  scanf("%d", &n);', '  scanf("%d", &n);'),
+    ['MUESTRA_DISTINTA']
   ),
 ];
