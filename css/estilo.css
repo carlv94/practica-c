@@ -1089,6 +1089,93 @@ form[hidden],
   stroke-width: 1.5;
 }
 
+/* El plano: ejes con cuadricula, puntos, segmentos y una circunferencia, en SVG.
+   El dibujo se escala con el ancho; los rotulos llevan un borde del color del
+   fondo para leerse encima de las lineas. */
+.plano {
+  display: block;
+  width: 100%;
+  max-width: 460px;
+  height: auto;
+}
+
+.plano .grilla {
+  stroke: var(--borde);
+  stroke-width: 1;
+}
+
+.plano .eje {
+  stroke: var(--suave);
+  stroke-width: 1.5;
+}
+
+.plano .marca-plano,
+.plano .nombre-eje {
+  fill: var(--suave);
+  font-size: 11px;
+}
+
+.plano .nombre-eje {
+  font-style: italic;
+  font-size: 12px;
+}
+
+.plano .rotulo-plano {
+  fill: var(--texto);
+  font-size: 12px;
+  font-weight: 600;
+  stroke: var(--fondo);
+  stroke-width: 3.5px;
+  stroke-linejoin: round;
+  paint-order: stroke;
+}
+
+.plano .circulo-plano {
+  fill: var(--mejora-fondo);
+  fill-opacity: 0.6;
+  stroke: var(--mejora);
+  stroke-width: 1.5;
+  stroke-dasharray: 6 4;
+}
+
+.plano .segmento-plano {
+  stroke: var(--texto);
+  stroke-width: 1.8;
+}
+
+.plano .segmento-plano.resaltado {
+  stroke: var(--mejora);
+  stroke-width: 3.5;
+}
+
+.plano .segmento-plano.guia {
+  stroke: var(--suave);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
+}
+
+.plano .punto-plano {
+  fill: var(--texto);
+}
+
+.plano .punto-plano.dentro,
+.plano .punto-plano.resaltado {
+  fill: var(--mejora);
+}
+
+/* Fuera: hueco y de otro color, para que no dependa solo del color. */
+.plano .punto-plano.fuera {
+  fill: var(--fondo);
+  stroke: var(--error);
+  stroke-width: 2.5;
+}
+
+.plano .anillo-plano {
+  fill: none;
+  stroke: var(--mejora);
+  stroke-width: 2;
+}
+
 /* La escalera de acceso: tres escalones, cada uno mas alto que el anterior. */
 .escalera {
   display: flex;

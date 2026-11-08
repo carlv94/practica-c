@@ -164,6 +164,64 @@ export const ESCALONES_DE_ACCESO = [
   { nombre: 'Todas las variables', detalle: 'variable global, desde todas las funciones' },
 ];
 
+// El plano: puntos, segmentos y una circunferencia sobre ejes con cuadricula.
+//   "dibujo": { "titulo": "...", "plano": {
+//     "puntos": [[0, 0], { "en": [3, 4], "rotulo": "A", "estilo": "dentro" }],
+//     "segmentos": [{ "desde": [0, 0], "hasta": [3, 4], "rotulo": "5", "estilo": "resaltado", "lado": -1 }],
+//     "circulo": { "centro": [0, 0], "radio": 5 } } }
+// Un punto sin rotulo lleva sus coordenadas. Estilos de punto: normal, dentro, fuera,
+// resaltado; su "lado" (donde va el rotulo): derecha, izquierda, abajo. Estilos de
+// segmento: normal, resaltado, guia; su "lado": -1 pone el rotulo del otro lado. Devuelve todo en numeros, con el rango que hay que dibujar.
+export function planoDe(p) {
+  const coordenadas = (c, donde) => {
+    if (!Array.isArray(c) || c.length !== 2 || !c.every(Number.isFinite)) {
+      throw new Error(`El plano dibujado: ${donde} necesita dos coordenadas numericas.`);
+    }
+    return { x: c[0], y: c[1] };
+  };
+  const ESTILOS_PUNTO = ['normal', 'dentro', 'fuera', 'resaltado'];
+  const LADOS_PUNTO = ['derecha', 'izquierda', 'abajo'];
+  const ESTILOS_SEGMENTO = ['normal', 'resaltado', 'guia'];
+  const puntos = (p.puntos || []).map((q, i) => {
+    const o = Array.isArray(q) ? { en: q } : q;
+    const { x, y } = coordenadas(o.en, `el punto ${i + 1}`);
+    const estilo = o.estilo || 'normal';
+    if (!ESTILOS_PUNTO.includes(estilo)) throw new Error(`El plano dibujado: el estilo "${estilo}" del punto ${i + 1} no existe.`);
+    const lado = o.lado || 'derecha';
+    if (!LADOS_PUNTO.includes(lado)) throw new Error(`El plano dibujado: el lado "${lado}" del punto ${i + 1} no existe.`);
+    return { x, y, rotulo: o.rotulo ?? `(${x}, ${y})`, estilo, lado };
+  });
+  const segmentos = (p.segmentos || []).map((s, i) => {
+    const desde = coordenadas(s.desde, `el segmento ${i + 1} (desde)`);
+    const hasta = coordenadas(s.hasta, `el segmento ${i + 1} (hasta)`);
+    const estilo = s.estilo || 'normal';
+    if (!ESTILOS_SEGMENTO.includes(estilo)) throw new Error(`El plano dibujado: el estilo "${estilo}" del segmento ${i + 1} no existe.`);
+    return { desde, hasta, rotulo: s.rotulo ?? '', estilo, lado: s.lado === -1 ? -1 : 1 };
+  });
+  let circulo = null;
+  if (p.circulo) {
+    const centro = coordenadas(p.circulo.centro, 'el centro de la circunferencia');
+    if (!(p.circulo.radio > 0)) throw new Error('El plano dibujado: el radio de la circunferencia tiene que ser positivo.');
+    circulo = { centro, radio: p.circulo.radio };
+  }
+  if (!puntos.length && !segmentos.length && !circulo) throw new Error('El plano dibujado esta vacio.');
+
+  // El rango: lo que hay que mostrar, los ejes (el cero) y un margen de una unidad.
+  const xs = [0, ...puntos.map((q) => q.x), ...segmentos.flatMap((s) => [s.desde.x, s.hasta.x])];
+  const ys = [0, ...puntos.map((q) => q.y), ...segmentos.flatMap((s) => [s.desde.y, s.hasta.y])];
+  if (circulo) {
+    xs.push(circulo.centro.x - circulo.radio, circulo.centro.x + circulo.radio);
+    ys.push(circulo.centro.y - circulo.radio, circulo.centro.y + circulo.radio);
+  }
+  const xmin = Math.floor(Math.min(...xs)) - 1;
+  const xmax = Math.ceil(Math.max(...xs)) + 1;
+  const ymin = Math.floor(Math.min(...ys)) - 1;
+  const ymax = Math.ceil(Math.max(...ys)) + 1;
+  const mayor = Math.max(xmax - xmin, ymax - ymin);
+  const paso = mayor <= 10 ? 1 : mayor <= 20 ? 2 : 5;
+  return { puntos, segmentos, circulo, xmin, xmax, ymin, ymax, paso };
+}
+
 export function figuraDe(consigna) {
   // Una letra se dibuja entre comillas simples, como se escribe en el codigo.
   const comoSeEscribeLetras = (v) =>
@@ -173,6 +231,7 @@ export function figuraDe(consigna) {
   const propia = (d) => {
     // Una union: un solo lugar, con los nombres de sus miembros y el que tiene el valor.
     if (d.union) return { clase: 'union', titulo: d.titulo, union: d.union, salida: consigna.salida };
+    if (d.plano) return { clase: 'plano', titulo: d.titulo, plano: planoDe(d.plano), salida: consigna.salida };
     if (d.escalera) return { clase: 'escalera', titulo: d.titulo, escalones: ESCALONES_DE_ACCESO, salida: consigna.salida };
     if (d.memoria) return { clase: 'memoria', titulo: d.titulo, celdas: celdasDeMemoria(d.memoria, d.desde), salida: consigna.salida };
     // Un dibujo de nombres de un enumerado ("enumerados": true) no lleva comillas.

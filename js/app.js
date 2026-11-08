@@ -816,6 +816,11 @@ function dibujar(figura) {
     dibujarSalida(caja, figura.salida);
     return;
   }
+  if (figura.clase === 'plano') {
+    dibujarPlano(caja, figura.plano);
+    dibujarSalida(caja, figura.salida);
+    return;
+  }
   if (figura.clase === 'escalera') {
     dibujarEscalera(caja, figura.escalones);
     dibujarSalida(caja, figura.salida);
@@ -910,6 +915,123 @@ function dibujarUnion(caja, u) {
     elemento('span', 'valor' + (vacio ? ' vacio' : ' resaltado'), vacio ? ' ' : u.valor)
   );
   caja.appendChild(bloque);
+}
+
+// El plano: ejes con cuadricula, una circunferencia, segmentos y puntos con su rotulo.
+// El dibujo es de 360 de ancho y se escala con la pantalla (los estilos estan en
+// la hoja: colores, rayas y el borde claro de los rotulos).
+function dibujarPlano(caja, plano) {
+  const ns = 'http://www.w3.org/2000/svg';
+  const nodo = (etiqueta, atributos, texto) => {
+    const n = document.createElementNS(ns, etiqueta);
+    for (const [k, v] of Object.entries(atributos)) n.setAttribute(k, v);
+    if (texto !== undefined) n.textContent = texto;
+    return n;
+  };
+  const dec = (v) => Math.round(v * 100) / 100;
+  const ANCHO = 360;
+  const [izq, der, arriba, abajo] = [28, 16, 12, 26];
+  const unidad = Math.min((ANCHO - izq - der) / (plano.xmax - plano.xmin), 52);
+  const alto = arriba + unidad * (plano.ymax - plano.ymin) + abajo;
+  const px = (x) => dec(izq + (x - plano.xmin) * unidad);
+  const py = (y) => dec(arriba + (plano.ymax - y) * unidad);
+
+  caja.setAttribute('aria-label', descripcionDePlano(plano));
+  const svg = nodo('svg', { class: 'plano', viewBox: `0 0 ${ANCHO} ${dec(alto)}`, 'aria-hidden': 'true' });
+
+  // La cuadricula, con un numero cada "paso" unidades; los ejes son las lineas del cero.
+  const primero = (desde) => Math.ceil(desde / plano.paso) * plano.paso;
+  for (let x = primero(plano.xmin); x <= plano.xmax; x += plano.paso) {
+    svg.appendChild(nodo('line', { class: x === 0 ? 'eje' : 'grilla', x1: px(x), y1: py(plano.ymax), x2: px(x), y2: py(plano.ymin) }));
+    svg.appendChild(nodo('text', { class: 'marca-plano', x: px(x), y: py(plano.ymin) + 15, 'text-anchor': 'middle' }, x));
+  }
+  for (let y = primero(plano.ymin); y <= plano.ymax; y += plano.paso) {
+    svg.appendChild(nodo('line', { class: y === 0 ? 'eje' : 'grilla', x1: px(plano.xmin), y1: py(y), x2: px(plano.xmax), y2: py(y) }));
+    svg.appendChild(nodo('text', { class: 'marca-plano', x: px(plano.xmin) - 5, y: py(y) + 4, 'text-anchor': 'end' }, y));
+  }
+  svg.appendChild(nodo('text', { class: 'nombre-eje', x: px(plano.xmax) - 3, y: py(0) - 6, 'text-anchor': 'end' }, 'x'));
+  svg.appendChild(nodo('text', { class: 'nombre-eje', x: px(0) + 6, y: py(plano.ymax) + 11 }, 'y'));
+
+  if (plano.circulo) {
+    const c = plano.circulo;
+    svg.appendChild(nodo('circle', { class: 'circulo-plano', cx: px(c.centro.x), cy: py(c.centro.y), r: dec(c.radio * unidad) }));
+  }
+
+  for (const s of plano.segmentos) {
+    const [x1, y1, x2, y2] = [px(s.desde.x), py(s.desde.y), px(s.hasta.x), py(s.hasta.y)];
+    svg.appendChild(nodo('line', { class: `segmento-plano ${s.estilo}`, x1, y1, x2, y2 }));
+    if (!s.rotulo) continue;
+    // El rotulo va al costado del segmento, del lado de arriba (o a la derecha si es vertical).
+    const largo = Math.hypot(x2 - x1, y2 - y1) || 1;
+    let [nx, ny] = [-(y2 - y1) / largo, (x2 - x1) / largo];
+    if (ny > 1e-6 || (Math.abs(ny) <= 1e-6 && nx < 0)) [nx, ny] = [-nx, -ny];
+    nx *= s.lado;
+    ny *= s.lado;
+    // Si el segmento es empinado el rotulo empieza (o termina) junto a el, para no pisarlo.
+    const lateral = Math.abs(nx) > 0.5;
+    const separacion = lateral ? 8 : 11;
+    svg.appendChild(
+      nodo(
+        'text',
+        {
+          class: 'rotulo-plano',
+          x: dec((x1 + x2) / 2 + nx * separacion),
+          y: dec((y1 + y2) / 2 + ny * separacion + 4),
+          'text-anchor': lateral ? (nx > 0 ? 'start' : 'end') : 'middle',
+        },
+        s.rotulo
+      )
+    );
+  }
+
+  for (const q of plano.puntos) {
+    const [x, y] = [px(q.x), py(q.y)];
+    if (q.estilo === 'resaltado') svg.appendChild(nodo('circle', { class: 'anillo-plano', cx: x, cy: y, r: 9 }));
+    svg.appendChild(nodo('circle', { class: `punto-plano ${q.estilo}`, cx: x, cy: y, r: 4.5 }));
+    if (!q.rotulo) continue;
+    // Por defecto a la derecha y arriba del punto (si no entra, a la izquierda o
+    // abajo); "lado" lo manda a la izquierda o debajo.
+    const ancho = q.rotulo.length * 6.6;
+    const aLaIzquierda = q.lado === 'izquierda' || (q.lado === 'derecha' && x + 8 + ancho > ANCHO - 4);
+    const debajo = q.lado === 'abajo' || y - 9 < arriba + 6;
+    svg.appendChild(
+      nodo(
+        'text',
+        {
+          class: 'rotulo-plano',
+          x: q.lado === 'abajo' ? x : aLaIzquierda ? x - 8 : x + 8,
+          y: debajo ? y + 18 : y - 8,
+          'text-anchor': q.lado === 'abajo' ? 'middle' : aLaIzquierda ? 'end' : 'start',
+        },
+        q.rotulo
+      )
+    );
+  }
+  caja.appendChild(svg);
+}
+
+// El plano dicho en palabras, para quien no lo ve.
+function descripcionDePlano(plano) {
+  const en = (c) => `(${c.x}, ${c.y})`;
+  const partes = ['Plano con ejes x e y.'];
+  if (plano.puntos.length) {
+    partes.push(
+      'Puntos: ' +
+        plano.puntos
+          .map((q) => en(q) + (q.estilo === 'dentro' ? ' (dentro)' : q.estilo === 'fuera' ? ' (fuera)' : q.estilo === 'resaltado' ? ' (resaltado)' : ''))
+          .join(', ') +
+        '.'
+    );
+  }
+  if (plano.segmentos.length) {
+    partes.push(
+      'Segmentos: ' +
+        plano.segmentos.map((s) => `de ${en(s.desde)} a ${en(s.hasta)}${s.rotulo ? ', ' + s.rotulo : ''}`).join('; ') +
+        '.'
+    );
+  }
+  if (plano.circulo) partes.push(`Circunferencia de radio ${plano.circulo.radio} con centro en ${en(plano.circulo.centro)}.`);
+  return partes.join(' ');
 }
 
 // La escalera de acceso: cada escalon da mas acceso que el anterior.

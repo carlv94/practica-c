@@ -1490,14 +1490,45 @@ porque el proyecto no se podría armar.
 Una línea del enunciado que empieza con `> ` se muestra como una fórmula: en su propio
 renglón, con sangría y sin partirse (si no entra en la pantalla, se desplaza hacia el
 costado). Cada línea es una fórmula. Se escriben con los símbolos de Unicode (`x₁`, `²`,
-`√`, `−`), sin etiqueta, para no gastar espacio en el celular:
+`√`, `−`); conviene ponerles una etiqueta corta (`distancia = ...`) si hay lugar:
 
 ```
-"la distancia entre ellos es:
-> √((x₂ − x₁)² + (y₂ − y₁)²)
-y el punto medio es:
-> ..."
+"Si los puntos son (x₁, y₁) y (x₂, y₂):
+> distancia = √((x₂ − x₁)² + (y₂ − y₁)²)
+> punto medio = ..."
 ```
+
+### Un plano en el dibujo
+
+El `dibujo` de una consigna puede ser un plano con ejes y cuadrícula: puntos, segmentos y una
+circunferencia, en SVG (se escala con el ancho de la pantalla y respeta el modo oscuro). Es un
+dibujo fijo, el del ejemplo del enunciado: no cambia con lo que escriba el alumno.
+
+```
+"dibujo": {
+  "titulo": "Los puntos del ejemplo:",
+  "plano": {
+    "puntos": [[0, 0], { "en": [3, 4], "rotulo": "A", "estilo": "resaltado", "lado": "izquierda" }],
+    "segmentos": [{ "desde": [0, 0], "hasta": [3, 4], "rotulo": "5", "estilo": "guia", "lado": -1 }],
+    "circulo": { "centro": [0, 0], "radio": 5 }
+  }
+}
+```
+
+- Un punto es `[x, y]` o `{ "en": [x, y], ... }`. Sin `rotulo` lleva sus coordenadas, `(3, 4)`;
+  con `"rotulo": ""` no lleva ninguno. `estilo`: `normal`, `dentro` (relleno), `fuera` (hueco y
+  de otro color) o `resaltado` (con un anillo). `lado`: dónde va el rótulo, `derecha` (por
+  defecto; si no entra pasa solo a la izquierda), `izquierda` o `abajo`.
+- Un segmento lleva `desde` y `hasta` (coordenadas, no hace falta que sean puntos), un `rotulo`
+  opcional sobre él y un `estilo`: `normal`, `resaltado` (grueso y de color) o `guia` (rayado).
+  El rótulo va arriba del segmento (a la derecha si es vertical); `"lado": -1` lo pasa al otro lado.
+- El rango de los ejes se arma solo: incluye el cero, todo lo que se dibuja y una unidad de margen,
+  y la cuadrícula marca de a 1, 2 o 5 según el tamaño.
+- Lleva una descripción en palabras para los lectores de pantalla.
+
+Las pruebas arman cada plano de las series (`planoDe` en `js/enunciado.js`) y avisan si una
+descripción está mal escrita. Lo que no pueden avisar es si los rótulos se pisan: hay que mirar
+el dibujo.
 
 ### Ampliar un archivo: `comienza`
 

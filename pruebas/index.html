@@ -25,8 +25,8 @@
         programaDeOpciones,
         partesPrevias,
       } from '../js/serie.js';
-      import { marcasDe, partesDeEnunciado, fichasDe, bloquesDeEnunciado } from '../js/enunciado.js';
-      import { CASOS_DE_ENUNCIADO, resultadoDelEnunciado } from './casos-enunciado.js';
+      import { marcasDe, partesDeEnunciado, fichasDe, bloquesDeEnunciado, planoDe, figuraDe } from '../js/enunciado.js';
+      import { CASOS_DE_ENUNCIADO, resultadoDelEnunciado, CASOS_DE_PLANO, resultadoDelPlano } from './casos-enunciado.js';
       import { CASOS } from './casos.js';
       import { ejecutar } from '../js/simulador.js';
       import { CASOS_DEL_SIMULADOR, resultadoDelSimulador } from './casos-simulador.js';
@@ -321,6 +321,23 @@
         for (const caso of CASOS_DE_ENUNCIADO) {
           const r = resultadoDelEnunciado(bloquesDeEnunciado, caso);
           anotar(r.bien, `enunciado: ${caso.nombre}`, r.detalle);
+        }
+
+        for (const caso of CASOS_DE_PLANO) {
+          const r = resultadoDelPlano(planoDe, caso);
+          anotar(r.bien, `plano: ${caso.nombre}`, r.detalle);
+        }
+
+        // Los dibujos con plano de las series se arman sin error.
+        for (const s of todas) {
+          for (const c of s.consignas.filter((c) => c.dibujo && (c.dibujo.plano || Array.isArray(c.dibujo)))) {
+            try {
+              figuraDe(c);
+              anotar(true, `dibujo de ${c.id}`);
+            } catch (e) {
+              anotar(false, `dibujo de ${c.id}`, e.message);
+            }
+          }
         }
 
         for (const caso of CASOS_DEL_SIMULADOR) {
