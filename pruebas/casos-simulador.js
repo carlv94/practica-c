@@ -1108,6 +1108,31 @@ export const CASOS_DEL_SIMULADOR = [
     codigo: conFunciones("void mover(TPunto *p, double dx) {\n  p->x = p->x + dx;\n}", "TPunto pts[MAX];\nmover(&pts[5], 1);"),
     espera: {"error":"FueraDeRango"},
   },
+  {
+    nombre: "*p como argumento por valor: una estructura a la que apunta un puntero",
+    codigo: conFunciones("int cuantos(TPila p) {\n  return p.tope;\n}\nint doble(TPila *p) {\n  return cuantos(*p) * 2;\n}", "TPila p;\np.tope = 3;\nprintf(\"%d\", doble(&p));"),
+    espera: {"salida":"6"},
+  },
+  {
+    nombre: "*p como argumento por valor: un elemento de un arreglo de estructuras",
+    codigo: conFunciones("int cuantos(TPila p) {\n  return p.tope;\n}\nint doble(TPila *p) {\n  return cuantos(*p) * 2;\n}", "TPila ps[MAX];\nint i;\nfor (i = 0; i < MAX; i++) {\n  ps[i].tope = i;\n}\nprintf(\"%d %d\", doble(&ps[1]), doble(&ps[2]));"),
+    espera: {"salida":"2 4"},
+  },
+  {
+    nombre: "*p como argumento por valor: la funcion recibe una copia",
+    codigo: conFunciones("void ponerEnCero(TPila p) {\n  p.tope = 0;\n}\nvoid llamar(TPila *p) {\n  ponerEnCero(*p);\n}", "TPila p;\np.tope = 3;\nllamar(&p);\nprintf(\"%d\", p.tope);"),
+    espera: {"salida":"3"},
+  },
+  {
+    nombre: "*p como argumento por valor: con un arreglo adentro",
+    codigo: conFunciones("int primero(TPila p) {\n  return p.datos[0];\n}\nint desdePuntero(TPila *p) {\n  return primero(*p);\n}", "TPila p;\np.datos[0] = 7;\nprintf(\"%d\", desdePuntero(&p));"),
+    espera: {"salida":"7"},
+  },
+  {
+    nombre: "*p como argumento por valor: un puntero sin direccion",
+    codigo: conFunciones("int cuantos(TPila p) {\n  return p.tope;\n}\nint doble(TPila *p) {\n  return cuantos(*p) * 2;\n}", "TPila *p;\nprintf(\"%d\", cuantos(*p));"),
+    espera: {"error":"PunteroSinDestino"},
+  },
 ];
 
 // Corre un caso y dice si salio lo esperado. "ejecutar" es la funcion del

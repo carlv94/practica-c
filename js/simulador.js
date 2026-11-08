@@ -1655,7 +1655,31 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
     if (nodo.type === 'identifier' && estructurasVivas.has(nodo.text)) return camposCopiados(nodo.text);
     if (nodo.type === 'subscript_expression') return elementoCopiado(nodo);
     if (nodo.type === 'call_expression') return evaluar(nodo).estructura || null;
+    if (nodo.type === 'pointer_expression' && /^\*/.test(nodo.text.trimStart())) return estructuraApuntada(nodo);
     return null;
+  }
+
+  // *p, con p un puntero a una estructura (pertenece(*c, x)): una copia de lo que hay en el
+  // lugar al que apunta, ya sea una variable o un elemento de un arreglo de estructuras.
+  function estructuraApuntada(nodo) {
+    const sobre = nodo.childForFieldName('argument') || nodo.namedChildren[nodo.namedChildren.length - 1];
+    if (!sobre || sobre.type !== 'identifier') return null;
+    const puntero = variables.get(sobre.text);
+    if (!puntero || !puntero.puntero || !puntero.aEstructura) return null;
+    const destino = puntero.destino;
+    if (!destino) throw new PunteroSinDestino(sobre.text, fila(nodo), destino === null);
+    const copia = new Map();
+    for (const [camino, campo] of destino.claves) {
+      if (destino.elemento != null) {
+        const elemento = campo.datos[destino.elemento];
+        const { dimsDeLaVariable, ...resto } = campo;
+        if (campo.dims.length === 1) copia.set('.' + camino, { ...resto, dims: undefined, datos: undefined, valor: elemento });
+        else copia.set('.' + camino, { ...resto, dims: campo.dims.slice(1), datos: structuredClone(elemento) });
+      } else {
+        copia.set('.' + camino, { ...campo, datos: campo.datos ? structuredClone(campo.datos) : campo.datos });
+      }
+    }
+    return copia;
   }
 
   // Lo copiado pasa a ser los campos de otra variable de la misma estructura.
