@@ -173,3 +173,86 @@ export function resultadoDelPlano(planoDe, caso) {
       : { bien: false, detalle: 'error: ' + e.message };
   }
 }
+
+// El diagrama de Venn: en que region cae cada numero y cual es el resultado de cada
+// operacion, y los errores de una descripcion mal escrita.
+const AB = { a: [1, 2, 3, 4], b: [3, 4, 5, 6] };
+export const CASOS_DE_VENN = [
+  {
+    nombre: 'los numeros caen en su region',
+    venn: { ...AB, resaltar: 'union' },
+    sale: (r) => r.soloA.join() === '1,2' && r.ambos.join() === '3,4' && r.soloB.join() === '5,6',
+  },
+  {
+    nombre: 'la union resalta todo, ordenado',
+    venn: { a: [4, 1], b: [3, 1], resaltar: 'union' },
+    sale: (r) => r.resultado.join() === '1,3,4',
+  },
+  {
+    nombre: 'la interseccion resalta lo que esta en los dos',
+    venn: { ...AB, resaltar: 'interseccion' },
+    sale: (r) => r.resultado.join() === '3,4',
+  },
+  {
+    nombre: 'la diferencia resalta lo de a que no esta en b',
+    venn: { ...AB, resaltar: 'diferencia' },
+    sale: (r) => r.resultado.join() === '1,2',
+  },
+  {
+    nombre: 'la diferencia al reves resalta lo de b que no esta en a',
+    venn: { ...AB, resaltar: 'diferenciaInversa' },
+    sale: (r) => r.resultado.join() === '5,6',
+  },
+  {
+    nombre: 'los nombres, por defecto a y b',
+    venn: { ...AB, resaltar: 'union' },
+    sale: (r) => r.nombres.join() === 'a,b',
+  },
+  {
+    nombre: 'nombres propios',
+    venn: { ...AB, resaltar: 'union', nombres: ['A', 'B'] },
+    sale: (r) => r.nombres.join() === 'A,B',
+  },
+  {
+    nombre: 'conjuntos sin nada en comun: la interseccion queda vacia',
+    venn: { a: [1, 2], b: [3], resaltar: 'interseccion' },
+    sale: (r) => r.ambos.length === 0 && r.resultado.length === 0,
+  },
+  {
+    nombre: 'una region con mas de cuatro numeros no entra',
+    venn: { a: [1, 2, 3, 4, 5], b: [9], resaltar: 'union' },
+    error: 'no entran mas de 4',
+  },
+  {
+    nombre: 'un conjunto que repite un numero',
+    venn: { a: [1, 1], b: [2], resaltar: 'union' },
+    error: 'repite',
+  },
+  {
+    nombre: 'un conjunto que no es una lista de numeros',
+    venn: { a: [1, 'x'], b: [2], resaltar: 'union' },
+    error: 'lista de numeros',
+  },
+  {
+    nombre: 'una region que no se puede resaltar',
+    venn: { ...AB, resaltar: 'complemento' },
+    error: 'no se puede resaltar',
+  },
+  {
+    nombre: 'nombres que no son dos',
+    venn: { ...AB, resaltar: 'union', nombres: ['a'] },
+    error: 'dos nombres',
+  },
+];
+
+export function resultadoDelVenn(vennDe, caso) {
+  try {
+    const r = vennDe(caso.venn);
+    if (caso.error) return { bien: false, detalle: `esperaba el error "${caso.error}" y salio ${JSON.stringify(r)}` };
+    return { bien: Boolean(caso.sale(r)), detalle: JSON.stringify(r) };
+  } catch (e) {
+    return caso.error
+      ? { bien: e.message.includes(caso.error), detalle: e.message }
+      : { bien: false, detalle: 'error: ' + e.message };
+  }
+}

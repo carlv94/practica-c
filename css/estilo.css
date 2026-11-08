@@ -1192,6 +1192,52 @@ form[hidden],
   stroke-width: 2;
 }
 
+/* El diagrama de Venn: dos circulos, los numeros de cada region y la region que es el
+   resultado resaltada (relleno de color y numeros en negrita). */
+.venn {
+  display: block;
+  width: 100%;
+  max-width: 460px;
+  height: auto;
+}
+
+.venn .region-venn {
+  fill: var(--mejora);
+  fill-opacity: 0.35;
+}
+
+/* La union: los circulos opacos dentro de un grupo, y la transparencia en el grupo. */
+.venn .union-venn {
+  opacity: 0.35;
+}
+
+.venn .relleno-venn {
+  fill: var(--mejora);
+}
+
+.venn .contorno-venn {
+  fill: none;
+  stroke: var(--suave);
+  stroke-width: 2;
+}
+
+.venn .nombre-venn {
+  fill: var(--texto);
+  font-size: 14px;
+  font-weight: 700;
+  font-style: italic;
+}
+
+.venn .numero-venn {
+  fill: var(--suave);
+  font-size: 15px;
+}
+
+.venn .numero-venn.resultado {
+  fill: var(--texto);
+  font-weight: 700;
+}
+
 /* La escalera de acceso: tres escalones, cada uno mas alto que el anterior. */
 .escalera {
   display: flex;

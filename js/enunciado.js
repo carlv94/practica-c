@@ -222,6 +222,45 @@ export function planoDe(p) {
   return { puntos, segmentos, circulo, xmin, xmax, ymin, ymax, paso };
 }
 
+// Un diagrama de Venn de dos conjuntos de numeros, con una region resaltada.
+//   "dibujo": { "titulo": "...", "venn": { "a": [1, 2, 3, 4], "b": [3, 4, 5, 6],
+//     "nombres": ["a", "b"], "resaltar": "union" } }
+// "resaltar": union, interseccion, diferencia (los de a que no estan en b) o
+// diferenciaInversa (los de b que no estan en a). Los numeros se acomodan solos en su
+// region, asi el dibujo no puede contradecir al ejemplo. Una region lleva a lo sumo 4.
+export const REGIONES_DE_VENN = {
+  union: 'la unión',
+  interseccion: 'la intersección',
+  diferencia: 'la diferencia (los de {a} que no están en {b})',
+  diferenciaInversa: 'la diferencia (los de {b} que no están en {a})',
+};
+export function vennDe(v) {
+  const conjunto = (c, cual) => {
+    if (!Array.isArray(c) || !c.every(Number.isFinite)) throw new Error(`El diagrama de Venn: el conjunto ${cual} tiene que ser una lista de numeros.`);
+    if (new Set(c).size !== c.length) throw new Error(`El diagrama de Venn: el conjunto ${cual} repite un numero.`);
+    return c;
+  };
+  const a = conjunto(v.a, 'a');
+  const b = conjunto(v.b, 'b');
+  const resaltar = v.resaltar;
+  if (!Object.hasOwn(REGIONES_DE_VENN, resaltar)) throw new Error(`El diagrama de Venn: no se puede resaltar "${resaltar}".`);
+  const nombres = v.nombres || ['a', 'b'];
+  if (!Array.isArray(nombres) || nombres.length !== 2) throw new Error('El diagrama de Venn: "nombres" son dos nombres.');
+  const soloA = a.filter((x) => !b.includes(x));
+  const ambos = a.filter((x) => b.includes(x));
+  const soloB = b.filter((x) => !a.includes(x));
+  for (const [region, lista] of [['solo de a', soloA], ['de los dos', ambos], ['solo de b', soloB]]) {
+    if (lista.length > 4) throw new Error(`El diagrama de Venn: la region "${region}" tiene ${lista.length} numeros y no entran mas de 4.`);
+  }
+  const resultado = {
+    union: [...soloA, ...ambos, ...soloB],
+    interseccion: ambos,
+    diferencia: soloA,
+    diferenciaInversa: soloB,
+  }[resaltar];
+  return { a, b, nombres, soloA, ambos, soloB, resaltar, resultado: [...resultado].sort((x, y) => x - y) };
+}
+
 export function figuraDe(consigna) {
   // Una letra se dibuja entre comillas simples, como se escribe en el codigo.
   const comoSeEscribeLetras = (v) =>
@@ -231,6 +270,7 @@ export function figuraDe(consigna) {
   const propia = (d) => {
     // Una union: un solo lugar, con los nombres de sus miembros y el que tiene el valor.
     if (d.union) return { clase: 'union', titulo: d.titulo, union: d.union, salida: consigna.salida };
+    if (d.venn) return { clase: 'venn', titulo: d.titulo, venn: vennDe(d.venn), salida: consigna.salida };
     if (d.plano) return { clase: 'plano', titulo: d.titulo, plano: planoDe(d.plano), salida: consigna.salida };
     if (d.escalera) return { clase: 'escalera', titulo: d.titulo, escalones: ESCALONES_DE_ACCESO, salida: consigna.salida };
     if (d.memoria) return { clase: 'memoria', titulo: d.titulo, celdas: celdasDeMemoria(d.memoria, d.desde), salida: consigna.salida };

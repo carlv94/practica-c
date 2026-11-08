@@ -1293,7 +1293,8 @@ El plan de la reestructuración está en la memoria del proyecto
   por valor (una copia), `return`, recursión (con tope) y variables globales.
   Un arreglo pasado es el mismo arreglo. Sabe un **subconjunto mínimo de
   punteros**: `&variable` (o `&arreglo[i]`, también con un arreglo de estructuras: `&cuentas[i]`,
-  que apunta a ese elemento) al llamar, un parámetro declarado con
+  que apunta a ese elemento) al llamar, `*p` como argumento de una estructura por valor
+  (`pertenece(*c, x)`: se pasa una copia), un parámetro declarado con
   `*` y `*x` adentro; nada de aritmética de punteros. Entra por `practica`
   (o `main`); las funciones se conocen aunque estén definidas después.
 - **Errores de la receta `&` / `*`**, todos con la fórmula completa
@@ -1511,6 +1512,28 @@ pide un dato la haría fallar:
 ```
 "... Use solo las operaciones del `.h`.\n! No use `printf` para mostrar mensajes que pidan los datos: léalos directamente con `scanf`."
 ```
+
+### Un diagrama de Venn en el dibujo
+
+El `dibujo` de una consigna también puede ser un diagrama de Venn de dos conjuntos de números,
+con una región resaltada (el resultado de la operación). Los números se acomodan solos en su
+región, así que el dibujo no puede contradecir al ejemplo del enunciado:
+
+```
+"dibujo": {
+  "titulo": "La unión de `a` y `b` (lo resaltado):",
+  "venn": { "a": [1, 2, 3, 4], "b": [3, 4, 5, 6], "resaltar": "union", "nombres": ["a", "b"] }
+}
+```
+
+- `resaltar`: `union`, `interseccion`, `diferencia` (los de `a` que no están en `b`) o
+  `diferenciaInversa` (los de `b` que no están en `a`). `nombres` es opcional (por defecto `a` y `b`).
+- Una región (solo de `a`, de los dos, solo de `b`) lleva a lo sumo 4 números y un conjunto no
+  repite ninguno: si no, `vennDe` (en `js/enunciado.js`) avisa y las pruebas fallan.
+- Los números del resultado van en negrita; la región, con relleno de color. Lleva una
+  descripción en palabras para los lectores de pantalla.
+- Con una **lista** de dibujos (`"dibujo": [ {...}, {...} ]`) se muestran uno debajo del otro,
+  cada uno con su título; sirve para dos diagramas en la misma consigna.
 
 ### Un plano en el dibujo
 

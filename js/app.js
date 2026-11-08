@@ -31,7 +31,7 @@ import {
 import { descargar } from './descarga.js';
 import { crearEditor, pintar } from './editor.js';
 import { enviarIntento, enviarInforme, numeroDeInforme, enviaEstadisticas, esLocal, esDocente } from './estadisticas.js';
-import { bloquesDeEnunciado, partesDeEnunciado, enunciadoEnDos, fichasDe, figuraDe, sustituir } from './enunciado.js';
+import { bloquesDeEnunciado, partesDeEnunciado, enunciadoEnDos, fichasDe, figuraDe, sustituir, REGIONES_DE_VENN } from './enunciado.js';
 import { analizar, evaluar, mostrar, pilaComoTexto } from './pila.js';
 
 // La vista del docente: lista tambien las series y los grupos ocultos (en el
@@ -838,12 +838,23 @@ function dibujar(figura) {
     dibujarSalida(caja, figura.salida);
     return;
   }
+  if (figura.clase === 'venn') {
+    dibujarVenn(caja, figura.venn);
+    dibujarSalida(caja, figura.salida);
+    return;
+  }
   if (figura.clase === 'varias') {
     figura.figuras.forEach((f) => {
       if (f.titulo) caja.appendChild(elementoConCodigo('p', 'titulo-figura', f.titulo));
-      dibujarArreglo(caja, f);
+      if (f.clase === 'venn') dibujarVenn(caja, f.venn);
+      else if (f.clase === 'plano') dibujarPlano(caja, f.plano);
+      else dibujarArreglo(caja, f);
     });
-    caja.setAttribute('aria-label', figura.figuras.map(descripcionDe).join('. '));
+    // Un solo texto para todos (los dibujos de a uno ya se describieron cada uno).
+    caja.setAttribute(
+      'aria-label',
+      figura.figuras.map((f) => (f.clase === 'venn' ? descripcionDeVenn(f.venn) : f.clase === 'plano' ? descripcionDePlano(f.plano) : descripcionDe(f))).join(' ')
+    );
     dibujarSalida(caja, figura.salida);
     return;
   }
@@ -1015,6 +1026,86 @@ function dibujarPlano(caja, plano) {
     );
   }
   caja.appendChild(svg);
+}
+
+// Un diagrama de Venn: dos circulos que se cruzan, con los numeros de cada region y la
+// region que es el resultado de la operacion resaltada. Las partes de un circulo que
+// no son resultado se dejan sin color: se recortan con una mascara.
+let vennsDibujados = 0;
+function dibujarVenn(caja, v) {
+  const ns = 'http://www.w3.org/2000/svg';
+  const nodo = (etiqueta, atributos, texto) => {
+    const n = document.createElementNS(ns, etiqueta);
+    for (const [k, val] of Object.entries(atributos)) n.setAttribute(k, val);
+    if (texto !== undefined) n.textContent = texto;
+    return n;
+  };
+  const id = `venn-${++vennsDibujados}`;
+  const [ra, rb] = [{ x: 135, y: 108, r: 82 }, { x: 225, y: 108, r: 82 }];
+  const svg = nodo('svg', { class: 'venn', viewBox: '0 0 360 210', 'aria-hidden': 'true' });
+  caja.setAttribute('aria-label', descripcionDeVenn(v));
+
+  // Los recortes: el circulo a, el circulo b y "a sin b" (una mascara con b en negro).
+  const defs = nodo('defs', {});
+  const clipA = nodo('clipPath', { id: `${id}-a` });
+  clipA.appendChild(nodo('circle', { cx: ra.x, cy: ra.y, r: ra.r }));
+  const clipB = nodo('clipPath', { id: `${id}-b` });
+  clipB.appendChild(nodo('circle', { cx: rb.x, cy: rb.y, r: rb.r }));
+  const mascara = nodo('mask', { id: `${id}-sin` });
+  mascara.append(nodo('rect', { x: 0, y: 0, width: 360, height: 210, fill: 'white' }), nodo('circle', { cx: rb.x, cy: rb.y, r: rb.r, fill: 'black' }));
+  const mascaraInversa = nodo('mask', { id: `${id}-sin-a` });
+  mascaraInversa.append(nodo('rect', { x: 0, y: 0, width: 360, height: 210, fill: 'white' }), nodo('circle', { cx: ra.x, cy: ra.y, r: ra.r, fill: 'black' }));
+  defs.append(clipA, clipB, mascara, mascaraInversa);
+  svg.appendChild(defs);
+
+  // La region resaltada.
+  const relleno = (cx, cy, r, extra) => nodo('circle', { class: 'region-venn', cx, cy, r, ...extra });
+  if (v.resaltar === 'union') {
+    // Los dos circulos van en un grupo y la transparencia es del grupo: asi donde se cruzan
+    // no se suman las dos capas y la zona de los dos se ve del mismo color que el resto.
+    const grupo = nodo('g', { class: 'union-venn' });
+    grupo.append(nodo('circle', { class: 'relleno-venn', cx: ra.x, cy: ra.y, r: ra.r }), nodo('circle', { class: 'relleno-venn', cx: rb.x, cy: rb.y, r: rb.r }));
+    svg.appendChild(grupo);
+  }
+  if (v.resaltar === 'interseccion') svg.appendChild(relleno(rb.x, rb.y, rb.r, { 'clip-path': `url(#${id}-a)` }));
+  if (v.resaltar === 'diferencia') svg.appendChild(relleno(ra.x, ra.y, ra.r, { mask: `url(#${id}-sin)` }));
+  if (v.resaltar === 'diferenciaInversa') svg.appendChild(relleno(rb.x, rb.y, rb.r, { mask: `url(#${id}-sin-a)` }));
+
+  // Los contornos y los nombres de los conjuntos.
+  svg.append(
+    nodo('circle', { class: 'contorno-venn', cx: ra.x, cy: ra.y, r: ra.r }),
+    nodo('circle', { class: 'contorno-venn', cx: rb.x, cy: rb.y, r: rb.r }),
+    nodo('text', { class: 'nombre-venn', x: ra.x - ra.r + 6, y: 16, 'text-anchor': 'start' }, v.nombres[0]),
+    nodo('text', { class: 'nombre-venn', x: rb.x + rb.r - 6, y: 16, 'text-anchor': 'end' }, v.nombres[1])
+  );
+
+  // Los numeros de cada region, en una columna centrada en ella; los del resultado, en negrita.
+  const enResultado = new Set(v.resultado);
+  const columna = (numeros, x) => {
+    const paso = 22;
+    const arriba = ra.y - ((numeros.length - 1) * paso) / 2;
+    numeros.forEach((n, k) => {
+      svg.appendChild(
+        nodo('text', { class: 'numero-venn' + (enResultado.has(n) ? ' resultado' : ''), x, y: arriba + k * paso + 5, 'text-anchor': 'middle' }, n)
+      );
+    });
+  };
+  columna(v.soloA, (ra.x - ra.r + (rb.x - rb.r)) / 2);
+  columna(v.ambos, (ra.x + rb.x) / 2);
+  columna(v.soloB, (ra.x + ra.r + (rb.x + rb.r)) / 2);
+  caja.appendChild(svg);
+}
+
+// El diagrama dicho en palabras, para quien no lo ve.
+function descripcionDeVenn(v) {
+  const cuales = (c) => (c.length ? c.join(', ') : 'ninguno');
+  const region = REGIONES_DE_VENN[v.resaltar].replaceAll('{a}', v.nombres[0]).replaceAll('{b}', v.nombres[1]);
+  return (
+    `Diagrama de Venn de los conjuntos ${v.nombres[0]} y ${v.nombres[1]}. ` +
+    `${v.nombres[0]} tiene ${cuales(v.a)}; ${v.nombres[1]} tiene ${cuales(v.b)}. ` +
+    `Solo en ${v.nombres[0]}: ${cuales(v.soloA)}. En los dos: ${cuales(v.ambos)}. Solo en ${v.nombres[1]}: ${cuales(v.soloB)}. ` +
+    `Resaltado, ${region}: ${cuales(v.resultado)}.`
+  );
 }
 
 // El plano dicho en palabras, para quien no lo ve.
