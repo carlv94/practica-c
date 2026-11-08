@@ -50,7 +50,7 @@
       "titulo": "Declarar las operaciones nuevas",
       "escribe": "fecha.h",
       "comienza": "#ifndef FECHA_H\n#define FECHA_H\n\ntypedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\ntypedef struct {\n  int dia;\n  int mes;\n  int anio;\n} TFecha;\n\nTFecha crear(int dia, int mes, int anio);\nTBool esBisiesto(TFecha f);\nint diasDelMes(TFecha f);\nTFecha sumarDias(TFecha f, int n);\nvoid mostrar(TFecha f);\n\n#endif",
-      "enunciado": "El archivo `fecha.h` ya está escrito y lo ve en el editor. Agréguele dos operaciones, que reciben la fecha por valor y devuelven la fecha que resulta:\n- `sumarMeses`: recibe una fecha y una cantidad de meses, y devuelve la fecha con esos meses sumados.\n- `sumarAnios`: recibe una fecha y una cantidad de años, y devuelve la fecha con esos años sumados.\n\nLas declaraciones nuevas van antes del `#endif`. Lo que ya estaba no se cambia.",
+      "enunciado": "El archivo `fecha.h` ya está escrito y lo ve en el editor. Agréguele dos operaciones, que reciben la fecha por valor y devuelven la fecha que resulta:\n- `sumarMeses`: recibe una fecha y una cantidad de meses, y devuelve la fecha con esos meses sumados.\n- `sumarAnios`: recibe una fecha y una cantidad de años, y devuelve la fecha con esos años sumados.\n\nLo que ya estaba no se cambia.\n! Las declaraciones nuevas van antes del `#endif`.",
       "requiere": [
         {
           "encabezado": {
