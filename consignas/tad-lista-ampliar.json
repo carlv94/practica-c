@@ -1,0 +1,725 @@
+{
+  "id": "tad-lista-ampliar",
+  "titulo": "Ampliar la lista: eliminar",
+  "continua": true,
+  "descripcion": "Agregar a la lista la operación de sacar el elemento de una posición, que corre hacia el comienzo los que le seguían, y usarla junto con `insertar` para intercambiar dos posiciones.",
+  "consignas": [
+    {
+      "id": "tadla-h",
+      "titulo": "Declarar eliminar",
+      "escribe": "lista.h",
+      "comienza": "#ifndef LISTA_H\n#define LISTA_H\n\n#define MAX 10\n\ntypedef enum {\n  OK,\n  LISTA_LLENA,\n  POSICION_INVALIDA\n} TResultado;\n\ntypedef struct {\n  int elementos[MAX];\n  int cantidad;\n} TLista;\n\nvoid inicializar(TLista *l);\nint longitud(TLista l);\nint obtener(TLista l, int pos);\nTResultado insertar(TLista *l, int pos, int x);\n\n#endif",
+      "enunciado": "El archivo `lista.h` ya está escrito y lo ve en el editor. Agréguele una operación:\n- `eliminar`: saca el elemento que está en una posición. Recibe la lista por referencia y la posición, y devuelve un `TResultado`.\n\nLo que ya estaba no se cambia.\n! La declaración nueva va antes del `#endif`.",
+      "requiere": [
+        {
+          "encabezado": {
+            "guarda": "LISTA_H"
+          }
+        },
+        {
+          "struct": {
+            "capturar": "S",
+            "campos": [
+              {
+                "nombre": "elementos",
+                "tipo": "entero",
+                "arreglo": 10,
+                "constante": "MAX"
+              },
+              {
+                "nombre": "cantidad",
+                "tipo": "entero"
+              }
+            ]
+          }
+        },
+        {
+          "alias": {
+            "de": "$S",
+            "nombre": "TLista",
+            "capturar": "T"
+          }
+        },
+        {
+          "enum": {
+            "enumeradores": [
+              "OK",
+              "LISTA_LLENA",
+              "POSICION_INVALIDA"
+            ],
+            "capturar": "E"
+          }
+        },
+        {
+          "alias": {
+            "de": "$E",
+            "nombre": "TResultado",
+            "capturar": "R"
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "inicializar",
+            "retorna": "void",
+            "parametros": [
+              {
+                "tipo": "estructura",
+                "referencia": true
+              }
+            ]
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "longitud",
+            "retorna": "entero",
+            "parametros": [
+              {
+                "tipo": "estructura"
+              }
+            ]
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "obtener",
+            "retorna": "entero",
+            "parametros": [
+              {
+                "tipo": "estructura"
+              },
+              {
+                "tipo": "entero"
+              }
+            ]
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "insertar",
+            "retorna": "enumerado",
+            "parametros": [
+              {
+                "tipo": "estructura",
+                "referencia": true
+              },
+              {
+                "tipo": "entero"
+              },
+              {
+                "tipo": "entero"
+              }
+            ]
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "eliminar",
+            "retorna": "enumerado",
+            "parametros": [
+              {
+                "tipo": "estructura",
+                "referencia": true
+              },
+              {
+                "tipo": "entero"
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "#ifndef LISTA_H\n#define LISTA_H\n\n#define MAX 10\n\ntypedef enum {\n  OK,\n  LISTA_LLENA,\n  POSICION_INVALIDA\n} TResultado;\n\ntypedef struct {\n  int elementos[MAX];\n  int cantidad;\n} TLista;\n\nvoid inicializar(TLista *l);\nint longitud(TLista l);\nint obtener(TLista l, int pos);\nTResultado insertar(TLista *l, int pos, int x);\nTResultado eliminar(TLista *l, int pos);\n\n#endif"
+    },
+    {
+      "id": "tadla-c",
+      "titulo": "Definir eliminar",
+      "escribe": "lista.c",
+      "comienza": "#include \"lista.h\"\n\nvoid inicializar(TLista *l) {\n  l->cantidad = 0;\n}\n\nint longitud(TLista l) {\n  return l.cantidad;\n}\n\nint obtener(TLista l, int pos) {\n  return l.elementos[pos];\n}\n\nTResultado insertar(TLista *l, int pos, int x) {\n  if (l->cantidad == MAX) {\n    return LISTA_LLENA;\n  }\n  if (pos < 0 || pos > l->cantidad) {\n    return POSICION_INVALIDA;\n  }\n  for (int i = l->cantidad; i > pos; i--) {\n    l->elementos[i] = l->elementos[i - 1];\n  }\n  l->elementos[pos] = x;\n  l->cantidad = l->cantidad + 1;\n  return OK;\n}",
+      "dibujo": [
+        {
+          "titulo": "Antes: la lista [20, 12, 5, 30], con `cantidad` en 4:",
+          "valores": [
+            20,
+            12,
+            5,
+            30,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ]
+        },
+        {
+          "titulo": "Después de `eliminar(&l, 1)`: el 12 sale y los que le seguían se corren una posición hacia el comienzo (lo resaltado). `cantidad` pasa a 3:",
+          "valores": [
+            20,
+            5,
+            30,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "resaltar": [
+            1,
+            2
+          ]
+        }
+      ],
+      "enunciado": "Con su `lista.h` ampliado (lo ve arriba, en su pestaña), complete `lista.c`: ya define las cuatro operaciones de antes y está en el editor. Agréguele la definición de la nueva, al final:\n- `eliminar`: si la posición no está entre 0 y `cantidad` menos uno, devuelve `POSICION_INVALIDA` y la lista no cambia. Si no, saca el elemento de esa posición, corre una posición hacia el comienzo los que estaban después, resta uno a `cantidad` y devuelve `OK`.\n\nLo que ya estaba escrito no se cambia.",
+      "requiere": [
+        {
+          "incluyeLocal": "lista.h"
+        },
+        {
+          "sinTipos": true
+        },
+        {
+          "defineTodo": true
+        },
+        {
+          "funcion": {
+            "nombre": "eliminar",
+            "retorna": "enumerado",
+            "soloEnumeradores": true,
+            "parametros": [
+              {
+                "tipo": "estructura",
+                "referencia": true
+              },
+              {
+                "tipo": "entero"
+              }
+            ]
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "antes": "TLista l;\nl.cantidad = 4;\nl.elementos[0] = 20;\nl.elementos[1] = 12;\nl.elementos[2] = 5;\nl.elementos[3] = 30;",
+                "llama": "eliminar(&l, 1)",
+                "devuelve": "OK",
+                "contexto": "Eliminar la posición 1 de [20, 12, 5, 30]",
+                "visible": true,
+                "salida": ""
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 4;\nl.elementos[0] = 20;\nl.elementos[1] = 12;\nl.elementos[2] = 5;\nl.elementos[3] = 30;\neliminar(&l, 1);",
+                "llama": "l.cantidad",
+                "devuelve": 3,
+                "contexto": "Eliminar la posición 1 de [20, 12, 5, 30]: cuántos elementos tiene la lista después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 4;\nl.elementos[0] = 20;\nl.elementos[1] = 12;\nl.elementos[2] = 5;\nl.elementos[3] = 30;\neliminar(&l, 1);",
+                "llama": "l.elementos[0]",
+                "devuelve": 20,
+                "contexto": "Eliminar la posición 1 de [20, 12, 5, 30]: la posición 0 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 4;\nl.elementos[0] = 20;\nl.elementos[1] = 12;\nl.elementos[2] = 5;\nl.elementos[3] = 30;\neliminar(&l, 1);",
+                "llama": "l.elementos[1]",
+                "devuelve": 5,
+                "contexto": "Eliminar la posición 1 de [20, 12, 5, 30]: la posición 1 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 4;\nl.elementos[0] = 20;\nl.elementos[1] = 12;\nl.elementos[2] = 5;\nl.elementos[3] = 30;\neliminar(&l, 1);",
+                "llama": "l.elementos[2]",
+                "devuelve": 30,
+                "contexto": "Eliminar la posición 1 de [20, 12, 5, 30]: la posición 2 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\nl.elementos[2] = 30;",
+                "llama": "eliminar(&l, 0)",
+                "devuelve": "OK",
+                "contexto": "Eliminar la posición 0 (la primera) de [20, 5, 30]"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\nl.elementos[2] = 30;\neliminar(&l, 0);",
+                "llama": "l.cantidad",
+                "devuelve": 2,
+                "contexto": "Eliminar la posición 0 (la primera) de [20, 5, 30]: cuántos elementos tiene la lista después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\nl.elementos[2] = 30;\neliminar(&l, 0);",
+                "llama": "l.elementos[0]",
+                "devuelve": 5,
+                "contexto": "Eliminar la posición 0 (la primera) de [20, 5, 30]: la posición 0 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\nl.elementos[2] = 30;\neliminar(&l, 0);",
+                "llama": "l.elementos[1]",
+                "devuelve": 30,
+                "contexto": "Eliminar la posición 0 (la primera) de [20, 5, 30]: la posición 1 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\nl.elementos[2] = 30;",
+                "llama": "eliminar(&l, 2)",
+                "devuelve": "OK",
+                "contexto": "Eliminar la posición 2 (la última) de [20, 5, 30]"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\nl.elementos[2] = 30;\neliminar(&l, 2);",
+                "llama": "l.cantidad",
+                "devuelve": 2,
+                "contexto": "Eliminar la posición 2 (la última) de [20, 5, 30]: cuántos elementos tiene la lista después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\nl.elementos[2] = 30;\neliminar(&l, 2);",
+                "llama": "l.elementos[0]",
+                "devuelve": 20,
+                "contexto": "Eliminar la posición 2 (la última) de [20, 5, 30]: la posición 0 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\nl.elementos[2] = 30;\neliminar(&l, 2);",
+                "llama": "l.elementos[1]",
+                "devuelve": 5,
+                "contexto": "Eliminar la posición 2 (la última) de [20, 5, 30]: la posición 1 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 1;\nl.elementos[0] = 7;",
+                "llama": "eliminar(&l, 0)",
+                "devuelve": "OK",
+                "contexto": "Eliminar el único elemento"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 1;\nl.elementos[0] = 7;\neliminar(&l, 0);",
+                "llama": "l.cantidad",
+                "devuelve": 0,
+                "contexto": "Eliminar el único elemento: cuántos elementos tiene la lista después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 10;\nl.elementos[0] = 9;\nl.elementos[1] = 4;\nl.elementos[2] = 10;\nl.elementos[3] = 1;\nl.elementos[4] = 8;\nl.elementos[5] = 3;\nl.elementos[6] = 7;\nl.elementos[7] = 6;\nl.elementos[8] = 2;\nl.elementos[9] = 5;",
+                "llama": "eliminar(&l, 0)",
+                "devuelve": "OK",
+                "contexto": "Eliminar la primera de una lista llena"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 10;\nl.elementos[0] = 9;\nl.elementos[1] = 4;\nl.elementos[2] = 10;\nl.elementos[3] = 1;\nl.elementos[4] = 8;\nl.elementos[5] = 3;\nl.elementos[6] = 7;\nl.elementos[7] = 6;\nl.elementos[8] = 2;\nl.elementos[9] = 5;\neliminar(&l, 0);",
+                "llama": "l.cantidad",
+                "devuelve": 9,
+                "contexto": "Eliminar la primera de una lista llena: cuántos elementos tiene la lista después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 10;\nl.elementos[0] = 9;\nl.elementos[1] = 4;\nl.elementos[2] = 10;\nl.elementos[3] = 1;\nl.elementos[4] = 8;\nl.elementos[5] = 3;\nl.elementos[6] = 7;\nl.elementos[7] = 6;\nl.elementos[8] = 2;\nl.elementos[9] = 5;\neliminar(&l, 0);",
+                "llama": "l.elementos[0]",
+                "devuelve": 4,
+                "contexto": "Eliminar la primera de una lista llena: la posición 0 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 10;\nl.elementos[0] = 9;\nl.elementos[1] = 4;\nl.elementos[2] = 10;\nl.elementos[3] = 1;\nl.elementos[4] = 8;\nl.elementos[5] = 3;\nl.elementos[6] = 7;\nl.elementos[7] = 6;\nl.elementos[8] = 2;\nl.elementos[9] = 5;\neliminar(&l, 0);",
+                "llama": "l.elementos[1]",
+                "devuelve": 10,
+                "contexto": "Eliminar la primera de una lista llena: la posición 1 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 10;\nl.elementos[0] = 9;\nl.elementos[1] = 4;\nl.elementos[2] = 10;\nl.elementos[3] = 1;\nl.elementos[4] = 8;\nl.elementos[5] = 3;\nl.elementos[6] = 7;\nl.elementos[7] = 6;\nl.elementos[8] = 2;\nl.elementos[9] = 5;\neliminar(&l, 0);",
+                "llama": "l.elementos[2]",
+                "devuelve": 1,
+                "contexto": "Eliminar la primera de una lista llena: la posición 2 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 10;\nl.elementos[0] = 9;\nl.elementos[1] = 4;\nl.elementos[2] = 10;\nl.elementos[3] = 1;\nl.elementos[4] = 8;\nl.elementos[5] = 3;\nl.elementos[6] = 7;\nl.elementos[7] = 6;\nl.elementos[8] = 2;\nl.elementos[9] = 5;\neliminar(&l, 0);",
+                "llama": "l.elementos[3]",
+                "devuelve": 8,
+                "contexto": "Eliminar la primera de una lista llena: la posición 3 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 10;\nl.elementos[0] = 9;\nl.elementos[1] = 4;\nl.elementos[2] = 10;\nl.elementos[3] = 1;\nl.elementos[4] = 8;\nl.elementos[5] = 3;\nl.elementos[6] = 7;\nl.elementos[7] = 6;\nl.elementos[8] = 2;\nl.elementos[9] = 5;\neliminar(&l, 0);",
+                "llama": "l.elementos[4]",
+                "devuelve": 3,
+                "contexto": "Eliminar la primera de una lista llena: la posición 4 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 10;\nl.elementos[0] = 9;\nl.elementos[1] = 4;\nl.elementos[2] = 10;\nl.elementos[3] = 1;\nl.elementos[4] = 8;\nl.elementos[5] = 3;\nl.elementos[6] = 7;\nl.elementos[7] = 6;\nl.elementos[8] = 2;\nl.elementos[9] = 5;\neliminar(&l, 0);",
+                "llama": "l.elementos[5]",
+                "devuelve": 7,
+                "contexto": "Eliminar la primera de una lista llena: la posición 5 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 10;\nl.elementos[0] = 9;\nl.elementos[1] = 4;\nl.elementos[2] = 10;\nl.elementos[3] = 1;\nl.elementos[4] = 8;\nl.elementos[5] = 3;\nl.elementos[6] = 7;\nl.elementos[7] = 6;\nl.elementos[8] = 2;\nl.elementos[9] = 5;\neliminar(&l, 0);",
+                "llama": "l.elementos[6]",
+                "devuelve": 6,
+                "contexto": "Eliminar la primera de una lista llena: la posición 6 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 10;\nl.elementos[0] = 9;\nl.elementos[1] = 4;\nl.elementos[2] = 10;\nl.elementos[3] = 1;\nl.elementos[4] = 8;\nl.elementos[5] = 3;\nl.elementos[6] = 7;\nl.elementos[7] = 6;\nl.elementos[8] = 2;\nl.elementos[9] = 5;\neliminar(&l, 0);",
+                "llama": "l.elementos[7]",
+                "devuelve": 2,
+                "contexto": "Eliminar la primera de una lista llena: la posición 7 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 10;\nl.elementos[0] = 9;\nl.elementos[1] = 4;\nl.elementos[2] = 10;\nl.elementos[3] = 1;\nl.elementos[4] = 8;\nl.elementos[5] = 3;\nl.elementos[6] = 7;\nl.elementos[7] = 6;\nl.elementos[8] = 2;\nl.elementos[9] = 5;\neliminar(&l, 0);",
+                "llama": "l.elementos[8]",
+                "devuelve": 5,
+                "contexto": "Eliminar la primera de una lista llena: la posición 8 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\nl.elementos[2] = 30;",
+                "llama": "eliminar(&l, 3)",
+                "devuelve": "POSICION_INVALIDA",
+                "contexto": "Eliminar la posición 3 de una lista con 3 elementos",
+                "visible": true,
+                "salida": ""
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\nl.elementos[2] = 30;\neliminar(&l, 3);",
+                "llama": "l.cantidad",
+                "devuelve": 3,
+                "contexto": "Eliminar la posición 3 de una lista con 3 elementos: cuántos elementos tiene la lista después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\nl.elementos[2] = 30;\neliminar(&l, 3);",
+                "llama": "l.elementos[0]",
+                "devuelve": 20,
+                "contexto": "Eliminar la posición 3 de una lista con 3 elementos: la posición 0 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\nl.elementos[2] = 30;\neliminar(&l, 3);",
+                "llama": "l.elementos[1]",
+                "devuelve": 5,
+                "contexto": "Eliminar la posición 3 de una lista con 3 elementos: la posición 1 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\nl.elementos[2] = 30;\neliminar(&l, 3);",
+                "llama": "l.elementos[2]",
+                "devuelve": 30,
+                "contexto": "Eliminar la posición 3 de una lista con 3 elementos: la posición 2 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\nl.elementos[2] = 30;",
+                "llama": "eliminar(&l, -1)",
+                "devuelve": "POSICION_INVALIDA",
+                "contexto": "Eliminar la posición -1"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\nl.elementos[2] = 30;\neliminar(&l, -1);",
+                "llama": "l.cantidad",
+                "devuelve": 3,
+                "contexto": "Eliminar la posición -1: cuántos elementos tiene la lista después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\nl.elementos[2] = 30;\neliminar(&l, -1);",
+                "llama": "l.elementos[0]",
+                "devuelve": 20,
+                "contexto": "Eliminar la posición -1: la posición 0 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\nl.elementos[2] = 30;\neliminar(&l, -1);",
+                "llama": "l.elementos[1]",
+                "devuelve": 5,
+                "contexto": "Eliminar la posición -1: la posición 1 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\nl.elementos[2] = 30;\neliminar(&l, -1);",
+                "llama": "l.elementos[2]",
+                "devuelve": 30,
+                "contexto": "Eliminar la posición -1: la posición 2 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 0;",
+                "llama": "eliminar(&l, 0)",
+                "devuelve": "POSICION_INVALIDA",
+                "contexto": "Eliminar la posición 0 de una lista vacía"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 0;\neliminar(&l, 0);",
+                "llama": "l.cantidad",
+                "devuelve": 0,
+                "contexto": "Eliminar la posición 0 de una lista vacía: cuántos elementos tiene la lista después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\nl.elementos[2] = 30;\neliminar(&l, 1);\ninsertar(&l, 1, 99);",
+                "llama": "l.elementos[1]",
+                "devuelve": 99,
+                "contexto": "Eliminar la posición 1 de [20, 5, 30] y volver a insertar en ella el 99"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\nl.elementos[2] = 30;\neliminar(&l, 1);\ninsertar(&l, 1, 99);",
+                "llama": "l.elementos[2]",
+                "devuelve": 30,
+                "contexto": "Eliminar la posición 1 de [20, 5, 30] e insertar el 99: la posición 2"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\nl.elementos[2] = 30;",
+                "llama": "insertar(&l, 1, 12)",
+                "devuelve": "OK",
+                "contexto": "Las operaciones de antes siguen funcionando: insertar el 12 en la posición 1 de [20, 5, 30]"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\nl.elementos[2] = 30;\ninsertar(&l, 1, 12);",
+                "llama": "l.cantidad",
+                "devuelve": 4,
+                "contexto": "Las operaciones de antes siguen funcionando: insertar el 12 en la posición 1 de [20, 5, 30]: cuántos elementos tiene la lista después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\nl.elementos[2] = 30;\ninsertar(&l, 1, 12);",
+                "llama": "l.elementos[0]",
+                "devuelve": 20,
+                "contexto": "Las operaciones de antes siguen funcionando: insertar el 12 en la posición 1 de [20, 5, 30]: la posición 0 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\nl.elementos[2] = 30;\ninsertar(&l, 1, 12);",
+                "llama": "l.elementos[1]",
+                "devuelve": 12,
+                "contexto": "Las operaciones de antes siguen funcionando: insertar el 12 en la posición 1 de [20, 5, 30]: la posición 1 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\nl.elementos[2] = 30;\ninsertar(&l, 1, 12);",
+                "llama": "l.elementos[2]",
+                "devuelve": 5,
+                "contexto": "Las operaciones de antes siguen funcionando: insertar el 12 en la posición 1 de [20, 5, 30]: la posición 2 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\nl.elementos[2] = 30;\ninsertar(&l, 1, 12);",
+                "llama": "l.elementos[3]",
+                "devuelve": 30,
+                "contexto": "Las operaciones de antes siguen funcionando: insertar el 12 en la posición 1 de [20, 5, 30]: la posición 3 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 10;\nl.elementos[0] = 9;\nl.elementos[1] = 4;\nl.elementos[2] = 10;\nl.elementos[3] = 1;\nl.elementos[4] = 8;\nl.elementos[5] = 3;\nl.elementos[6] = 7;\nl.elementos[7] = 6;\nl.elementos[8] = 2;\nl.elementos[9] = 5;",
+                "llama": "insertar(&l, 5, 99)",
+                "devuelve": "LISTA_LLENA",
+                "contexto": "Las operaciones de antes siguen funcionando: insertar en una lista llena"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 10;\nl.elementos[0] = 9;\nl.elementos[1] = 4;\nl.elementos[2] = 10;\nl.elementos[3] = 1;\nl.elementos[4] = 8;\nl.elementos[5] = 3;\nl.elementos[6] = 7;\nl.elementos[7] = 6;\nl.elementos[8] = 2;\nl.elementos[9] = 5;\ninsertar(&l, 5, 99);",
+                "llama": "l.cantidad",
+                "devuelve": 10,
+                "contexto": "Las operaciones de antes siguen funcionando: insertar en una lista llena: cuántos elementos tiene la lista después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 7;\nl.elementos[1] = 4;\nl.elementos[2] = 9;",
+                "llama": "obtener(l, 2)",
+                "devuelve": 9,
+                "contexto": "Las operaciones de antes siguen funcionando: la posición 2 de [7, 4, 9]"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 7;\nl.elementos[1] = 4;\nl.elementos[2] = 9;",
+                "llama": "longitud(l)",
+                "devuelve": 3,
+                "contexto": "Las operaciones de antes siguen funcionando: la longitud de [7, 4, 9]"
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "#include \"lista.h\"\n\nvoid inicializar(TLista *l) {\n  l->cantidad = 0;\n}\n\nint longitud(TLista l) {\n  return l.cantidad;\n}\n\nint obtener(TLista l, int pos) {\n  return l.elementos[pos];\n}\n\nTResultado insertar(TLista *l, int pos, int x) {\n  if (l->cantidad == MAX) {\n    return LISTA_LLENA;\n  }\n  if (pos < 0 || pos > l->cantidad) {\n    return POSICION_INVALIDA;\n  }\n  for (int i = l->cantidad; i > pos; i--) {\n    l->elementos[i] = l->elementos[i - 1];\n  }\n  l->elementos[pos] = x;\n  l->cantidad = l->cantidad + 1;\n  return OK;\n}\n\nTResultado eliminar(TLista *l, int pos) {\n  if (pos < 0 || pos >= l->cantidad) {\n    return POSICION_INVALIDA;\n  }\n  for (int i = pos; i < l->cantidad - 1; i++) {\n    l->elementos[i] = l->elementos[i + 1];\n  }\n  l->cantidad = l->cantidad - 1;\n  return OK;\n}"
+    },
+    {
+      "id": "tadla-main",
+      "titulo": "Intercambiar posiciones",
+      "escribe": "main.c",
+      "inicializa": "inicializar",
+      "enunciado": "Con su `lista.h` y su `lista.c` ampliados, escriba `main.c`. Lea con `scanf`, en este orden:\n- la cantidad de números `n`, a lo sumo 10\n- los `n` números, que se guardan en una lista, uno a continuación del otro\n- una posición\n- otra posición\n\nIntercambie los elementos de esas dos posiciones: el que estaba en una pasa a la otra, y al revés. Muestre con `printf`, separados por un espacio, los elementos de la lista. Se supone que las dos posiciones existen en la lista y que pueden llegar en cualquier orden. Por ejemplo, si se ingresan:\n- `4` (cantidad de números)\n- `15`, `31`, `8` y `22` (los números)\n- `0` (una posición)\n- `2` (la otra posición)\n\nel programa muestra `8 31 15 22`.\nUse solo las operaciones del `.h`.",
+      "requiere": [
+        {
+          "incluyeLocal": "lista.h"
+        },
+        {
+          "soloOperaciones": "TLista"
+        },
+        {
+          "usaOperaciones": [
+            "inicializar",
+            "insertar",
+            "eliminar",
+            "longitud",
+            "obtener"
+          ]
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "entrada": [
+                  4,
+                  15,
+                  31,
+                  8,
+                  22,
+                  0,
+                  2
+                ],
+                "muestra": [
+                  8,
+                  31,
+                  15,
+                  22
+                ],
+                "separadas": true
+              },
+              {
+                "entrada": [
+                  4,
+                  15,
+                  31,
+                  8,
+                  22,
+                  2,
+                  0
+                ],
+                "muestra": [
+                  8,
+                  31,
+                  15,
+                  22
+                ],
+                "separadas": true
+              },
+              {
+                "entrada": [
+                  4,
+                  15,
+                  31,
+                  8,
+                  22,
+                  1,
+                  3
+                ],
+                "muestra": [
+                  15,
+                  22,
+                  8,
+                  31
+                ],
+                "separadas": true
+              },
+              {
+                "entrada": [
+                  4,
+                  15,
+                  31,
+                  8,
+                  22,
+                  3,
+                  1
+                ],
+                "muestra": [
+                  15,
+                  22,
+                  8,
+                  31
+                ],
+                "separadas": true
+              },
+              {
+                "entrada": [
+                  3,
+                  6,
+                  2,
+                  9,
+                  1,
+                  1
+                ],
+                "muestra": [
+                  6,
+                  2,
+                  9
+                ],
+                "separadas": true
+              },
+              {
+                "entrada": [
+                  2,
+                  7,
+                  3,
+                  0,
+                  1
+                ],
+                "muestra": [
+                  3,
+                  7
+                ],
+                "separadas": true
+              },
+              {
+                "entrada": [
+                  1,
+                  5,
+                  0,
+                  0
+                ],
+                "muestra": [
+                  5
+                ],
+                "separadas": true
+              },
+              {
+                "entrada": [
+                  10,
+                  9,
+                  4,
+                  10,
+                  1,
+                  8,
+                  3,
+                  7,
+                  6,
+                  2,
+                  5,
+                  0,
+                  9
+                ],
+                "muestra": [
+                  5,
+                  4,
+                  10,
+                  1,
+                  8,
+                  3,
+                  7,
+                  6,
+                  2,
+                  9
+                ],
+                "separadas": true
+              },
+              {
+                "entrada": [
+                  10,
+                  9,
+                  4,
+                  10,
+                  1,
+                  8,
+                  3,
+                  7,
+                  6,
+                  2,
+                  5,
+                  5,
+                  4
+                ],
+                "muestra": [
+                  9,
+                  4,
+                  10,
+                  1,
+                  3,
+                  8,
+                  7,
+                  6,
+                  2,
+                  5
+                ],
+                "separadas": true
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "#include <stdio.h>\n#include \"lista.h\"\n\nint main() {\n  TLista l;\n  int n;\n  int x;\n  int p;\n  int q;\n  int a;\n  int b;\n\n  inicializar(&l);\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%d\", &x);\n    insertar(&l, longitud(l), x);\n  }\n  scanf(\"%d\", &p);\n  scanf(\"%d\", &q);\n  a = obtener(l, p);\n  b = obtener(l, q);\n  eliminar(&l, p);\n  insertar(&l, p, b);\n  eliminar(&l, q);\n  insertar(&l, q, a);\n  for (int i = 0; i < longitud(l); i++) {\n    printf(\"%d \", obtener(l, i));\n  }\n  return 0;\n}"
+    }
+  ]
+}

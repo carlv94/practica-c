@@ -1,0 +1,903 @@
+{
+  "id": "tad-lista",
+  "titulo": "Un TAD con posiciones: la lista",
+  "continua": true,
+  "descripcion": "Una lista de números enteros guardada en un arreglo: insertar en cualquier posición obliga a correr los elementos que siguen, y la operación avisa con un enumerado si no pudo.",
+  "consignas": [
+    {
+      "id": "tadl-h",
+      "titulo": "El archivo de la lista",
+      "escribe": "lista.h",
+      "enunciado": "Escriba `lista.h`, el archivo que describe el TAD lista de números enteros. Una lista guarda hasta 10 números en un arreglo `elementos`, en el orden de la lista, y lleva un campo `cantidad` con cuántos hay, en ese orden. El tamaño del arreglo es la constante `MAX`, que vale 10, y el tipo se llama `TLista`. Las posiciones de la lista empiezan en 0. Declare también el enumerado `TResultado`, con los valores `OK`, `LISTA_LLENA` y `POSICION_INVALIDA` (en ese orden): una de las operaciones lo usa para decir si pudo hacer lo que se le pidió. Tiene cuatro operaciones:\n- `inicializar`: la deja vacía. Recibe la lista por referencia y no devuelve nada.\n- `longitud`: devuelve cuántos elementos tiene. Recibe la lista por valor.\n- `obtener`: devuelve el elemento que está en una posición. Recibe la lista por valor y la posición.\n- `insertar`: mete un número en una posición. Recibe la lista por referencia, la posición y el número, y devuelve un `TResultado`.\n\nUse las guardas de inclusión `LISTA_H`.",
+      "requiere": [
+        {
+          "encabezado": {
+            "guarda": "LISTA_H"
+          }
+        },
+        {
+          "struct": {
+            "capturar": "S",
+            "campos": [
+              {
+                "nombre": "elementos",
+                "tipo": "entero",
+                "arreglo": 10,
+                "constante": "MAX"
+              },
+              {
+                "nombre": "cantidad",
+                "tipo": "entero"
+              }
+            ]
+          }
+        },
+        {
+          "alias": {
+            "de": "$S",
+            "nombre": "TLista",
+            "capturar": "T"
+          }
+        },
+        {
+          "enum": {
+            "enumeradores": [
+              "OK",
+              "LISTA_LLENA",
+              "POSICION_INVALIDA"
+            ],
+            "capturar": "E"
+          }
+        },
+        {
+          "alias": {
+            "de": "$E",
+            "nombre": "TResultado",
+            "capturar": "R"
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "inicializar",
+            "retorna": "void",
+            "parametros": [
+              {
+                "tipo": "estructura",
+                "referencia": true
+              }
+            ]
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "longitud",
+            "retorna": "entero",
+            "parametros": [
+              {
+                "tipo": "estructura"
+              }
+            ]
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "obtener",
+            "retorna": "entero",
+            "parametros": [
+              {
+                "tipo": "estructura"
+              },
+              {
+                "tipo": "entero"
+              }
+            ]
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "insertar",
+            "retorna": "enumerado",
+            "parametros": [
+              {
+                "tipo": "estructura",
+                "referencia": true
+              },
+              {
+                "tipo": "entero"
+              },
+              {
+                "tipo": "entero"
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "#ifndef LISTA_H\n#define LISTA_H\n\n#define MAX 10\n\ntypedef enum {\n  OK,\n  LISTA_LLENA,\n  POSICION_INVALIDA\n} TResultado;\n\ntypedef struct {\n  int elementos[MAX];\n  int cantidad;\n} TLista;\n\nvoid inicializar(TLista *l);\nint longitud(TLista l);\nint obtener(TLista l, int pos);\nTResultado insertar(TLista *l, int pos, int x);\n\n#endif"
+    },
+    {
+      "id": "tadl-c",
+      "titulo": "La implementación de la lista",
+      "escribe": "lista.c",
+      "dibujo": [
+        {
+          "titulo": "Antes: la lista [20, 5, 30], con `cantidad` en 3:",
+          "valores": [
+            20,
+            5,
+            30,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ]
+        },
+        {
+          "titulo": "Después de `insertar(&l, 1, 12)`: el 12 entra en la posición 1 y los que estaban desde ahí se corren una posición hacia el final (lo resaltado). `cantidad` pasa a 4:",
+          "valores": [
+            20,
+            12,
+            5,
+            30,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "resaltar": [
+            1,
+            2,
+            3
+          ]
+        }
+      ],
+      "enunciado": "Ahora escriba `lista.c`, que define las cuatro operaciones del `lista.h` que acaba de escribir (lo ve arriba, en su pestaña). Los elementos se guardan en `elementos` desde la posición 0, en el orden de la lista, y `cantidad` dice cuántos hay: vale 0 cuando la lista está vacía. Las operaciones hacen lo siguiente:\n- `inicializar`: deja la lista vacía.\n- `longitud`: devuelve cuántos elementos hay.\n- `obtener`: devuelve el elemento que está en la posición que recibe.\n- `insertar`: si la lista está llena, devuelve `LISTA_LLENA`; si no, y la posición no está entre 0 y `cantidad` (la posición `cantidad` es al final), devuelve `POSICION_INVALIDA`. En esos dos casos la lista no cambia. Si no, mete el número en esa posición, corre una posición hacia el final los elementos que estaban desde ahí, suma uno a `cantidad` y devuelve `OK`.\n\nSe supone que `obtener` se usa siempre con una posición que existe. No olvide incluir el `.h`.",
+      "requiere": [
+        {
+          "incluyeLocal": "lista.h"
+        },
+        {
+          "sinTipos": true
+        },
+        {
+          "defineTodo": true
+        },
+        {
+          "funcion": {
+            "nombre": "insertar",
+            "retorna": "enumerado",
+            "soloEnumeradores": true,
+            "parametros": [
+              {
+                "tipo": "estructura",
+                "referencia": true
+              },
+              {
+                "tipo": "entero"
+              },
+              {
+                "tipo": "entero"
+              }
+            ]
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "antes": "TLista l;\nl.cantidad = 5;\ninicializar(&l);",
+                "llama": "l.cantidad",
+                "devuelve": 0,
+                "contexto": "Después de inicializar una lista que tenía 5 elementos",
+                "visible": true
+              },
+              {
+                "antes": "TLista l;\ninicializar(&l);",
+                "llama": "longitud(l)",
+                "devuelve": 0,
+                "contexto": "Con una lista recién inicializada"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 0;",
+                "llama": "longitud(l)",
+                "devuelve": 0,
+                "contexto": "La lista vacía"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 7;\nl.elementos[1] = 4;\nl.elementos[2] = 9;",
+                "llama": "longitud(l)",
+                "devuelve": 3,
+                "contexto": "La lista [7, 4, 9]",
+                "visible": true
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 10;\nl.elementos[0] = 9;\nl.elementos[1] = 4;\nl.elementos[2] = 10;\nl.elementos[3] = 1;\nl.elementos[4] = 8;\nl.elementos[5] = 3;\nl.elementos[6] = 7;\nl.elementos[7] = 6;\nl.elementos[8] = 2;\nl.elementos[9] = 5;",
+                "llama": "longitud(l)",
+                "devuelve": 10,
+                "contexto": "La lista llena: [9, 4, 10, 1, 8, 3, 7, 6, 2, 5]"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 7;\nl.elementos[1] = 4;\nl.elementos[2] = 9;",
+                "llama": "obtener(l, 0)",
+                "devuelve": 7,
+                "contexto": "La posición 0 de [7, 4, 9]",
+                "visible": true
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 7;\nl.elementos[1] = 4;\nl.elementos[2] = 9;",
+                "llama": "obtener(l, 1)",
+                "devuelve": 4,
+                "contexto": "La posición 1 de [7, 4, 9]"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 7;\nl.elementos[1] = 4;\nl.elementos[2] = 9;",
+                "llama": "obtener(l, 2)",
+                "devuelve": 9,
+                "contexto": "La posición 2 de [7, 4, 9]"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 1;\nl.elementos[0] = -3;",
+                "llama": "obtener(l, 0)",
+                "devuelve": -3,
+                "contexto": "La posición 0 de [-3]"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\nl.elementos[2] = 30;",
+                "llama": "insertar(&l, 1, 12)",
+                "devuelve": "OK",
+                "contexto": "Insertar el 12 en la posición 1 de [20, 5, 30]",
+                "visible": true,
+                "salida": ""
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\nl.elementos[2] = 30;\ninsertar(&l, 1, 12);",
+                "llama": "l.cantidad",
+                "devuelve": 4,
+                "contexto": "Insertar el 12 en la posición 1 de [20, 5, 30]: cuántos elementos tiene la lista después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\nl.elementos[2] = 30;\ninsertar(&l, 1, 12);",
+                "llama": "l.elementos[0]",
+                "devuelve": 20,
+                "contexto": "Insertar el 12 en la posición 1 de [20, 5, 30]: la posición 0 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\nl.elementos[2] = 30;\ninsertar(&l, 1, 12);",
+                "llama": "l.elementos[1]",
+                "devuelve": 12,
+                "contexto": "Insertar el 12 en la posición 1 de [20, 5, 30]: la posición 1 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\nl.elementos[2] = 30;\ninsertar(&l, 1, 12);",
+                "llama": "l.elementos[2]",
+                "devuelve": 5,
+                "contexto": "Insertar el 12 en la posición 1 de [20, 5, 30]: la posición 2 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\nl.elementos[2] = 30;\ninsertar(&l, 1, 12);",
+                "llama": "l.elementos[3]",
+                "devuelve": 30,
+                "contexto": "Insertar el 12 en la posición 1 de [20, 5, 30]: la posición 3 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\nl.elementos[2] = 30;",
+                "llama": "insertar(&l, 0, 9)",
+                "devuelve": "OK",
+                "contexto": "Insertar el 9 al principio de [20, 5, 30]"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\nl.elementos[2] = 30;\ninsertar(&l, 0, 9);",
+                "llama": "l.cantidad",
+                "devuelve": 4,
+                "contexto": "Insertar el 9 al principio de [20, 5, 30]: cuántos elementos tiene la lista después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\nl.elementos[2] = 30;\ninsertar(&l, 0, 9);",
+                "llama": "l.elementos[0]",
+                "devuelve": 9,
+                "contexto": "Insertar el 9 al principio de [20, 5, 30]: la posición 0 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\nl.elementos[2] = 30;\ninsertar(&l, 0, 9);",
+                "llama": "l.elementos[1]",
+                "devuelve": 20,
+                "contexto": "Insertar el 9 al principio de [20, 5, 30]: la posición 1 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\nl.elementos[2] = 30;\ninsertar(&l, 0, 9);",
+                "llama": "l.elementos[2]",
+                "devuelve": 5,
+                "contexto": "Insertar el 9 al principio de [20, 5, 30]: la posición 2 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\nl.elementos[2] = 30;\ninsertar(&l, 0, 9);",
+                "llama": "l.elementos[3]",
+                "devuelve": 30,
+                "contexto": "Insertar el 9 al principio de [20, 5, 30]: la posición 3 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\nl.elementos[2] = 30;",
+                "llama": "insertar(&l, 3, 14)",
+                "devuelve": "OK",
+                "contexto": "Insertar el 14 al final de [20, 5, 30] (posición 3)"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\nl.elementos[2] = 30;\ninsertar(&l, 3, 14);",
+                "llama": "l.cantidad",
+                "devuelve": 4,
+                "contexto": "Insertar el 14 al final de [20, 5, 30] (posición 3): cuántos elementos tiene la lista después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\nl.elementos[2] = 30;\ninsertar(&l, 3, 14);",
+                "llama": "l.elementos[0]",
+                "devuelve": 20,
+                "contexto": "Insertar el 14 al final de [20, 5, 30] (posición 3): la posición 0 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\nl.elementos[2] = 30;\ninsertar(&l, 3, 14);",
+                "llama": "l.elementos[1]",
+                "devuelve": 5,
+                "contexto": "Insertar el 14 al final de [20, 5, 30] (posición 3): la posición 1 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\nl.elementos[2] = 30;\ninsertar(&l, 3, 14);",
+                "llama": "l.elementos[2]",
+                "devuelve": 30,
+                "contexto": "Insertar el 14 al final de [20, 5, 30] (posición 3): la posición 2 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\nl.elementos[2] = 30;\ninsertar(&l, 3, 14);",
+                "llama": "l.elementos[3]",
+                "devuelve": 14,
+                "contexto": "Insertar el 14 al final de [20, 5, 30] (posición 3): la posición 3 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 0;",
+                "llama": "insertar(&l, 0, 7)",
+                "devuelve": "OK",
+                "contexto": "Insertar el 7 en una lista vacía"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 0;\ninsertar(&l, 0, 7);",
+                "llama": "l.cantidad",
+                "devuelve": 1,
+                "contexto": "Insertar el 7 en una lista vacía: cuántos elementos tiene la lista después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 0;\ninsertar(&l, 0, 7);",
+                "llama": "l.elementos[0]",
+                "devuelve": 7,
+                "contexto": "Insertar el 7 en una lista vacía: la posición 0 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 9;\nl.elementos[0] = 9;\nl.elementos[1] = 4;\nl.elementos[2] = 7;\nl.elementos[3] = 1;\nl.elementos[4] = 8;\nl.elementos[5] = 3;\nl.elementos[6] = 6;\nl.elementos[7] = 2;\nl.elementos[8] = 5;",
+                "llama": "insertar(&l, 4, 99)",
+                "devuelve": "OK",
+                "contexto": "Insertar el 99 en la posición 4 de [9, 4, 7, 1, 8, 3, 6, 2, 5]"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 9;\nl.elementos[0] = 9;\nl.elementos[1] = 4;\nl.elementos[2] = 7;\nl.elementos[3] = 1;\nl.elementos[4] = 8;\nl.elementos[5] = 3;\nl.elementos[6] = 6;\nl.elementos[7] = 2;\nl.elementos[8] = 5;\ninsertar(&l, 4, 99);",
+                "llama": "l.cantidad",
+                "devuelve": 10,
+                "contexto": "Insertar el 99 en la posición 4 de [9, 4, 7, 1, 8, 3, 6, 2, 5]: cuántos elementos tiene la lista después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 9;\nl.elementos[0] = 9;\nl.elementos[1] = 4;\nl.elementos[2] = 7;\nl.elementos[3] = 1;\nl.elementos[4] = 8;\nl.elementos[5] = 3;\nl.elementos[6] = 6;\nl.elementos[7] = 2;\nl.elementos[8] = 5;\ninsertar(&l, 4, 99);",
+                "llama": "l.elementos[0]",
+                "devuelve": 9,
+                "contexto": "Insertar el 99 en la posición 4 de [9, 4, 7, 1, 8, 3, 6, 2, 5]: la posición 0 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 9;\nl.elementos[0] = 9;\nl.elementos[1] = 4;\nl.elementos[2] = 7;\nl.elementos[3] = 1;\nl.elementos[4] = 8;\nl.elementos[5] = 3;\nl.elementos[6] = 6;\nl.elementos[7] = 2;\nl.elementos[8] = 5;\ninsertar(&l, 4, 99);",
+                "llama": "l.elementos[1]",
+                "devuelve": 4,
+                "contexto": "Insertar el 99 en la posición 4 de [9, 4, 7, 1, 8, 3, 6, 2, 5]: la posición 1 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 9;\nl.elementos[0] = 9;\nl.elementos[1] = 4;\nl.elementos[2] = 7;\nl.elementos[3] = 1;\nl.elementos[4] = 8;\nl.elementos[5] = 3;\nl.elementos[6] = 6;\nl.elementos[7] = 2;\nl.elementos[8] = 5;\ninsertar(&l, 4, 99);",
+                "llama": "l.elementos[2]",
+                "devuelve": 7,
+                "contexto": "Insertar el 99 en la posición 4 de [9, 4, 7, 1, 8, 3, 6, 2, 5]: la posición 2 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 9;\nl.elementos[0] = 9;\nl.elementos[1] = 4;\nl.elementos[2] = 7;\nl.elementos[3] = 1;\nl.elementos[4] = 8;\nl.elementos[5] = 3;\nl.elementos[6] = 6;\nl.elementos[7] = 2;\nl.elementos[8] = 5;\ninsertar(&l, 4, 99);",
+                "llama": "l.elementos[3]",
+                "devuelve": 1,
+                "contexto": "Insertar el 99 en la posición 4 de [9, 4, 7, 1, 8, 3, 6, 2, 5]: la posición 3 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 9;\nl.elementos[0] = 9;\nl.elementos[1] = 4;\nl.elementos[2] = 7;\nl.elementos[3] = 1;\nl.elementos[4] = 8;\nl.elementos[5] = 3;\nl.elementos[6] = 6;\nl.elementos[7] = 2;\nl.elementos[8] = 5;\ninsertar(&l, 4, 99);",
+                "llama": "l.elementos[4]",
+                "devuelve": 99,
+                "contexto": "Insertar el 99 en la posición 4 de [9, 4, 7, 1, 8, 3, 6, 2, 5]: la posición 4 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 9;\nl.elementos[0] = 9;\nl.elementos[1] = 4;\nl.elementos[2] = 7;\nl.elementos[3] = 1;\nl.elementos[4] = 8;\nl.elementos[5] = 3;\nl.elementos[6] = 6;\nl.elementos[7] = 2;\nl.elementos[8] = 5;\ninsertar(&l, 4, 99);",
+                "llama": "l.elementos[5]",
+                "devuelve": 8,
+                "contexto": "Insertar el 99 en la posición 4 de [9, 4, 7, 1, 8, 3, 6, 2, 5]: la posición 5 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 9;\nl.elementos[0] = 9;\nl.elementos[1] = 4;\nl.elementos[2] = 7;\nl.elementos[3] = 1;\nl.elementos[4] = 8;\nl.elementos[5] = 3;\nl.elementos[6] = 6;\nl.elementos[7] = 2;\nl.elementos[8] = 5;\ninsertar(&l, 4, 99);",
+                "llama": "l.elementos[6]",
+                "devuelve": 3,
+                "contexto": "Insertar el 99 en la posición 4 de [9, 4, 7, 1, 8, 3, 6, 2, 5]: la posición 6 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 9;\nl.elementos[0] = 9;\nl.elementos[1] = 4;\nl.elementos[2] = 7;\nl.elementos[3] = 1;\nl.elementos[4] = 8;\nl.elementos[5] = 3;\nl.elementos[6] = 6;\nl.elementos[7] = 2;\nl.elementos[8] = 5;\ninsertar(&l, 4, 99);",
+                "llama": "l.elementos[7]",
+                "devuelve": 6,
+                "contexto": "Insertar el 99 en la posición 4 de [9, 4, 7, 1, 8, 3, 6, 2, 5]: la posición 7 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 9;\nl.elementos[0] = 9;\nl.elementos[1] = 4;\nl.elementos[2] = 7;\nl.elementos[3] = 1;\nl.elementos[4] = 8;\nl.elementos[5] = 3;\nl.elementos[6] = 6;\nl.elementos[7] = 2;\nl.elementos[8] = 5;\ninsertar(&l, 4, 99);",
+                "llama": "l.elementos[8]",
+                "devuelve": 2,
+                "contexto": "Insertar el 99 en la posición 4 de [9, 4, 7, 1, 8, 3, 6, 2, 5]: la posición 8 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 9;\nl.elementos[0] = 9;\nl.elementos[1] = 4;\nl.elementos[2] = 7;\nl.elementos[3] = 1;\nl.elementos[4] = 8;\nl.elementos[5] = 3;\nl.elementos[6] = 6;\nl.elementos[7] = 2;\nl.elementos[8] = 5;\ninsertar(&l, 4, 99);",
+                "llama": "l.elementos[9]",
+                "devuelve": 5,
+                "contexto": "Insertar el 99 en la posición 4 de [9, 4, 7, 1, 8, 3, 6, 2, 5]: la posición 9 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 10;\nl.elementos[0] = 9;\nl.elementos[1] = 4;\nl.elementos[2] = 10;\nl.elementos[3] = 1;\nl.elementos[4] = 8;\nl.elementos[5] = 3;\nl.elementos[6] = 7;\nl.elementos[7] = 6;\nl.elementos[8] = 2;\nl.elementos[9] = 5;",
+                "llama": "insertar(&l, 5, 99)",
+                "devuelve": "LISTA_LLENA",
+                "contexto": "Insertar en una lista llena",
+                "visible": true,
+                "salida": ""
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 10;\nl.elementos[0] = 9;\nl.elementos[1] = 4;\nl.elementos[2] = 10;\nl.elementos[3] = 1;\nl.elementos[4] = 8;\nl.elementos[5] = 3;\nl.elementos[6] = 7;\nl.elementos[7] = 6;\nl.elementos[8] = 2;\nl.elementos[9] = 5;\ninsertar(&l, 5, 99);",
+                "llama": "l.cantidad",
+                "devuelve": 10,
+                "contexto": "Insertar en una lista llena: cuántos elementos tiene la lista después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 10;\nl.elementos[0] = 9;\nl.elementos[1] = 4;\nl.elementos[2] = 10;\nl.elementos[3] = 1;\nl.elementos[4] = 8;\nl.elementos[5] = 3;\nl.elementos[6] = 7;\nl.elementos[7] = 6;\nl.elementos[8] = 2;\nl.elementos[9] = 5;\ninsertar(&l, 5, 99);",
+                "llama": "l.elementos[0]",
+                "devuelve": 9,
+                "contexto": "Insertar en una lista llena: la posición 0 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 10;\nl.elementos[0] = 9;\nl.elementos[1] = 4;\nl.elementos[2] = 10;\nl.elementos[3] = 1;\nl.elementos[4] = 8;\nl.elementos[5] = 3;\nl.elementos[6] = 7;\nl.elementos[7] = 6;\nl.elementos[8] = 2;\nl.elementos[9] = 5;\ninsertar(&l, 5, 99);",
+                "llama": "l.elementos[1]",
+                "devuelve": 4,
+                "contexto": "Insertar en una lista llena: la posición 1 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 10;\nl.elementos[0] = 9;\nl.elementos[1] = 4;\nl.elementos[2] = 10;\nl.elementos[3] = 1;\nl.elementos[4] = 8;\nl.elementos[5] = 3;\nl.elementos[6] = 7;\nl.elementos[7] = 6;\nl.elementos[8] = 2;\nl.elementos[9] = 5;\ninsertar(&l, 5, 99);",
+                "llama": "l.elementos[2]",
+                "devuelve": 10,
+                "contexto": "Insertar en una lista llena: la posición 2 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 10;\nl.elementos[0] = 9;\nl.elementos[1] = 4;\nl.elementos[2] = 10;\nl.elementos[3] = 1;\nl.elementos[4] = 8;\nl.elementos[5] = 3;\nl.elementos[6] = 7;\nl.elementos[7] = 6;\nl.elementos[8] = 2;\nl.elementos[9] = 5;\ninsertar(&l, 5, 99);",
+                "llama": "l.elementos[3]",
+                "devuelve": 1,
+                "contexto": "Insertar en una lista llena: la posición 3 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 10;\nl.elementos[0] = 9;\nl.elementos[1] = 4;\nl.elementos[2] = 10;\nl.elementos[3] = 1;\nl.elementos[4] = 8;\nl.elementos[5] = 3;\nl.elementos[6] = 7;\nl.elementos[7] = 6;\nl.elementos[8] = 2;\nl.elementos[9] = 5;\ninsertar(&l, 5, 99);",
+                "llama": "l.elementos[4]",
+                "devuelve": 8,
+                "contexto": "Insertar en una lista llena: la posición 4 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 10;\nl.elementos[0] = 9;\nl.elementos[1] = 4;\nl.elementos[2] = 10;\nl.elementos[3] = 1;\nl.elementos[4] = 8;\nl.elementos[5] = 3;\nl.elementos[6] = 7;\nl.elementos[7] = 6;\nl.elementos[8] = 2;\nl.elementos[9] = 5;\ninsertar(&l, 5, 99);",
+                "llama": "l.elementos[5]",
+                "devuelve": 3,
+                "contexto": "Insertar en una lista llena: la posición 5 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 10;\nl.elementos[0] = 9;\nl.elementos[1] = 4;\nl.elementos[2] = 10;\nl.elementos[3] = 1;\nl.elementos[4] = 8;\nl.elementos[5] = 3;\nl.elementos[6] = 7;\nl.elementos[7] = 6;\nl.elementos[8] = 2;\nl.elementos[9] = 5;\ninsertar(&l, 5, 99);",
+                "llama": "l.elementos[6]",
+                "devuelve": 7,
+                "contexto": "Insertar en una lista llena: la posición 6 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 10;\nl.elementos[0] = 9;\nl.elementos[1] = 4;\nl.elementos[2] = 10;\nl.elementos[3] = 1;\nl.elementos[4] = 8;\nl.elementos[5] = 3;\nl.elementos[6] = 7;\nl.elementos[7] = 6;\nl.elementos[8] = 2;\nl.elementos[9] = 5;\ninsertar(&l, 5, 99);",
+                "llama": "l.elementos[7]",
+                "devuelve": 6,
+                "contexto": "Insertar en una lista llena: la posición 7 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 10;\nl.elementos[0] = 9;\nl.elementos[1] = 4;\nl.elementos[2] = 10;\nl.elementos[3] = 1;\nl.elementos[4] = 8;\nl.elementos[5] = 3;\nl.elementos[6] = 7;\nl.elementos[7] = 6;\nl.elementos[8] = 2;\nl.elementos[9] = 5;\ninsertar(&l, 5, 99);",
+                "llama": "l.elementos[8]",
+                "devuelve": 2,
+                "contexto": "Insertar en una lista llena: la posición 8 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 10;\nl.elementos[0] = 9;\nl.elementos[1] = 4;\nl.elementos[2] = 10;\nl.elementos[3] = 1;\nl.elementos[4] = 8;\nl.elementos[5] = 3;\nl.elementos[6] = 7;\nl.elementos[7] = 6;\nl.elementos[8] = 2;\nl.elementos[9] = 5;\ninsertar(&l, 5, 99);",
+                "llama": "l.elementos[9]",
+                "devuelve": 5,
+                "contexto": "Insertar en una lista llena: la posición 9 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 10;\nl.elementos[0] = 9;\nl.elementos[1] = 4;\nl.elementos[2] = 10;\nl.elementos[3] = 1;\nl.elementos[4] = 8;\nl.elementos[5] = 3;\nl.elementos[6] = 7;\nl.elementos[7] = 6;\nl.elementos[8] = 2;\nl.elementos[9] = 5;",
+                "llama": "insertar(&l, 15, 99)",
+                "devuelve": "LISTA_LLENA",
+                "contexto": "Insertar en una lista llena con una posición que tampoco existe"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 10;\nl.elementos[0] = 9;\nl.elementos[1] = 4;\nl.elementos[2] = 10;\nl.elementos[3] = 1;\nl.elementos[4] = 8;\nl.elementos[5] = 3;\nl.elementos[6] = 7;\nl.elementos[7] = 6;\nl.elementos[8] = 2;\nl.elementos[9] = 5;\ninsertar(&l, 15, 99);",
+                "llama": "l.cantidad",
+                "devuelve": 10,
+                "contexto": "Insertar en una lista llena con una posición que tampoco existe: cuántos elementos tiene la lista después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 10;\nl.elementos[0] = 9;\nl.elementos[1] = 4;\nl.elementos[2] = 10;\nl.elementos[3] = 1;\nl.elementos[4] = 8;\nl.elementos[5] = 3;\nl.elementos[6] = 7;\nl.elementos[7] = 6;\nl.elementos[8] = 2;\nl.elementos[9] = 5;\ninsertar(&l, 15, 99);",
+                "llama": "l.elementos[0]",
+                "devuelve": 9,
+                "contexto": "Insertar en una lista llena con una posición que tampoco existe: la posición 0 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 10;\nl.elementos[0] = 9;\nl.elementos[1] = 4;\nl.elementos[2] = 10;\nl.elementos[3] = 1;\nl.elementos[4] = 8;\nl.elementos[5] = 3;\nl.elementos[6] = 7;\nl.elementos[7] = 6;\nl.elementos[8] = 2;\nl.elementos[9] = 5;\ninsertar(&l, 15, 99);",
+                "llama": "l.elementos[1]",
+                "devuelve": 4,
+                "contexto": "Insertar en una lista llena con una posición que tampoco existe: la posición 1 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 10;\nl.elementos[0] = 9;\nl.elementos[1] = 4;\nl.elementos[2] = 10;\nl.elementos[3] = 1;\nl.elementos[4] = 8;\nl.elementos[5] = 3;\nl.elementos[6] = 7;\nl.elementos[7] = 6;\nl.elementos[8] = 2;\nl.elementos[9] = 5;\ninsertar(&l, 15, 99);",
+                "llama": "l.elementos[2]",
+                "devuelve": 10,
+                "contexto": "Insertar en una lista llena con una posición que tampoco existe: la posición 2 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 10;\nl.elementos[0] = 9;\nl.elementos[1] = 4;\nl.elementos[2] = 10;\nl.elementos[3] = 1;\nl.elementos[4] = 8;\nl.elementos[5] = 3;\nl.elementos[6] = 7;\nl.elementos[7] = 6;\nl.elementos[8] = 2;\nl.elementos[9] = 5;\ninsertar(&l, 15, 99);",
+                "llama": "l.elementos[3]",
+                "devuelve": 1,
+                "contexto": "Insertar en una lista llena con una posición que tampoco existe: la posición 3 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 10;\nl.elementos[0] = 9;\nl.elementos[1] = 4;\nl.elementos[2] = 10;\nl.elementos[3] = 1;\nl.elementos[4] = 8;\nl.elementos[5] = 3;\nl.elementos[6] = 7;\nl.elementos[7] = 6;\nl.elementos[8] = 2;\nl.elementos[9] = 5;\ninsertar(&l, 15, 99);",
+                "llama": "l.elementos[4]",
+                "devuelve": 8,
+                "contexto": "Insertar en una lista llena con una posición que tampoco existe: la posición 4 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 10;\nl.elementos[0] = 9;\nl.elementos[1] = 4;\nl.elementos[2] = 10;\nl.elementos[3] = 1;\nl.elementos[4] = 8;\nl.elementos[5] = 3;\nl.elementos[6] = 7;\nl.elementos[7] = 6;\nl.elementos[8] = 2;\nl.elementos[9] = 5;\ninsertar(&l, 15, 99);",
+                "llama": "l.elementos[5]",
+                "devuelve": 3,
+                "contexto": "Insertar en una lista llena con una posición que tampoco existe: la posición 5 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 10;\nl.elementos[0] = 9;\nl.elementos[1] = 4;\nl.elementos[2] = 10;\nl.elementos[3] = 1;\nl.elementos[4] = 8;\nl.elementos[5] = 3;\nl.elementos[6] = 7;\nl.elementos[7] = 6;\nl.elementos[8] = 2;\nl.elementos[9] = 5;\ninsertar(&l, 15, 99);",
+                "llama": "l.elementos[6]",
+                "devuelve": 7,
+                "contexto": "Insertar en una lista llena con una posición que tampoco existe: la posición 6 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 10;\nl.elementos[0] = 9;\nl.elementos[1] = 4;\nl.elementos[2] = 10;\nl.elementos[3] = 1;\nl.elementos[4] = 8;\nl.elementos[5] = 3;\nl.elementos[6] = 7;\nl.elementos[7] = 6;\nl.elementos[8] = 2;\nl.elementos[9] = 5;\ninsertar(&l, 15, 99);",
+                "llama": "l.elementos[7]",
+                "devuelve": 6,
+                "contexto": "Insertar en una lista llena con una posición que tampoco existe: la posición 7 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 10;\nl.elementos[0] = 9;\nl.elementos[1] = 4;\nl.elementos[2] = 10;\nl.elementos[3] = 1;\nl.elementos[4] = 8;\nl.elementos[5] = 3;\nl.elementos[6] = 7;\nl.elementos[7] = 6;\nl.elementos[8] = 2;\nl.elementos[9] = 5;\ninsertar(&l, 15, 99);",
+                "llama": "l.elementos[8]",
+                "devuelve": 2,
+                "contexto": "Insertar en una lista llena con una posición que tampoco existe: la posición 8 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 10;\nl.elementos[0] = 9;\nl.elementos[1] = 4;\nl.elementos[2] = 10;\nl.elementos[3] = 1;\nl.elementos[4] = 8;\nl.elementos[5] = 3;\nl.elementos[6] = 7;\nl.elementos[7] = 6;\nl.elementos[8] = 2;\nl.elementos[9] = 5;\ninsertar(&l, 15, 99);",
+                "llama": "l.elementos[9]",
+                "devuelve": 5,
+                "contexto": "Insertar en una lista llena con una posición que tampoco existe: la posición 9 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\nl.elementos[2] = 30;",
+                "llama": "insertar(&l, 5, 9)",
+                "devuelve": "POSICION_INVALIDA",
+                "contexto": "Insertar en la posición 5 de [20, 5, 30]",
+                "visible": true,
+                "salida": ""
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\nl.elementos[2] = 30;\ninsertar(&l, 5, 9);",
+                "llama": "l.cantidad",
+                "devuelve": 3,
+                "contexto": "Insertar en la posición 5 de [20, 5, 30]: cuántos elementos tiene la lista después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\nl.elementos[2] = 30;\ninsertar(&l, 5, 9);",
+                "llama": "l.elementos[0]",
+                "devuelve": 20,
+                "contexto": "Insertar en la posición 5 de [20, 5, 30]: la posición 0 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\nl.elementos[2] = 30;\ninsertar(&l, 5, 9);",
+                "llama": "l.elementos[1]",
+                "devuelve": 5,
+                "contexto": "Insertar en la posición 5 de [20, 5, 30]: la posición 1 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\nl.elementos[2] = 30;\ninsertar(&l, 5, 9);",
+                "llama": "l.elementos[2]",
+                "devuelve": 30,
+                "contexto": "Insertar en la posición 5 de [20, 5, 30]: la posición 2 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\nl.elementos[2] = 30;",
+                "llama": "insertar(&l, -1, 9)",
+                "devuelve": "POSICION_INVALIDA",
+                "contexto": "Insertar en la posición -1"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\nl.elementos[2] = 30;\ninsertar(&l, -1, 9);",
+                "llama": "l.cantidad",
+                "devuelve": 3,
+                "contexto": "Insertar en la posición -1: cuántos elementos tiene la lista después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\nl.elementos[2] = 30;\ninsertar(&l, -1, 9);",
+                "llama": "l.elementos[0]",
+                "devuelve": 20,
+                "contexto": "Insertar en la posición -1: la posición 0 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\nl.elementos[2] = 30;\ninsertar(&l, -1, 9);",
+                "llama": "l.elementos[1]",
+                "devuelve": 5,
+                "contexto": "Insertar en la posición -1: la posición 1 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\nl.elementos[2] = 30;\ninsertar(&l, -1, 9);",
+                "llama": "l.elementos[2]",
+                "devuelve": 30,
+                "contexto": "Insertar en la posición -1: la posición 2 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\nl.elementos[2] = 30;",
+                "llama": "insertar(&l, 4, 9)",
+                "devuelve": "POSICION_INVALIDA",
+                "contexto": "Insertar en la posición 4 de una lista con 3 elementos"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\nl.elementos[2] = 30;\ninsertar(&l, 4, 9);",
+                "llama": "l.cantidad",
+                "devuelve": 3,
+                "contexto": "Insertar en la posición 4 de una lista con 3 elementos: cuántos elementos tiene la lista después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\nl.elementos[2] = 30;\ninsertar(&l, 4, 9);",
+                "llama": "l.elementos[0]",
+                "devuelve": 20,
+                "contexto": "Insertar en la posición 4 de una lista con 3 elementos: la posición 0 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\nl.elementos[2] = 30;\ninsertar(&l, 4, 9);",
+                "llama": "l.elementos[1]",
+                "devuelve": 5,
+                "contexto": "Insertar en la posición 4 de una lista con 3 elementos: la posición 1 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 3;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\nl.elementos[2] = 30;\ninsertar(&l, 4, 9);",
+                "llama": "l.elementos[2]",
+                "devuelve": 30,
+                "contexto": "Insertar en la posición 4 de una lista con 3 elementos: la posición 2 después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 0;",
+                "llama": "insertar(&l, 1, 9)",
+                "devuelve": "POSICION_INVALIDA",
+                "contexto": "Insertar en la posición 1 de una lista vacía"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 0;\ninsertar(&l, 1, 9);",
+                "llama": "l.cantidad",
+                "devuelve": 0,
+                "contexto": "Insertar en la posición 1 de una lista vacía: cuántos elementos tiene la lista después"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 2;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\ninsertar(&l, 1, 15);\ninsertar(&l, 0, 9);",
+                "llama": "l.elementos[2]",
+                "devuelve": 15,
+                "contexto": "Dos inserciones seguidas en [20, 5]: la posición 2"
+              },
+              {
+                "antes": "TLista l;\nl.cantidad = 2;\nl.elementos[0] = 20;\nl.elementos[1] = 5;\ninsertar(&l, 1, 15);\ninsertar(&l, 0, 9);",
+                "llama": "l.elementos[3]",
+                "devuelve": 5,
+                "contexto": "Dos inserciones seguidas en [20, 5]: la posición 3"
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "#include \"lista.h\"\n\nvoid inicializar(TLista *l) {\n  l->cantidad = 0;\n}\n\nint longitud(TLista l) {\n  return l.cantidad;\n}\n\nint obtener(TLista l, int pos) {\n  return l.elementos[pos];\n}\n\nTResultado insertar(TLista *l, int pos, int x) {\n  if (l->cantidad == MAX) {\n    return LISTA_LLENA;\n  }\n  if (pos < 0 || pos > l->cantidad) {\n    return POSICION_INVALIDA;\n  }\n  for (int i = l->cantidad; i > pos; i--) {\n    l->elementos[i] = l->elementos[i - 1];\n  }\n  l->elementos[pos] = x;\n  l->cantidad = l->cantidad + 1;\n  return OK;\n}"
+    },
+    {
+      "id": "tadl-q-orden",
+      "titulo": "Por qué se empieza por el último",
+      "enunciado": "Para hacer lugar en la posición `pos`, `insertar` copia cada elemento a la posición siguiente, empezando por el último y terminando en el de la posición `pos`. ¿Por qué no empieza copiando el de la posición `pos`?",
+      "opciones": [
+        {
+          "texto": "Porque así hace menos copias.",
+          "codigo": "OPCION_LISTA_MENOS_COPIAS",
+          "explicacion": "Se copian los mismos elementos en cualquiera de los dos órdenes: la cantidad de copias no cambia. Lo que cambia es lo que queda en el arreglo."
+        },
+        {
+          "texto": "Porque así no pisa ningún elemento.",
+          "correcta": true,
+          "explicacion": "Copiar primero el de la posición `pos` a la `pos + 1` borra el que estaba ahí antes de haberlo copiado; al seguir con los demás, todas las posiciones terminan con el mismo valor. Empezando por el último, cada elemento se copia a una posición que ya quedó libre: el último va a la casilla vacía que hay después de él, y cada uno de los otros, al hueco que acaba de dejar el que le seguía."
+        },
+        {
+          "texto": "Porque `elementos` solo se puede recorrer de atrás hacia adelante.",
+          "codigo": "OPCION_LISTA_SOLO_ATRAS",
+          "explicacion": "Un arreglo se puede recorrer en cualquier sentido. Lo que importa es el orden en que se copian los elementos, no el sentido del ciclo."
+        }
+      ]
+    },
+    {
+      "id": "tadl-main",
+      "titulo": "Insertar en una posición",
+      "escribe": "main.c",
+      "inicializa": "inicializar",
+      "enunciado": "Con su `lista.h` y su `lista.c`, escriba `main.c`. Lea con `scanf`, en este orden:\n- la cantidad de números `n`, a lo sumo 10\n- los `n` números, que se guardan en una lista, uno a continuación del otro\n- una posición\n- un número\n\nInserte el número en esa posición. Si pudo, muestre con `printf`, separados por un espacio, los elementos de la lista; si no pudo, muestre `No se pudo insertar`. Por ejemplo, si se ingresan:\n- `3` (cantidad de números)\n- `15`, `8` y `22` (los números)\n- `1` (la posición)\n- `9` (el número que se inserta)\n\nel programa muestra `15 9 8 22`.\nUse solo las operaciones del `.h`.\n! No use `printf` para mostrar mensajes que pidan los datos: léalos directamente con `scanf`.",
+      "requiere": [
+        {
+          "incluyeLocal": "lista.h"
+        },
+        {
+          "soloOperaciones": "TLista"
+        },
+        {
+          "usaOperaciones": [
+            "inicializar",
+            "insertar",
+            "longitud",
+            "obtener"
+          ]
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "entrada": [
+                  3,
+                  15,
+                  8,
+                  22,
+                  1,
+                  9
+                ],
+                "muestra": [
+                  15,
+                  9,
+                  8,
+                  22
+                ],
+                "separadas": true
+              },
+              {
+                "entrada": [
+                  3,
+                  15,
+                  8,
+                  22,
+                  0,
+                  4
+                ],
+                "muestra": [
+                  4,
+                  15,
+                  8,
+                  22
+                ],
+                "separadas": true
+              },
+              {
+                "entrada": [
+                  3,
+                  15,
+                  8,
+                  22,
+                  3,
+                  40
+                ],
+                "muestra": [
+                  15,
+                  8,
+                  22,
+                  40
+                ],
+                "separadas": true
+              },
+              {
+                "entrada": [
+                  0,
+                  0,
+                  6
+                ],
+                "muestra": [
+                  6
+                ],
+                "separadas": true
+              },
+              {
+                "entrada": [
+                  9,
+                  5,
+                  9,
+                  2,
+                  7,
+                  1,
+                  8,
+                  3,
+                  6,
+                  4,
+                  4,
+                  77
+                ],
+                "muestra": [
+                  5,
+                  9,
+                  2,
+                  7,
+                  77,
+                  1,
+                  8,
+                  3,
+                  6,
+                  4
+                ],
+                "separadas": true
+              },
+              {
+                "entrada": [
+                  3,
+                  15,
+                  8,
+                  22,
+                  5,
+                  9
+                ],
+                "salida": "No se pudo insertar"
+              },
+              {
+                "entrada": [
+                  10,
+                  5,
+                  9,
+                  2,
+                  7,
+                  1,
+                  8,
+                  3,
+                  6,
+                  4,
+                  10,
+                  2,
+                  77
+                ],
+                "salida": "No se pudo insertar"
+              },
+              {
+                "entrada": [
+                  2,
+                  5,
+                  6,
+                  -1,
+                  7
+                ],
+                "salida": "No se pudo insertar"
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "#include <stdio.h>\n#include \"lista.h\"\n\nint main() {\n  TLista l;\n  int n;\n  int x;\n  int pos;\n\n  inicializar(&l);\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%d\", &x);\n    insertar(&l, longitud(l), x);\n  }\n  scanf(\"%d\", &pos);\n  scanf(\"%d\", &x);\n  if (insertar(&l, pos, x) == OK) {\n    for (int i = 0; i < longitud(l); i++) {\n      printf(\"%d \", obtener(l, i));\n    }\n  } else {\n    printf(\"No se pudo insertar\");\n  }\n  return 0;\n}"
+    }
+  ]
+}

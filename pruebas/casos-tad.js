@@ -97,6 +97,9 @@ const conjuntoUsar = serie('tad-conjunto-usar');
 const conjuntoAmpliar = serie('tad-conjunto-ampliar');
 const conjuntoCompletar = serie('tad-conjunto-completar');
 const conjuntoRepr = serie('tad-conjunto-representacion');
+const tadLista = serie('tad-lista');
+const tadListaAmpliar = serie('tad-lista-ampliar');
+const tadListaUsar = serie('tad-lista-usar');
 
 // main.c de las pilas con lo que va adentro de main.
 const MAIN_PILA = (...cuerpo) =>
@@ -609,6 +612,17 @@ const CONJ_MAIN_COMPLETO = "#include <stdio.h>\n#include \"conjunto.h\"\n\nint m
 const REPR_H = "#ifndef CONJUNTO_H\n#define CONJUNTO_H\n\n#define TAM 21\n\ntypedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\ntypedef struct {\n  TBool presente[TAM];\n  int cantidad;\n} TConjunto;\n\nvoid inicializar(TConjunto *c);\nvoid agregar(TConjunto *c, int x);\nTBool pertenece(TConjunto c, int x);\nint cardinal(TConjunto c);\nvoid eliminar(TConjunto *c, int x);\nTConjunto unir(TConjunto a, TConjunto b);\nTConjunto intersectar(TConjunto a, TConjunto b);\nTConjunto restar(TConjunto a, TConjunto b);\n\n#endif";
 const REPR_C1 = "#include \"conjunto.h\"\n\nvoid inicializar(TConjunto *c) {\n  for (int i = 0; i < TAM; i++) {\n    c->presente[i] = FALSO;\n  }\n  c->cantidad = 0;\n}\n\nTBool pertenece(TConjunto c, int x) {\n  return c.presente[x];\n}\n\nvoid agregar(TConjunto *c, int x) {\n  if (c->presente[x] == FALSO) {\n    c->presente[x] = VERDADERO;\n    c->cantidad = c->cantidad + 1;\n  }\n}\n\nvoid eliminar(TConjunto *c, int x) {\n  if (c->presente[x] == VERDADERO) {\n    c->presente[x] = FALSO;\n    c->cantidad = c->cantidad - 1;\n  }\n}\n\nint cardinal(TConjunto c) {\n  return c.cantidad;\n}\n\nTConjunto unir(TConjunto a, TConjunto b) {\n  TConjunto r;\n\n  inicializar(&r);\n  return r;\n}\n\nTConjunto intersectar(TConjunto a, TConjunto b) {\n  TConjunto r;\n\n  inicializar(&r);\n  return r;\n}\n\nTConjunto restar(TConjunto a, TConjunto b) {\n  TConjunto r;\n\n  inicializar(&r);\n  return r;\n}";
 const REPR_C2 = "#include \"conjunto.h\"\n\nvoid inicializar(TConjunto *c) {\n  for (int i = 0; i < TAM; i++) {\n    c->presente[i] = FALSO;\n  }\n  c->cantidad = 0;\n}\n\nTBool pertenece(TConjunto c, int x) {\n  return c.presente[x];\n}\n\nvoid agregar(TConjunto *c, int x) {\n  if (c->presente[x] == FALSO) {\n    c->presente[x] = VERDADERO;\n    c->cantidad = c->cantidad + 1;\n  }\n}\n\nvoid eliminar(TConjunto *c, int x) {\n  if (c->presente[x] == VERDADERO) {\n    c->presente[x] = FALSO;\n    c->cantidad = c->cantidad - 1;\n  }\n}\n\nint cardinal(TConjunto c) {\n  return c.cantidad;\n}\n\nTConjunto unir(TConjunto a, TConjunto b) {\n  TConjunto r;\n\n  inicializar(&r);\n  for (int i = 0; i < TAM; i++) {\n    if (a.presente[i] == VERDADERO || b.presente[i] == VERDADERO) {\n      agregar(&r, i);\n    }\n  }\n  return r;\n}\n\nTConjunto intersectar(TConjunto a, TConjunto b) {\n  TConjunto r;\n\n  inicializar(&r);\n  for (int i = 0; i < TAM; i++) {\n    if (a.presente[i] == VERDADERO && b.presente[i] == VERDADERO) {\n      agregar(&r, i);\n    }\n  }\n  return r;\n}\n\nTConjunto restar(TConjunto a, TConjunto b) {\n  TConjunto r;\n\n  inicializar(&r);\n  for (int i = 0; i < TAM; i++) {\n    if (a.presente[i] == VERDADERO && b.presente[i] == FALSO) {\n      agregar(&r, i);\n    }\n  }\n  return r;\n}";
+
+// Series de la lista de enteros (arreglo con posiciones).
+const LISTA_H = "#ifndef LISTA_H\n#define LISTA_H\n\n#define MAX 10\n\ntypedef enum {\n  OK,\n  LISTA_LLENA,\n  POSICION_INVALIDA\n} TResultado;\n\ntypedef struct {\n  int elementos[MAX];\n  int cantidad;\n} TLista;\n\nvoid inicializar(TLista *l);\nint longitud(TLista l);\nint obtener(TLista l, int pos);\nTResultado insertar(TLista *l, int pos, int x);\n\n#endif";
+const LISTA_C = "#include \"lista.h\"\n\nvoid inicializar(TLista *l) {\n  l->cantidad = 0;\n}\n\nint longitud(TLista l) {\n  return l.cantidad;\n}\n\nint obtener(TLista l, int pos) {\n  return l.elementos[pos];\n}\n\nTResultado insertar(TLista *l, int pos, int x) {\n  if (l->cantidad == MAX) {\n    return LISTA_LLENA;\n  }\n  if (pos < 0 || pos > l->cantidad) {\n    return POSICION_INVALIDA;\n  }\n  for (int i = l->cantidad; i > pos; i--) {\n    l->elementos[i] = l->elementos[i - 1];\n  }\n  l->elementos[pos] = x;\n  l->cantidad = l->cantidad + 1;\n  return OK;\n}";
+const LISTA_MAIN = "#include <stdio.h>\n#include \"lista.h\"\n\nint main() {\n  TLista l;\n  int n;\n  int x;\n  int pos;\n\n  inicializar(&l);\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%d\", &x);\n    insertar(&l, longitud(l), x);\n  }\n  scanf(\"%d\", &pos);\n  scanf(\"%d\", &x);\n  if (insertar(&l, pos, x) == OK) {\n    for (int i = 0; i < longitud(l); i++) {\n      printf(\"%d \", obtener(l, i));\n    }\n  } else {\n    printf(\"No se pudo insertar\");\n  }\n  return 0;\n}";
+const LISTA_H_AMPLIADO = "#ifndef LISTA_H\n#define LISTA_H\n\n#define MAX 10\n\ntypedef enum {\n  OK,\n  LISTA_LLENA,\n  POSICION_INVALIDA\n} TResultado;\n\ntypedef struct {\n  int elementos[MAX];\n  int cantidad;\n} TLista;\n\nvoid inicializar(TLista *l);\nint longitud(TLista l);\nint obtener(TLista l, int pos);\nTResultado insertar(TLista *l, int pos, int x);\nTResultado eliminar(TLista *l, int pos);\n\n#endif";
+const LISTA_C_AMPLIADO = "#include \"lista.h\"\n\nvoid inicializar(TLista *l) {\n  l->cantidad = 0;\n}\n\nint longitud(TLista l) {\n  return l.cantidad;\n}\n\nint obtener(TLista l, int pos) {\n  return l.elementos[pos];\n}\n\nTResultado insertar(TLista *l, int pos, int x) {\n  if (l->cantidad == MAX) {\n    return LISTA_LLENA;\n  }\n  if (pos < 0 || pos > l->cantidad) {\n    return POSICION_INVALIDA;\n  }\n  for (int i = l->cantidad; i > pos; i--) {\n    l->elementos[i] = l->elementos[i - 1];\n  }\n  l->elementos[pos] = x;\n  l->cantidad = l->cantidad + 1;\n  return OK;\n}\n\nTResultado eliminar(TLista *l, int pos) {\n  if (pos < 0 || pos >= l->cantidad) {\n    return POSICION_INVALIDA;\n  }\n  for (int i = pos; i < l->cantidad - 1; i++) {\n    l->elementos[i] = l->elementos[i + 1];\n  }\n  l->cantidad = l->cantidad - 1;\n  return OK;\n}";
+const LISTA_MAIN_INTERCAMBIAR = "#include <stdio.h>\n#include \"lista.h\"\n\nint main() {\n  TLista l;\n  int n;\n  int x;\n  int p;\n  int q;\n  int a;\n  int b;\n\n  inicializar(&l);\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%d\", &x);\n    insertar(&l, longitud(l), x);\n  }\n  scanf(\"%d\", &p);\n  scanf(\"%d\", &q);\n  a = obtener(l, p);\n  b = obtener(l, q);\n  eliminar(&l, p);\n  insertar(&l, p, b);\n  eliminar(&l, q);\n  insertar(&l, q, a);\n  for (int i = 0; i < longitud(l); i++) {\n    printf(\"%d \", obtener(l, i));\n  }\n  return 0;\n}";
+const LISTA_INVERTIR = "#include <stdio.h>\n#include \"lista.h\"\n\nint main() {\n  TLista l;\n  int n;\n  int x;\n  int j;\n  int a;\n  int b;\n\n  inicializar(&l);\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%d\", &x);\n    insertar(&l, longitud(l), x);\n  }\n  for (int i = 0; i < longitud(l) / 2; i++) {\n    j = longitud(l) - 1 - i;\n    a = obtener(l, i);\n    b = obtener(l, j);\n    eliminar(&l, i);\n    insertar(&l, i, b);\n    eliminar(&l, j);\n    insertar(&l, j, a);\n  }\n  for (int i = 0; i < longitud(l); i++) {\n    printf(\"%d \", obtener(l, i));\n  }\n  return 0;\n}";
+const LISTA_ORDENADO = "#include <stdio.h>\n#include \"lista.h\"\n\nint main() {\n  TLista l;\n  int n;\n  int x;\n  int pos;\n\n  inicializar(&l);\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%d\", &x);\n    pos = 0;\n    while (pos < longitud(l) && obtener(l, pos) <= x) {\n      pos = pos + 1;\n    }\n    insertar(&l, pos, x);\n  }\n  for (int i = 0; i < longitud(l); i++) {\n    printf(\"%d \", obtener(l, i));\n  }\n  return 0;\n}";
+const LISTA_QUITAR = "#include <stdio.h>\n#include \"lista.h\"\n\nint main() {\n  TLista l;\n  int n;\n  int x;\n  int pos;\n\n  inicializar(&l);\n  scanf(\"%d\", &n);\n  for (int k = 0; k < n; k++) {\n    scanf(\"%d\", &x);\n    insertar(&l, longitud(l), x);\n  }\n  scanf(\"%d\", &x);\n  pos = 0;\n  while (pos < longitud(l)) {\n    if (obtener(l, pos) == x) {\n      eliminar(&l, pos);\n    } else {\n      pos = pos + 1;\n    }\n  }\n  for (int i = 0; i < longitud(l); i++) {\n    printf(\"%d \", obtener(l, i));\n  }\n  return 0;\n}";
 
 const FECHA_H = lineas(
   '#ifndef FECHA_H',
@@ -2337,4 +2351,89 @@ export const CASOS_DE_TAD = [
   conjuntoRepr(5, 'caben mas pero de 0 a 20', '0'),
   conjuntoRepr(5, 'caben cualquier valor', '1', ['OPCION_REPR_CUALQUIER_VALOR']),
   conjuntoRepr(5, 'hay que cambiar el main', '2', ['OPCION_REPR_CAMBIAR_MAIN']),
+  // ===== La lista =====
+  tadLista(1, 'completo', LISTA_H),
+  tadLista(1, 'el arreglo sin la constante', LISTA_H.replace('elementos[MAX]', 'elementos[10]'), ['CAMPO_ARREGLO_SIN_CONSTANTE']),
+  tadLista(1, 'sin la cantidad', LISTA_H.replace('  int cantidad;\n', ''), ['CAMPO_FALTA']),
+  tadLista(1, 'insertar con la lista por valor', LISTA_H.replace('TResultado insertar(TLista *l,', 'TResultado insertar(TLista l,'), ['PARAMETRO_REFERENCIA_FALTA']),
+  tadLista(1, 'insertar devuelve un entero', LISTA_H.replace('TResultado insertar', 'int insertar'), ['FUNCION_TIPO_RETORNO']),
+  tadLista(1, 'sin declarar obtener', LISTA_H.replace('int obtener(TLista l, int pos);\n', ''), ['PROTOTIPO_FALTA']),
+  tadLista(1, 'con algo afuera', LISTA_H + '\n\nTResultado eliminar(TLista *l, int pos);', ['ENCABEZADO_FUERA_DE_LA_GUARDA']),
+  tadLista(2, 'completo', LISTA_C),
+  tadLista(
+    2,
+    'insertar que corre desde la posicion hacia el final',
+    LISTA_C.replace('  for (int i = l->cantidad; i > pos; i--) {\n    l->elementos[i] = l->elementos[i - 1];\n  }', '  for (int i = pos; i < l->cantidad; i++) {\n    l->elementos[i + 1] = l->elementos[i];\n  }'),
+    ['DEVUELVE_DISTINTO']
+  ),
+  tadLista(2, 'insertar sin sumar a la cantidad', LISTA_C.replace('  l->cantidad = l->cantidad + 1;\n', ''), ['DEVUELVE_DISTINTO']),
+  tadLista(2, 'insertar sin guardar el numero', LISTA_C.replace('  l->elementos[pos] = x;\n', ''), ['DEVUELVE_DISTINTO']),
+  tadLista(2, 'insertar sin correr los elementos', LISTA_C.replace('  for (int i = l->cantidad; i > pos; i--) {\n    l->elementos[i] = l->elementos[i - 1];\n  }\n', ''), ['DEVUELVE_DISTINTO']),
+  tadLista(2, 'insertar que no admite el final', LISTA_C.replace('pos > l->cantidad', 'pos >= l->cantidad'), ['DEVUELVE_DISTINTO']),
+  tadLista(2, 'insertar sin mirar las posiciones negativas', LISTA_C.replace('pos < 0 || ', ''), ['INDICE_FUERA_DE_RANGO']),
+  tadLista(2, 'insertar que confunde los dos errores', LISTA_C.replace('    return LISTA_LLENA;', '    return POSICION_INVALIDA;'), ['DEVUELVE_DISTINTO']),
+  tadLista(
+    2,
+    'insertar que mira la posicion antes que si esta llena',
+    LISTA_C.replace(
+      '  if (l->cantidad == MAX) {\n    return LISTA_LLENA;\n  }\n  if (pos < 0 || pos > l->cantidad) {\n    return POSICION_INVALIDA;\n  }',
+      '  if (pos < 0 || pos > l->cantidad) {\n    return POSICION_INVALIDA;\n  }\n  if (l->cantidad == MAX) {\n    return LISTA_LLENA;\n  }'
+    ),
+    ['DEVUELVE_DISTINTO']
+  ),
+  tadLista(2, 'insertar sin controlar si esta llena', LISTA_C.replace('  if (l->cantidad == MAX) {\n    return LISTA_LLENA;\n  }\n', ''), ['INDICE_FUERA_DE_RANGO']),
+  tadLista(2, 'obtener que devuelve la posicion siguiente', LISTA_C.replace('return l.elementos[pos];', 'return l.elementos[pos + 1];'), ['DEVUELVE_DISTINTO']),
+  tadLista(2, 'longitud que devuelve el maximo', LISTA_C.replace('return l.cantidad;', 'return MAX;'), ['DEVUELVE_DISTINTO']),
+  tadLista(2, 'inicializar que no pone la cantidad en 0', LISTA_C.replace('  l->cantidad = 0;', '  l->cantidad = l->cantidad;'), ['DEVUELVE_DISTINTO']),
+  tadLista(2, 'sin definir obtener', LISTA_C.replace('int obtener(TLista l, int pos) {\n  return l.elementos[pos];\n}\n\n', ''), ['PROTOTIPO_SIN_DEFINICION']),
+  tadLista(3, 'empieza por el ultimo para no pisar', '1'),
+  tadLista(3, 'para hacer menos copias', '0', ['OPCION_LISTA_MENOS_COPIAS']),
+  tadLista(3, 'solo se recorre hacia atras', '2', ['OPCION_LISTA_SOLO_ATRAS']),
+  tadLista(4, 'el main correcto', LISTA_MAIN),
+  tadLista(4, 'avisando cuando si pudo', LISTA_MAIN.replace('== OK', '== LISTA_LLENA'), ['MUESTRA_FALTA']),
+  tadLista(4, 'cargando al principio en vez de al final', LISTA_MAIN.replace('insertar(&l, longitud(l), x);', 'insertar(&l, 0, x);'), ['MUESTRA_DISTINTA']),
+  tadLista(4, 'con un mensaje para pedir los datos', LISTA_MAIN.replace('  scanf("%d", &pos);', '  printf("Posicion: ");\n  scanf("%d", &pos);'), ['MUESTRA_DISTINTA']),
+  tadLista(4, 'mirando el arreglo', LISTA_MAIN.replace('obtener(l, i)', 'l.elementos[i]'), ['TAD_ACCESO_DIRECTO', 'TAD_OPERACION_SIN_USAR']),
+  tadListaAmpliar(1, 'completo', LISTA_H_AMPLIADO),
+  tadListaAmpliar(1, 'sin declarar eliminar', LISTA_H_AMPLIADO.replace('TResultado eliminar(TLista *l, int pos);\n', ''), ['PROTOTIPO_FALTA']),
+  tadListaAmpliar(1, 'eliminar con la lista por valor', LISTA_H_AMPLIADO.replace('eliminar(TLista *l,', 'eliminar(TLista l,'), ['PARAMETRO_REFERENCIA_FALTA']),
+  tadListaAmpliar(1, 'eliminar devuelve void', LISTA_H_AMPLIADO.replace('TResultado eliminar', 'void eliminar'), ['FUNCION_TIPO_RETORNO']),
+  tadListaAmpliar(1, 'eliminar despues del endif', LISTA_H_AMPLIADO.replace('TResultado eliminar(TLista *l, int pos);\n\n#endif', '\n#endif\nTResultado eliminar(TLista *l, int pos);'), ['ENCABEZADO_FUERA_DE_LA_GUARDA']),
+  tadListaAmpliar(2, 'completo', LISTA_C_AMPLIADO),
+  tadListaAmpliar(2, 'eliminar sin restar a la cantidad', LISTA_C_AMPLIADO.replace('  l->cantidad = l->cantidad - 1;\n', ''), ['DEVUELVE_DISTINTO']),
+  tadListaAmpliar(2, 'eliminar sin correr los elementos', LISTA_C_AMPLIADO.replace('  for (int i = pos; i < l->cantidad - 1; i++) {\n    l->elementos[i] = l->elementos[i + 1];\n  }\n', ''), ['DEVUELVE_DISTINTO']),
+  tadListaAmpliar(2, 'eliminar que acepta la posicion cantidad', LISTA_C_AMPLIADO.replace('pos >= l->cantidad', 'pos > l->cantidad'), ['DEVUELVE_DISTINTO']),
+  tadListaAmpliar(2, 'eliminar sin mirar las posiciones negativas', LISTA_C_AMPLIADO.replace('pos < 0 || pos >= l->cantidad', 'pos >= l->cantidad'), ['INDICE_FUERA_DE_RANGO']),
+  tadListaAmpliar(2, 'eliminar que devuelve siempre OK', LISTA_C_AMPLIADO.replace('  if (pos < 0 || pos >= l->cantidad) {\n    return POSICION_INVALIDA;\n  }\n  for (int i = pos;', '  for (int i = pos;'), ['DEVUELVE_DISTINTO']),
+  tadListaAmpliar(2, 'sin definir eliminar', LISTA_C_AMPLIADO.slice(0, LISTA_C_AMPLIADO.indexOf('\n\nTResultado eliminar')), ['PROTOTIPO_SIN_DEFINICION']),
+  tadListaAmpliar(2, 'insertar roto al agregar eliminar', LISTA_C_AMPLIADO.replace('i > pos; i--', 'i > pos + 1; i--'), ['DEVUELVE_DISTINTO']),
+  tadListaAmpliar(3, 'el main correcto', LISTA_MAIN_INTERCAMBIAR),
+  tadListaAmpliar(3, 'sin eliminar', LISTA_MAIN_INTERCAMBIAR.replace('  eliminar(&l, p);\n', '').replace('  eliminar(&l, q);\n', ''), ['TAD_OPERACION_SIN_USAR']),
+  tadListaAmpliar(3, 'dejando el mismo valor en las dos', LISTA_MAIN_INTERCAMBIAR.replace('insertar(&l, q, a);', 'insertar(&l, q, b);'), ['MUESTRA_DISTINTA']),
+  tadListaAmpliar(3, 'cambiando solo una de las dos', LISTA_MAIN_INTERCAMBIAR.replace('  eliminar(&l, q);\n  insertar(&l, q, a);\n', ''), ['MUESTRA_DISTINTA']),
+  tadListaAmpliar(
+    3,
+    'sacando las dos antes de insertar',
+    LISTA_MAIN_INTERCAMBIAR.replace('  eliminar(&l, p);\n  insertar(&l, p, b);\n  eliminar(&l, q);\n  insertar(&l, q, a);', '  eliminar(&l, p);\n  eliminar(&l, q);\n  insertar(&l, p, b);\n  insertar(&l, q, a);'),
+    ['MUESTRA_DISTINTA']
+  ),
+  tadListaUsar(1, 'insertar en orden correcto', LISTA_ORDENADO),
+  tadListaUsar(1, 'con menor estricto, que da lo mismo', LISTA_ORDENADO.replace('<= x', '< x')),
+  tadListaUsar(1, 'siempre al final', LISTA_ORDENADO.replace('    while (pos < longitud(l) && obtener(l, pos) <= x) {\n      pos = pos + 1;\n    }\n', '    pos = longitud(l);\n'), ['MUESTRA_DISTINTA']),
+  tadListaUsar(1, 'de mayor a menor', LISTA_ORDENADO.replace('<= x', '>= x'), ['MUESTRA_DISTINTA']),
+  tadListaUsar(1, 'sin mirar hasta donde llega la lista', LISTA_ORDENADO.replace('pos < longitud(l) && ', ''), ['TAD_USO_INCORRECTO']),
+  tadListaUsar(2, 'quitar correcto', LISTA_QUITAR),
+  tadListaUsar(
+    2,
+    'avanzando siempre, se saltea el que sigue',
+    LISTA_QUITAR.replace('      eliminar(&l, pos);\n    } else {\n      pos = pos + 1;\n    }', '      eliminar(&l, pos);\n    }\n    pos = pos + 1;'),
+    ['MUESTRA_DISTINTA']
+  ),
+  tadListaUsar(2, 'sin eliminar', LISTA_QUITAR.replace('      eliminar(&l, pos);\n', '      pos = pos + 1;\n'), ['TAD_OPERACION_SIN_USAR']),
+  tadListaUsar(2, 'quitando solo la primera aparicion', LISTA_QUITAR.replace('      eliminar(&l, pos);\n', '      eliminar(&l, pos);\n      pos = longitud(l);\n'), ['MUESTRA_DISTINTA']),
+  tadListaUsar(3, 'invertir correcto', LISTA_INVERTIR),
+  tadListaUsar(3, 'con una lista auxiliar', LISTA_INVERTIR.replace('  TLista l;\n', '  TLista l;\n  TLista aux;\n'), ['TAD_VARIABLE_AUXILIAR']),
+  tadListaUsar(3, 'invirtiendo toda la lista dos veces', LISTA_INVERTIR.replace('longitud(l) / 2', 'longitud(l)'), ['MUESTRA_DISTINTA']),
+  tadListaUsar(3, 'sin sacar y volver a meter', LISTA_INVERTIR.replace('  eliminar(&l, i);\n', '').replace('  eliminar(&l, j);\n', ''), ['TAD_OPERACION_SIN_USAR']),
+  tadListaUsar(3, 'dejando el mismo valor en las dos posiciones', LISTA_INVERTIR.replace('insertar(&l, j, a);', 'insertar(&l, j, b);'), ['MUESTRA_DISTINTA']),
 ];
