@@ -262,6 +262,10 @@ Las reglas de `requiere`:
   valga 8) y, si hace falta, `"constante": "MAX"` (el tamaño se escribe con esa
   constante). Errores: `CAMPO_NO_ES_ARREGLO`, `CAMPO_ARREGLO_DIMENSIONES`,
   `CAMPO_ARREGLO_SIN_CONSTANTE`, `ARREGLO_CHICO` y `ARREGLO_GRANDE`.
+  Un campo que es un arreglo de **enumerados** se pide igual, con el tipo:
+  `{ "nombre": "presente", "tipo": "enumerado", "de": "$B", "arreglo": 21, "constante": "TAM" }`
+  (`$B` es el alias del enumerado, que tiene que estar antes en la lista de reglas). Los
+  errores son los mismos, y `CAMPO_TIPO` si los elementos no son de ese tipo.
 - `{ "variable": { "tipo": "$S" } }` — una variable de ese tipo, global o
   local. El tipo es una captura (`$S`), un tipo de C (`int`) o una categoría
   (`entero`, `real`, `caracter`). Opcionales:
@@ -1294,7 +1298,8 @@ El plan de la reestructuración está en la memoria del proyecto
   Un arreglo pasado es el mismo arreglo. Sabe un **subconjunto mínimo de
   punteros**: `&variable` (o `&arreglo[i]`, también con un arreglo de estructuras: `&cuentas[i]`,
   que apunta a ese elemento) al llamar, `*p` como argumento de una estructura por valor
-  (`pertenece(*c, x)`: se pasa una copia), un parámetro declarado con
+  (`pertenece(*c, x)`: se pasa una copia), un campo que es un arreglo de enumerados
+  (`TBool presente[TAM]` dentro de una estructura: se sigue como uno de enteros), un parámetro declarado con
   `*` y `*x` adentro; nada de aritmética de punteros. Entra por `practica`
   (o `main`); las funciones se conocen aunque estén definidas después.
 - **Errores de la receta `&` / `*`**, todos con la fórmula completa
@@ -1512,6 +1517,14 @@ pide un dato la haría fallar:
 ```
 "... Use solo las operaciones del `.h`.\n! No use `printf` para mostrar mensajes que pidan los datos: léalos directamente con `scanf`."
 ```
+
+### Reescribir en dos pasos un archivo
+
+La cadena de consignas (`continua`) va juntando lo que el alumno escribe: si una consigna escribe
+`conjunto.c` y la siguiente lo vuelve a escribir, quedarían las dos versiones juntas (las funciones
+repetidas) y el corrector probaría la primera. Para reescribir el mismo archivo en dos consignas,
+la segunda va con `"continua": false`, trae lo demás ya escrito en `archivos` (por ejemplo el `.h`
+actualizado) y arranca con lo que dejó la primera en `comienza`. Ejemplo: `tad-conjunto-representacion`.
 
 ### Un diagrama de Venn en el dibujo
 

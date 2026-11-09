@@ -1234,6 +1234,47 @@ export function corregir(
     // Un campo que es un enumerado: "tipo": "enumerado", "de": "TTurno".
     if (esperado.tipo === 'enumerado') {
       const pedido = valorDe(esperado.de);
+      // Un arreglo de enumerados: "arreglo": 21, "constante": "TAM" (presente[TAM] de TBool).
+      if (esperado.arreglo != null) {
+        const pide =
+          typeof esperado.arreglo === 'number'
+            ? `un arreglo de ${esperado.arreglo} elementos de tipo \`${pedido}\``
+            : `un arreglo de tipo \`${pedido}\``;
+        if (campo.punteros) {
+          error('CAMPO_ES_PUNTERO', `\`${n}\` tiene que ser ${pide}: sobra el \`*\`.`, campo.fila);
+        } else if (!campo.arreglo.length) {
+          error(
+            'CAMPO_NO_ES_ARREGLO',
+            `\`${n}\` guarda un solo valor. La consigna pide ${pide}: falta indicar cuántos elementos tiene, entre corchetes.`,
+            campo.fila
+          );
+        } else if (campo.arreglo.length > 1) {
+          error(
+            'CAMPO_ARREGLO_DIMENSIONES',
+            `\`${n}\` tiene ${campo.arreglo.length} dimensiones: eso es una tabla. La consigna pide ${pide}, de una sola dimensión.`,
+            campo.fila
+          );
+        } else if (!mismoTipo(real, resolver(tipoDesdeTexto(pedido), modelo))) {
+          error('CAMPO_TIPO', `Los elementos de \`${n}\` tienen que ser de tipo \`${pedido}\`: es un enumerado. ${declarado}`, campo.fila);
+        } else if (!campo.arreglo[0].trim()) {
+          error('ARREGLO_SIN_DIMENSION', `A \`${n}\` le falta la cantidad de elementos entre los corchetes.`, campo.fila);
+        } else if (esperado.constante && campo.arreglo[0].trim() !== esperado.constante) {
+          error(
+            'CAMPO_ARREGLO_SIN_CONSTANTE',
+            `El tamaño de \`${n}\` se escribe con la constante \`${esperado.constante}\`, no con un número: así el tamaño se cambia en un solo lugar.`,
+            campo.fila
+          );
+        } else {
+          const tiene = typeof esperado.arreglo === 'number' ? valorDeDimension(campo.arreglo[0], modelo) : null;
+          const elementos = (k) => (k === 1 ? '1 elemento' : `${k} elementos`);
+          if (tiene != null && tiene < esperado.arreglo) {
+            error('ARREGLO_CHICO', `\`${n}\` puede guardar ${elementos(tiene)} y hay que guardar ${esperado.arreglo}: no alcanza.`, campo.fila);
+          } else if (tiene != null && tiene > esperado.arreglo) {
+            error('ARREGLO_GRANDE', `\`${n}\` puede guardar ${elementos(tiene)} y la consigna pide ${esperado.arreglo}: sobra espacio.`, campo.fila);
+          }
+        }
+        return;
+      }
       if (campo.punteros || campo.arreglo.length) {
         error(
           'CAMPO_TIPO',
