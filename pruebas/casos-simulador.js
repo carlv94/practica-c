@@ -1133,6 +1133,36 @@ export const CASOS_DEL_SIMULADOR = [
     codigo: conFunciones("int cuantos(TPila p) {\n  return p.tope;\n}\nint doble(TPila *p) {\n  return cuantos(*p) * 2;\n}", "TPila *p;\nprintf(\"%d\", cuantos(*p));"),
     espera: {"error":"PunteroSinDestino"},
   },
+  {
+    nombre: "un campo que es un arreglo de enumerados: se escribe y se lee",
+    codigo: conFunciones("typedef struct {\n  TTurno dia[MAX];\n  int cantidad;\n} TSemana;", "TSemana s;\ns.dia[0] = NOCHE;\ns.dia[2] = TARDE;\nprintf(\"%d %d\", s.dia[0], s.dia[2]);"),
+    espera: {"salida":"2 1"},
+  },
+  {
+    nombre: "un campo que es un arreglo de enumerados: se cambia por puntero",
+    codigo: conFunciones("typedef struct {\n  TTurno dia[MAX];\n  int cantidad;\n} TSemana;\nvoid poner(TSemana *s, int i, TTurno t) {\n  s->dia[i] = t;\n}", "TSemana s;\nponer(&s, 1, TARDE);\nprintf(\"%d\", s.dia[1]);"),
+    espera: {"salida":"1"},
+  },
+  {
+    nombre: "un campo que es un arreglo de enumerados: por valor la funcion recibe una copia",
+    codigo: conFunciones("typedef struct {\n  TTurno dia[MAX];\n  int cantidad;\n} TSemana;\nint cambiar(TSemana s, int i) {\n  s.dia[i] = NOCHE;\n  return s.dia[i];\n}", "TSemana s;\ns.dia[0] = MANANA;\nprintf(\"%d %d\", cambiar(s, 0), s.dia[0]);"),
+    espera: {"salida":"2 0"},
+  },
+  {
+    nombre: "un campo que es un arreglo de enumerados: se compara con un enumerador",
+    codigo: conFunciones("typedef struct {\n  TTurno dia[MAX];\n  int cantidad;\n} TSemana;", "TSemana s;\ns.dia[1] = TARDE;\nif (s.dia[1] == TARDE) {\n  printf(\"si\");\n}"),
+    espera: {"salida":"si"},
+  },
+  {
+    nombre: "un campo que es un arreglo de enumerados: una posicion fuera del arreglo",
+    codigo: conFunciones("typedef struct {\n  TTurno dia[MAX];\n  int cantidad;\n} TSemana;", "TSemana s;\ns.dia[5] = NOCHE;"),
+    espera: {"error":"FueraDeRango"},
+  },
+  {
+    nombre: "un campo que es un arreglo de enumerados: una casilla sin valor",
+    codigo: conFunciones("typedef struct {\n  TTurno dia[MAX];\n  int cantidad;\n} TSemana;", "TSemana s;\nprintf(\"%d\", s.dia[0]);"),
+    espera: {"error":"SinValor"},
+  },
 ];
 
 // Corre un caso y dice si salio lo esperado. "ejecutar" es la funcion del

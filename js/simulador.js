@@ -361,6 +361,9 @@ function recogerEstructuras(arbol) {
           soportado: simple && numerico,
           // Un arreglo de numeros dentro de la estructura (las letras son cadenas, que no se siguen).
           arreglo: !simple && soloArreglo && numerico && !/char/.test(tipo.text) && tamanos.every(Boolean) ? tamanos : null,
+          // Un arreglo de un tipo con nombre (TBool presente[21]): si es un enumerado se sigue
+          // como uno de numeros; que lo sea se sabe recien al crear el campo.
+          arregloNombrado: !simple && soloArreglo && tipo.type === 'type_identifier' && tamanos.every(Boolean) ? { tipo: tipo.text, tamanos } : null,
           estructura: deEstructura || null,
         });
       }
@@ -1702,7 +1705,12 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
     if (nivel > 5) sinVerificar(d, 'estructuras muy anidadas');
     // En una union, escribir un miembro deja sin valor a los otros.
     const enUnion = campos.esUnion ? { grupo: prefijo, miembros: campos.map((c) => c.nombre) } : null;
-    for (const campo of campos) {
+    for (const campoDado of campos) {
+      // Un arreglo de enumerados (TBool presente[21]) es un arreglo de enteros.
+      const campo =
+        !campoDado.arreglo && campoDado.arregloNombrado && tiposEnum.has(campoDado.arregloNombrado.tipo)
+          ? { ...campoDado, arreglo: campoDado.arregloNombrado.tamanos, texto: 'int' }
+          : campoDado;
       const clave = `${prefijo}.${campo.nombre}`;
       const deEnum = !campo.soportado && Boolean(campo.estructura) && tiposEnum.has(campo.estructura);
       if (!campo.soportado && !deEnum && !campo.arreglo) {
