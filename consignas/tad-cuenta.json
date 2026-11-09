@@ -274,17 +274,17 @@
         {
           "texto": "Porque `printf` solo se puede usar en el archivo que tiene `main`.",
           "codigo": "OPCION_PRINTF_SOLO_EN_MAIN",
-          "explicacion": "Se puede: cualquier `.c` puede incluir `stdio.h` y llamar a `printf`, como hace el `mostrar` del `punto.c`. Lo que decide si conviene es qué le corresponde hacer a la cuenta, no qué archivo la define."
+          "explicacion": "Se puede: cualquier `.c` puede incluir `stdio.h` y llamar a `printf`, como hace el `mostrar` del `punto.c`."
         },
         {
-          "texto": "Porque la cuenta no sabe quién la usa ni cómo avisar: eso lo decide quien la usa.",
+          "texto": "Porque avisar al usuario le corresponde a quien usa la cuenta.",
           "correcta": true,
           "explicacion": "`cuenta.c` solo sabe llevar el saldo. La misma cuenta puede usarla un cajero que muestra un mensaje, un programa que cobra cuotas y solo cuenta cuántas no se pudieron pagar, o uno que anota los rechazos en un archivo. Si `retirar` mostrara un mensaje, ninguno de esos usos podría decidir qué hacer. Al devolver un `TResultado`, la cuenta dice qué pasó y `main.c` decide: mostrar un mensaje, probar con otra cuenta o seguir sin avisar."
         },
         {
           "texto": "Porque devolver un enumerado es más rápido que llamar a `printf`.",
           "codigo": "OPCION_ENUM_MAS_RAPIDO",
-          "explicacion": "La velocidad no es lo que decide esto: la diferencia sería insignificante. Lo que importa es quién tiene la información para elegir cómo avisar. La cuenta sabe que el saldo no alcanzó, pero no sabe si hay una pantalla, un archivo o nadie mirando."
+          "explicacion": "La velocidad no es lo que decide esto: la diferencia sería insignificante."
         }
       ]
     },
