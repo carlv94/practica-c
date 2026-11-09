@@ -449,6 +449,7 @@ export function corregir(
     if (regla.defineTodo) return reglaDefineTodo(modelo);
     if (regla.soloOperaciones) return reglaSoloOperaciones(regla.soloOperaciones, modelo);
     if (regla.usaOperaciones) return reglaUsaOperaciones(regla.usaOperaciones, modelo);
+    if (regla.unaVariable) return reglaUnaVariable(regla.unaVariable, modelo);
     if (regla.sinGlobales) return reglaSinGlobales(modelo);
     if (regla.global) return reglaGlobal(regla.global, modelo);
     if (regla.enum) return reglaEnum(regla.enum, modelo);
@@ -1091,6 +1092,20 @@ export function corregir(
     error(
       'TAD_OPERACION_SIN_USAR',
       `La consigna pide usar ${enLista(faltan)}, y el programa no ${faltan.length === 1 ? 'la llama' : 'las llama'}: un tipo abstracto se usa con sus operaciones.`
+    );
+  }
+
+  // Una sola variable de un tipo: para pedir que se trabaje sobre la misma, sin copias.
+  //   { "unaVariable": "TLista" }
+  function reglaUnaVariable(tipo, modelo) {
+    const def = estructuraDeTipo({ clase: 'nombre', nombre: tipo }, modelo);
+    if (!def) return;
+    const variables = modelo.variables.filter((v) => v.nuevo && estructuraDeTipo(v.tipo, modelo) === def);
+    if (variables.length < 2) return;
+    error(
+      'TAD_VARIABLE_AUXILIAR',
+      `Hay más de una variable de tipo ${BT}${tipo}${BT} (${enLista(variables.map((v) => v.nombre))}): la consigna pide trabajar sobre la misma, sin armar otra.`,
+      variables[1].fila
     );
   }
 

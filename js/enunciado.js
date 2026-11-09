@@ -391,3 +391,30 @@ export function bloquesDeEnunciado(enunciado) {
     })
     .filter((b) => b.items || b.formula || b.advertencia || b.texto);
 }
+
+// Una referencia a otra consigna se escribe [[id-de-la-serie#id-de-la-consigna]]: la
+// pagina la muestra como un enlace "consigna 23.3", con el numero que tenga ahora.
+export const REFERENCIA_A_CONSIGNA = /\[\[([\w-]+)#([\w-]+)\]\]/g;
+
+// Donde esta una consigna: { serie, indice } (indice desde 0), o null si no existe.
+export function lugarDeConsigna(series, idSerie, idConsigna) {
+  const serie = series.find((s) => s.id === idSerie);
+  const indice = serie ? serie.consignas.findIndex((c) => c.id === idConsigna) : -1;
+  return indice < 0 ? null : { serie, indice };
+}
+
+// Lo que esta mal en las referencias de las series: una que no apunta a nada, o una
+// serie visible que lleva a una oculta (el alumno no la ve). "ocultas" tiene los ids.
+export function problemasDeReferencias(series, ocultas = new Set()) {
+  const problemas = [];
+  for (const s of series) {
+    for (const c of s.consignas) {
+      for (const m of JSON.stringify(c).matchAll(REFERENCIA_A_CONSIGNA)) {
+        const destino = lugarDeConsigna(series, m[1], m[2]);
+        if (!destino) problemas.push(`${c.id}: ${m[0]} no apunta a ninguna consigna`);
+        else if (!ocultas.has(s.id) && ocultas.has(destino.serie.id)) problemas.push(`${c.id}: ${m[0]} lleva a una serie oculta`);
+      }
+    }
+  }
+  return problemas;
+}

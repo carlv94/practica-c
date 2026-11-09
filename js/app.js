@@ -31,7 +31,7 @@ import {
 import { descargar } from './descarga.js';
 import { crearEditor, pintar } from './editor.js';
 import { enviarIntento, enviarInforme, numeroDeInforme, enviaEstadisticas, esLocal, esDocente } from './estadisticas.js';
-import { bloquesDeEnunciado, partesDeEnunciado, enunciadoEnDos, fichasDe, figuraDe, sustituir, REGIONES_DE_VENN } from './enunciado.js';
+import { bloquesDeEnunciado, partesDeEnunciado, enunciadoEnDos, fichasDe, figuraDe, sustituir, REGIONES_DE_VENN, REFERENCIA_A_CONSIGNA, lugarDeConsigna } from './enunciado.js';
 import { analizar, evaluar, mostrar, pilaComoTexto } from './pila.js';
 
 // La vista del docente: lista tambien las series y los grupos ocultos (en el
@@ -112,9 +112,29 @@ function conCodigo(texto) {
       codigo.textContent = parte;
       fragmento.appendChild(codigo);
     } else {
-      fragmento.appendChild(document.createTextNode(parte));
+      fragmento.appendChild(conReferencias(parte));
     }
   });
+  return fragmento;
+}
+
+// Texto con [[serie#consigna]] como un enlace a esa consigna ("consigna 23.3"): el
+// numero sale de donde esta la consigna ahora. Una que no existe queda como se escribio.
+function conReferencias(texto) {
+  const fragmento = document.createDocumentFragment();
+  let hasta = 0;
+  for (const m of texto.matchAll(REFERENCIA_A_CONSIGNA)) {
+    const destino = lugarDeConsigna(series, m[1], m[2]);
+    if (!destino) continue;
+    if (m.index > hasta) fragmento.appendChild(document.createTextNode(texto.slice(hasta, m.index)));
+    const enlace = document.createElement('a');
+    enlace.className = 'referencia';
+    enlace.href = `#/serie/${encodeURIComponent(m[1])}/${encodeURIComponent(m[2])}`;
+    enlace.textContent = `consigna ${destino.serie.numero}.${destino.indice + 1}`;
+    fragmento.appendChild(enlace);
+    hasta = m.index + m[0].length;
+  }
+  if (hasta < texto.length) fragmento.appendChild(document.createTextNode(texto.slice(hasta)));
   return fragmento;
 }
 
@@ -1635,14 +1655,36 @@ function teclaEnRespuesta(evento) {
 
 // ---- arranque -----------------------------------------------------------------
 
-// Muestra lo que diga la direccion: una serie o, si no nombra ninguna que
-// exista, la lista.
+// Va a una consigna de la serie abierta (un enlace como #/serie/id/consigna). Si ya
+// se resolvio, se repasa; si es la que toca, queda abierta; si todavia no se llego,
+// se avisa que consignas faltan (el modo docente salta, como con los pasos).
+function irAConsigna(idConsigna) {
+  const destino = serie.consignas.findIndex((c) => c.id === idConsigna);
+  if (destino < 0) return;
+  if (destino < hechas.length) repasar(destino);
+  else if (destino > hechas.length && VE_LAS_OCULTAS) irA(destino);
+  else if (destino > hechas.length) {
+    const faltan = [];
+    for (let k = hechas.length; k < destino; k++) faltan.push(`la ${serie.numero}.${k + 1}`);
+    const aviso = $('aviso-salto');
+    aviso.textContent = `Para llegar a la consigna ${serie.numero}.${destino + 1} tiene que resolver antes ${
+      faltan.length === 1 ? faltan[0] : faltan.slice(0, -1).join(', ') + ' y ' + faltan[faltan.length - 1]
+    }.`;
+    aviso.hidden = false;
+    window.scrollTo(0, 0);
+  }
+}
+
+// Muestra lo que diga la direccion: una serie (y, si la nombra, una consigna) o,
+// si no nombra ninguna que exista, la lista.
 function navegar() {
-  const pedida = /^#\/serie\/(.+)$/.exec(location.hash);
+  const pedida = /^#\/serie\/([^/]+)(?:\/([^/]+))?$/.exec(location.hash);
   const s = pedida && series.find((x) => x.id === decodeURIComponent(pedida[1]));
   let caja = null;
-  if (s) abrirSerie(s);
-  else {
+  if (s) {
+    abrirSerie(s);
+    if (pedida[2]) irAConsigna(decodeURIComponent(pedida[2]));
+  } else {
     const pedido = /^#\/grupo\/(.+)$/.exec(location.hash);
     const idGrupo = pedido && decodeURIComponent(pedido[1]);
     const agrupado = idGrupo && grupos.some((g) => g.id === idGrupo && g.agrupar);

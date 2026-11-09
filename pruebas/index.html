@@ -25,7 +25,7 @@
         programaDeOpciones,
         partesPrevias,
       } from '../js/serie.js';
-      import { marcasDe, partesDeEnunciado, fichasDe, bloquesDeEnunciado, planoDe, vennDe, figuraDe } from '../js/enunciado.js';
+      import { marcasDe, partesDeEnunciado, fichasDe, bloquesDeEnunciado, planoDe, vennDe, figuraDe, problemasDeReferencias } from '../js/enunciado.js';
       import { CASOS_DE_ENUNCIADO, resultadoDelEnunciado, CASOS_DE_PLANO, resultadoDelPlano, CASOS_DE_VENN, resultadoDelVenn } from './casos-enunciado.js';
       import { CASOS } from './casos.js';
       import { ejecutar } from '../js/simulador.js';
@@ -97,10 +97,13 @@
             enGrupos.add(archivo);
           }
         }
+        const archivosOcultos = new Set(indice.grupos.flatMap((g) => (g.oculto ? g.series : g.ocultas || [])));
+        const idsOcultos = new Set();
         for (const archivo of indice.grupos.flatMap((g) => g.series)) {
           try {
             const leida = await (await fetch('../consignas/' + archivo)).json();
             unico(leida.id, 'serie');
+            if (archivosOcultos.has(archivo)) idsOcultos.add(leida.id);
             leida.consignas.forEach((c) => unico(c.id, 'consigna'));
             todas.push(leida);
           } catch (e) {
@@ -316,6 +319,16 @@
             abiertas[1].destacar === true &&
             abiertas[0].destacar === false;
           anotar(bien, 'ficha de un arreglo: una por elemento', JSON.stringify(abiertas));
+        }
+
+        {
+          const problemas = problemasDeReferencias(todas, idsOcultos);
+          anotar(!problemas.length, 'referencias entre consignas: apuntan a algo que existe', problemas.join('\n'));
+          const prueba = problemasDeReferencias(
+            [{ id: 'a', consignas: [{ id: 'x', enunciado: 'ver [[b#y]] y [[b#nada]] y [[c#z]]' }] }, { id: 'b', consignas: [{ id: 'y' }] }, { id: 'c', consignas: [{ id: 'z' }] }],
+            new Set(['c'])
+          );
+          anotar(prueba.length === 2 && /b#nada/.test(prueba[0]) && /oculta/.test(prueba[1]), 'referencias entre consignas: se avisan las que no existen y las que llevan a una oculta', JSON.stringify(prueba));
         }
 
         for (const caso of CASOS_DE_ENUNCIADO) {

@@ -1518,6 +1518,20 @@ pide un dato la haría fallar:
 "... Use solo las operaciones del `.h`.\n! No use `printf` para mostrar mensajes que pidan los datos: léalos directamente con `scanf`."
 ```
 
+### Referirse a otra consigna
+
+En cualquier texto de una consigna (enunciado, opciones, explicaciones) se puede escribir
+`[[id-de-la-serie#id-de-la-consigna]]`, por ejemplo `[[tad-lista-ampliar#tadla-main]]`. La página
+lo muestra como un enlace con el número que tenga en ese momento ("consigna 23.3"), así que si las
+series se reordenan el texto se corrige solo. El enlace va a `#/serie/<serie>/<consigna>`:
+- si el alumno ya resolvió esa consigna, la abre para repasarla (su avance no cambia);
+- si es la que le toca, queda abierta;
+- si todavía no llegó, abre la serie donde está y avisa qué consignas tiene que resolver antes;
+- en el modo docente salta ahí, completando las anteriores con sus soluciones de referencia.
+
+Las pruebas rechazan una referencia que no apunta a ninguna consigna y una serie visible que
+enlaza a una oculta (el alumno no la vería): `problemasDeReferencias` en `js/enunciado.js`.
+
 ### Reescribir en dos pasos un archivo
 
 La cadena de consignas (`continua`) va juntando lo que el alumno escribe: si una consigna escribe
@@ -1672,6 +1686,8 @@ la respuesta es un archivo completo.
     de su estructura (`TAD_ACCESO_DIRECTO`, que nombra las operaciones del `.h`).
   - `{ "usaOperaciones": ["inicializar", "contar"] }`: el programa llama a esas
     operaciones (`TAD_OPERACION_SIN_USAR`).
+  - `{ "unaVariable": "TLista" }`: el programa declara una sola variable de ese tipo, para
+    pedir que se trabaje sobre la misma lista y no sobre una copia (`TAD_VARIABLE_AUXILIAR`).
 - **Probar el `.c`**: un caso de `ejecuta` con `antes` (lo que se hace antes de
   probar: `TContador c; inicializar(&c); contar(&c);`), `llama` y `devuelve`. El caso puede
   traer `contexto` ("Después de inicializar un contador y contar tres veces"), que encabeza el
