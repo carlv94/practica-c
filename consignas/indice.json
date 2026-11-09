@@ -150,7 +150,8 @@
         "tad-conjunto.json",
         "tad-conjunto-usar.json",
         "tad-conjunto-ampliar.json",
-        "tad-conjunto-completar.json"
+        "tad-conjunto-completar.json",
+        "tad-conjunto-representacion.json"
       ]
     }
   ]

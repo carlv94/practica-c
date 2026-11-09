@@ -96,6 +96,7 @@ const conjunto = serie('tad-conjunto');
 const conjuntoUsar = serie('tad-conjunto-usar');
 const conjuntoAmpliar = serie('tad-conjunto-ampliar');
 const conjuntoCompletar = serie('tad-conjunto-completar');
+const conjuntoRepr = serie('tad-conjunto-representacion');
 
 // main.c de las pilas con lo que va adentro de main.
 const MAIN_PILA = (...cuerpo) =>
@@ -603,6 +604,11 @@ const CONJ_MAIN_AMPLIADO = "#include <stdio.h>\n#include \"conjunto.h\"\n\nint m
 const CONJ_H_COMPLETO = "#ifndef CONJUNTO_H\n#define CONJUNTO_H\n\n#define MAX 10\n\ntypedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\ntypedef struct {\n  int elementos[MAX];\n  int cantidad;\n} TConjunto;\n\nvoid inicializar(TConjunto *c);\nvoid agregar(TConjunto *c, int x);\nTBool pertenece(TConjunto c, int x);\nint cardinal(TConjunto c);\nvoid eliminar(TConjunto *c, int x);\nTConjunto unir(TConjunto a, TConjunto b);\nTConjunto intersectar(TConjunto a, TConjunto b);\nTConjunto restar(TConjunto a, TConjunto b);\n\n#endif";
 const CONJ_C_COMPLETO = "#include \"conjunto.h\"\n\nvoid inicializar(TConjunto *c) {\n  c->cantidad = 0;\n}\n\nTBool pertenece(TConjunto c, int x) {\n  for (int i = 0; i < c.cantidad; i++) {\n    if (c.elementos[i] == x) {\n      return VERDADERO;\n    }\n  }\n  return FALSO;\n}\n\nvoid agregar(TConjunto *c, int x) {\n  if (pertenece(*c, x) == FALSO) {\n    c->elementos[c->cantidad] = x;\n    c->cantidad = c->cantidad + 1;\n  }\n}\n\nint cardinal(TConjunto c) {\n  return c.cantidad;\n}\n\nvoid eliminar(TConjunto *c, int x) {\n  for (int i = 0; i < c->cantidad; i++) {\n    if (c->elementos[i] == x) {\n      c->elementos[i] = c->elementos[c->cantidad - 1];\n      c->cantidad = c->cantidad - 1;\n      return;\n    }\n  }\n}\n\nTConjunto unir(TConjunto a, TConjunto b) {\n  TConjunto r = a;\n\n  for (int i = 0; i < b.cantidad; i++) {\n    agregar(&r, b.elementos[i]);\n  }\n  return r;\n}\n\nTConjunto intersectar(TConjunto a, TConjunto b) {\n  TConjunto r;\n\n  inicializar(&r);\n  for (int i = 0; i < a.cantidad; i++) {\n    if (pertenece(b, a.elementos[i]) == VERDADERO) {\n      agregar(&r, a.elementos[i]);\n    }\n  }\n  return r;\n}\n\nTConjunto restar(TConjunto a, TConjunto b) {\n  TConjunto r;\n\n  inicializar(&r);\n  for (int i = 0; i < a.cantidad; i++) {\n    if (pertenece(b, a.elementos[i]) == FALSO) {\n      agregar(&r, a.elementos[i]);\n    }\n  }\n  return r;\n}";
 const CONJ_MAIN_COMPLETO = "#include <stdio.h>\n#include \"conjunto.h\"\n\nint main() {\n  TConjunto a;\n  TConjunto b;\n  TConjunto u;\n  TConjunto i;\n  TConjunto r;\n  int n;\n  int x;\n\n  inicializar(&a);\n  inicializar(&b);\n  scanf(\"%d\", &n);\n  for (int k = 0; k < n; k++) {\n    scanf(\"%d\", &x);\n    agregar(&a, x);\n  }\n  scanf(\"%d\", &n);\n  for (int k = 0; k < n; k++) {\n    scanf(\"%d\", &x);\n    agregar(&b, x);\n  }\n  u = unir(a, b);\n  i = intersectar(a, b);\n  r = restar(a, b);\n  for (int k = 1; k <= 20; k++) {\n    if (pertenece(u, k) == VERDADERO) {\n      printf(\"%d \", k);\n    }\n  }\n  printf(\"\\n\");\n  for (int k = 1; k <= 20; k++) {\n    if (pertenece(i, k) == VERDADERO) {\n      printf(\"%d \", k);\n    }\n  }\n  printf(\"\\n\");\n  for (int k = 1; k <= 20; k++) {\n    if (pertenece(r, k) == VERDADERO) {\n      printf(\"%d \", k);\n    }\n  }\n  return 0;\n}";
+
+// Serie que cambia la representacion del conjunto (presencias, numeros de 0 a 20).
+const REPR_H = "#ifndef CONJUNTO_H\n#define CONJUNTO_H\n\n#define TAM 21\n\ntypedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\ntypedef struct {\n  TBool presente[TAM];\n  int cantidad;\n} TConjunto;\n\nvoid inicializar(TConjunto *c);\nvoid agregar(TConjunto *c, int x);\nTBool pertenece(TConjunto c, int x);\nint cardinal(TConjunto c);\nvoid eliminar(TConjunto *c, int x);\nTConjunto unir(TConjunto a, TConjunto b);\nTConjunto intersectar(TConjunto a, TConjunto b);\nTConjunto restar(TConjunto a, TConjunto b);\n\n#endif";
+const REPR_C1 = "#include \"conjunto.h\"\n\nvoid inicializar(TConjunto *c) {\n  for (int i = 0; i < TAM; i++) {\n    c->presente[i] = FALSO;\n  }\n  c->cantidad = 0;\n}\n\nTBool pertenece(TConjunto c, int x) {\n  return c.presente[x];\n}\n\nvoid agregar(TConjunto *c, int x) {\n  if (c->presente[x] == FALSO) {\n    c->presente[x] = VERDADERO;\n    c->cantidad = c->cantidad + 1;\n  }\n}\n\nvoid eliminar(TConjunto *c, int x) {\n  if (c->presente[x] == VERDADERO) {\n    c->presente[x] = FALSO;\n    c->cantidad = c->cantidad - 1;\n  }\n}\n\nint cardinal(TConjunto c) {\n  return c.cantidad;\n}\n\nTConjunto unir(TConjunto a, TConjunto b) {\n  TConjunto r;\n\n  inicializar(&r);\n  return r;\n}\n\nTConjunto intersectar(TConjunto a, TConjunto b) {\n  TConjunto r;\n\n  inicializar(&r);\n  return r;\n}\n\nTConjunto restar(TConjunto a, TConjunto b) {\n  TConjunto r;\n\n  inicializar(&r);\n  return r;\n}";
+const REPR_C2 = "#include \"conjunto.h\"\n\nvoid inicializar(TConjunto *c) {\n  for (int i = 0; i < TAM; i++) {\n    c->presente[i] = FALSO;\n  }\n  c->cantidad = 0;\n}\n\nTBool pertenece(TConjunto c, int x) {\n  return c.presente[x];\n}\n\nvoid agregar(TConjunto *c, int x) {\n  if (c->presente[x] == FALSO) {\n    c->presente[x] = VERDADERO;\n    c->cantidad = c->cantidad + 1;\n  }\n}\n\nvoid eliminar(TConjunto *c, int x) {\n  if (c->presente[x] == VERDADERO) {\n    c->presente[x] = FALSO;\n    c->cantidad = c->cantidad - 1;\n  }\n}\n\nint cardinal(TConjunto c) {\n  return c.cantidad;\n}\n\nTConjunto unir(TConjunto a, TConjunto b) {\n  TConjunto r;\n\n  inicializar(&r);\n  for (int i = 0; i < TAM; i++) {\n    if (a.presente[i] == VERDADERO || b.presente[i] == VERDADERO) {\n      agregar(&r, i);\n    }\n  }\n  return r;\n}\n\nTConjunto intersectar(TConjunto a, TConjunto b) {\n  TConjunto r;\n\n  inicializar(&r);\n  for (int i = 0; i < TAM; i++) {\n    if (a.presente[i] == VERDADERO && b.presente[i] == VERDADERO) {\n      agregar(&r, i);\n    }\n  }\n  return r;\n}\n\nTConjunto restar(TConjunto a, TConjunto b) {\n  TConjunto r;\n\n  inicializar(&r);\n  for (int i = 0; i < TAM; i++) {\n    if (a.presente[i] == VERDADERO && b.presente[i] == FALSO) {\n      agregar(&r, i);\n    }\n  }\n  return r;\n}";
 
 const FECHA_H = lineas(
   '#ifndef FECHA_H',
@@ -2296,4 +2302,39 @@ export const CASOS_DE_TAD = [
   conjuntoCompletar(3, 'el main correcto', CONJ_MAIN_COMPLETO),
   conjuntoCompletar(3, 'con los renglones cambiados', CONJ_MAIN_COMPLETO.replace('pertenece(u, k)', 'pertenece(r, k)').replace('pertenece(r, k) == VERDADERO) {\n      printf("%d ", k);\n    }\n  }\n  return 0;', 'pertenece(u, k) == VERDADERO) {\n      printf("%d ", k);\n    }\n  }\n  return 0;'), ['MUESTRA_DISTINTA']),
   conjuntoCompletar(3, 'sin usar restar', CONJ_MAIN_COMPLETO.replace('  r = restar(a, b);\n', '  r = i;\n'), ['TAD_OPERACION_SIN_USAR']),
+  // ===== Cambiar la representacion del conjunto =====
+  conjuntoRepr(1, 'solo cambia el .c', '0', ['OPCION_REPR_SOLO_C']),
+  conjuntoRepr(1, 'cambian el .h y el .c', '1'),
+  conjuntoRepr(1, 'cambian los tres', '2', ['OPCION_REPR_LOS_TRES']),
+  conjuntoRepr(2, 'completo', REPR_H),
+  conjuntoRepr(2, 'dejando la constante MAX', REPR_H.replace('#define TAM 21', '#define MAX 10').replace('presente[TAM]', 'presente[MAX]'), ['CAMPO_ARREGLO_SIN_CONSTANTE']),
+  conjuntoRepr(2, 'con una casilla de menos', REPR_H.replace('#define TAM 21', '#define TAM 20'), ['ARREGLO_CHICO']),
+  conjuntoRepr(2, 'las casillas enteras', REPR_H.replace('TBool presente[TAM];', 'int presente[TAM];'), ['CAMPO_TIPO']),
+  conjuntoRepr(2, 'las casillas con un solo valor', REPR_H.replace('TBool presente[TAM];', 'TBool presente;'), ['CAMPO_NO_ES_ARREGLO']),
+  conjuntoRepr(2, 'sin la cantidad', REPR_H.replace('  int cantidad;\n', ''), ['CAMPO_FALTA']),
+  conjuntoRepr(2, 'agregar con el conjunto por valor', REPR_H.replace('void agregar(TConjunto *c, int x);', 'void agregar(TConjunto c, int x);'), ['PARAMETRO_REFERENCIA_FALTA']),
+  conjuntoRepr(2, 'con algo afuera', REPR_H + '\n\nvoid vaciar(TConjunto *c);', ['ENCABEZADO_FUERA_DE_LA_GUARDA']),
+  conjuntoRepr(3, 'completo', REPR_C1),
+  conjuntoRepr(
+    3,
+    'agregar que suma aunque ya estuviera',
+    REPR_C1.replace('  if (c->presente[x] == FALSO) {\n    c->presente[x] = VERDADERO;\n    c->cantidad = c->cantidad + 1;\n  }', '  c->presente[x] = VERDADERO;\n  c->cantidad = c->cantidad + 1;'),
+    ['DEVUELVE_DISTINTO']
+  ),
+  conjuntoRepr(3, 'eliminar sin restar a la cantidad', REPR_C1.replace('    c->cantidad = c->cantidad - 1;\n', ''), ['DEVUELVE_DISTINTO']),
+  conjuntoRepr(3, 'pertenece siempre verdadero', REPR_C1.replace('  return c.presente[x];', '  return VERDADERO;'), ['DEVUELVE_DISTINTO']),
+  conjuntoRepr(3, 'inicializar sin recorrer las casillas', REPR_C1.replace('  for (int i = 0; i < TAM; i++) {\n    c->presente[i] = FALSO;\n  }\n', ''), ['VARIABLE_SIN_VALOR']),
+  conjuntoRepr(3, 'inicializar que deja el contador sin valor', REPR_C1.replace('  c->cantidad = 0;', '  c->cantidad = c->cantidad;'), ['VARIABLE_SIN_VALOR']),
+  conjuntoRepr(3, 'cardinal que devuelve el tamano', REPR_C1.replace('  return c.cantidad;', '  return TAM;'), ['DEVUELVE_DISTINTO']),
+  conjuntoRepr(3, 'sin definir eliminar', REPR_C1.replace('void eliminar(TConjunto *c, int x) {\n  if (c->presente[x] == VERDADERO) {\n    c->presente[x] = FALSO;\n    c->cantidad = c->cantidad - 1;\n  }\n}\n\n', ''), ['PROTOTIPO_SIN_DEFINICION']),
+  conjuntoRepr(4, 'completo', REPR_C2),
+  conjuntoRepr(4, 'con las tres provisorias', REPR_C1, ['DEVUELVE_DISTINTO']),
+  conjuntoRepr(4, 'unir con y en vez de o', REPR_C2.replace('a.presente[i] == VERDADERO || b.presente[i] == VERDADERO', 'a.presente[i] == VERDADERO && b.presente[i] == VERDADERO'), ['DEVUELVE_DISTINTO']),
+  conjuntoRepr(4, 'intersectar con o en vez de y', REPR_C2.replace('a.presente[i] == VERDADERO && b.presente[i] == VERDADERO) {\n      agregar(&r, i);\n    }\n  }\n  return r;\n}\n\nTConjunto restar', 'a.presente[i] == VERDADERO || b.presente[i] == VERDADERO) {\n      agregar(&r, i);\n    }\n  }\n  return r;\n}\n\nTConjunto restar'), ['DEVUELVE_DISTINTO']),
+  conjuntoRepr(4, 'restar sin negar la casilla de b', REPR_C2.replace('a.presente[i] == VERDADERO && b.presente[i] == FALSO', 'a.presente[i] == VERDADERO && b.presente[i] == VERDADERO'), ['DEVUELVE_DISTINTO']),
+  conjuntoRepr(4, 'restar con a y b al reves', REPR_C2.replace('a.presente[i] == VERDADERO && b.presente[i] == FALSO', 'b.presente[i] == VERDADERO && a.presente[i] == FALSO'), ['DEVUELVE_DISTINTO']),
+  conjuntoRepr(4, 'unir sin llegar a la ultima casilla', REPR_C2.replace('  for (int i = 0; i < TAM; i++) {\n    if (a.presente[i] == VERDADERO || b.presente[i] == VERDADERO)', '  for (int i = 0; i < TAM - 1; i++) {\n    if (a.presente[i] == VERDADERO || b.presente[i] == VERDADERO)'), ['DEVUELVE_DISTINTO']),
+  conjuntoRepr(5, 'caben mas pero de 0 a 20', '0'),
+  conjuntoRepr(5, 'caben cualquier valor', '1', ['OPCION_REPR_CUALQUIER_VALOR']),
+  conjuntoRepr(5, 'hay que cambiar el main', '2', ['OPCION_REPR_CAMBIAR_MAIN']),
 ];
