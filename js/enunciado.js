@@ -264,7 +264,7 @@ export function vennDe(v) {
 export function figuraDe(consigna) {
   // Una letra se dibuja entre comillas simples, como se escribe en el codigo.
   const comoSeEscribeLetras = (v) =>
-    Array.isArray(v) ? v.map(comoSeEscribeLetras) : typeof v === 'string' ? `'${v}'` : v;
+    Array.isArray(v) ? v.map(comoSeEscribeLetras) : typeof v === 'string' ? ([...v].length === 1 ? `'${v}'` : `"${v}"`) : v;
   const comoSeEscribe = comoSeEscribeLetras;
   const d = consigna.dibujo;
   const propia = (d) => {

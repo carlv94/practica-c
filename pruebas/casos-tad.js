@@ -100,6 +100,9 @@ const conjuntoRepr = serie('tad-conjunto-representacion');
 const tadLista = serie('tad-lista');
 const tadListaAmpliar = serie('tad-lista-ampliar');
 const tadListaUsar = serie('tad-lista-usar');
+const tadAgenda = serie('tad-agenda');
+const tadAgendaUsar = serie('tad-agenda-usar');
+const tadAgendaAmpliar = serie('tad-agenda-ampliar');
 
 // main.c de las pilas con lo que va adentro de main.
 const MAIN_PILA = (...cuerpo) =>
@@ -623,6 +626,16 @@ const LISTA_MAIN_INTERCAMBIAR = "#include <stdio.h>\n#include \"lista.h\"\n\nint
 const LISTA_INVERTIR = "#include <stdio.h>\n#include \"lista.h\"\n\nint main() {\n  TLista l;\n  int n;\n  int x;\n  int j;\n  int a;\n  int b;\n\n  inicializar(&l);\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%d\", &x);\n    insertar(&l, longitud(l), x);\n  }\n  for (int i = 0; i < longitud(l) / 2; i++) {\n    j = longitud(l) - 1 - i;\n    a = obtener(l, i);\n    b = obtener(l, j);\n    eliminar(&l, i);\n    insertar(&l, i, b);\n    eliminar(&l, j);\n    insertar(&l, j, a);\n  }\n  for (int i = 0; i < longitud(l); i++) {\n    printf(\"%d \", obtener(l, i));\n  }\n  return 0;\n}";
 const LISTA_ORDENADO = "#include <stdio.h>\n#include \"lista.h\"\n\nint main() {\n  TLista l;\n  int n;\n  int x;\n  int pos;\n\n  inicializar(&l);\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%d\", &x);\n    pos = 0;\n    while (pos < longitud(l) && obtener(l, pos) <= x) {\n      pos = pos + 1;\n    }\n    insertar(&l, pos, x);\n  }\n  for (int i = 0; i < longitud(l); i++) {\n    printf(\"%d \", obtener(l, i));\n  }\n  return 0;\n}";
 const LISTA_QUITAR = "#include <stdio.h>\n#include \"lista.h\"\n\nint main() {\n  TLista l;\n  int n;\n  int x;\n  int pos;\n\n  inicializar(&l);\n  scanf(\"%d\", &n);\n  for (int k = 0; k < n; k++) {\n    scanf(\"%d\", &x);\n    insertar(&l, longitud(l), x);\n  }\n  scanf(\"%d\", &x);\n  pos = 0;\n  while (pos < longitud(l)) {\n    if (obtener(l, pos) == x) {\n      eliminar(&l, pos);\n    } else {\n      pos = pos + 1;\n    }\n  }\n  for (int i = 0; i < longitud(l); i++) {\n    printf(\"%d \", obtener(l, i));\n  }\n  return 0;\n}";
+
+// Series de la agenda de contactos (cadenas dentro de un TAD).
+const AGENDA_H = "#ifndef AGENDA_H\n#define AGENDA_H\n\n#define MAX 10\n#define LARGO 20\n\ntypedef enum {\n  OK,\n  AGENDA_LLENA,\n  NOMBRE_REPETIDO,\n  NO_ENCONTRADO\n} TResultado;\n\ntypedef struct {\n  char nombres[MAX][LARGO];\n  unsigned long telefonos[MAX];\n  int cantidad;\n} TAgenda;\n\nvoid inicializar(TAgenda *a);\nint total(TAgenda a);\nTResultado agregar(TAgenda *a, char nombre[], unsigned long telefono);\nTResultado buscar(TAgenda a, char nombre[], unsigned long *telefono);\n\n#endif";
+const AGENDA_C = "#include <string.h>\n#include \"agenda.h\"\n\nvoid inicializar(TAgenda *a) {\n  a->cantidad = 0;\n}\n\nint total(TAgenda a) {\n  return a.cantidad;\n}\n\nTResultado agregar(TAgenda *a, char nombre[], unsigned long telefono) {\n  for (int i = 0; i < a->cantidad; i++) {\n    if (strcmp(a->nombres[i], nombre) == 0) {\n      return NOMBRE_REPETIDO;\n    }\n  }\n  if (a->cantidad == MAX) {\n    return AGENDA_LLENA;\n  }\n  strcpy(a->nombres[a->cantidad], nombre);\n  a->telefonos[a->cantidad] = telefono;\n  a->cantidad = a->cantidad + 1;\n  return OK;\n}\n\nTResultado buscar(TAgenda a, char nombre[], unsigned long *telefono) {\n  for (int i = 0; i < a.cantidad; i++) {\n    if (strcmp(a.nombres[i], nombre) == 0) {\n      *telefono = a.telefonos[i];\n      return OK;\n    }\n  }\n  return NO_ENCONTRADO;\n}";
+const AGENDA_MAIN = "#include <stdio.h>\n#include \"agenda.h\"\n\nint main() {\n  TAgenda a;\n  char nombre[LARGO];\n  unsigned long telefono;\n  int n;\n  int q;\n\n  inicializar(&a);\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%s\", nombre);\n    scanf(\"%lu\", &telefono);\n    agregar(&a, nombre, telefono);\n  }\n  printf(\"Contactos: %d\\n\", total(a));\n  scanf(\"%d\", &q);\n  for (int i = 0; i < q; i++) {\n    scanf(\"%s\", nombre);\n    if (buscar(a, nombre, &telefono) == OK) {\n      printf(\"%lu\\n\", telefono);\n    } else {\n      printf(\"No esta\\n\");\n    }\n  }\n  return 0;\n}";
+const AGENDA_CARGAR = "#include <stdio.h>\n#include \"agenda.h\"\n\nint main() {\n  TAgenda a;\n  char nombre[LARGO];\n  unsigned long telefono;\n  int n;\n  int cargados = 0;\n  int repetidos = 0;\n  int sinLugar = 0;\n\n  inicializar(&a);\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%s\", nombre);\n    scanf(\"%lu\", &telefono);\n    TResultado r = agregar(&a, nombre, telefono);\n    if (r == OK) {\n      cargados = cargados + 1;\n    } else if (r == NOMBRE_REPETIDO) {\n      repetidos = repetidos + 1;\n      buscar(a, nombre, &telefono);\n      printf(\"El contacto %s ya fue registrado con el numero %lu\\n\", nombre, telefono);\n    } else {\n      sinLugar = sinLugar + 1;\n    }\n  }\n  printf(\"Cargados: %d\\nRepetidos: %d\\nSin lugar: %d\", cargados, repetidos, sinLugar);\n  return 0;\n}";
+const AGENDA_DOS = "#include <stdio.h>\n#include \"agenda.h\"\n\nint main() {\n  TAgenda trabajo;\n  TAgenda personal;\n  char nombre[LARGO];\n  unsigned long telefono;\n  int n;\n  int q;\n\n  inicializar(&trabajo);\n  inicializar(&personal);\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%s\", nombre);\n    scanf(\"%lu\", &telefono);\n    agregar(&trabajo, nombre, telefono);\n  }\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%s\", nombre);\n    scanf(\"%lu\", &telefono);\n    agregar(&personal, nombre, telefono);\n  }\n  scanf(\"%d\", &q);\n  for (int i = 0; i < q; i++) {\n    scanf(\"%s\", nombre);\n    if (buscar(trabajo, nombre, &telefono) == OK) {\n      printf(\"%lu\\n\", telefono);\n    } else if (buscar(personal, nombre, &telefono) == OK) {\n      printf(\"%lu\\n\", telefono);\n    } else {\n      printf(\"No esta\\n\");\n    }\n  }\n  return 0;\n}";
+const AGENDA_H_AMPLIADO = "#ifndef AGENDA_H\n#define AGENDA_H\n\n#define MAX 10\n#define LARGO 20\n\ntypedef enum {\n  OK,\n  AGENDA_LLENA,\n  NOMBRE_REPETIDO,\n  NO_ENCONTRADO\n} TResultado;\n\ntypedef struct {\n  char nombres[MAX][LARGO];\n  unsigned long telefonos[MAX];\n  int cantidad;\n} TAgenda;\n\nvoid inicializar(TAgenda *a);\nint total(TAgenda a);\nTResultado agregar(TAgenda *a, char nombre[], unsigned long telefono);\nTResultado buscar(TAgenda a, char nombre[], unsigned long *telefono);\nTResultado eliminar(TAgenda *a, char nombre[]);\n\n#endif";
+const AGENDA_C_AMPLIADO = "#include <string.h>\n#include \"agenda.h\"\n\nvoid inicializar(TAgenda *a) {\n  a->cantidad = 0;\n}\n\nint total(TAgenda a) {\n  return a.cantidad;\n}\n\nTResultado agregar(TAgenda *a, char nombre[], unsigned long telefono) {\n  for (int i = 0; i < a->cantidad; i++) {\n    if (strcmp(a->nombres[i], nombre) == 0) {\n      return NOMBRE_REPETIDO;\n    }\n  }\n  if (a->cantidad == MAX) {\n    return AGENDA_LLENA;\n  }\n  strcpy(a->nombres[a->cantidad], nombre);\n  a->telefonos[a->cantidad] = telefono;\n  a->cantidad = a->cantidad + 1;\n  return OK;\n}\n\nTResultado buscar(TAgenda a, char nombre[], unsigned long *telefono) {\n  for (int i = 0; i < a.cantidad; i++) {\n    if (strcmp(a.nombres[i], nombre) == 0) {\n      *telefono = a.telefonos[i];\n      return OK;\n    }\n  }\n  return NO_ENCONTRADO;\n}\n\nTResultado eliminar(TAgenda *a, char nombre[]) {\n  for (int i = 0; i < a->cantidad; i++) {\n    if (strcmp(a->nombres[i], nombre) == 0) {\n      for (int j = i; j < a->cantidad - 1; j++) {\n        strcpy(a->nombres[j], a->nombres[j + 1]);\n        a->telefonos[j] = a->telefonos[j + 1];\n      }\n      a->cantidad = a->cantidad - 1;\n      return OK;\n    }\n  }\n  return NO_ENCONTRADO;\n}";
+const AGENDA_BAJAS = "#include <stdio.h>\n#include \"agenda.h\"\n\nint main() {\n  TAgenda a;\n  char nombre[LARGO];\n  unsigned long telefono;\n  int n;\n  int q;\n\n  inicializar(&a);\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%s\", nombre);\n    scanf(\"%lu\", &telefono);\n    agregar(&a, nombre, telefono);\n  }\n  scanf(\"%d\", &q);\n  for (int i = 0; i < q; i++) {\n    scanf(\"%s\", nombre);\n    if (eliminar(&a, nombre) == OK) {\n      printf(\"Eliminado\\n\");\n    } else {\n      printf(\"No esta\\n\");\n    }\n  }\n  printf(\"Quedan: %d\", total(a));\n  return 0;\n}";
 
 const FECHA_H = lineas(
   '#ifndef FECHA_H',
@@ -2436,4 +2449,90 @@ export const CASOS_DE_TAD = [
   tadListaUsar(3, 'invirtiendo toda la lista dos veces', LISTA_INVERTIR.replace('longitud(l) / 2', 'longitud(l)'), ['MUESTRA_DISTINTA']),
   tadListaUsar(3, 'sin sacar y volver a meter', LISTA_INVERTIR.replace('  eliminar(&l, i);\n', '').replace('  eliminar(&l, j);\n', ''), ['TAD_OPERACION_SIN_USAR']),
   tadListaUsar(3, 'dejando el mismo valor en las dos posiciones', LISTA_INVERTIR.replace('insertar(&l, j, a);', 'insertar(&l, j, b);'), ['MUESTRA_DISTINTA']),
+  // ===== La agenda =====
+  tadAgenda(1, 'completo', AGENDA_H),
+  tadAgenda(1, 'los nombres sin la constante del largo', AGENDA_H.replace('nombres[MAX][LARGO]', 'nombres[MAX][20]'), ['CAMPO_CADENA_SIN_CONSTANTE']),
+  tadAgenda(1, 'los nombres sin la constante de la cantidad', AGENDA_H.replace('nombres[MAX][LARGO]', 'nombres[10][LARGO]'), ['CAMPO_ARREGLO_SIN_CONSTANTE']),
+  tadAgenda(1, 'nombres de solo 10 letras', AGENDA_H.replace('#define LARGO 20', '#define LARGO 10'), ['ARREGLO_CHICO']),
+  tadAgenda(1, 'un solo nombre en vez de una tabla', AGENDA_H.replace('nombres[MAX][LARGO]', 'nombres[LARGO]'), ['CAMPO_NO_ES_TABLA']),
+  tadAgenda(1, 'los nombres como numeros', AGENDA_H.replace('char nombres[MAX][LARGO]', 'int nombres[MAX][LARGO]'), ['CAMPO_TIPO']),
+  tadAgenda(1, 'los telefonos como int', AGENDA_H.replace('unsigned long telefonos[MAX]', 'int telefonos[MAX]'), ['CAMPO_TIPO']),
+  tadAgenda(1, 'los telefonos como long (con signo)', AGENDA_H.replace('unsigned long telefonos[MAX]', 'long telefonos[MAX]'), ['CAMPO_TIPO']),
+  tadAgenda(1, 'sin la cantidad', AGENDA_H.replace('  int cantidad;\n', ''), ['CAMPO_FALTA']),
+  tadAgenda(1, 'agregar con la agenda por valor', AGENDA_H.replace('TResultado agregar(TAgenda *a,', 'TResultado agregar(TAgenda a,'), ['PARAMETRO_REFERENCIA_FALTA']),
+  tadAgenda(1, 'agregar sin el telefono', AGENDA_H.replace('char nombre[], unsigned long telefono);', 'char nombre[]);'), ['PARAMETROS_CANTIDAD']),
+  tadAgenda(1, 'agregar con el telefono int', AGENDA_H.replace('unsigned long telefono);', 'int telefono);'), ['PARAMETRO_TIPO']),
+  tadAgenda(1, 'agregar con el telefono long (con signo)', AGENDA_H.replace('unsigned long telefono);', 'long telefono);'), ['PARAMETRO_TIPO']),
+  tadAgenda(1, 'buscar con el telefono por valor', AGENDA_H.replace('unsigned long *telefono);', 'unsigned long telefono);'), ['PARAMETRO_REFERENCIA_FALTA']),
+  tadAgenda(1, 'agregar devuelve un entero', AGENDA_H.replace('TResultado agregar', 'int agregar'), ['FUNCION_TIPO_RETORNO']),
+  tadAgenda(1, 'sin declarar buscar', AGENDA_H.replace('TResultado buscar(TAgenda a, char nombre[], unsigned long *telefono);\n', ''), ['PROTOTIPO_FALTA']),
+  tadAgenda(1, 'con algo afuera', AGENDA_H + '\n\nvoid eliminar(TAgenda *a);', ['ENCABEZADO_FUERA_DE_LA_GUARDA']),
+  tadAgenda(2, 'completo', AGENDA_C),
+  tadAgenda(2, 'agregar sin buscar repetidos', AGENDA_C.replace('  for (int i = 0; i < a->cantidad; i++) {\n    if (strcmp(a->nombres[i], nombre) == 0) {\n      return NOMBRE_REPETIDO;\n    }\n  }\n', ''), ['DEVUELVE_DISTINTO']),
+  tadAgenda(2, 'agregar comparando con ==', AGENDA_C.replace('strcmp(a->nombres[i], nombre) == 0', 'a->nombres[i] == nombre'), ['DEVUELVE_DISTINTO']),
+  tadAgenda(2, 'agregar que compara solo el principio', AGENDA_C.replace('strcmp(a->nombres[i], nombre) == 0', 'strncmp(a->nombres[i], nombre, strlen(nombre)) == 0'), ['DEVUELVE_DISTINTO']),
+  tadAgenda(2, 'agregar que copia el nombre con =', AGENDA_C.replace('strcpy(a->nombres[a->cantidad], nombre);', 'a->nombres[a->cantidad] = nombre;'), ['CADENA_COPIADA_CON_IGUAL']),
+  tadAgenda(2, 'agregar sin copiar el nombre', AGENDA_C.replace('  strcpy(a->nombres[a->cantidad], nombre);\n', ''), ['VARIABLE_SIN_VALOR']),
+  tadAgenda(2, 'agregar sin guardar el telefono', AGENDA_C.replace('  a->telefonos[a->cantidad] = telefono;\n', ''), ['VARIABLE_SIN_VALOR']),
+  tadAgenda(2, 'agregar sin sumar a la cantidad', AGENDA_C.replace('  a->cantidad = a->cantidad + 1;\n', ''), ['DEVUELVE_DISTINTO']),
+  tadAgenda(2, 'agregar sin mirar si esta llena', AGENDA_C.replace('  if (a->cantidad == MAX) {\n    return AGENDA_LLENA;\n  }\n', ''), ['INDICE_FUERA_DE_RANGO']),
+  tadAgenda(
+    2,
+    'agregar que mira si esta llena antes que los repetidos',
+    AGENDA_C.replace(
+      '  for (int i = 0; i < a->cantidad; i++) {\n    if (strcmp(a->nombres[i], nombre) == 0) {\n      return NOMBRE_REPETIDO;\n    }\n  }\n  if (a->cantidad == MAX) {\n    return AGENDA_LLENA;\n  }\n',
+      '  if (a->cantidad == MAX) {\n    return AGENDA_LLENA;\n  }\n  for (int i = 0; i < a->cantidad; i++) {\n    if (strcmp(a->nombres[i], nombre) == 0) {\n      return NOMBRE_REPETIDO;\n    }\n  }\n'
+    ),
+    ['DEVUELVE_DISTINTO']
+  ),
+  tadAgenda(2, 'buscar que no deja el telefono', AGENDA_C.replace('      *telefono = a.telefonos[i];\n', ''), ['DEVUELVE_DISTINTO']),
+  tadAgenda(2, 'buscar que cambia la variable si no lo encuentra', AGENDA_C.replace('  return NO_ENCONTRADO;', '  *telefono = 0;\n  return NO_ENCONTRADO;'), ['DEVUELVE_DISTINTO']),
+  tadAgenda(2, 'buscar que devuelve siempre OK', AGENDA_C.replace('  return NO_ENCONTRADO;', '  return OK;'), ['DEVUELVE_DISTINTO']),
+  tadAgenda(2, 'buscar que mira hasta el maximo', AGENDA_C.replace('for (int i = 0; i < a.cantidad; i++)', 'for (int i = 0; i < MAX; i++)'), ['VARIABLE_SIN_VALOR']),
+  tadAgenda(2, 'inicializar que no pone la cantidad en 0', AGENDA_C.replace('  a->cantidad = 0;', '  a->cantidad = a->cantidad;'), ['DEVUELVE_DISTINTO']),
+  tadAgenda(2, 'total que devuelve el maximo', AGENDA_C.replace('return a.cantidad;', 'return MAX;'), ['DEVUELVE_DISTINTO']),
+  tadAgenda(2, 'sin incluir la biblioteca de cadenas', AGENDA_C.replace('#include <string.h>\n', ''), ['INCLUDE_FALTA_PARA_FUNCION']),
+  tadAgenda(2, 'sin definir buscar', AGENDA_C.slice(0, AGENDA_C.indexOf('\n\nTResultado buscar')), ['PROTOTIPO_SIN_DEFINICION']),
+  tadAgenda(3, 'comparando con strcmp', '1'),
+  tadAgenda(3, 'solo se comparan numeros', '0', ['OPCION_AGENDA_SOLO_ENTEROS']),
+  tadAgenda(3, 'hay que escribir en minusculas', '2', ['OPCION_AGENDA_MINUSCULAS']),
+  tadAgenda(4, 'el main correcto', AGENDA_MAIN),
+  tadAgenda(4, 'con un mensaje para pedir los datos', AGENDA_MAIN.replace('    scanf("%s", nombre);\n    scanf("%lu", &telefono);', '    printf("Nombre: ");\n    scanf("%s", nombre);\n    scanf("%lu", &telefono);'), ['MUESTRA_DISTINTA']),
+  tadAgenda(4, 'sin mostrar los contactos', AGENDA_MAIN.replace('  printf("Contactos: %d\\n", total(a));\n', ''), ['TAD_OPERACION_SIN_USAR']),
+  tadAgenda(4, 'avisando al reves', AGENDA_MAIN.replace('== OK', '== NO_ENCONTRADO'), ['MUESTRA_DISTINTA']),
+  tadAgenda(4, 'mirando el arreglo', AGENDA_MAIN.replace('total(a)', 'a.cantidad'), ['TAD_ACCESO_DIRECTO', 'TAD_OPERACION_SIN_USAR']),
+  tadAgenda(4, 'leyendo el telefono como int', AGENDA_MAIN.replace('scanf("%lu", &telefono);', 'scanf("%d", &telefono);'), ['FORMATO_NO_CORRESPONDE_AL_TIPO']),
+  tadAgenda(4, 'leyendo el telefono con %ld', AGENDA_MAIN.replace('scanf("%lu", &telefono);', 'scanf("%ld", &telefono);'), ['FORMATO_NO_CORRESPONDE_AL_TIPO']),
+  tadAgenda(4, 'el telefono declarado long (con signo)', AGENDA_MAIN.replace('unsigned long telefono;', 'long telefono;'), ['FORMATO_NO_CORRESPONDE_AL_TIPO']),
+  tadAgendaUsar(1, 'cargar correcto', AGENDA_CARGAR),
+  tadAgendaUsar(1, 'contando todo como cargado', AGENDA_CARGAR.replace('      cargados = cargados + 1;', '      cargados = cargados + 1;\n    }\n    if (r != OK) {\n      cargados = cargados + 1;'), ['MUESTRA_DISTINTA']),
+  tadAgendaUsar(1, 'sin distinguir los repetidos', AGENDA_CARGAR.replace('r == NOMBRE_REPETIDO', 'r == AGENDA_LLENA'), ['MUESTRA_DISTINTA']),
+  tadAgendaUsar(1, 'con un mensaje para pedir los datos', AGENDA_CARGAR.replace('  scanf("%d", &n);', '  printf("Cantidad: ");\n  scanf("%d", &n);'), ['MUESTRA_DISTINTA']),
+  tadAgendaUsar(1, 'con un nombre mas largo de lo que entra', AGENDA_CARGAR.replace('char nombre[LARGO];', 'char nombre[5];'), ['INDICE_FUERA_DE_RANGO']),
+  tadAgendaUsar(1, 'avisando sin consultar a buscar', AGENDA_CARGAR.replace('      buscar(a, nombre, &telefono);\n', ''), ['TAD_OPERACION_SIN_USAR']),
+  tadAgendaUsar(1, 'mostrando el telefono que se acaba de ingresar', AGENDA_CARGAR.replace('      buscar(a, nombre, &telefono);\n', '      unsigned long otro;\n      buscar(a, nombre, &otro);\n'), ['MUESTRA_DISTINTA']),
+  tadAgendaUsar(1, 'avisando de todos los contactos', AGENDA_CARGAR.replace('    TResultado r = agregar(&a, nombre, telefono);\n', '    TResultado r = agregar(&a, nombre, telefono);\n    printf("El contacto %s ya fue registrado con el numero %lu\\n", nombre, telefono);\n'), ['MUESTRA_DISTINTA']),
+  tadAgendaUsar(1, 'con otro texto en el aviso', AGENDA_CARGAR.replace('ya fue registrado', 'ya esta registrado'), ['MUESTRA_DISTINTA']),
+  tadAgendaUsar(1, 'el telefono del aviso con %d', AGENDA_CARGAR.replace('numero %lu', 'numero %d'), ['FORMATO_NO_CORRESPONDE_AL_TIPO']),
+  tadAgendaUsar(2, 'dos agendas correcto', AGENDA_DOS),
+  tadAgendaUsar(2, 'mirando primero la personal', AGENDA_DOS.replace('buscar(trabajo, nombre, &telefono) == OK', 'buscar(personal, nombre, &telefono) == OK').replace('buscar(personal, nombre, &telefono) == OK) {\n      printf("%lu\\n", telefono);\n    } else {', 'buscar(trabajo, nombre, &telefono) == OK) {\n      printf("%lu\\n", telefono);\n    } else {'), ['MUESTRA_DISTINTA']),
+  tadAgendaUsar(2, 'cargando todo en la de trabajo', AGENDA_DOS.replace('agregar(&personal, nombre, telefono);', 'agregar(&trabajo, nombre, telefono);'), ['MUESTRA_DISTINTA']),
+  tadAgendaAmpliar(1, 'completo', AGENDA_H_AMPLIADO),
+  tadAgendaAmpliar(1, 'la declaracion despues del endif', AGENDA_H_AMPLIADO.replace('TResultado eliminar(TAgenda *a, char nombre[]);\n\n#endif', '\n#endif\nTResultado eliminar(TAgenda *a, char nombre[]);'), ['ENCABEZADO_FUERA_DE_LA_GUARDA']),
+  tadAgendaAmpliar(1, 'eliminar que devuelve un entero', AGENDA_H_AMPLIADO.replace('TResultado eliminar', 'int eliminar'), ['FUNCION_TIPO_RETORNO']),
+  tadAgendaAmpliar(1, 'sin declarar eliminar', AGENDA_H_AMPLIADO.replace('TResultado eliminar(TAgenda *a, char nombre[]);\n', ''), ['PROTOTIPO_FALTA']),
+  tadAgendaAmpliar(1, 'eliminar con la agenda por valor', AGENDA_H_AMPLIADO.replace('eliminar(TAgenda *a,', 'eliminar(TAgenda a,'), ['PARAMETRO_REFERENCIA_FALTA']),
+  tadAgendaAmpliar(2, 'completo', AGENDA_C_AMPLIADO),
+  tadAgendaAmpliar(2, 'eliminar que devuelve siempre OK', AGENDA_C_AMPLIADO.slice(0, AGENDA_C_AMPLIADO.lastIndexOf('  return NO_ENCONTRADO;')) + '  return OK;\n}', ['DEVUELVE_DISTINTO']),
+  tadAgendaAmpliar(2, 'sin definir eliminar', AGENDA_C_AMPLIADO.slice(0, AGENDA_C_AMPLIADO.indexOf('\n\nTResultado eliminar')), ['PROTOTIPO_SIN_DEFINICION']),
+  tadAgendaAmpliar(2, 'eliminar sin restar a la cantidad', AGENDA_C_AMPLIADO.replace('      a->cantidad = a->cantidad - 1;\n', ''), ['DEVUELVE_DISTINTO']),
+  tadAgendaAmpliar(2, 'eliminar sin correr los nombres', AGENDA_C_AMPLIADO.replace('        strcpy(a->nombres[j], a->nombres[j + 1]);\n', ''), ['DEVUELVE_DISTINTO']),
+  tadAgendaAmpliar(2, 'eliminar sin correr los telefonos', AGENDA_C_AMPLIADO.replace('        a->telefonos[j] = a->telefonos[j + 1];\n', ''), ['DEVUELVE_DISTINTO']),
+  tadAgendaAmpliar(3, 'el main correcto', AGENDA_BAJAS),
+  tadAgendaAmpliar(3, 'sin eliminar', AGENDA_BAJAS.replace('eliminar(&a, nombre) == OK', 'buscar(a, nombre, &telefono) == OK'), ['TAD_OPERACION_SIN_USAR']),
+  tadAgendaAmpliar(3, 'avisando al reves', AGENDA_BAJAS.replace('eliminar(&a, nombre) == OK', 'eliminar(&a, nombre) == NO_ENCONTRADO'), ['MUESTRA_DISTINTA']),
+  tadAgendaAmpliar(3, 'sin mostrar cuantos quedan', AGENDA_BAJAS.replace('  printf("Quedan: %d", total(a));\n', ''), ['TAD_OPERACION_SIN_USAR']),
+  tadAgendaAmpliar(3, 'mostrando cuantas bajas se pidieron', AGENDA_BAJAS.replace('total(a)', 'q'), ['TAD_OPERACION_SIN_USAR']),
+  tadAgendaAmpliar(3, 'mostrando cuantos contactos se leyeron', AGENDA_BAJAS.replace('total(a)', 'n'), ['TAD_OPERACION_SIN_USAR']),
+  tadAgendaAmpliar(3, 'cambiando el texto del aviso', AGENDA_BAJAS.replace('printf("Eliminado\\n")', 'printf("Eliminada\\n")'), ['MUESTRA_DISTINTA']),
 ];
