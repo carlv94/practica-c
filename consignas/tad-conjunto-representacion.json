@@ -143,7 +143,7 @@
           ]
         }
       ],
-      "enunciado": "El archivo `conjunto.h` ya está escrito y lo ve en el editor. Se va a cambiar la forma de guardar un conjunto: en lugar de una lista con los números que están, usar un arreglo `presente` con una casilla por cada número posible, de 0 a 20, que dice si ese número está (`VERDADERO`) o no (`FALSO`). Haga estos cambios:\n- Cambie la constante `MAX` por `TAM`, que vale 21: una casilla por cada número del 0 al 20.\n- Cambie los campos de `TConjunto`: ahora son `presente`, un arreglo de `TAM` elementos de tipo `TBool`, y `cantidad`, con cuántos números hay, en ese orden.\n\nLas operaciones no cambian: no toque sus declaraciones.",
+      "enunciado": "El archivo `conjunto.h` ya está escrito y lo ve en el editor. Se va a cambiar la forma de guardar un conjunto: en lugar de una lista con los números que están, usar un arreglo `presente` con una casilla por cada número posible, de 0 a 20, que dice si ese número está (`VERDADERO`) o no (`FALSO`). Cambie la constante `MAX` por `TAM`, que vale 21 (una casilla por cada número del 0 al 20), y cambie los campos de `TConjunto`, que ahora son, en este orden:\n- `presente`: un arreglo de `TAM` elementos de tipo `TBool`. Cada casilla dice si el número que corresponde a su posición está o no.\n- `cantidad`: cuántos números hay.\n\nLas operaciones no cambian: no toque sus declaraciones.",
       "requiere": [
         {
           "encabezado": {

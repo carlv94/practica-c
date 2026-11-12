@@ -146,7 +146,7 @@
       "id": "tadh-fraccion",
       "titulo": "El archivo de la fracción",
       "escribe": "fraccion.h",
-      "enunciado": "Escriba `fraccion.h` para el TAD fracción. Una fracción guarda un numerador y un denominador, enteros, en los campos `numerador` y `denominador`, y el tipo se llama `TFraccion`. Tiene tres operaciones:\n- `crear`: recibe el numerador y el denominador y devuelve la fracción.\n- `sumar`: recibe dos fracciones y devuelve su suma.\n- `mostrar`: recibe una fracción y la muestra en pantalla, sin devolver nada.\n\nLas fracciones se pasan por valor. Use las guardas de inclusión `FRACCION_H`.",
+      "enunciado": "Escriba `fraccion.h` para el TAD fracción. Una fracción guarda un numerador y un denominador. El tipo se llama `TFraccion` y tiene dos campos, enteros:\n- `numerador`: el numerador de la fracción.\n- `denominador`: el denominador de la fracción.\n\nTiene tres operaciones:\n- `crear`: recibe el numerador y el denominador y devuelve la fracción.\n- `sumar`: recibe dos fracciones y devuelve su suma.\n- `mostrar`: recibe una fracción y la muestra en pantalla, sin devolver nada.\n\nLas fracciones se pasan por valor. Use las guardas de inclusión `FRACCION_H`.",
       "requiere": [
         {
           "encabezado": {
