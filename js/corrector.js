@@ -82,6 +82,7 @@ import {
   DivisionPorCero,
   NombreDesconocido,
   TextoComoLetra,
+  CadenaConIgual,
   EstructuraEntera,
 } from './simulador.js';
 
@@ -95,6 +96,15 @@ const CATEGORIAS = {
   entero: { es: esEntero, pide: 'un número entero', pideVarios: 'números enteros' },
   real: { es: esReal, pide: 'un número con decimales', pideVarios: 'números con decimales' },
   caracter: { es: (t) => t === 'char', pide: 'un solo carácter', pideVarios: 'caracteres' },
+  // Un entero largo: long, long int, unsigned long...
+  largo: { es: (t) => t.split(' ').includes('long'), pide: 'un número entero largo (`long`)', pideVarios: 'números enteros largos (`long`)' },
+  // Un entero largo sin signo: unsigned long. Lo que se guarda no es negativo y no entra en 4 bytes con signo.
+  largoSinSigno: {
+    es: (t) => t.split(' ').includes('long') && t.split(' ').includes('unsigned'),
+    pide: 'un número entero largo sin signo (`unsigned long`)',
+    pideVarios: 'números enteros largos sin signo (`unsigned long`)',
+    razon: 'Los valores de esta consigna nunca son negativos y pasan de 2.147.483.647, el máximo de un `int` (y de un `long` de 4 bytes, como el de Windows): por eso se declara sin signo y largo.',
+  },
 };
 
 // Un acento grave, para armar mensajes con codigo.
@@ -171,7 +181,7 @@ const DE_LA_BIBLIOTECA = [
 
 // La biblioteca que hay que agregar para usar una funcion, en las reglas que la
 // controlan (hoy solo la de resultado).
-const BIBLIOTECA_DE = { pow: 'math.h', sqrt: 'math.h' };
+const BIBLIOTECA_DE = { pow: 'math.h', sqrt: 'math.h', strcpy: 'string.h', strcmp: 'string.h', strlen: 'string.h', strncmp: 'string.h' };
 
 // El plural de un nombre de nivel: curso -> cursos, parcial -> parciales.
 const enPlural = (s) => (/[aeiou]$/i.test(s) ? `${s}s` : /ón$/i.test(s) ? `${s.slice(0, -2)}ones` : `${s}es`);
@@ -691,7 +701,7 @@ export function corregir(
       if (!cumple) {
         error(
           'FUNCION_TIPO_RETORNO',
-          `La función tiene que devolver ${categoria.pide}: ese es el tipo que va antes del nombre. Está declarada como ${BT}${escrito}${BT}.`,
+          `La función tiene que devolver ${categoria.pide}: ese es el tipo que va antes del nombre. Está declarada como ${BT}${escrito}${BT}.${categoria.razon ? ' ' + categoria.razon : ''}`,
           f.fila
         );
         return;
@@ -762,7 +772,7 @@ export function corregir(
       if (categoria && !(tipo.clase === 'primitivo' && categoria.es(tipo.nombre))) {
         error(
           'PARAMETRO_TIPO',
-          `${que} tiene que ser ${categoria.pide}. Está declarado como ${declarado}.`,
+          `${que} tiene que ser ${categoria.pide}. Está declarado como ${declarado}.${categoria.razon ? ' ' + categoria.razon : ''}`,
           p.fila
         );
         return;
@@ -1205,6 +1215,54 @@ export function corregir(
     const n = campo.nombre;
     const declarado = `Está declarado como ${enPalabras(campo)}.`;
 
+    // Un arreglo de cadenas (dos corchetes): "tipo": "cadena", "arreglo": 10, "constante": "MAX" (cuantos
+    // textos guarda) y "largo": 20, "constanteLargo": "LARGO" (cuantas letras tiene cada uno).
+    if (esperado.tipo === 'cadena' && esperado.arreglo != null) {
+      const pide = `una tabla de ${esperado.arreglo} cadenas de ${esperado.largo} caracteres`;
+      const tamano = (texto, constante) => {
+        const e = texto.trim();
+        return { vacio: !e, constante: Boolean(constante) && e !== constante, valor: valorDeDimension(e, modelo) };
+      };
+      if (base !== 'char') {
+        error('CAMPO_TIPO', `Los textos de \`${n}\` tienen que ser cadenas de caracteres. ${declarado}`, campo.fila);
+      } else if (campo.punteros) {
+        error('CAMPO_ES_PUNTERO', `\`${n}\` tiene que ser ${pide}: sobra el \`*\`.`, campo.fila);
+      } else if (campo.arreglo.length !== 2) {
+        error(
+          'CAMPO_NO_ES_TABLA',
+          `\`${n}\` tiene que ser ${pide}: una tabla con dos pares de corchetes, el primero con cuántos textos guarda y el segundo con el largo de cada uno. Está declarado como ${enPalabras(campo)}.`,
+          campo.fila
+        );
+      } else {
+        const filas = tamano(campo.arreglo[0], esperado.constante);
+        const largo = tamano(campo.arreglo[1], esperado.constanteLargo);
+        if (filas.vacio || largo.vacio) {
+          error('ARREGLO_SIN_DIMENSION', `A \`${n}\` le falta una dimensión entre los corchetes.`, campo.fila);
+        } else if (filas.constante) {
+          error(
+            'CAMPO_ARREGLO_SIN_CONSTANTE',
+            `La cantidad de textos de \`${n}\` se escribe con la constante \`${esperado.constante}\`, no con un número: así el tamaño se cambia en un solo lugar.`,
+            campo.fila
+          );
+        } else if (largo.constante) {
+          error(
+            'CAMPO_CADENA_SIN_CONSTANTE',
+            `El largo de cada texto de \`${n}\` se escribe con la constante \`${esperado.constanteLargo}\`, no con un número: así el tamaño se cambia en un solo lugar.`,
+            campo.fila
+          );
+        } else if (filas.valor != null && filas.valor < esperado.arreglo) {
+          error('ARREGLO_CHICO', `\`${n}\` puede guardar ${filas.valor} textos y hay que guardar ${esperado.arreglo}: no alcanza.`, campo.fila);
+        } else if (filas.valor != null && filas.valor > esperado.arreglo) {
+          error('ARREGLO_GRANDE', `\`${n}\` puede guardar ${filas.valor} textos y la consigna pide ${esperado.arreglo}: sobra espacio.`, campo.fila);
+        } else if (largo.valor != null && largo.valor < esperado.largo) {
+          error('ARREGLO_CHICO', `Cada texto de \`${n}\` puede tener ${largo.valor} caracteres y la consigna pide ${esperado.largo}: no alcanza.`, campo.fila);
+        } else if (largo.valor != null && largo.valor > esperado.largo) {
+          error('ARREGLO_GRANDE', `Cada texto de \`${n}\` puede tener ${largo.valor} caracteres y la consigna pide ${esperado.largo}: sobra espacio.`, campo.fila);
+        }
+      }
+      return;
+    }
+
     if (esperado.tipo === 'cadena') {
       if (base !== 'char') {
         error(
@@ -1349,7 +1407,7 @@ export function corregir(
           campo.fila
         );
       } else if (!base || !categoria.es(base)) {
-        error('CAMPO_TIPO', `Los elementos de \`${n}\` tienen que ser ${categoria.pideVarios}. ${declarado}`, campo.fila);
+        error('CAMPO_TIPO', `Los elementos de \`${n}\` tienen que ser ${categoria.pideVarios}. ${declarado}${categoria.razon ? ' ' + categoria.razon : ''}`, campo.fila);
       } else if (!campo.arreglo[0].trim()) {
         error('ARREGLO_SIN_DIMENSION', `A \`${n}\` le falta la cantidad de elementos entre los corchetes.`, campo.fila);
       } else if (esperado.constante && campo.arreglo[0].trim() !== esperado.constante) {
@@ -1382,7 +1440,7 @@ export function corregir(
         campo.fila
       );
     } else if (!base || !categoria.es(base)) {
-      error('CAMPO_TIPO', `\`${n}\` tiene que ser ${categoria.pide}. ${declarado}`, campo.fila);
+      error('CAMPO_TIPO', `\`${n}\` tiene que ser ${categoria.pide}. ${declarado}${categoria.razon ? ' ' + categoria.razon : ''}`, campo.fila);
     }
   }
 
@@ -3508,6 +3566,12 @@ export function corregir(
             : `\`${e.texto}\` es una estructura entera, con varios campos adentro: no es un número. Para usarla en una cuenta hay que elegir uno de sus campos.`,
           e.fila
         );
+      } else if (e instanceof CadenaConIgual) {
+        error(
+          'CADENA_COPIADA_CON_IGUAL',
+          `${conContexto}\`${e.izquierda} = ${e.derecha}\` no se puede hacer: una cadena es un arreglo, y un arreglo no se copia con \`=\`. Para copiar el texto se usa \`strcpy(destino, origen)\`.`,
+          e.fila
+        );
       } else if (e instanceof TextoComoLetra) {
         const contenido = e.texto.slice(1, -1);
         // Si la revision general ya lo dijo, no se repite.
@@ -3720,7 +3784,8 @@ export function corregir(
       llamada = `${llamada.slice(0, abre)}(${args.join(', ')})`;
     }
     const devuelve = f ? textoDeTipo(f.tipo) : 'int';
-    if (!m || (f && !(f.tipo.clase === 'primitivo' && f.tipo.nombre === 'void' && !f.punteros))) {
+    // Una funcion de la biblioteca (strcmp, strlen) no esta en el modelo: devuelve un entero.
+    if (!m || !f || !(f.tipo.clase === 'primitivo' && f.tipo.nombre === 'void' && !f.punteros)) {
       lineas.push(`  ${devuelve} __devuelve;`);
       lineas.push(`  __devuelve = ${llamada};`);
     } else {
@@ -3746,16 +3811,20 @@ export function corregir(
 
   // "%d" con un decimal, "%f" con un entero: dice cual es el que corresponde.
   function mensajeDeFormato(e) {
-    const queEs = { '%d': 'un entero (`int`)', '%i': 'un entero (`int`)', '%f': 'un decimal (`float`)', '%lf': 'un decimal (`double`)', '%c': 'una letra (`char`)' };
-    const deTipo = { int: 'un `int`', float: 'un `float`', double: 'un `double`', char: 'un `char`', decimal: 'un valor decimal' };
+    const queEs = { '%d': 'un entero (`int`)', '%i': 'un entero (`int`)', '%ld': 'un entero largo (`long`)', '%lu': 'un entero largo sin signo (`unsigned long`)', '%f': 'un decimal (`float`)', '%lf': 'un decimal (`double`)', '%c': 'una letra (`char`)' };
+    const deTipo = { int: 'un `int`', long: 'un `long`', 'unsigned long': 'un `unsigned long`', float: 'un `float`', double: 'un `double`', char: 'un `char`', decimal: 'un valor decimal' };
     const correcto =
       e.funcion === 'scanf'
-        ? { int: '%d', float: '%f', double: '%lf', char: '%c' }[e.tipo]
+        ? { int: '%d', long: '%ld', 'unsigned long': '%lu', float: '%f', double: '%lf', char: '%c' }[e.tipo]
         : e.tipo === 'int'
           ? '%d'
-          : e.tipo === 'char'
-            ? '%c'
-            : '%f';
+          : e.tipo === 'long'
+            ? '%ld'
+            : e.tipo === 'unsigned long'
+              ? '%lu'
+              : e.tipo === 'char'
+              ? '%c'
+              : '%f';
     const que = e.funcion === 'printf' && e.formato === '%lf' ? 'un decimal' : queEs[e.formato];
     return `\`${e.formato}\` es el formato de ${que}, y \`${e.texto}\` es ${deTipo[e.tipo]}: el formato que le corresponde es \`${correcto}\`.`;
   }
@@ -4410,7 +4479,7 @@ export function corregir(
         // (Si no empieza con una llamada, como "p.tope" despues de preparar una pila,
         // es una expresion que se evalua tal cual.)
         const nombreLlamado = llamada && /^\s*([A-Za-z_]\w*)\s*\(/.exec(llamada);
-        if (nombreLlamado && !modelo.funciones.some((x) => !x.prototipo && x.nombre === nombreLlamado[1])) {
+        if (nombreLlamado && !DE_LA_BIBLIOTECA.includes(nombreLlamado[1]) && !modelo.funciones.some((x) => !x.prototipo && x.nombre === nombreLlamado[1])) {
           // Si ya se dijo que la funcion se llama de otra manera, con eso alcanza.
           // Y si el .h declara la funcion y falta definirla, tambien: lo dice defineTodo.
           if (diagnosticos.some((d) => d.codigo === 'FUNCION_NOMBRE' || d.codigo === 'PROTOTIPO_SIN_DEFINICION')) return;

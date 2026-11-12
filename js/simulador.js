@@ -25,6 +25,14 @@
 // Algo que el interprete no sabe seguir.
 export class SinVerificar extends Error {}
 
+// Una cadena es un arreglo y no se copia con =: se usa strcpy.
+export class CadenaConIgual extends Error {
+  constructor(izquierda, derecha, fila) {
+    super(`${izquierda} = ${derecha}`);
+    Object.assign(this, { izquierda, derecha, fila });
+  }
+}
+
 // Un indice que no existe: v[5] en un arreglo de 5.
 export class FueraDeRango extends Error {
   // "escrito" es si el indice es un numero escrito: notas[6]. "dimension" es
@@ -359,8 +367,8 @@ function recogerEstructuras(arbol) {
           nombre: nombre.text,
           texto: tipo.text,
           soportado: simple && numerico,
-          // Un arreglo de numeros dentro de la estructura (las letras son cadenas, que no se siguen).
-          arreglo: !simple && soloArreglo && numerico && !/char/.test(tipo.text) && tamanos.every(Boolean) ? tamanos : null,
+          // Un arreglo de numeros dentro de la estructura; un char[N] es una cadena: un arreglo de codigos.
+          arreglo: !simple && soloArreglo && numerico && tamanos.every(Boolean) ? tamanos : null,
           // Un arreglo de un tipo con nombre (TBool presente[21]): si es un enumerado se sigue
           // como uno de numeros; que lo sea se sabe recien al crear el campo.
           arregloNombrado: !simple && soloArreglo && tipo.type === 'type_identifier' && tamanos.every(Boolean) ? { tipo: tipo.text, tamanos } : null,
@@ -508,7 +516,8 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
   }
 
   // Un arreglo, o lo que queda de el al indexarlo.
-  function posicion(n) {
+  // "parcial" deja sin indice la ultima dimension: una cadena (nombres[i], c.nombre).
+  function posicion(n, parcial = false) {
     if (n.type === 'identifier') {
       const variable = variables.get(n.text);
       if (!variable && estructurasVivas.has(n.text)) {
@@ -531,7 +540,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
       while (raiz && ['subscript_expression', 'parenthesized_expression'].includes(raiz.type)) {
         raiz = raiz.type === 'subscript_expression' ? raiz.childForFieldName('argument') : raiz.namedChildren[0];
       }
-      if (raiz && raiz.type === 'field_expression') return posicionDeCampo(n);
+      if (raiz && raiz.type === 'field_expression') return posicionDeCampo(n, parcial);
       const base = posicion(n.childForFieldName('argument'));
       // p[i] con p un puntero: lo mismo que *(p + i).
       if (base.variable && base.variable.puntero) {
@@ -561,7 +570,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
       return { ...base, indices: [...base.indices, indice.v] };
     }
     if (n.type === 'parenthesized_expression') return posicion(n.namedChildren[0]);
-    if (n.type === 'field_expression') return posicionDeCampo(n);
+    if (n.type === 'field_expression') return posicionDeCampo(n, parcial);
     // *x: lo que apunta un parametro declarado con * (la variable que llego con &).
     if (n.type === 'pointer_expression' && /^\*/.test(n.text.trimStart())) {
       const argumento = n.childForFieldName('argument') || n.namedChildren[n.namedChildren.length - 1];
@@ -595,7 +604,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
 
   // Un campo de una variable de estructura: "alumno.promedio" es esa variable
   // aplanada, y "alumnos[i].promedio" una de las posiciones de "alumnos.promedio".
-  function posicionDeCampo(n) {
+  function posicionDeCampo(n, parcial = false) {
     // El camino de afuera hacia adentro: campos e indices, hasta la variable.
     // Con una flecha (p->edad) o un asterisco ((*p).edad) la variable es un puntero
     // a una estructura, y los campos son los de la estructura a la que apunta.
@@ -702,7 +711,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
         }
         posiciones.push(indice.v);
       });
-    if (variable.dims && posiciones.length !== variable.dims.length) sinVerificar(n, `${nombreBase} sin todos sus indices`);
+    if (variable.dims && posiciones.length !== variable.dims.length - (parcial ? 1 : 0)) sinVerificar(n, `${nombreBase} sin todos sus indices`);
     if (!variable.dims && posiciones.length) sinVerificar(n);
     return { variable, nombre: clave, indices: posiciones };
   }
@@ -1137,8 +1146,8 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
         continue;
       }
       const formato = `%${m[4]}${m[5]}`;
-      if (![...['%d', '%i', '%f', '%lf', '%c'], ...(conTexto ? ['%s'] : [])].includes(formato)) sinVerificar(n, `la conversion ${m[0]}`);
-      if (m[4] && m[5] !== 'f') sinVerificar(n, `la conversion ${m[0]}`);
+      if (![...['%d', '%i', '%f', '%lf', '%ld', '%lu', '%c'], ...(conTexto ? ['%s'] : [])].includes(formato)) sinVerificar(n, `la conversion ${m[0]}`);
+      if (m[4] && !['f', 'd', 'u'].includes(m[5])) sinVerificar(n, `la conversion ${m[0]}`);
       lista.push({ formato, relleno: m[1], ancho: Number(m[2] || 0), decimales: m[3] === undefined ? null : Number(m[3]) });
     }
     if (desde < texto.length) lista.push({ texto: texto.slice(desde) });
@@ -1152,24 +1161,100 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
   function tipoDe(n) {
     if (['identifier', 'subscript_expression', 'field_expression'].includes(n.type)) {
       const p = posicion(n);
-      if (p.variable) return p.variable.tipo;
+      if (p.variable) return p.variable.largo ? (p.variable.sinSigno ? 'unsigned long' : 'long') : p.variable.tipo;
     }
     return null;
   }
 
-  // Las letras de una cadena: un arreglo de caracteres, hasta su fin ('\0'), o un texto escrito.
-  function textoDeCadena(a) {
-    if (a.type === 'string_literal') return textoDe(a);
-    if (!(a.type === 'identifier' || a.type === 'field_expression')) return sinVerificar(a, 'un texto que no se sabe seguir');
-    const v = variables.get(a.text.replace(/\s+/g, ''));
-    if (!v || !v.dims || v.dims.length !== 1) return sinVerificar(a, 'un texto que no se sabe seguir');
+  // Una expresion que se puede mirar sin cambiar nada (sin ++, --, = ni llamadas).
+  const sinEfectos = (n) => !/\+\+|--|=|\(/.test(n.text);
+
+  // Una cadena: un arreglo de caracteres (sus codigos) que termina en 0, o un texto escrito.
+  // Devuelve { nombre, datos, literal } o null si no es una cadena que se sepa seguir. Con
+  // "datos" se trabaja en el lugar: es el mismo arreglo de la variable (o de un campo, o
+  // de una fila de nombres).
+  function cadenaEn(a) {
+    if (a.type === 'string_literal') {
+      return { nombre: a.text, literal: true, datos: [...textoDe(a)].map((c) => c.codePointAt(0)).concat(0) };
+    }
+    if (a.type === 'parenthesized_expression') return cadenaEn(a.namedChildren[0]);
+    if (!['identifier', 'field_expression', 'subscript_expression'].includes(a.type)) return null;
+    const p = posicion(a, true);
+    if (p.constante != null || !p.variable) return null;
+    const v = p.variable;
+    if (v.puntero || !v.dims || v.tipo !== 'char' || p.indices.length !== v.dims.length - 1) return null;
+    let datos = v.datos;
+    for (const i of p.indices) datos = datos[i];
+    return { nombre: p.nombre, literal: false, datos };
+  }
+
+  // Las letras de los codigos, hasta su fin ('\0'). Una letra sin valor es una cadena que nadie escribio.
+  function textoDeDatos(datos, a) {
     let texto = '';
-    for (const codigo of v.datos) {
-      if (codigo === undefined) return sinVerificar(a, 'una cadena sin su fin');
+    for (const codigo of datos) {
+      if (codigo === undefined) throw new SinValor(a.text.replace(/\s+/g, ' '), fila(a), a.text.replace(/\s+/g, ' '));
       if (codigo === 0) return texto;
       texto += String.fromCodePoint(codigo);
     }
     return sinVerificar(a, 'una cadena sin su fin');
+  }
+
+  function textoDeCadena(a) {
+    const c = cadenaEn(a);
+    if (!c) return sinVerificar(a, 'un texto que no se sabe seguir');
+    return textoDeDatos(c.datos, a);
+  }
+
+  // Guarda un texto en una cadena, con su 0 al final. Si no entra, se sale del arreglo.
+  function guardarTexto(destino, texto, n) {
+    const codigos = [...texto].map((c) => c.codePointAt(0));
+    if (codigos.length + 1 > destino.datos.length) throw new FueraDeRango(destino.nombre, codigos.length, destino.datos.length, fila(n));
+    codigos.forEach((c, i) => {
+      destino.datos[i] = c;
+    });
+    destino.datos[codigos.length] = 0;
+  }
+
+  // La cadena como la ve una funcion que la recibe: el mismo arreglo.
+  const cadenaComoParametro = (c) => ({ flotante: false, tipo: 'char', bytes: 1, dims: [c.datos.length], datos: c.datos, comoParametro: true });
+
+  // strcpy, strcmp y strlen.
+  function deCadenas(nombre, lista, n) {
+    const cadena = (k) => {
+      const c = cadenaEn(lista[k]);
+      if (!c) sinVerificar(lista[k], 'un texto que no se sabe seguir');
+      return c;
+    };
+    if (nombre === 'strlen') return { v: textoDeDatos(cadena(0).datos, lista[0]).length, f: false };
+    if (nombre === 'strcmp' || nombre === 'strncmp') {
+      let a = textoDeDatos(cadena(0).datos, lista[0]);
+      let b = textoDeDatos(cadena(1).datos, lista[1]);
+      if (nombre === 'strncmp') {
+        const k = evaluar(lista[2]).v;
+        a = a.slice(0, k);
+        b = b.slice(0, k);
+      }
+      let i = 0;
+      while (i < a.length && i < b.length && a[i] === b[i]) i++;
+      return { v: (i < a.length ? a.charCodeAt(i) : 0) - (i < b.length ? b.charCodeAt(i) : 0), f: false };
+    }
+    const destino = cadena(0);
+    if (destino.literal) sinVerificar(lista[0], 'strcpy sobre un texto escrito');
+    guardarTexto(destino, textoDeDatos(cadena(1).datos, lista[1]), n);
+    return { v: 0, f: false };
+  }
+
+  // scanf("%s", nombre) lee una palabra y gets(nombre) la linea: cada dato de la entrada es un texto.
+  function leerCadena(nodo, n, linea) {
+    if (entrada === null) sinVerificar(n, 'una lectura sin datos para darle');
+    const destino = cadenaEn(nodo);
+    if (!destino || destino.literal) sinVerificar(nodo, 'una cadena donde guardar el texto');
+    if (siguiente >= entrada.length) throw new SinEntrada(fila(n));
+    const dato = entrada[siguiente++];
+    // Un texto de una sola letra llega como su codigo.
+    const texto = typeof dato === 'number' ? String.fromCodePoint(dato) : String(dato);
+    guardarTexto(destino, linea ? texto : texto.split(/\s+/)[0], n);
+    lecturas++;
   }
 
   function imprimir(n, lista) {
@@ -1215,8 +1300,10 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
       const esDecimal = p.formato === '%f' || p.formato === '%lf';
       const esLetra = p.formato === '%c';
       // Una letra se muestra con %c: con %d saldria su numero.
-      const letraComoEntero = (p.formato === '%d' || p.formato === '%i') && tipo === 'char';
-      if (decimal !== esDecimal || letraComoEntero) {
+      const letraComoEntero = (p.formato === '%d' || p.formato === '%i') && (tipo === 'char' || tipo === 'long' || tipo === 'unsigned long');
+      // %lu es el de un unsigned long, y un unsigned long se muestra con %lu.
+      const sinSigno = tipo != null && (p.formato === '%lu') !== (tipo === 'unsigned long');
+      if (decimal !== esDecimal || letraComoEntero || sinSigno) {
         throw new FormatoDistinto('printf', p.formato, nodo.text, tipo || (decimal ? 'decimal' : 'int'), fila(nodo));
       }
       mostrados.push(valor.v);
@@ -1244,7 +1331,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
 
   function leerDelTeclado(n, lista) {
     if (entrada === null) sinVerificar(n, 'scanf sin datos para darle');
-    const convs = conversiones(partes(textoDe(lista[0]), n));
+    const convs = conversiones(partes(textoDe(lista[0]), n, true));
     const destinos = lista.slice(1);
     if (convs.length !== destinos.length) {
       throw new ConversionesDistintas('scanf', convs.length, destinos.length, fila(n));
@@ -1252,6 +1339,11 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
     let leidosAhora = 0;
     convs.forEach((conv, k) => {
       const a = destinos[k];
+      if (conv.formato === '%s') {
+        leerCadena(a, n, false);
+        leidosAhora++;
+        return;
+      }
       // &p o *p con p ya declarado con *: la variable puntero se pasa tal cual.
       if (a.type === 'pointer_expression') {
         const sobre = a.childForFieldName('argument') || a.namedChildren[a.namedChildren.length - 1];
@@ -1277,9 +1369,17 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
       const tipo = p.variable.tipo;
       // Una letra llega como su numero (el usuario escribe 'T' y entra 84).
       const correcto = tipo === 'int' ? '%d' : tipo === 'char' ? '%c' : tipo === 'float' ? '%f' : '%lf';
-      const igual = conv.formato === correcto || (conv.formato === '%i' && tipo === 'int');
-      if (!igual) throw new FormatoDistinto('scanf', conv.formato, destino.text, tipo, fila(a));
+      const largo = Boolean(p.variable.largo);
+      const sinSigno = largo && Boolean(p.variable.sinSigno);
+      const igual =
+        tipo === 'int'
+          ? largo
+            ? conv.formato === (sinSigno ? '%lu' : '%ld')
+            : ['%d', '%i', '%ld'].includes(conv.formato)
+          : conv.formato === correcto;
+      if (!igual) throw new FormatoDistinto('scanf', conv.formato, destino.text, largo ? (sinSigno ? 'unsigned long' : 'long') : tipo, fila(a));
       if (siguiente >= entrada.length) throw new SinEntrada(fila(n));
+      if (typeof entrada[siguiente] !== 'number') sinVerificar(a, 'un texto leido como numero');
       guardar(p, { v: entrada[siguiente++], f: tipo !== 'int' }, a);
       lecturas++;
       leidosAhora++;
@@ -1346,6 +1446,17 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
           if (hijo && hijo.type === 'string_literal') throw new TextoComoLetra(hijo.text, fila(hijo));
         }
         if (operador === '==' || operador === '!=') {
+          // Dos cadenas (arreglos) se comparan por direccion: son iguales solo si son la misma.
+          const cadenas = ['left', 'right'].map((lado) => {
+            const hijo = n.childForFieldName(lado);
+            try {
+              return hijo && sinEfectos(hijo) ? cadenaEn(hijo) : null;
+            } catch (e) {
+              if (e instanceof SinVerificar) return null;
+              throw e;
+            }
+          });
+          if (cadenas[0] && cadenas[1]) return { v: (cadenas[0].datos === cadenas[1].datos) === (operador === '==') ? 1 : 0, f: false };
           const deDirecciones = compararDirecciones(n, operador);
           if (deDirecciones) return deDirecciones;
         }
@@ -1371,6 +1482,13 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
         const lista = argumentos ? argumentos.namedChildren.filter((a) => a.type !== 'comment') : [];
         if (funcion && funcion.text === 'printf' && lista.length >= 1) return imprimir(n, lista);
         if (funcion && funcion.text === 'scanf' && lista.length >= 2) return leerDelTeclado(n, lista);
+        if (funcion && funcion.text === 'gets' && lista.length === 1 && !definidas.has('gets')) {
+          leerCadena(lista[0], n, true);
+          return { v: 0, f: false };
+        }
+        if (funcion && ['strcpy', 'strcmp', 'strlen', 'strncmp'].includes(funcion.text) && lista.length === ({ strlen: 1, strncmp: 3 }[funcion.text] ?? 2) && !definidas.has(funcion.text)) {
+          return deCadenas(funcion.text, lista, n);
+        }
         if (funcion && funcion.type === 'identifier' && definidas.has(funcion.text)) {
           return llamarFuncion(definidas.get(funcion.text), lista, n);
         }
@@ -1415,6 +1533,15 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
           const base = variables.get(clave);
           const hermanos = base && base.union ? base.union.miembros.filter((m) => m !== miembro) : [];
           if (hermanos.some((m) => prueba[`${grupo}${m}`] != null)) return { v: 0, f: false };
+        }
+        if (operador === '=' && ['identifier', 'subscript_expression', 'field_expression'].includes(izquierda.type) && !estructurasVivas.has(izquierda.text) && sinEfectos(izquierda)) {
+          let aCadena = null;
+          try {
+            aCadena = cadenaEn(izquierda);
+          } catch (e) {
+            if (!(e instanceof SinVerificar)) throw e;
+          }
+          if (aCadena && !aCadena.literal) throw new CadenaConIgual(izquierda.text.replace(/\s+/g, ' '), nodoDerecha.text.replace(/\s+/g, ' '), fila(n));
         }
         if (nodoDerecha.type === 'string_literal' && ['subscript_expression', 'field_expression'].includes(izquierda.type)) {
           throw new TextoComoLetra(nodoDerecha.text, fila(nodoDerecha));
@@ -1733,6 +1860,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
         variables.set(clave, {
           flotante,
           tipo: tipoCampo,
+          largo: !flotante && /long/.test(textoCampo), sinSigno: !flotante && /long/.test(textoCampo) && /unsigned/.test(textoCampo),
           bytes,
           valor: dado === undefined ? undefined : flotante ? dado : Math.trunc(dado),
           union: enUnion,
@@ -1751,7 +1879,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
           Array.isArray(x) ? x.map(copia) : x === null ? undefined : flotante ? x : Math.trunc(x);
         datos = copia(prueba[clave]);
       }
-      variables.set(clave, { flotante, tipo: tipoCampo, bytes, dims: dimsDelCampo, datos, union: enUnion, dimsDeLaVariable: dims.length });
+      variables.set(clave, { flotante, tipo: tipoCampo, largo: !flotante && /long/.test(textoCampo), sinSigno: !flotante && /long/.test(textoCampo) && /unsigned/.test(textoCampo), bytes, dims: dimsDelCampo, datos, union: enUnion, dimsDeLaVariable: dims.length });
     }
     if (enUnion) anotarPisados(enUnion, dims);
   }
@@ -1781,6 +1909,13 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
         v.pisado.set(indices.join(','), con[0]);
       }
     }
+  }
+
+  // Un texto escrito en un arreglo de char: sus codigos, el 0 del fin y el resto en 0.
+  function textoEnArreglo(inicial, tamano) {
+    const codigos = [...textoDe(inicial)].map((c) => c.codePointAt(0));
+    if (codigos.length + 1 > tamano) sinVerificar(inicial, 'un texto que no entra en la cadena');
+    return Array.from({ length: tamano }, (_, i) => codigos[i] ?? 0);
   }
 
   function declarar(n) {
@@ -1827,21 +1962,29 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
         variables.set(nombre.text, {
           flotante,
           tipo: nombreDeTipo,
+          largo: !flotante && /long/.test(textoTipo), sinSigno: !flotante && /long/.test(textoTipo) && /unsigned/.test(textoTipo),
           bytes: bytesDe(textoTipo),
           valor: valor ? (flotante ? valor.v : Math.trunc(valor.v)) : declarandoGlobales ? 0 : undefined,
         });
         continue;
       }
-      // "int v[] = {...}": la cantidad sale de la lista
+      // "int v[] = {...}": la cantidad sale de la lista; "char s[] = \"hola\"", del texto y su 0.
       const sinTamano = dims[0] === null;
+      const deTexto = Boolean(inicial) && inicial.type === 'string_literal' && nombreDeTipo === 'char' && dims.length === 1;
       if (dims[0] === null) {
-        if (!inicial || inicial.type !== 'initializer_list') sinVerificar(d);
-        dims[0] = inicial.namedChildren.filter((h) => h.type !== 'comment').length;
+        if (deTexto) dims[0] = [...textoDe(inicial)].length + 1;
+        else {
+          if (!inicial || inicial.type !== 'initializer_list') sinVerificar(d);
+          dims[0] = inicial.namedChildren.filter((h) => h.type !== 'comment').length;
+        }
       }
       if (dims.some((k) => !Number.isInteger(k) || k < 0)) sinVerificar(d);
-      let datos =
-        inicial && inicial.type === 'initializer_list' ? llenar(dims, inicial, flotante) : sinLista(dims);
-      if (inicial && inicial.type !== 'initializer_list') sinVerificar(inicial);
+      let datos = deTexto
+        ? textoEnArreglo(inicial, dims[0])
+        : inicial && inicial.type === 'initializer_list'
+          ? llenar(dims, inicial, flotante)
+          : sinLista(dims);
+      if (inicial && inicial.type !== 'initializer_list' && !deTexto) sinVerificar(inicial);
       if (prueba && Array.isArray(prueba[nombre.text])) {
         const otros = prueba[nombre.text];
         // Una lista de listas para una tabla: la forma tiene que ser la misma.
@@ -1855,7 +1998,7 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
         const copia = (x) => (Array.isArray(x) ? x.map(copia) : flotante ? x : Math.trunc(x));
         datos = copia(otros);
       }
-      variables.set(nombre.text, { flotante, tipo: nombreDeTipo, bytes: bytesDe(textoTipo), dims, datos });
+      variables.set(nombre.text, { flotante, tipo: nombreDeTipo, largo: !flotante && /long/.test(textoTipo), sinSigno: !flotante && /long/.test(textoTipo) && /unsigned/.test(textoTipo), bytes: bytesDe(textoTipo), dims, datos });
     }
   }
 
@@ -1964,6 +2107,13 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
         return;
       }
       if (p.clase === 'arreglo') {
+        if (p.tipo === 'char' && !(deArreglo && deArreglo.dims)) {
+          const c = cadenaEn(a);
+          if (c) {
+            local.set(p.nombre, cadenaComoParametro(c));
+            return;
+          }
+        }
         if (!deArreglo || !deArreglo.dims) sinVerificar(a, `un argumento que no es un arreglo para ${p.nombre}`);
         local.set(p.nombre, comoParametro(deArreglo));
         return;
@@ -1972,6 +2122,13 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
         if (a.text === 'NULL') {
           local.set(p.nombre, { puntero: true, parametro: true, destino: null, flotante: p.flotante, tipo: p.tipo, bytes: p.bytes });
           return;
+        }
+        if (p.tipo === 'char' && !conAmpersand && !(deArreglo && (deArreglo.dims || deArreglo.puntero))) {
+          const c = cadenaEn(a);
+          if (c) {
+            local.set(p.nombre, cadenaComoParametro(c));
+            return;
+          }
         }
         if (deArreglo && (deArreglo.dims || deArreglo.puntero)) {
           // Un puntero se copia (la funcion recibe la direccion); un arreglo es el mismo.

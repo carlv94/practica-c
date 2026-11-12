@@ -130,9 +130,100 @@ export const CASOS_DEL_SIMULADOR = [
     espera: { error: 'SinValor' },
   },
   {
-    nombre: 'estructuras: un campo cadena no se sigue',
-    codigo: con("TAlumno alumno;\nalumno.apellidoNombre[0] = 'P';"),
-    espera: { error: 'SinVerificar' },
+    nombre: "estructuras: un campo cadena se sigue letra por letra",
+    codigo: con("TAlumno alumno;\nalumno.apellidoNombre[0] = 'P';\nprintf(\"%c\", alumno.apellidoNombre[0]);"),
+    espera: {"salida":"P"},
+  },
+  {
+    nombre: "cadenas: un texto escrito en un arreglo de char",
+    codigo: con("char s[10] = \"hola\";\nprintf(\"%s %d\", s, strlen(s));"),
+    espera: {"salida":"hola 4"},
+  },
+  {
+    nombre: "cadenas: sin tamano, entra el texto y su fin",
+    codigo: con("char s[] = \"ab\";\nprintf(\"%s\", s);"),
+    espera: {"salida":"ab"},
+  },
+  {
+    nombre: "cadenas: strcpy en un campo de una estructura",
+    codigo: con("TAlumno a;\nstrcpy(a.apellidoNombre, \"Perez\");\nprintf(\"%s\", a.apellidoNombre);"),
+    espera: {"salida":"Perez"},
+  },
+  {
+    nombre: "cadenas: strcpy que no entra se sale del arreglo",
+    codigo: con("char s[3];\nstrcpy(s, \"hola\");"),
+    espera: {"error":"FueraDeRango"},
+  },
+  {
+    nombre: "cadenas: strcmp de iguales y de distintas",
+    codigo: con("printf(\"%d %d %d\", strcmp(\"ab\", \"ab\") == 0, strcmp(\"ab\", \"ac\") < 0, strcmp(\"b\", \"a\") > 0);"),
+    espera: {"salida":"1 1 1"},
+  },
+  {
+    nombre: "cadenas: strcmp entre un campo y un texto",
+    codigo: con("TAlumno a;\nstrcpy(a.apellidoNombre, \"Luna\");\nif (strcmp(a.apellidoNombre, \"Luna\") == 0) {\n  printf(\"igual\");\n}"),
+    espera: {"salida":"igual"},
+  },
+  {
+    nombre: "cadenas: scanf lee una palabra",
+    codigo: con("char s[10];\nscanf(\"%s\", s);\nprintf(\"[%s]\", s);"),
+    entrada: ["ana"],
+    espera: {"salida":"[ana]"},
+  },
+  {
+    nombre: "cadenas: scanf con una sola letra",
+    codigo: con("char s[10];\nscanf(\"%s\", s);\nprintf(\"[%s]\", s);"),
+    entrada: [120],
+    espera: {"salida":"[x]"},
+  },
+  {
+    nombre: "cadenas: gets lee la linea entera",
+    codigo: con("char s[20];\ngets(s);\nprintf(\"[%s]\", s);"),
+    entrada: ["ana maria"],
+    espera: {"salida":"[ana maria]"},
+  },
+  {
+    nombre: "cadenas: scanf con una palabra que no entra",
+    codigo: con("char s[4];\nscanf(\"%s\", s);"),
+    entrada: ["abcdef"],
+    espera: {"error":"FueraDeRango"},
+  },
+  {
+    nombre: "cadenas: una cadena como parametro",
+    codigo: conFunciones("void copiar(char destino[], char origen[]) {\n  strcpy(destino, origen);\n}", "char a[10];\ncopiar(a, \"Gomez\");\nprintf(\"%s\", a);"),
+    espera: {"salida":"Gomez"},
+  },
+  {
+    nombre: "cadenas: un campo de un elemento de un arreglo como argumento",
+    codigo: conFunciones("void mostrar(char t[]) {\n  printf(\"%s\", t);\n}", "TAlumno alumnos[MAX];\nstrcpy(alumnos[1].apellidoNombre, \"Gomez\");\nmostrar(alumnos[1].apellidoNombre);"),
+    espera: {"salida":"Gomez"},
+  },
+  {
+    nombre: "cadenas: char * como parametro",
+    codigo: conFunciones("void mostrar(char *t) {\n  printf(\"%s\", t);\n}", "mostrar(\"hola\");"),
+    espera: {"salida":"hola"},
+  },
+  {
+    nombre: "cadenas: copiar el nombre dentro de una estructura por puntero",
+    codigo: conFunciones("void poner(TAlumno *a, char nombre[]) {\n  strcpy(a->apellidoNombre, nombre);\n}", "TAlumno alumno;\nponer(&alumno, \"Luna\");\nprintf(\"%s\", alumno.apellidoNombre);"),
+    espera: {"salida":"Luna"},
+  },
+  {
+    nombre: "cadenas: una estructura por valor lleva su cadena",
+    codigo: conFunciones("int mismo(TAlumno a) {\n  strcpy(a.apellidoNombre, \"Otro\");\n  return strcmp(a.apellidoNombre, \"Otro\");\n}", "TAlumno alumno;\nstrcpy(alumno.apellidoNombre, \"Luna\");\nprintf(\"%d %s\", mismo(alumno), alumno.apellidoNombre);"),
+    espera: {"salida":"0 Luna"},
+  },
+  {
+    nombre: "cadenas: un long se lee y se muestra con %ld",
+    codigo: con("long t;\nscanf(\"%ld\", &t);\nprintf(\"%ld\", t + 1);"),
+    entrada: [7],
+    espera: {"salida":"8"},
+  },
+  {
+    nombre: "cadenas: un texto leido como numero queda sin verificar",
+    codigo: con("int n;\nscanf(\"%d\", &n);"),
+    entrada: ["ana"],
+    espera: {"error":"SinVerificar"},
   },
   {
     nombre: 'estructuras: una estructura entera se copia en otra',
@@ -1162,6 +1253,95 @@ export const CASOS_DEL_SIMULADOR = [
     nombre: "un campo que es un arreglo de enumerados: una casilla sin valor",
     codigo: conFunciones("typedef struct {\n  TTurno dia[MAX];\n  int cantidad;\n} TSemana;", "TSemana s;\nprintf(\"%d\", s.dia[0]);"),
     espera: {"error":"SinValor"},
+  },
+  {
+    nombre: "cadenas: == entre dos cadenas compara direcciones, no letras",
+    codigo: con("char a[5] = \"ab\";\nchar b[5] = \"ab\";\nprintf(\"%d %d\", a == b, a == a);"),
+    espera: {"salida":"0 1"},
+  },
+  {
+    nombre: "cadenas: != entre dos cadenas iguales da verdadero",
+    codigo: con("char a[5] = \"ab\";\nchar b[5] = \"ab\";\nif (a != b) {\n  printf(\"distintas\");\n}"),
+    espera: {"salida":"distintas"},
+  },
+  {
+    nombre: "cadenas: un arreglo no se copia con =",
+    codigo: con("char a[5];\nchar b[5] = \"ab\";\na = b;"),
+    espera: {"error":"CadenaConIgual"},
+  },
+  {
+    nombre: "cadenas: un campo cadena no se copia con =",
+    codigo: con("TAlumno alumno;\nchar t[10] = \"x\";\nalumno.apellidoNombre = t;"),
+    espera: {"error":"CadenaConIgual"},
+  },
+  {
+    nombre: "cadenas: strncmp compara solo el principio",
+    codigo: con("printf(\"%d %d\", strncmp(\"abcd\", \"abxx\", 2) == 0, strncmp(\"abcd\", \"abxx\", 3) == 0);"),
+    espera: {"salida":"1 0"},
+  },
+  {
+    nombre: "cadenas: strlen de una cadena que nadie escribio",
+    codigo: con("char s[5];\nprintf(\"%d\", strlen(s));"),
+    espera: {"error":"SinValor"},
+  },
+  {
+    nombre: "cadenas: un long con %d no corresponde",
+    codigo: con("long t = 5;\nprintf(\"%d\", t);"),
+    espera: {"error":"FormatoDistinto"},
+  },
+  {
+    nombre: "cadenas: leer un long con %d no corresponde",
+    codigo: con("long t;\nscanf(\"%d\", &t);"),
+    entrada: [7],
+    espera: {"error":"FormatoDistinto"},
+  },
+  {
+    nombre: "cadenas: un indice con ++ no se evalua dos veces",
+    codigo: con("int v[3];\nint n = 0;\nv[n++] = 5;\nprintf(\"%d\", n);"),
+    espera: {"salida":"1"},
+  },
+  {
+    nombre: "sin signo: un unsigned long se muestra con %lu",
+    codigo: con("unsigned long t = 3878551234;\nprintf(\"%lu\", t);"),
+    espera: {"salida":"3878551234"},
+  },
+  {
+    nombre: "sin signo: un unsigned long con %ld no corresponde",
+    codigo: con("unsigned long t = 5;\nprintf(\"%ld\", t);"),
+    espera: {"error":"FormatoDistinto"},
+  },
+  {
+    nombre: "sin signo: un unsigned long con %d no corresponde",
+    codigo: con("unsigned long t = 5;\nprintf(\"%d\", t);"),
+    espera: {"error":"FormatoDistinto"},
+  },
+  {
+    nombre: "sin signo: un long con %lu no corresponde",
+    codigo: con("long t = 5;\nprintf(\"%lu\", t);"),
+    espera: {"error":"FormatoDistinto"},
+  },
+  {
+    nombre: "sin signo: un int con %lu no corresponde",
+    codigo: con("int t = 5;\nprintf(\"%lu\", t);"),
+    espera: {"error":"FormatoDistinto"},
+  },
+  {
+    nombre: "sin signo: se lee un unsigned long con %lu",
+    codigo: con("unsigned long t;\nscanf(\"%lu\", &t);\nprintf(\"%lu\", t);"),
+    entrada: [3878551234],
+    espera: {"salida":"3878551234"},
+  },
+  {
+    nombre: "sin signo: leer un unsigned long con %ld no corresponde",
+    codigo: con("unsigned long t;\nscanf(\"%ld\", &t);"),
+    entrada: [7],
+    espera: {"error":"FormatoDistinto"},
+  },
+  {
+    nombre: "sin signo: leer un long con %lu no corresponde",
+    codigo: con("long t;\nscanf(\"%lu\", &t);"),
+    entrada: [7],
+    espera: {"error":"FormatoDistinto"},
   },
 ];
 

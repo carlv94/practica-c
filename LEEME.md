@@ -264,6 +264,13 @@ Las reglas de `requiere`:
   `CAMPO_ARREGLO_SIN_CONSTANTE`, `ARREGLO_CHICO` y `ARREGLO_GRANDE`.
   Un campo que es un arreglo de **enumerados** se pide igual, con el tipo:
   `{ "nombre": "presente", "tipo": "enumerado", "de": "$B", "arreglo": 21, "constante": "TAM" }`
+  Un **arreglo de cadenas** (`char nombres[MAX][LARGO]`) se pide con
+  `{ "nombre": "nombres", "tipo": "cadena", "arreglo": 10, "constante": "MAX", "largo": 20, "constanteLargo": "LARGO" }`
+  (errores: `CAMPO_NO_ES_TABLA`, `CAMPO_ARREGLO_SIN_CONSTANTE`, `CAMPO_CADENA_SIN_CONSTANTE`,
+  `ARREGLO_CHICO` y `ARREGLO_GRANDE`). Y `"tipo": "largo"` pide un `long` (campo, parámetro o
+  retorno), como `entero` pide cualquier entero. Y `"tipo": "largoSinSigno"` pide un `unsigned long`
+  (para valores que no son negativos y pasan del máximo de un `int`, como un teléfono de 10 cifras;
+  el mensaje de error explica el motivo).
   (`$B` es el alias del enumerado, que tiene que estar antes en la lista de reglas). Los
   errores son los mismos, y `CAMPO_TIPO` si los elementos no son de ese tipo.
 - `{ "variable": { "tipo": "$S" } }` — una variable de ese tipo, global o
@@ -1299,7 +1306,12 @@ El plan de la reestructuración está en la memoria del proyecto
   punteros**: `&variable` (o `&arreglo[i]`, también con un arreglo de estructuras: `&cuentas[i]`,
   que apunta a ese elemento) al llamar, `*p` como argumento de una estructura por valor
   (`pertenece(*c, x)`: se pasa una copia), un campo que es un arreglo de enumerados
-  (`TBool presente[TAM]` dentro de una estructura: se sigue como uno de enteros), un parámetro declarado con
+  (`TBool presente[TAM]` dentro de una estructura: se sigue como uno de enteros), **cadenas**
+  (`char s[20] = "hola"`, `strcpy`, `strcmp`, `strncmp`, `strlen`, `scanf("%s", s)`, `gets(s)`, una cadena
+  como argumento: variable, campo de una estructura, fila de una tabla de cadenas o texto escrito; en
+  `entrada` cada dato de texto es una palabra (o una línea, para `gets`); `==` entre dos cadenas compara
+  direcciones, como en C; `nombre = otro` es el error `CADENA_COPIADA_CON_IGUAL`; copiar un texto que no
+  entra se sale del arreglo), el `%ld` de un `long` y el `%lu` de un `unsigned long` (cada uno con el formato del otro, o con `%d`, es `FORMATO_NO_CORRESPONDE_AL_TIPO`), un parámetro declarado con
   `*` y `*x` adentro; nada de aritmética de punteros. Entra por `practica`
   (o `main`); las funciones se conocen aunque estén definidas después.
 - **Errores de la receta `&` / `*`**, todos con la fórmula completa
