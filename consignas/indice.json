@@ -154,7 +154,10 @@
         "tad-conjunto-representacion.json",
         "tad-lista.json",
         "tad-lista-ampliar.json",
-        "tad-lista-usar.json"
+        "tad-lista-usar.json",
+        "tad-agenda.json",
+        "tad-agenda-usar.json",
+        "tad-agenda-ampliar.json"
       ]
     }
   ]
