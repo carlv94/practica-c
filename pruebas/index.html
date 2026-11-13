@@ -31,6 +31,9 @@
       import { ejecutar } from '../js/simulador.js';
       import { CASOS_DEL_SIMULADOR, resultadoDelSimulador } from './casos-simulador.js';
       import { problemasDeLaTabla } from './casos-pila.js';
+      import { ejecutar as ejecutarMotor } from '../js/motor/interprete.js';
+      import { CASOS_DEL_MOTOR, resultadoDelMotor, CASOS_DE_LA_REGLA, resultadoDeLaRegla } from './casos-motor.js';
+import { corregir } from '../js/corrector.js';
 
       const salida = document.getElementById('salida');
       const lineas = [];
@@ -361,6 +364,15 @@
         for (const caso of CASOS_DEL_SIMULADOR) {
           const r = resultadoDelSimulador(analizador, ejecutar, caso);
           anotar(r.bien, `simulador: ${caso.nombre}`, r.detalle);
+        }
+
+        for (const caso of CASOS_DEL_MOTOR) {
+          const r = resultadoDelMotor(analizador, ejecutarMotor, caso);
+          anotar(r.bien, `motor: ${caso.nombre}`, r.detalle);
+        }
+        for (const caso of CASOS_DE_LA_REGLA) {
+          const r = resultadoDeLaRegla(analizador, corregir, caso);
+          anotar(r.bien, `regla memoria: ${caso.nombre}`, r.detalle);
         }
 
         for (const caso of CASOS) {

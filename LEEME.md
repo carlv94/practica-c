@@ -1966,6 +1966,53 @@ antes de la línea que lo usa.
 
 Cuando un alumno escriba algo que el corrector entienda mal, se suma el caso a
 `pruebas/casos.js` antes de arreglarlo.
+
+## Motor de memoria (`js/motor/`)
+
+Un intérprete de C aparte del simulador (`js/simulador.js`), con una memoria real: cada
+variable y cada bloque de `malloc` tiene identidad y dirección, hay montículo, marcos de
+función y punteros que se siguen de verdad (también `TNodo **`). Es para el grupo de Tipos
+dinámicos y para otras materias (Algoritmos y Estructuras de Datos). No usa nada de la
+página (`document`, `window`): recibe el analizador y el texto del programa.
+
+```js
+import { ejecutar } from './js/motor/interprete.js';
+const r = ejecutar(analizador, fuente, { entrada: '3 1 2', traza: true });
+// r.salida, r.error ({ codigo, mensaje, fila, datos } o null), r.retorno, r.fugas, r.traza, r.pasos
+```
+
+- `memoria.js`: reservas (variables y bloques), punteros `{ reserva, st, arr, i }`, direcciones
+  inventadas y fijas (globales desde 200, pila desde 1000, montículo desde 5000).
+- `interprete.js`: recorre el árbol de tree-sitter. Cubre `int`/`char`/`float`/`double`,
+  estructuras (también anidadas y autorreferidas), arreglos y tablas, enumerados, `#define`
+  numérico, punteros y su aritmética, `malloc`/`calloc`/`realloc`/`free`, `sizeof` con la
+  alineación de las estructuras, funciones y recursión, `switch`, `printf`, `scanf`,
+  `strlen`/`strcpy`/`strcat`/`strcmp`. Lo que no sabe seguir termina en `SIN_VERIFICAR`.
+- `traza.js`: una fotografía por sentencia (línea, variables de cada función, montículo, con los
+  punteros como `{ k: 'ptr', a: id, ruta }`) para el reproductor paso a paso. Un error deja la
+  última fotografía con el estado en que se produjo.
+- `errores.js` y `mensajes.js`: los códigos y el catálogo de mensajes al alumno (el único lugar
+  donde está la voz del docente).
+- `regla.js`: la regla `memoria`.
+Errores de memoria: `DESREFERENCIA_NULA`, `PUNTERO_SIN_INICIALIZAR`, `USO_DE_MEMORIA_LIBERADA`,
+`VARIABLE_FUERA_DE_ALCANCE` (la local muerta), `LIBERACION_DOBLE`, `LIBERACION_INVALIDA`,
+`FUERA_DE_BLOQUE`, `FUERA_DE_RANGO`, `ESCRITURA_EN_TEXTO`. Las fugas no son un error del motor:
+`r.fugas` lista los bloques sin liberar y la regla decide si importan.
+
+### La regla `memoria`
+
+Ejecuta el programa completo (los archivos de la serie más la respuesta) y lo compara:
+
+- `{ "memoria": { "casos": [ { "entrada": "3
+1 2 3", "salida": "6" } ], "sinFugas": true, "usa": ["malloc", "free"] } }`.
+  Cada caso corre el programa con ese texto de entrada y compara lo que muestra (sin espacios ni
+  saltos al final: `MUESTRA_DISTINTA`, `MUESTRA_CASI_IGUAL`, `MUESTRA_FALTA`). `sinFugas` exige
+  liberar todo (`FUGA_DE_MEMORIA`). `usa` exige llamar a esas funciones (`MALLOC_FALTA`,
+  `FREE_FALTA`...). Un error de ejecución se informa con su mensaje y la línea de la respuesta.
+
+Pruebas: `pruebas/casos-motor.js` (el motor y la regla); se corren en la página de pruebas y, más
+rápido, con Node (no hay `package.json`: `node --experimental-default-type=module` y el analizador
+cargado con `createRequire` desde `vendor/tree-sitter`).
 
 ## Pendiente
 

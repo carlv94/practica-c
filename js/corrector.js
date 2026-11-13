@@ -42,6 +42,7 @@
 //   { "usaAlias": { "alias": "$T", "arreglo": { "alMenos": 30 } } }
 
 import { fichasDe } from './enunciado.js';
+import { corregirMemoria } from './motor/regla.js';
 import {
   construirModelo,
   erroresDeSintaxis,
@@ -484,6 +485,7 @@ export function corregir(
     if (regla.suma) return reglaSuma(regla.suma, modelo);
     if (regla.resultado) return reglaResultado(regla.resultado, modelo);
     if (regla.ejecuta) return reglaEjecuta(regla.ejecuta, modelo);
+    if (regla.memoria) return reglaMemoria(regla.memoria, modelo);
     if (regla.intercambia) return reglaIntercambia(regla.intercambia, modelo);
     if (regla.muestra) return reglaMuestra(regla.muestra, modelo);
     if (regla.limpiaEntrada) return reglaLimpiaEntrada(regla.limpiaEntrada, modelo);
@@ -4430,6 +4432,19 @@ export function corregir(
     const queda = convertir(original.queda, true);
     if (!cambio) return original;
     return { ...original, datos, queda, vistos: original.vistos || original.datos, enumQueda };
+  }
+
+  // Un programa completo que se ejecuta con el motor de memoria (js/motor/): punteros,
+  // malloc y free. Ver js/motor/regla.js.
+  //   { "memoria": { "casos": [ { "entrada": "3 1 2", "salida": "..." } ], "sinFugas": true, "usa": ["malloc"] } }
+  function reglaMemoria(regla, modelo) {
+    // Con un error en lo escrito no se sigue el programa: se arregla eso primero.
+    if (diagnosticos.some((d) => d.nivel === 'error')) return;
+    const r = corregirMemoria(analizador, fuente, respuesta, regla);
+    for (const d of r.diagnosticos) {
+      // El motor cuenta las lineas desde 1; el corrector, desde 0.
+      diag(d.nivel, d.codigo, d.mensaje, d.fila == null ? null : d.fila - 1, d.bloques);
+    }
   }
 
   function reglaEjecuta(regla, modelo) {
