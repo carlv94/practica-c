@@ -1994,6 +1994,54 @@ const r = ejecutar(analizador, fuente, { entrada: '3 1 2', traza: true });
 - `errores.js` y `mensajes.js`: los códigos y el catálogo de mensajes al alumno (el único lugar
   donde está la voz del docente).
 - `regla.js`: la regla `memoria`.
+- `figura.js`: la clase `Figura(contenedor, { cabezas })` con `mostrar(foto, anterior, { animar, duracion })`
+  dibuja un `<svg>` con la pila (una caja por función en curso; las variables del cuerpo de la función
+  aparecen desde el comienzo, atenuadas, hasta que se ejecuta su declaración) y el montículo en tres
+  grupos: la lista (lo que se alcanza desde las `cabezas`, de izquierda a derecha), los nodos sin enlazar
+  (los que solo señalan variables de la función en curso; pasan a la lista, con una animación, cuando algo
+  de afuera los señala) y los que nadie señala (una fuga, en ámbar punteado). Sin `cabezas`, la lista es lo
+  que alcanzan las variables de las funciones que llamaron a la que está en curso (con una sola función,
+  todo es la lista). Las flechas van por canales y carriles, con el nombre de la variable junto a la punta.
+  Un bloque liberado se ve mientras algo lo señale, y su flecha sigue con punta, continua y en rojo (el puntero todavía apunta; lo que ya no vale es la memoria), y en el paso en que se libera pasa de azul a rojo con un fundido; punteada y en rojo queda solo la que apunta a algo que ya no está o fuera de un arreglo. Lo que cambió con el paso
+  anterior va en amarillo, y la flecha que salió de una casilla que cambió va en ámbar y más gruesa (se
+  dibuja desde su casilla hasta el destino). Un paso con movimiento tiene dos fases: primero se dibuja esa
+  flecha (se dibuja hacia el bloque, que todavía está donde estaba; si el puntero iba a otro lado, la punta se
+  desliza del destino viejo al nuevo; si pasó a `NULL`, la flecha se retrae hacia su casilla; las rutas se
+  calculan también contra la disposición del paso anterior y se mezclan punto a punto; si había una flecha
+  antes, primero se la ve resaltada y quieta, 0,6 de la unidad de movimiento), una pausa con todo quieto (1,1 veces lo que dura el dibujo) y después los bloques se
+  reubican; las flechas hacia un bloque que acaba de aparecer se dibujan al final. `mostrar()` devuelve lo
+  que dura la animación, para que la reproducción espere. Los nombres de las flechas que salen de una variable
+  están ocultos y se ven con la casilla «Nombres de las flechas» (se recuerda), o al señalar una flecha, una
+  variable o un bloque; las flechas tienen un trazo ancho invisible para poder señalarlas, el cuadro dice
+  de dónde sale y a dónde va, y un clic la deja fija hasta otro clic. Al terminar el programa (ya no hay
+  funciones) los bloques se quedan donde estaban, solo con la marca «sin puntero». Las cajas de la pila también
+  se animan, en el tiempo B: la de una función que termina se desvanece (la primera mitad) y las de abajo suben;
+  la de una llamada aparece y las de abajo bajan. Cada caja es un grupo con coordenadas propias, y las casillas
+  de la pila (y las flechas que salen de ellas) la siguen mientras se mueve; la caja que se fue se conserva
+  (clonada de la escena anterior) hasta que termina el movimiento. Al pasar el cursor sobre una variable o un bloque se muestra su contenido (tipo,
+  dirección, campos, adónde apunta cada puntero y, si cambió con la línea anterior, adónde apuntaba antes) y se resaltan sus flechas. `dibujarFotografia(foto, anterior)`
+  es la versión sin animación que usa la página de pruebas.
+- `reproductor.js`: `crearReproductor({ codigo, traza, error, titulo, funciones, cabezas })` devuelve el paso
+  a paso: el código con resaltado de sintaxis (el de `editor.js`) y desplazamiento horizontal, la línea que
+  está por ejecutarse resaltada y el código de afuera de la función en curso atenuado (`r.funciones` dice
+  dónde empieza y termina cada una), la figura, lo que muestra el programa y los controles (botones, barra,
+  flechas del teclado y velocidad, que se recuerda; la velocidad fija la unidad de movimiento y la reproducción
+  espera a que termine la animación de cada paso, con un descanso). Una función que termina sin `return` muestra un paso
+  en su llave de cierre, con sus variables todavía en la pila. Los estilos están en `css/reproductor.css`.
+  Se adapta al espacio: con mucho ancho el código ocupa menos y la figura puede crecer hasta 1,5 veces su
+  tamaño; con poco ancho la figura va arriba, a una escala legible (nunca menos de 70 %, se desplaza) y el
+  código pasa a una ventana de cinco líneas centrada en la que se va a ejecutar, con un botón «Ver todo el
+  código». Los botones «−», «+» y «Ajustar» cambian la escala de la figura (se recuerda). «Ampliar» lleva
+  el panel a toda la ventana (y a la pantalla completa del navegador donde existe, intentando apaisarla en
+  Android): apaisado, el código va en una columna angosta y la figura al lado; vertical, la figura arriba
+  con un aviso «Gire el teléfono». Un deslizamiento horizontal sobre la figura pasa de paso, y en pantallas
+  táctiles un toque describe lo que se toca. Escape cierra lo ampliado.
+  El código sigue a la ejecución sin marearse: al cambiar de función se desplaza (suave) hasta que su primera
+  línea queda arriba, o centra la línea si la función no cabe; dentro de la misma función no se mueve, salvo
+  lo mínimo cuando la línea sale de lo visible. En toda la pantalla el panel del código se limita al alto de
+  la pantalla (`align-items: stretch` en `.rep-ampliado .rep-cuerpo`; sin eso crecía hasta su contenido,
+  quedaba recortado y no podía desplazarse).
+  `pruebas/reproductor.html` es la página para probarlo con programas de lista.
 Errores de memoria: `DESREFERENCIA_NULA`, `PUNTERO_SIN_INICIALIZAR`, `USO_DE_MEMORIA_LIBERADA`,
 `VARIABLE_FUERA_DE_ALCANCE` (la local muerta), `LIBERACION_DOBLE`, `LIBERACION_INVALIDA`,
 `FUERA_DE_BLOQUE`, `FUERA_DE_RANGO`, `ESCRITURA_EN_TEXTO`. Las fugas no son un error del motor:

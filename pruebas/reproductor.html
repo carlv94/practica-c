@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Prueba del reproductor</title>
+    <link rel="stylesheet" href="../css/estilo.css" />
+    <link rel="stylesheet" href="../css/reproductor.css" />
+    <style>
+      body { margin: 16px auto; max-width: 1800px; padding: 0 16px; }
+      select { font: inherit; margin-bottom: 8px; }
+    </style>
+  </head>
+  <body>
+    <h1>Prueba del reproductor paso a paso</h1>
+    <p>
+      Programa:
+      <select id="eleccion"></select>
+    </p>
+    <div id="lugar">Cargando el analizador...</div>
+
+    <script type="module">
+      import { cargarAnalizador } from '../js/analizador.js';
+      import { ejecutar } from '../js/motor/interprete.js';
+      import { mensajeDeError } from '../js/motor/mensajes.js';
+      import { crearReproductor } from '../js/motor/reproductor.js';
+
+      const LISTA = `#include <stdio.h>
+#include <stdlib.h>
+
+typedef struct nodo {
+  int dato;
+  struct nodo *sig;
+} TNodo;
+`;
+
+      const PROGRAMAS = {
+        'Insertar al inicio con doble puntero': `${LISTA}
+void insertarInicio(TNodo **lista, int x) {
+  TNodo *nuevo = malloc(sizeof(TNodo));
+  nuevo->dato = x;
+  nuevo->sig = *lista;
+  *lista = nuevo;
+}
+
+int main() {
+  TNodo *lista = NULL;
+  insertarInicio(&lista, 10);
+  insertarInicio(&lista, 20);
+  insertarInicio(&lista, 30);
+  return 0;
+}`,
+        'Insertar al final': `${LISTA}
+void insertarFinal(TNodo **lista, int x) {
+  TNodo *nuevo = malloc(sizeof(TNodo));
+  nuevo->dato = x;
+  nuevo->sig = NULL;
+  if (*lista == NULL) {
+    *lista = nuevo;
+  } else {
+    TNodo *p = *lista;
+    while (p->sig != NULL) {
+      p = p->sig;
+    }
+    p->sig = nuevo;
+  }
+}
+
+int main() {
+  TNodo *lista = NULL;
+  insertarFinal(&lista, 10);
+  insertarFinal(&lista, 20);
+  insertarFinal(&lista, 30);
+  return 0;
+}`,
+        'Insertar al inicio con la cabeza por valor (no funciona)': `${LISTA}
+void insertarInicio(TNodo *lista, int x) {
+  TNodo *nuevo = malloc(sizeof(TNodo));
+  nuevo->dato = x;
+  nuevo->sig = lista;
+  lista = nuevo;
+}
+
+int main() {
+  TNodo *lista = NULL;
+  insertarInicio(lista, 10);
+  insertarInicio(lista, 20);
+  return 0;
+}`,
+        'Eliminar el primero y liberar': `${LISTA}
+TNodo *insertar(TNodo *lista, int x) {
+  TNodo *nuevo = malloc(sizeof(TNodo));
+  nuevo->dato = x;
+  nuevo->sig = lista;
+  return nuevo;
+}
+
+void eliminarPrimero(TNodo **lista) {
+  TNodo *p = *lista;
+  *lista = p->sig;
+  free(p);
+}
+
+int main() {
+  TNodo *lista = NULL;
+  lista = insertar(lista, 1);
+  lista = insertar(lista, 2);
+  lista = insertar(lista, 3);
+  eliminarPrimero(&lista);
+  printf("Primero: %d\\n", lista->dato);
+  return 0;
+}`,
+        'Usar un nodo después de liberarlo (error)': `${LISTA}
+int main() {
+  TNodo *a = malloc(sizeof(TNodo));
+  a->dato = 5;
+  a->sig = NULL;
+  free(a);
+  printf("%d\\n", a->dato);
+  return 0;
+}`,
+        'Redirigir un puntero y dejarlo en NULL': `${LISTA}
+int main() {
+  TNodo *a = malloc(sizeof(TNodo));
+  TNodo *b = malloc(sizeof(TNodo));
+  a->dato = 1;
+  a->sig = b;
+  b->dato = 2;
+  b->sig = NULL;
+  TNodo *p = a;
+  p = p->sig;
+  p = NULL;
+  free(a);
+  free(b);
+  return 0;
+}`,
+        'Arreglo dinámico y una cadena': `#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+int main() {
+  int n = 4;
+  int *v = malloc(n * sizeof(int));
+  for (int i = 0; i < n; i++) {
+    v[i] = (i + 1) * 10;
+  }
+  char nombre[10];
+  strcpy(nombre, "Ana");
+  printf("%s %d\\n", nombre, v[2]);
+  free(v);
+  return 0;
+}`,
+      };
+
+      // Las variables que guardan el comienzo de la lista, para los programas que lo necesitan.
+      const cabezasDe = { 'Insertar al inicio con la cabeza por valor (no funciona)': null };
+      const eleccion = document.getElementById('eleccion');
+      const lugar = document.getElementById('lugar');
+      for (const nombre of Object.keys(PROGRAMAS)) eleccion.append(new Option(nombre, nombre));
+
+      const analizador = await cargarAnalizador();
+      function mostrar() {
+        const codigo = PROGRAMAS[eleccion.value];
+        const r = ejecutar(analizador, codigo, { traza: true });
+        const error = r.error ? { ...r.error, ...mensajeDeError(r.error) } : null;
+        lugar.replaceChildren(crearReproductor({ codigo, traza: r.traza, error, titulo: eleccion.value, funciones: r.funciones, cabezas: cabezasDe[eleccion.value] }));
+      }
+      eleccion.onchange = mostrar;
+      mostrar();
+    </script>
+  </body>
+</html>

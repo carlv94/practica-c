@@ -1,0 +1,599 @@
+/* El reproductor paso a paso (js/motor/reproductor.js y figura.js).
+   Usa las variables de estilo.css, asi que sigue el modo oscuro. */
+.rep {
+  background: var(--panel);
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  padding: 12px;
+  margin: 12px 0;
+}
+.rep:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+}
+.rep-titulo-general {
+  margin: 0 0 8px;
+  font-size: 1rem;
+}
+.rep-barra {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.rep-boton {
+  font: inherit;
+  padding: 4px 10px;
+  border: 1px solid var(--borde);
+  border-radius: 6px;
+  background: var(--fondo);
+  color: var(--texto);
+  cursor: pointer;
+}
+.rep-boton:hover:not(:disabled) {
+  border-color: var(--acento);
+}
+.rep-boton:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.rep-barra-pasos {
+  flex: 1 1 140px;
+  min-width: 120px;
+}
+.rep-cuenta {
+  color: var(--suave);
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+.rep-cuerpo {
+  display: grid;
+  grid-template-columns: minmax(240px, 2fr) 3fr;
+  gap: 12px;
+  align-items: start;
+}
+@media (max-width: 760px) {
+  .rep-cuerpo {
+    grid-template-columns: 1fr;
+  }
+}
+.rep-codigo {
+  position: relative;
+  margin: 0;
+  max-height: 440px;
+  overflow: auto;
+  background: var(--codigo);
+  border-radius: 6px;
+  padding: 6px 0;
+  font-family: Consolas, "Cascadia Mono", Menlo, monospace;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+/* Una linea larga no se corta: el panel se desplaza hacia el costado. */
+.rep-lineas {
+  display: inline-block;
+  min-width: 100%;
+}
+.rep-linea {
+  display: flex;
+  gap: 8px;
+  padding: 0 8px;
+  border-left: 3px solid transparent;
+  white-space: pre;
+  transition: opacity 0.25s;
+}
+.rep-fuera {
+  opacity: 0.45;
+}
+.rep-fuente {
+  flex: 0 0 auto;
+}
+.rep-numero {
+  position: relative;
+  flex: 0 0 3ch;
+  text-align: right;
+  color: var(--suave);
+  user-select: none;
+}
+/* la linea que se va a ejecutar: fondo marcado, barra gruesa y una marca en los numeros (no solo color) */
+.rep-ahora {
+  background: var(--mejora-fondo);
+  background: color-mix(in srgb, var(--acento) 24%, var(--codigo));
+  border-left-color: var(--acento);
+  box-shadow: inset 3px 0 0 var(--acento);
+}
+.rep-error {
+  background: var(--error-fondo);
+  background: color-mix(in srgb, var(--error) 24%, var(--codigo));
+  border-left-color: var(--error);
+  box-shadow: inset 3px 0 0 var(--error);
+}
+.rep-ahora .rep-numero,
+.rep-error .rep-numero {
+  font-weight: 700;
+}
+.rep-ahora .rep-numero {
+  color: var(--acento);
+}
+.rep-error .rep-numero {
+  color: var(--error);
+}
+.rep-ahora .rep-numero::before,
+.rep-error .rep-numero::before {
+  content: '▶';
+  position: absolute;
+  left: 0;
+  font-size: 0.65em;
+  line-height: inherit;
+}
+.rep-lado {
+  min-width: 0;
+}
+.rep-estado {
+  margin: 0 0 8px;
+  font-size: 0.92rem;
+}
+.rep-estado-texto {
+  margin: 0 0 4px;
+}
+.rep-estado-linea {
+  margin: 0;
+  padding: 4px 8px;
+  overflow-x: auto;
+  background: var(--codigo);
+  border-radius: 6px;
+  font-family: Consolas, "Cascadia Mono", Menlo, monospace;
+  font-size: 0.85rem;
+  white-space: pre;
+}
+.rep-velocidad {
+  font-size: 0.85rem;
+  color: var(--suave);
+  white-space: nowrap;
+}
+.rep-velocidad select {
+  font: inherit;
+  margin-left: 4px;
+}
+.rep-estado-error {
+  color: var(--error);
+  background: var(--error-fondo);
+  border-radius: 6px;
+  padding: 6px 8px;
+}
+.rep-figura {
+  overflow: auto;
+  border: 1px solid var(--borde);
+  border-radius: 6px;
+  padding: 6px;
+  background: var(--fondo);
+}
+.rep-subtitulo {
+  margin: 10px 0 4px;
+  font-size: 0.85rem;
+  color: var(--suave);
+}
+.rep-consola {
+  margin: 0;
+  min-height: 1.6em;
+  max-height: 140px;
+  overflow: auto;
+  background: var(--codigo);
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 0.85rem;
+}
+.rep-nota {
+  margin: 8px 0 0;
+  font-size: 0.8rem;
+  color: var(--suave);
+}
+
+/* la figura */
+.rep-svg {
+  display: block;
+  max-width: none;
+  font-family: Consolas, "Cascadia Mono", Menlo, monospace;
+  font-size: 12px;
+}
+.rep-svg text {
+  fill: var(--texto);
+}
+.rep-svg .rep-titulo {
+  fill: var(--suave);
+  font-weight: 700;
+}
+.rep-svg .rep-funcion {
+  font-weight: 700;
+}
+.rep-svg .rep-campo,
+.rep-svg .rep-indice,
+.rep-svg .rep-direccion {
+  fill: var(--suave);
+  font-size: 10px;
+}
+.rep-svg .rep-aviso {
+  fill: var(--aviso);
+  font-size: 10px;
+}
+.rep-marco {
+  fill: var(--panel);
+  stroke: var(--borde);
+  stroke-width: 1.2;
+}
+.rep-marco.rep-actual {
+  stroke: var(--acento);
+  stroke-width: 2;
+}
+.rep-bloque {
+  fill: var(--panel);
+  stroke: var(--suave);
+  stroke-width: 1.4;
+}
+.rep-bloque.rep-huerfano {
+  stroke-dasharray: 5 3;
+  stroke: var(--aviso);
+}
+.rep-bloque.rep-liberado,
+.rep-svg .rep-liberado {
+  opacity: 0.5;
+  stroke-dasharray: 3 3;
+}
+.rep-celda {
+  fill: var(--fondo);
+  stroke: var(--borde);
+  stroke-width: 1.2;
+}
+.rep-celda.rep-vacia {
+  stroke-dasharray: 3 2;
+}
+.rep-celda.rep-nulo + text {
+  fill: var(--suave);
+  font-size: 10px;
+}
+.rep-celda.rep-cambio {
+  fill: var(--aviso-fondo);
+  stroke: var(--aviso);
+  stroke-width: 2.4;
+}
+.rep-punto {
+  fill: var(--acento);
+}
+.rep-punto.rep-muerto {
+  fill: var(--error);
+}
+.rep-flecha {
+  fill: none;
+  stroke: var(--acento);
+  stroke-width: 1.6;
+}
+.rep-flecha-mala {
+  stroke: var(--error);
+  stroke-dasharray: 4 3;
+}
+.rep-cabeza {
+  fill: var(--acento);
+}
+.rep-cabeza-mala {
+  fill: var(--error);
+}
+.rep-pendiente {
+  opacity: 0.4;
+}
+.rep-pendiente .rep-celda {
+  stroke-dasharray: 3 3;
+}
+/* el cursor sobre una variable o un bloque */
+.rep-figura {
+  position: relative;
+}
+.rep-zona {
+  fill: transparent;
+}
+.rep-var,
+.rep-bloque-g {
+  cursor: default;
+}
+.rep-svg .rep-subgrupo {
+  fill: var(--suave);
+  font-size: 10px;
+  font-style: italic;
+}
+.rep-svg .rep-etiqueta-texto {
+  fill: var(--sobre-acento);
+  font-size: 10px;
+}
+.rep-etiqueta {
+  fill: var(--acento);
+  opacity: 0.9;
+}
+.rep-flecha-g {
+  transition: opacity 0.15s;
+}
+.rep-enfoque .rep-flecha-g {
+  opacity: 0.12;
+}
+.rep-enfoque .rep-flecha-g.rep-viva {
+  opacity: 1;
+}
+.rep-enfoque .rep-flecha-g.rep-viva .rep-flecha {
+  stroke-width: 2.6;
+}
+.rep-foco .rep-bloque,
+.rep-foco .rep-zona {
+  stroke: var(--acento);
+  stroke-width: 2.2;
+}
+.rep-foco .rep-zona {
+  fill: var(--mejora-fondo);
+}
+.rep-relacionado .rep-bloque {
+  stroke: var(--acento);
+}
+.rep-relacionado .rep-zona {
+  fill: var(--mejora-fondo);
+}
+.rep-tip {
+  position: fixed;
+  z-index: 5;
+  max-width: 320px;
+  padding: 6px 8px;
+  background: var(--panel);
+  color: var(--texto);
+  border: 1px solid var(--acento);
+  border-radius: 6px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  font-size: 0.8rem;
+  pointer-events: none;
+}
+.rep-tip-titulo {
+  font-weight: 700;
+}
+.rep-tip-datos {
+  color: var(--suave);
+  margin-bottom: 4px;
+}
+.rep-tip-valor {
+  font-family: Consolas, "Cascadia Mono", Menlo, monospace;
+  white-space: pre;
+}
+
+/* ---- el espacio: ancho, chico, compacto y toda la pantalla ---- */
+.rep-columna-codigo {
+  min-width: 0;
+}
+.rep-ver-codigo,
+.rep-cerrar-codigo {
+  display: none;
+}
+.rep-herramientas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 6px;
+  font-size: 0.85rem;
+  color: var(--suave);
+}
+.rep-herramientas .rep-boton {
+  padding: 1px 9px;
+}
+.rep-zoom-valor {
+  min-width: 3.2em;
+}
+.rep-giro {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  padding: 6px 8px;
+  background: var(--aviso-fondo);
+  color: var(--aviso);
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+.rep-giro[hidden] {
+  display: none;
+}
+/* con mucho ancho, el codigo ocupa menos y la figura mas */
+.rep-ancho .rep-cuerpo {
+  grid-template-columns: minmax(300px, 3fr) 7fr;
+}
+/* con poco ancho: la figura arriba y el codigo abajo */
+.rep-chico .rep-cuerpo {
+  grid-template-columns: 1fr;
+}
+.rep-chico .rep-lado {
+  order: -1;
+}
+/* compacto: el codigo es una ventana de cinco lineas y el resto se abre a pedido */
+.rep-compacto .rep-codigo {
+  max-height: calc(5 * 1.5 * 0.85rem + 12px);
+}
+.rep-compacto .rep-ver-codigo {
+  display: inline-block;
+  margin-top: 6px;
+}
+.rep-compacto .rep-estado-linea,
+.rep-compacto .rep-nota {
+  display: none;
+}
+.rep-codigo-abierto .rep-codigo {
+  position: fixed;
+  inset: 8px;
+  z-index: 1200;
+  max-height: none;
+  padding-top: 44px;
+  border: 1px solid var(--acento);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+}
+.rep-codigo-abierto .rep-cerrar-codigo {
+  display: block;
+  position: fixed;
+  top: 14px;
+  right: 18px;
+  z-index: 1300;
+}
+/* toda la pantalla */
+.rep-sin-scroll,
+.rep-sin-scroll body {
+  overflow: hidden;
+}
+.rep-ampliado {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 8px;
+  border: none;
+  border-radius: 0;
+  overflow: hidden;
+}
+.rep-ampliado .rep-titulo-general {
+  display: none;
+}
+.rep-ampliado .rep-cuerpo {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.rep-ampliado .rep-barra {
+  margin: 8px 0 0;
+}
+.rep-ampliado .rep-lado {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+}
+.rep-ampliado .rep-figura {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.rep-ampliado .rep-consola {
+  max-height: 64px;
+}
+.rep-ampliado .rep-columna-codigo {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.rep-ampliado.rep-chico .rep-cuerpo {
+  grid-template-rows: minmax(0, 1fr) auto;
+}
+/* apaisado: el codigo en una columna angosta, con toda la altura, y la figura al lado */
+.rep-apaisado .rep-cuerpo {
+  grid-template-columns: minmax(180px, 30%) 1fr;
+}
+.rep-apaisado .rep-lado {
+  order: 0;
+}
+.rep-apaisado .rep-codigo {
+  max-height: none;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.rep-apaisado .rep-ver-codigo {
+  display: none;
+}
+@media (pointer: coarse) {
+  .rep-boton {
+    min-height: 42px;
+    padding: 6px 12px;
+  }
+  .rep-herramientas .rep-boton {
+    min-width: 42px;
+  }
+  .rep-barra-pasos {
+    min-height: 32px;
+  }
+}
+
+/* en toda la pantalla el cuerpo ocupa lo que queda sobre la barra y no la desborda */
+.rep-ampliado .rep-cuerpo {
+  grid-template-rows: minmax(0, 1fr);
+  overflow: hidden;
+}
+.rep-ampliado.rep-compacto.rep-apaisado .rep-subtitulo {
+  display: none;
+}
+.rep-ampliado.rep-compacto.rep-apaisado .rep-consola {
+  max-height: 38px;
+}
+.rep-ampliado .rep-estado-texto {
+  margin: 0 0 2px;
+}
+.rep-ampliado .rep-barra {
+  flex: 0 0 auto;
+}
+
+/* apaisado: la barra en una sola fila para dejarle la altura a la figura */
+.rep-apaisado .rep-barra {
+  flex-wrap: nowrap;
+  gap: 4px;
+  margin-top: 4px;
+  overflow-x: auto;
+}
+.rep-apaisado .rep-boton {
+  min-height: 34px;
+  padding: 2px 8px;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+.rep-apaisado .rep-barra-pasos {
+  flex: 1 1 80px;
+  min-width: 80px;
+  min-height: 0;
+}
+.rep-apaisado .rep-cuenta,
+.rep-apaisado .rep-velocidad {
+  font-size: 0.75rem;
+}
+
+/* la flecha que acaba de cambiar, y adonde apuntaba antes */
+.rep-flecha-g.rep-nueva .rep-flecha {
+  stroke: var(--aviso);
+  stroke-width: 3;
+}
+.rep-cabeza-nueva {
+  fill: var(--aviso);
+}
+.rep-etiqueta.rep-etiqueta-nueva {
+  fill: var(--aviso);
+}
+.rep-flecha-g.rep-nueva .rep-etiqueta-texto {
+  fill: var(--fondo);
+}
+/* en toda la pantalla las columnas ocupan el alto: el panel del codigo se limita al de la pantalla y se desplaza */
+.rep-ampliado .rep-cuerpo {
+  align-items: stretch;
+}
+
+/* las flechas se pueden senalar, y sus nombres se ven si se pide o al senalarlas */
+.rep-flecha-zona {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 12;
+  pointer-events: stroke;
+  cursor: pointer;
+}
+.rep-etiqueta-g {
+  display: none;
+}
+.rep-con-nombres .rep-etiqueta-g,
+.rep-flecha-g.rep-viva .rep-etiqueta-g {
+  display: inline;
+}
+.rep-nombres {
+  margin-left: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* un puntero a un bloque liberado: sigue apuntando, en rojo y continua */
+.rep-flecha.rep-flecha-liberada {
+  stroke: var(--error);
+}

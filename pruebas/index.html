@@ -32,6 +32,7 @@
       import { CASOS_DEL_SIMULADOR, resultadoDelSimulador } from './casos-simulador.js';
       import { problemasDeLaTabla } from './casos-pila.js';
       import { ejecutar as ejecutarMotor } from '../js/motor/interprete.js';
+      import { dibujarFotografia } from '../js/motor/figura.js';
       import { CASOS_DEL_MOTOR, resultadoDelMotor, CASOS_DE_LA_REGLA, resultadoDeLaRegla } from './casos-motor.js';
 import { corregir } from '../js/corrector.js';
 
@@ -370,6 +371,17 @@ import { corregir } from '../js/corrector.js';
           const r = resultadoDelMotor(analizador, ejecutarMotor, caso);
           anotar(r.bien, `motor: ${caso.nombre}`, r.detalle);
         }
+        // La figura se dibuja en todos los pasos de todos los programas, sin fallar.
+        for (const caso of CASOS_DEL_MOTOR) {
+          try {
+            const r = ejecutarMotor(analizador, caso.codigo, { entrada: caso.entrada, traza: true });
+            r.traza.forEach((foto, i) => dibujarFotografia(foto, i ? r.traza[i - 1] : null));
+            anotar(true, `figura del motor: ${caso.nombre}`);
+          } catch (e) {
+            anotar(false, `figura del motor: ${caso.nombre}`, e.stack);
+          }
+        }
+
         for (const caso of CASOS_DE_LA_REGLA) {
           const r = resultadoDeLaRegla(analizador, corregir, caso);
           anotar(r.bien, `regla memoria: ${caso.nombre}`, r.detalle);
