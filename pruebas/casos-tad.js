@@ -103,6 +103,8 @@ const tadListaUsar = serie('tad-lista-usar');
 const tadAgenda = serie('tad-agenda');
 const tadAgendaUsar = serie('tad-agenda-usar');
 const tadAgendaAmpliar = serie('tad-agenda-ampliar');
+const fechaComparar = serie('tad-fecha-comparar');
+const tadTarea = serie('tad-tarea');
 
 // main.c de las pilas con lo que va adentro de main.
 const MAIN_PILA = (...cuerpo) =>
@@ -636,6 +638,12 @@ const AGENDA_DOS = "#include <stdio.h>\n#include \"agenda.h\"\n\nint main() {\n 
 const AGENDA_H_AMPLIADO = "#ifndef AGENDA_H\n#define AGENDA_H\n\n#define MAX 10\n#define LARGO 20\n\ntypedef enum {\n  OK,\n  AGENDA_LLENA,\n  NOMBRE_REPETIDO,\n  NO_ENCONTRADO\n} TResultado;\n\ntypedef struct {\n  char nombres[MAX][LARGO];\n  unsigned long telefonos[MAX];\n  int cantidad;\n} TAgenda;\n\nvoid inicializar(TAgenda *a);\nint total(TAgenda a);\nTResultado agregar(TAgenda *a, char nombre[], unsigned long telefono);\nTResultado buscar(TAgenda a, char nombre[], unsigned long *telefono);\nTResultado eliminar(TAgenda *a, char nombre[]);\n\n#endif";
 const AGENDA_C_AMPLIADO = "#include <string.h>\n#include \"agenda.h\"\n\nvoid inicializar(TAgenda *a) {\n  a->cantidad = 0;\n}\n\nint total(TAgenda a) {\n  return a.cantidad;\n}\n\nTResultado agregar(TAgenda *a, char nombre[], unsigned long telefono) {\n  for (int i = 0; i < a->cantidad; i++) {\n    if (strcmp(a->nombres[i], nombre) == 0) {\n      return NOMBRE_REPETIDO;\n    }\n  }\n  if (a->cantidad == MAX) {\n    return AGENDA_LLENA;\n  }\n  strcpy(a->nombres[a->cantidad], nombre);\n  a->telefonos[a->cantidad] = telefono;\n  a->cantidad = a->cantidad + 1;\n  return OK;\n}\n\nTResultado buscar(TAgenda a, char nombre[], unsigned long *telefono) {\n  for (int i = 0; i < a.cantidad; i++) {\n    if (strcmp(a.nombres[i], nombre) == 0) {\n      *telefono = a.telefonos[i];\n      return OK;\n    }\n  }\n  return NO_ENCONTRADO;\n}\n\nTResultado eliminar(TAgenda *a, char nombre[]) {\n  for (int i = 0; i < a->cantidad; i++) {\n    if (strcmp(a->nombres[i], nombre) == 0) {\n      for (int j = i; j < a->cantidad - 1; j++) {\n        strcpy(a->nombres[j], a->nombres[j + 1]);\n        a->telefonos[j] = a->telefonos[j + 1];\n      }\n      a->cantidad = a->cantidad - 1;\n      return OK;\n    }\n  }\n  return NO_ENCONTRADO;\n}";
 const AGENDA_BAJAS = "#include <stdio.h>\n#include \"agenda.h\"\n\nint main() {\n  TAgenda a;\n  char nombre[LARGO];\n  unsigned long telefono;\n  int n;\n  int q;\n\n  inicializar(&a);\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%s\", nombre);\n    scanf(\"%lu\", &telefono);\n    agregar(&a, nombre, telefono);\n  }\n  scanf(\"%d\", &q);\n  for (int i = 0; i < q; i++) {\n    scanf(\"%s\", nombre);\n    if (eliminar(&a, nombre) == OK) {\n      printf(\"Eliminado\\n\");\n    } else {\n      printf(\"No esta\\n\");\n    }\n  }\n  printf(\"Quedan: %d\", total(a));\n  return 0;\n}";
+
+const TT_FECHA_H = "#ifndef FECHA_H\n#define FECHA_H\n\ntypedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\ntypedef struct {\n  int dia;\n  int mes;\n  int anio;\n} TFecha;\n\nTFecha crear(int dia, int mes, int anio);\nTBool esBisiesto(TFecha f);\nint diasDelMes(TFecha f);\nTFecha sumarDias(TFecha f, int n);\nvoid mostrar(TFecha f);\nint comparar(TFecha a, TFecha b);\n\n#endif";
+const TT_FECHA_C = "#include <stdio.h>\n#include \"fecha.h\"\n\nTFecha crear(int dia, int mes, int anio) {\n  TFecha f;\n\n  f.dia = dia;\n  f.mes = mes;\n  f.anio = anio;\n  return f;\n}\n\nTBool esBisiesto(TFecha f) {\n  if ((f.anio % 4 == 0 && f.anio % 100 != 0) || f.anio % 400 == 0) {\n    return VERDADERO;\n  }\n  return FALSO;\n}\n\nint diasDelMes(TFecha f) {\n  int dias;\n\n  if (f.mes == 2) {\n    if (esBisiesto(f) == VERDADERO) {\n      dias = 29;\n    } else {\n      dias = 28;\n    }\n  } else if (f.mes == 4 || f.mes == 6 || f.mes == 9 || f.mes == 11) {\n    dias = 30;\n  } else {\n    dias = 31;\n  }\n  return dias;\n}\n\nTFecha sumarDias(TFecha f, int n) {\n  for (int i = 0; i < n; i++) {\n    f.dia = f.dia + 1;\n    if (f.dia > diasDelMes(f)) {\n      f.dia = 1;\n      f.mes = f.mes + 1;\n      if (f.mes > 12) {\n        f.mes = 1;\n        f.anio = f.anio + 1;\n      }\n    }\n  }\n  return f;\n}\n\nvoid mostrar(TFecha f) {\n  printf(\"%d/%d/%d\", f.dia, f.mes, f.anio);\n}\n\nint comparar(TFecha a, TFecha b) {\n  if (a.anio != b.anio) {\n    if (a.anio < b.anio) {\n      return -1;\n    }\n    return 1;\n  }\n  if (a.mes != b.mes) {\n    if (a.mes < b.mes) {\n      return -1;\n    }\n    return 1;\n  }\n  if (a.dia != b.dia) {\n    if (a.dia < b.dia) {\n      return -1;\n    }\n    return 1;\n  }\n  return 0;\n}";
+const TT_TAREA_H = "#ifndef TAREA_H\n#define TAREA_H\n\n#include \"fecha.h\"\n\n#define LARGO 30\n\ntypedef struct {\n  char titulo[LARGO];\n  TFecha vence;\n  TBool hecha;\n} TTarea;\n\nTTarea crearTarea(char titulo[], TFecha vence);\nvoid completar(TTarea *t);\nTBool estaHecha(TTarea t);\nTFecha vencimiento(TTarea t);\nTBool vencida(TTarea t, TFecha hoy);\n\n#endif";
+const TT_TAREA_C = "#include <string.h>\n#include \"tarea.h\"\n\nTTarea crearTarea(char titulo[], TFecha vence) {\n  TTarea t;\n\n  strcpy(t.titulo, titulo);\n  t.vence = vence;\n  t.hecha = FALSO;\n  return t;\n}\n\nvoid completar(TTarea *t) {\n  t->hecha = VERDADERO;\n}\n\nTBool estaHecha(TTarea t) {\n  return t.hecha;\n}\n\nTFecha vencimiento(TTarea t) {\n  return t.vence;\n}\n\nTBool vencida(TTarea t, TFecha hoy) {\n  if (t.hecha == VERDADERO) {\n    return FALSO;\n  }\n  if (comparar(t.vence, hoy) < 0) {\n    return VERDADERO;\n  }\n  return FALSO;\n}";
+const TT_TAREA_MAIN = "#include <stdio.h>\n#include \"tarea.h\"\n\nint main() {\n  TFecha hoy;\n  TTarea t;\n  char titulo[LARGO];\n  int dia;\n  int mes;\n  int anio;\n  int hecha;\n  int n;\n  int vencidas = 0;\n  int paraHoy = 0;\n\n  scanf(\"%d\", &dia);\n  scanf(\"%d\", &mes);\n  scanf(\"%d\", &anio);\n  hoy = crear(dia, mes, anio);\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%s\", titulo);\n    scanf(\"%d\", &dia);\n    scanf(\"%d\", &mes);\n    scanf(\"%d\", &anio);\n    scanf(\"%d\", &hecha);\n    t = crearTarea(titulo, crear(dia, mes, anio));\n    if (hecha == 1) {\n      completar(&t);\n    }\n    if (vencida(t, hoy) == VERDADERO) {\n      printf(\"%s (vencida)\\n\", titulo);\n      vencidas = vencidas + 1;\n    } else if (estaHecha(t) == FALSO && comparar(vencimiento(t), hoy) == 0) {\n      printf(\"%s (para hoy)\\n\", titulo);\n      paraHoy = paraHoy + 1;\n    }\n  }\n  printf(\"Vencidas: %d\\nPara hoy: %d\", vencidas, paraHoy);\n  return 0;\n}";
 
 const FECHA_H = lineas(
   '#ifndef FECHA_H',
@@ -2535,4 +2543,49 @@ export const CASOS_DE_TAD = [
   tadAgendaAmpliar(3, 'mostrando cuantas bajas se pidieron', AGENDA_BAJAS.replace('total(a)', 'q'), ['TAD_OPERACION_SIN_USAR']),
   tadAgendaAmpliar(3, 'mostrando cuantos contactos se leyeron', AGENDA_BAJAS.replace('total(a)', 'n'), ['TAD_OPERACION_SIN_USAR']),
   tadAgendaAmpliar(3, 'cambiando el texto del aviso', AGENDA_BAJAS.replace('printf("Eliminado\\n")', 'printf("Eliminada\\n")'), ['MUESTRA_DISTINTA']),
+  // ===== Ampliar la fecha: comparar =====
+  fechaComparar(1, 'completo', TT_FECHA_H),
+  fechaComparar(1, 'sin declarar comparar', TT_FECHA_H.replace("int comparar(TFecha a, TFecha b);\n", ""), ['PROTOTIPO_FALTA']),
+  fechaComparar(1, 'comparar que no devuelve nada', TT_FECHA_H.replace("int comparar", "void comparar"), ['FUNCION_TIPO_RETORNO']),
+  fechaComparar(1, 'comparar con una sola fecha', TT_FECHA_H.replace("int comparar(TFecha a, TFecha b);", "int comparar(TFecha a);"), ['PARAMETROS_CANTIDAD']),
+  fechaComparar(1, 'la declaracion despues del endif', TT_FECHA_H.replace("int comparar(TFecha a, TFecha b);\n\n#endif", "\n#endif\nint comparar(TFecha a, TFecha b);"), ['ENCABEZADO_FUERA_DE_LA_GUARDA']),
+  fechaComparar(2, 'completo', TT_FECHA_C),
+  fechaComparar(2, 'sin definir comparar', TT_FECHA_C.slice(0, TT_FECHA_C.indexOf('\n\nint comparar')), ['PROTOTIPO_SIN_DEFINICION']),
+  fechaComparar(2, 'comparando solo los anios', TT_FECHA_C.slice(0, TT_FECHA_C.indexOf('\n\nint comparar')) + "\n\nint comparar(TFecha a, TFecha b) {\n  if (a.anio < b.anio) {\n    return -1;\n  }\n  if (a.anio > b.anio) {\n    return 1;\n  }\n  return 0;\n}", ['DEVUELVE_DISTINTO']),
+  fechaComparar(2, 'mirando el dia antes que el mes', TT_FECHA_C.slice(0, TT_FECHA_C.indexOf('\n\nint comparar')) + "\n\nint comparar(TFecha a, TFecha b) {\n  if (a.anio != b.anio) {\n    if (a.anio < b.anio) {\n      return -1;\n    }\n    return 1;\n  }\n  if (a.dia != b.dia) {\n    if (a.dia < b.dia) {\n      return -1;\n    }\n    return 1;\n  }\n  if (a.mes != b.mes) {\n    if (a.mes < b.mes) {\n      return -1;\n    }\n    return 1;\n  }\n  return 0;\n}", ['DEVUELVE_DISTINTO']),
+  fechaComparar(2, 'devolviendo la diferencia', TT_FECHA_C.slice(0, TT_FECHA_C.indexOf('\n\nint comparar')) + "\n\nint comparar(TFecha a, TFecha b) {\n  return (a.anio * 10000 + a.mes * 100 + a.dia) - (b.anio * 10000 + b.mes * 100 + b.dia);\n}", ['DEVUELVE_DISTINTO']),
+  fechaComparar(2, 'con los signos al reves', TT_FECHA_C.replace(/return -1;/g, "return 7;").replace(/return 1;/g, "return -1;").replace(/return 7;/g, "return 1;"), ['DEVUELVE_DISTINTO']),
+  fechaComparar(2, 'que siempre dice que son iguales', TT_FECHA_C.slice(0, TT_FECHA_C.indexOf('\n\nint comparar')) + "\n\nint comparar(TFecha a, TFecha b) {\n  return 0;\n}", ['DEVUELVE_DISTINTO']),
+  // ===== Un TAD que usa a otro: la tarea =====
+  tadTarea(1, 'completo', TT_TAREA_H),
+  tadTarea(1, 'sin incluir fecha.h', TT_TAREA_H.replace("#include \"fecha.h\"\n\n", ""), ['INCLUDE_PROPIO_FALTA']),
+  tadTarea(1, 'el vencimiento como tres enteros', TT_TAREA_H.replace("  TFecha vence;\n", "  int dia;\n  int mes;\n  int anio;\n"), ['CAMPO_FALTA']),
+  tadTarea(1, 'la marca como entero', TT_TAREA_H.replace("  TBool hecha;", "  int hecha;"), ['CAMPO_TIPO']),
+  tadTarea(1, 'sin declarar vencida', TT_TAREA_H.replace("TBool vencida(TTarea t, TFecha hoy);\n", ""), ['PROTOTIPO_FALTA']),
+  tadTarea(1, 'completar con la tarea por valor', TT_TAREA_H.replace("void completar(TTarea *t);", "void completar(TTarea t);"), ['PARAMETRO_REFERENCIA_FALTA']),
+  tadTarea(1, 'vencida que devuelve un entero', TT_TAREA_H.replace("TBool vencida", "int vencida"), ['FUNCION_TIPO_RETORNO']),
+  tadTarea(1, 'las declaraciones despues del endif', TT_TAREA_H.replace("TBool vencida(TTarea t, TFecha hoy);\n\n#endif", "\n#endif\nTBool vencida(TTarea t, TFecha hoy);"), ['ENCABEZADO_FUERA_DE_LA_GUARDA']),
+  tadTarea(2, 'completo', TT_TAREA_C),
+  tadTarea(2, 'vencida mirando los campos de la fecha', TT_TAREA_C.replace("comparar(t.vence, hoy) < 0", "t.vence.anio < hoy.anio || (t.vence.anio == hoy.anio && t.vence.mes < hoy.mes) || (t.vence.anio == hoy.anio && t.vence.mes == hoy.mes && t.vence.dia < hoy.dia)"), ['TAD_ACCESO_DIRECTO', 'TAD_OPERACION_SIN_USAR']),
+  tadTarea(2, 'vencida sin usar comparar', TT_TAREA_C.replace("  if (comparar(t.vence, hoy) < 0) {\n    return VERDADERO;\n  }\n", ""), ['TAD_OPERACION_SIN_USAR']),
+  tadTarea(2, 'vencida sin mirar si esta hecha', TT_TAREA_C.replace("  if (t.hecha == VERDADERO) {\n    return FALSO;\n  }\n", ""), ['DEVUELVE_DISTINTO']),
+  tadTarea(2, 'vencida que cuenta la de hoy', TT_TAREA_C.replace("comparar(t.vence, hoy) < 0", "comparar(t.vence, hoy) <= 0"), ['DEVUELVE_DISTINTO']),
+  tadTarea(2, 'crearTarea que la deja hecha', TT_TAREA_C.replace("  t.hecha = FALSO;", "  t.hecha = VERDADERO;"), ['DEVUELVE_DISTINTO']),
+  tadTarea(2, 'crearTarea sin guardar el titulo', TT_TAREA_C.replace("  strcpy(t.titulo, titulo);\n", ""), ['VARIABLE_SIN_VALOR']),
+  tadTarea(2, 'completar sin marcar', TT_TAREA_C.replace("  t->hecha = VERDADERO;\n", ""), ['DEVUELVE_DISTINTO']),
+  tadTarea(2, 'vencimiento que devuelve otra fecha', TT_TAREA_C.replace("  return t.vence;", "  return crear(1, 1, 2000);"), ['DEVUELVE_DISTINTO']),
+  tadTarea(2, 'sin definir vencida', TT_TAREA_C.slice(0, TT_TAREA_C.indexOf('\n\nTBool vencida')), ['PROTOTIPO_SIN_DEFINICION', 'TAD_OPERACION_SIN_USAR']),
+  tadTarea(3, 'fecha.h y fecha.c', '1'),
+  tadTarea(3, 'solo fecha.c', '0', ['OPCION_TAREA_SOLO_FECHA_C']),
+  tadTarea(3, 'fecha.h, fecha.c y tarea.c', '2', ['OPCION_TAREA_Y_TAREA_C']),
+  tadTarea(3, 'los cinco', '3', ['OPCION_TAREA_LOS_CINCO']),
+  tadTarea(4, 'el main correcto', TT_TAREA_MAIN),
+  tadTarea(4, 'sin completar las hechas', TT_TAREA_MAIN.replace("    if (hecha == 1) {\n      completar(&t);\n    }\n", ""), ['MUESTRA_DISTINTA']),
+  tadTarea(4, 'mostrando las hechas que vencen hoy', TT_TAREA_MAIN.replace("estaHecha(t) == FALSO && ", ""), ['MUESTRA_DISTINTA']),
+  tadTarea(4, 'mirando los campos de la fecha', TT_TAREA_MAIN.replace("comparar(vencimiento(t), hoy) == 0", "vencimiento(t).dia == hoy.dia && vencimiento(t).mes == hoy.mes && vencimiento(t).anio == hoy.anio"), ['TAD_ACCESO_DIRECTO', 'TAD_OPERACION_SIN_USAR']),
+  tadTarea(4, 'armando la fecha de hoy a mano', TT_TAREA_MAIN.replace("  hoy = crear(dia, mes, anio);", "  hoy.dia = dia;\n  hoy.mes = mes;\n  hoy.anio = anio;"), ['TAD_ACCESO_DIRECTO']),
+  tadTarea(4, 'mirando los campos de la tarea', TT_TAREA_MAIN.replace("estaHecha(t) == FALSO", "t.hecha == FALSO"), ['TAD_ACCESO_DIRECTO']),
+  tadTarea(4, 'sin comparar las fechas', TT_TAREA_MAIN.replace("comparar(vencimiento(t), hoy) == 0", "VERDADERO"), ['TAD_OPERACION_SIN_USAR']),
+  tadTarea(4, 'con otro texto en el aviso', TT_TAREA_MAIN.replace("(vencida)", "(atrasada)"), ['MUESTRA_DISTINTA']),
+  tadTarea(4, 'sin contar las de hoy', TT_TAREA_MAIN.replace("      paraHoy = paraHoy + 1;\n", ""), ['MUESTRA_DISTINTA']),
 ];

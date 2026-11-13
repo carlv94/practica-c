@@ -1,0 +1,526 @@
+{
+  "id": "tad-tarea",
+  "titulo": "Un TAD que usa a otro: la tarea",
+  "continua": false,
+  "descripcion": "Un TAD cuyo campo es otro TAD: una tarea con título, fecha de vencimiento y estado. Se escribe `tarea.h`, después `tarea.c` (que maneja la fecha solo con sus operaciones) y por último un `main.c` que usa los dos TAD.",
+  "consignas": [
+    {
+      "id": "tadt-h",
+      "titulo": "El archivo de la tarea",
+      "escribe": "tarea.h",
+      "archivos": [
+        {
+          "nombre": "fecha.h",
+          "codigo": "#ifndef FECHA_H\n#define FECHA_H\n\ntypedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\ntypedef struct {\n  int dia;\n  int mes;\n  int anio;\n} TFecha;\n\nTFecha crear(int dia, int mes, int anio);\nTBool esBisiesto(TFecha f);\nint diasDelMes(TFecha f);\nTFecha sumarDias(TFecha f, int n);\nvoid mostrar(TFecha f);\nint comparar(TFecha a, TFecha b);\n\n#endif"
+        },
+        {
+          "nombre": "fecha.c",
+          "codigo": "#include <stdio.h>\n#include \"fecha.h\"\n\nTFecha crear(int dia, int mes, int anio) {\n  TFecha f;\n\n  f.dia = dia;\n  f.mes = mes;\n  f.anio = anio;\n  return f;\n}\n\nTBool esBisiesto(TFecha f) {\n  if ((f.anio % 4 == 0 && f.anio % 100 != 0) || f.anio % 400 == 0) {\n    return VERDADERO;\n  }\n  return FALSO;\n}\n\nint diasDelMes(TFecha f) {\n  int dias;\n\n  if (f.mes == 2) {\n    if (esBisiesto(f) == VERDADERO) {\n      dias = 29;\n    } else {\n      dias = 28;\n    }\n  } else if (f.mes == 4 || f.mes == 6 || f.mes == 9 || f.mes == 11) {\n    dias = 30;\n  } else {\n    dias = 31;\n  }\n  return dias;\n}\n\nTFecha sumarDias(TFecha f, int n) {\n  for (int i = 0; i < n; i++) {\n    f.dia = f.dia + 1;\n    if (f.dia > diasDelMes(f)) {\n      f.dia = 1;\n      f.mes = f.mes + 1;\n      if (f.mes > 12) {\n        f.mes = 1;\n        f.anio = f.anio + 1;\n      }\n    }\n  }\n  return f;\n}\n\nvoid mostrar(TFecha f) {\n  printf(\"%d/%d/%d\", f.dia, f.mes, f.anio);\n}\n\nint comparar(TFecha a, TFecha b) {\n  if (a.anio != b.anio) {\n    if (a.anio < b.anio) {\n      return -1;\n    }\n    return 1;\n  }\n  if (a.mes != b.mes) {\n    if (a.mes < b.mes) {\n      return -1;\n    }\n    return 1;\n  }\n  if (a.dia != b.dia) {\n    if (a.dia < b.dia) {\n      return -1;\n    }\n    return 1;\n  }\n  return 0;\n}",
+          "oculto": true
+        }
+      ],
+      "enunciado": "En esta serie va a armar un TAD que usa a otro. Escriba `tarea.h`, el archivo que describe el TAD tarea. El tipo se llama `TTarea` y tiene tres campos, en este orden:\n- `titulo`: una cadena de `LARGO` caracteres, con `LARGO` igual a 30.\n- `vence`: la fecha de vencimiento.\n- `hecha`: `VERDADERO` si la tarea ya está hecha y `FALSO` si está pendiente.\n\nPara `vence` y para `hecha` no hace falta definir nada nuevo: la fecha ya es un TAD, el de `fecha.h` que ve en el editor, y de allí salen `TFecha` y `TBool`. El `.h` de la tarea lo incluye.\n\nTiene cinco operaciones:\n- `crearTarea`: recibe el título y la fecha de vencimiento y devuelve la tarea, que empieza pendiente.\n- `completar`: la marca como hecha. Recibe la tarea por referencia y no devuelve nada.\n- `estaHecha`: dice si la tarea está hecha (devuelve un `TBool`). Recibe la tarea por valor.\n- `vencimiento`: devuelve la fecha de vencimiento. Recibe la tarea por valor.\n- `vencida`: dice si la tarea está vencida (devuelve un `TBool`). Recibe la tarea y la fecha de hoy, por valor.\n\nDos TAD en un mismo programa no pueden tener operaciones con el mismo nombre, por eso la de la tarea no se llama `crear`, que ya es de la fecha. Use las guardas de inclusión `TAREA_H`.",
+      "requiere": [
+        {
+          "encabezado": {
+            "guarda": "TAREA_H"
+          }
+        },
+        {
+          "incluyeLocal": "fecha.h"
+        },
+        {
+          "struct": {
+            "capturar": "S",
+            "campos": [
+              {
+                "nombre": "titulo",
+                "tipo": "cadena",
+                "largo": 30,
+                "constanteLargo": "LARGO"
+              },
+              {
+                "nombre": "vence",
+                "tipo": "estructura",
+                "de": "TFecha"
+              },
+              {
+                "nombre": "hecha",
+                "tipo": "enumerado",
+                "de": "TBool"
+              }
+            ]
+          }
+        },
+        {
+          "alias": {
+            "de": "$S",
+            "nombre": "TTarea",
+            "capturar": "T"
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "crearTarea",
+            "retorna": "estructura",
+            "parametros": [
+              {
+                "tipo": "caracter",
+                "arreglo": true
+              },
+              {
+                "tipo": "estructura"
+              }
+            ]
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "completar",
+            "retorna": "void",
+            "parametros": [
+              {
+                "tipo": "estructura",
+                "referencia": true
+              }
+            ]
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "estaHecha",
+            "retorna": "enumerado",
+            "parametros": [
+              {
+                "tipo": "estructura"
+              }
+            ]
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "vencimiento",
+            "retorna": "estructura",
+            "parametros": [
+              {
+                "tipo": "estructura"
+              }
+            ]
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "vencida",
+            "retorna": "enumerado",
+            "parametros": [
+              {
+                "tipo": "estructura"
+              },
+              {
+                "tipo": "estructura"
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "#ifndef TAREA_H\n#define TAREA_H\n\n#include \"fecha.h\"\n\n#define LARGO 30\n\ntypedef struct {\n  char titulo[LARGO];\n  TFecha vence;\n  TBool hecha;\n} TTarea;\n\nTTarea crearTarea(char titulo[], TFecha vence);\nvoid completar(TTarea *t);\nTBool estaHecha(TTarea t);\nTFecha vencimiento(TTarea t);\nTBool vencida(TTarea t, TFecha hoy);\n\n#endif"
+    },
+    {
+      "id": "tadt-c",
+      "titulo": "La implementación de la tarea",
+      "escribe": "tarea.c",
+      "archivos": [
+        {
+          "nombre": "fecha.h",
+          "codigo": "#ifndef FECHA_H\n#define FECHA_H\n\ntypedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\ntypedef struct {\n  int dia;\n  int mes;\n  int anio;\n} TFecha;\n\nTFecha crear(int dia, int mes, int anio);\nTBool esBisiesto(TFecha f);\nint diasDelMes(TFecha f);\nTFecha sumarDias(TFecha f, int n);\nvoid mostrar(TFecha f);\nint comparar(TFecha a, TFecha b);\n\n#endif"
+        },
+        {
+          "nombre": "fecha.c",
+          "codigo": "#include <stdio.h>\n#include \"fecha.h\"\n\nTFecha crear(int dia, int mes, int anio) {\n  TFecha f;\n\n  f.dia = dia;\n  f.mes = mes;\n  f.anio = anio;\n  return f;\n}\n\nTBool esBisiesto(TFecha f) {\n  if ((f.anio % 4 == 0 && f.anio % 100 != 0) || f.anio % 400 == 0) {\n    return VERDADERO;\n  }\n  return FALSO;\n}\n\nint diasDelMes(TFecha f) {\n  int dias;\n\n  if (f.mes == 2) {\n    if (esBisiesto(f) == VERDADERO) {\n      dias = 29;\n    } else {\n      dias = 28;\n    }\n  } else if (f.mes == 4 || f.mes == 6 || f.mes == 9 || f.mes == 11) {\n    dias = 30;\n  } else {\n    dias = 31;\n  }\n  return dias;\n}\n\nTFecha sumarDias(TFecha f, int n) {\n  for (int i = 0; i < n; i++) {\n    f.dia = f.dia + 1;\n    if (f.dia > diasDelMes(f)) {\n      f.dia = 1;\n      f.mes = f.mes + 1;\n      if (f.mes > 12) {\n        f.mes = 1;\n        f.anio = f.anio + 1;\n      }\n    }\n  }\n  return f;\n}\n\nvoid mostrar(TFecha f) {\n  printf(\"%d/%d/%d\", f.dia, f.mes, f.anio);\n}\n\nint comparar(TFecha a, TFecha b) {\n  if (a.anio != b.anio) {\n    if (a.anio < b.anio) {\n      return -1;\n    }\n    return 1;\n  }\n  if (a.mes != b.mes) {\n    if (a.mes < b.mes) {\n      return -1;\n    }\n    return 1;\n  }\n  if (a.dia != b.dia) {\n    if (a.dia < b.dia) {\n      return -1;\n    }\n    return 1;\n  }\n  return 0;\n}",
+          "oculto": true
+        },
+        {
+          "nombre": "tarea.h",
+          "codigo": "#ifndef TAREA_H\n#define TAREA_H\n\n#include \"fecha.h\"\n\n#define LARGO 30\n\ntypedef struct {\n  char titulo[LARGO];\n  TFecha vence;\n  TBool hecha;\n} TTarea;\n\nTTarea crearTarea(char titulo[], TFecha vence);\nvoid completar(TTarea *t);\nTBool estaHecha(TTarea t);\nTFecha vencimiento(TTarea t);\nTBool vencida(TTarea t, TFecha hoy);\n\n#endif"
+        }
+      ],
+      "enunciado": "Ahora escriba `tarea.c`, que define las cinco operaciones del `tarea.h` que acaba de escribir (lo ve en el editor, junto con `fecha.h`):\n- `crearTarea`: arma la tarea con el título y la fecha de vencimiento que recibe, y la deja pendiente.\n- `completar`: marca la tarea como hecha.\n- `estaHecha`: devuelve `VERDADERO` si la tarea está hecha y `FALSO` si no.\n- `vencimiento`: devuelve la fecha de vencimiento.\n- `vencida`: devuelve `VERDADERO` si la tarea está pendiente y su vencimiento es anterior a la fecha de hoy, y `FALSO` si no. Una tarea hecha nunca está vencida, y una que vence hoy todavía no lo está.\n\nPara trabajar con la fecha use solo las operaciones de `fecha.h`. No olvide incluir el `.h`.",
+      "requiere": [
+        {
+          "incluyeLocal": "tarea.h"
+        },
+        {
+          "sinTipos": true
+        },
+        {
+          "defineTodo": true
+        },
+        {
+          "soloOperaciones": "TFecha"
+        },
+        {
+          "usaOperaciones": [
+            "comparar"
+          ]
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "antes": "TTarea t = crearTarea(\"Informe\", crear(10, 3, 2026));",
+                "llama": "estaHecha(t)",
+                "devuelve": "FALSO",
+                "contexto": "Al crear una tarea queda pendiente",
+                "visible": true
+              },
+              {
+                "antes": "TTarea t = crearTarea(\"Informe\", crear(10, 3, 2026));",
+                "llama": "strcmp(t.titulo, \"Informe\")",
+                "devuelve": 0,
+                "contexto": "Al crear una tarea con el título Informe: su título"
+              },
+              {
+                "antes": "TTarea t = crearTarea(\"Informe\", crear(10, 3, 2026));",
+                "llama": "comparar(vencimiento(t), crear(10, 3, 2026))",
+                "devuelve": 0,
+                "contexto": "Al crear una tarea que vence el 10/3/2026: su vencimiento"
+              },
+              {
+                "antes": "TTarea t = crearTarea(\"Compras\", crear(25, 12, 2025));",
+                "llama": "comparar(vencimiento(t), crear(25, 12, 2025))",
+                "devuelve": 0,
+                "contexto": "Al crear una tarea que vence el 25/12/2025: su vencimiento"
+              },
+              {
+                "antes": "TTarea t = crearTarea(\"Informe\", crear(10, 3, 2026));\ncompletar(&t);",
+                "llama": "estaHecha(t)",
+                "devuelve": "VERDADERO",
+                "contexto": "Después de completar una tarea"
+              },
+              {
+                "antes": "TTarea t = crearTarea(\"Informe\", crear(10, 3, 2026));\ncompletar(&t);",
+                "llama": "comparar(vencimiento(t), crear(10, 3, 2026))",
+                "devuelve": 0,
+                "contexto": "Después de completar una tarea: su vencimiento"
+              },
+              {
+                "antes": "TFecha hoy = crear(15, 3, 2026);\nTTarea t = crearTarea(\"Informe\", crear(10, 3, 2026));",
+                "llama": "vencida(t, hoy)",
+                "devuelve": "VERDADERO",
+                "contexto": "Hoy es el 15/3/2026 y la tarea pendiente vence el 10/3/2026",
+                "visible": true
+              },
+              {
+                "antes": "TFecha hoy = crear(15, 3, 2026);\nTTarea t = crearTarea(\"Informe\", crear(15, 3, 2026));",
+                "llama": "vencida(t, hoy)",
+                "devuelve": "FALSO",
+                "contexto": "Hoy es el 15/3/2026 y la tarea pendiente vence hoy"
+              },
+              {
+                "antes": "TFecha hoy = crear(15, 3, 2026);\nTTarea t = crearTarea(\"Informe\", crear(20, 3, 2026));",
+                "llama": "vencida(t, hoy)",
+                "devuelve": "FALSO",
+                "contexto": "Hoy es el 15/3/2026 y la tarea pendiente vence el 20/3/2026"
+              },
+              {
+                "antes": "TFecha hoy = crear(15, 3, 2026);\nTTarea t = crearTarea(\"Informe\", crear(10, 3, 2026));\ncompletar(&t);",
+                "llama": "vencida(t, hoy)",
+                "devuelve": "FALSO",
+                "contexto": "Hoy es el 15/3/2026 y la tarea ya hecha vencía el 10/3/2026"
+              },
+              {
+                "antes": "TFecha hoy = crear(15, 3, 2026);\nTTarea t = crearTarea(\"Informe\", crear(20, 2, 2026));",
+                "llama": "vencida(t, hoy)",
+                "devuelve": "VERDADERO",
+                "contexto": "Hoy es el 15/3/2026 y la tarea pendiente vence el 20/2/2026 (el día es mayor que el de hoy, pero el mes es menor)"
+              },
+              {
+                "antes": "TFecha hoy = crear(15, 3, 2026);\nTTarea t = crearTarea(\"Informe\", crear(25, 12, 2025));",
+                "llama": "vencida(t, hoy)",
+                "devuelve": "VERDADERO",
+                "contexto": "Hoy es el 15/3/2026 y la tarea pendiente vence el 25/12/2025 (de un año anterior)"
+              },
+              {
+                "antes": "TFecha hoy = crear(15, 3, 2026);\nTTarea t = crearTarea(\"Informe\", crear(5, 4, 2026));",
+                "llama": "vencida(t, hoy)",
+                "devuelve": "FALSO",
+                "contexto": "Hoy es el 15/3/2026 y la tarea pendiente vence el 5/4/2026 (el día es menor que el de hoy, pero el mes es mayor)"
+              },
+              {
+                "antes": "TFecha hoy = crear(15, 3, 2026);\nTTarea t = crearTarea(\"Informe\", crear(1, 1, 2027));",
+                "llama": "vencida(t, hoy)",
+                "devuelve": "FALSO",
+                "contexto": "Hoy es el 15/3/2026 y la tarea pendiente vence el 1/1/2027 (de un año posterior)"
+              },
+              {
+                "antes": "TFecha hoy = crear(15, 3, 2026);\nTTarea t = crearTarea(\"Informe\", crear(20, 3, 2026));\ncompletar(&t);",
+                "llama": "vencida(t, hoy)",
+                "devuelve": "FALSO",
+                "contexto": "Hoy es el 15/3/2026 y la tarea ya hecha vence el 20/3/2026"
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "#include <string.h>\n#include \"tarea.h\"\n\nTTarea crearTarea(char titulo[], TFecha vence) {\n  TTarea t;\n\n  strcpy(t.titulo, titulo);\n  t.vence = vence;\n  t.hecha = FALSO;\n  return t;\n}\n\nvoid completar(TTarea *t) {\n  t->hecha = VERDADERO;\n}\n\nTBool estaHecha(TTarea t) {\n  return t.hecha;\n}\n\nTFecha vencimiento(TTarea t) {\n  return t.vence;\n}\n\nTBool vencida(TTarea t, TFecha hoy) {\n  if (t.hecha == VERDADERO) {\n    return FALSO;\n  }\n  if (comparar(t.vence, hoy) < 0) {\n    return VERDADERO;\n  }\n  return FALSO;\n}"
+    },
+    {
+      "id": "tadt-q-archivos",
+      "titulo": "Qué archivos cambian",
+      "archivos": [
+        {
+          "nombre": "fecha.h",
+          "codigo": "#ifndef FECHA_H\n#define FECHA_H\n\ntypedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\ntypedef struct {\n  int dia;\n  int mes;\n  int anio;\n} TFecha;\n\nTFecha crear(int dia, int mes, int anio);\nTBool esBisiesto(TFecha f);\nint diasDelMes(TFecha f);\nTFecha sumarDias(TFecha f, int n);\nvoid mostrar(TFecha f);\nint comparar(TFecha a, TFecha b);\n\n#endif"
+        },
+        {
+          "nombre": "fecha.c",
+          "codigo": "#include <stdio.h>\n#include \"fecha.h\"\n\nTFecha crear(int dia, int mes, int anio) {\n  TFecha f;\n\n  f.dia = dia;\n  f.mes = mes;\n  f.anio = anio;\n  return f;\n}\n\nTBool esBisiesto(TFecha f) {\n  if ((f.anio % 4 == 0 && f.anio % 100 != 0) || f.anio % 400 == 0) {\n    return VERDADERO;\n  }\n  return FALSO;\n}\n\nint diasDelMes(TFecha f) {\n  int dias;\n\n  if (f.mes == 2) {\n    if (esBisiesto(f) == VERDADERO) {\n      dias = 29;\n    } else {\n      dias = 28;\n    }\n  } else if (f.mes == 4 || f.mes == 6 || f.mes == 9 || f.mes == 11) {\n    dias = 30;\n  } else {\n    dias = 31;\n  }\n  return dias;\n}\n\nTFecha sumarDias(TFecha f, int n) {\n  for (int i = 0; i < n; i++) {\n    f.dia = f.dia + 1;\n    if (f.dia > diasDelMes(f)) {\n      f.dia = 1;\n      f.mes = f.mes + 1;\n      if (f.mes > 12) {\n        f.mes = 1;\n        f.anio = f.anio + 1;\n      }\n    }\n  }\n  return f;\n}\n\nvoid mostrar(TFecha f) {\n  printf(\"%d/%d/%d\", f.dia, f.mes, f.anio);\n}\n\nint comparar(TFecha a, TFecha b) {\n  if (a.anio != b.anio) {\n    if (a.anio < b.anio) {\n      return -1;\n    }\n    return 1;\n  }\n  if (a.mes != b.mes) {\n    if (a.mes < b.mes) {\n      return -1;\n    }\n    return 1;\n  }\n  if (a.dia != b.dia) {\n    if (a.dia < b.dia) {\n      return -1;\n    }\n    return 1;\n  }\n  return 0;\n}"
+        },
+        {
+          "nombre": "tarea.h",
+          "codigo": "#ifndef TAREA_H\n#define TAREA_H\n\n#include \"fecha.h\"\n\n#define LARGO 30\n\ntypedef struct {\n  char titulo[LARGO];\n  TFecha vence;\n  TBool hecha;\n} TTarea;\n\nTTarea crearTarea(char titulo[], TFecha vence);\nvoid completar(TTarea *t);\nTBool estaHecha(TTarea t);\nTFecha vencimiento(TTarea t);\nTBool vencida(TTarea t, TFecha hoy);\n\n#endif"
+        },
+        {
+          "nombre": "tarea.c",
+          "codigo": "#include <string.h>\n#include \"tarea.h\"\n\nTTarea crearTarea(char titulo[], TFecha vence) {\n  TTarea t;\n\n  strcpy(t.titulo, titulo);\n  t.vence = vence;\n  t.hecha = FALSO;\n  return t;\n}\n\nvoid completar(TTarea *t) {\n  t->hecha = VERDADERO;\n}\n\nTBool estaHecha(TTarea t) {\n  return t.hecha;\n}\n\nTFecha vencimiento(TTarea t) {\n  return t.vence;\n}\n\nTBool vencida(TTarea t, TFecha hoy) {\n  if (t.hecha == VERDADERO) {\n    return FALSO;\n  }\n  if (comparar(t.vence, hoy) < 0) {\n    return VERDADERO;\n  }\n  return FALSO;\n}"
+        },
+        {
+          "nombre": "main.c",
+          "codigo": "#include <stdio.h>\n#include \"tarea.h\"\n\nint main() {\n  TFecha hoy;\n  TTarea t;\n  char titulo[LARGO];\n  int dia;\n  int mes;\n  int anio;\n  int hecha;\n  int n;\n  int vencidas = 0;\n  int paraHoy = 0;\n\n  scanf(\"%d\", &dia);\n  scanf(\"%d\", &mes);\n  scanf(\"%d\", &anio);\n  hoy = crear(dia, mes, anio);\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%s\", titulo);\n    scanf(\"%d\", &dia);\n    scanf(\"%d\", &mes);\n    scanf(\"%d\", &anio);\n    scanf(\"%d\", &hecha);\n    t = crearTarea(titulo, crear(dia, mes, anio));\n    if (hecha == 1) {\n      completar(&t);\n    }\n    if (vencida(t, hoy) == VERDADERO) {\n      printf(\"%s (vencida)\\n\", titulo);\n      vencidas = vencidas + 1;\n    } else if (estaHecha(t) == FALSO && comparar(vencimiento(t), hoy) == 0) {\n      printf(\"%s (para hoy)\\n\", titulo);\n      paraHoy = paraHoy + 1;\n    }\n  }\n  printf(\"Vencidas: %d\\nPara hoy: %d\", vencidas, paraHoy);\n  return 0;\n}"
+        }
+      ],
+      "enunciado": "Se quiere cambiar la forma de guardar la fecha: en lugar de tres enteros (`dia`, `mes` y `anio`), un solo entero con los días que pasaron desde el 1/1/2000. Las operaciones de la fecha tienen que seguir siendo las mismas, con los mismos nombres, parámetros y resultados, y `tarea.c` y `main.c` manejan la fecha solo con esas operaciones. ¿Qué archivos hay que modificar?",
+      "opciones": [
+        {
+          "texto": "Solo `fecha.c`.",
+          "codigo": "OPCION_TAREA_SOLO_FECHA_C",
+          "explicacion": "Las operaciones de la fecha están en `fecha.c`, pero los campos de `TFecha` se declaran en `fecha.h`, y cambiar la forma de guardar es cambiar esos campos. Hay que modificar también el `.h`."
+        },
+        {
+          "texto": "`fecha.h` y `fecha.c`.",
+          "correcta": true,
+          "explicacion": "Los campos de `TFecha` se declaran en `fecha.h` y las operaciones que los usan están en `fecha.c`: los dos cambian. `tarea.h` no: guarda una `TFecha` en un campo sin saber qué tiene adentro. Tampoco `tarea.c` ni `main.c`, que solo llaman a las operaciones de la fecha, y estas siguen teniendo el mismo nombre, los mismos parámetros y el mismo resultado. Si `tarea.c` hubiera comparado `vence.dia` con `hoy.dia`, sí habría que reescribirlo, y por eso conviene usar `comparar`."
+        },
+        {
+          "texto": "`fecha.h`, `fecha.c` y `tarea.c`.",
+          "codigo": "OPCION_TAREA_Y_TAREA_C",
+          "explicacion": "`tarea.c` maneja la fecha con `comparar` y con las demás operaciones, que no cambian ni de nombre ni de parámetros, así que no se entera de cómo se guarda por dentro. Solo habría que tocarlo si hubiera entrado a los campos de la fecha."
+        },
+        {
+          "texto": "Los cinco archivos.",
+          "codigo": "OPCION_TAREA_LOS_CINCO",
+          "explicacion": "`tarea.h`, `tarea.c` y `main.c` no necesitan cambios: usan la fecha solo por sus operaciones, que siguen siendo las mismas. Hay que modificar `fecha.h` (los campos) y `fecha.c` (las operaciones que los usan)."
+        }
+      ]
+    },
+    {
+      "id": "tadt-main",
+      "titulo": "Usar la tarea",
+      "escribe": "main.c",
+      "archivos": [
+        {
+          "nombre": "fecha.h",
+          "codigo": "#ifndef FECHA_H\n#define FECHA_H\n\ntypedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\ntypedef struct {\n  int dia;\n  int mes;\n  int anio;\n} TFecha;\n\nTFecha crear(int dia, int mes, int anio);\nTBool esBisiesto(TFecha f);\nint diasDelMes(TFecha f);\nTFecha sumarDias(TFecha f, int n);\nvoid mostrar(TFecha f);\nint comparar(TFecha a, TFecha b);\n\n#endif"
+        },
+        {
+          "nombre": "fecha.c",
+          "codigo": "#include <stdio.h>\n#include \"fecha.h\"\n\nTFecha crear(int dia, int mes, int anio) {\n  TFecha f;\n\n  f.dia = dia;\n  f.mes = mes;\n  f.anio = anio;\n  return f;\n}\n\nTBool esBisiesto(TFecha f) {\n  if ((f.anio % 4 == 0 && f.anio % 100 != 0) || f.anio % 400 == 0) {\n    return VERDADERO;\n  }\n  return FALSO;\n}\n\nint diasDelMes(TFecha f) {\n  int dias;\n\n  if (f.mes == 2) {\n    if (esBisiesto(f) == VERDADERO) {\n      dias = 29;\n    } else {\n      dias = 28;\n    }\n  } else if (f.mes == 4 || f.mes == 6 || f.mes == 9 || f.mes == 11) {\n    dias = 30;\n  } else {\n    dias = 31;\n  }\n  return dias;\n}\n\nTFecha sumarDias(TFecha f, int n) {\n  for (int i = 0; i < n; i++) {\n    f.dia = f.dia + 1;\n    if (f.dia > diasDelMes(f)) {\n      f.dia = 1;\n      f.mes = f.mes + 1;\n      if (f.mes > 12) {\n        f.mes = 1;\n        f.anio = f.anio + 1;\n      }\n    }\n  }\n  return f;\n}\n\nvoid mostrar(TFecha f) {\n  printf(\"%d/%d/%d\", f.dia, f.mes, f.anio);\n}\n\nint comparar(TFecha a, TFecha b) {\n  if (a.anio != b.anio) {\n    if (a.anio < b.anio) {\n      return -1;\n    }\n    return 1;\n  }\n  if (a.mes != b.mes) {\n    if (a.mes < b.mes) {\n      return -1;\n    }\n    return 1;\n  }\n  if (a.dia != b.dia) {\n    if (a.dia < b.dia) {\n      return -1;\n    }\n    return 1;\n  }\n  return 0;\n}",
+          "oculto": true
+        },
+        {
+          "nombre": "tarea.h",
+          "codigo": "#ifndef TAREA_H\n#define TAREA_H\n\n#include \"fecha.h\"\n\n#define LARGO 30\n\ntypedef struct {\n  char titulo[LARGO];\n  TFecha vence;\n  TBool hecha;\n} TTarea;\n\nTTarea crearTarea(char titulo[], TFecha vence);\nvoid completar(TTarea *t);\nTBool estaHecha(TTarea t);\nTFecha vencimiento(TTarea t);\nTBool vencida(TTarea t, TFecha hoy);\n\n#endif"
+        },
+        {
+          "nombre": "tarea.c",
+          "codigo": "#include <string.h>\n#include \"tarea.h\"\n\nTTarea crearTarea(char titulo[], TFecha vence) {\n  TTarea t;\n\n  strcpy(t.titulo, titulo);\n  t.vence = vence;\n  t.hecha = FALSO;\n  return t;\n}\n\nvoid completar(TTarea *t) {\n  t->hecha = VERDADERO;\n}\n\nTBool estaHecha(TTarea t) {\n  return t.hecha;\n}\n\nTFecha vencimiento(TTarea t) {\n  return t.vence;\n}\n\nTBool vencida(TTarea t, TFecha hoy) {\n  if (t.hecha == VERDADERO) {\n    return FALSO;\n  }\n  if (comparar(t.vence, hoy) < 0) {\n    return VERDADERO;\n  }\n  return FALSO;\n}",
+          "oculto": true
+        }
+      ],
+      "enunciado": "Con los dos TAD, escriba `main.c`. Lea con `scanf`, en este orden:\n- la fecha de hoy: el día, el mes y el año\n- la cantidad de tareas `n`\n- las `n` tareas: cada una es un título, de una sola palabra y de a lo sumo 29 letras, el día, el mes y el año de su vencimiento, y un `1` si ya está hecha o un `0` si está pendiente\n\nCree cada tarea y, si ya está hecha, márquela como hecha. Por cada tarea vencida muestre, en un renglón, su título y `(vencida)`; por cada tarea pendiente que vence hoy, su título y `(para hoy)`. Las demás no se muestran. Al final muestre, en dos renglones, `Vencidas: ` con cuántas tareas están vencidas y `Para hoy: ` con cuántas son pendientes y vencen hoy. Por ejemplo, si se ingresan:\n- `18 9 2026` (la fecha de hoy)\n- `8` (cantidad de tareas)\n- `Informe 10 9 2026 0`, `Compras 18 9 2026 0`, `Tesis 4 6 2026 1`, `Examen 25 9 2026 0`, `Banco 18 9 2026 1`, `Gimnasio 18 9 2026 0`, `Pagos 28 7 2026 0` y `Taller 7 12 2025 0` (título, vencimiento y si está hecha de cada tarea)\n\nel programa muestra:\n`Informe (vencida)`\n`Compras (para hoy)`\n`Gimnasio (para hoy)`\n`Pagos (vencida)`\n`Taller (vencida)`\n`Vencidas: 3`\n`Para hoy: 2`\nUse solo las operaciones de los `.h`.\n! No use `printf` para mostrar mensajes que pidan los datos: léalos directamente con `scanf`.",
+      "requiere": [
+        {
+          "incluyeLocal": "tarea.h"
+        },
+        {
+          "soloOperaciones": "TTarea"
+        },
+        {
+          "soloOperaciones": "TFecha"
+        },
+        {
+          "usaOperaciones": [
+            "crearTarea",
+            "vencida",
+            "comparar"
+          ]
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "entrada": [
+                  18,
+                  9,
+                  2026,
+                  8,
+                  "Informe",
+                  10,
+                  9,
+                  2026,
+                  0,
+                  "Compras",
+                  18,
+                  9,
+                  2026,
+                  0,
+                  "Tesis",
+                  4,
+                  6,
+                  2026,
+                  1,
+                  "Examen",
+                  25,
+                  9,
+                  2026,
+                  0,
+                  "Banco",
+                  18,
+                  9,
+                  2026,
+                  1,
+                  "Gimnasio",
+                  18,
+                  9,
+                  2026,
+                  0,
+                  "Pagos",
+                  28,
+                  7,
+                  2026,
+                  0,
+                  "Taller",
+                  7,
+                  12,
+                  2025,
+                  0
+                ],
+                "salida": "Informe (vencida)\nCompras (para hoy)\nGimnasio (para hoy)\nPagos (vencida)\nTaller (vencida)\nVencidas: 3\nPara hoy: 2"
+              },
+              {
+                "entrada": [
+                  15,
+                  3,
+                  2026,
+                  0
+                ],
+                "salida": "Vencidas: 0\nPara hoy: 0"
+              },
+              {
+                "entrada": [
+                  1,
+                  1,
+                  2026,
+                  3,
+                  "Viejo",
+                  31,
+                  12,
+                  2025,
+                  0,
+                  "Nuevo",
+                  1,
+                  1,
+                  2026,
+                  0,
+                  "Futuro",
+                  2,
+                  1,
+                  2026,
+                  0
+                ],
+                "salida": "Viejo (vencida)\nNuevo (para hoy)\nVencidas: 1\nPara hoy: 1"
+              },
+              {
+                "entrada": [
+                  15,
+                  3,
+                  2026,
+                  2,
+                  "Uno",
+                  1,
+                  1,
+                  2020,
+                  1,
+                  "Dos",
+                  15,
+                  3,
+                  2026,
+                  1
+                ],
+                "salida": "Vencidas: 0\nPara hoy: 0"
+              },
+              {
+                "entrada": [
+                  5,
+                  6,
+                  2026,
+                  2,
+                  "Pasada",
+                  20,
+                  5,
+                  2026,
+                  0,
+                  "Proxima",
+                  2,
+                  7,
+                  2026,
+                  0
+                ],
+                "salida": "Pasada (vencida)\nVencidas: 1\nPara hoy: 0"
+              },
+              {
+                "entrada": [
+                  5,
+                  6,
+                  2026,
+                  2,
+                  "Anual",
+                  5,
+                  6,
+                  2027,
+                  0,
+                  "Atrasada",
+                  4,
+                  6,
+                  2026,
+                  0
+                ],
+                "salida": "Atrasada (vencida)\nVencidas: 1\nPara hoy: 0"
+              },
+              {
+                "entrada": [
+                  30,
+                  11,
+                  2026,
+                  1,
+                  "Cierre",
+                  30,
+                  11,
+                  2026,
+                  0
+                ],
+                "salida": "Cierre (para hoy)\nVencidas: 0\nPara hoy: 1"
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "#include <stdio.h>\n#include \"tarea.h\"\n\nint main() {\n  TFecha hoy;\n  TTarea t;\n  char titulo[LARGO];\n  int dia;\n  int mes;\n  int anio;\n  int hecha;\n  int n;\n  int vencidas = 0;\n  int paraHoy = 0;\n\n  scanf(\"%d\", &dia);\n  scanf(\"%d\", &mes);\n  scanf(\"%d\", &anio);\n  hoy = crear(dia, mes, anio);\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%s\", titulo);\n    scanf(\"%d\", &dia);\n    scanf(\"%d\", &mes);\n    scanf(\"%d\", &anio);\n    scanf(\"%d\", &hecha);\n    t = crearTarea(titulo, crear(dia, mes, anio));\n    if (hecha == 1) {\n      completar(&t);\n    }\n    if (vencida(t, hoy) == VERDADERO) {\n      printf(\"%s (vencida)\\n\", titulo);\n      vencidas = vencidas + 1;\n    } else if (estaHecha(t) == FALSO && comparar(vencimiento(t), hoy) == 0) {\n      printf(\"%s (para hoy)\\n\", titulo);\n      paraHoy = paraHoy + 1;\n    }\n  }\n  printf(\"Vencidas: %d\\nPara hoy: %d\", vencidas, paraHoy);\n  return 0;\n}"
+    }
+  ]
+}

@@ -157,7 +157,9 @@
         "tad-lista-usar.json",
         "tad-agenda.json",
         "tad-agenda-usar.json",
-        "tad-agenda-ampliar.json"
+        "tad-agenda-ampliar.json",
+        "tad-fecha-comparar.json",
+        "tad-tarea.json"
       ]
     }
   ]

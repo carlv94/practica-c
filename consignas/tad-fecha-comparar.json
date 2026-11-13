@@ -1,0 +1,419 @@
+{
+  "id": "tad-fecha-comparar",
+  "titulo": "Ampliar la fecha: comparar",
+  "continua": true,
+  "descripcion": "Agregar a la fecha una operación que dice cuál de dos fechas viene antes, para usarla después desde otro TAD.",
+  "consignas": [
+    {
+      "id": "tadfc-h",
+      "titulo": "Declarar comparar",
+      "escribe": "fecha.h",
+      "comienza": "#ifndef FECHA_H\n#define FECHA_H\n\ntypedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\ntypedef struct {\n  int dia;\n  int mes;\n  int anio;\n} TFecha;\n\nTFecha crear(int dia, int mes, int anio);\nTBool esBisiesto(TFecha f);\nint diasDelMes(TFecha f);\nTFecha sumarDias(TFecha f, int n);\nvoid mostrar(TFecha f);\n\n#endif",
+      "enunciado": "El archivo `fecha.h` ya está escrito y lo ve en el editor. Agréguele la operación `comparar`, que dice cuál de dos fechas viene antes en el calendario. Recibe las dos fechas por valor y devuelve un entero: `-1` si la primera fecha es anterior a la segunda, `0` si son la misma fecha y `1` si la primera es posterior.\n\nLo que ya estaba no se cambia.\n! Las declaraciones nuevas van antes del `#endif`.",
+      "requiere": [
+        {
+          "encabezado": {
+            "guarda": "FECHA_H"
+          }
+        },
+        {
+          "struct": {
+            "capturar": "S",
+            "campos": [
+              {
+                "nombre": "dia",
+                "tipo": "entero"
+              },
+              {
+                "nombre": "mes",
+                "tipo": "entero"
+              },
+              {
+                "nombre": "anio",
+                "tipo": "entero"
+              }
+            ]
+          }
+        },
+        {
+          "alias": {
+            "de": "$S",
+            "nombre": "TFecha",
+            "capturar": "T"
+          }
+        },
+        {
+          "enum": {
+            "enumeradores": [
+              "FALSO",
+              "VERDADERO"
+            ],
+            "capturar": "E"
+          }
+        },
+        {
+          "alias": {
+            "de": "$E",
+            "nombre": "TBool",
+            "capturar": "B"
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "crear",
+            "retorna": "estructura",
+            "parametros": [
+              {
+                "tipo": "entero"
+              },
+              {
+                "tipo": "entero"
+              },
+              {
+                "tipo": "entero"
+              }
+            ]
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "esBisiesto",
+            "retorna": "enumerado",
+            "parametros": [
+              {
+                "tipo": "estructura"
+              }
+            ]
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "diasDelMes",
+            "retorna": "entero",
+            "parametros": [
+              {
+                "tipo": "estructura"
+              }
+            ]
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "sumarDias",
+            "retorna": "estructura",
+            "parametros": [
+              {
+                "tipo": "estructura"
+              },
+              {
+                "tipo": "entero"
+              }
+            ]
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "mostrar",
+            "retorna": "void",
+            "parametros": [
+              {
+                "tipo": "estructura"
+              }
+            ]
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "comparar",
+            "retorna": "entero",
+            "parametros": [
+              {
+                "tipo": "estructura"
+              },
+              {
+                "tipo": "estructura"
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "#ifndef FECHA_H\n#define FECHA_H\n\ntypedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\ntypedef struct {\n  int dia;\n  int mes;\n  int anio;\n} TFecha;\n\nTFecha crear(int dia, int mes, int anio);\nTBool esBisiesto(TFecha f);\nint diasDelMes(TFecha f);\nTFecha sumarDias(TFecha f, int n);\nvoid mostrar(TFecha f);\nint comparar(TFecha a, TFecha b);\n\n#endif"
+    },
+    {
+      "id": "tadfc-c",
+      "titulo": "Definir comparar",
+      "escribe": "fecha.c",
+      "comienza": "#include <stdio.h>\n#include \"fecha.h\"\n\nTFecha crear(int dia, int mes, int anio) {\n  TFecha f;\n\n  f.dia = dia;\n  f.mes = mes;\n  f.anio = anio;\n  return f;\n}\n\nTBool esBisiesto(TFecha f) {\n  if ((f.anio % 4 == 0 && f.anio % 100 != 0) || f.anio % 400 == 0) {\n    return VERDADERO;\n  }\n  return FALSO;\n}\n\nint diasDelMes(TFecha f) {\n  int dias;\n\n  if (f.mes == 2) {\n    if (esBisiesto(f) == VERDADERO) {\n      dias = 29;\n    } else {\n      dias = 28;\n    }\n  } else if (f.mes == 4 || f.mes == 6 || f.mes == 9 || f.mes == 11) {\n    dias = 30;\n  } else {\n    dias = 31;\n  }\n  return dias;\n}\n\nTFecha sumarDias(TFecha f, int n) {\n  for (int i = 0; i < n; i++) {\n    f.dia = f.dia + 1;\n    if (f.dia > diasDelMes(f)) {\n      f.dia = 1;\n      f.mes = f.mes + 1;\n      if (f.mes > 12) {\n        f.mes = 1;\n        f.anio = f.anio + 1;\n      }\n    }\n  }\n  return f;\n}\n\nvoid mostrar(TFecha f) {\n  printf(\"%d/%d/%d\", f.dia, f.mes, f.anio);\n}",
+      "enunciado": "Con su `fecha.h` ampliado (lo ve arriba, en su pestaña), complete `fecha.c`: ya define las cinco operaciones de antes y está en el editor. Agréguele al final la definición de `comparar`: devuelve `-1` si la primera fecha es anterior a la segunda, `0` si son la misma fecha y `1` si la primera es posterior.\n\nLo que ya estaba escrito no se cambia.",
+      "requiere": [
+        {
+          "incluyeLocal": "fecha.h"
+        },
+        {
+          "sinTipos": true
+        },
+        {
+          "defineTodo": true
+        },
+        {
+          "funcion": {
+            "nombre": "esBisiesto",
+            "retorna": "enumerado",
+            "soloEnumeradores": true,
+            "parametros": [
+              {
+                "tipo": "estructura"
+              }
+            ]
+          }
+        },
+        {
+          "funcion": {
+            "nombre": "comparar",
+            "retorna": "entero",
+            "parametros": [
+              {
+                "tipo": "estructura"
+              },
+              {
+                "tipo": "estructura"
+              }
+            ]
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "antes": "",
+                "llama": "crear(5, 3, 2024)",
+                "devuelve": {
+                  "dia": 5,
+                  "mes": 3,
+                  "anio": 2024
+                },
+                "contexto": "Al crear la fecha 5/3/2024",
+                "visible": true
+              },
+              {
+                "antes": "TFecha f = crear(1, 1, 2023);",
+                "llama": "esBisiesto(f)",
+                "devuelve": "FALSO",
+                "contexto": "El año 2023 (no es múltiplo de 4)"
+              },
+              {
+                "antes": "TFecha f = crear(1, 1, 2024);",
+                "llama": "esBisiesto(f)",
+                "devuelve": "VERDADERO",
+                "contexto": "El año 2024 (múltiplo de 4)"
+              },
+              {
+                "antes": "TFecha f = crear(1, 1, 1900);",
+                "llama": "esBisiesto(f)",
+                "devuelve": "FALSO",
+                "contexto": "El año 1900 (múltiplo de 100, no de 400)"
+              },
+              {
+                "antes": "TFecha f = crear(1, 1, 2000);",
+                "llama": "esBisiesto(f)",
+                "devuelve": "VERDADERO",
+                "contexto": "El año 2000 (múltiplo de 400)"
+              },
+              {
+                "antes": "TFecha f = crear(1, 4, 2023);",
+                "llama": "diasDelMes(f)",
+                "devuelve": 30,
+                "contexto": "Los días de abril"
+              },
+              {
+                "antes": "TFecha f = crear(1, 1, 2023);",
+                "llama": "diasDelMes(f)",
+                "devuelve": 31,
+                "contexto": "Los días de enero"
+              },
+              {
+                "antes": "TFecha f = crear(1, 2, 2023);",
+                "llama": "diasDelMes(f)",
+                "devuelve": 28,
+                "contexto": "Los días de febrero de un año común"
+              },
+              {
+                "antes": "TFecha f = crear(1, 2, 2024);",
+                "llama": "diasDelMes(f)",
+                "devuelve": 29,
+                "contexto": "Los días de febrero de un año bisiesto (múltiplo de 4)"
+              },
+              {
+                "antes": "TFecha f = crear(1, 2, 1900);",
+                "llama": "diasDelMes(f)",
+                "devuelve": 28,
+                "contexto": "Los días de febrero de 1900 (múltiplo de 100, no de 400)"
+              },
+              {
+                "antes": "TFecha f = crear(1, 2, 2000);",
+                "llama": "diasDelMes(f)",
+                "devuelve": 29,
+                "contexto": "Los días de febrero de 2000 (múltiplo de 400)"
+              },
+              {
+                "antes": "TFecha f = crear(10, 3, 2024);",
+                "llama": "sumarDias(f, 5)",
+                "devuelve": {
+                  "dia": 15,
+                  "mes": 3,
+                  "anio": 2024
+                },
+                "contexto": "Al sumar 5 días al 10/3/2024",
+                "visible": true
+              },
+              {
+                "antes": "TFecha f = crear(28, 2, 2024);",
+                "llama": "sumarDias(f, 2)",
+                "devuelve": {
+                  "dia": 1,
+                  "mes": 3,
+                  "anio": 2024
+                },
+                "contexto": "Al sumar 2 días al 28/2/2024 (año bisiesto)"
+              },
+              {
+                "antes": "TFecha f = crear(28, 2, 2023);",
+                "llama": "sumarDias(f, 1)",
+                "devuelve": {
+                  "dia": 1,
+                  "mes": 3,
+                  "anio": 2023
+                },
+                "contexto": "Al sumar 1 día al 28/2/2023"
+              },
+              {
+                "antes": "TFecha f = crear(30, 4, 2024);",
+                "llama": "sumarDias(f, 1)",
+                "devuelve": {
+                  "dia": 1,
+                  "mes": 5,
+                  "anio": 2024
+                },
+                "contexto": "Al sumar 1 día al 30/4/2024"
+              },
+              {
+                "antes": "TFecha f = crear(31, 12, 2023);",
+                "llama": "sumarDias(f, 1)",
+                "devuelve": {
+                  "dia": 1,
+                  "mes": 1,
+                  "anio": 2024
+                },
+                "contexto": "Al sumar 1 día al 31/12/2023"
+              },
+              {
+                "antes": "TFecha f = crear(1, 1, 2023);",
+                "llama": "sumarDias(f, 365)",
+                "devuelve": {
+                  "dia": 1,
+                  "mes": 1,
+                  "anio": 2024
+                },
+                "contexto": "Al sumar 365 días al 1/1/2023"
+              },
+              {
+                "antes": "TFecha f = crear(1, 1, 2024);",
+                "llama": "sumarDias(f, 366)",
+                "devuelve": {
+                  "dia": 1,
+                  "mes": 1,
+                  "anio": 2025
+                },
+                "contexto": "Al sumar 366 días al 1/1/2024"
+              },
+              {
+                "antes": "TFecha f = crear(7, 6, 2024);",
+                "llama": "sumarDias(f, 0)",
+                "devuelve": {
+                  "dia": 7,
+                  "mes": 6,
+                  "anio": 2024
+                },
+                "contexto": "Al sumar 0 días"
+              },
+              {
+                "antes": "TFecha f = crear(5, 3, 2024);",
+                "llama": "mostrar(f)",
+                "salida": "5/3/2024",
+                "contexto": "Al mostrar la fecha 5/3/2024"
+              },
+              {
+                "antes": "TFecha a = crear(10, 3, 2026);\nTFecha b = crear(15, 3, 2026);",
+                "llama": "comparar(a, b)",
+                "devuelve": -1,
+                "contexto": "Comparar el 10/3/2026 con el 15/3/2026 (difieren en el día)",
+                "visible": true
+              },
+              {
+                "antes": "TFecha a = crear(15, 3, 2026);\nTFecha b = crear(10, 3, 2026);",
+                "llama": "comparar(a, b)",
+                "devuelve": 1,
+                "contexto": "Comparar el 15/3/2026 con el 10/3/2026 (difieren en el día)"
+              },
+              {
+                "antes": "TFecha a = crear(20, 2, 2026);\nTFecha b = crear(5, 3, 2026);",
+                "llama": "comparar(a, b)",
+                "devuelve": -1,
+                "contexto": "Comparar el 20/2/2026 con el 5/3/2026 (el primero tiene el día mayor, pero el mes menor)"
+              },
+              {
+                "antes": "TFecha a = crear(5, 3, 2026);\nTFecha b = crear(20, 2, 2026);",
+                "llama": "comparar(a, b)",
+                "devuelve": 1,
+                "contexto": "Comparar el 5/3/2026 con el 20/2/2026 (el primero tiene el día menor, pero el mes mayor)"
+              },
+              {
+                "antes": "TFecha a = crear(25, 12, 2025);\nTFecha b = crear(1, 1, 2026);",
+                "llama": "comparar(a, b)",
+                "devuelve": -1,
+                "contexto": "Comparar el 25/12/2025 con el 1/1/2026 (difieren en el año)"
+              },
+              {
+                "antes": "TFecha a = crear(1, 1, 2026);\nTFecha b = crear(25, 12, 2025);",
+                "llama": "comparar(a, b)",
+                "devuelve": 1,
+                "contexto": "Comparar el 1/1/2026 con el 25/12/2025 (difieren en el año)"
+              },
+              {
+                "antes": "TFecha a = crear(15, 3, 2025);\nTFecha b = crear(15, 3, 2026);",
+                "llama": "comparar(a, b)",
+                "devuelve": -1,
+                "contexto": "Comparar el 15/3/2025 con el 15/3/2026 (solo difiere el año)"
+              },
+              {
+                "antes": "TFecha a = crear(15, 3, 2026);\nTFecha b = crear(15, 3, 2025);",
+                "llama": "comparar(a, b)",
+                "devuelve": 1,
+                "contexto": "Comparar el 15/3/2026 con el 15/3/2025 (solo difiere el año)"
+              },
+              {
+                "antes": "TFecha a = crear(15, 3, 2026);\nTFecha b = crear(15, 3, 2026);",
+                "llama": "comparar(a, b)",
+                "devuelve": 0,
+                "contexto": "Comparar el 15/3/2026 con ella misma"
+              },
+              {
+                "antes": "TFecha a = crear(1, 6, 2027);\nTFecha b = crear(30, 11, 2026);",
+                "llama": "comparar(a, b)",
+                "devuelve": 1,
+                "contexto": "Comparar el 1/6/2027 con el 30/11/2026 (el primero tiene día y mes menores, pero el año mayor)"
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "#include <stdio.h>\n#include \"fecha.h\"\n\nTFecha crear(int dia, int mes, int anio) {\n  TFecha f;\n\n  f.dia = dia;\n  f.mes = mes;\n  f.anio = anio;\n  return f;\n}\n\nTBool esBisiesto(TFecha f) {\n  if ((f.anio % 4 == 0 && f.anio % 100 != 0) || f.anio % 400 == 0) {\n    return VERDADERO;\n  }\n  return FALSO;\n}\n\nint diasDelMes(TFecha f) {\n  int dias;\n\n  if (f.mes == 2) {\n    if (esBisiesto(f) == VERDADERO) {\n      dias = 29;\n    } else {\n      dias = 28;\n    }\n  } else if (f.mes == 4 || f.mes == 6 || f.mes == 9 || f.mes == 11) {\n    dias = 30;\n  } else {\n    dias = 31;\n  }\n  return dias;\n}\n\nTFecha sumarDias(TFecha f, int n) {\n  for (int i = 0; i < n; i++) {\n    f.dia = f.dia + 1;\n    if (f.dia > diasDelMes(f)) {\n      f.dia = 1;\n      f.mes = f.mes + 1;\n      if (f.mes > 12) {\n        f.mes = 1;\n        f.anio = f.anio + 1;\n      }\n    }\n  }\n  return f;\n}\n\nvoid mostrar(TFecha f) {\n  printf(\"%d/%d/%d\", f.dia, f.mes, f.anio);\n}\n\nint comparar(TFecha a, TFecha b) {\n  if (a.anio != b.anio) {\n    if (a.anio < b.anio) {\n      return -1;\n    }\n    return 1;\n  }\n  if (a.mes != b.mes) {\n    if (a.mes < b.mes) {\n      return -1;\n    }\n    return 1;\n  }\n  if (a.dia != b.dia) {\n    if (a.dia < b.dia) {\n      return -1;\n    }\n    return 1;\n  }\n  return 0;\n}"
+    }
+  ]
+}
