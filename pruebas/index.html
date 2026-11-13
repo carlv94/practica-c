@@ -382,6 +382,22 @@ import { corregir } from '../js/corrector.js';
           }
         }
 
+        // Los dibujos de memoria de los cuestionarios (dibujo.motor): el programa corre sin error
+        // y pasa por la linea en que se quiere ver la memoria.
+        for (const s of todas) {
+          for (const c of s.consignas.filter((x) => x.dibujo && x.dibujo.motor)) {
+            const m = c.dibujo.motor;
+            try {
+              const r = ejecutarMotor(analizador, m.codigo, { entrada: m.entrada || '', traza: true });
+              const llega = r.traza.some((f) => f.linea === m.linea);
+              anotar(!r.error && llega, `dibujo de memoria de ${c.id}`, r.error ? r.error.codigo : `el programa no pasa por la línea ${m.linea}`);
+              r.traza.forEach((foto, i) => dibujarFotografia(foto, i ? r.traza[i - 1] : null));
+            } catch (e) {
+              anotar(false, `dibujo de memoria de ${c.id}`, e.stack);
+            }
+          }
+        }
+
         for (const caso of CASOS_DE_LA_REGLA) {
           const r = resultadoDeLaRegla(analizador, corregir, caso);
           anotar(r.bien, `regla memoria: ${caso.nombre}`, r.detalle);

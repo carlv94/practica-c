@@ -1091,17 +1091,17 @@ class Interprete {
       case 'scanf':
         return this.leer(nodos);
       case 'malloc': {
-        const bytes = this.entero(arg(0), 'malloc');
+        const bytes = this.bytesPedidos(this.entero(arg(0), 'malloc'));
         const r = this.memoria.reservar(bytes);
         return { t: puntero(VOID), v: r ? { reserva: r, st: undefined, arr: null, i: 0, sinTipo: true } : null };
       }
       case 'calloc': {
-        const bytes = this.entero(arg(0), 'calloc') * this.entero(arg(1), 'calloc');
+        const bytes = this.bytesPedidos(this.entero(arg(0), 'calloc') * this.entero(arg(1), 'calloc'));
         const r = this.memoria.reservar(bytes, true);
         return { t: puntero(VOID), v: r ? { reserva: r, st: undefined, arr: null, i: 0, sinTipo: true } : null };
       }
       case 'realloc':
-        return this.reasignar(arg(0), this.entero(arg(1), 'realloc'));
+        return this.reasignar(arg(0), this.bytesPedidos(this.entero(arg(1), 'realloc')));
       case 'free':
         this.liberar(arg(0).v);
         return { t: VOID, v: null };
@@ -1141,6 +1141,12 @@ class Interprete {
   entero(rv, nombre) {
     if (rv.t.k !== 'int') throw new ErrorDelMotor('SIN_VERIFICAR', `${nombre} con un valor que no es entero`);
     return rv.v;
+  }
+
+  // La cantidad de bytes que se pide a malloc: un numero negativo es, para el lenguaje, uno enorme
+  // (el parametro es sin signo), asi que no se puede reservar.
+  bytesPedidos(v) {
+    return v < 0 ? 2 ** 64 + v : v;
   }
 
   escribirSalida(texto) {

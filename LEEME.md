@@ -2058,6 +2058,16 @@ Ejecuta el programa completo (los archivos de la serie más la respuesta) y lo c
   liberar todo (`FUGA_DE_MEMORIA`). `usa` exige llamar a esas funciones (`MALLOC_FALTA`,
   `FREE_FALTA`...). Un error de ejecución se informa con su mensaje y la línea de la respuesta.
 
+- `{ "memoria": { ..., "comparaConNulo": true } }`: el programa tiene que preguntar si un puntero es `NULL` (`== NULL`,
+  `!= NULL`, `== 0`, `!p` o `if (p)`): `NULL_SIN_COMPROBAR`. Evita "comprobar" el resultado de `malloc` con un número escrito a mano.- `{ "memoria": { ..., "cabezas": ["lista"] } }`: las variables que guardan el comienzo de la estructura, para el paso a paso.
+  Una consigna con la regla `memoria` ofrece, después de comprobar (también con la respuesta equivocada), el botón
+  «Ver paso a paso»: ejecuta el programa completo con el motor y lo muestra en el reproductor (el caso que falló o, si
+  todo está bien, el primero). El corrector devuelve ese programa en `r.memoria` (`{ fuente, entrada, cabezas }`).
+- `"dibujo": { "motor": { "codigo": "...", "linea": 9, "entrada": "", "cabezas": [] } }` en una consigna de opciones: se
+  ejecuta el programa y se muestra la figura de la pila y el montículo justo antes de ejecutar esa línea (sin controles).
+  La página de pruebas comprueba que el programa corra sin error y pase por esa línea.
+- `malloc`, `calloc`, `realloc` y `free` piden `#include <stdlib.h>` (`INCLUDE_FALTA_PARA_FUNCION`). Una consigna `"en": "archivo"`
+  con `"despues"` (un `main` que usa lo que el alumno escribe) también vale en una serie que no es `dentroDeMain`.
 Pruebas: `pruebas/casos-motor.js` (el motor y la regla); se corren en la página de pruebas y, más
 rápido, con Node (no hay `package.json`: `node --experimental-default-type=module` y el analizador
 cargado con `createRequire` desde `vendor/tree-sitter`).

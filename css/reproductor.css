@@ -597,3 +597,11 @@
 .rep-flecha.rep-flecha-liberada {
   stroke: var(--error);
 }
+
+/* el boton "Ver paso a paso" debajo de los mensajes de una consigna */
+.paso-a-paso {
+  margin-top: 10px;
+}
+.paso-a-paso-lugar {
+  margin-top: 8px;
+}

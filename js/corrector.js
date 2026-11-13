@@ -178,11 +178,23 @@ const MEJORA_FIN_EN_EL_TEXTO =
 const DE_LA_BIBLIOTECA = [
   'strcpy', 'strncpy', 'strcat', 'strncat', 'strcmp', 'strncmp', 'strlen', 'strchr', 'strstr',
   'printf', 'scanf', 'puts', 'gets', 'fgets', 'sprintf', 'memcpy', 'getchar', 'fflush',
+  'malloc', 'calloc', 'realloc', 'free',
 ];
 
 // La biblioteca que hay que agregar para usar una funcion, en las reglas que la
 // controlan (hoy solo la de resultado).
-const BIBLIOTECA_DE = { pow: 'math.h', sqrt: 'math.h', strcpy: 'string.h', strcmp: 'string.h', strlen: 'string.h', strncmp: 'string.h' };
+const BIBLIOTECA_DE = {
+  pow: 'math.h',
+  sqrt: 'math.h',
+  strcpy: 'string.h',
+  strcmp: 'string.h',
+  strlen: 'string.h',
+  strncmp: 'string.h',
+  malloc: 'stdlib.h',
+  calloc: 'stdlib.h',
+  realloc: 'stdlib.h',
+  free: 'stdlib.h',
+};
 
 // El plural de un nombre de nivel: curso -> cursos, parcial -> parciales.
 const enPlural = (s) => (/[aeiou]$/i.test(s) ? `${s}s` : /ón$/i.test(s) ? `${s.slice(0, -2)}ones` : `${s}es`);
@@ -301,7 +313,11 @@ export function corregir(
   const adentro = juntar(contexto);
   let previo;
   let fuente;
-  if (!dentroDeMain) {
+  if (!dentroDeMain && enArchivo && despues) {
+    // Funciones que escribe el alumno, y despues el codigo que la consigna da (un main que las usa).
+    previo = afuera + adentro;
+    fuente = previo + respuesta.replace(/\s+$/, '') + '\n\n' + despues;
+  } else if (!dentroDeMain) {
     previo = afuera + adentro;
     fuente = previo + respuesta;
   } else if (enArchivo && (despues || arriba)) {
@@ -323,6 +339,8 @@ export function corregir(
   // Los numeros que armarLlamada guardo en variables para pasar su direccion:
   // [{ indice, nombre, inicial }].
   let ultimaLlamada = [];
+  // El programa que ejecuto la regla "memoria" (para el paso a paso): { fuente, entrada, cabezas }.
+  let ejecucionMemoria = null;
   const nuevas = { ...capturas };
 
   // "fila" es la del codigo completo; al alumno se le dice la linea de SU respuesta.
@@ -362,6 +380,7 @@ export function corregir(
       sinVerificar,
       diagnosticos: informados,
       capturas: correcto ? nuevas : capturas,
+      memoria: ejecucionMemoria,
     };
   }
 
@@ -4440,11 +4459,15 @@ export function corregir(
   function reglaMemoria(regla, modelo) {
     // Con un error en lo escrito no se sigue el programa: se arregla eso primero.
     if (diagnosticos.some((d) => d.nivel === 'error')) return;
+    // Una funcion de la biblioteca (malloc, free) sin su #include.
+    if (bibliotecaFalta(modelo)) return;
     const r = corregirMemoria(analizador, fuente, respuesta, regla);
     for (const d of r.diagnosticos) {
       // El motor cuenta las lineas desde 1; el corrector, desde 0.
       diag(d.nivel, d.codigo, d.mensaje, d.fila == null ? null : d.fila - 1, d.bloques);
     }
+    // El caso que corrio (el que fallo, o el ultimo) para mostrarlo paso a paso.
+    if (r.ejecucion) ejecucionMemoria = { fuente, ...r.ejecucion };
   }
 
   function reglaEjecuta(regla, modelo) {
@@ -6920,7 +6943,7 @@ const DE_LA_BIBLIOTECA_C = new Set([
   'printf', 'scanf', 'gets', 'fgets', 'puts', 'putchar', 'getchar', 'strlen', 'strcpy', 'strncpy', 'strcmp',
   'strncmp', 'strcat', 'strncat', 'strchr', 'strstr', 'toupper', 'tolower', 'isalpha', 'isdigit', 'isspace',
   'isupper', 'islower', 'isalnum', 'pow', 'sqrt', 'abs', 'fabs', 'rand', 'srand', 'time', 'exit', 'atoi',
-  'atof', 'fflush', 'sprintf', 'sscanf',
+  'atof', 'fflush', 'sprintf', 'sscanf', 'malloc', 'calloc', 'realloc', 'free',
 ]);
 
 // Llamar a lo que no existe, o a una funcion antes de que este definida o

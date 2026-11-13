@@ -274,6 +274,9 @@ export function figuraDe(consigna) {
     if (d.plano) return { clase: 'plano', titulo: d.titulo, plano: planoDe(d.plano), salida: consigna.salida };
     if (d.escalera) return { clase: 'escalera', titulo: d.titulo, escalones: ESCALONES_DE_ACCESO, salida: consigna.salida };
     if (d.memoria) return { clase: 'memoria', titulo: d.titulo, celdas: celdasDeMemoria(d.memoria, d.desde), salida: consigna.salida };
+    // La memoria de un programa en un momento: se ejecuta con el motor (js/motor/) y se muestra la figura
+    // de la pila y el monticulo justo antes de ejecutar la linea "linea": { codigo, linea, entrada, cabezas }.
+    if (d.motor) return { clase: 'motor', titulo: d.titulo, motor: d.motor, salida: consigna.salida };
     // Un dibujo de nombres de un enumerado ("enumerados": true) no lleva comillas.
     const comoSeEscribe = d.enumerados ? (v) => v : comoSeEscribeLetras;
     const tresDimensiones = Array.isArray(d.valores[0]) && Array.isArray(d.valores[0][0]);

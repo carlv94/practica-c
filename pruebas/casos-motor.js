@@ -95,6 +95,10 @@ export const CASOS_DEL_MOTOR = [
   { nombre: 'liberar desde el medio del bloque', codigo: `#include <stdlib.h>\nint main() { int *v = malloc(3 * sizeof(int)); free(v + 1); return 0; }`, espera: { error: 'LIBERACION_INVALIDA' } },
   { nombre: 'escribir mas alla del bloque', codigo: `#include <stdlib.h>\nint main() { int *v = malloc(3 * sizeof(int)); v[3] = 1; return 0; }`, espera: { error: 'FUERA_DE_BLOQUE' } },
   { nombre: 'malloc con la cantidad de bytes mal calculada', codigo: `#include <stdlib.h>\nint main() { int n = 4; int *v = malloc(n); v[1] = 7; return 0; }`, espera: { error: 'FUERA_DE_BLOQUE' } },
+  { nombre: 'malloc con un tamano que se pasa de entero da NULL', codigo: `#include <stdlib.h>
+int main() { int n = 2000000000; int *v = malloc(n * 4); printf("%d", v == NULL); return 0; }`, espera: { salida: '1' } },
+  { nombre: 'malloc con una cantidad enorme de enteros da NULL', codigo: `#include <stdlib.h>
+int main() { int n = 2000000000; int *v = malloc(n * sizeof(int)); printf("%d", v == NULL); return 0; }`, espera: { salida: '1' } },
   { nombre: 'free(NULL) no hace nada', codigo: `#include <stdlib.h>\nint main() { free(NULL); return 0; }`, espera: { salida: '', fugas: 0 } },
   { nombre: 'un bloque nunca liberado de una funcion', codigo: `#include <stdlib.h>\nvoid f() { int *p = malloc(sizeof(int)); *p = 1; }\nint main() { f(); f(); return 0; }`, espera: { fugas: 2 } },
 

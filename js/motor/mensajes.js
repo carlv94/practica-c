@@ -32,7 +32,7 @@ const MENSAJES = {
   USO_DE_MEMORIA_LIBERADA: (con) =>
     frase(
       con,
-      `el programa usa un bloque de memoria después de liberarlo con ${BT}free${BT}: esa memoria ya no es suyo, y lo que había dentro puede haber cambiado. Después de ${BT}free${BT} hay que dejar de usar el bloque, y conviene asignarle ${BT}NULL${BT} al puntero.`
+      `el programa usa un bloque de memoria después de liberarlo con ${BT}free${BT}: esa memoria ya no es del programa, y lo que había dentro puede haber cambiado. Después de ${BT}free${BT} hay que dejar de usar el bloque, y conviene asignarle ${BT}NULL${BT} al puntero.`
     ),
   VARIABLE_FUERA_DE_ALCANCE: (con) =>
     frase(
@@ -111,6 +111,9 @@ export const mensajeDeFugas = (con, cantidad) =>
     con,
     `el programa termina sin liberar ${cantidad === 1 ? 'un bloque' : `${cantidad} bloques`} de memoria reservados con ${BT}malloc${BT}. Cada ${BT}malloc${BT} tiene que tener su ${BT}free${BT}, cuando ya no se necesita lo que se reservó.`
   );
+
+export const mensajeDeNuloSinComprobar = () =>
+  `La consigna pide comprobar el resultado de ${BT}malloc${BT}: el programa no pregunta si el puntero es ${BT}NULL${BT}, con ${BT}== NULL${BT}, ${BT}!= NULL${BT} o ${BT}if (p)${BT}.`;
 
 export const mensajeDeFuncionFalta = (nombre) =>
   `La consigna pide usar ${BT}${nombre}${BT}: el programa no la llama.`;

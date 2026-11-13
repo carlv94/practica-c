@@ -4,7 +4,9 @@
 //   { "memoria": {
 //       "casos": [ { "entrada": "3\n1 2 3", "salida": "6", "contexto": "..." } ],
 //       "sinFugas": true,
-//       "usa": ["malloc", "free"] } }
+//       "usa": ["malloc", "free"],
+//       "comparaConNulo": true,
+//       "cabezas": ["lista"] } }
 //
 //   casos     cada uno ejecuta el programa entero con ese texto de entrada y compara
 //             lo que muestra (sin los espacios ni saltos del final). Sin casos, se
@@ -12,13 +14,21 @@
 //   sinFugas  el programa tiene que liberar todo lo que reserva (FUGA_DE_MEMORIA).
 //   usa       funciones de la biblioteca que la respuesta tiene que llamar (por ejemplo
 //             malloc): MALLOC_FALTA, FREE_FALTA...
+//   comparaConNulo  el programa tiene que preguntar si un puntero es NULL (== NULL, != NULL, !p o
+//             if (p)): NULL_SIN_COMPROBAR. Evita "comprobar" con un numero escrito a mano.
+//   cabezas   nombres de las variables que guardan el comienzo de la estructura (para el
+//             paso a paso: ver figura.js)
 //
 // No depende del corrector: recibe el programa y devuelve diagnosticos
-// { nivel, codigo, mensaje, fila, bloques } y la ejecucion de cada caso (con la
-// traza, si se pide) para el reproductor.
+// { nivel, codigo, mensaje, fila, bloques }, la ejecucion de cada caso (con la traza, si
+// se pide) y "ejecucion": { entrada, cabezas } del caso que corrio por ultimo (el que
+// fallo, si alguno fallo; si no, el primero), para mostrarlo en el reproductor.
 
 import { ejecutar } from './interprete.js';
-import { mensajeDeError, mensajeDeFugas, mensajeDeFuncionFalta, contextoDeEntrada } from './mensajes.js';
+import { mensajeDeError, mensajeDeFugas, mensajeDeFuncionFalta, mensajeDeNuloSinComprobar, contextoDeEntrada } from './mensajes.js';
+
+// Preguntar si un puntero es NULL: p == NULL, p != NULL, p == 0, !p, if (p).
+const PREGUNTA_POR_NULO = /(?:==|!=)\s*(?:NULL|0)\b|\(\s*!\s*[A-Za-z_]\w*\s*\)|\bif\s*\(\s*[A-Za-z_]\w*\s*\)/;
 
 // El codigo sin comentarios ni textos entre comillas.
 const sinTextos = (codigo) =>
@@ -47,6 +57,12 @@ const plano = (t) =>
 export function corregirMemoria(analizador, fuente, respuesta, regla, { traza = false } = {}) {
   const diagnosticos = [];
   const ejecuciones = [];
+  // "fallo": que caso mostrar paso a paso: el que fallo (el ultimo que corrio) o, si todo esta bien,
+  // el primero (el del ejemplo de la consigna).
+  const resultado = (fallo) => {
+    const ultima = fallo ? ejecuciones[ejecuciones.length - 1] : ejecuciones[0];
+    return { diagnosticos, ejecuciones, ejecucion: ultima ? { entrada: ultima.caso.entrada ?? '', cabezas: regla.cabezas || null } : null };
+  };
   const diag = (nivel, codigo, mensaje, fila = null, bloques = null) =>
     diagnosticos.push({ nivel, codigo, mensaje, fila, ...(bloques ? { bloques } : {}) });
 
@@ -54,8 +70,13 @@ export function corregirMemoria(analizador, fuente, respuesta, regla, { traza = 
   for (const nombre of regla.usa || []) {
     if (!new RegExp(`\\b${nombre}\\s*\\(`).test(codigo)) {
       diag('error', `${nombre.toUpperCase()}_FALTA`, mensajeDeFuncionFalta(nombre));
-      return { diagnosticos, ejecuciones };
+      return resultado(true);
     }
+  }
+
+  if (regla.comparaConNulo && !PREGUNTA_POR_NULO.test(codigo)) {
+    diag('error', 'NULL_SIN_COMPROBAR', mensajeDeNuloSinComprobar());
+    return resultado(true);
   }
 
   for (const caso of regla.casos || [{}]) {
@@ -66,7 +87,7 @@ export function corregirMemoria(analizador, fuente, respuesta, regla, { traza = 
     if (r.error) {
       const m = mensajeDeError(r.error, con);
       diag(m.nivel, m.codigo, m.mensaje, r.error.fila);
-      return { diagnosticos, ejecuciones };
+      return resultado(true);
     }
     if (caso.salida != null) {
       const sale = sinEspaciosFinales(r.salida);
@@ -87,13 +108,13 @@ export function corregirMemoria(analizador, fuente, respuesta, regla, { traza = 
             ? [{ titulo: 'Tiene que mostrar:', lineas: [debe] }]
             : [{ lineas: sale.split('\n') }, { titulo: 'Tiene que mostrar:', lineas: debe.split('\n') }]
         );
-        return { diagnosticos, ejecuciones };
+        return resultado(true);
       }
     }
     if (regla.sinFugas && r.fugas.length) {
       diag('error', 'FUGA_DE_MEMORIA', mensajeDeFugas(con, r.fugas.length));
-      return { diagnosticos, ejecuciones };
+      return resultado(true);
     }
   }
-  return { diagnosticos, ejecuciones };
+  return resultado(false);
 }

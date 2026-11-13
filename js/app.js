@@ -858,6 +858,11 @@ function dibujar(figura) {
     dibujarSalida(caja, figura.salida);
     return;
   }
+  if (figura.clase === 'motor') {
+    dibujarMotor(caja, figura.motor);
+    dibujarSalida(caja, figura.salida);
+    return;
+  }
   if (figura.clase === 'venn') {
     dibujarVenn(caja, figura.venn);
     dibujarSalida(caja, figura.salida);
@@ -1167,6 +1172,58 @@ function dibujarEscalera(caja, escalones) {
   caja.appendChild(escalera);
 }
 
+// La memoria de un programa en un momento (la pila y el monticulo), con el motor de memoria:
+// el programa se ejecuta y se muestra la figura justo antes de ejecutar la linea "linea".
+async function dibujarMotor(caja, motor) {
+  // El lugar se reserva ya (despues del titulo y antes de la salida); el dibujo llega cuando carga el motor.
+  const lugar = elemento('div', 'rep-figura');
+  caja.appendChild(lugar);
+  try {
+    const [{ ejecutar }, { Figura }] = await Promise.all([import('./motor/interprete.js'), import('./motor/figura.js')]);
+    const r = ejecutar(analizador, motor.codigo, { entrada: motor.entrada || '', traza: true });
+    const foto = r.traza.find((f) => f.linea === motor.linea) || r.traza[r.traza.length - 1];
+    if (!foto) return;
+    const figura = new Figura(lugar, { cabezas: motor.cabezas || null });
+    figura.mostrar(foto, null);
+    // Con el panel ya en la pagina se mide, y si cambia el ancho se vuelve a ajustar.
+    if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => figura.fijarEscala({})).observe(lugar);
+    figura.fijarEscala({});
+  } catch (error) {
+    console.error('No se pudo dibujar la memoria de la consigna:', error);
+  }
+}
+
+// El paso a paso de lo que se acaba de comprobar: un boton debajo de los mensajes que ejecuta el
+// programa con el motor de memoria y lo muestra en el reproductor. Sirve tambien si la respuesta
+// esta mal: se ve que paso con la memoria.
+function ofrecerPasoAPaso(r, consigna) {
+  if (!r.memoria) return;
+  const boton = elemento('button', 'paso-a-paso', 'Ver paso a paso');
+  boton.type = 'button';
+  const lugar = elemento('div', 'paso-a-paso-lugar');
+  boton.addEventListener('click', async () => {
+    boton.disabled = true;
+    try {
+      const [{ ejecutar }, { crearReproductor }, { mensajeDeError }] = await Promise.all([
+        import('./motor/interprete.js'),
+        import('./motor/reproductor.js'),
+        import('./motor/mensajes.js'),
+      ]);
+      const res = ejecutar(analizador, r.memoria.fuente, { entrada: r.memoria.entrada || '', traza: true });
+      if (!res.traza.length) throw new Error('el programa no tiene nada que seguir');
+      const error = res.error ? { ...res.error, ...mensajeDeError(res.error) } : null;
+      lugar.replaceChildren(
+        crearReproductor({ codigo: r.memoria.fuente, traza: res.traza, error, titulo: consigna.titulo, funciones: res.funciones, cabezas: r.memoria.cabezas })
+      );
+      boton.hidden = true;
+    } catch (error) {
+      console.error('No se pudo armar el paso a paso:', error);
+      boton.disabled = false;
+    }
+  });
+  $('resultado').append(boton, lugar);
+}
+
 // La memoria: un casillero por variable, con su direccion arriba y su nombre
 // abajo. De cada puntero sale una flecha, por debajo, hasta la variable a la
 // que apunta.
@@ -1426,6 +1483,7 @@ function comprobar() {
     }
   }
   mostrarResultado(cajas, delaOpcion);
+  ofrecerPasoAPaso(r, consigna);
 }
 
 // Los mensajes quedan debajo del editor, y con el codigo previo arriba suelen
