@@ -1,0 +1,299 @@
+{
+  "id": "dinamica-memoria",
+  "titulo": "Memoria dinámica",
+  "continua": false,
+  "descripcion": "Un arreglo común tiene un tamaño que se decide al escribir el programa. Con `malloc` se pide memoria mientras el programa corre, y con `free` se la devuelve cuando ya no hace falta.",
+  "cabecera": "#include <stdio.h>\n#include <stdlib.h>",
+  "consignas": [
+    {
+      "id": "dinamica-q-tamano",
+      "titulo": "Un arreglo de tamaño fijo",
+      "enunciado": "Un programa tiene que guardar las notas de un alumno. Primero pregunta cuántas son y después las lee, pero ese número lo escribe quien usa el programa y es distinto cada vez. ¿Qué tamaño se le puede poner al arreglo de las notas?",
+      "codigo": "int cantidad;\nscanf(\"%d\", &cantidad);\n\nint notas[...];",
+      "opciones": [
+        {
+          "texto": "Un número fijo grande, como `100`, que alcance para casi todos los casos",
+          "codigo": "OPCION_UN_NUMERO_FIJO",
+          "explicacion": "Con `100` alcanza hasta que alguien escribe `150` notas: no hay lugar para las que sobran. Y si son `3`, quedan `97` posiciones reservadas que no se usan."
+        },
+        {
+          "texto": "Ninguno: la memoria se pide cuando el programa ya corre",
+          "correcta": true,
+          "explicacion": "La cantidad de notas se conoce recién cuando el programa corre y alguien la escribe, y un arreglo común necesita su tamaño al escribir el programa. Para estos casos el lenguaje permite pedir memoria mientras el programa corre, y devolverla cuando ya no hace falta. Se llama memoria dinámica y es lo que va a ver en esta serie."
+        },
+        {
+          "texto": "La variable `cantidad`, que ya se leyó: `int notas[cantidad];`",
+          "codigo": "OPCION_LA_VARIABLE",
+          "explicacion": "Hay compiladores que aceptan esta forma, pero no es una solución general: un arreglo común desaparece cuando termina la función que lo declaró, así que no se puede devolver ni usar después. Hace falta pedir la memoria en el momento en que se conoce la cantidad."
+        }
+      ]
+    },
+    {
+      "id": "dinamica-q-donde",
+      "titulo": "Dónde vive cada cosa",
+      "enunciado": "Hasta ahora las variables vivían en la pila: cada función tiene las suyas y desaparecen cuando la función termina. Lo que se reserva con `malloc` vive en otro lugar, el montículo, y sigue ahí hasta que se lo libera con `free`. En este programa, `malloc` reserva el lugar de un entero y `p` apunta a él. ¿Dónde está guardado el número `8`?",
+      "codigo": "int n = 5;\nint *p = malloc(sizeof(int));\n\n*p = 8;\nprintf(\"%d\", *p + n);",
+      "dibujo": {
+        "titulo": "La memoria justo antes del `printf`:",
+        "motor": {
+          "codigo": "#include <stdio.h>\n#include <stdlib.h>\n\nint main() {\n  int n = 5;\n  int *p = malloc(sizeof(int));\n\n  *p = 8;\n  printf(\"%d\", *p + n);\n  free(p);\n  return 0;\n}",
+          "linea": 9
+        }
+      },
+      "opciones": [
+        {
+          "texto": "En `p`, que es una variable de la pila",
+          "codigo": "OPCION_EN_P",
+          "explicacion": "`p` es una variable común, de la pila, y lo que guarda no es el `8`: es la dirección del bloque donde está el `8`."
+        },
+        {
+          "texto": "En un bloque del montículo, al que apunta `p`",
+          "correcta": true,
+          "explicacion": "El `8` está en el bloque que reservó `malloc`, en el montículo. `p` es una variable común, de la pila: guarda la dirección del bloque, y la flecha del dibujo la representa. Cuando `main` termine, `n` y `p` van a desaparecer solas, pero el bloque seguiría ahí si no se lo liberara: por eso cada `malloc` necesita su `free`."
+        },
+        {
+          "texto": "En `n`, junto al valor que ya tenía",
+          "codigo": "OPCION_EN_N",
+          "explicacion": "`n` guarda su propio valor, `5`. El `8` está en otro lugar: el bloque que reservó `malloc`."
+        }
+      ]
+    },
+    {
+      "id": "dinamica-q-sizeof",
+      "titulo": "Cuántos bytes pedir",
+      "enunciado": "`malloc` recibe la cantidad de bytes que se quiere reservar. Se necesita un bloque para guardar un número decimal de tipo `double`, que se va a apuntar con `p`. ¿Cuál de estas formas de pedirlo sirve en cualquier computadora?",
+      "codigo": "double *p;\n\np = malloc(...);",
+      "opciones": [
+        {
+          "texto": "`malloc(sizeof(double))`",
+          "correcta": true,
+          "explicacion": "`sizeof(double)` es lo que ocupa un `double` en la computadora donde se compila el programa, y `malloc` reserva esa cantidad de bytes. También se podría escribir `sizeof(*p)`, el tamaño de lo que `p` apunta, que sigue valiendo aunque más tarde se cambie el tipo de `p`."
+        },
+        {
+          "texto": "`malloc(8)`",
+          "codigo": "OPCION_UN_NUMERO",
+          "explicacion": "Un `double` ocupa `8` bytes en casi todas las computadoras, pero no en todas. Un número escrito a mano puede quedar mal en otra máquina: `sizeof` da el tamaño de la computadora donde se compila."
+        },
+        {
+          "texto": "`malloc(sizeof(int))`",
+          "codigo": "OPCION_SIZEOF_OTRO_TIPO",
+          "explicacion": "`sizeof(int)` es el tamaño de un entero, `4` bytes, y un `double` ocupa `8`: el bloque quedaría chico y, al guardar el número, se escribiría fuera de él. Hay que pedir el tamaño del tipo que se va a guardar."
+        }
+      ]
+    },
+    {
+      "id": "dinamica-reservar",
+      "titulo": "Reservar, usar y liberar un entero",
+      "en": "archivo",
+      "enunciado": "Escriba `main`. Lea con `scanf` un número entero y guárdelo en un entero reservado con `malloc`: el número tiene que vivir en el montículo, no en una variable común. Muestre su doble y, cuando ya no lo necesite, libere la memoria. Por ejemplo, si se ingresa `7`, el programa muestra `14`.\n! No use `printf` para mostrar mensajes que pidan el dato: léalo directamente con `scanf`.",
+      "requiere": [
+        {
+          "memoria": {
+            "casos": [
+              {
+                "entrada": "7",
+                "salida": "14",
+                "contexto": ""
+              },
+              {
+                "entrada": "-3",
+                "salida": "-6"
+              },
+              {
+                "entrada": "0",
+                "salida": "0"
+              }
+            ],
+            "sinFugas": true,
+            "usa": [
+              "malloc",
+              "free"
+            ]
+          }
+        }
+      ],
+      "referencia": "int main() {\n  int *p = malloc(sizeof(int));\n\n  scanf(\"%d\", p);\n  printf(\"%d\", *p * 2);\n  free(p);\n  return 0;\n}"
+    },
+    {
+      "id": "dinamica-q-null",
+      "titulo": "Cuando no hay memoria",
+      "enunciado": "`malloc` le pide memoria a la computadora, y a veces no puede dársela: por ejemplo, si se pide un bloque enorme. En este programa se reserva espacio para tantos enteros como indique el usuario. ¿Qué devuelve `malloc` cuando no puede reservar la memoria?",
+      "codigo": "int n;\nscanf(\"%d\", &n);\n\nint *p = malloc(n * sizeof(int));",
+      "opciones": [
+        {
+          "texto": "Un bloque más chico, con la memoria que haya",
+          "codigo": "OPCION_BLOQUE_MAS_CHICO",
+          "explicacion": "`malloc` no reserva menos de lo que se le pidió: o da el bloque entero, o no da ninguno."
+        },
+        {
+          "texto": "Termina el programa y muestra un mensaje de error",
+          "codigo": "OPCION_TERMINA",
+          "explicacion": "`malloc` no termina el programa ni muestra mensajes: devuelve un valor, y es el programa el que tiene que mirarlo."
+        },
+        {
+          "texto": "`NULL`",
+          "correcta": true,
+          "explicacion": "Cuando no puede reservar, `malloc` devuelve `NULL`, la dirección que no apunta a ningún lugar. Por eso, antes de usar el bloque hay que comprobar que el puntero no sea `NULL`: si lo fuera, usar el bloque, por ejemplo escribir en lo que `p` apunta, intentaría escribir donde no hay nada y el programa se detendría. La consigna que sigue lo practica."
+        }
+      ]
+    },
+    {
+      "id": "dinamica-comprobar",
+      "titulo": "Comprobar el resultado de malloc",
+      "en": "archivo",
+      "enunciado": "Escriba `main`. Lea con `scanf` una cantidad `n` y reserve con `malloc` espacio para `n` enteros. Si no se pudo reservar la memoria, muestre `Sin memoria`. Si se pudo, muestre `Memoria reservada` y libérela. Con una cantidad enorme, como `2000000000`, la computadora no puede reservar tanta memoria. Por ejemplo, si se ingresa `4`, el programa muestra `Memoria reservada`.\n! No use `printf` para mostrar mensajes que pidan el dato: léalo directamente con `scanf`.",
+      "requiere": [
+        {
+          "memoria": {
+            "casos": [
+              {
+                "entrada": "4",
+                "salida": "Memoria reservada",
+                "contexto": ""
+              },
+              {
+                "entrada": "1",
+                "salida": "Memoria reservada"
+              },
+              {
+                "entrada": "7",
+                "salida": "Memoria reservada"
+              },
+              {
+                "entrada": "2000000000",
+                "salida": "Sin memoria"
+              },
+              {
+                "entrada": "1500000000",
+                "salida": "Sin memoria"
+              }
+            ],
+            "sinFugas": true,
+            "usa": [
+              "malloc",
+              "free"
+            ],
+            "comparaConNulo": true
+          }
+        }
+      ],
+      "referencia": "int main() {\n  int n;\n\n  scanf(\"%d\", &n);\n  int *p = malloc(n * sizeof(int));\n\n  if (p == NULL) {\n    printf(\"Sin memoria\");\n  } else {\n    printf(\"Memoria reservada\");\n    free(p);\n  }\n  return 0;\n}"
+    },
+    {
+      "id": "dinamica-q-bloque",
+      "titulo": "Cómo se llega a cada entero",
+      "enunciado": "Con `malloc` se reservó un bloque para cuatro enteros y `v` apunta a él. Para comparar, `a` es un arreglo común de cuatro enteros. ¿Cuál de estas instrucciones es la incorrecta para guardar un `7` en el tercer entero del bloque al que apunta `v`?",
+      "codigo": "int a[4] = {8, 6, 9, 5};\nint *v = malloc(4 * sizeof(int));",
+      "dibujo": {
+        "titulo": "La memoria, con el bloque todavía vacío:",
+        "motor": {
+          "codigo": "#include <stdio.h>\n#include <stdlib.h>\n\nint main() {\n  int a[4] = {8, 6, 9, 5};\n  int *v = malloc(4 * sizeof(int));\n\n  free(v);\n  return 0;\n}",
+          "linea": 8
+        }
+      },
+      "opciones": [
+        {
+          "texto": "`v[2] = 7;`",
+          "codigo": "OPCION_VALIDA_CON_CORCHETES",
+          "explicacion": "Esta instrucción sí guarda el `7` en el tercer entero: con `[ ]` las posiciones se cuentan desde `0`, así que `v[2]` es el tercero. Es lo mismo que `*(v + 2) = 7;`."
+        },
+        {
+          "texto": "`*v + 2 = 7;`",
+          "correcta": true,
+          "explicacion": "`*v + 2` no es un lugar de la memoria sino una cuenta: el primer entero más `2`. No se le puede asignar nada y el programa no compila. Las otras dos llegan al tercer entero, y son equivalentes: `v[2]` es otra forma de escribir `*(v + 2)`. Con los paréntesis, primero se avanzan dos enteros desde el primero y después el `*` llega a ese lugar. Se puede usar `[ ]` con un puntero porque el nombre de un arreglo, como `a`, es la dirección de su primer elemento, y `v` guarda la dirección del primer entero del bloque que reservó `malloc`: igual que `a[2]` es `*(a + 2)`."
+        },
+        {
+          "texto": "`*(v + 2) = 7;`",
+          "codigo": "OPCION_VALIDA_CON_ASTERISCO",
+          "explicacion": "Esta instrucción sí guarda el `7` en el tercer entero: `v + 2` es la dirección que está dos enteros después de la primera, y el `*` llega a ese lugar. Es lo mismo que `v[2] = 7;`."
+        }
+      ]
+    },
+    {
+      "id": "dinamica-arreglo",
+      "titulo": "Un arreglo dinámico",
+      "en": "archivo",
+      "enunciado": "Escriba `main`. Lea con `scanf` la cantidad de notas `n` y reserve con `malloc` un arreglo de `n` enteros. Lea las `n` notas, muestre `Promedio: ` con el promedio con un decimal y libere la memoria. Por ejemplo, si se ingresan:\n- `4` (cantidad de notas)\n- `8`, `6`, `9` y `5` (las notas)\n\nel programa muestra `Promedio: 7.0`.\n! No use `printf` para mostrar mensajes que pidan los datos: léalos directamente con `scanf`.",
+      "requiere": [
+        {
+          "memoria": {
+            "casos": [
+              {
+                "entrada": "4\n8 6 9 5",
+                "salida": "Promedio: 7.0",
+                "contexto": ""
+              },
+              {
+                "entrada": "3\n9 2 6",
+                "salida": "Promedio: 5.7"
+              },
+              {
+                "entrada": "1\n6",
+                "salida": "Promedio: 6.0"
+              },
+              {
+                "entrada": "2\n7 8",
+                "salida": "Promedio: 7.5"
+              }
+            ],
+            "sinFugas": true,
+            "usa": [
+              "malloc",
+              "free"
+            ]
+          }
+        }
+      ],
+      "referencia": "int main() {\n  int n;\n\n  scanf(\"%d\", &n);\n  int *notas = malloc(n * sizeof(int));\n  int suma = 0;\n\n  for (int i = 0; i < n; i++) {\n    scanf(\"%d\", &notas[i]);\n    suma += notas[i];\n  }\n  printf(\"Promedio: %.1f\", (float) suma / n);\n  free(notas);\n  return 0;\n}"
+    },
+    {
+      "id": "dinamica-estructura",
+      "titulo": "Una estructura en el montículo",
+      "en": "archivo",
+      "dado": "typedef struct {\n  int legajo;\n  float promedio;\n} TAlumno;",
+      "despues": "int main() {\n  TAlumno *a = crearAlumno(1234, 7.5);\n\n  printf(\"%d %.1f\", a->legajo, a->promedio);\n  free(a);\n  return 0;\n}",
+      "enunciado": "Escriba la función `crearAlumno`. Recibe un legajo (un entero) y un promedio (un `float`), reserva con `malloc` un `TAlumno`, le carga esos dos datos y devuelve su dirección. Quien la llame se ocupa de liberar el bloque. El `main` ya está escrito: llama a `crearAlumno(1234, 7.5)`, muestra el legajo y el promedio del alumno que recibe y lo libera.",
+      "requiere": [
+        {
+          "memoria": {
+            "casos": [
+              {
+                "salida": "1234 7.5",
+                "contexto": ""
+              }
+            ],
+            "sinFugas": true,
+            "usa": [
+              "malloc"
+            ]
+          }
+        }
+      ],
+      "referencia": "TAlumno *crearAlumno(int legajo, float promedio) {\n  TAlumno *a = malloc(sizeof(TAlumno));\n\n  a->legajo = legajo;\n  a->promedio = promedio;\n  return a;\n}"
+    },
+    {
+      "id": "dinamica-devolver",
+      "titulo": "Devolver un bloque reservado",
+      "en": "archivo",
+      "despues": "int main() {\n  int *v = crearArreglo(3);\n\n  for (int i = 0; i < 3; i++) {\n    printf(\"%d \", v[i]);\n  }\n  free(v);\n  return 0;\n}",
+      "enunciado": "Escriba la función `crearArreglo`. Recibe una cantidad `n`, reserva con `malloc` un arreglo de `n` enteros, guarda en cada posición el doble de su número de posición (`0` en la primera, `2` en la segunda, y así) y devuelve la dirección del bloque. No lo libere: lo hace quien la llama. El `main` ya está escrito y la usa. Por ejemplo, `crearArreglo(3)` deja en el bloque `0`, `2` y `4`.",
+      "requiere": [
+        {
+          "memoria": {
+            "casos": [
+              {
+                "salida": "0 2 4",
+                "contexto": ""
+              }
+            ],
+            "sinFugas": true,
+            "usa": [
+              "malloc"
+            ]
+          }
+        }
+      ],
+      "referencia": "int *crearArreglo(int n) {\n  int *v = malloc(n * sizeof(int));\n\n  for (int i = 0; i < n; i++) {\n    v[i] = i * 2;\n  }\n  return v;\n}"
+    }
+  ]
+}

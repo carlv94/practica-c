@@ -161,6 +161,15 @@
         "tad-fecha-comparar.json",
         "tad-tarea.json"
       ]
+    },
+    {
+      "id": "dinamicos",
+      "agrupar": true,
+      "titulo": "Tipos dinámicos de datos",
+      "descripcion": "Memoria que se pide mientras el programa corre, y estructuras que crecen y se achican según se necesite.",
+      "series": [
+        "dinamica-memoria.json"
+      ]
     }
   ]
 }
