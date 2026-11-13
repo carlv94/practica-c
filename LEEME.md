@@ -623,7 +623,10 @@ Estructuras, serie "Usar los campos"):
 - **El simulador aplana** también lo anidado: `alumno.nacimiento.anio` es una
   variable con ese nombre y `alumnos[i].nacimiento.anio` un arreglo
   (`"alumnos.nacimiento.anio": [2004, 1998]` en los datos de prueba). Una
-  estructura entera donde va un número es `CAMPO_ES_UNA_ESTRUCTURA`.
+  estructura entera donde va un número es `CAMPO_ES_UNA_ESTRUCTURA`. Una estructura
+entera sí se puede guardar en un campo que es otra estructura (`tarea.vence = vence;`),
+devolver (`return tarea.vence;`) y pasar como argumento (`comparar(tarea.vence, hoy)`):
+se copian todos sus campos.
 - **`"sigueDe": "id"`** en una consigna: arranca con lo que **quedó después**
   de esa consigna, con la respuesta del alumno (como `parteDe`, pero después).
   Sirve cuando las que siguen necesitan lo que declaró el alumno y no pueden
@@ -1691,11 +1694,16 @@ la respuesta es un archivo completo.
     `INCLUYE_UN_C`.
   - `{ "sinTipos": true }`: el `.c` no vuelve a declarar el tipo (`TIPO_REPETIDO_EN_EL_C`).
   - `{ "defineTodo": true }`: el `.c` define cada prototipo del `.h`, con la misma
-    firma (`PROTOTIPO_SIN_DEFINICION`, `FIRMA_DISTINTA_DEL_PROTOTIPO`).
+    firma (`PROTOTIPO_SIN_DEFINICION`, `FIRMA_DISTINTA_DEL_PROTOTIPO`). Una operación que otro
+    archivo del programa ya define (el `fecha.c` oculto, cuando el `.c` es el de un TAD que usa a otro)
+    no se le exige.
     Con `defineTodo`, una regla `funcion` por nombre que busca una operación sin
     definir no la confunde con otra: deja el aviso a `defineTodo`.
   - `{ "soloOperaciones": "TContador" }`: quien usa el TAD no accede a los campos
-    de su estructura (`TAD_ACCESO_DIRECTO`, que nombra las operaciones del `.h`).
+    de su estructura (`TAD_ACCESO_DIRECTO`, que nombra las operaciones que hablan de ese tipo).
+    Sigue el tipo por un camino (`t.vence.dia`, `t->vence.dia`, `ts[i].vence.dia`) y por el
+    resultado de una función (`vencimiento(t).dia`): sirve para que el `.c` de un TAD que
+    usa a otro no entre a los campos del de adentro (serie `tad-tarea`, con `"soloOperaciones": "TFecha"`).
   - `{ "usaOperaciones": ["inicializar", "contar"] }`: el programa llama a esas
     operaciones (`TAD_OPERACION_SIN_USAR`).
   - `{ "unaVariable": "TLista" }`: el programa declara una sola variable de ese tipo, para

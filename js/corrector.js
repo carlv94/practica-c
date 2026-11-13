@@ -1041,7 +1041,11 @@ export function corregir(
   // El .c define todo lo que el .h declara, con la misma firma.
   //   { "defineTodo": true }
   function reglaDefineTodo(modelo) {
-    const declaradas = modelo.funciones.filter((f) => !f.nuevo && f.prototipo);
+    // Una operacion que otro archivo del programa ya define (el .c de otro TAD,
+    // que viene oculto) no la tiene que definir este .c.
+    const declaradas = modelo.funciones.filter(
+      (f) => !f.nuevo && f.prototipo && !modelo.funciones.some((d) => !d.nuevo && !d.prototipo && d.nombre === f.nombre)
+    );
     const mismo = (a, b) => {
       const ra = resolver(a.tipo, modelo);
       const rb = resolver(b.tipo, modelo);
@@ -1078,12 +1082,33 @@ export function corregir(
     if (!def) return;
     const parametros = modelo.funciones.filter((f) => f.nuevo).flatMap((f) => f.parametros);
     const declarada = (nombre) => modelo.variables.findLast((v) => v.nombre === nombre) || parametros.findLast((p) => p.nombre === nombre);
+    // La estructura de lo que esta a la izquierda del punto: una variable, o un
+    // camino que baja por campos (`t.vence`, `t->vence`, `ts[i].vence`).
+    const estructuraDe = (texto) => {
+      // El resultado de una funcion: `vencimiento(t).dia`.
+      const llamada = /^([A-Za-z_]\w*)\s*\(.*\)$/s.exec(texto.trim());
+      if (llamada) {
+        const f = modelo.funciones.findLast((x) => x.nombre === llamada[1]);
+        return f && !f.punteros && !(f.arreglo || []).length ? estructuraDeTipo(f.tipo, modelo) : null;
+      }
+      const m =/^([A-Za-z_]\w*)(?:\[[^\]]*\])*((?:(?:\.|->)[A-Za-z_]\w*(?:\[[^\]]*\])*)*)$/.exec(texto.replace(/\s+/g, ''));
+      const v = m && declarada(m[1]);
+      if (!v) return null;
+      let actual = estructuraDeTipo(v.tipo, modelo);
+      for (const nombre of m[2].split(/\.|->/).filter(Boolean)) {
+        const campo = actual && actual.campos.find((k) => k.nombre === nombre.replace(/\[.*$/, ''));
+        actual = campo ? estructuraDeTipo(campo.tipo, modelo) : null;
+      }
+      return actual;
+    };
+    // Las operaciones que hablan de este tipo (si un .h trae dos tipos, no se
+    // nombran las del otro).
+    const hablaDelTipo = (f) => [f, ...f.parametros].some((p) => estructuraDeTipo(p.tipo, modelo) === def);
     for (const c of modelo.camposUsados) {
       if (!c.nuevo) continue;
-      const nombre = /^[A-Za-z_]\w*/.exec(c.variable);
-      const v = nombre && declarada(nombre[0]);
-      if (!v || estructuraDeTipo(v.tipo, modelo) !== def) continue;
-      const operaciones = modelo.funciones.filter((f) => !f.nuevo && f.prototipo).map((f) => f.nombre);
+      if (estructuraDe(c.variable) !== def) continue;
+      const prototipos = modelo.funciones.filter((f) => !f.nuevo && f.prototipo);
+      const operaciones = (prototipos.some(hablaDelTipo) ? prototipos.filter(hablaDelTipo) : prototipos).map((f) => f.nombre);
       error(
         'TAD_ACCESO_DIRECTO',
         `${BT}${c.variable}.${c.campo}${BT} entra a los campos de ${BT}${tipo}${BT}. Quien usa un tipo abstracto no sabe cómo está hecho por dentro: todo lo hace con sus operaciones${operaciones.length ? ` (${enLista(operaciones)})` : ''}. Así, si cambia la forma de guardar los datos, este código sigue funcionando.`,

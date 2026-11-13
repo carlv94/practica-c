@@ -1534,6 +1534,16 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
           const hermanos = base && base.union ? base.union.miembros.filter((m) => m !== miembro) : [];
           if (hermanos.some((m) => prueba[`${grupo}${m}`] != null)) return { v: 0, f: false };
         }
+        // Guardar una estructura en un campo que es otra estructura: "tarea.vence = vence;".
+        if (operador === '=' && izquierda.type === 'field_expression') {
+          const camino = caminoDeEstructura(izquierda);
+          if (camino) {
+            const copia = estructuraDe(nodoDerecha);
+            if (!copia) sinVerificar(n, 'una estructura que no se sabe seguir');
+            volcarCampos(camino, copia);
+            return { v: 0, f: false };
+          }
+        }
         if (operador === '=' && ['identifier', 'subscript_expression', 'field_expression'].includes(izquierda.type) && !estructurasVivas.has(izquierda.text) && sinEfectos(izquierda)) {
           let aCadena = null;
           try {
@@ -1781,8 +1791,23 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
   }
 
   // La estructura que dice un nodo: una variable, un elemento de un arreglo, o lo que devuelve una funcion.
+  // Un campo que es otra estructura (tarea.vence): su camino, o null si no lo es.
+  function caminoDeEstructura(nodo) {
+    if (nodo.type !== 'field_expression') return null;
+    const camino = nodo.text.replace(/\s+/g, '');
+    if (!/^[A-Za-z_]\w*(\.[A-Za-z_]\w*)+$/.test(camino)) return null;
+    for (let ambito = variables; ambito; ambito = ambito.padre) {
+      for (const clave of Map.prototype.keys.call(ambito)) if (clave.startsWith(camino + '.')) return camino;
+    }
+    return null;
+  }
+
   function estructuraDe(nodo) {
     if (nodo.type === 'identifier' && estructurasVivas.has(nodo.text)) return camposCopiados(nodo.text);
+    if (nodo.type === 'field_expression') {
+      const camino = caminoDeEstructura(nodo);
+      if (camino) return camposCopiados(camino);
+    }
     if (nodo.type === 'subscript_expression') return elementoCopiado(nodo);
     if (nodo.type === 'call_expression') return evaluar(nodo).estructura || null;
     if (nodo.type === 'pointer_expression' && /^\*/.test(nodo.text.trimStart())) return estructuraApuntada(nodo);
@@ -2222,6 +2247,8 @@ export function ejecutar(arbol, constante, entrada = null, prueba = null, desde 
         // Una estructura se devuelve por valor: sale una copia entera.
         if (valor && valor.type === 'identifier' && estructurasVivas.has(valor.text)) {
           retorno = { v: 0, f: false, estructura: camposCopiados(valor.text) };
+        } else if (valor && valor.type === 'field_expression' && caminoDeEstructura(valor)) {
+          retorno = { v: 0, f: false, estructura: camposCopiados(caminoDeEstructura(valor)) };
         } else {
           retorno = valor ? evaluar(valor) : null;
         }

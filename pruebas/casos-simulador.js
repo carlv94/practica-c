@@ -1343,6 +1343,22 @@ export const CASOS_DEL_SIMULADOR = [
     entrada: [7],
     espera: {"error":"FormatoDistinto"},
   },
+  {
+    nombre: "estructura dentro de otra: guardar, devolver y pasar el campo",
+    codigo: conFunciones(
+      "typedef struct {\n  int dia;\n  int mes;\n} TF;\ntypedef struct {\n  TF vence;\n  int hecha;\n} TT;\nTT crearT(TF f) {\n  TT t;\n  t.vence = f;\n  t.hecha = 0;\n  return t;\n}\nTF venc(TT t) {\n  return t.vence;\n}\nint mesDe(TF f) {\n  return f.mes;\n}",
+      "TF f;\nf.dia = 3;\nf.mes = 7;\nTT t = crearT(f);\nTF g = venc(t);\nint m = mesDe(t.vence);"
+    ),
+    espera: { variables: { m: 7, 'g.dia': 3, 'g.mes': 7, 't.vence.dia': 3 } },
+  },
+  {
+    nombre: "estructura dentro de otra: guardar una copia, no la misma",
+    codigo: conFunciones(
+      "typedef struct {\n  int dia;\n  int mes;\n} TF;\ntypedef struct {\n  TF vence;\n  int hecha;\n} TT;",
+      "TF f;\nf.dia = 3;\nf.mes = 7;\nTT t;\nt.vence = f;\nf.dia = 99;"
+    ),
+    espera: { variables: { 't.vence.dia': 3, 'f.dia': 99 } },
+  },
 ];
 
 // Corre un caso y dice si salio lo esperado. "ejecutar" es la funcion del
