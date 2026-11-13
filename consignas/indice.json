@@ -168,7 +168,11 @@
       "titulo": "Tipos dinámicos de datos",
       "descripcion": "Memoria que se pide mientras el programa corre, y estructuras que crecen y se achican según se necesite.",
       "series": [
-        "dinamica-memoria.json"
+        "dinamica-memoria.json",
+        "dinamica-errores.json"
+      ],
+      "ocultas": [
+        "dinamica-errores.json"
       ]
     }
   ]

@@ -26,6 +26,41 @@ const ESTRUCTURA = (reserva, cuerpo) => `TAlumno *crearAlumno(int legajo, float 
 const DEVOLVER = (cuerpo) => `int *crearArreglo(int n) {\n  int *v = malloc(n * sizeof(int));\n\n${cuerpo}  return v;\n}`;
 const CARGA = '  for (int i = 0; i < n; i++) {\n    v[i] = i * 2;\n  }\n';
 
+const errores = serie('dinamica-errores');
+
+// Serie 2: errores tipicos.
+const FUGA = (cuerpoFinal) =>
+  `int main() {
+  int n;
+
+  scanf("%d", &n);
+  for (int i = 0; i < n; i++) {
+    int *p = malloc(sizeof(int));
+
+    scanf("%d", p);
+    printf("%d ", *p * 2);
+${cuerpoFinal}  }
+  return 0;
+}`;
+const SUMA = (reserva, hasta) =>
+  `int main() {
+  int n;
+
+  scanf("%d", &n);
+  int *v = ${reserva};
+  int suma = 0;
+
+  for (int i = 0; i ${hasta} n; i++) {
+    scanf("%d", &v[i]);
+    suma += v[i];
+  }
+  printf("Suma: %d", suma);
+  free(v);
+  return 0;
+}`;
+const CREAR = (cuerpo) => `int *crearNumero(int valor) {
+${cuerpo}}`;
+
 export const CASOS_DE_DINAMICA = [
   // ===== 1. un arreglo de tamano fijo
   memoria(1, 'ninguno sirve: se pide al ejecutar', '1'),
@@ -92,4 +127,48 @@ export const CASOS_DE_DINAMICA = [
   memoria(10, 'libera antes de devolver', DEVOLVER(CARGA).replace('  return v;', '  free(v);\n  return v;'), ['USO_DE_MEMORIA_LIBERADA']),
   memoria(10, 'guarda el numero de posicion y no el doble', DEVOLVER(CARGA.replace('i * 2', 'i')), ['MUESTRA_DISTINTA']),
   memoria(10, 'sin malloc', 'int *crearArreglo(int n) {\n  int v[3];\n\n  return v;\n}', ['MALLOC_FALTA']),
+
+  // ===== serie 2. 1. una fuga de memoria
+  errores(1, 'sigue reservado pero nadie lo apunta', '1'),
+  errores(1, 'se libera solo', '0', ['OPCION_SE_LIBERA_SOLO']),
+  errores(1, 'apunta a los dos', '2', ['OPCION_APUNTA_A_LOS_DOS']),
+
+  // ===== 2. arreglar una fuga
+  errores(2, 'la referencia', FUGA('    free(p);\n')),
+  errores(2, 'el programa con la fuga', FUGA(''), ['FUGA_DE_MEMORIA']),
+  errores(2, 'libera antes de usar', FUGA('').replace('    scanf("%d", p);', '    free(p);\n    scanf("%d", p);'), ['USO_DE_MEMORIA_LIBERADA']),
+  errores(2, 'sin malloc', 'int main() {\n  int n;\n\n  scanf("%d", &n);\n  for (int i = 0; i < n; i++) {\n    int x;\n\n    scanf("%d", &x);\n    printf("%d ", x * 2);\n  }\n  return 0;\n}', ['MALLOC_FALTA']),
+
+  // ===== 3. un puntero a un bloque liberado
+  errores(3, 'la misma direccion de antes', '0'),
+  errores(3, 'queda en NULL', '1', ['OPCION_QUEDA_EN_NULL']),
+  errores(3, 'un bloque nuevo', '2', ['OPCION_BLOQUE_NUEVO']),
+
+  // ===== 4. liberar dos veces
+  errores(4, 'es un error', '2'),
+  errores(4, 'se ignora', '0', ['OPCION_SE_IGNORA']),
+  errores(4, 'libera otro', '1', ['OPCION_LIBERA_OTRO']),
+
+  // ===== 5. escribir fuera del bloque
+  errores(5, 'escribe fuera del bloque', '1'),
+  errores(5, 'agranda el bloque', '0', ['OPCION_AGRANDA']),
+  errores(5, 'es el ultimo', '2', ['OPCION_ES_EL_ULTIMO']),
+
+  // ===== 6. una posicion de mas
+  errores(6, 'la referencia', SUMA('malloc(n * sizeof(int))', '<')),
+  errores(6, 'el programa con una posicion de mas', SUMA('malloc(n * sizeof(int))', '<='), ['FUERA_DE_BLOQUE']),
+  errores(6, 'un lugar de mas en el bloque y el mismo limite', SUMA('malloc((n + 1) * sizeof(int))', '<='), ['VARIABLE_SIN_VALOR']),
+  errores(6, 'sin liberar', SUMA('malloc(n * sizeof(int))', '<').replace('  free(v);\n', ''), ['FREE_FALTA']),
+
+  // ===== 7. la direccion de una variable local
+  errores(7, 'x desaparece', '2'),
+  errores(7, 'return no devuelve punteros', '0', ['OPCION_RETURN_NO_DEVUELVE_PUNTEROS']),
+  errores(7, 'no se apunta a un int', '1', ['OPCION_NO_SE_APUNTA_A_UN_INT']),
+
+  // ===== 8. corregir la funcion
+  errores(8, 'la referencia', CREAR('  int *p = malloc(sizeof(int));\n\n  *p = valor;\n  return p;\n')),
+  errores(8, 'el programa con la direccion de una local', CREAR('  int x = valor;\n\n  return &x;\n'), ['MALLOC_FALTA']),
+  errores(8, 'con malloc pero devuelve la direccion de una local', CREAR('  int *p = malloc(sizeof(int));\n  int x = valor;\n\n  free(p);\n  return &x;\n'), ['VARIABLE_FUERA_DE_ALCANCE']),
+  errores(8, 'sin cargar el valor', CREAR('  int *p = malloc(sizeof(int));\n\n  return p;\n'), ['VARIABLE_SIN_VALOR']),
+  errores(8, 'libera dentro de la funcion', CREAR('  int *p = malloc(sizeof(int));\n\n  *p = valor;\n  free(p);\n  return p;\n'), ['USO_DE_MEMORIA_LIBERADA']),
 ];

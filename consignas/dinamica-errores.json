@@ -1,0 +1,248 @@
+{
+  "id": "dinamica-errores",
+  "titulo": "Errores típicos con memoria dinámica",
+  "continua": false,
+  "descripcion": "Los errores con memoria dinámica suelen no avisar: el programa sigue, a veces parece andar y falla más tarde o en otra computadora. Se aprende a reconocerlos y a corregirlos.",
+  "cabecera": "#include <stdio.h>\n#include <stdlib.h>",
+  "consignas": [
+    {
+      "id": "errores-q-fuga",
+      "titulo": "Una fuga de memoria",
+      "enunciado": "En este programa se reserva un bloque con `malloc` y se guarda un valor en él. Después, `p` recibe la dirección de otro bloque, también reservado con `malloc`. ¿Qué pasó con el primer bloque, el que guarda el `3`?",
+      "codigo": "int *p = malloc(sizeof(int));\n*p = 3;\n\np = malloc(sizeof(int));",
+      "dibujo": {
+        "titulo": "La memoria después de la última línea:",
+        "motor": {
+          "codigo": "#include <stdio.h>\n#include <stdlib.h>\n\nint main() {\n  int *p = malloc(sizeof(int));\n\n  *p = 3;\n  p = malloc(sizeof(int));\n  free(p);\n  return 0;\n}",
+          "linea": 9
+        }
+      },
+      "opciones": [
+        {
+          "texto": "Se liberó solo, porque `p` dejó de apuntar a él",
+          "codigo": "OPCION_SE_LIBERA_SOLO",
+          "explicacion": "Un bloque se libera únicamente con `free`. Cambiar la dirección que guarda `p` no libera nada: el bloque sigue reservado."
+        },
+        {
+          "texto": "Sigue reservado, pero ya nadie lo apunta",
+          "correcta": true,
+          "explicacion": "El primer bloque sigue reservado hasta que el programa termina, pero la única dirección que lo apuntaba era la que guardaba `p`, y se perdió al asignarle otra. Sin esa dirección ya no se puede usar ni liberar con `free`. Eso es una fuga de memoria: se pierde memoria que el programa no puede devolver. En la figura se ve como un bloque «sin puntero». Para evitarla hay que liberar un bloque, con `free(p);`, antes de perder su dirección."
+        },
+        {
+          "texto": "`p` apunta ahora a los dos bloques",
+          "codigo": "OPCION_APUNTA_A_LOS_DOS",
+          "explicacion": "Un puntero guarda una sola dirección. Al asignarle la del segundo bloque, `p` deja de guardar la del primero."
+        }
+      ]
+    },
+    {
+      "id": "errores-arreglar-fuga",
+      "titulo": "Arreglar una fuga",
+      "en": "archivo",
+      "comienza": "int main() {\n  int n;\n\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    int *p = malloc(sizeof(int));\n\n    scanf(\"%d\", p);\n    printf(\"%d \", *p * 2);\n  }\n  return 0;\n}",
+      "enunciado": "Este programa lee una cantidad `n` y, `n` veces, lee un número, lo guarda en un bloque reservado con `malloc` y muestra su doble. Pierde memoria: cada vuelta reserva un bloque nuevo y ninguno se libera. Corríjalo para que no quede ningún bloque sin liberar. Por ejemplo, si se ingresa `3` y después `4`, `7` y `1`, el programa muestra `8 14 2`.",
+      "requiere": [
+        {
+          "memoria": {
+            "casos": [
+              {
+                "entrada": "3\n4 7 1",
+                "salida": "8 14 2",
+                "contexto": ""
+              },
+              {
+                "entrada": "1\n5",
+                "salida": "10"
+              },
+              {
+                "entrada": "2\n6 9",
+                "salida": "12 18"
+              },
+              {
+                "entrada": "0",
+                "salida": ""
+              }
+            ],
+            "sinFugas": true,
+            "usa": [
+              "malloc"
+            ]
+          }
+        }
+      ],
+      "referencia": "int main() {\n  int n;\n\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    int *p = malloc(sizeof(int));\n\n    scanf(\"%d\", p);\n    printf(\"%d \", *p * 2);\n    free(p);\n  }\n  return 0;\n}"
+    },
+    {
+      "id": "errores-q-colgante",
+      "titulo": "Un puntero a un bloque liberado",
+      "enunciado": "Después de `free(p)`, el bloque ya no es del programa. ¿Qué guarda `p` en ese momento? La figura muestra la memoria justo después del `free`.",
+      "codigo": "int *p = malloc(sizeof(int));\n*p = 6;\n\nfree(p);",
+      "dibujo": {
+        "titulo": "La memoria justo después de `free(p)`:",
+        "motor": {
+          "codigo": "#include <stdio.h>\n#include <stdlib.h>\n\nint main() {\n  int *p = malloc(sizeof(int));\n\n  *p = 6;\n  free(p);\n  return 0;\n}",
+          "linea": 9
+        }
+      },
+      "opciones": [
+        {
+          "texto": "La misma dirección de antes, de un bloque que ya no es del programa",
+          "correcta": true,
+          "explicacion": "`free` libera el bloque, pero no cambia lo que guarda `p`: sigue guardando la dirección de antes. En la figura se ve como una flecha roja que apunta a un bloque «liberado». Usar `*p` ahora es un error, aunque a veces parezca andar: el bloque puede conservar el `6` un rato, o ya estar reutilizado para otra cosa, o el programa puede detenerse. Por eso, después de `free`, conviene escribir `p = NULL;`: así, un uso por error se descubre enseguida."
+        },
+        {
+          "texto": "`NULL`, porque `free` deja el puntero así",
+          "codigo": "OPCION_QUEDA_EN_NULL",
+          "explicacion": "`free` recibe una copia de la dirección y libera el bloque, pero no puede cambiar la variable `p` de quien la llama. `p` conserva la dirección vieja."
+        },
+        {
+          "texto": "La dirección de un bloque nuevo que `free` reserva",
+          "codigo": "OPCION_BLOQUE_NUEVO",
+          "explicacion": "`free` solo libera: nunca reserva memoria. `p` sigue guardando la dirección del bloque que se liberó."
+        }
+      ]
+    },
+    {
+      "id": "errores-q-doble",
+      "titulo": "Liberar dos veces",
+      "enunciado": "Un programa reserva un bloque, lo usa y llama dos veces a `free` con el mismo puntero. ¿Qué pasa con la segunda llamada?",
+      "codigo": "int *p = malloc(sizeof(int));\n*p = 9;\n\nfree(p);\nfree(p);",
+      "opciones": [
+        {
+          "texto": "No pasa nada: `free` ignora los bloques ya liberados",
+          "codigo": "OPCION_SE_IGNORA",
+          "explicacion": "`free` no lleva la cuenta de qué bloques ya liberó, así que no los ignora. Liberar dos veces el mismo bloque es un error."
+        },
+        {
+          "texto": "Libera el siguiente bloque del montículo",
+          "codigo": "OPCION_LIBERA_OTRO",
+          "explicacion": "`free` libera solo el bloque cuya dirección recibe, nunca otro. Con la misma dirección, intenta liberar un bloque que ya no existe."
+        },
+        {
+          "texto": "Es un error: libera memoria que ya no es del programa",
+          "correcta": true,
+          "explicacion": "Después del primer `free`, la memoria ya no es del programa, y liberarla otra vez es un error: puede detener el programa o dañar memoria que ahora usa otra cosa. Si después del primer `free` se escribe `p = NULL;`, el segundo `free(p)` no hace nada, porque liberar `NULL` está permitido: es otra razón para dejar el puntero en `NULL`."
+        }
+      ]
+    },
+    {
+      "id": "errores-q-fuera",
+      "titulo": "Escribir fuera del bloque",
+      "enunciado": "Se reservó un bloque con lugar para tres enteros, como muestra la figura. ¿Qué hace la instrucción `v[3] = 7;`?",
+      "codigo": "int *v = malloc(3 * sizeof(int));\n\nv[3] = 7;",
+      "dibujo": {
+        "titulo": "La memoria después de `malloc`:",
+        "motor": {
+          "codigo": "#include <stdio.h>\n#include <stdlib.h>\n\nint main() {\n  int *v = malloc(3 * sizeof(int));\n\n  free(v);\n  return 0;\n}",
+          "linea": 7
+        }
+      },
+      "opciones": [
+        {
+          "texto": "Agranda el bloque para que entre el cuarto entero",
+          "codigo": "OPCION_AGRANDA",
+          "explicacion": "Un bloque no cambia de tamaño solo. Para agrandarlo habría que pedir otro más grande; escribir en una posición no lo agranda."
+        },
+        {
+          "texto": "Guarda el `7` fuera del bloque, en memoria que no es del programa",
+          "correcta": true,
+          "explicacion": "El bloque tiene las posiciones `0`, `1` y `2`: la `3` ya está afuera. En C nadie avisa: el `7` se escribe igual, y puede pisar datos de otro bloque o del propio programa. A veces el programa falla más tarde y lejos de la causa, y a veces parece andar. Es el mismo error que salirse de un arreglo común, pero acá nada en el programa marca dónde termina el bloque."
+        },
+        {
+          "texto": "Guarda el `7` en el último entero del bloque",
+          "codigo": "OPCION_ES_EL_ULTIMO",
+          "explicacion": "El último entero del bloque es `v[2]`: las posiciones se cuentan desde `0`, así que `v[3]` es el cuarto."
+        }
+      ]
+    },
+    {
+      "id": "errores-corregir-posicion",
+      "titulo": "Corregir una posición de más",
+      "en": "archivo",
+      "comienza": "int main() {\n  int n;\n\n  scanf(\"%d\", &n);\n  int *v = malloc(n * sizeof(int));\n  int suma = 0;\n\n  for (int i = 0; i <= n; i++) {\n    scanf(\"%d\", &v[i]);\n    suma += v[i];\n  }\n  printf(\"Suma: %d\", suma);\n  free(v);\n  return 0;\n}",
+      "enunciado": "Este programa lee una cantidad `n`, reserva espacio para `n` enteros, lee los `n` números y muestra su suma, pero se pasa de la última posición del bloque. Corríjalo. Por ejemplo, si se ingresa `3` y después `5`, `2` y `8`, el programa muestra `Suma: 15`.",
+      "requiere": [
+        {
+          "memoria": {
+            "casos": [
+              {
+                "entrada": "3\n5 2 8",
+                "salida": "Suma: 15",
+                "contexto": ""
+              },
+              {
+                "entrada": "1\n9",
+                "salida": "Suma: 9"
+              },
+              {
+                "entrada": "2\n7 4",
+                "salida": "Suma: 11"
+              }
+            ],
+            "sinFugas": true,
+            "usa": [
+              "malloc",
+              "free"
+            ]
+          }
+        }
+      ],
+      "referencia": "int main() {\n  int n;\n\n  scanf(\"%d\", &n);\n  int *v = malloc(n * sizeof(int));\n  int suma = 0;\n\n  for (int i = 0; i < n; i++) {\n    scanf(\"%d\", &v[i]);\n    suma += v[i];\n  }\n  printf(\"Suma: %d\", suma);\n  free(v);\n  return 0;\n}"
+    },
+    {
+      "id": "errores-q-local",
+      "titulo": "Devolver la dirección de una variable local",
+      "enunciado": "La función `crear` declara una variable común, `x`, y devuelve su dirección. `main` guarda esa dirección en `p`. ¿Por qué el puntero que devuelve `crear` no sirve? La figura muestra la memoria justo después de la llamada.",
+      "programa": "#include <stdio.h>\n#include <stdlib.h>\n\nint *crear() {\n  int x = 5;\n\n  return &x;\n}\n\nint main() {\n  int *p = crear();\n\n  return 0;\n}",
+      "dibujo": {
+        "titulo": "La memoria después de llamar a `crear`:",
+        "motor": {
+          "codigo": "#include <stdio.h>\n#include <stdlib.h>\n\nint *crear() {\n  int x = 5;\n\n  return &x;\n}\n\nint main() {\n  int *p = crear();\n\n  return 0;\n}",
+          "linea": 13
+        }
+      },
+      "opciones": [
+        {
+          "texto": "Porque `return` no puede devolver direcciones",
+          "codigo": "OPCION_RETURN_NO_DEVUELVE_PUNTEROS",
+          "explicacion": "Una función sí puede devolver una dirección, como hace `malloc`. El problema no es devolverla, sino de qué es esa dirección."
+        },
+        {
+          "texto": "Porque un puntero no puede apuntar a un `int` común",
+          "codigo": "OPCION_NO_SE_APUNTA_A_UN_INT",
+          "explicacion": "Un puntero puede apuntar a cualquier variable común, como ya vio. Lo que falla acá es cuánto vive esa variable."
+        },
+        {
+          "texto": "Porque `x` desaparece cuando termina `crear`",
+          "correcta": true,
+          "explicacion": "Las variables comunes de una función viven en la pila y desaparecen cuando la función termina. `crear` devuelve la dirección de `x`, pero cuando `main` la recibe `x` ya no existe: en la figura, `p` apunta a algo que ya no está. Lo que tiene que sobrevivir a la función se reserva con `malloc`, que vive en el montículo hasta que se lo libera. La consigna que sigue lo practica."
+        }
+      ]
+    },
+    {
+      "id": "errores-corregir-local",
+      "titulo": "Corregir la función",
+      "en": "archivo",
+      "comienza": "int *crearNumero(int valor) {\n  int x = valor;\n\n  return &x;\n}",
+      "despues": "int main() {\n  int *p = crearNumero(8);\n\n  printf(\"%d\", *p);\n  free(p);\n  return 0;\n}",
+      "enunciado": "La función `crearNumero` recibe un entero y debería devolver la dirección de un lugar donde quede guardado, pero devuelve la de una variable local. Corríjala. El `main` ya está escrito: llama a `crearNumero(8)`, muestra el número al que apunta la dirección que recibe y la libera.",
+      "requiere": [
+        {
+          "memoria": {
+            "casos": [
+              {
+                "salida": "8",
+                "contexto": ""
+              }
+            ],
+            "sinFugas": true,
+            "usa": [
+              "malloc"
+            ]
+          }
+        }
+      ],
+      "referencia": "int *crearNumero(int valor) {\n  int *p = malloc(sizeof(int));\n\n  *p = valor;\n  return p;\n}"
+    }
+  ]
+}
