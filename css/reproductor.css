@@ -121,11 +121,15 @@
 }
 .rep-ahora .rep-numero::before,
 .rep-error .rep-numero::before {
-  content: '▶';
+  /* un triangulo dibujado con bordes (el glifo ▶ queda alto segun la fuente), centrado en la linea */
+  content: '';
   position: absolute;
   left: 0;
-  font-size: 0.65em;
-  line-height: inherit;
+  top: 50%;
+  transform: translateY(-50%);
+  border-style: solid;
+  border-width: 0.3em 0 0.3em 0.5em;
+  border-color: transparent transparent transparent currentColor;
 }
 .rep-lado {
   min-width: 0;
