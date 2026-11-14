@@ -170,9 +170,6 @@
       "series": [
         "dinamica-memoria.json",
         "dinamica-errores.json"
-      ],
-      "ocultas": [
-        "dinamica-errores.json"
       ]
     }
   ]
