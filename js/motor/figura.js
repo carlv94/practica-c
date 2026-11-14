@@ -435,6 +435,12 @@ export class Figura {
         seMueven = true;
       }
     }
+    // Si el paso nuevo es mas bajo (se fue una caja de la pila), lo que todavia esta donde estaba
+    // quedaria cortado: se conserva el alto del paso anterior y se ajusta mientras todo se reubica.
+    escena.altoFinal = escena.alto + 10;
+    escena.altoActual = escena.altoFinal;
+    escena.altoDesde = previa && previa.altoActual ? previa.altoActual : escena.altoFinal;
+    if (mueve && seMueven && escena.altoDesde > escena.altoFinal) this.ponerAlto(escena.altoDesde);
     if (seMueven) {
       for (const b of escena.bloques.values()) if (b.nuevo) b.g.style.opacity = '0';
       for (const m of escena.marcosG.values()) if (m.nuevo) m.g.style.opacity = '0';
@@ -547,7 +553,19 @@ export class Figura {
     }
   }
 
+  // Cambia el alto que se ve (sin tocar la escala): el area visible es mas alta que el paso nuevo mientras se anima.
+  ponerAlto(h) {
+    const escena = this.escena;
+    const svg = escena.svg;
+    const [, , nw] = svg.getAttribute('viewBox').split(' ').map(Number);
+    escena.altoActual = h;
+    svg.setAttribute('viewBox', `0 0 ${nw} ${h}`);
+    svg.setAttribute('height', h * this.escalaActual);
+  }
+
   fotograma(e) {
+    const { altoDesde, altoFinal } = this.escena;
+    if (altoDesde > altoFinal) this.ponerAlto(altoDesde + (altoFinal - altoDesde) * e);
     for (const b of this.escena.bloques.values()) {
       b.actual = { x: b.desde.x + (b.hasta.x - b.desde.x) * e, y: b.desde.y + (b.hasta.y - b.desde.y) * e };
       b.g.setAttribute('transform', `translate(${b.actual.x},${b.actual.y})`);
@@ -814,6 +832,15 @@ export class Figura {
       r.viejo = describirEn(r, bloquesViejos, ctViejo, marcosViejos);
       retiradas.push(r);
     }
+    // Una caja de la pila que se va (termino una funcion): sus flechas se contraen hacia la casilla en
+    // el mismo tiempo en que se dibujan las nuevas (la de main que recibe la direccion), y no desaparecen antes.
+    if (previa && anterior) {
+      for (const fp of previa.flechas) {
+        const m = fp.origen.marco;
+        if (m == null || marcosG.has(m) || !previa.marcosG.has(m) || !fp.final) continue;
+        retiradas.push({ ...fp, deId: null, nombre: null, cambio: true, tarde: false, previo: null, viejo: fp.final, escenaOrigen: previa });
+      }
+    }
 
     return {
       svg,
@@ -839,8 +866,9 @@ export class Figura {
   // ----------------------------------------------------------------- flechas
 
   // Los puntos de la ruta de una flecha, con los bloques donde estan ahora.
-  rutaPuntos(f, d, filas) {
-    const { bloques, marcosG, derechaPila } = this.escena;
+  // "escena" es la del paso anterior para la flecha de una caja que ya se fue.
+  rutaPuntos(f, d, filas, escena = this.escena) {
+    const { bloques, marcosG, derechaPila } = escena;
     const absoluto = (a) => {
       if (a.bloque != null) {
         const pos = bloques.get(a.bloque).actual;
@@ -964,7 +992,7 @@ export class Figura {
     if (this.animandoA) {
       for (const r of this.escena.retiradas) {
         if (!r.viejo) continue;
-        const completa = this.rutaPuntos(r, r.viejo, filas);
+        const completa = this.rutaPuntos(r, r.viejo, filas, r.escenaOrigen || this.escena);
         const puntos = recortar(completa, largoDe(completa) * (1 - this.kA));
         if (puntos) hijos.push(this.grupoDeFlecha(r, r.viejo, puntos, -1));
       }
