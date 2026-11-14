@@ -703,8 +703,17 @@ export class Figura {
       const clases = 'rep-bloque' + (b.vivo ? '' : ' rep-liberado') + (huerfano ? ' rep-huerfano' : '');
       g.append(el('rect', { x: 0, y: ENCABEZADO, width: lugar.w, height: lugar.h, rx: 5, class: clases }));
       g.append(texto(2, 8, String(b.dir), 'rep-direccion'));
-      if (!b.vivo) g.append(texto(lugar.w - 2, 8, 'liberado', 'rep-aviso', { 'text-anchor': 'end' }));
-      else if (huerfano) g.append(texto(lugar.w - 2, 8, 'sin puntero', 'rep-aviso', { 'text-anchor': 'end' }));
+      // El aviso va a la derecha de la direccion; si el bloque es tan chico que no entran los dos
+      // (6 px por cifra, 5,6 por letra), va debajo del bloque, centrado.
+      const aviso = !b.vivo ? 'liberado' : huerfano ? 'sin puntero' : '';
+      if (aviso) {
+        const entra = lugar.w >= String(b.dir).length * 6 + aviso.length * 5.6 + 10;
+        g.append(
+          entra
+            ? texto(lugar.w - 2, 8, aviso, 'rep-aviso', { 'text-anchor': 'end' })
+            : texto(lugar.w / 2, ENCABEZADO + lugar.h + 11, aviso, 'rep-aviso', { 'text-anchor': 'middle' })
+        );
+      }
       p.ancla(b.id, [], 0, ENCABEZADO, lugar.w, lugar.h);
       p.valor(v, PAD, ENCABEZADO + PAD, b.id, ruta);
       p.bloque = null;
