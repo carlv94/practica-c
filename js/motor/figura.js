@@ -443,7 +443,8 @@ export class Figura {
       b.desde = mueve && antes ? { x: escena.x0 + antes.rx, y: antes.y } : { ...b.hasta };
       b.actual = { ...b.desde };
       b.nuevo = mueve && !antes;
-      if (Math.abs(b.desde.x - b.hasta.x) > 0.5 || Math.abs(b.desde.y - b.hasta.y) > 0.5) seMueven = true;
+      // Un bloque nuevo aparece (fundido) aunque nada mas se mueva: asi se lo ve antes de que llegue la flecha que lo apunta.
+      if (Math.abs(b.desde.x - b.hasta.x) > 0.5 || Math.abs(b.desde.y - b.hasta.y) > 0.5 || b.nuevo) seMueven = true;
       b.g.setAttribute('transform', `translate(${b.actual.x},${b.actual.y})`);
     }
     // Las cajas de la pila: las que siguen suben o bajan, las nuevas se abren y las que ya no estan
@@ -519,6 +520,8 @@ export class Figura {
     const espera = duracionA + pausa;
     const duracionB = seMueven ? u : 0;
     const hayTarde = seMueven && escena.flechas.some((f) => f.tarde);
+    // Entre que aparece el bloque y se dibuja la flecha que lo apunta, una pausa corta.
+    const pausaNuevo = 0.2 * u;
     const inicio = performance.now() + retardo;
     const paso = (ahora) => {
       const t = ahora - inicio;
@@ -556,12 +559,12 @@ export class Figura {
       this.escena.salientes = [];
       this.pintarFlechas();
       // Las flechas hacia bloques que acaban de aparecer se dibujan al final.
-      this.dibujarNuevas('.rep-tarde', u);
-      this.parpadear(escena, objetivos, dParpadeo, hayTarde ? u : 0);
-      this.finAtenuado = setTimeout(quitarAtenuado, (hayTarde ? u : 0) + dParpadeo + 50);
+      this.dibujarNuevas('.rep-tarde', u, hayTarde ? pausaNuevo : 0);
+      this.parpadear(escena, objetivos, dParpadeo, hayTarde ? pausaNuevo + u : 0);
+      this.finAtenuado = setTimeout(quitarAtenuado, (hayTarde ? pausaNuevo + u : 0) + dParpadeo + 50);
     };
     this.raf = requestAnimationFrame(paso);
-    return retardo + espera + duracionB + (hayTarde ? u : 0) + dParpadeo;
+    return retardo + espera + duracionB + (hayTarde ? pausaNuevo + u : 0) + dParpadeo;
   }
 
   // La casilla o el bloque que se resalta cuando un puntero recibe su direccion: un bloque del montículo entero
@@ -812,11 +815,11 @@ export class Figura {
 
   // Las flechas (sus grupos) que cumplen el selector se van dibujando desde su origen hasta su destino. La punta
   // viaja con el extremo del trazo: un trazo punteado que avanza dejaria la punta ya puesta en el destino.
-  dibujarNuevas(selector, milisegundos) {
+  dibujarNuevas(selector, milisegundos, retraso = 0) {
     if (!this.escena || sinMovimiento()) return;
     const grupos = [...this.escena.capaFlechas.querySelectorAll(selector)].filter((g) => g.puntosCompletos);
     if (!grupos.length) return;
-    const inicio = performance.now();
+    const inicio = performance.now() + retraso;
     // Devuelve si todavia queda algo por dibujar.
     const dibujar = (k) => {
       const avance = 1 - (1 - k) * (1 - k);
@@ -835,7 +838,7 @@ export class Figura {
     // El primer estado (sin dibujar) se pone ya: si se esperara al proximo cuadro, se veria un instante la flecha completa.
     if (!dibujar(0)) return;
     const paso = (ahora) => {
-      if (dibujar(Math.min(1, (ahora - inicio) / milisegundos))) requestAnimationFrame(paso);
+      if (dibujar(Math.min(1, Math.max(0, (ahora - inicio) / milisegundos)))) requestAnimationFrame(paso);
     };
     requestAnimationFrame(paso);
   }
