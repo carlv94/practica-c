@@ -433,8 +433,11 @@ export class Figura {
       }
     }
     // Lo que acaba de recibir la direccion (un bloque que reservo malloc, una variable con &) parpadea cuando la flecha llego.
-    const objetivos = mueve ? this.objetivosDeParpadeo(escena) : [];
-    const dParpadeo = objetivos.length ? 0.9 * u : 0;
+    // Los que reciben una flecha que se anima en el tiempo A parpadean apenas ella termina de llegar (antes de que los
+    // bloques se reubiquen); los de una flecha hacia un bloque que acaba de aparecer, cuando se termina de dibujar.
+    const objetivos = mueve ? this.objetivosDeParpadeo(escena) : { alLlegar: [], alFinal: [] };
+    const dLlegar = objetivos.alLlegar.length ? 0.9 * u : 0;
+    const dFinal = objetivos.alFinal.length ? 0.9 * u : 0;
     this.dFundido = mueve ? u : 450;
     this.retardoFundido = retardo;
     let seMueven = false;
@@ -516,7 +519,8 @@ export class Figura {
     const hayVieja = retardo > 0 && (foto.accesos || []).some((h) => h.tipo === 'vieja');
     const retencion = animA && hayFlechaPrevia && !hayVieja ? u * 0.6 : 0;
     const duracionA = animA ? retencion + u : 0;
-    const pausa = conFlechaAntes ? u * 1.1 : 0;
+    // La pausa entre la flecha y la reubicacion es tambien el lugar del parpadeo de lo que la flecha acaba de alcanzar.
+    const pausa = conFlechaAntes ? Math.max(u * 1.1, dLlegar + u * 0.2) : 0;
     const espera = duracionA + pausa;
     const duracionB = seMueven ? u : 0;
     const hayTarde = seMueven && escena.flechas.some((f) => f.tarde);
@@ -535,11 +539,11 @@ export class Figura {
         this.animandoA = false;
         this.kA = 1;
         this.pintarFlechas();
+        this.parpadear(escena, objetivos.alLlegar, dLlegar, 0);
       }
       if (!seMueven) {
         this.raf = null;
-        this.parpadear(escena, objetivos, dParpadeo, 0);
-        this.finAtenuado = setTimeout(quitarAtenuado, dParpadeo + 50);
+        this.finAtenuado = setTimeout(quitarAtenuado, dLlegar + 50);
         return;
       }
       if (t < espera) {
@@ -560,11 +564,11 @@ export class Figura {
       this.pintarFlechas();
       // Las flechas hacia bloques que acaban de aparecer se dibujan al final.
       this.dibujarNuevas('.rep-tarde', u, hayTarde ? pausaNuevo : 0);
-      this.parpadear(escena, objetivos, dParpadeo, hayTarde ? pausaNuevo + u : 0);
-      this.finAtenuado = setTimeout(quitarAtenuado, (hayTarde ? pausaNuevo + u : 0) + dParpadeo + 50);
+      this.parpadear(escena, objetivos.alFinal, dFinal, hayTarde ? pausaNuevo + u : 0);
+      this.finAtenuado = setTimeout(quitarAtenuado, (hayTarde ? pausaNuevo + u : 0) + dFinal + 50);
     };
     this.raf = requestAnimationFrame(paso);
-    return retardo + espera + duracionB + (hayTarde ? pausaNuevo + u : 0) + dParpadeo;
+    return retardo + espera + duracionB + (hayTarde ? pausaNuevo + u : 0) + dFinal + (seMueven ? 0 : dLlegar);
   }
 
   // La casilla o el bloque que se resalta cuando un puntero recibe su direccion: un bloque del montículo entero
@@ -576,12 +580,15 @@ export class Figura {
 
   // Los destinos de las flechas que cambiaron en este paso: lo que acaba de recibir una direccion (tambien si la
   // direccion era la de otro puntero: antes parpadeo con la flecha copiada, y ahora, al llegar la flecha nueva).
+  // "alLlegar": la flecha se anima en el tiempo A; "alFinal": va hacia un bloque que recien aparece (se dibuja al final).
   objetivosDeParpadeo(escena) {
-    const salida = [];
+    const salida = { alLlegar: [], alFinal: [] };
     for (const f of escena.flechas) {
       if (!f.cambio || !f.final || f.muerto || f.fuera) continue;
       const k = this.claveDeResalte(escena, f.a, f.ruta);
-      if (escena.anclas.get(k) && !salida.includes(k)) salida.push(k);
+      if (!escena.anclas.get(k)) continue;
+      const lista = f.tarde ? salida.alFinal : salida.alLlegar;
+      if (!salida.alLlegar.includes(k) && !salida.alFinal.includes(k)) lista.push(k);
     }
     return salida;
   }
