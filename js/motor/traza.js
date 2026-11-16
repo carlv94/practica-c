@@ -9,7 +9,9 @@
 //   accesos:   (si los hubo) los accesos por puntero que hizo la sentencia anterior, para animarlos:
 //              [{ de: { a, ruta } | null, a: { a, ruta }, tipo? }], de la casilla del puntero a la casilla a la que llega;
 //              tipo 'copia': se copio ese puntero a otro (se resalta su flecha y lo que senala);
-//              tipo 'vieja': la flecha que tenia el puntero que se acaba de sobrescribir (destella antes del cambio)
+//              tipo 'vieja': la flecha que tenia el puntero que se acaba de sobrescribir (destella antes del cambio);
+//              tipo 'valor': se copio el valor de una casilla en otra (de: el origen); "para" (en 'copia' y 'valor') es la
+//              casilla que recibe el valor, y tambien se resalta
 //
 // Cada variable o bloque es { id, nombre, tipo, dir, tam, vivo, valor }. Un valor es:
 //   { k: 'num', v, t }                un numero (t: el tipo)

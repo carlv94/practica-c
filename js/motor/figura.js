@@ -660,7 +660,32 @@ export class Figura {
     // El ultimo resalte de un recorrido: si es el de la casilla donde se va a guardar una copia (despues de mostrar lo
     // que se guarda), queda encendido una pausa corta antes de que se dibuje la flecha nueva.
     let ultimoResalte = null;
-    const hayCopia = accesos.some((h) => h.tipo === 'copia');
+    const hayCopia = accesos.some((h) => h.tipo === 'copia' || h.tipo === 'valor');
+    // Una copia termina resaltando la casilla que recibe el valor (si no la resalto ya el recorrido hasta ella).
+    let pendientePara = null;
+    const resaltadas = new Set();
+    const pulso = (casilla) => {
+      const marco = el('rect', { x: casilla.x - 3, y: casilla.y - 3, width: casilla.w + 6, height: casilla.h + 6, rx: 4, class: 'rep-acceso' });
+      marco.style.opacity = '0';
+      capa.append(marco);
+      if (marco.animate) {
+        const animacion = marco.animate(
+          [{ opacity: 0 }, { opacity: 1, offset: 0.25 }, { opacity: 1, offset: 0.75 }, { opacity: 0 }],
+          { duration: dResalte, delay: t, fill: 'both' }
+        );
+        ultimoResalte = { marco, animacion, delay: t, duracion: dResalte };
+      }
+      t += dResalte;
+    };
+    const resaltarDestino = () => {
+      if (!pendientePara) return;
+      const k = clave(pendientePara.a, pendientePara.ruta);
+      pendientePara = null;
+      if (resaltadas.has(k)) return;
+      const ancla = previa.anclas && previa.anclas.get(k);
+      const casilla = ancla ? this.absolutoDe(previa, ancla) : null;
+      if (casilla) pulso(casilla);
+    };
     for (const h of accesos) {
       const copia = h.tipo === 'copia';
       const destino = previa.anclas && previa.anclas.get(copia ? this.claveDeResalte(previa, h.a.a, h.a.ruta) : clave(h.a.a, h.a.ruta));
@@ -671,6 +696,7 @@ export class Figura {
         // La flecha que tenia el puntero que se sobrescribe destella antes de que cambie; la casilla de destino
         // sigue encendida mientras tanto (no se resalta el bloque al que apuntaba: no interviene).
         if (!flecha) continue;
+        resaltarDestino();
         encender(h, t);
         const dDestello = 0.8 * u;
         const trazo = el('path', { d: camino(this.rutaPuntos(flecha, flecha.final, previa.filas, previa)), class: 'rep-flujo' });
@@ -687,7 +713,12 @@ export class Figura {
       if (copia) {
         // Un puntero que se copia: parpadean su flecha y lo que senala.
         ultimoResalte = null;
+        pendientePara = h.para;
         const dParpadeo = 0.9 * u;
+        // El origen de la copia (la casilla del puntero) parpadea junto con su flecha y el bloque.
+        const origen = h.de && previa.anclas && previa.anclas.get(clave(h.de.a, h.de.ruta));
+        const cajaOrigen = origen ? this.absolutoDe(previa, origen) : null;
+        if (cajaOrigen) this.parpadeo(capa, cajaOrigen, dParpadeo, t);
         if (flecha) {
           encender(h, t);
           const trazo = el('path', { d: camino(this.rutaPuntos(flecha, flecha.final, previa.filas, previa)), class: 'rep-flujo' });
@@ -719,18 +750,16 @@ export class Figura {
         }
         t += dFlecha;
       }
-      const marco = el('rect', { x: casilla.x - 3, y: casilla.y - 3, width: casilla.w + 6, height: casilla.h + 6, rx: 4, class: 'rep-acceso' });
-      marco.style.opacity = '0';
-      capa.append(marco);
-      if (marco.animate) {
-        const animacion = marco.animate(
-          [{ opacity: 0 }, { opacity: 1, offset: 0.25 }, { opacity: 1, offset: 0.75 }, { opacity: 0 }],
-          { duration: dResalte, delay: t, fill: 'both' }
-        );
-        ultimoResalte = { marco, animacion, delay: t, duracion: dResalte };
+      if (h.tipo === 'valor') {
+        // Se copia el valor de una casilla en otra: primero se resalta el origen.
+        pendientePara = h.para;
+        pulso(casilla);
+        continue;
       }
-      t += dResalte;
+      resaltadas.add(clave(h.a.a, h.a.ruta));
+      pulso(casilla);
     }
+    resaltarDestino();
     if (hayCopia && ultimoResalte) {
       extender(ultimoResalte, 0.3 * u);
       t += 0.3 * u;

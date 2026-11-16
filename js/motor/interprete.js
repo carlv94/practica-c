@@ -447,7 +447,7 @@ class Interprete {
         reserva = this.nuevaLocal(r.nombre, tipo);
         reserva.declId = d.startIndex;
       }
-      if (init) this.inicializar(reserva.raiz, init);
+      if (init) this.inicializar(reserva.raiz, init, reserva);
     }
   }
 
@@ -457,7 +457,7 @@ class Interprete {
     throw new ErrorDelMotor('SIN_VERIFICAR', 'un arreglo de letras que no se inicializa con un texto', n.startPosition.row + 1);
   }
 
-  inicializar(st, init) {
+  inicializar(st, init, reserva = null) {
     const tipo = st.t;
     if (init.type === 'initializer_list') {
       ceros(st);
@@ -478,10 +478,10 @@ class Interprete {
       st.elems.forEach((e, i) => (e.v = i < codigos.length ? codigos[i] : 0));
       return;
     }
-    if (tipo.k === 'ptr') {
-      const { rv, origen } = this.evaluarConOrigen(init);
+    if (tipo.k === 'ptr' || reserva) {
+      const { rv, origen, celda } = this.evaluarConOrigen(init);
       this.asignarAlmacen(st, rv);
-      if (origen) this.copia(origen, st.v);
+      this.registrarCopia(st, origen, celda, reserva ? this.ubicar(reserva, st) : null);
       return;
     }
     this.asignarAlmacen(st, this.evaluar(init));
@@ -580,11 +580,25 @@ class Interprete {
   }
 
   // Se copio un puntero a otro (q = p, q = p->sig): se anota de que casilla salia la flecha y a donde iba.
-  copia(origen, p) {
+  copia(origen, p, para) {
     if (!this.opciones.traza || !origen || !p || !p.reserva || this.accesos.length >= 8) return;
     const s = serializarPuntero(p);
     if (s.k !== 'ptr') return;
-    this.accesos.push({ de: origen, a: { a: s.a, ruta: s.ruta }, tipo: 'copia' });
+    this.accesos.push({ de: origen, a: { a: s.a, ruta: s.ruta }, tipo: 'copia', para: para || null });
+  }
+
+  // Se copio el valor de una casilla en otra (a = b, int c = a): se resalta el origen y despues el destino.
+  copiaValor(celda, para) {
+    if (!this.opciones.traza || !celda || this.accesos.length >= 8) return;
+    this.accesos.push({ de: celda, a: celda, tipo: 'valor', para: para || null });
+  }
+
+  // Despues de guardar el valor: si venia de otra casilla (una variable, un campo, un elemento, lo que apunta un puntero)
+  // se anota la copia: de un puntero a un bloque, con su flecha; de cualquier otra cosa, solo las dos casillas.
+  registrarCopia(st, origen, celda, para) {
+    if (!celda) return;
+    if (st.t.k === 'ptr' && origen && st.v) this.copia(origen, st.v, para);
+    else this.copiaValor(celda, para);
   }
 
   // La lectura de una variable puntero que no sigue ninguna flecha (en una condicion, o la que se libera):
@@ -643,9 +657,10 @@ class Interprete {
       default:
         break;
     }
-    if (!lv) return { rv: this.evaluar(n), origen: null };
-    const rv = n.type === 'identifier' ? this.valorDe(lv, n.text) : this.valorDe(lv, n.text);
-    return { rv, origen: lv.st.t && lv.st.t.k === 'ptr' ? this.ubicar(lv.reserva, lv.st) : null };
+    if (!lv) return { rv: this.evaluar(n), origen: null, celda: null };
+    const rv = this.valorDe(lv, n.text);
+    const celda = this.ubicar(lv.reserva, lv.st);
+    return { rv, origen: lv.st.t && lv.st.t.k === 'ptr' ? celda : null, celda };
   }
 
   mover(p, k) {
@@ -914,7 +929,8 @@ class Interprete {
     const finDestino = this.accesos.length;
     let rv;
     let origenCopiado = null;
-    if (op === '=' && lv.st.t.k === 'ptr') ({ rv, origen: origenCopiado } = this.evaluarConOrigen(n.childForFieldName('right')));
+    let celdaCopiada = null;
+    if (op === '=') ({ rv, origen: origenCopiado, celda: celdaCopiada } = this.evaluarConOrigen(n.childForFieldName('right')));
     else rv = this.evaluar(n.childForFieldName('right'));
     if (op !== '=') {
       const actual = this.valorDe(lv, n.childForFieldName('left').text);
@@ -923,7 +939,7 @@ class Interprete {
     if (lv.st.t.k !== 'struct') rv = this.convertir(rv, lv.st.t);
     const viejo = lv.st.t.k === 'ptr' ? lv.st.v : undefined;
     this.escribir(lv, rv);
-    if (origenCopiado) this.copia(origenCopiado, lv.st.v);
+    this.registrarCopia(lv.st, origenCopiado, celdaCopiada, this.ubicar(lv.reserva, lv.st));
     const sobrescrito = op === '=' && lv.st.t.k === 'ptr' ? viejo : undefined;
     // Para la traza: primero lo que se guarda (el recorrido que lleva al valor y su copia) y despues donde se guarda
     // (el recorrido hasta la casilla de destino), aunque C evalue primero el lado izquierdo.

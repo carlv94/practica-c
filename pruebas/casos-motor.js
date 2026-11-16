@@ -473,6 +473,48 @@ int main() {
       },
     },
   },
+  {
+    nombre: 'copiar el contenido de una variable en otra anota el origen y el destino',
+    codigo: String.raw`int main() {
+  int a = 3;
+  int b = 0;
+  int c = a;
+
+  b = a;
+  b = b + 1;
+  return 0;
+}`,
+    espera: {
+      traza: (traza) => {
+        const copias = traza.flatMap((x) => (x.accesos || []).filter((h) => h.tipo === 'valor'));
+        // int c = a (el destino todavia no existe en la figura anterior) y b = a; b = b + 1 no es una copia
+        if (copias.length !== 2) return 'tenia que haber dos copias (int c = a; b = a;) y hay ' + copias.length;
+        const [declaracion, asignacion] = copias;
+        if (!declaracion.para || !asignacion.para) return 'cada copia tenia que decir que casilla recibe el valor';
+        if (asignacion.de.a === asignacion.para.a) return 'el origen y el destino de b = a tienen que ser distintos';
+        return null;
+      },
+    },
+  },
+  {
+    nombre: 'copiar un puntero dice tambien que casilla recibe la direccion',
+    codigo: String.raw`int main() {
+  int n = 3;
+  int *p = &n;
+  int *q = NULL;
+
+  q = p;
+  return 0;
+}`,
+    espera: {
+      traza: (traza) => {
+        const copias = traza.flatMap((x) => (x.accesos || []).filter((h) => h.tipo === 'copia'));
+        if (copias.length !== 1) return 'tenia que haber una copia (q = p) y hay ' + copias.length;
+        if (!copias[0].para) return 'la copia tenia que decir que casilla recibe la direccion';
+        return null;
+      },
+    },
+  },
 ];
 
 export function resultadoDelMotor(analizador, ejecutar, caso) {
