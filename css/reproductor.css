@@ -597,6 +597,21 @@
   white-space: nowrap;
 }
 
+/* el flujo de un acceso por puntero: un destello que viaja por la flecha y la casilla que alcanza */
+.rep-flujo {
+  fill: none;
+  stroke: var(--texto);
+  stroke-width: 5;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 4px var(--acento));
+}
+.rep-acceso {
+  fill: none;
+  stroke: var(--texto);
+  stroke-width: 3;
+  filter: drop-shadow(0 0 4px var(--acento));
+}
+
 /* un puntero a un bloque liberado: sigue apuntando, en rojo y continua */
 .rep-flecha.rep-flecha-liberada {
   stroke: var(--error);

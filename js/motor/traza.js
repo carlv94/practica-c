@@ -6,6 +6,8 @@
 //   globales:  las variables globales
 //   marcos:    las funciones en curso, de la primera llamada a la ultima, con sus variables
 //   monticulo: los bloques reservados con malloc (los liberados siguen, marcados)
+//   accesos:   (si los hubo) los accesos por puntero que hizo la sentencia anterior, para animarlos:
+//              [{ de: { a, ruta } | null, a: { a, ruta } }], de la casilla del puntero a la casilla a la que llega
 //
 // Cada variable o bloque es { id, nombre, tipo, dir, tam, vivo, valor }. Un valor es:
 //   { k: 'num', v, t }                un numero (t: el tipo)
@@ -19,7 +21,7 @@
 import { textoDeTipo } from './tipos.js';
 import { almacen } from './memoria.js';
 
-function rutaDe(st, objetivo) {
+export function rutaDe(st, objetivo) {
   if (st === objetivo) return [];
   if (st.elems) {
     for (let i = 0; i < st.elems.length; i++) {

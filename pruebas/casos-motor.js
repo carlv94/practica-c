@@ -330,6 +330,71 @@ int main() {
 }`,
     espera: { resultado: (r) => (JSON.stringify(r.funciones) === JSON.stringify([{ nombre: 'doble', desde: 1, hasta: 3 }, { nombre: 'main', desde: 5, hasta: 7 }]) ? '' : 'funciones: ' + JSON.stringify(r.funciones)) },
   },
+
+  // ------------------------------------------------------------ los accesos por puntero (para animarlos)
+  {
+    nombre: 'un acceso con ** pasa por el puntero del medio',
+    codigo: String.raw`#include <stdio.h>
+int main() {
+  int n = 3;
+  int *p = &n;
+  int **pp = &p;
+
+  **pp = 8;
+  return 0;
+}`,
+    espera: {
+      salida: '',
+      traza: (traza) => {
+        const dobles = traza.filter((x) => x.accesos && x.accesos.length === 2);
+        if (dobles.length !== 1) return 'tenia que haber un paso con dos saltos y hay ' + dobles.length;
+        const [uno, dos] = dobles[0].accesos;
+        if (uno.a.a !== dos.de.a) return 'el segundo salto tiene que salir de donde llego el primero';
+        return null;
+      },
+    },
+  },
+  {
+    nombre: 'un acceso a un arreglo comun no se anota, el de un bloque con malloc si',
+    codigo: String.raw`#include <stdlib.h>
+int main() {
+  int a[2] = {1, 2};
+  int *v = malloc(2 * sizeof(int));
+
+  a[0] = 5;
+  v[1] = 7;
+  free(v);
+  return 0;
+}`,
+    espera: {
+      traza: (traza) => {
+        const con = traza.filter((x) => x.accesos);
+        if (con.length !== 1) return 'tenia que haber un paso con acceso y hay ' + con.length;
+        if (JSON.stringify(con[0].accesos[0].a.ruta) !== '[1]') return 'el acceso tenia que llegar a la posicion 1';
+        return null;
+      },
+    },
+  },
+  {
+    nombre: 'con la flecha el acceso llega hasta el campo',
+    codigo: String.raw`#include <stdlib.h>
+typedef struct nodo { int dato; struct nodo *sig; } TNodo;
+int main() {
+  TNodo *q = malloc(sizeof(TNodo));
+
+  q->dato = 5;
+  free(q);
+  return 0;
+}`,
+    espera: {
+      traza: (traza) => {
+        const con = traza.filter((x) => x.accesos);
+        if (con.length !== 1) return 'tenia que haber un paso con acceso y hay ' + con.length;
+        if (con[0].accesos[0].a.ruta.at(-1) !== 'dato') return 'el acceso tenia que llegar al campo dato';
+        return null;
+      },
+    },
+  },
 ];
 
 export function resultadoDelMotor(analizador, ejecutar, caso) {

@@ -20,7 +20,7 @@ import {
   Memoria, almacen, ceros, copiar, punteroA, punteroEnArreglo, mismoDestino, direccionDe,
 } from './memoria.js';
 import { formatear, Entrada, piezasDeScanf } from './biblioteca.js';
-import { fotografia } from './traza.js';
+import { fotografia, rutaDe } from './traza.js';
 
 const TAMANO_T = { k: 'int', nombre: 'unsigned long', bytes: 8, sinSigno: true };
 const MAX_PASOS = 200000;
@@ -99,6 +99,7 @@ class Interprete {
     this.fila = 1;
     this.enMacro = 0;
     this.traza = [];
+    this.accesos = []; // los accesos por puntero desde la ultima fotografia
     this.error = null;
     this.retorno = null;
   }
@@ -139,8 +140,13 @@ class Interprete {
   }
 
   instantanea(linea, error = null) {
-    if (this.traza.length >= MAX_TRAZA) return;
+    if (this.traza.length >= MAX_TRAZA) {
+      this.accesos = [];
+      return;
+    }
     const foto = fotografia(this, linea);
+    if (this.accesos.length) foto.accesos = this.accesos;
+    this.accesos = [];
     if (error) foto.error = error;
     this.traza.push(foto);
   }
@@ -546,6 +552,51 @@ class Interprete {
     return { st: p.st, reserva: r, arr: p.arr, i: p.i };
   }
 
+  // Donde esta una parte de un almacen: { a: id de la variable o del bloque, ruta } (ver traza.js).
+  ubicar(reserva, st) {
+    const ruta = reserva && reserva.raiz ? rutaDe(reserva.raiz, st) : null;
+    return ruta ? { a: reserva.id, ruta } : null;
+  }
+
+  // Un acceso por puntero: de la casilla donde esta el puntero ("origen") a lo que alcanza ("destino").
+  // Solo se anotan los que parten de un puntero (no los de un arreglo comun) y para la traza.
+  acceso(origen, destino) {
+    if (!this.opciones.traza || !origen || this.accesos.length >= 8) return;
+    const a = this.ubicar(destino.reserva, destino.st);
+    if (!a) return;
+    const ultimo = this.accesos[this.accesos.length - 1];
+    if (ultimo && ultimo.de.a === origen.a && ultimo.a.a === a.a && ultimo.de.ruta.join('/') === origen.ruta.join('/') && ultimo.a.ruta.join('/') === a.ruta.join('/')) return;
+    this.accesos.push({ de: origen, a });
+  }
+
+  // Evalua una expresion y, si es una casilla que guarda un puntero (una variable, un campo, un elemento,
+  // lo que apunta otro puntero), dice donde esta: es de donde sale el acceso que sigue.
+  evaluarConOrigen(n) {
+    if (!this.enMacro) this.fila = n.startPosition.row + 1;
+    let lv = null;
+    switch (n.type) {
+      case 'identifier': {
+        const v = this.buscar(n.text);
+        if (v) lv = { st: v.reserva.raiz, reserva: v.reserva };
+        break;
+      }
+      case 'parenthesized_expression':
+        return this.evaluarConOrigen(n.namedChildren[0]);
+      case 'pointer_expression':
+        if (n.children[0].text === '*') lv = this.lvalor(n);
+        break;
+      case 'subscript_expression':
+      case 'field_expression':
+        lv = this.lvalor(n);
+        break;
+      default:
+        break;
+    }
+    if (!lv) return { rv: this.evaluar(n), origen: null };
+    const rv = n.type === 'identifier' ? this.valorDe(lv, n.text) : this.valorDe(lv, n.text);
+    return { rv, origen: lv.st.t && lv.st.t.k === 'ptr' ? this.ubicar(lv.reserva, lv.st) : null };
+  }
+
   mover(p, k) {
     if (p === undefined) throw new ErrorDelMotor('PUNTERO_SIN_INICIALIZAR');
     if (p === null) {
@@ -612,24 +663,30 @@ class Interprete {
         return this.lvalor(n.namedChildren[0]);
       case 'pointer_expression': {
         if (n.children[0].text !== '*') break;
-        const p = this.evaluar(n.childForFieldName('argument'));
+        const { rv: p, origen } = this.evaluarConOrigen(n.childForFieldName('argument'));
         if (p.t.k !== 'ptr') throw new ErrorDelMotor('SIN_VERIFICAR', 'un * sobre algo que no es un puntero');
         if (p.t.a.k === 'void') throw new ErrorDelMotor('SIN_VERIFICAR', 'un * sobre un puntero void');
-        return this.deref(p.v);
+        const d = this.deref(p.v);
+        this.acceso(origen, d);
+        return d;
       }
       case 'subscript_expression': {
-        const base = this.evaluar(n.childForFieldName('argument'));
+        const { rv: base, origen } = this.evaluarConOrigen(n.childForFieldName('argument'));
         const indice = this.evaluar(n.childForFieldName('index') || n.childForFieldName('indices'));
         if (base.t.k !== 'ptr') throw new ErrorDelMotor('SIN_VERIFICAR', 'corchetes sobre algo que no es un arreglo ni un puntero');
         if (indice.t.k !== 'int') throw new ErrorDelMotor('SIN_VERIFICAR', 'un indice que no es entero');
-        return this.deref(this.mover(base.v, indice.v));
+        const d = this.deref(this.mover(base.v, indice.v));
+        this.acceso(origen, d);
+        return d;
       }
       case 'field_expression': {
         const flecha = n.children.some((h) => h.type === '->');
         const nombre = n.childForFieldName('field').text;
         let sobre;
+        let origen = null;
         if (flecha) {
-          const p = this.evaluar(n.childForFieldName('argument'));
+          const { rv: p, origen: o } = this.evaluarConOrigen(n.childForFieldName('argument'));
+          origen = o;
           if (p.t.k !== 'ptr' || p.t.a.k !== 'struct') throw new ErrorDelMotor('SIN_VERIFICAR', 'una flecha sobre algo que no apunta a una estructura');
           sobre = this.deref(p.v);
         } else {
@@ -638,6 +695,8 @@ class Interprete {
         }
         const campo = sobre.st.campos.get(nombre);
         if (!campo) throw new ErrorDelMotor('CAMPO_DESCONOCIDO', `la estructura no tiene un campo ${nombre}`, n.startPosition.row + 1, { campo: nombre });
+        // Con la flecha el acceso llega hasta el campo, no a toda la estructura.
+        if (flecha) this.acceso(origen, { st: campo, reserva: sobre.reserva });
         return { st: campo, reserva: sobre.reserva };
       }
       default:

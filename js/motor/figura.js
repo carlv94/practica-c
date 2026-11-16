@@ -24,7 +24,7 @@
 // resalta, tambien la flecha que salio de una casilla que cambio (en ambar y mas gruesa).
 // Un paso con movimiento tiene tres tiempos: se anima la flecha (se dibuja hacia el bloque, que
 // todavia esta donde estaba, o se redirige: la punta se desliza del destino viejo al nuevo; si el
-// puntero pasa a NULL, se retrae), una pausa con todo quieto, y los bloques se reubican; tambien las
+// puntero pasa a NULL, se desvanece), una pausa con todo quieto, y los bloques se reubican; tambien las
 // cajas de la pila: la de una funcion que termina se desvanece y las de abajo suben, y la de una
 // llamada aparece y las de abajo bajan. mostrar() devuelve
 // cuanto dura todo, para que quien reproduce espere. Los nombres de las flechas se ven si se
@@ -161,14 +161,17 @@ function punterosDe(v, salida = []) {
   return salida;
 }
 
-// Los bloques que se ven: los reservados, el que se libera en este paso y los
-// liberados que algun puntero (de una variable o de un bloque en uso) todavia senala.
+// Los bloques que se ven: los reservados, el que se libera en este paso, los liberados que algun
+// puntero (de una variable o de un bloque en uso) todavia senala y los ultimos liberados, que quedan
+// a la vista (con su aviso) aunque el puntero ya sea NULL: la memoria liberada no desaparece.
+const MAX_LIBERADOS = 4;
 function bloquesVisibles(foto, anterior) {
   const apuntados = new Set();
   const fuentes = [...foto.globales, ...foto.marcos.flatMap((m) => m.variables), ...foto.monticulo.filter((b) => b.vivo)];
   for (const r of fuentes) for (const p of punterosDe(r.valor)) apuntados.add(p.a);
   const vivosAntes = new Set(anterior ? anterior.monticulo.filter((b) => b.vivo).map((b) => b.id) : []);
-  return foto.monticulo.filter((b) => b.vivo || apuntados.has(b.id) || vivosAntes.has(b.id));
+  const recientes = new Set(foto.monticulo.filter((b) => !b.vivo).slice(-MAX_LIBERADOS).map((b) => b.id));
+  return foto.monticulo.filter((b) => b.vivo || apuntados.has(b.id) || vivosAntes.has(b.id) || recientes.has(b.id));
 }
 
 // Reparte los bloques visibles en la lista, los sin enlazar y los sin puntero.
@@ -383,7 +386,10 @@ export class Figura {
   }
 
   // "duracion" es la unidad de movimiento. Devuelve cuanto dura la animacion de este paso (0 si no hay).
-  mostrar(foto, anterior = null, { animar = false, duracion = 450 } = {}) {
+  // "flujo": el paso viene de avanzar uno (se animan los accesos por puntero que hizo la sentencia, si los hubo);
+  // "repeticion": cuantas veces ya se animo un acceso de esa sentencia (en un bucle se acelera).
+  mostrar(foto, anterior = null, { animar = false, duracion = 450, flujo = false, repeticion = 0 } = {}) {
+    this.terminarFlujo();
     if (this.raf) cancelAnimationFrame(this.raf);
     this.raf = null;
     const previa = this.escena;
@@ -402,6 +408,9 @@ export class Figura {
     this.fijada = null;
 
     const u = duracion;
+    // Antes de que cambie nada, se ve por donde se llega a lo que la sentencia toca.
+    const retardo =
+      flujo && animar && !sinMovimiento() && u > 0 && previa && foto.accesos && foto.accesos.length ? this.iniciarFlujo(previa, foto.accesos, u, repeticion, escena) : 0;
     const mueve = animar && !sinMovimiento() && u > 0 && Boolean(previa);
     this.fundir = mueve;
     let seMueven = false;
@@ -445,7 +454,7 @@ export class Figura {
       for (const b of escena.bloques.values()) if (b.nuevo) b.g.style.opacity = '0';
       for (const m of escena.marcosG.values()) if (m.nuevo) m.g.style.opacity = '0';
     }
-    // Tiempo A: las flechas que cambiaron se animan (se dibujan, se redirigen o se retraen) con los
+    // Tiempo A: las flechas que cambiaron se animan (se dibujan, se redirigen o se retraen o se desvanecen) con los
     // bloques todavia donde estaban; despues, una pausa. Tiempo B: los bloques se reubican. FIN: todo
     // en su lugar. Si nada se mueve, solo hay tiempo A.
     const hayRetiradas = escena.retiradas.some((r) => r.viejo);
@@ -456,9 +465,20 @@ export class Figura {
     const animA = mueve && (seMueven ? hayA : escena.flechas.some((f) => f.cambio) || hayRetiradas);
     this.animandoA = animA;
     this.kA = animA ? 0 : 1;
+    if (animA && previa) {
+      for (const [id, b] of previa.bloques) {
+        if (escena.bloques.has(id) || !escena.retiradas.some((r) => r.desvanece && r.a === id)) continue;
+        const clon = b.g.cloneNode(true);
+        clon.style.pointerEvents = 'none';
+        for (const e of clon.querySelectorAll('[data-id]')) e.removeAttribute('data-id');
+        clon.setAttribute('transform', `translate(${b.actual.x},${b.actual.y})`);
+        escena.raiz.append(clon);
+        escena.desvanecen.push({ g: clon });
+      }
+    }
     this.pintarFlechas();
-    if (!mueve || (!animA && !seMueven)) return 0;
-    // Si habia una flecha antes (se va a redirigir o a retraer), primero se la ve resaltada y quieta.
+    if (!mueve || (!animA && !seMueven)) return retardo;
+    // Si habia una flecha antes (se va a redirigir o a desvanecer), primero se la ve resaltada y quieta.
     const hayFlechaPrevia = escena.flechas.some((f) => f.cambio && f.viejo) || hayRetiradas;
     const retencion = animA && hayFlechaPrevia ? u * 0.6 : 0;
     const duracionA = animA ? retencion + u : 0;
@@ -466,7 +486,7 @@ export class Figura {
     const espera = duracionA + pausa;
     const duracionB = seMueven ? u : 0;
     const hayTarde = seMueven && escena.flechas.some((f) => f.tarde);
-    const inicio = performance.now();
+    const inicio = performance.now() + retardo;
     const paso = (ahora) => {
       const t = ahora - inicio;
       if (this.animandoA && t < duracionA) {
@@ -504,7 +524,85 @@ export class Figura {
       this.dibujarNuevas('.rep-tarde .rep-flecha', u);
     };
     this.raf = requestAnimationFrame(paso);
-    return espera + duracionB + (hayTarde ? u : 0);
+    return retardo + espera + duracionB + (hayTarde ? u : 0);
+  }
+
+  // ------------------------------------------------------------------ flujo de un acceso
+
+  // Donde esta ahora una casilla de una escena (ver rutaPuntos).
+  absolutoDe(escena, a) {
+    if (a.bloque != null) {
+      const b = escena.bloques.get(a.bloque);
+      return b ? { x: b.actual.x + a.x, y: b.actual.y + a.y, w: a.w, h: a.h } : null;
+    }
+    if (a.marco != null) {
+      const m = escena.marcosG.get(a.marco);
+      return m ? { x: a.x, y: a.y + m.actual.y, w: a.w, h: a.h } : null;
+    }
+    return a;
+  }
+
+  // Sobre la figura del paso anterior (todavia como estaba), por cada acceso: un destello que viaja por la
+  // flecha del puntero hasta lo que alcanza, y esa casilla se resalta un instante. En un acceso de dos
+  // saltos (**pp) el destello pasa por el puntero del medio. Devuelve lo que dura (0 si no hay nada que ver).
+  // Mientras tanto la figura nueva queda esperando: se la pone cuando termina.
+  iniciarFlujo(previa, accesos, u, repeticion, escena) {
+    const factor = Math.max(0.25, 1 / (1 + 0.7 * repeticion));
+    const dFlecha = 0.8 * u * factor;
+    const dResalte = 0.5 * u * factor;
+    const clon = previa.svg.cloneNode(true);
+    const capa = el('g');
+    clon.append(capa);
+    let t = 0;
+    for (const h of accesos) {
+      const destino = previa.anclas && previa.anclas.get(clave(h.a.a, h.a.ruta));
+      const casilla = destino ? this.absolutoDe(previa, destino) : null;
+      if (!casilla) continue;
+      const flecha = h.de ? previa.flechas.find((f) => f.claveOrigen === clave(h.de.a, h.de.ruta) && f.final) : null;
+      if (flecha) {
+        const puntos = this.rutaPuntos(flecha, flecha.final, previa.filas, previa);
+        const largo = largoDe(puntos);
+        const trozo = Math.min(28, largo * 0.4);
+        const destello = el('path', { d: camino(puntos), class: 'rep-flujo' });
+        destello.setAttribute('stroke-dasharray', `${trozo} ${largo + trozo}`);
+        destello.style.opacity = '0';
+        capa.append(destello);
+        if (destello.animate) {
+          destello.animate(
+            [
+              { strokeDashoffset: trozo, opacity: 1 },
+              { strokeDashoffset: -largo, opacity: 1 },
+            ],
+            { duration: dFlecha, delay: t, easing: 'ease-in-out', fill: 'both' }
+          );
+        }
+        t += dFlecha;
+      }
+      const marco = el('rect', { x: casilla.x - 3, y: casilla.y - 3, width: casilla.w + 6, height: casilla.h + 6, rx: 4, class: 'rep-acceso' });
+      marco.style.opacity = '0';
+      capa.append(marco);
+      if (marco.animate) {
+        marco.animate(
+          [{ opacity: 0 }, { opacity: 1, offset: 0.25 }, { opacity: 1, offset: 0.75 }, { opacity: 0 }],
+          { duration: dResalte, delay: t, fill: 'both' }
+        );
+      }
+      t += dResalte;
+    }
+    if (!t) return 0;
+    const total = t + 0.1 * u * factor;
+    this.contenedor.replaceChildren(clon);
+    this.flujoActivo = { svg: escena.svg, temporizador: setTimeout(() => this.terminarFlujo(), total) };
+    return total;
+  }
+
+  // La figura nueva reemplaza a la del paso anterior, que se mostraba mientras corria el flujo.
+  terminarFlujo() {
+    const f = this.flujoActivo;
+    if (!f) return;
+    this.flujoActivo = null;
+    clearTimeout(f.temporizador);
+    this.contenedor.replaceChildren(f.svg);
   }
 
   // Los nombres de las flechas (de las que salen de una variable) se ven siempre, o solo al senalarlas.
@@ -827,8 +925,11 @@ export class Figura {
     for (const [llave, prev] of p.previos) {
       if (!p.cambios.has(llave) || conFlecha.has(llave)) continue;
       const origen = p.anclas.get(llave);
-      if (!origen || !p.anclas.get(clave(prev.a, prev.ruta))) continue;
+      // Un bloque liberado que ya nadie senala deja de dibujarse: se lo ve desvanecerse junto con la flecha.
+      const seVaDeLaVista = Boolean(previa && previa.bloques.has(prev.a) && !bloques.has(prev.a));
+      if (!origen || !(p.anclas.get(clave(prev.a, prev.ruta)) || seVaDeLaVista)) continue;
       const r = { origen, deId: null, nombre: null, a: prev.a, ruta: prev.ruta, muerto: false, fuera: false, cambio: true, tarde: false };
+      if (seVaDeLaVista) Object.assign(r, { escenaOrigen: previa, desvanece: true });
       r.viejo = describirEn(r, bloquesViejos, ctViejo, marcosViejos);
       retiradas.push(r);
     }
@@ -847,6 +948,8 @@ export class Figura {
       bloques,
       filas,
       retiradas,
+      desvanecen: [],
+      anclas: p.anclas,
       alto,
       marcosG,
       raiz,
@@ -972,6 +1075,12 @@ export class Figura {
 
   pintarFlechas() {
     const { flechas, capaFlechas } = this.escena;
+    // Los bloques que se van de la vista se desvanecen en el tiempo A, a la vez que la flecha que los senalaba.
+    for (const d of this.escena.desvanecen) {
+      if (this.animandoA) d.g.style.opacity = String(Math.max(0, 1 - this.kA));
+      else d.g.remove();
+    }
+    if (!this.animandoA) this.escena.desvanecen = [];
     const antes = this.fase === 'A';
     const filas = antes ? this.escena.filasPrevias : this.escena.filas;
     const hijos = [];
@@ -988,13 +1097,20 @@ export class Figura {
       }
       hijos.push(this.grupoDeFlecha(f, d, puntos, indice));
     });
-    // Un puntero que paso a NULL: su flecha se retrae hacia la casilla.
+    // Un puntero que paso a NULL: su flecha, resaltada (ver "retencion" en mostrar), se desvanece de a poco
+    // y el bloque queda donde estaba. La flecha de una caja que se fue (termino una funcion) se contrae.
     if (this.animandoA) {
       for (const r of this.escena.retiradas) {
         if (!r.viejo) continue;
         const completa = this.rutaPuntos(r, r.viejo, filas, r.escenaOrigen || this.escena);
-        const puntos = recortar(completa, largoDe(completa) * (1 - this.kA));
-        if (puntos) hijos.push(this.grupoDeFlecha(r, r.viejo, puntos, -1));
+        if (r.escenaOrigen && !r.desvanece) {
+          const puntos = recortar(completa, largoDe(completa) * (1 - this.kA));
+          if (puntos) hijos.push(this.grupoDeFlecha(r, r.viejo, puntos, -1));
+        } else {
+          const g = this.grupoDeFlecha(r, r.viejo, completa, -1);
+          g.style.opacity = String(Math.max(0, 1 - this.kA));
+          hijos.push(g);
+        }
       }
     }
     capaFlechas.replaceChildren(...hijos);

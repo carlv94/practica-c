@@ -270,7 +270,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   }
 
   // "animar": se mueven los bloques del paso anterior al de ahora (si no, aparecen en su lugar).
-  function pintarPaso(animar = false) {
+  function pintarPaso(animar = false, adelante = false) {
     const foto = traza[paso];
     const antes = paso > 0 ? traza[paso - 1] : null;
     cuenta.textContent = `Paso ${paso + 1} de ${traza.length}`;
@@ -293,7 +293,12 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
 
     mostrarEstado(foto);
     // La unidad de movimiento sale de la velocidad: lo que dura dibujar una flecha o mover los nodos.
-    ultimaAnimacion = dibujo.mostrar(foto, antes, { animar, duracion: VELOCIDADES[Number(velocidad.value)].ms * 0.5 });
+    // Un acceso que se repite en un bucle (la misma sentencia, ya animada antes) se anima mas rapido.
+    let repeticion = 0;
+    if (adelante && antes && foto.accesos) {
+      for (let j = 1; j < paso; j++) if (traza[j - 1].linea === antes.linea && traza[j].accesos) repeticion++;
+    }
+    ultimaAnimacion = dibujo.mostrar(foto, antes, { animar, duracion: VELOCIDADES[Number(velocidad.value)].ms * 0.5, flujo: adelante, repeticion });
     consola.textContent = foto.salida || ' ';
     etiquetaZoom.textContent = `${Math.round(dibujo.escalaActual * 100)} %`;
   }
@@ -301,8 +306,9 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   function ir(n) {
     const nuevo = Math.max(0, Math.min(traza.length - 1, n));
     const animar = Math.abs(nuevo - paso) === 1;
+    const adelante = nuevo === paso + 1;
     paso = nuevo;
-    pintarPaso(animar);
+    pintarPaso(animar, adelante);
   }
 
   function parar() {
