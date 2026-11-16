@@ -20,7 +20,7 @@ import {
   Memoria, almacen, ceros, copiar, punteroA, punteroEnArreglo, mismoDestino, direccionDe,
 } from './memoria.js';
 import { formatear, Entrada, piezasDeScanf } from './biblioteca.js';
-import { fotografia, rutaDe } from './traza.js';
+import { fotografia, rutaDe, serializarPuntero } from './traza.js';
 
 const TAMANO_T = { k: 'int', nombre: 'unsigned long', bytes: 8, sinSigno: true };
 const MAX_PASOS = 200000;
@@ -478,6 +478,12 @@ class Interprete {
       st.elems.forEach((e, i) => (e.v = i < codigos.length ? codigos[i] : 0));
       return;
     }
+    if (tipo.k === 'ptr') {
+      const { rv, origen } = this.evaluarConOrigen(init);
+      this.asignarAlmacen(st, rv);
+      if (origen) this.copia(origen, st.v);
+      return;
+    }
     this.asignarAlmacen(st, this.evaluar(init));
   }
 
@@ -569,8 +575,16 @@ class Interprete {
     const lectura = this.accesos.findIndex((x) => !x.de && mismo(x.a, origen));
     if (lectura >= 0) this.accesos.splice(lectura, 1);
     const ultimo = this.accesos[this.accesos.length - 1];
-    if (ultimo && ultimo.de.a === origen.a && ultimo.a.a === a.a && ultimo.de.ruta.join('/') === origen.ruta.join('/') && ultimo.a.ruta.join('/') === a.ruta.join('/')) return;
+    if (ultimo && ultimo.de && ultimo.de.a === origen.a && ultimo.a.a === a.a && ultimo.de.ruta.join('/') === origen.ruta.join('/') && ultimo.a.ruta.join('/') === a.ruta.join('/')) return;
     this.accesos.push({ de: origen, a });
+  }
+
+  // Se copio un puntero a otro (q = p, q = p->sig): se anota de que casilla salia la flecha y a donde iba.
+  copia(origen, p) {
+    if (!this.opciones.traza || !origen || !p || !p.reserva || this.accesos.length >= 8) return;
+    const s = serializarPuntero(p);
+    if (s.k !== 'ptr') return;
+    this.accesos.push({ de: origen, a: { a: s.a, ruta: s.ruta }, tipo: 'copia' });
   }
 
   // La lectura de una variable puntero que no sigue ninguna flecha (en una condicion, o la que se libera):
@@ -896,13 +910,17 @@ class Interprete {
   asignacion(n) {
     const op = n.childForFieldName('operator').text;
     const lv = this.lvalor(n.childForFieldName('left'));
-    let rv = this.evaluar(n.childForFieldName('right'));
+    let rv;
+    let origenCopiado = null;
+    if (op === '=' && lv.st.t.k === 'ptr') ({ rv, origen: origenCopiado } = this.evaluarConOrigen(n.childForFieldName('right')));
+    else rv = this.evaluar(n.childForFieldName('right'));
     if (op !== '=') {
       const actual = this.valorDe(lv, n.childForFieldName('left').text);
       rv = this.operar(op.slice(0, -1), actual, rv);
     }
     if (lv.st.t.k !== 'struct') rv = this.convertir(rv, lv.st.t);
     this.escribir(lv, rv);
+    if (origenCopiado) this.copia(origenCopiado, lv.st.v);
     return lv.st.t.k === 'struct' ? { t: lv.st.t, v: lv.st } : { t: lv.st.t, v: lv.st.v };
   }
 

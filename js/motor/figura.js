@@ -34,6 +34,9 @@
 
 const NS = 'http://www.w3.org/2000/svg';
 let contadorDeCortes = 0; // para dar un id distinto a cada recorte de una caja que se abre o se cierra
+// Un parpadeo: aparece, casi se apaga y vuelve a aparecer.
+const PARPADEO = [{ opacity: 0 }, { opacity: 1, offset: 0.2 }, { opacity: 0.1, offset: 0.45 }, { opacity: 1, offset: 0.7 }, { opacity: 0 }];
+const factorDeRepeticion = (repeticion) => Math.max(0.25, 1 / (1 + 0.7 * repeticion));
 const CW = 52; // ancho de una casilla
 const CH = 26; // alto de una casilla
 const PAD = 6;
@@ -426,6 +429,10 @@ export class Figura {
         e.animate(sale ? [{ opacity: 1 }, { opacity: 0 }] : [{ opacity: 0 }, { opacity: 1 }], { duration: u, delay: retardo, easing: 'ease-in-out', fill: 'both' });
       }
     }
+    // Lo que acaba de recibir la direccion (un bloque que reservo malloc, una variable con &) parpadea cuando la flecha llego.
+    const factor = factorDeRepeticion(repeticion);
+    const objetivos = mueve ? this.objetivosDeParpadeo(escena, foto) : [];
+    const dParpadeo = objetivos.length ? 0.9 * u * factor : 0;
     this.dFundido = mueve ? u : 450;
     this.retardoFundido = retardo;
     let seMueven = false;
@@ -521,6 +528,7 @@ export class Figura {
       }
       if (!seMueven) {
         this.raf = null;
+        this.parpadear(escena, objetivos, dParpadeo, 0);
         return;
       }
       if (t < espera) {
@@ -541,9 +549,52 @@ export class Figura {
       this.pintarFlechas();
       // Las flechas hacia bloques que acaban de aparecer se dibujan al final.
       this.dibujarNuevas('.rep-tarde', u);
+      this.parpadear(escena, objetivos, dParpadeo, hayTarde ? u : 0);
     };
     this.raf = requestAnimationFrame(paso);
-    return retardo + espera + duracionB + (hayTarde ? u : 0);
+    return retardo + espera + duracionB + (hayTarde ? u : 0) + dParpadeo;
+  }
+
+  // La casilla o el bloque que se resalta cuando un puntero recibe su direccion: un bloque del montículo entero
+  // (el puntero a su comienzo), si no la casilla a la que apunta.
+  claveDeResalte(escena, id, ruta) {
+    const entero = escena.bloques.has(id) && (ruta.length === 0 || (ruta.length === 1 && ruta[0] === 0));
+    return clave(id, entero ? [] : ruta);
+  }
+
+  // Los destinos de las flechas que cambiaron en este paso, menos los de un puntero que se copio (esos ya se resaltaron
+  // antes, con la flecha del puntero copiado).
+  objetivosDeParpadeo(escena, foto) {
+    const copiados = new Set((foto.accesos || []).filter((h) => h.tipo === 'copia').map((h) => clave(h.a.a, h.a.ruta)));
+    const salida = [];
+    for (const f of escena.flechas) {
+      if (!f.cambio || !f.final || f.muerto || f.fuera) continue;
+      if (copiados.has(clave(f.a, f.ruta))) continue;
+      const k = this.claveDeResalte(escena, f.a, f.ruta);
+      if (escena.anclas.get(k) && !salida.includes(k)) salida.push(k);
+    }
+    return salida;
+  }
+
+  parpadear(escena, objetivos, duracion, retraso) {
+    if (!escena.capaResalte || !duracion || sinMovimiento()) return;
+    for (const k of objetivos) {
+      const ancla = escena.anclas.get(k);
+      const caja = ancla ? this.absolutoDe(escena, ancla) : null;
+      if (caja) this.parpadeo(escena.capaResalte, caja, duracion, retraso);
+    }
+  }
+
+  // Un marco que parpadea alrededor de una casilla o de un bloque (y se quita al terminar).
+  parpadeo(capa, caja, duracion, retraso) {
+    const marco = el('rect', { x: caja.x - 3, y: caja.y - 3, width: caja.w + 6, height: caja.h + 6, rx: 4, class: 'rep-acceso' });
+    marco.style.opacity = '0';
+    capa.append(marco);
+    if (marco.animate) {
+      const a = marco.animate(PARPADEO, { duration: duracion, delay: retraso, fill: 'both' });
+      a.onfinish = () => marco.remove();
+    }
+    return marco;
   }
 
   // ------------------------------------------------------------------ flujo de un acceso
@@ -566,20 +617,34 @@ export class Figura {
   // saltos (**pp) el destello pasa por el puntero del medio. Devuelve lo que dura (0 si no hay nada que ver).
   // Mientras tanto la figura nueva queda esperando: se la pone cuando termina.
   iniciarFlujo(previa, accesos, u, repeticion, escena) {
-    const factor = Math.max(0.25, 1 / (1 + 0.7 * repeticion));
+    const factor = factorDeRepeticion(repeticion);
     const dFlecha = 0.8 * u * factor;
     const dResalte = 0.5 * u * factor;
     const clon = previa.svg.cloneNode(true);
     // Los velos de un fundido que ya termino no se copian: la figura anterior se ve como quedo.
-    for (const e of clon.querySelectorAll('.rep-fundido, .rep-fundido-bloque')) e.remove();
+    for (const e of clon.querySelectorAll('.rep-fundido, .rep-fundido-bloque, .rep-acceso')) e.remove();
     const capa = el('g');
     clon.append(capa);
     let t = 0;
     for (const h of accesos) {
-      const destino = previa.anclas && previa.anclas.get(clave(h.a.a, h.a.ruta));
+      const copia = h.tipo === 'copia';
+      const destino = previa.anclas && previa.anclas.get(copia ? this.claveDeResalte(previa, h.a.a, h.a.ruta) : clave(h.a.a, h.a.ruta));
       const casilla = destino ? this.absolutoDe(previa, destino) : null;
       if (!casilla) continue;
       const flecha = h.de ? previa.flechas.find((f) => f.claveOrigen === clave(h.de.a, h.de.ruta) && f.final) : null;
+      if (copia) {
+        // Un puntero que se copia: parpadean su flecha y lo que senala.
+        const dParpadeo = 0.9 * u * factor;
+        if (flecha) {
+          const trazo = el('path', { d: camino(this.rutaPuntos(flecha, flecha.final, previa.filas, previa)), class: 'rep-flujo' });
+          trazo.style.opacity = '0';
+          capa.append(trazo);
+          if (trazo.animate) trazo.animate(PARPADEO, { duration: dParpadeo, delay: t, fill: 'both' });
+        }
+        this.parpadeo(capa, casilla, dParpadeo, t);
+        t += dParpadeo;
+        continue;
+      }
       if (flecha) {
         const puntos = this.rutaPuntos(flecha, flecha.final, previa.filas, previa);
         const largo = largoDe(puntos);
@@ -972,7 +1037,8 @@ export class Figura {
       'aria-label': describir(foto),
     });
     const capaFlechas = el('g');
-    svg.append(defs, raiz, capaFlechas);
+    const capaResalte = el('g', { 'pointer-events': 'none' }); // los parpadeos de lo que acaba de recibir una direccion
+    svg.append(defs, raiz, capaFlechas, capaResalte);
     this.alAire(svg);
     // Un puntero que cambio de destino: como iba hacia el viejo (para deslizar la flecha). Un puntero
     // que dejo de apuntar (paso a NULL): una flecha que solo se ve retrayendose.
@@ -1015,6 +1081,7 @@ export class Figura {
       filas,
       retiradas,
       desvanecen: [],
+      capaResalte,
       anclas: p.anclas,
       alto,
       marcosG,

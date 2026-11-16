@@ -1997,6 +1997,10 @@ const r = ejecutar(analizador, fuente, { entrada: '3 1 2', traza: true });
   figura anterior, un destello viaja por la flecha de cada puntero y la casilla que alcanza se resalta; recién después cambia la figura.
   Una sentencia que se repite (un bucle) acelera: el reproductor cuenta las veces anteriores y la duración se reduce (mínimo un cuarto).
   Los últimos 4 bloques liberados quedan a la vista (con su aviso) aunque ya nadie los señale.
+  Cuando un puntero recibe la dirección de un bloque o de una variable (`p = malloc(...)`, `p = &n`, también un parámetro que recibe `&x`),
+  ese bloque o esa casilla parpadea al llegar la flecha (`objetivosDeParpadeo`). Cuando se copia otro puntero (`q = p`, `p = p->sig`,
+  `nuevo->sig = lista`, también `int *q = p;`) la fotografía trae un acceso `tipo: 'copia'` y, antes de que cambie la figura, parpadean la
+  flecha del puntero copiado y el bloque al que apunta; ese destino no vuelve a parpadear al final.
   También se resalta la casilla de una variable puntero que se pregunta en una condición (`p == NULL`, `!p`, `if (p)`) o que se libera
   (`free(p)`), sin flecha: `{ de: null, a }`. Al liberarse un bloque, la flecha, el borde y el aviso "liberado" cambian de a poco (una unidad,
   después del flujo). La flecha de un puntero liberado que pasa a `NULL` se retira roja y más gruesa.

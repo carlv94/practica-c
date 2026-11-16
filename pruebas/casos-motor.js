@@ -420,6 +420,30 @@ int main() {
       },
     },
   },
+  {
+    nombre: 'copiar un puntero anota la flecha y lo que senala; recibir una direccion nueva no es una copia',
+    codigo: String.raw`#include <stdlib.h>
+int main() {
+  int n = 3;
+  int *p = &n;
+  int *q;
+  int *r;
+
+  q = p;
+  r = malloc(sizeof(int));
+  free(r);
+  return 0;
+}`,
+    espera: {
+      traza: (traza) => {
+        const copias = traza.flatMap((x) => (x.accesos || []).filter((h) => h.tipo === 'copia'));
+        if (copias.length !== 1) return 'tenia que haber una copia (q = p) y hay ' + copias.length;
+        const [c] = copias;
+        if (!c.de || c.a.ruta.length !== 0) return 'la copia tenia que salir de la casilla de p y llegar a la variable n';
+        return null;
+      },
+    },
+  },
 ];
 
 export function resultadoDelMotor(analizador, ejecutar, caso) {

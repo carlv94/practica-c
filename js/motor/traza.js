@@ -7,7 +7,8 @@
 //   marcos:    las funciones en curso, de la primera llamada a la ultima, con sus variables
 //   monticulo: los bloques reservados con malloc (los liberados siguen, marcados)
 //   accesos:   (si los hubo) los accesos por puntero que hizo la sentencia anterior, para animarlos:
-//              [{ de: { a, ruta } | null, a: { a, ruta } }], de la casilla del puntero a la casilla a la que llega
+//              [{ de: { a, ruta } | null, a: { a, ruta }, tipo? }], de la casilla del puntero a la casilla a la que llega;
+//              tipo 'copia': se copio ese puntero a otro (se resalta su flecha y lo que senala)
 //
 // Cada variable o bloque es { id, nombre, tipo, dir, tam, vivo, valor }. Un valor es:
 //   { k: 'num', v, t }                un numero (t: el tipo)
@@ -37,7 +38,7 @@ export function rutaDe(st, objetivo) {
   return null;
 }
 
-function serializarPuntero(p) {
+export function serializarPuntero(p) {
   if (p === undefined) return { k: 'sinvalor', t: 'puntero' };
   if (p === null) return { k: 'nulo' };
   const raiz = p.reserva.raiz;
