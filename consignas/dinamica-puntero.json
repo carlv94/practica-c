@@ -1,0 +1,268 @@
+{
+  "id": "dinamica-puntero",
+  "titulo": "Cambiar un puntero desde una función",
+  "continua": false,
+  "descripcion": "Una función que recibe un puntero recibe una copia. Para cambiar el puntero de afuera, por ejemplo para dejarle un bloque reservado, hay que pasar su dirección: un puntero a un puntero.",
+  "cabecera": "#include <stdio.h>\n#include <stdlib.h>",
+  "consignas": [
+    {
+      "id": "ptrptr-q-falla",
+      "titulo": "Una función que reserva y no alcanza",
+      "enunciado": "La función `reservar` quiere reservar un bloque con `malloc` y dejar su dirección en el puntero que recibe. `main` tiene un puntero `p` en `NULL`, y le pasa `p` a la función. La figura muestra la memoria justo antes de la llamada. Cuando `reservar` termina, ¿qué guarda el `p` de `main`?",
+      "programa": "#include <stdio.h>\n#include <stdlib.h>\n\nvoid reservar(int *p, int valor) {\n  p = malloc(sizeof(int));\n  *p = valor;\n}\n\nint main() {\n  int *p = NULL;\n\n  reservar(p, 8);\n  return 0;\n}",
+      "dibujo": {
+        "titulo": "La memoria justo antes de llamar a `reservar`:",
+        "motor": {
+          "codigo": "#include <stdio.h>\n#include <stdlib.h>\n\nvoid reservar(int *p, int valor) {\n  p = malloc(sizeof(int));\n  *p = valor;\n}\n\nint main() {\n  int *p = NULL;\n\n  reservar(p, 8);\n  return 0;\n}",
+          "linea": 12
+        }
+      },
+      "pasoAPaso": {
+        "guia": "Avance hasta que `reservar` guarda la dirección del bloque, y mire en qué casilla queda la flecha: en la `p` de `reservar`, no en la de `main`. Después siga hasta que la función termina."
+      },
+      "opciones": [
+        {
+          "texto": "`NULL`, igual que antes",
+          "correcta": true,
+          "explicacion": "`reservar` no recibe la variable `p` de `main`, sino una copia de lo que guarda: `NULL`. Su `p` es otra variable, con el mismo nombre, que vive solo mientras la función corre. La dirección del bloque que devuelve `malloc` se guarda en esa copia, y cuando la función termina la copia desaparece. El `p` de `main` sigue en `NULL` y el bloque queda reservado sin que nadie lo apunte: una fuga de memoria. Es la regla de siempre para las funciones: lo que llega es una copia. Para cambiar una variable de afuera hay que recibir su dirección, y acá esa variable es un puntero."
+        },
+        {
+          "texto": "La dirección del bloque que reservó la función, porque `p` apunta ahora a él",
+          "codigo": "OPCION_DIRECCION_DEL_BLOQUE",
+          "explicacion": "Eso pasaría si `reservar` trabajara con el `p` de `main`, pero trabaja con una copia: la asignación cambia la copia y no el `p` de afuera."
+        },
+        {
+          "texto": "Cualquier valor: la función lo dejó sin inicializar",
+          "codigo": "OPCION_SIN_INICIALIZAR",
+          "explicacion": "`main` inicializó `p` con `NULL` y la función no lo toca. No hay ningún valor indeterminado."
+        }
+      ]
+    },
+    {
+      "id": "ptrptr-q-tipo",
+      "titulo": "La dirección de un puntero",
+      "enunciado": "En este programa `n` es un entero y `p` guarda su dirección. Pero `p`, como toda variable, también está guardada en algún lugar de la memoria y tiene su propia dirección, como muestra la figura. ¿De qué tipo es la expresión `&p`, la dirección de `p`?",
+      "codigo": "int n = 4;\nint *p = &n;",
+      "dibujo": {
+        "titulo": "La memoria después de la segunda línea:",
+        "motor": {
+          "codigo": "#include <stdio.h>\n#include <stdlib.h>\n\nint main() {\n  int n = 4;\n  int *p = &n;\n\n  return 0;\n}",
+          "linea": 8
+        }
+      },
+      "opciones": [
+        {
+          "texto": "`int`",
+          "codigo": "OPCION_INT",
+          "explicacion": "Una dirección nunca es un `int`: es de un tipo puntero. Que al final de las flechas haya un entero no cambia el tipo de lo que se guarda en el camino."
+        },
+        {
+          "texto": "`int *`",
+          "codigo": "OPCION_INT_PUNTERO",
+          "explicacion": "`int *` es el tipo de `p`: guarda la dirección de un entero. `&p` es otra cosa: la dirección de una variable que ya es un puntero."
+        },
+        {
+          "texto": "`int **`",
+          "correcta": true,
+          "explicacion": "La dirección de una variable de tipo `T` es de tipo `T *`: `&n` es `int *` porque `n` es un `int`. La variable `p` es de tipo `int *`, así que `&p` es de tipo `int **`: un puntero a un puntero a un entero. Se guarda en una variable declarada con dos asteriscos, `int **pp = &p;`."
+        }
+      ]
+    },
+    {
+      "id": "ptrptr-q-expresiones",
+      "titulo": "Qué hay detrás de cada asterisco",
+      "enunciado": "Ahora `pp` guarda la dirección de `p`, como muestra la figura. ¿Qué hay en `*pp`?",
+      "codigo": "int n = 4;\nint *p = &n;\nint **pp = &p;",
+      "dibujo": {
+        "titulo": "La memoria después de la tercera línea:",
+        "motor": {
+          "codigo": "#include <stdio.h>\n#include <stdlib.h>\n\nint main() {\n  int n = 4;\n  int *p = &n;\n  int **pp = &p;\n\n  return 0;\n}",
+          "linea": 9
+        }
+      },
+      "opciones": [
+        {
+          "texto": "El entero `n`",
+          "codigo": "OPCION_EL_ENTERO",
+          "explicacion": "`pp` no apunta a `n`: apunta a otra variable. Un `*` sigue una sola flecha de la figura. Vuelva a mirarla y cuente los saltos."
+        },
+        {
+          "texto": "La dirección de `p`",
+          "codigo": "OPCION_LA_DIRECCION",
+          "explicacion": "Esa es la que guarda `pp`, es decir, el valor de `pp`. El `*` sigue la flecha: llega a lo que hay en esa dirección."
+        },
+        {
+          "texto": "La variable `p`",
+          "correcta": true,
+          "explicacion": "`pp` guarda la dirección de `p`, así que `*pp` es la variable `p` misma: se puede leer y también asignar. `*pp = NULL;` deja a `p` en `NULL`, y esto es lo que necesita una función para cambiar un puntero de afuera. Cada `*` sigue una flecha de la figura: `*pp` llega a `p`, y `**pp` sigue la flecha de `p` y llega a `n`."
+        }
+      ]
+    },
+    {
+      "id": "ptrptr-q-escribir",
+      "titulo": "Escribir con dos asteriscos",
+      "enunciado": "La figura muestra la memoria justo antes de la última instrucción. ¿Qué hace `**pp = 8;`?",
+      "codigo": "int n = 3;\nint *p = &n;\nint **pp = &p;\n\n**pp = 8;",
+      "dibujo": {
+        "titulo": "La memoria antes de `**pp = 8;`:",
+        "motor": {
+          "codigo": "#include <stdio.h>\n#include <stdlib.h>\n\nint main() {\n  int n = 3;\n  int *p = &n;\n  int **pp = &p;\n\n  **pp = 8;\n  return 0;\n}",
+          "linea": 9
+        }
+      },
+      "pasoAPaso": {
+        "guia": "Avance una línea y mire en qué casilla se completa el `8`: es la de `n`, a la que se llega siguiendo dos flechas."
+      },
+      "opciones": [
+        {
+          "texto": "Guarda un `8` en `pp`",
+          "codigo": "OPCION_GUARDA_EN_PP",
+          "explicacion": "`pp` es la variable que guarda la dirección de `p`. Para cambiarla se asigna sin asteriscos, `pp = ...`; con `**pp` se escribe en el final del camino."
+        },
+        {
+          "texto": "Guarda un `8` en `n`",
+          "correcta": true,
+          "explicacion": "Cada `*` sigue una flecha: el primero va de `pp` a `p` y el segundo, de `p` a `n`. Por eso `**pp` es la variable `n` y la instrucción le asigna el `8`. `p` y `pp` quedan como estaban: siguen guardando las mismas direcciones."
+        },
+        {
+          "texto": "Guarda un `8` en `p`",
+          "codigo": "OPCION_GUARDA_EN_P",
+          "explicacion": "Eso es lo que haría `*pp = ...`, con un solo asterisco, y `p` guarda direcciones, no enteros. Con dos asteriscos se sigue una flecha más."
+        }
+      ]
+    },
+    {
+      "id": "ptrptr-corregir-reservar",
+      "titulo": "Corregir la función que reserva",
+      "en": "archivo",
+      "comienza": "void reservar(int *p, int valor) {\n  p = malloc(sizeof(int));\n  *p = valor;\n}",
+      "despues": "int main() {\n  int *p = NULL;\n\n  reservar(&p, 8);\n  printf(\"%d\", *p);\n  free(p);\n  return 0;\n}",
+      "enunciado": "La función `reservar` de la primera consigna no cambia el puntero de `main` porque recibe una copia. Corríjala para que reciba la dirección del puntero y deje ahí el bloque que reserva con `malloc`, con el valor que recibe ya guardado. El `main` ya está escrito: llama a `reservar(&p, 8)`, muestra el número al que apunta `p` y libera el bloque. Antes de corregirla, puede ver qué le pasa a este programa con el botón «Paso a paso» del editor.",
+      "requiere": [
+        {
+          "memoria": {
+            "casos": [
+              {
+                "salida": "8",
+                "contexto": ""
+              }
+            ],
+            "sinFugas": true,
+            "usa": [
+              "malloc"
+            ]
+          }
+        }
+      ],
+      "referencia": "void reservar(int **p, int valor) {\n  *p = malloc(sizeof(int));\n  **p = valor;\n}"
+    },
+    {
+      "id": "ptrptr-reservar-enteros",
+      "titulo": "Reservar y avisar si se pudo",
+      "en": "archivo",
+      "comienza": "typedef enum {\n  FALSO,\n  VERDADERO\n} TBool;",
+      "despues": "int main() {\n  int n;\n  int *v;\n\n  scanf(\"%d\", &n);\n  if (reservarEnteros(&v, n) == FALSO) {\n    printf(\"Sin memoria\");\n    return 0;\n  }\n  for (int i = 0; i < n; i++) {\n    v[i] = i * 2;\n    printf(\"%d \", v[i]);\n  }\n  free(v);\n  return 0;\n}",
+      "enunciado": "Escriba la función `reservarEnteros`, que recibe un puntero a puntero a entero y una cantidad `n`. Reserva con `malloc` espacio para `n` enteros, deja su dirección en el puntero que recibió y devuelve un `TBool`: `VERDADERO` si pudo o `FALSO` si `malloc` no consiguió memoria. El enumerado `TBool` ya está escrito en el editor. Es un caso en que `return` solo no alcanza: hay que entregar dos cosas, el bloque y si se pudo. El `main` ya está escrito: lee `n`, llama a la función y, si pudo, carga los primeros `n` números pares, empezando por `0`, y los muestra; si no, muestra `Sin memoria`. Por ejemplo, si se ingresa `3`, el programa muestra `0 2 4`.",
+      "requiere": [
+        {
+          "memoria": {
+            "casos": [
+              {
+                "entrada": "3",
+                "salida": "0 2 4",
+                "contexto": ""
+              },
+              {
+                "entrada": "1",
+                "salida": "0"
+              },
+              {
+                "entrada": "5",
+                "salida": "0 2 4 6 8"
+              },
+              {
+                "entrada": "2000000000",
+                "salida": "Sin memoria"
+              }
+            ],
+            "sinFugas": true,
+            "usa": [
+              "malloc"
+            ],
+            "comparaConNulo": true
+          }
+        }
+      ],
+      "referencia": "typedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\nTBool reservarEnteros(int **v, int n) {\n  *v = malloc(n * sizeof(int));\n  if (*v == NULL) {\n    return FALSO;\n  }\n  return VERDADERO;\n}"
+    },
+    {
+      "id": "ptrptr-liberar",
+      "titulo": "Liberar y dejar en NULL",
+      "en": "archivo",
+      "despues": "int main() {\n  int *p = malloc(sizeof(int));\n\n  *p = 6;\n  printf(\"%d \", *p);\n  liberar(&p);\n  liberar(&p);\n  if (p == NULL) {\n    printf(\"Liberado\");\n  }\n  return 0;\n}",
+      "enunciado": "Escriba la función `liberar`, que recibe la dirección de un puntero a entero, libera el bloque al que apunta ese puntero y lo deja en `NULL`, para que no quede apuntando a un bloque liberado. El `main` ya está escrito: reserva un bloque, muestra el número que guarda, llama dos veces a `liberar(&p)` y avisa si `p` quedó en `NULL`. Si `liberar` está bien escrita, la segunda llamada no hace nada y el programa termina sin errores.",
+      "requiere": [
+        {
+          "memoria": {
+            "casos": [
+              {
+                "salida": "6 Liberado",
+                "contexto": ""
+              }
+            ],
+            "sinFugas": true,
+            "usa": [
+              "free"
+            ]
+          }
+        }
+      ],
+      "referencia": "void liberar(int **p) {\n  free(*p);\n  *p = NULL;\n}"
+    },
+    {
+      "id": "ptrptr-q-conviene",
+      "titulo": "Qué forma conviene",
+      "enunciado": "Una función tiene que reservar un bloque de `n` enteros y entregárselo a quien la llama. No tiene que informar nada más. ¿Cuál es la forma que conviene?",
+      "opciones": [
+        {
+          "texto": "Recibir un `int **` y dejar ahí la dirección del bloque",
+          "codigo": "OPCION_RECIBIR_PUNTERO_A_PUNTERO",
+          "explicacion": "Funciona, pero es más complicado de lo necesario: quien la llama tiene que pasar `&p` y la función debe escribir `*p` y `**p`, con más lugar para equivocarse. Conviene cuando hay algo más que informar, como en `reservarEnteros`, o cuando hay que cambiar un puntero que ya existe, como en `liberar`."
+        },
+        {
+          "texto": "Guardar la dirección en una variable global",
+          "codigo": "OPCION_GLOBAL",
+          "explicacion": "Cualquier función podría cambiarla sin que se note, y la función dejaría de servir para dos bloques. Ya vio que no conviene."
+        },
+        {
+          "texto": "Devolver la dirección con `return`",
+          "correcta": true,
+          "explicacion": "Si lo único que hay que entregar es el bloque, `return` alcanza: es la forma más simple, como en `crearArreglo`. Se usa un `int **` cuando hay que cambiar un puntero que ya existe, como en `liberar`, o cuando además del bloque hay algo más que informar, como en `reservarEnteros`, que avisa si pudo. Conviene dar siempre el menor acceso que alcance. El puntero a puntero vuelve a aparecer más adelante, al insertar un nodo al comienzo de una lista enlazada."
+        }
+      ]
+    },
+    {
+      "id": "ptrptr-q-incorrecta",
+      "titulo": "Cuál es la incorrecta",
+      "enunciado": "Con estas declaraciones, `n` es un entero, `p` guarda su dirección y `pp` guarda la dirección de `p`. ¿Cuál de estas instrucciones es la incorrecta?",
+      "codigo": "int n = 5;\nint *p = &n;\nint **pp = &p;",
+      "opciones": [
+        {
+          "texto": "`**pp = 9;`",
+          "codigo": "OPCION_DOBLE_ASTERISCO_PP",
+          "explicacion": "Esta instrucción es válida: `*pp` es `p`, y el segundo `*` sigue su flecha hasta `n`, así que guarda el `9` en `n`."
+        },
+        {
+          "texto": "`**p = 9;`",
+          "correcta": true,
+          "explicacion": "`p` es un `int *`: con un `*` se llega a `n`, que es un entero, y a un entero no se le puede aplicar otro `*`. No compila. Los dos asteriscos corresponden a `pp`, que tiene dos saltos hasta `n`. Las otras dos instrucciones son válidas: `**pp = 9;` guarda el `9` en `n`, y `*pp = NULL;` deja a `p` en `NULL`."
+        },
+        {
+          "texto": "`*pp = NULL;`",
+          "codigo": "OPCION_PP_NULL",
+          "explicacion": "Esta instrucción es válida: `*pp` es `p`, así que le asigna `NULL`. Después `p` no apunta a ningún lado, y `n` no cambia."
+        }
+      ]
+    }
+  ]
+}

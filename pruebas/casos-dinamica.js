@@ -61,6 +61,14 @@ const SUMA = (reserva, hasta) =>
 const CREAR = (cuerpo) => `int *crearNumero(int valor) {
 ${cuerpo}}`;
 
+const puntero = serie('dinamica-puntero');
+
+// Serie 3: cambiar un puntero desde una funcion.
+const RESERVAR_PP = (cuerpo, tipo = 'int **p') => 'void reservar(' + tipo + ', int valor) {\n' + cuerpo + '}';
+const TBOOL = 'typedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\n';
+const ENTEROS = (cuerpo) => TBOOL + 'TBool reservarEnteros(int **v, int n) {\n' + cuerpo + '}';
+const LIBERAR = (cuerpo, tipo = 'int **p') => 'void liberar(' + tipo + ') {\n' + cuerpo + '}';
+
 export const CASOS_DE_DINAMICA = [
   // ===== 1. un arreglo de tamano fijo
   memoria(1, 'ninguno sirve: se pide al ejecutar', '1'),
@@ -171,4 +179,55 @@ export const CASOS_DE_DINAMICA = [
   errores(8, 'con malloc pero devuelve la direccion de una local', CREAR('  int *p = malloc(sizeof(int));\n  int x = valor;\n\n  free(p);\n  return &x;\n'), ['VARIABLE_FUERA_DE_ALCANCE']),
   errores(8, 'sin cargar el valor', CREAR('  int *p = malloc(sizeof(int));\n\n  return p;\n'), ['VARIABLE_SIN_VALOR']),
   errores(8, 'libera dentro de la funcion', CREAR('  int *p = malloc(sizeof(int));\n\n  *p = valor;\n  free(p);\n  return p;\n'), ['USO_DE_MEMORIA_LIBERADA']),
+
+  // ===== serie 3. 1. una funcion que reserva y no alcanza
+  puntero(1, 'NULL, igual que antes', '0'),
+  puntero(1, 'la direccion del bloque', '1', ['OPCION_DIRECCION_DEL_BLOQUE']),
+  puntero(1, 'sin inicializar', '2', ['OPCION_SIN_INICIALIZAR']),
+
+  // ===== 2. la direccion de un puntero
+  puntero(2, 'int **', '2'),
+  puntero(2, 'int *', '1', ['OPCION_INT_PUNTERO']),
+  puntero(2, 'int', '0', ['OPCION_INT']),
+
+  // ===== 3. que hay detras de cada asterisco
+  puntero(3, 'la variable p', '2'),
+  puntero(3, 'el entero n', '0', ['OPCION_EL_ENTERO']),
+  puntero(3, 'la direccion de p', '1', ['OPCION_LA_DIRECCION']),
+
+  // ===== 4. escribir con dos asteriscos
+  puntero(4, 'el entero n', '1'),
+  puntero(4, 'en pp', '0', ['OPCION_GUARDA_EN_PP']),
+  puntero(4, 'en p', '2', ['OPCION_GUARDA_EN_P']),
+
+  // ===== 4. corregir la funcion que reserva
+  puntero(5, 'la referencia', RESERVAR_PP('  *p = malloc(sizeof(int));\n  **p = valor;\n')),
+  puntero(5, 'con un puntero auxiliar', RESERVAR_PP('  int *x = malloc(sizeof(int));\n\n  *x = valor;\n  *p = x;\n')),
+  puntero(5, 'la funcion con el error', RESERVAR_PP('  p = malloc(sizeof(int));\n  *p = valor;\n', 'int *p'), ['DESREFERENCIA_NULA']),
+  puntero(5, 'recibe la direccion pero asigna a la copia', RESERVAR_PP('  p = malloc(sizeof(int));\n  **p = valor;\n'), ['FUERA_DE_BLOQUE']),
+  puntero(5, 'sin malloc', RESERVAR_PP('  **p = valor;\n'), ['MALLOC_FALTA']),
+
+  // ===== 5. reservar y avisar si se pudo
+  puntero(6, 'la referencia', ENTEROS('  *v = malloc(n * sizeof(int));\n  if (*v == NULL) {\n    return FALSO;\n  }\n  return VERDADERO;\n')),
+  puntero(6, 'con la pregunta por NULL de otra forma', ENTEROS('  *v = malloc(n * sizeof(int));\n  if (!*v) {\n    return FALSO;\n  }\n  return VERDADERO;\n')),
+  puntero(6, 'devuelve siempre 1', ENTEROS('  *v = malloc(n * sizeof(int));\n  return VERDADERO;\n'), ['NULL_SIN_COMPROBAR']),
+  puntero(6, 'pide los bytes sin sizeof', ENTEROS('  *v = malloc(n);\n  if (*v == NULL) {\n    return FALSO;\n  }\n  return VERDADERO;\n'), ['FUERA_DE_BLOQUE']),
+  puntero(6, 'sin malloc', ENTEROS('  return FALSO;\n'), ['MALLOC_FALTA']),
+
+  // ===== 6. liberar y dejar en NULL
+  puntero(7, 'la referencia', LIBERAR('  free(*p);\n  *p = NULL;\n')),
+  puntero(7, 'sin dejar en NULL', LIBERAR('  free(*p);\n'), ['LIBERACION_DOBLE']),
+  puntero(7, 'sin liberar', LIBERAR('  *p = NULL;\n'), ['FREE_FALTA']),
+  puntero(7, 'con un puntero comun', LIBERAR('  free(p);\n  p = NULL;\n', 'int *p'), ['LIBERACION_INVALIDA']),
+
+  // ===== 7. que forma conviene
+  puntero(8, 'return', '2'),
+  puntero(8, 'un puntero a puntero', '0', ['OPCION_RECIBIR_PUNTERO_A_PUNTERO']),
+  puntero(8, 'una global', '1', ['OPCION_GLOBAL']),
+
+
+  // ===== 9. cual es la incorrecta
+  puntero(9, 'dos asteriscos con p', '1'),
+  puntero(9, 'dos asteriscos con pp', '0', ['OPCION_DOBLE_ASTERISCO_PP']),
+  puntero(9, 'pp en NULL', '2', ['OPCION_PP_NULL']),
 ];

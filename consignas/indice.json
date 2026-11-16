@@ -169,7 +169,11 @@
       "descripcion": "Memoria que se pide mientras el programa corre, y estructuras que crecen y se achican según se necesite.",
       "series": [
         "dinamica-memoria.json",
-        "dinamica-errores.json"
+        "dinamica-errores.json",
+        "dinamica-puntero.json"
+      ],
+      "ocultas": [
+        "dinamica-puntero.json"
       ]
     }
   ]
