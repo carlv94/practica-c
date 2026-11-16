@@ -909,7 +909,9 @@ class Interprete {
 
   asignacion(n) {
     const op = n.childForFieldName('operator').text;
+    const inicio = this.accesos.length;
     const lv = this.lvalor(n.childForFieldName('left'));
+    const finDestino = this.accesos.length;
     let rv;
     let origenCopiado = null;
     if (op === '=' && lv.st.t.k === 'ptr') ({ rv, origen: origenCopiado } = this.evaluarConOrigen(n.childForFieldName('right')));
@@ -919,8 +921,23 @@ class Interprete {
       rv = this.operar(op.slice(0, -1), actual, rv);
     }
     if (lv.st.t.k !== 'struct') rv = this.convertir(rv, lv.st.t);
+    const viejo = lv.st.t.k === 'ptr' ? lv.st.v : undefined;
     this.escribir(lv, rv);
     if (origenCopiado) this.copia(origenCopiado, lv.st.v);
+    const sobrescrito = op === '=' && lv.st.t.k === 'ptr' ? viejo : undefined;
+    // Para la traza: primero lo que se guarda (el recorrido que lleva al valor y su copia) y despues donde se guarda
+    // (el recorrido hasta la casilla de destino), aunque C evalue primero el lado izquierdo.
+    if (op === '=' && this.opciones.traza && finDestino > inicio && this.accesos.length > finDestino) {
+      const destino = this.accesos.slice(inicio, finDestino);
+      const valor = this.accesos.slice(finDestino);
+      this.accesos.splice(inicio, this.accesos.length - inicio, ...valor, ...destino);
+    }
+    // La flecha que tenia el puntero sobrescrito (si apuntaba a algo vivo): destella antes de que cambie.
+    if (this.opciones.traza && sobrescrito && sobrescrito.reserva && this.accesos.length < 8) {
+      const s = serializarPuntero(sobrescrito);
+      const de = this.ubicar(lv.reserva, lv.st);
+      if (s.k === 'ptr' && !s.muerto && de) this.accesos.push({ de, a: { a: s.a, ruta: s.ruta }, tipo: 'vieja' });
+    }
     return lv.st.t.k === 'struct' ? { t: lv.st.t, v: lv.st } : { t: lv.st.t, v: lv.st.v };
   }
 

@@ -444,6 +444,35 @@ int main() {
       },
     },
   },
+  {
+    nombre: 'en una asignacion de punteros la traza muestra primero lo que se guarda y despues donde se guarda',
+    codigo: String.raw`#include <stdlib.h>
+typedef struct nodo { int dato; struct nodo *sig; } TNodo;
+void insertar(TNodo **lista, int dato) {
+  TNodo *nuevo = malloc(sizeof(TNodo));
+
+  nuevo->dato = dato;
+  nuevo->sig = *lista;
+  *lista = nuevo;
+}
+int main() {
+  TNodo *lista = NULL;
+
+  insertar(&lista, 5);
+  insertar(&lista, 8);
+  return 0;
+}`,
+    espera: {
+      traza: (traza) => {
+        const forma = (x) => (x.accesos || []).map((h) => (h.tipo === 'copia' ? 'copia' : h.tipo === 'vieja' ? 'vieja' : 'ir')).join(',');
+        const conCopia = traza.filter((x) => (x.accesos || []).some((h) => h.tipo === 'copia'));
+        // 1a insercion: *lista = nuevo (lista valia NULL: no hay flecha vieja); 2a: nuevo->sig = *lista y *lista = nuevo (la flecha vieja de lista destella)
+        const formas = conCopia.map(forma);
+        if (JSON.stringify(formas) !== JSON.stringify(['copia,ir', 'ir,copia,ir', 'copia,ir,vieja'])) return 'el orden tenia que ser valor y despues destino y es ' + JSON.stringify(formas);
+        return null;
+      },
+    },
+  },
 ];
 
 export function resultadoDelMotor(analizador, ejecutar, caso) {

@@ -8,7 +8,8 @@
 //   monticulo: los bloques reservados con malloc (los liberados siguen, marcados)
 //   accesos:   (si los hubo) los accesos por puntero que hizo la sentencia anterior, para animarlos:
 //              [{ de: { a, ruta } | null, a: { a, ruta }, tipo? }], de la casilla del puntero a la casilla a la que llega;
-//              tipo 'copia': se copio ese puntero a otro (se resalta su flecha y lo que senala)
+//              tipo 'copia': se copio ese puntero a otro (se resalta su flecha y lo que senala);
+//              tipo 'vieja': la flecha que tenia el puntero que se acaba de sobrescribir (destella antes del cambio)
 //
 // Cada variable o bloque es { id, nombre, tipo, dir, tam, vivo, valor }. Un valor es:
 //   { k: 'num', v, t }                un numero (t: el tipo)
