@@ -398,6 +398,25 @@ import { corregir } from '../js/corrector.js';
           }
         }
 
+        // El paso a paso de los cuestionarios (pasoAPaso): el programa se puede ejecutar y dibujar en
+        // todos sus pasos, tenga o no el error que la consigna quiere mostrar; trae una guia.
+        for (const s of todas) {
+          for (const c of s.consignas.filter((x) => x.pasoAPaso)) {
+            const p = c.pasoAPaso;
+            const base = p.codigo != null ? p : c.dibujo && c.dibujo.motor;
+            try {
+              if (!base || !base.codigo) throw new Error('no hay programa: falta pasoAPaso.codigo o dibujo.motor');
+              if (!p.guia) throw new Error('falta la guia');
+              const r = ejecutarMotor(analizador, base.codigo, { entrada: p.entrada || base.entrada || '', traza: true });
+              if (!r.traza.length) throw new Error('el programa no tiene nada que seguir');
+              r.traza.forEach((foto, i) => dibujarFotografia(foto, i ? r.traza[i - 1] : null));
+              anotar(Boolean(c.opciones), `paso a paso de ${c.id}`, 'solo los cuestionarios llevan pasoAPaso');
+            } catch (e) {
+              anotar(false, `paso a paso de ${c.id}`, e.stack);
+            }
+          }
+        }
+
         for (const caso of CASOS_DE_LA_REGLA) {
           const r = resultadoDeLaRegla(analizador, corregir, caso);
           anotar(r.bien, `regla memoria: ${caso.nombre}`, r.detalle);

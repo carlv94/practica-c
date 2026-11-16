@@ -2072,6 +2072,19 @@ Ejecuta el programa completo (los archivos de la serie más la respuesta) y lo c
 - `"dibujo": { "motor": { "codigo": "...", "linea": 9, "entrada": "", "cabezas": [] } }` en una consigna de opciones: se
   ejecuta el programa y se muestra la figura de la pila y el montículo justo antes de ejecutar esa línea (sin controles).
   La página de pruebas comprueba que el programa corra sin error y pase por esa línea.
+- `"pasoAPaso": { "guia": "Avance hasta ...", "codigo": "...", "entrada": "", "cabezas": [] }` en un cuestionario: después de
+  acertar (no antes: no adelanta la respuesta) aparece el botón «Ver paso a paso» y, debajo, la guía (una oración: qué mirar).
+  El programa es `pasoAPaso.codigo` o, si no lo trae, el de `dibujo.motor`. Puede terminar en un error del motor (un `free`
+  doble, una posición fuera del bloque): el reproductor lo muestra. La página de pruebas comprueba que se pueda ejecutar y dibujar.
+  `comparaConNulo` también acepta `*p == NULL`, `!*p` e `if (*p)` (un puntero recibido por su dirección).
+- El botón "Ver paso a paso" de un cuestionario queda fijo al pie de la ventana mientras se ven los mensajes (`#resultado > .paso-a-paso`, `position: sticky`).
+- Una consigna de código cuya regla es `memoria` tiene, en el encabezado del editor, un botón "▶ Paso a paso". Solo ejecuta lo ya comprobado:
+  guarda el texto comprobado (sin espacios del final ni líneas en blanco finales) y su ejecución (`r.memoria`). Si el editor cambia, el botón
+  queda apagado (`aria-disabled`, sigue recibiendo el toque) y un aviso (`#aviso-paso`, con el estilo de `mensaje aviso`) explica por qué:
+  nunca se comprobó, se editó después, o el programa no llegó a ejecutarse. Una consigna con `comienza` arranca con ese texto como
+  comprobado (se ejecuta al mostrarla). El botón destella al volver a poder usarse. No cuenta como intento.
+  Los cuestionarios no tienen editor: su botón "▶ Paso a paso" (`#ver-paso-cuestionario`) va a la derecha de «Siguiente», solo después de
+  acertar, con destello; la guía de `pasoAPaso` se muestra encima del reproductor al abrirlo.
 - `malloc`, `calloc`, `realloc` y `free` piden `#include <stdlib.h>` (`INCLUDE_FALTA_PARA_FUNCION`). Una consigna `"en": "archivo"`
   con `"despues"` (un `main` que usa lo que el alumno escribe) también vale en una serie que no es `dentroDeMain`.
 Pruebas: `pruebas/casos-motor.js` (el motor y la regla); se corren en la página de pruebas y, más

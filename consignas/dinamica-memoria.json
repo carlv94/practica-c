@@ -40,6 +40,9 @@
           "linea": 9
         }
       },
+      "pasoAPaso": {
+        "guia": "Avance hasta el `malloc` y mire dónde aparece el bloque: no está en la caja de `main`, que guarda a `n` y a `p`, sino en el montículo."
+      },
       "opciones": [
         {
           "texto": "En `p`, que es una variable de la pila",
@@ -190,6 +193,10 @@
           "codigo": "#include <stdio.h>\n#include <stdlib.h>\n\nint main() {\n  int a[4] = {8, 6, 9, 5};\n  int *v = malloc(4 * sizeof(int));\n\n  free(v);\n  return 0;\n}",
           "linea": 8
         }
+      },
+      "pasoAPaso": {
+        "codigo": "#include <stdio.h>\n#include <stdlib.h>\n\nint main() {\n  int a[4] = {8, 6, 9, 5};\n  int *v = malloc(4 * sizeof(int));\n\n  v[2] = 7;\n  a[2] = 7;\n  free(v);\n  return 0;\n}",
+        "guia": "Avance hasta `v[2] = 7;` y mire qué casilla del bloque se completa. Después compare con `a[2] = 7;` en el arreglo común: es la tercera en los dos."
       },
       "opciones": [
         {

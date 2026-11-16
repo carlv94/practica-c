@@ -27,8 +27,9 @@
 import { ejecutar } from './interprete.js';
 import { mensajeDeError, mensajeDeFugas, mensajeDeFuncionFalta, mensajeDeNuloSinComprobar, contextoDeEntrada } from './mensajes.js';
 
-// Preguntar si un puntero es NULL: p == NULL, p != NULL, p == 0, !p, if (p).
-const PREGUNTA_POR_NULO = /(?:==|!=)\s*(?:NULL|0)\b|\(\s*!\s*[A-Za-z_]\w*\s*\)|\bif\s*\(\s*[A-Za-z_]\w*\s*\)/;
+// Preguntar si un puntero es NULL: p == NULL, p != NULL, p == 0, !p, if (p); tambien con un
+// puntero que se recibio por su direccion: *p == NULL, !*p, if (*p).
+const PREGUNTA_POR_NULO = /(?:==|!=)\s*(?:NULL|0)\b|\(\s*!\s*\*?\s*[A-Za-z_]\w*\s*\)|\bif\s*\(\s*\*?\s*[A-Za-z_]\w*\s*\)/;
 
 // El codigo sin comentarios ni textos entre comillas.
 const sinTextos = (codigo) =>

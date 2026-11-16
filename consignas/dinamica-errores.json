@@ -17,6 +17,9 @@
           "linea": 9
         }
       },
+      "pasoAPaso": {
+        "guia": "Avance hasta la segunda llamada a `malloc` y mire qué pasa con la flecha de `p` y con el primer bloque, el que guarda el `3`."
+      },
       "opciones": [
         {
           "texto": "Se liberó solo, porque `p` dejó de apuntar a él",
@@ -84,6 +87,9 @@
           "linea": 9
         }
       },
+      "pasoAPaso": {
+        "guia": "Avance hasta después de `free(p)`: la flecha de `p` sigue ahí, pero el bloque aparece liberado."
+      },
       "opciones": [
         {
           "texto": "La misma dirección de antes, de un bloque que ya no es del programa",
@@ -107,6 +113,10 @@
       "titulo": "Liberar dos veces",
       "enunciado": "Un programa reserva un bloque, lo usa y llama dos veces a `free` con el mismo puntero. ¿Qué pasa con la segunda llamada?",
       "codigo": "int *p = malloc(sizeof(int));\n*p = 9;\n\nfree(p);\nfree(p);",
+      "pasoAPaso": {
+        "codigo": "#include <stdio.h>\n#include <stdlib.h>\n\nint main() {\n  int *p = malloc(sizeof(int));\n\n  *p = 9;\n  free(p);\n  free(p);\n  return 0;\n}",
+        "guia": "Avance hasta el segundo `free(p)`: el programa se detiene, porque ese bloque ya estaba liberado."
+      },
       "opciones": [
         {
           "texto": "No pasa nada: `free` ignora los bloques ya liberados",
@@ -136,6 +146,10 @@
           "codigo": "#include <stdio.h>\n#include <stdlib.h>\n\nint main() {\n  int *v = malloc(3 * sizeof(int));\n\n  free(v);\n  return 0;\n}",
           "linea": 7
         }
+      },
+      "pasoAPaso": {
+        "codigo": "#include <stdio.h>\n#include <stdlib.h>\n\nint main() {\n  int *v = malloc(3 * sizeof(int));\n\n  v[3] = 7;\n  free(v);\n  return 0;\n}",
+        "guia": "Avance hasta `v[3] = 7;`: el bloque llega hasta la posición `2`, y el programa se detiene porque la `3` ya está afuera."
       },
       "opciones": [
         {
@@ -200,6 +214,9 @@
           "codigo": "#include <stdio.h>\n#include <stdlib.h>\n\nint *crear() {\n  int x = 5;\n\n  return &x;\n}\n\nint main() {\n  int *p = crear();\n\n  return 0;\n}",
           "linea": 13
         }
+      },
+      "pasoAPaso": {
+        "guia": "Avance hasta que termina `crear` y mire qué pasa con `x` y con la flecha de `p`."
       },
       "opciones": [
         {

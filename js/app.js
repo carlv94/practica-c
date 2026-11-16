@@ -749,6 +749,11 @@ function mostrarConsigna() {
       : '';
   ambito.hidden = !ambito.textContent;
   $('comprobar').hidden = false;
+  $('paso-del-editor').hidden = true;
+  $('paso-del-editor').replaceChildren();
+  $('ver-paso-cuestionario').hidden = true;
+  pasoDeCuestionario = null;
+  cerrarAvisoPaso();
   $('siguiente').hidden = true;
   $('usar-anterior').hidden = true;
   if (sinEditor) {
@@ -756,6 +761,8 @@ function mostrarConsigna() {
     if (esCuestionario) dibujarOpciones(consigna, capturas);
     else dibujarPila(consigna);
     $('ver-solucion').hidden = true;
+    $('ver-paso-a-paso').hidden = true;
+    cerrarAvisoPaso();
     return;
   }
   // Una consigna que amplia un archivo ya hecho lo trae escrito en el editor
@@ -763,6 +770,18 @@ function mostrarConsigna() {
   editor.poner(textoGuardado || consigna.comienza || '');
   $('respuesta').readOnly = false;
   $('ver-solucion').hidden = false;
+  pasoComprobado = null;
+  if (consigna.comienza && consignaConPaso()) {
+    // El programa que trae la consigna cuenta como comprobado: se ejecuta ahora para saber si se puede ver.
+    let datos = null;
+    try {
+      datos = corregirPaso(analizador, serie, repasando ?? hechas.length, avanceMostrado(), consigna.comienza).memoria || null;
+    } catch (e) {
+      console.error('No se pudo armar el programa de la consigna:', e);
+    }
+    pasoComprobado = { indice: repasando ?? hechas.length, texto: normalizar(consigna.comienza), datos, inicial: true };
+  }
+  actualizarBotonPasoAPaso();
   // Repasando, se puede traer lo que se habia respondido.
   $('usar-anterior').hidden = repasando == null;
   $('respuesta').focus({ preventScroll: true });
@@ -1193,35 +1212,163 @@ async function dibujarMotor(caja, motor) {
   }
 }
 
-// El paso a paso de lo que se acaba de comprobar: un boton debajo de los mensajes que ejecuta el
-// programa con el motor de memoria y lo muestra en el reproductor. Sirve tambien si la respuesta
-// esta mal: se ve que paso con la memoria.
+// El reproductor de un programa: lo ejecuta con el motor de memoria y arma el reproductor.
+// "datos" es { fuente, entrada, cabezas }.
+async function reproductorDe(datos, consigna) {
+  const [{ ejecutar }, { crearReproductor }, { mensajeDeError }] = await Promise.all([
+    import('./motor/interprete.js'),
+    import('./motor/reproductor.js'),
+    import('./motor/mensajes.js'),
+  ]);
+  const res = ejecutar(analizador, datos.fuente, { entrada: datos.entrada || '', traza: true });
+  if (!res.traza.length) throw new Error('el programa no tiene nada que seguir');
+  const error = res.error ? { ...res.error, ...mensajeDeError(res.error) } : null;
+  return crearReproductor({ codigo: datos.fuente, traza: res.traza, error, titulo: consigna.titulo, funciones: res.funciones, cabezas: datos.cabezas });
+}
+
+// El paso a paso de un cuestionario: junto a "Siguiente", solo despues de acertar (no adelanta la
+// respuesta). Ejecuta el programa de "pasoAPaso.codigo" o, si no lo trae, el del dibujo del motor.
+let pasoDeCuestionario = null; // { consigna, datos }
+
 function ofrecerPasoAPaso(r, consigna) {
-  if (!r.memoria) return;
-  const boton = elemento('button', 'paso-a-paso', 'Ver paso a paso');
-  boton.type = 'button';
-  const lugar = elemento('div', 'paso-a-paso-lugar');
-  boton.addEventListener('click', async () => {
-    boton.disabled = true;
-    try {
-      const [{ ejecutar }, { crearReproductor }, { mensajeDeError }] = await Promise.all([
-        import('./motor/interprete.js'),
-        import('./motor/reproductor.js'),
-        import('./motor/mensajes.js'),
-      ]);
-      const res = ejecutar(analizador, r.memoria.fuente, { entrada: r.memoria.entrada || '', traza: true });
-      if (!res.traza.length) throw new Error('el programa no tiene nada que seguir');
-      const error = res.error ? { ...res.error, ...mensajeDeError(res.error) } : null;
-      lugar.replaceChildren(
-        crearReproductor({ codigo: r.memoria.fuente, traza: res.traza, error, titulo: consigna.titulo, funciones: res.funciones, cabezas: r.memoria.cabezas })
-      );
-      boton.hidden = true;
-    } catch (error) {
-      console.error('No se pudo armar el paso a paso:', error);
-      boton.disabled = false;
+  const boton = $('ver-paso-cuestionario');
+  boton.hidden = true;
+  pasoDeCuestionario = null;
+  if (!(r.correcto && consigna.opciones && consigna.pasoAPaso)) return;
+  const p = consigna.pasoAPaso;
+  const base = p.codigo != null ? p : consigna.dibujo?.motor;
+  if (!base) return;
+  pasoDeCuestionario = {
+    consigna,
+    datos: { fuente: base.codigo, entrada: p.entrada || base.entrada || '', cabezas: p.cabezas || base.cabezas || null, guia: p.guia },
+  };
+  boton.hidden = false;
+  boton.classList.remove('destello');
+  void boton.offsetWidth;
+  boton.classList.add('destello');
+}
+
+async function verPasoDeCuestionario() {
+  if (!pasoDeCuestionario) return;
+  const { consigna, datos } = pasoDeCuestionario;
+  const lugar = $('paso-del-editor');
+  try {
+    // La guia, encima del reproductor: se lee justo cuando se va a usar la figura.
+    const guia = datos.guia ? elementoConCodigo('p', 'paso-a-paso-guia', datos.guia) : null;
+    const reproductor = await reproductorDe(datos, consigna);
+    lugar.replaceChildren(...(guia ? [guia, reproductor] : [reproductor]));
+  } catch (error) {
+    console.error('No se pudo armar el paso a paso:', error);
+    lugar.replaceChildren(mensaje('aviso', 'No se pudo seguir este programa paso a paso.'));
+  }
+  lugar.hidden = false;
+  const sinAnimar = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  lugar.scrollIntoView({ behavior: sinAnimar ? 'auto' : 'smooth', block: 'nearest' });
+}
+
+// El boton "Paso a paso" del editor ejecuta solo lo que ya se comprobo: asi lo que se ve coincide con
+// el veredicto de los mensajes, y el programa se puede ejecutar. Se guarda el texto comprobado (sin
+// los espacios del final) y su ejecucion; si el editor cambia, el boton queda apagado y, al tocarlo,
+// un aviso explica por que. Una consigna que trae un programa cargado ("comienza") arranca con ese
+// texto como comprobado (si se ejecuta).
+let pasoComprobado = null; // { indice, texto, datos, inicial }
+let pasoListo = false;
+
+const normalizar = (texto) =>
+  texto
+    .replace(/\r\n/g, '\n')
+    .split('\n')
+    .map((linea) => linea.replace(/\s+$/, ''))
+    .join('\n')
+    .replace(/\s+$/, '');
+
+const AVISOS_DEL_PASO = {
+  sin: 'Pulse «Comprobar» para ver el paso a paso.',
+  cambio: 'Cambió el código: pulse «Comprobar» para ver el paso a paso.',
+  noejecuta: 'El programa todavía no se puede ejecutar: corrija lo que se señala y pulse «Comprobar».',
+};
+
+// La consigna actual, si es de codigo y se corrige ejecutando el programa.
+function consignaConPaso() {
+  const consigna = serie?.consignas[repasando ?? hechas.length];
+  return consigna && !consigna.opciones && !consigna.pila && consigna.requiere?.some((regla) => regla.memoria) ? consigna : null;
+}
+
+// 'listo' (se puede ver), 'sin' (nunca se comprobo), 'cambio' (se edito despues) o 'noejecuta'
+// (se comprobo pero el programa no llego a ejecutarse).
+function estadoDelPaso() {
+  const e = pasoComprobado;
+  if (!e || e.indice !== (repasando ?? hechas.length)) return 'sin';
+  if (normalizar($('respuesta').value) !== e.texto) return 'cambio';
+  return e.datos ? 'listo' : e.inicial ? 'sin' : 'noejecuta';
+}
+
+function cerrarAvisoPaso() {
+  $('aviso-paso').hidden = true;
+  $('aviso-paso').replaceChildren();
+}
+
+function mostrarAvisoPaso(texto) {
+  const caja = mensaje('aviso', texto);
+  const cerrar = elemento('button', 'cerrar-aviso', '×');
+  cerrar.type = 'button';
+  cerrar.setAttribute('aria-label', 'Cerrar el aviso');
+  cerrar.addEventListener('click', cerrarAvisoPaso);
+  caja.append(cerrar);
+  $('aviso-paso').replaceChildren(caja);
+  $('aviso-paso').hidden = false;
+}
+
+// "destello": que el boton llame la atencion si acaba de poder usarse.
+function actualizarBotonPasoAPaso(destello = false) {
+  const boton = $('ver-paso-a-paso');
+  boton.hidden = !consignaConPaso();
+  if (boton.hidden) {
+    cerrarAvisoPaso();
+    pasoListo = false;
+    return;
+  }
+  const listo = estadoDelPaso() === 'listo';
+  boton.setAttribute('aria-disabled', String(!listo));
+  boton.classList.toggle('apagado', !listo);
+  if (listo) {
+    cerrarAvisoPaso();
+    if (destello && !pasoListo) {
+      boton.classList.remove('destello');
+      void boton.offsetWidth;
+      boton.classList.add('destello');
     }
-  });
-  $('resultado').append(boton, lugar);
+  }
+  pasoListo = listo;
+}
+
+// Despues de comprobar una consigna de codigo: queda lista la ejecucion de ese texto, si la hubo.
+function registrarPasoComprobado(indice, respuesta, r) {
+  if (!consignaConPaso()) return;
+  pasoComprobado = { indice, texto: normalizar(respuesta), datos: r.memoria || null, inicial: false };
+  $('paso-del-editor').hidden = true;
+  $('paso-del-editor').replaceChildren();
+  actualizarBotonPasoAPaso(true);
+}
+
+async function verPasoAPasoDelEditor() {
+  const consigna = consignaConPaso();
+  if (!consigna) return;
+  const estado = estadoDelPaso();
+  if (estado !== 'listo') {
+    mostrarAvisoPaso(AVISOS_DEL_PASO[estado]);
+    return;
+  }
+  const lugar = $('paso-del-editor');
+  try {
+    lugar.replaceChildren(await reproductorDe(pasoComprobado.datos, consigna));
+  } catch (error) {
+    console.error('No se pudo armar el paso a paso:', error);
+    lugar.replaceChildren(mensaje('aviso', 'No se pudo seguir este programa paso a paso.'));
+  }
+  lugar.hidden = false;
+  const sinAnimar = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  lugar.scrollIntoView({ behavior: sinAnimar ? 'auto' : 'smooth', block: 'nearest' });
 }
 
 // La memoria: un casillero por variable, con su direccion arriba y su nombre
@@ -1484,6 +1631,7 @@ function comprobar() {
   }
   mostrarResultado(cajas, delaOpcion);
   ofrecerPasoAPaso(r, consigna);
+  if (!esCuestionario && !esPila) registrarPasoComprobado(indice, respuesta, r);
 }
 
 // Los mensajes quedan debajo del editor, y con el codigo previo arriba suelen
@@ -1822,14 +1970,19 @@ async function iniciar() {
 
   $('comprobar').disabled = false;
   $('comprobar').addEventListener('click', comprobar);
+  $('respuesta').addEventListener('input', () => actualizarBotonPasoAPaso(true));
+  $('ver-paso-a-paso').addEventListener('click', verPasoAPasoDelEditor);
+  $('ver-paso-cuestionario').addEventListener('click', verPasoDeCuestionario);
   $('siguiente').addEventListener('click', siguiente);
   $('salir-repaso').addEventListener('click', salirDelRepaso);
   $('usar-anterior').addEventListener('click', () => {
     if (repasando == null || !hechas[repasando]) return;
     editor.poner(hechas[repasando].codigo);
+    actualizarBotonPasoAPaso(true);
     $('respuesta').focus({ preventScroll: true });
   });
   $('ver-solucion').addEventListener('click', verSolucion);
+  $('ver-solucion').addEventListener('click', () => setTimeout(() => actualizarBotonPasoAPaso(true), 0));
   $('descargar').addEventListener('click', bajarArchivos);
   $('reiniciar').addEventListener('click', reiniciar);
   $('respuesta').addEventListener('keydown', teclaEnRespuesta);

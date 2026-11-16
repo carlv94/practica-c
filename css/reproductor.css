@@ -617,10 +617,58 @@
   stroke: var(--error);
 }
 
-/* el boton "Ver paso a paso" debajo de los mensajes de una consigna */
-.paso-a-paso {
-  margin-top: 10px;
+.cabecera-respuesta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 6px;
 }
-.paso-a-paso-lugar {
-  margin-top: 8px;
+.cabecera-respuesta label {
+  margin: 0;
+}
+#ver-paso-a-paso {
+  padding: 4px 12px;
+  font-size: 0.85rem;
+}
+/* Apagado: no se puede ver todavia (hay que comprobar), pero sigue recibiendo el toque y explica por que. */
+#ver-paso-a-paso.apagado {
+  opacity: 0.6;
+}
+.destello {
+  animation: destello-paso 1.2s ease-out 1;
+}
+@keyframes destello-paso {
+  0% { box-shadow: 0 0 0 0 var(--enlace, #4c8dff); }
+  40% { box-shadow: 0 0 0 6px rgba(76, 141, 255, 0.45); }
+  100% { box-shadow: 0 0 0 0 rgba(76, 141, 255, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .destello {
+    animation: none;
+  }
+}
+#aviso-paso {
+  margin-bottom: 8px;
+}
+#aviso-paso .mensaje {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+.cerrar-aviso {
+  flex: none;
+  padding: 0 8px;
+  line-height: 1.4;
+  font-size: 1.1rem;
+}
+#paso-del-editor {
+  margin-top: 12px;
+}
+.paso-a-paso-guia {
+  margin: 0 0 8px;
+  color: var(--suave);
+  font-size: 0.92rem;
 }
