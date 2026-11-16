@@ -315,6 +315,13 @@
 .rep-flecha-g {
   transition: opacity 0.15s;
 }
+/* Mientras dura un paso, las flechas que no intervienen se atenuan (un poco: se sigue viendo la estructura entera). */
+.rep-atenua .rep-flecha-g {
+  opacity: 0.38;
+}
+.rep-atenua .rep-flecha-g.rep-activa {
+  opacity: 1;
+}
 .rep-enfoque .rep-flecha-g {
   opacity: 0.12;
 }

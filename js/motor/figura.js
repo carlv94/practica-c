@@ -34,6 +34,8 @@
 
 const NS = 'http://www.w3.org/2000/svg';
 let contadorDeCortes = 0; // para dar un id distinto a cada recorte de una caja que se abre o se cierra
+// Lo que no interviene en un paso (las flechas de afuera) se atenua hasta esta opacidad.
+const ATENUADO = 0.38;
 // Un parpadeo: aparece, casi se apaga y vuelve a aparecer.
 const PARPADEO = [{ opacity: 0 }, { opacity: 1, offset: 0.2 }, { opacity: 0.1, offset: 0.45 }, { opacity: 1, offset: 0.7 }, { opacity: 0 }];
 const CW = 52; // ancho de una casilla
@@ -410,6 +412,9 @@ export class Figura {
     this.fijada = null;
 
     const u = duracion;
+    this.involucradas = new Set((foto.accesos || []).filter((h) => h.de).map((h) => clave(h.de.a, h.de.ruta)));
+    clearTimeout(this.finAtenuado);
+    this.finAtenuado = null;
     // Antes de que cambie nada, se ve por donde se llega a lo que la sentencia toca.
     const retardo =
       flujo && animar && !sinMovimiento() && u > 0 && previa && foto.accesos && foto.accesos.length ? this.iniciarFlujo(previa, foto.accesos, u, escena) : 0;
@@ -487,6 +492,10 @@ export class Figura {
     const animA = mueve && (seMueven ? hayA : escena.flechas.some((f) => f.cambio) || hayRetiradas);
     this.animandoA = animA;
     this.kA = animA ? 0 : 1;
+    // Lo que no interviene se atenua mientras dura el paso (hay flechas que se animan o que cambian).
+    const quitarAtenuado = () => escena.svg.classList.remove('rep-atenua');
+    const atenuar = mueve && (seMueven || animA) && (this.involucradas.size > 0 || escena.flechas.some((f) => f.cambio) || escena.retiradas.length > 0);
+    if (atenuar) escena.svg.classList.add('rep-atenua');
     if (animA && previa) {
       for (const [id, b] of previa.bloques) {
         if (escena.bloques.has(id) || !escena.retiradas.some((r) => r.desvanece && r.a === id)) continue;
@@ -503,7 +512,8 @@ export class Figura {
     if (!mueve || (!animA && !seMueven)) return retardo + (hayFundido ? u : 0);
     // Si habia una flecha antes (se va a redirigir o a desvanecer), primero se la ve resaltada y quieta.
     const hayFlechaPrevia = escena.flechas.some((f) => f.cambio && f.viejo) || hayRetiradas;
-    const retencion = animA && hayFlechaPrevia ? u * 0.6 : 0;
+    const hayVieja = retardo > 0 && (foto.accesos || []).some((h) => h.tipo === 'vieja');
+    const retencion = animA && hayFlechaPrevia && !hayVieja ? u * 0.6 : 0;
     const duracionA = animA ? retencion + u : 0;
     const pausa = conFlechaAntes ? u * 1.1 : 0;
     const espera = duracionA + pausa;
@@ -526,6 +536,7 @@ export class Figura {
       if (!seMueven) {
         this.raf = null;
         this.parpadear(escena, objetivos, dParpadeo, 0);
+        this.finAtenuado = setTimeout(quitarAtenuado, dParpadeo + 50);
         return;
       }
       if (t < espera) {
@@ -547,6 +558,7 @@ export class Figura {
       // Las flechas hacia bloques que acaban de aparecer se dibujan al final.
       this.dibujarNuevas('.rep-tarde', u);
       this.parpadear(escena, objetivos, dParpadeo, hayTarde ? u : 0);
+      this.finAtenuado = setTimeout(quitarAtenuado, (hayTarde ? u : 0) + dParpadeo + 50);
     };
     this.raf = requestAnimationFrame(paso);
     return retardo + espera + duracionB + (hayTarde ? u : 0) + dParpadeo;
@@ -617,19 +629,67 @@ export class Figura {
     const clon = previa.svg.cloneNode(true);
     // Los velos de un fundido que ya termino no se copian: la figura anterior se ve como quedo.
     for (const e of clon.querySelectorAll('.rep-fundido, .rep-fundido-bloque, .rep-acceso')) e.remove();
+    // Si algun acceso recorre una flecha, todas arrancan atenuadas (una entrada breve) y cada una se enciende, con su destello,
+    // cuando le toca, y sigue encendida: queda el rastro de lo que intervino. Sin flechas que recorrer no se atenua nada.
+    const grupos = new Map();
+    for (const g of clon.querySelectorAll('.rep-flecha-g')) grupos.set(g.getAttribute('data-k'), g);
+    const conFlecha = accesos.some((h) => h.de && grupos.has(clave(h.de.a, h.de.ruta)));
+    const entrada = 0.2 * u;
+    if (conFlecha) {
+      for (const g of grupos.values()) if (g.animate) g.animate([{ opacity: 1 }, { opacity: ATENUADO }], { duration: entrada, fill: 'both' });
+    }
+    const encendidas = new Set();
+    const encender = (h, cuando) => {
+      const k = clave(h.de.a, h.de.ruta);
+      const g = grupos.get(k);
+      if (!conFlecha || !g || encendidas.has(k)) return;
+      encendidas.add(k);
+      if (g.animate) g.animate([{ opacity: ATENUADO }, { opacity: 1 }], { duration: 0.2 * u, delay: cuando, fill: 'both' });
+    };
     const capa = el('g');
     clon.append(capa);
-    let t = 0;
+    let t = conFlecha ? entrada : 0;
+    // Deja encendido un resalte de un recorrido (la casilla de destino) un rato mas.
+    const extender = (ultimo, extra) => {
+      const { marco, animacion, delay, duracion } = ultimo;
+      animacion.cancel();
+      const largo = duracion + extra;
+      const borde = (0.25 * duracion) / largo;
+      marco.animate([{ opacity: 0 }, { opacity: 1, offset: borde }, { opacity: 1, offset: 1 - borde }, { opacity: 0 }], { duration: largo, delay, fill: 'both' });
+    };
+    // El ultimo resalte de un recorrido: si es el de la casilla donde se va a guardar una copia (despues de mostrar lo
+    // que se guarda), queda encendido una pausa corta antes de que se dibuje la flecha nueva.
+    let ultimoResalte = null;
+    const hayCopia = accesos.some((h) => h.tipo === 'copia');
     for (const h of accesos) {
       const copia = h.tipo === 'copia';
       const destino = previa.anclas && previa.anclas.get(copia ? this.claveDeResalte(previa, h.a.a, h.a.ruta) : clave(h.a.a, h.a.ruta));
       const casilla = destino ? this.absolutoDe(previa, destino) : null;
       if (!casilla) continue;
       const flecha = h.de ? previa.flechas.find((f) => f.claveOrigen === clave(h.de.a, h.de.ruta) && f.final) : null;
+      if (h.tipo === 'vieja') {
+        // La flecha que tenia el puntero que se sobrescribe destella antes de que cambie; la casilla de destino
+        // sigue encendida mientras tanto (no se resalta el bloque al que apuntaba: no interviene).
+        if (!flecha) continue;
+        encender(h, t);
+        const dDestello = 0.8 * u;
+        const trazo = el('path', { d: camino(this.rutaPuntos(flecha, flecha.final, previa.filas, previa)), class: 'rep-flujo' });
+        trazo.style.opacity = '0';
+        capa.append(trazo);
+        if (trazo.animate) trazo.animate(PARPADEO, { duration: dDestello, delay: t, fill: 'both' });
+        if (ultimoResalte) {
+          extender(ultimoResalte, dDestello);
+          ultimoResalte = null;
+        }
+        t += dDestello;
+        continue;
+      }
       if (copia) {
         // Un puntero que se copia: parpadean su flecha y lo que senala.
+        ultimoResalte = null;
         const dParpadeo = 0.9 * u;
         if (flecha) {
+          encender(h, t);
           const trazo = el('path', { d: camino(this.rutaPuntos(flecha, flecha.final, previa.filas, previa)), class: 'rep-flujo' });
           trazo.style.opacity = '0';
           capa.append(trazo);
@@ -640,6 +700,7 @@ export class Figura {
         continue;
       }
       if (flecha) {
+        encender(h, t);
         const puntos = this.rutaPuntos(flecha, flecha.final, previa.filas, previa);
         const largo = largoDe(puntos);
         const trozo = Math.min(28, largo * 0.4);
@@ -662,12 +723,17 @@ export class Figura {
       marco.style.opacity = '0';
       capa.append(marco);
       if (marco.animate) {
-        marco.animate(
+        const animacion = marco.animate(
           [{ opacity: 0 }, { opacity: 1, offset: 0.25 }, { opacity: 1, offset: 0.75 }, { opacity: 0 }],
           { duration: dResalte, delay: t, fill: 'both' }
         );
+        ultimoResalte = { marco, animacion, delay: t, duracion: dResalte };
       }
       t += dResalte;
+    }
+    if (hayCopia && ultimoResalte) {
+      extender(ultimoResalte, 0.3 * u);
+      t += 0.3 * u;
     }
     if (!t) return 0;
     const total = t + 0.1 * u;
@@ -1166,7 +1232,10 @@ export class Figura {
       'data-o': f.deId,
       'data-d': f.a,
       'data-i': indice,
+      'data-k': f.claveOrigen || '',
     });
+    // Mientras se atenuan las flechas que no intervienen: la que cambia o la que recorre un acceso queda como estaba.
+    if (f.cambio || f.retirada || (this.involucradas && this.involucradas.has(f.claveOrigen))) g.classList.add('rep-activa');
     g.puntosCompletos = puntos;
     // Una flecha nueva hacia un bloque que acaba de aparecer espera a que termine el movimiento.
     if (f.tarde && this.fase !== 'FIN') g.style.opacity = '0';
