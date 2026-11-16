@@ -368,7 +368,7 @@ int main() {
 }`,
     espera: {
       traza: (traza) => {
-        const con = traza.filter((x) => x.accesos);
+        const con = traza.filter((x) => x.accesos && x.accesos.some((a) => a.de));
         if (con.length !== 1) return 'tenia que haber un paso con acceso y hay ' + con.length;
         if (JSON.stringify(con[0].accesos[0].a.ruta) !== '[1]') return 'el acceso tenia que llegar a la posicion 1';
         return null;
@@ -388,9 +388,34 @@ int main() {
 }`,
     espera: {
       traza: (traza) => {
-        const con = traza.filter((x) => x.accesos);
+        const con = traza.filter((x) => x.accesos && x.accesos.some((a) => a.de));
         if (con.length !== 1) return 'tenia que haber un paso con acceso y hay ' + con.length;
         if (con[0].accesos[0].a.ruta.at(-1) !== 'dato') return 'el acceso tenia que llegar al campo dato';
+        return null;
+      },
+    },
+  },
+  {
+    nombre: 'preguntar por un puntero o liberarlo resalta su casilla, sin flecha',
+    codigo: String.raw`#include <stdlib.h>
+int main() {
+  int n = 3;
+  int *p = malloc(sizeof(int));
+
+  if (p == NULL) {
+    return 1;
+  }
+  while (n > 0 && p != NULL) {
+    n--;
+  }
+  free(p);
+  return 0;
+}`,
+    espera: {
+      traza: (traza) => {
+        const lecturas = traza.filter((x) => x.accesos && x.accesos.length === 1 && !x.accesos[0].de);
+        if (lecturas.length < 4) return 'tenia que resaltar el puntero en el if, en el while y en el free y hay ' + lecturas.length;
+        if (traza.some((x) => x.accesos && x.accesos.some((a) => a.de))) return 'ninguno de estos pasos sigue una flecha';
         return null;
       },
     },

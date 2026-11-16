@@ -241,7 +241,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   // El codigo sigue a la ejecucion sin marear. Al cambiar de funcion, se baja hasta que su primera
   // linea queda arriba (y si no cabe entera, se centra la linea que sigue). Dentro de la misma
   // funcion no se mueve, salvo que la linea salga de lo visible: entonces lo minimo, con margen.
-  function seguirLinea(cambioDeFuncion = false, suave = false) {
+  function seguirLinea(cambioDeFuncion = false, suave = false, fotoActual = traza[paso]) {
     if (!marcada) return;
     const alto = panelCodigo.clientHeight;
     if (!alto) return;
@@ -256,7 +256,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
       panelCodigo.scrollTo({ top: tope, behavior: suave && !sinMovimiento() ? 'smooth' : 'auto' });
     };
     if (cambioDeFuncion) {
-      const f = funcionDe(traza[paso]);
+      const f = funcionDe(fotoActual);
       const cabecera = f ? lineas[f.desde - 1] : null;
       let destino = cabecera ? cabecera.offsetTop - 4 : arriba - alto / 2;
       // La funcion no cabe y la linea queda abajo de lo visible: se centra la linea.
@@ -269,8 +269,19 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     else if (abajo > desde + alto - margen) ir(abajo + margen - alto);
   }
 
+  // La marca de la linea (y lo que la acompana: el cuadro "por ejecutar" y lo que muestra el programa)
+  // espera a que termine la animacion de lo que hizo la linea anterior; si se avanza antes, se pone ya.
+  let marcaPendiente = null;
+
   // "animar": se mueven los bloques del paso anterior al de ahora (si no, aparecen en su lugar).
+  // "adelante": se llego avanzando un paso (la unica vez que se espera a la animacion).
   function pintarPaso(animar = false, adelante = false) {
+    if (marcaPendiente) {
+      clearTimeout(marcaPendiente.reloj);
+      const pendiente = marcaPendiente;
+      marcaPendiente = null;
+      pendiente.aplicar();
+    }
     const foto = traza[paso];
     const antes = paso > 0 ? traza[paso - 1] : null;
     cuenta.textContent = `Paso ${paso + 1} de ${traza.length}`;
@@ -278,20 +289,6 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     anterior.disabled = inicio.disabled = paso === 0;
     siguiente.disabled = final.disabled = paso === traza.length - 1;
 
-    // El codigo de afuera de la funcion en curso se atenua.
-    const f = funcionDe(foto);
-    const cambioDeFuncion = Boolean(f) && (!funcionAnterior || funcionAnterior.nombre !== f.nombre);
-    lineas.forEach((fila, i) => fila.classList.toggle('rep-fuera', Boolean(f) && (i + 1 < f.desde || i + 1 > f.hasta)));
-
-    if (marcada) marcada.classList.remove('rep-ahora', 'rep-error');
-    marcada = foto.linea != null ? lineas[foto.linea - 1] : null;
-    if (marcada) {
-      marcada.classList.add(foto.error ? 'rep-error' : 'rep-ahora');
-      seguirLinea(cambioDeFuncion, animar);
-    }
-    funcionAnterior = f;
-
-    mostrarEstado(foto);
     // La unidad de movimiento sale de la velocidad: lo que dura dibujar una flecha o mover los nodos.
     // Un acceso que se repite en un bucle (la misma sentencia, ya animada antes) se anima mas rapido.
     let repeticion = 0;
@@ -299,8 +296,32 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
       for (let j = 1; j < paso; j++) if (traza[j - 1].linea === antes.linea && traza[j].accesos) repeticion++;
     }
     ultimaAnimacion = dibujo.mostrar(foto, antes, { animar, duracion: VELOCIDADES[Number(velocidad.value)].ms * 0.5, flujo: adelante, repeticion });
-    consola.textContent = foto.salida || ' ';
     etiquetaZoom.textContent = `${Math.round(dibujo.escalaActual * 100)} %`;
+
+    const aplicar = () => {
+      // El codigo de afuera de la funcion en curso se atenua.
+      const f = funcionDe(foto);
+      const cambioDeFuncion = Boolean(f) && (!funcionAnterior || funcionAnterior.nombre !== f.nombre);
+      lineas.forEach((fila, i) => fila.classList.toggle('rep-fuera', Boolean(f) && (i + 1 < f.desde || i + 1 > f.hasta)));
+      if (marcada) marcada.classList.remove('rep-ahora', 'rep-error');
+      marcada = foto.linea != null ? lineas[foto.linea - 1] : null;
+      if (marcada) {
+        marcada.classList.add(foto.error ? 'rep-error' : 'rep-ahora');
+        seguirLinea(cambioDeFuncion, animar, foto);
+      }
+      funcionAnterior = f;
+      mostrarEstado(foto);
+      consola.textContent = foto.salida || ' ';
+    };
+    if (adelante && animar && ultimaAnimacion > 0) {
+      const reloj = setTimeout(() => {
+        marcaPendiente = null;
+        aplicar();
+      }, ultimaAnimacion);
+      marcaPendiente = { reloj, aplicar };
+    } else {
+      aplicar();
+    }
   }
 
   function ir(n) {

@@ -564,9 +564,46 @@ class Interprete {
     if (!this.opciones.traza || !origen || this.accesos.length >= 8) return;
     const a = this.ubicar(destino.reserva, destino.st);
     if (!a) return;
+    // Si ya se habia resaltado esa casilla como una lectura, ahora es el comienzo de la flecha: no se repite.
+    const mismo = (x, y) => x.a === y.a && x.ruta.join('/') === y.ruta.join('/');
+    const lectura = this.accesos.findIndex((x) => !x.de && mismo(x.a, origen));
+    if (lectura >= 0) this.accesos.splice(lectura, 1);
     const ultimo = this.accesos[this.accesos.length - 1];
     if (ultimo && ultimo.de.a === origen.a && ultimo.a.a === a.a && ultimo.de.ruta.join('/') === origen.ruta.join('/') && ultimo.a.ruta.join('/') === a.ruta.join('/')) return;
     this.accesos.push({ de: origen, a });
+  }
+
+  // La lectura de una variable puntero que no sigue ninguna flecha (en una condicion, o la que se libera):
+  // solo se resalta su casilla.
+  lectura(n) {
+    if (!this.opciones.traza || this.accesos.length >= 8) return;
+    while (n.type === 'parenthesized_expression') n = n.namedChildren[0];
+    if (n.type !== 'identifier') return;
+    const v = this.buscar(n.text);
+    if (!v || !v.reserva.raiz || !v.reserva.raiz.t || v.reserva.raiz.t.k !== 'ptr') return;
+    const a = this.ubicar(v.reserva, v.reserva.raiz);
+    if (!a) return;
+    if (this.accesos.some((x) => (x.de ? x.de : x.a).a === a.a && (x.de ? x.de : x.a).ruta.join('/') === a.ruta.join('/'))) return;
+    this.accesos.push({ de: null, a });
+  }
+
+  // Los punteros que se preguntan en una condicion (p == NULL, !p, if (p)); no se entra en las llamadas ni en &x.
+  lecturasEnCondicion(n) {
+    if (!this.opciones.traza) return;
+    switch (n.type) {
+      case 'identifier':
+        this.lectura(n);
+        return;
+      case 'call_expression':
+      case 'sizeof_expression':
+        return;
+      case 'pointer_expression':
+        if (n.children[0].text === '&') return;
+        break;
+      default:
+        break;
+    }
+    for (const h of n.namedChildren) this.lecturasEnCondicion(h);
   }
 
   // Evalua una expresion y, si es una casilla que guarda un puntero (una variable, un campo, un elemento,
@@ -615,6 +652,7 @@ class Interprete {
   }
 
   condicion(n) {
+    this.lecturasEnCondicion(n);
     const rv = this.evaluar(n);
     this.usable(rv);
     if (rv.t.k === 'struct') throw new ErrorDelMotor('ASIGNACION_INVALIDA', 'una estructura como condicion');
@@ -1162,6 +1200,7 @@ class Interprete {
       case 'realloc':
         return this.reasignar(arg(0), this.bytesPedidos(this.entero(arg(1), 'realloc')));
       case 'free':
+        this.lectura(nodos[0]);
         this.liberar(arg(0).v);
         return { t: VOID, v: null };
       case 'strlen':

@@ -137,7 +137,7 @@ function destinosDe(foto) {
   const recorrer = (v, id, ruta) => {
     if (v.k === 'est') v.campos.forEach((c) => recorrer(c.v, id, [...ruta, c.n]));
     else if (v.k === 'arr') v.elems.forEach((e, i) => recorrer(e, id, [...ruta, i]));
-    else if (v.k === 'ptr') mapa.set(clave(id, ruta), { a: v.a, ruta: v.ruta });
+    else if (v.k === 'ptr') mapa.set(clave(id, ruta), { a: v.a, ruta: v.ruta, muerto: Boolean(v.muerto) });
   };
   for (const r of [...foto.globales, ...foto.marcos.flatMap((m) => m.variables), ...foto.monticulo]) recorrer(r.valor, r.id, []);
   return mapa;
@@ -413,6 +413,20 @@ export class Figura {
       flujo && animar && !sinMovimiento() && u > 0 && previa && foto.accesos && foto.accesos.length ? this.iniciarFlujo(previa, foto.accesos, u, repeticion, escena) : 0;
     const mueve = animar && !sinMovimiento() && u > 0 && Boolean(previa);
     this.fundir = mueve;
+    // El fundido de lo que se acaba de liberar (la flecha, el borde del bloque y su aviso) dura una unidad y
+    // empieza cuando termina el flujo; cuenta como parte de lo que dura el paso.
+    const fundidosDeBloque = [...escena.svg.querySelectorAll('.rep-fundido-bloque, .rep-aviso-nuevo')];
+    const hayFundido = mueve && (fundidosDeBloque.length > 0 || escena.flechas.some((f) => f.recienLiberada));
+    for (const e of fundidosDeBloque) {
+      const sale = e.classList.contains('rep-fundido-bloque');
+      if (!mueve) {
+        if (sale) e.remove();
+      } else if (e.animate) {
+        e.animate(sale ? [{ opacity: 1 }, { opacity: 0 }] : [{ opacity: 0 }, { opacity: 1 }], { duration: u, delay: retardo, easing: 'ease-in-out', fill: 'both' });
+      }
+    }
+    this.dFundido = mueve ? u : 450;
+    this.retardoFundido = retardo;
     let seMueven = false;
     for (const b of escena.bloques.values()) {
       const antes = posiciones.get(b.id);
@@ -477,7 +491,8 @@ export class Figura {
       }
     }
     this.pintarFlechas();
-    if (!mueve || (!animA && !seMueven)) return retardo;
+    this.retardoFundido = 0;
+    if (!mueve || (!animA && !seMueven)) return retardo + (hayFundido ? u : 0);
     // Si habia una flecha antes (se va a redirigir o a desvanecer), primero se la ve resaltada y quieta.
     const hayFlechaPrevia = escena.flechas.some((f) => f.cambio && f.viejo) || hayRetiradas;
     const retencion = animA && hayFlechaPrevia ? u * 0.6 : 0;
@@ -551,6 +566,8 @@ export class Figura {
     const dFlecha = 0.8 * u * factor;
     const dResalte = 0.5 * u * factor;
     const clon = previa.svg.cloneNode(true);
+    // Los velos de un fundido que ya termino no se copian: la figura anterior se ve como quedo.
+    for (const e of clon.querySelectorAll('.rep-fundido, .rep-fundido-bloque')) e.remove();
     const capa = el('g');
     clon.append(capa);
     let t = 0;
@@ -806,6 +823,7 @@ export class Figura {
     const bloques = new Map();
     const enLista = new Set(lista.map((b) => b.id));
     const enSueltos = new Set(sueltos.map((b) => b.id));
+    const vivosPrevios = new Set(anterior ? anterior.monticulo.filter((x) => x.vivo).map((x) => x.id) : []);
     for (const b of visibles) {
       const lugar = lugares.get(b.id);
       if (!lugar) continue;
@@ -818,6 +836,9 @@ export class Figura {
       const huerfano = b.vivo && !enLista.has(b.id) && !enSueltos.has(b.id);
       const clases = 'rep-bloque' + (b.vivo ? '' : ' rep-liberado') + (huerfano ? ' rep-huerfano' : '');
       g.append(el('rect', { x: 0, y: ENCABEZADO, width: lugar.w, height: lugar.h, rx: 5, class: clases }));
+      // Recien liberado: encima va el borde de antes, que se desvanece (ver mostrar).
+      const recienLiberado = !b.vivo && vivosPrevios.has(b.id);
+      if (recienLiberado) g.append(el('rect', { x: 0, y: ENCABEZADO, width: lugar.w, height: lugar.h, rx: 5, class: 'rep-bloque rep-fundido-bloque' }));
       g.append(texto(2, 8, String(b.dir), 'rep-direccion'));
       // El aviso va a la derecha de la direccion; si el bloque es tan chico que no entran los dos
       // (6 px por cifra, 5,6 por letra), va debajo del bloque, centrado.
@@ -826,8 +847,8 @@ export class Figura {
         const entra = lugar.w >= String(b.dir).length * 6 + aviso.length * 5.6 + 10;
         g.append(
           entra
-            ? texto(lugar.w - 2, 8, aviso, 'rep-aviso', { 'text-anchor': 'end' })
-            : texto(lugar.w / 2, ENCABEZADO + lugar.h + 11, aviso, 'rep-aviso', { 'text-anchor': 'middle' })
+            ? texto(lugar.w - 2, 8, aviso, 'rep-aviso' + (recienLiberado ? ' rep-aviso-nuevo' : ''), { 'text-anchor': 'end' })
+            : texto(lugar.w / 2, ENCABEZADO + lugar.h + 11, aviso, 'rep-aviso' + (recienLiberado ? ' rep-aviso-nuevo' : ''), { 'text-anchor': 'middle' })
         );
       }
       p.ancla(b.id, [], 0, ENCABEZADO, lugar.w, lugar.h);
@@ -928,7 +949,7 @@ export class Figura {
       // Un bloque liberado que ya nadie senala deja de dibujarse: se lo ve desvanecerse junto con la flecha.
       const seVaDeLaVista = Boolean(previa && previa.bloques.has(prev.a) && !bloques.has(prev.a));
       if (!origen || !(p.anclas.get(clave(prev.a, prev.ruta)) || seVaDeLaVista)) continue;
-      const r = { origen, deId: null, nombre: null, a: prev.a, ruta: prev.ruta, muerto: false, fuera: false, cambio: true, tarde: false };
+      const r = { origen, deId: null, nombre: null, a: prev.a, ruta: prev.ruta, muerto: Boolean(prev.muerto), fuera: false, cambio: true, tarde: false, retirada: true };
       if (seVaDeLaVista) Object.assign(r, { escenaOrigen: previa, desvanece: true });
       r.viejo = describirEn(r, bloquesViejos, ctViejo, marcosViejos);
       retiradas.push(r);
@@ -1032,14 +1053,21 @@ export class Figura {
   // El grupo de dibujo de una flecha: la zona para senalarla, el trazo y, si corresponde, su nombre.
   grupoDeFlecha(f, d, puntos, indice) {
     const fin = puntos[puntos.length - 1];
-    const g = el('g', { class: 'rep-flecha-g' + (f.cambio ? ' rep-nueva' : '') + (f.tarde ? ' rep-tarde' : ''), 'data-o': f.deId, 'data-d': f.a, 'data-i': indice });
+    // La flecha de un puntero liberado que pasa a NULL se retira como era: roja, y mas gruesa para que se vea que cambia.
+    const retiradaRoja = f.retirada && f.muerto && d.tipo !== 'perdida';
+    const g = el('g', {
+      class: 'rep-flecha-g' + (f.cambio && !retiradaRoja ? ' rep-nueva' : '') + (retiradaRoja ? ' rep-retirada' : '') + (f.tarde ? ' rep-tarde' : ''),
+      'data-o': f.deId,
+      'data-d': f.a,
+      'data-i': indice,
+    });
     // Una flecha nueva hacia un bloque que acaba de aparecer espera a que termine el movimiento.
     if (f.tarde && this.fase !== 'FIN') g.style.opacity = '0';
     // Punteada y roja: apunta a algo que no esta (una variable que ya no existe) o fuera del arreglo.
     // Continua y roja: apunta a un bloque liberado (el puntero sigue apuntando, pero la memoria ya no es suya).
     const punteada = f.fuera || d.tipo === 'perdida';
     const liberada = f.muerto && d.tipo !== 'perdida';
-    const marcaNormal = f.cambio ? 'url(#rep-punta-nueva)' : 'url(#rep-punta)';
+    const marcaNormal = f.cambio && !retiradaRoja ? 'url(#rep-punta-nueva)' : 'url(#rep-punta)';
     const trazado = camino(puntos);
     // Un trazo invisible y ancho, para poder senalarla con el cursor o con el dedo.
     g.append(el('path', { d: trazado, class: 'rep-flecha-zona' }));
@@ -1115,7 +1143,7 @@ export class Figura {
     }
     capaFlechas.replaceChildren(...hijos);
     for (const trazo of capaFlechas.querySelectorAll('.rep-fundido')) {
-      if (trazo.animate) trazo.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 450, easing: 'ease-in', fill: 'forwards' });
+      if (trazo.animate) trazo.animate([{ opacity: 1 }, { opacity: 0 }], { duration: this.dFundido || 450, delay: this.retardoFundido || 0, easing: 'ease-in-out', fill: 'both' });
     }
     this.aplicarEnfoque();
   }

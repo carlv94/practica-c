@@ -612,6 +612,11 @@
   filter: drop-shadow(0 0 4px var(--acento));
 }
 
+/* la flecha roja de un puntero liberado que pasa a NULL se retira como era, mas gruesa */
+.rep-flecha-g.rep-retirada .rep-flecha {
+  stroke-width: 3;
+}
+
 /* un puntero a un bloque liberado: sigue apuntando, en rojo y continua */
 .rep-flecha.rep-flecha-liberada {
   stroke: var(--error);
