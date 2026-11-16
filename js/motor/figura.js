@@ -428,7 +428,7 @@ export class Figura {
       }
     }
     // Lo que acaba de recibir la direccion (un bloque que reservo malloc, una variable con &) parpadea cuando la flecha llego.
-    const objetivos = mueve ? this.objetivosDeParpadeo(escena, foto) : [];
+    const objetivos = mueve ? this.objetivosDeParpadeo(escena) : [];
     const dParpadeo = objetivos.length ? 0.9 * u : 0;
     this.dFundido = mueve ? u : 450;
     this.retardoFundido = retardo;
@@ -559,14 +559,12 @@ export class Figura {
     return clave(id, entero ? [] : ruta);
   }
 
-  // Los destinos de las flechas que cambiaron en este paso, menos los de un puntero que se copio (esos ya se resaltaron
-  // antes, con la flecha del puntero copiado).
-  objetivosDeParpadeo(escena, foto) {
-    const copiados = new Set((foto.accesos || []).filter((h) => h.tipo === 'copia').map((h) => clave(h.a.a, h.a.ruta)));
+  // Los destinos de las flechas que cambiaron en este paso: lo que acaba de recibir una direccion (tambien si la
+  // direccion era la de otro puntero: antes parpadeo con la flecha copiada, y ahora, al llegar la flecha nueva).
+  objetivosDeParpadeo(escena) {
     const salida = [];
     for (const f of escena.flechas) {
       if (!f.cambio || !f.final || f.muerto || f.fuera) continue;
-      if (copiados.has(clave(f.a, f.ruta))) continue;
       const k = this.claveDeResalte(escena, f.a, f.ruta);
       if (escena.anclas.get(k) && !salida.includes(k)) salida.push(k);
     }
