@@ -536,7 +536,7 @@ export class Figura {
       this.escena.salientes = [];
       this.pintarFlechas();
       // Las flechas hacia bloques que acaban de aparecer se dibujan al final.
-      this.dibujarNuevas('.rep-tarde .rep-flecha', u);
+      this.dibujarNuevas('.rep-tarde', u);
     };
     this.raf = requestAnimationFrame(paso);
     return retardo + espera + duracionB + (hayTarde ? u : 0);
@@ -652,20 +652,34 @@ export class Figura {
     this.escalaActual = k;
   }
 
-  // Las flechas que cumplen el selector se van dibujando desde su origen hasta su destino.
+  // Las flechas (sus grupos) que cumplen el selector se van dibujando desde su origen hasta su destino. La punta
+  // viaja con el extremo del trazo: un trazo punteado que avanza dejaria la punta ya puesta en el destino.
   dibujarNuevas(selector, milisegundos) {
     if (!this.escena || sinMovimiento()) return;
-    for (const trazo of this.escena.capaFlechas.querySelectorAll(selector)) {
-      if (!trazo.getTotalLength || !trazo.animate) continue;
-      const largo = trazo.getTotalLength();
-      trazo.animate(
-        [
-          { strokeDasharray: `${largo}`, strokeDashoffset: `${largo}` },
-          { strokeDasharray: `${largo}`, strokeDashoffset: '0' },
-        ],
-        { duration: milisegundos, easing: 'ease-out' }
-      );
-    }
+    const grupos = [...this.escena.capaFlechas.querySelectorAll(selector)].filter((g) => g.puntosCompletos);
+    if (!grupos.length) return;
+    const inicio = performance.now();
+    // Devuelve si todavia queda algo por dibujar.
+    const dibujar = (k) => {
+      const avance = 1 - (1 - k) * (1 - k);
+      let vivas = false;
+      for (const g of grupos) {
+        if (!g.isConnected) continue;
+        vivas = true;
+        const trozo = k < 1 ? recortar(g.puntosCompletos, largoDe(g.puntosCompletos) * avance) : g.puntosCompletos;
+        g.style.visibility = trozo ? '' : 'hidden';
+        // El nombre de la flecha aparece cuando ya llego.
+        for (const r of g.querySelectorAll('.rep-etiqueta-g')) r.style.visibility = k < 1 ? 'hidden' : '';
+        if (trozo) for (const trazo of g.querySelectorAll('.rep-flecha')) trazo.setAttribute('d', camino(trozo));
+      }
+      return vivas && k < 1;
+    };
+    // El primer estado (sin dibujar) se pone ya: si se esperara al proximo cuadro, se veria un instante la flecha completa.
+    if (!dibujar(0)) return;
+    const paso = (ahora) => {
+      if (dibujar(Math.min(1, (ahora - inicio) / milisegundos))) requestAnimationFrame(paso);
+    };
+    requestAnimationFrame(paso);
   }
 
   // Cambia el alto que se ve (sin tocar la escala): el area visible es mas alta que el paso nuevo mientras se anima.
@@ -1061,6 +1075,7 @@ export class Figura {
       'data-d': f.a,
       'data-i': indice,
     });
+    g.puntosCompletos = puntos;
     // Una flecha nueva hacia un bloque que acaba de aparecer espera a que termine el movimiento.
     if (f.tarde && this.fase !== 'FIN') g.style.opacity = '0';
     // Punteada y roja: apunta a algo que no esta (una variable que ya no existe) o fuera del arreglo.
