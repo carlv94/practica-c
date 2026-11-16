@@ -290,12 +290,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     siguiente.disabled = final.disabled = paso === traza.length - 1;
 
     // La unidad de movimiento sale de la velocidad: lo que dura dibujar una flecha o mover los nodos.
-    // Un acceso que se repite en un bucle (la misma sentencia, ya animada antes) se anima mas rapido.
-    let repeticion = 0;
-    if (adelante && antes && foto.accesos) {
-      for (let j = 1; j < paso; j++) if (traza[j - 1].linea === antes.linea && traza[j].accesos) repeticion++;
-    }
-    ultimaAnimacion = dibujo.mostrar(foto, antes, { animar, duracion: VELOCIDADES[Number(velocidad.value)].ms * 0.5, flujo: adelante, repeticion });
+    ultimaAnimacion = dibujo.mostrar(foto, antes, { animar, duracion: VELOCIDADES[Number(velocidad.value)].ms * 0.5, flujo: adelante });
     etiquetaZoom.textContent = `${Math.round(dibujo.escalaActual * 100)} %`;
 
     const aplicar = () => {

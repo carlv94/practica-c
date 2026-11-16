@@ -36,7 +36,6 @@ const NS = 'http://www.w3.org/2000/svg';
 let contadorDeCortes = 0; // para dar un id distinto a cada recorte de una caja que se abre o se cierra
 // Un parpadeo: aparece, casi se apaga y vuelve a aparecer.
 const PARPADEO = [{ opacity: 0 }, { opacity: 1, offset: 0.2 }, { opacity: 0.1, offset: 0.45 }, { opacity: 1, offset: 0.7 }, { opacity: 0 }];
-const factorDeRepeticion = (repeticion) => Math.max(0.25, 1 / (1 + 0.7 * repeticion));
 const CW = 52; // ancho de una casilla
 const CH = 26; // alto de una casilla
 const PAD = 6;
@@ -390,9 +389,8 @@ export class Figura {
   }
 
   // "duracion" es la unidad de movimiento. Devuelve cuanto dura la animacion de este paso (0 si no hay).
-  // "flujo": el paso viene de avanzar uno (se animan los accesos por puntero que hizo la sentencia, si los hubo);
-  // "repeticion": cuantas veces ya se animo un acceso de esa sentencia (en un bucle se acelera).
-  mostrar(foto, anterior = null, { animar = false, duracion = 450, flujo = false, repeticion = 0 } = {}) {
+  // "flujo": el paso viene de avanzar uno (se animan los accesos por puntero que hizo la sentencia, si los hubo).
+  mostrar(foto, anterior = null, { animar = false, duracion = 450, flujo = false } = {}) {
     this.terminarFlujo();
     if (this.raf) cancelAnimationFrame(this.raf);
     this.raf = null;
@@ -414,7 +412,7 @@ export class Figura {
     const u = duracion;
     // Antes de que cambie nada, se ve por donde se llega a lo que la sentencia toca.
     const retardo =
-      flujo && animar && !sinMovimiento() && u > 0 && previa && foto.accesos && foto.accesos.length ? this.iniciarFlujo(previa, foto.accesos, u, repeticion, escena) : 0;
+      flujo && animar && !sinMovimiento() && u > 0 && previa && foto.accesos && foto.accesos.length ? this.iniciarFlujo(previa, foto.accesos, u, escena) : 0;
     const mueve = animar && !sinMovimiento() && u > 0 && Boolean(previa);
     this.fundir = mueve;
     // El fundido de lo que se acaba de liberar (la flecha, el borde del bloque y su aviso) dura una unidad y
@@ -430,9 +428,8 @@ export class Figura {
       }
     }
     // Lo que acaba de recibir la direccion (un bloque que reservo malloc, una variable con &) parpadea cuando la flecha llego.
-    const factor = factorDeRepeticion(repeticion);
     const objetivos = mueve ? this.objetivosDeParpadeo(escena, foto) : [];
-    const dParpadeo = objetivos.length ? 0.9 * u * factor : 0;
+    const dParpadeo = objetivos.length ? 0.9 * u : 0;
     this.dFundido = mueve ? u : 450;
     this.retardoFundido = retardo;
     let seMueven = false;
@@ -616,10 +613,9 @@ export class Figura {
   // flecha del puntero hasta lo que alcanza, y esa casilla se resalta un instante. En un acceso de dos
   // saltos (**pp) el destello pasa por el puntero del medio. Devuelve lo que dura (0 si no hay nada que ver).
   // Mientras tanto la figura nueva queda esperando: se la pone cuando termina.
-  iniciarFlujo(previa, accesos, u, repeticion, escena) {
-    const factor = factorDeRepeticion(repeticion);
-    const dFlecha = 0.8 * u * factor;
-    const dResalte = 0.5 * u * factor;
+  iniciarFlujo(previa, accesos, u, escena) {
+    const dFlecha = 0.8 * u;
+    const dResalte = 0.5 * u;
     const clon = previa.svg.cloneNode(true);
     // Los velos de un fundido que ya termino no se copian: la figura anterior se ve como quedo.
     for (const e of clon.querySelectorAll('.rep-fundido, .rep-fundido-bloque, .rep-acceso')) e.remove();
@@ -634,7 +630,7 @@ export class Figura {
       const flecha = h.de ? previa.flechas.find((f) => f.claveOrigen === clave(h.de.a, h.de.ruta) && f.final) : null;
       if (copia) {
         // Un puntero que se copia: parpadean su flecha y lo que senala.
-        const dParpadeo = 0.9 * u * factor;
+        const dParpadeo = 0.9 * u;
         if (flecha) {
           const trazo = el('path', { d: camino(this.rutaPuntos(flecha, flecha.final, previa.filas, previa)), class: 'rep-flujo' });
           trazo.style.opacity = '0';
@@ -676,7 +672,7 @@ export class Figura {
       t += dResalte;
     }
     if (!t) return 0;
-    const total = t + 0.1 * u * factor;
+    const total = t + 0.1 * u;
     this.contenedor.replaceChildren(clon);
     this.flujoActivo = { svg: escena.svg, temporizador: setTimeout(() => this.terminarFlujo(), total) };
     return total;

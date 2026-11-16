@@ -1993,9 +1993,8 @@ const r = ejecutar(analizador, fuente, { entrada: '3 1 2', traza: true });
   última fotografía con el estado en que se produjo.
   Si la sentencia anterior accedió a algo por un puntero, la fotografía trae `accesos: [{ de: { a, ruta }, a: { a, ruta } }]`
   (de la casilla del puntero a la casilla que alcanza; `**pp` son dos, `p->campo` llega hasta el campo; los de un arreglo común no se
-  anotan; los que terminan en error tampoco). La figura los anima al avanzar un paso (`mostrar(..., { flujo, repeticion })`): sobre la
+  anotan; los que terminan en error tampoco). La figura los anima al avanzar un paso (`mostrar(..., { flujo })`): sobre la
   figura anterior, un destello viaja por la flecha de cada puntero y la casilla que alcanza se resalta; recién después cambia la figura.
-  Una sentencia que se repite (un bucle) acelera: el reproductor cuenta las veces anteriores y la duración se reduce (mínimo un cuarto).
   Los últimos 4 bloques liberados quedan a la vista (con su aviso) aunque ya nadie los señale.
   Cuando un puntero recibe la dirección de un bloque o de una variable (`p = malloc(...)`, `p = &n`, también un parámetro que recibe `&x`),
   ese bloque o esa casilla parpadea al llegar la flecha (`objetivosDeParpadeo`). Cuando se copia otro puntero (`q = p`, `p = p->sig`,
