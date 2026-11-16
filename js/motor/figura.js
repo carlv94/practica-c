@@ -25,14 +25,15 @@
 // Un paso con movimiento tiene tres tiempos: se anima la flecha (se dibuja hacia el bloque, que
 // todavia esta donde estaba, o se redirige: la punta se desliza del destino viejo al nuevo; si el
 // puntero pasa a NULL, se desvanece), una pausa con todo quieto, y los bloques se reubican; tambien las
-// cajas de la pila: la de una funcion que termina se desvanece y las de abajo suben, y la de una
-// llamada aparece y las de abajo bajan. mostrar() devuelve
+// cajas de la pila: la de una funcion que termina se cierra (de abajo hacia arriba) y las de abajo suben, y la de una
+// llamada se abre (de arriba hacia abajo) y las de abajo bajan. mostrar() devuelve
 // cuanto dura todo, para que quien reproduce espere. Los nombres de las flechas se ven si se
 // pide (fijarNombres), o al senalar una flecha, una variable o un bloque; un clic en una flecha la deja fija. Adonde apuntaba antes un
 // puntero que cambio se dice en la descripcion al pasar el cursor. Los colores salen de las
 // variables de css/estilo.css.
 
 const NS = 'http://www.w3.org/2000/svg';
+let contadorDeCortes = 0; // para dar un id distinto a cada recorte de una caja que se abre o se cierra
 const CW = 52; // ancho de una casilla
 const CH = 26; // alto de una casilla
 const PAD = 6;
@@ -436,8 +437,8 @@ export class Figura {
       if (Math.abs(b.desde.x - b.hasta.x) > 0.5 || Math.abs(b.desde.y - b.hasta.y) > 0.5) seMueven = true;
       b.g.setAttribute('transform', `translate(${b.actual.x},${b.actual.y})`);
     }
-    // Las cajas de la pila: las que siguen suben o bajan, las nuevas aparecen y las que ya no estan
-    // se ven (quietas) hasta el tiempo B, en que se desvanecen.
+    // Las cajas de la pila: las que siguen suben o bajan, las nuevas se abren y las que ya no estan
+    // se ven (quietas) hasta el tiempo B, en que se cierran.
     for (const m of escena.marcosG.values()) {
       const antes = posicionesMarcos.get(m.clave);
       m.desde = mueve && antes != null ? { y: antes } : { y: m.hasta.y };
@@ -454,7 +455,10 @@ export class Figura {
         for (const e of clon.querySelectorAll('[data-id]')) e.removeAttribute('data-id');
         clon.setAttribute('transform', `translate(0,${m.actual.y})`);
         escena.raiz.append(clon);
-        escena.salientes.push({ g: clon });
+        clon.removeAttribute('clip-path');
+        const borde = clon.querySelector('.rep-marco');
+        if (borde) borde.setAttribute('height', m.alto);
+        escena.salientes.push({ g: clon, rect: borde, alto: m.alto, ancho: m.ancho });
         seMueven = true;
       }
     }
@@ -466,7 +470,7 @@ export class Figura {
     if (mueve && seMueven && escena.altoDesde > escena.altoFinal) this.ponerAlto(escena.altoDesde);
     if (seMueven) {
       for (const b of escena.bloques.values()) if (b.nuevo) b.g.style.opacity = '0';
-      for (const m of escena.marcosG.values()) if (m.nuevo) m.g.style.opacity = '0';
+      for (const m of escena.marcosG.values()) if (m.nuevo) this.abrirCaja(m, 0, escena);
     }
     // Tiempo A: las flechas que cambiaron se animan (se dibujan, se redirigen o se retraen o se desvanecen) con los
     // bloques todavia donde estaban; despues, una pausa. Tiempo B: los bloques se reubican. FIN: todo
@@ -682,6 +686,32 @@ export class Figura {
     requestAnimationFrame(paso);
   }
 
+  // Una caja de la pila que llega se abre (y una que se va se cierra) de arriba hacia abajo: su borde crece o se achica
+  // y el contenido se va mostrando con el. "k" va de 0 (cerrada) a 1 (abierta). Se mueve junto con las de abajo, asi no se pisan.
+  abrirCaja(caja, k, escena = this.escena) {
+    if (!caja.rect) return;
+    if (k >= 1) {
+      if (caja.clip) {
+        caja.g.removeAttribute('clip-path');
+        caja.clip.parentNode.remove();
+        caja.clip = null;
+      }
+      caja.rect.setAttribute('height', caja.alto);
+      return;
+    }
+    if (!caja.clip) {
+      const id = 'rep-clip-' + (++contadorDeCortes);
+      const corte = el('clipPath', { id });
+      caja.clip = el('rect', { x: -4, y: -4, width: caja.ancho + 24, height: 0 });
+      corte.append(caja.clip);
+      escena.svg.querySelector('defs').append(corte);
+      caja.g.setAttribute('clip-path', `url(#${id})`);
+    }
+    const alto = Math.max(0, caja.alto * k);
+    caja.rect.setAttribute('height', alto);
+    caja.clip.setAttribute('height', alto > 0 ? alto + 6 : 0);
+  }
+
   // Cambia el alto que se ve (sin tocar la escala): el area visible es mas alta que el paso nuevo mientras se anima.
   ponerAlto(h) {
     const escena = this.escena;
@@ -703,10 +733,10 @@ export class Figura {
     for (const m of this.escena.marcosG.values()) {
       m.actual = { y: m.desde.y + (m.hasta.y - m.desde.y) * e };
       m.g.setAttribute('transform', `translate(0,${m.actual.y})`);
-      if (m.nuevo) m.g.style.opacity = String(e);
+      if (m.nuevo) this.abrirCaja(m, e);
     }
-    // La caja que se va se desvanece en la primera mitad, antes de que la de abajo llegue a su lugar.
-    for (const sa of this.escena.salientes) sa.g.style.opacity = String(Math.max(0, 1 - 2 * e));
+    // La caja que se va se cierra, de abajo hacia arriba, a la vez que la de abajo sube a su lugar.
+    for (const sa of this.escena.salientes) this.abrirCaja(sa, 1 - e);
     this.pintarFlechas();
   }
 
@@ -741,7 +771,8 @@ export class Figura {
       // Cada caja es un grupo con coordenadas propias: asi se la puede mover.
       const gm = el('g', { class: 'rep-marco-g' });
       raiz.append(gm);
-      gm.append(el('rect', { x: 8, y: 0, width: ancho, height: alto, rx: 6, class: 'rep-marco' + (caja.actual ? ' rep-actual' : '') }));
+      const bordeMarco = el('rect', { x: 8, y: 0, width: ancho, height: alto, rx: 6, class: 'rep-marco' + (caja.actual ? ' rep-actual' : '') });
+      gm.append(bordeMarco);
       gm.append(texto(16, 15, caja.titulo, 'rep-funcion'));
       p.marco = caja.clave;
       let fy = 22;
@@ -762,7 +793,7 @@ export class Figura {
       }
       p.marco = null;
       gm.setAttribute('transform', `translate(0,${y})`);
-      marcosG.set(caja.clave, { clave: caja.clave, g: gm, hasta: { y } });
+      marcosG.set(caja.clave, { clave: caja.clave, g: gm, rect: bordeMarco, alto, ancho, hasta: { y } });
       anchoPila = Math.max(anchoPila, ancho + 8);
       y += alto + 10;
     }

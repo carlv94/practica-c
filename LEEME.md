@@ -2026,8 +2026,8 @@ const r = ejecutar(analizador, fuente, { entrada: '3 1 2', traza: true });
   variable o un bloque; las flechas tienen un trazo ancho invisible para poder señalarlas, el cuadro dice
   de dónde sale y a dónde va, y un clic la deja fija hasta otro clic. Al terminar el programa (ya no hay
   funciones) los bloques se quedan donde estaban, solo con la marca «sin puntero». Las cajas de la pila también
-  se animan, en el tiempo B: la de una función que termina se desvanece (la primera mitad) y las de abajo suben;
-  la de una llamada aparece y las de abajo bajan. Cada caja es un grupo con coordenadas propias, y las casillas
+  se animan, en el tiempo B: la de una función que termina se cierra (su borde se achica de abajo hacia arriba mientras el contenido se recorta) y las de abajo suben;
+  la de una llamada se abre de arriba hacia abajo y las de abajo bajan, a la par, sin pisarse. Cada caja es un grupo con coordenadas propias, y las casillas
   de la pila (y las flechas que salen de ellas) la siguen mientras se mueve; la caja que se fue se conserva
   (clonada de la escena anterior) hasta que termina el movimiento. Al pasar el cursor sobre una variable o un bloque se muestra su contenido (tipo,
   dirección, campos, adónde apunta cada puntero y, si cambió con la línea anterior, adónde apuntaba antes) y se resaltan sus flechas. `dibujarFotografia(foto, anterior)`
