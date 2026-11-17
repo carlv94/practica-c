@@ -699,9 +699,10 @@
   display: inline-block;
   max-width: 100%;
   box-sizing: border-box;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  /* una condicion larga pasa a la linea de abajo en lugar de cortarse: la respuesta tiene que verse siempre */
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: left;
   background: var(--fondo);
   border: 2px solid var(--acento);
   border-radius: 6px;
@@ -712,6 +713,15 @@
 }
 .rep-pregunta-resp {
   font-weight: 700;
+}
+/* en el telefono en vertical la respuesta va en su propia linea (la condicion puede ocupar todo el ancho) */
+@media (max-width: 600px) and (orientation: portrait) {
+  .rep-pregunta {
+    font-size: 0.8rem;
+  }
+  .rep-pregunta-resp {
+    display: block;
+  }
 }
 .rep-pregunta-resp.rep-si {
   color: var(--bien);
