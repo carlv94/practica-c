@@ -699,6 +699,13 @@ export class Figura {
     const clon = previa.svg.cloneNode(true);
     // Los velos de un fundido que ya termino no se copian: la figura anterior se ve como quedo.
     for (const e of clon.querySelectorAll('.rep-fundido, .rep-fundido-bloque, .rep-acceso')) e.remove();
+    // Lo que cambio en el paso anterior (en ambar) ya no es novedad: en este paso se ve con el color de siempre.
+    for (const g of clon.querySelectorAll('.rep-flecha-g.rep-nueva')) {
+      g.classList.remove('rep-nueva');
+      for (const p of g.querySelectorAll('[marker-end="url(#rep-punta-nueva)"]')) p.setAttribute('marker-end', 'url(#rep-punta)');
+    }
+    for (const e of clon.querySelectorAll('.rep-etiqueta-nueva')) e.classList.remove('rep-etiqueta-nueva');
+    for (const e of clon.querySelectorAll('.rep-celda.rep-cambio')) e.classList.remove('rep-cambio');
     // Si algun acceso recorre una flecha, todas arrancan atenuadas (una entrada breve) y cada una se enciende, con su destello,
     // cuando le toca, y sigue encendida: queda el rastro de lo que intervino. Sin flechas que recorrer no se atenua nada.
     const grupos = new Map();
