@@ -171,9 +171,6 @@
         "dinamica-memoria.json",
         "dinamica-errores.json",
         "dinamica-puntero.json"
-      ],
-      "ocultas": [
-        "dinamica-puntero.json"
       ]
     }
   ]
