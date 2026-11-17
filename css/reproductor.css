@@ -193,6 +193,21 @@
   padding: 6px 8px;
   font-size: 0.85rem;
 }
+/* en pantallas grandes (y no en toda la pantalla, que ya reparte el alto) la zona de la figura, lo que muestra el programa y
+   el estado tienen una altura fija: los controles de reproduccion quedan siempre en el mismo lugar, sin importar cuanto
+   crezca la figura (si no entra, se desplaza adentro) */
+.rep-ancho:not(.rep-ampliado) .rep-figura {
+  height: clamp(300px, 46vh, 480px);
+  box-sizing: border-box;
+}
+.rep-ancho:not(.rep-ampliado) .rep-consola {
+  height: 6.5em;
+  max-height: none;
+  box-sizing: border-box;
+}
+.rep-ancho:not(.rep-ampliado) .rep-estado {
+  min-height: 60px;
+}
 .rep-nota {
   margin: 8px 0 0;
   font-size: 0.8rem;
