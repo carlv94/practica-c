@@ -444,6 +444,7 @@ export class Figura {
         sombra.terminarFlujo();
         if (sombra.raf) cancelAnimationFrame(sombra.raf);
         clearTimeout(sombra.finAtenuado);
+        clearTimeout(sombra.finAparte);
         this.expansionPendiente = setTimeout(() => {
           this.expansionPendiente = null;
           this.mostrar(foto, intermedia, { animar, duracion, flujo, expandir: false });
@@ -469,6 +470,8 @@ export class Figura {
     this.involucradas = new Set((foto.accesos || []).filter((h) => h.de).map((h) => clave(h.de.a, h.de.ruta)));
     clearTimeout(this.finAtenuado);
     this.finAtenuado = null;
+    clearTimeout(this.finAparte);
+    this.finAparte = null;
     // Antes de que cambie nada, se ve por donde se llega a lo que la sentencia toca.
     const retardo =
       flujo && animar && !sinMovimiento() && u > 0 && previa && foto.accesos && foto.accesos.length ? this.iniciarFlujo(previa, foto.accesos, u, escena) : 0;
@@ -573,7 +576,21 @@ export class Figura {
     }
     this.pintarFlechas();
     this.retardoFundido = 0;
-    if (!mueve || (!animA && !seMueven)) return retardo + (hayFundido ? u : 0);
+    if (!mueve || (!animA && !seMueven)) {
+      // Cambio el valor de una casilla (no un puntero) a la que llega alguna flecha: las flechas quedan difuminadas un
+      // momento, para que se vea la casilla en ambar, y despues recuperan su color con un fundido.
+      const aparte = mueve && this.valorApuntadoCambio(escena, foto) ? 0.6 * u : 0;
+      if (aparte) {
+        const svg = escena.svg;
+        svg.classList.add('rep-aparte');
+        this.finAparte = setTimeout(() => {
+          svg.classList.remove('rep-aparte');
+          svg.classList.add('rep-vuelve');
+          this.finAparte = setTimeout(() => svg.classList.remove('rep-vuelve'), 400);
+        }, retardo + aparte);
+      }
+      return retardo + (hayFundido ? u : 0) + aparte;
+    }
     // Si habia una flecha antes (se va a redirigir o a desvanecer), primero se la ve resaltada y quieta.
     const hayFlechaPrevia = escena.flechas.some((f) => f.cambio && f.viejo) || hayRetiradas;
     const hayVieja = retardo > 0 && (foto.accesos || []).some((h) => h.tipo === 'vieja');
@@ -629,6 +646,21 @@ export class Figura {
     };
     this.raf = requestAnimationFrame(paso);
     return retardo + espera + duracionB + (hayTarde ? pausaNuevo + u : 0) + dFinal + (seMueven ? 0 : dLlegar);
+  }
+
+  // ¿Cambio en este paso el valor de una casilla que no es un puntero y a la que llega alguna flecha (a ella, a la
+  // variable que la contiene o a algo que ella contiene)?
+  valorApuntadoCambio(escena, foto) {
+    const plano = planoDe(foto);
+    for (const k of escena.cambios) {
+      const [id, ruta] = k.split('|');
+      if (ruta === '#vivo') continue;
+      const valor = plano.get(k);
+      if (valor === undefined || valor.startsWith('p') || valor === 'sinvalor') continue;
+      const relacionada = (r) => r === ruta || r === '' || ruta === '' || ruta.startsWith(r + '/') || r.startsWith(ruta + '/');
+      if (escena.flechas.some((f) => !f.fuera && !f.muerto && String(f.a) === id && relacionada(f.ruta.join('/')))) return true;
+    }
+    return false;
   }
 
   // La casilla o el bloque que se resalta cuando un puntero recibe su direccion: un bloque del montículo entero

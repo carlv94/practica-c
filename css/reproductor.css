@@ -322,6 +322,14 @@
 .rep-atenua .rep-flecha-g.rep-activa {
   opacity: 1;
 }
+/* Cambio el valor de algo a lo que llega una flecha: todas quedan difuminadas un momento y vuelven con un fundido. */
+.rep-aparte .rep-flecha-g,
+.rep-aparte .rep-flecha-g.rep-activa {
+  opacity: 0.38;
+}
+.rep-vuelve .rep-flecha-g {
+  transition-duration: 0.3s;
+}
 .rep-enfoque .rep-flecha-g {
   opacity: 0.12;
 }
