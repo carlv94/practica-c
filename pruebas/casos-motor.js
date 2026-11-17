@@ -590,6 +590,32 @@ int main() {
       },
     },
   },
+  {
+    nombre: 'una condicion dentro de una funcion llamada desde otra condicion tambien tiene su pregunta y su respuesta',
+    opciones: { preguntas: true },
+    codigo: String.raw`int analizar(int x) {
+  if (x > 1) {
+    return 1;
+  }
+  return 0;
+}
+
+int main() {
+  if (analizar(2) == 1) {
+    return 0;
+  }
+  return 1;
+}`,
+    espera: {
+      traza: (traza) => {
+        const preguntas = traza.filter((x) => x.pregunta).map((x) => x.pregunta.texto).join(' | ');
+        if (preguntas !== 'analizar(2) == 1 | x > 1') return 'las preguntas eran ' + preguntas;
+        const respuestas = traza.filter((x) => x.condicion).map((x) => x.condicion.texto + '=' + x.condicion.valor).join(' | ');
+        if (respuestas !== 'x > 1=true | analizar(2) == 1=true') return 'las respuestas eran ' + respuestas;
+        return null;
+      },
+    },
+  },
 ];
 
 export function resultadoDelMotor(analizador, ejecutar, caso) {

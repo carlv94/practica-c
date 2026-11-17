@@ -1109,11 +1109,16 @@ class Interprete {
       this.asignarAlmacen(reserva.raiz, args[i]);
     });
     let valor = null;
+    // Las condiciones de la funcion no son parte de la condicion (a && b) que la llamo: cuentan por separado.
+    const condicionesAfuera = this.enCondicion;
+    this.enCondicion = 0;
     try {
       this.ejecutar(f.cuerpo);
     } catch (e) {
       if (!(e instanceof Retorno)) throw e;
       valor = e.valor;
+    } finally {
+      this.enCondicion = condicionesAfuera;
     }
     let resultado;
     if (f.tipoRetorno.k === 'void') resultado = { t: VOID, v: null };
