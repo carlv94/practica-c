@@ -104,6 +104,7 @@ class Interprete {
     this.condicionHecha = null; // la ultima condicion que se evaluo, para la proxima fotografia
     this.fotoDePaso = null; // la fotografia con que empezo la ultima sentencia (la pregunta de una condicion se le suma)
     this.muestraHecha = null; // las casillas de los valores que acaba de mostrar un printf, para la proxima fotografia
+    this.lecturaHecha = null; // lo que acaba de leer un scanf (el trozo de la entrada y las casillas), para la proxima fotografia
     this.error = null;
     this.retorno = null;
   }
@@ -138,6 +139,7 @@ class Interprete {
       retorno: this.retorno,
       fugas: this.error ? [] : this.memoria.fugas().map((r) => ({ id: r.id, dir: r.dir, tam: r.tam })),
       traza: this.traza,
+      entrada: this.entrada.texto,
       pasos: this.pasos,
       funciones: [...this.funciones.values()].map((f) => ({ nombre: f.nombre, desde: f.desde, hasta: f.hasta })),
     };
@@ -148,6 +150,7 @@ class Interprete {
       this.accesos = [];
       this.condicionHecha = null;
       this.muestraHecha = null;
+      this.lecturaHecha = null;
       return;
     }
     const foto = fotografia(this, linea);
@@ -158,6 +161,8 @@ class Interprete {
     if (pregunta) foto.pregunta = pregunta;
     if (this.muestraHecha) foto.muestra = this.muestraHecha;
     this.muestraHecha = null;
+    if (this.lecturaHecha) foto.lectura = this.lecturaHecha;
+    this.lecturaHecha = null;
     if (error) foto.error = error;
     this.traza.push(foto);
   }
@@ -1444,11 +1449,18 @@ class Interprete {
       if (t.k === 'int' || t.k === 'float' || t.k === 'struct') {
         throw new ErrorDelMotor('AMPERSAND_FALTA', 'scanf recibe el valor de una variable en lugar de su direccion', h.startPosition.row + 1, { texto: h.text });
       }
+      // Si el destino es una variable puntero (scanf("%d", p)), se anota de donde sale: el valor se guarda siguiendo su flecha.
+      if (this.opciones.traza && this.opciones.preguntas) {
+        const { rv, origen } = this.evaluarConOrigen(h);
+        return { ...rv, origen };
+      }
       return this.evaluar(h);
     });
     const piezas = piezasDeScanf(formato);
     let k = 0;
     let asignados = 0;
+    const inicioDeLectura = this.entrada.pos;
+    const celdasLeidas = []; // las casillas que reciben los valores (para el reproductor)
     const bytesDe = { '': 4, h: 2, hh: 1, l: 8, ll: 8, L: 8 };
     for (const p of piezas) {
       if (p.blanco) {
@@ -1476,6 +1488,7 @@ class Interprete {
       if (k >= destinos.length) throw new ErrorDelMotor('SIN_VERIFICAR', 'scanf tiene mas conversiones que variables');
       const d = destinos[k++];
       if (d.t.k !== 'ptr') throw new ErrorDelMotor('AMPERSAND_FALTA', 'scanf recibe el valor de una variable en lugar de su direccion', null, { conv: p.conv });
+      if (d.origen && d.v) this.acceso(d.origen, this.deref(d.v)); // el recorrido por la flecha del puntero
       if (p.conv === 's') {
         this.escribirCadena(d.v, valor);
       } else {
@@ -1493,6 +1506,17 @@ class Interprete {
         lv.st.v = p.conv === 'c' ? valor.charCodeAt(0) : t.k === 'int' ? ajustar(valor, t) : t.bytes === 4 ? Math.fround(valor) : valor;
       }
       asignados++;
+      if (this.opciones.traza && this.opciones.preguntas) {
+        const s = serializarPuntero(d.v);
+        if (s.k === 'ptr') celdasLeidas.push({ a: s.a, ruta: s.ruta });
+      }
+    }
+    if (this.opciones.traza && this.opciones.preguntas) {
+      // Para el reproductor: el trozo de la entrada que se leyo (sin los blancos del comienzo) y adonde fue a parar.
+      let desde = inicioDeLectura;
+      while (desde < this.entrada.pos && /\s/.test(this.entrada.texto[desde])) desde++;
+      const agotada = asignados === 0 && this.entrada.agotada;
+      if (celdasLeidas.length || agotada) this.lecturaHecha = { desde, hasta: this.entrada.pos, celdas: celdasLeidas, agotada };
     }
     return { t: INT, v: asignados === 0 && this.entrada.agotada ? -1 : asignados };
   }

@@ -194,7 +194,14 @@ function fotoConLugar(foto, anterior) {
     marcos.push({ ...viejo, variables });
   }
   if (!crece) return null;
-  return { ...anterior, marcos, accesos: undefined, condicion: undefined, muestra: undefined, error: undefined };
+  return { ...anterior, marcos, accesos: undefined, condicion: undefined, muestra: undefined, lectura: undefined, error: undefined };
+}
+
+// Las casillas que se encienden en violeta en este paso: de las que salieron los valores de un printf y las que recibieron los de
+// un scanf.
+function enciende(foto) {
+  const celdas = [...(foto.muestra ? foto.muestra.celdas : []), ...(foto.lectura ? foto.lectura.celdas : [])];
+  return celdas.length ? { celdas } : null;
 }
 
 // Cuando en este paso se reserva un bloque (malloc) y ademas se recorre una flecha (*p = malloc(...), p->sig = malloc(...)):
@@ -206,7 +213,7 @@ function fotoConBloque(foto, anterior) {
   const nuevos = foto.monticulo.filter((b) => b.vivo && !antes.has(b.id));
   if (!nuevos.length) return null;
   if (!(foto.accesos || []).some((h) => h.de)) return null;
-  return { ...anterior, monticulo: [...anterior.monticulo, ...nuevos], accesos: undefined, condicion: undefined, pregunta: undefined, muestra: undefined, error: undefined };
+  return { ...anterior, monticulo: [...anterior.monticulo, ...nuevos], accesos: undefined, condicion: undefined, pregunta: undefined, muestra: undefined, lectura: undefined, error: undefined };
 }
 
 // Los bloques que se ven: los reservados, el que se libera en este paso, los liberados que algun
@@ -522,8 +529,8 @@ export class Figura {
     this.finAparte = null;
     // Antes de que cambie nada, se ve por donde se llega a lo que la sentencia toca.
     const retardo =
-      flujo && animar && !sinMovimiento() && u > 0 && previa && ((foto.accesos && foto.accesos.length) || foto.condicion || foto.muestra)
-        ? this.iniciarFlujo(previa, foto.accesos || [], u, escena, foto.condicion, foto.muestra)
+      flujo && animar && !sinMovimiento() && u > 0 && previa && ((foto.accesos && foto.accesos.length) || foto.condicion || foto.muestra || foto.lectura)
+        ? this.iniciarFlujo(previa, foto.accesos || [], u, escena, foto.condicion, enciende(foto))
         : 0;
     const mueve = animar && !sinMovimiento() && u > 0 && Boolean(previa);
     this.fundir = mueve;

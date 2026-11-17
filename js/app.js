@@ -1223,7 +1223,7 @@ async function reproductorDe(datos, consigna) {
   const res = ejecutar(analizador, datos.fuente, { entrada: datos.entrada || '', traza: true, preguntas: true });
   if (!res.traza.length) throw new Error('el programa no tiene nada que seguir');
   const error = res.error ? { ...res.error, ...mensajeDeError(res.error) } : null;
-  return crearReproductor({ codigo: datos.fuente, traza: res.traza, error, titulo: consigna.titulo, funciones: res.funciones, cabezas: datos.cabezas });
+  return crearReproductor({ codigo: datos.fuente, traza: res.traza, error, titulo: consigna.titulo, funciones: res.funciones, cabezas: datos.cabezas, entrada: res.entrada });
 }
 
 // El paso a paso de un cuestionario: junto a "Siguiente", solo despues de acertar (no adelanta la

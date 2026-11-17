@@ -111,7 +111,7 @@ const guardarVelocidad = (v) => {
   }
 };
 
-export function crearReproductor({ codigo, traza, error = null, titulo = '', funciones = [], cabezas = null }) {
+export function crearReproductor({ codigo, traza, error = null, titulo = '', funciones = [], cabezas = null, entrada = '' }) {
   const raiz = nodo('section', 'rep');
   raiz.tabIndex = 0;
   raiz.setAttribute('aria-label', titulo ? `Paso a paso: ${titulo}` : 'Paso a paso');
@@ -220,7 +220,41 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     dibujo.fijarNombres(casillaNombres.checked);
   };
   herramientas.append(nodo('span', '', 'Figura'), menos, mas, ajustar, etiquetaZoom, etiquetaNombres);
-  lado.append(estado, herramientas, franjaPregunta, figura, nodo('p', 'rep-subtitulo', 'Lo que muestra el programa'), consola, nota);
+  // Lo que ingresa el usuario: el texto de la entrada, con lo que ya se leyo atenuado (solo si el programa tiene entrada).
+  const textoDeEntrada = entrada || '';
+  const cajaDeEntrada = nodo('pre', 'rep-entrada');
+  const conEntrada = textoDeEntrada.length > 0;
+  // Hasta donde se leyo de la entrada y si se agoto, en cada paso.
+  const leidoEn = [];
+  const agotadaEn = [];
+  {
+    let leido = 0;
+    let agotada = false;
+    for (const f of traza) {
+      if (f.lectura) {
+        leido = Math.max(leido, f.lectura.hasta);
+        if (f.lectura.agotada) agotada = true;
+      }
+      leidoEn.push(leido);
+      agotadaEn.push(agotada);
+    }
+  }
+  // "resaltar": { desde, hasta } es lo que se acaba de leer (blanco sobre violeta); lo anterior se ve atenuado.
+  const pintarEntrada = (indice, resaltar = null) => {
+    if (!conEntrada) return;
+    const hasta = resaltar ? resaltar.desde : leidoEn[indice];
+    const partes = [];
+    if (hasta > 0) partes.push(nodo('span', 'rep-entrada-leida', textoDeEntrada.slice(0, hasta)));
+    if (resaltar) {
+      partes.push(nodo('span', 'rep-salida-nueva', textoDeEntrada.slice(resaltar.desde, resaltar.hasta)));
+      partes.push(textoDeEntrada.slice(resaltar.hasta));
+    } else partes.push(textoDeEntrada.slice(hasta));
+    if (agotadaEn[indice]) partes.push(nodo('span', 'rep-entrada-leida', ' ⏎'));
+    cajaDeEntrada.replaceChildren(...partes);
+  };
+  lado.append(estado, herramientas, franjaPregunta, figura, nodo('p', 'rep-subtitulo', 'Lo que muestra el programa'), consola);
+  if (conEntrada) lado.append(nodo('p', 'rep-subtitulo', 'Lo que ingresa el usuario'), cajaDeEntrada);
+  lado.append(nota);
   cuerpo.append(columnaCodigo, lado);
   raiz.append(giro, cuerpo, barra);
   panelCodigo.append(cerrarCodigo);
@@ -324,12 +358,24 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     relojesDeSalida = [];
     const antesDeSalida = antes && antes.salida ? antes.salida : '';
     const nuevoEnSalida = adelante && animar && foto.salida && foto.salida.length > antesDeSalida.length && foto.salida.startsWith(antesDeSalida) ? foto.salida.slice(antesDeSalida.length) : '';
-    dibujo.alMuestra = nuevoEnSalida
-      ? (desde, hasta) => {
-          relojesDeSalida.push(setTimeout(() => consola.replaceChildren(antesDeSalida, nodo('span', 'rep-salida-nueva', nuevoEnSalida)), desde));
-          relojesDeSalida.push(setTimeout(() => { consola.textContent = foto.salida || ' '; }, hasta));
-        }
-      : null;
+    const lectura = adelante && animar && foto.lectura && foto.lectura.hasta > foto.lectura.desde ? foto.lectura : null;
+    dibujo.alMuestra =
+      nuevoEnSalida || lectura
+        ? (desde, hasta) => {
+            relojesDeSalida.push(
+              setTimeout(() => {
+                if (nuevoEnSalida) consola.replaceChildren(antesDeSalida, nodo('span', 'rep-salida-nueva', nuevoEnSalida));
+                if (lectura) pintarEntrada(paso, lectura);
+              }, desde)
+            );
+            relojesDeSalida.push(
+              setTimeout(() => {
+                if (nuevoEnSalida) consola.textContent = foto.salida || ' ';
+                if (lectura) pintarEntrada(paso);
+              }, hasta)
+            );
+          }
+        : null;
     // La unidad de movimiento sale de la velocidad: lo que dura dibujar una flecha o mover los nodos.
     ultimaAnimacion = dibujo.mostrar(foto, antes, { animar, duracion: VELOCIDADES[Number(velocidad.value)].ms * 0.5, flujo: adelante });
     etiquetaZoom.textContent = `${Math.round(dibujo.escalaActual * 100)} %`;
@@ -348,6 +394,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
       funcionAnterior = f;
       mostrarEstado(foto);
       consola.textContent = foto.salida || ' ';
+      pintarEntrada(paso);
     };
     if (adelante && animar && ultimaAnimacion > 0) {
       const reloj = setTimeout(() => {

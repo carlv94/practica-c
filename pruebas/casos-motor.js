@@ -641,6 +641,55 @@ int main() {
       },
     },
   },
+  {
+    nombre: 'con "preguntas", el scanf anota el trozo de la entrada que leyo y las casillas que reciben los valores',
+    opciones: { preguntas: true },
+    entrada: '3 5',
+    codigo: String.raw`int main() {
+  int a;
+  int b;
+  int c = 9;
+  scanf("%d %d", &a, &b);
+  scanf("%d", &c);
+  return 0;
+}`,
+    espera: {
+      traza: (traza) => {
+        const lecturas = traza.filter((x) => x.lectura);
+        if (lecturas.length !== 2) return 'tenia que haber dos lecturas (los dos scanf) y hay ' + lecturas.length;
+        const [primera, segunda] = lecturas;
+        // va en la fotografia siguiente al scanf
+        if (primera.linea !== 6) return 'la lectura del primer scanf tenia que estar en la fotografia de la linea 6 y esta en la ' + primera.linea;
+        if (primera.lectura.desde !== 0 || primera.lectura.hasta !== 3) return 'el primer scanf tenia que leer "3 5" (0 a 3) y leyo ' + primera.lectura.desde + ' a ' + primera.lectura.hasta;
+        if (primera.lectura.celdas.length !== 2) return 'tenia que haber 2 casillas (a y b) y hay ' + primera.lectura.celdas.length;
+        if (primera.lectura.agotada) return 'el primer scanf no agota la entrada';
+        // el segundo ya no tiene nada que leer
+        if (!segunda.lectura.agotada || segunda.lectura.celdas.length !== 0) return 'el segundo scanf tenia que quedar con la entrada agotada y sin casillas';
+        return null;
+      },
+    },
+  },
+  {
+    nombre: 'con "preguntas", un scanf con un puntero anota tambien el recorrido por su flecha',
+    opciones: { preguntas: true },
+    entrada: '5',
+    codigo: String.raw`int main() {
+  int n;
+  int *p = &n;
+  scanf("%d", p);
+  scanf("%d", &n);
+  return 0;
+}`,
+    espera: {
+      traza: (traza) => {
+        const lecturas = traza.filter((x) => x.lectura);
+        if (lecturas.length !== 2) return 'tenia que haber dos lecturas y hay ' + lecturas.length;
+        const conFlecha = (x) => (x.accesos || []).filter((h) => h.de && !h.tipo).length;
+        if (conFlecha(lecturas[0]) !== 1) return 'el scanf con p tenia que recorrer la flecha de p y recorre ' + conFlecha(lecturas[0]);
+        return null;
+      },
+    },
+  },
 ];
 
 export function resultadoDelMotor(analizador, ejecutar, caso) {

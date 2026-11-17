@@ -745,6 +745,21 @@
   stroke-width: 4;
   filter: drop-shadow(0 0 4px var(--salida));
 }
+/* lo que ingresa el usuario: la entrada, con lo ya leido atenuado; el trozo que se acaba de leer, como el texto nuevo de la consola */
+.rep-entrada {
+  margin: 0;
+  min-height: 1.6em;
+  max-height: 6em;
+  overflow: auto;
+  background: var(--codigo);
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 0.85rem;
+  white-space: pre-wrap;
+}
+.rep-entrada-leida {
+  opacity: 0.5;
+}
 /* y lo que acaba de mostrar, en la consola: letra blanca en negrita sobre violeta intenso mientras la casilla esta encendida */
 .rep-salida-nueva {
   color: #fff;

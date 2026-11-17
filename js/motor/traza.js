@@ -19,6 +19,9 @@
 //              leen y las que la evaluacion recorre); mientras se ve la pregunta, las demas flechas se atenuan
 //   muestra:   (solo con la opcion "preguntas", si la sentencia anterior fue un printf) { celdas: [{ a, ruta }] }: las casillas
 //              de las que salieron los valores que acaba de mostrar
+//   lectura:   (solo con la opcion "preguntas", si la sentencia anterior fue un scanf) { desde, hasta, celdas, agotada }: el trozo de
+//              la entrada que se leyo (posiciones en el texto), las casillas que recibieron los valores y si la entrada ya
+//              no tenia nada que leer
 //   condicion: (si la sentencia anterior evaluo una condicion) { texto, valor }: la condicion tal como esta escrita y
 //              si dio verdadero o falso
 //
