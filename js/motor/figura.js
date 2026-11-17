@@ -166,6 +166,37 @@ function punterosDe(v, salida = []) {
   return salida;
 }
 
+// Un valor sin contenido (para una variable que todavia no se declaro): conserva la forma.
+function vaciar(v) {
+  if (v.k === 'est') return { ...v, campos: v.campos.map((c) => ({ n: c.n, v: vaciar(c.v) })) };
+  if (v.k === 'arr') return { ...v, elems: v.elems.map(vaciar), texto: undefined };
+  return { k: 'sinvalor', t: v.t || 'puntero' };
+}
+
+// Cuando en este paso una caja de la pila gana variables (se entra a un bloque y se declara una local), la fotografia
+// anterior con esas variables ya en su caja, todavia sin declarar (atenuadas): la caja se agranda y las de abajo se
+// corren antes de cualquier otra animacion. Si ninguna caja gana variables (o hay otros cambios en la pila), null.
+function fotoConLugar(foto, anterior) {
+  if (foto.marcos.length !== anterior.marcos.length) return null;
+  let crece = false;
+  const marcos = [];
+  for (let i = 0; i < foto.marcos.length; i++) {
+    const nuevo = foto.marcos[i];
+    const viejo = anterior.marcos[i];
+    if (nuevo.funcion !== viejo.funcion) return null;
+    if (nuevo.variables.length < viejo.variables.length) return null;
+    const delViejo = new Map(viejo.variables.map((v) => [v.nombre, v]));
+    if (viejo.variables.some((v) => !nuevo.variables.some((x) => x.nombre === v.nombre))) return null;
+    if (nuevo.variables.length > viejo.variables.length) crece = true;
+    const variables = nuevo.variables.map((v) =>
+      delViejo.get(v.nombre) || { ...v, id: -(v.id + 1000000), pendiente: true, vivo: true, dir: null, tam: null, valor: vaciar(v.valor) }
+    );
+    marcos.push({ ...viejo, variables });
+  }
+  if (!crece) return null;
+  return { ...anterior, marcos, accesos: undefined, error: undefined };
+}
+
 // Los bloques que se ven: los reservados, el que se libera en este paso, los liberados que algun
 // puntero (de una variable o de un bloque en uso) todavia senala y los ultimos liberados, que quedan
 // a la vista (con su aviso) aunque el puntero ya sea NULL: la memoria liberada no desaparece.
@@ -392,11 +423,34 @@ export class Figura {
 
   // "duracion" es la unidad de movimiento. Devuelve cuanto dura la animacion de este paso (0 si no hay).
   // "flujo": el paso viene de avanzar uno (se animan los accesos por puntero que hizo la sentencia, si los hubo).
-  mostrar(foto, anterior = null, { animar = false, duracion = 450, flujo = false } = {}) {
+  // "expandir": false cuando ya se hizo la fase de expansion de este paso (ver fotoConLugar).
+  mostrar(foto, anterior = null, { animar = false, duracion = 450, flujo = false, expandir = true } = {}) {
     this.terminarFlujo();
+    clearTimeout(this.expansionPendiente);
+    this.expansionPendiente = null;
     if (this.raf) cancelAnimationFrame(this.raf);
     this.raf = null;
     const previa = this.escena;
+    // La caja de una funcion que gana una variable se expande antes que cualquier otra animacion: primero se muestra
+    // la fotografia con el lugar ya hecho y despues, desde ahi, el paso de verdad.
+    if (expandir && flujo && animar && previa && anterior && duracion > 0 && !sinMovimiento()) {
+      const intermedia = fotoConLugar(foto, anterior);
+      if (intermedia) {
+        const expansion = this.mostrar(intermedia, anterior, { animar: true, duracion, flujo: false, expandir: false });
+        // Lo que dura el resto se mide en una figura de prueba (fuera de la pagina), que repite los dos pasos.
+        const sombra = new Figura(document.createElement('div'), { cabezas: this.cabezas });
+        sombra.mostrar(intermedia, anterior, { animar: false });
+        const resto = sombra.mostrar(foto, intermedia, { animar, duracion, flujo, expandir: false });
+        sombra.terminarFlujo();
+        if (sombra.raf) cancelAnimationFrame(sombra.raf);
+        clearTimeout(sombra.finAtenuado);
+        this.expansionPendiente = setTimeout(() => {
+          this.expansionPendiente = null;
+          this.mostrar(foto, intermedia, { animar, duracion, flujo, expandir: false });
+        }, expansion);
+        return expansion + resto;
+      }
+    }
     // Donde estaban los bloques (ahora, aunque se estuvieran moviendo), contados desde el borde del monticulo.
     const posiciones = previa ? new Map([...previa.bloques].map(([id, b]) => [id, { rx: b.actual.x - previa.x0, y: b.actual.y }])) : new Map();
     // Y donde estaban las cajas de la pila.
@@ -457,7 +511,10 @@ export class Figura {
       m.desde = mueve && antes != null ? { y: antes } : { y: m.hasta.y };
       m.actual = { ...m.desde };
       m.nuevo = mueve && antes == null;
-      if (Math.abs(m.desde.y - m.hasta.y) > 0.5 || m.nuevo) seMueven = true;
+      // Una caja que ya estaba y ahora es mas alta (gano una variable): crece desde el alto que tenia.
+      const antesDeLaCaja = previa && previa.marcosG.get(m.clave);
+      m.crece = mueve && antesDeLaCaja && m.alto > antesDeLaCaja.alto + 0.5 ? antesDeLaCaja.alto / m.alto : null;
+      if (Math.abs(m.desde.y - m.hasta.y) > 0.5 || m.nuevo || m.crece != null) seMueven = true;
       m.g.setAttribute('transform', `translate(0,${m.actual.y})`);
     }
     if (mueve && previa) {
@@ -483,7 +540,10 @@ export class Figura {
     if (mueve && seMueven && escena.altoDesde > escena.altoFinal) this.ponerAlto(escena.altoDesde);
     if (seMueven) {
       for (const b of escena.bloques.values()) if (b.nuevo) b.g.style.opacity = '0';
-      for (const m of escena.marcosG.values()) if (m.nuevo) this.abrirCaja(m, 0, escena);
+      for (const m of escena.marcosG.values()) {
+        if (m.nuevo) this.abrirCaja(m, 0, escena);
+        else if (m.crece != null) this.abrirCaja(m, m.crece, escena);
+      }
     }
     // Tiempo A: las flechas que cambiaron se animan (se dibujan, se redirigen o se retraen o se desvanecen) con los
     // bloques todavia donde estaban; despues, una pausa. Tiempo B: los bloques se reubican. FIN: todo
@@ -898,6 +958,7 @@ export class Figura {
       m.actual = { y: m.desde.y + (m.hasta.y - m.desde.y) * e };
       m.g.setAttribute('transform', `translate(0,${m.actual.y})`);
       if (m.nuevo) this.abrirCaja(m, e);
+      else if (m.crece != null) this.abrirCaja(m, m.crece + (1 - m.crece) * e);
     }
     // La caja que se va se cierra, de abajo hacia arriba, a la vez que la de abajo sube a su lugar.
     for (const sa of this.escena.salientes) this.abrirCaja(sa, 1 - e);
