@@ -17,6 +17,8 @@
 //              la condicion que se va a evaluar, las casillas que se leen para responderla ([{ a, ruta }]; sus lecturas ya no
 //              van en "accesos") y "enfoque": las casillas de punteros de las que salen las flechas que importan (las que se
 //              leen y las que la evaluacion recorre); mientras se ve la pregunta, las demas flechas se atenuan
+//   muestra:   (solo con la opcion "preguntas", si la sentencia anterior fue un printf) { celdas: [{ a, ruta }] }: las casillas
+//              de las que salieron los valores que acaba de mostrar
 //   condicion: (si la sentencia anterior evaluo una condicion) { texto, valor }: la condicion tal como esta escrita y
 //              si dio verdadero o falso
 //

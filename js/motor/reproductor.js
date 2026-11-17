@@ -297,6 +297,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   // La marca de la linea (y lo que la acompana: el cuadro "por ejecutar" y lo que muestra el programa)
   // espera a que termine la animacion de lo que hizo la linea anterior; si se avanza antes, se pone ya.
   let marcaPendiente = null;
+  let relojesDeSalida = [];
 
   // "animar": se mueven los bloques del paso anterior al de ahora (si no, aparecen en su lugar).
   // "adelante": se llego avanzando un paso (la unica vez que se espera a la animacion).
@@ -314,6 +315,18 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     anterior.disabled = inicio.disabled = paso === 0;
     siguiente.disabled = final.disabled = paso === traza.length - 1;
 
+    // El texto nuevo de la consola (un printf) aparece, en violeta y negrita, a la vez que se encienden las casillas de las que
+    // salio, y vuelve a ser normal cuando se apagan (la figura avisa cuando: alMuestra).
+    for (const r of relojesDeSalida) clearTimeout(r);
+    relojesDeSalida = [];
+    const antesDeSalida = antes && antes.salida ? antes.salida : '';
+    const nuevoEnSalida = adelante && animar && foto.salida && foto.salida.length > antesDeSalida.length && foto.salida.startsWith(antesDeSalida) ? foto.salida.slice(antesDeSalida.length) : '';
+    dibujo.alMuestra = nuevoEnSalida
+      ? (desde, hasta) => {
+          relojesDeSalida.push(setTimeout(() => consola.replaceChildren(antesDeSalida, nodo('span', 'rep-salida-nueva', nuevoEnSalida)), desde));
+          relojesDeSalida.push(setTimeout(() => { consola.textContent = foto.salida || ' '; }, hasta));
+        }
+      : null;
     // La unidad de movimiento sale de la velocidad: lo que dura dibujar una flecha o mover los nodos.
     ultimaAnimacion = dibujo.mostrar(foto, antes, { animar, duracion: VELOCIDADES[Number(velocidad.value)].ms * 0.5, flujo: adelante });
     etiquetaZoom.textContent = `${Math.round(dibujo.escalaActual * 100)} %`;

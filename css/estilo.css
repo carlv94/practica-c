@@ -24,6 +24,9 @@
   --c-numero: #953800;
   --c-comentario: #6e7781;
   --c-pre: #8a5a00;
+  /* lo que el programa va a mostrar por pantalla (figura y consola del reproductor) */
+  --salida: #7a3fd1;
+  --salida-intensa: #6d28d9; /* de fondo, con letra blanca */
 }
 
 @media (prefers-color-scheme: dark) {
@@ -50,6 +53,8 @@
     --c-numero: #ffa657;
     --c-comentario: #8b949e;
     --c-pre: #e3b341;
+    --salida: #c4a1ff;
+    --salida-intensa: #7c3aed;
   }
 }
 

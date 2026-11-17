@@ -701,6 +701,24 @@
   stroke: var(--acento);
   stroke-dasharray: 5 3;
 }
+/* los valores que el programa va a mostrar por pantalla: violeta, borde solido y grueso */
+.rep-acceso.rep-muestra {
+  stroke: var(--salida);
+  stroke-width: 4;
+  filter: drop-shadow(0 0 4px var(--salida));
+}
+/* y lo que acaba de mostrar, en la consola: letra blanca en negrita sobre violeta intenso mientras la casilla esta encendida */
+.rep-salida-nueva {
+  color: #fff;
+  background: var(--salida-intensa);
+  font-weight: 700;
+  font-synthesis: weight;
+  padding: 0 4px;
+  margin: 0 -4px;
+  border-radius: 4px;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
 /* la condicion que se evalua: un rotulo fijo en la esquina de la figura (no mueve nada) y, al final, la respuesta */
 .rep-pregunta-g {
   position: sticky;

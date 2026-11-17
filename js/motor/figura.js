@@ -194,7 +194,7 @@ function fotoConLugar(foto, anterior) {
     marcos.push({ ...viejo, variables });
   }
   if (!crece) return null;
-  return { ...anterior, marcos, accesos: undefined, condicion: undefined, error: undefined };
+  return { ...anterior, marcos, accesos: undefined, condicion: undefined, muestra: undefined, error: undefined };
 }
 
 // Cuando en este paso se reserva un bloque (malloc) y ademas se recorre una flecha (*p = malloc(...), p->sig = malloc(...)):
@@ -206,7 +206,7 @@ function fotoConBloque(foto, anterior) {
   const nuevos = foto.monticulo.filter((b) => b.vivo && !antes.has(b.id));
   if (!nuevos.length) return null;
   if (!(foto.accesos || []).some((h) => h.de)) return null;
-  return { ...anterior, monticulo: [...anterior.monticulo, ...nuevos], accesos: undefined, condicion: undefined, pregunta: undefined, error: undefined };
+  return { ...anterior, monticulo: [...anterior.monticulo, ...nuevos], accesos: undefined, condicion: undefined, pregunta: undefined, muestra: undefined, error: undefined };
 }
 
 // Los bloques que se ven: los reservados, el que se libera en este paso, los liberados que algun
@@ -520,8 +520,8 @@ export class Figura {
     this.finAparte = null;
     // Antes de que cambie nada, se ve por donde se llega a lo que la sentencia toca.
     const retardo =
-      flujo && animar && !sinMovimiento() && u > 0 && previa && ((foto.accesos && foto.accesos.length) || foto.condicion)
-        ? this.iniciarFlujo(previa, foto.accesos || [], u, escena, foto.condicion)
+      flujo && animar && !sinMovimiento() && u > 0 && previa && ((foto.accesos && foto.accesos.length) || foto.condicion || foto.muestra)
+        ? this.iniciarFlujo(previa, foto.accesos || [], u, escena, foto.condicion, foto.muestra)
         : 0;
     const mueve = animar && !sinMovimiento() && u > 0 && Boolean(previa);
     this.fundir = mueve;
@@ -775,7 +775,7 @@ export class Figura {
   // Mientras tanto la figura nueva queda esperando: se la pone cuando termina.
   // Si el paso evaluo una condicion ("condicion": { texto, valor }), se ve la pregunta (un rotulo con la condicion), las
   // casillas que se leen (con borde discontinuo) y, despues de una pausa para leer, la respuesta.
-  iniciarFlujo(previa, accesos, u, escena, condicion = null) {
+  iniciarFlujo(previa, accesos, u, escena, condicion = null, muestra = null) {
     const dFlecha = 0.8 * u;
     const dResalte = 0.5 * u;
     const clon = previa.svg.cloneNode(true);
@@ -925,6 +925,28 @@ export class Figura {
     if (hayCopia && ultimoResalte) {
       extender(ultimoResalte, 0.3 * u);
       t += 0.3 * u;
+    }
+    // Los valores que acaba de mostrar un printf: sus casillas se encienden en violeta, quedan un rato y se apagan (el texto de
+    // la consola se resalta a la vez: ver alMuestra).
+    if (muestra && muestra.celdas.length) {
+      const dura = 2 * u;
+      let hay = false;
+      for (const celda of muestra.celdas) {
+        const ancla = previa.anclas && previa.anclas.get(clave(celda.a, celda.ruta));
+        const caja = ancla ? this.absolutoDe(previa, ancla) : null;
+        if (!caja) continue;
+        hay = true;
+        const marco = el('rect', { x: caja.x - 3, y: caja.y - 3, width: caja.w + 6, height: caja.h + 6, rx: 4, class: 'rep-acceso rep-muestra' });
+        marco.style.opacity = '0';
+        capa.append(marco);
+        if (marco.animate) {
+          marco.animate([{ opacity: 0 }, { opacity: 1, offset: 0.1 }, { opacity: 1, offset: 0.9 }, { opacity: 0 }], { duration: dura, delay: t, fill: 'both' });
+        }
+      }
+      if (hay) {
+        if (this.alMuestra) this.alMuestra(t, t + dura);
+        t += dura;
+      }
     }
     // La respuesta de una condicion: el rotulo con la pregunta (que ya se veia en el paso anterior) se completa con
     // "verdadero" o "falso" despues de los accesos que haya, y se deja un momento a la vista.

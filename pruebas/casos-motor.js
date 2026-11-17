@@ -616,6 +616,31 @@ int main() {
       },
     },
   },
+  {
+    nombre: 'con "preguntas", el printf anota las casillas de las que salen los valores que muestra',
+    opciones: { preguntas: true },
+    codigo: String.raw`int main() {
+  int n = 3;
+  int m = 4;
+  int *p = &n;
+  printf("%d %d %d\n", n, *p, m * 2);
+  printf("hola\n");
+  return 0;
+}`,
+    espera: {
+      traza: (traza) => {
+        const conMuestra = traza.filter((x) => x.muestra);
+        if (conMuestra.length !== 1) return 'tenia que haber una sola fotografia con valores a mostrar y hay ' + conMuestra.length;
+        const m = conMuestra[0];
+        // va en la fotografia siguiente al printf (la que ya tiene el texto en la salida)
+        if (m.linea !== 6) return 'los valores mostrados tenian que estar en la fotografia siguiente al printf (linea 6) y estan en la ' + m.linea;
+        if (!m.salida || !m.salida.startsWith('3 3 8')) return 'esa fotografia tenia que tener el texto ya mostrado y tiene ' + JSON.stringify(m.salida);
+        // n (y *p, que es la misma casilla) y m * 2 (que usa m): dos casillas
+        if (m.muestra.celdas.length !== 2) return 'tenia que haber 2 casillas (n y m) y hay ' + m.muestra.celdas.length;
+        return null;
+      },
+    },
+  },
 ];
 
 export function resultadoDelMotor(analizador, ejecutar, caso) {

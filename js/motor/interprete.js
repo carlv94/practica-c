@@ -103,6 +103,7 @@ class Interprete {
     this.enCondicion = 0; // cuantas condiciones se estan evaluando (una dentro de otra: a && b)
     this.condicionHecha = null; // la ultima condicion que se evaluo, para la proxima fotografia
     this.fotoDePaso = null; // la fotografia con que empezo la ultima sentencia (la pregunta de una condicion se le suma)
+    this.muestraHecha = null; // las casillas de los valores que acaba de mostrar un printf, para la proxima fotografia
     this.error = null;
     this.retorno = null;
   }
@@ -146,6 +147,7 @@ class Interprete {
     if (this.traza.length >= MAX_TRAZA) {
       this.accesos = [];
       this.condicionHecha = null;
+      this.muestraHecha = null;
       return;
     }
     const foto = fotografia(this, linea);
@@ -154,6 +156,8 @@ class Interprete {
     if (this.condicionHecha) foto.condicion = this.condicionHecha;
     this.condicionHecha = null;
     if (pregunta) foto.pregunta = pregunta;
+    if (this.muestraHecha) foto.muestra = this.muestraHecha;
+    this.muestraHecha = null;
     if (error) foto.error = error;
     this.traza.push(foto);
   }
@@ -640,6 +644,29 @@ class Interprete {
         break;
     }
     for (const h of n.namedChildren) this.lecturasEnCondicion(h);
+  }
+
+  // Las casillas de las variables que usa una expresion (sin entrar en llamadas, sizeof ni &x).
+  celdasDeExpresion(n, salida) {
+    switch (n.type) {
+      case 'identifier': {
+        const v = this.buscar(n.text);
+        const celda = v && v.reserva.raiz ? this.ubicar(v.reserva, v.reserva.raiz) : null;
+        if (celda) salida.push(celda);
+        return;
+      }
+      case 'call_expression':
+      case 'sizeof_expression':
+      case 'string_literal':
+      case 'char_literal':
+        return;
+      case 'pointer_expression':
+        if (n.children[0].text === '&') return;
+        break;
+      default:
+        break;
+    }
+    for (const h of n.namedChildren) this.celdasDeExpresion(h, salida);
   }
 
   // Evalua una expresion y, si es una casilla que guarda un puntero (una variable, un campo, un elemento,
@@ -1282,7 +1309,21 @@ class Interprete {
     switch (nombre) {
       case 'printf': {
         const formato = this.cadenaDe(arg(0).v);
-        const args = nodos.slice(1).map((h) => this.evaluar(h));
+        // Para el reproductor: las casillas de las que salen los valores que se van a mostrar, anotadas para la fotografia
+        // siguiente (la que ya tiene el texto en la salida).
+        const detalle = Boolean(this.opciones.traza && this.opciones.preguntas);
+        const celdas = [];
+        const args = nodos.slice(1).map((h) => {
+          if (!detalle) return this.evaluar(h);
+          const { rv, celda } = this.evaluarConOrigen(h);
+          if (celda) celdas.push(celda);
+          else this.celdasDeExpresion(h, celdas);
+          return rv;
+        });
+        if (detalle) {
+          const unicas = celdas.filter((x, i) => celdas.findIndex((y) => y.a === x.a && y.ruta.join('/') === x.ruta.join('/')) === i).slice(0, 8);
+          if (unicas.length) this.muestraHecha = { celdas: unicas };
+        }
         const texto = formatear(formato, args, { cadenaDe: (p) => this.cadenaDe(p), direccionDe });
         this.escribirSalida(texto);
         return entero(texto.length);
