@@ -9,9 +9,16 @@
 //   accesos:   (si los hubo) los accesos por puntero que hizo la sentencia anterior, para animarlos:
 //              [{ de: { a, ruta } | null, a: { a, ruta }, tipo? }], de la casilla del puntero a la casilla a la que llega;
 //              tipo 'copia': se copio ese puntero a otro (se resalta su flecha y lo que senala);
+//              (una lectura de una condicion lleva cond: true);
 //              tipo 'vieja': la flecha que tenia el puntero que se acaba de sobrescribir (destella antes del cambio);
 //              tipo 'valor': se copio el valor de una casilla en otra (de: el origen); "para" (en 'copia' y 'valor') es la
 //              casilla que recibe el valor, y tambien se resalta
+//   pregunta:  (solo con la opcion "preguntas", en la fotografia de un if, while, do o for) { texto, celdas, enfoque }:
+//              la condicion que se va a evaluar, las casillas que se leen para responderla ([{ a, ruta }]; sus lecturas ya no
+//              van en "accesos") y "enfoque": las casillas de punteros de las que salen las flechas que importan (las que se
+//              leen y las que la evaluacion recorre); mientras se ve la pregunta, las demas flechas se atenuan
+//   condicion: (si la sentencia anterior evaluo una condicion) { texto, valor }: la condicion tal como esta escrita y
+//              si dio verdadero o falso
 //
 // Cada variable o bloque es { id, nombre, tipo, dir, tam, vivo, valor }. Un valor es:
 //   { k: 'num', v, t }                un numero (t: el tipo)

@@ -5,7 +5,7 @@
 //   crearReproductor({ codigo, traza, error, titulo, funciones })   devuelve un elemento
 //
 //   codigo     el programa, tal como se ejecuto
-//   traza      r.traza de ejecutar(..., { traza: true })
+//   traza      r.traza de ejecutar(..., { traza: true, preguntas: true }) (sin "preguntas" las condiciones no tienen su paso)
 //   error      r.error, ya con su mensaje para el alumno: { mensaje }, o null
 //   titulo     un titulo opcional
 //   cabezas    nombres de las variables que guardan el comienzo de la estructura (ver figura.js)

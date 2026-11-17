@@ -1220,7 +1220,7 @@ async function reproductorDe(datos, consigna) {
     import('./motor/reproductor.js'),
     import('./motor/mensajes.js'),
   ]);
-  const res = ejecutar(analizador, datos.fuente, { entrada: datos.entrada || '', traza: true });
+  const res = ejecutar(analizador, datos.fuente, { entrada: datos.entrada || '', traza: true, preguntas: true });
   if (!res.traza.length) throw new Error('el programa no tiene nada que seguir');
   const error = res.error ? { ...res.error, ...mensajeDeError(res.error) } : null;
   return crearReproductor({ codigo: datos.fuente, traza: res.traza, error, titulo: consigna.titulo, funciones: res.funciones, cabezas: datos.cabezas });

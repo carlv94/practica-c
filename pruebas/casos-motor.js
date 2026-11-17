@@ -413,7 +413,7 @@ int main() {
 }`,
     espera: {
       traza: (traza) => {
-        const lecturas = traza.filter((x) => x.accesos && x.accesos.length === 1 && !x.accesos[0].de);
+        const lecturas = traza.filter((x) => x.accesos && x.accesos.length >= 1 && x.accesos.every((a) => !a.de));
         if (lecturas.length < 4) return 'tenia que resaltar el puntero en el if, en el while y en el free y hay ' + lecturas.length;
         if (traza.some((x) => x.accesos && x.accesos.some((a) => a.de))) return 'ninguno de estos pasos sigue una flecha';
         return null;
@@ -515,10 +515,85 @@ int main() {
       },
     },
   },
+  {
+    nombre: 'una condicion queda en la traza con su texto, su resultado y las casillas que lee',
+    codigo: String.raw`int main() {
+  int n = 0;
+  int *p = &n;
+  if (p != NULL && n < 2) {
+    n = 5;
+  }
+  while (n > 3) {
+    n = n - 1;
+  }
+  for (int i = 0; i < 1; i++) {
+    n = n + 1;
+  }
+  return 0;
+}`,
+    espera: {
+      traza: (traza) => {
+        const conds = traza.filter((x) => x.condicion).map((x) => x.condicion);
+        const textos = conds.map((c) => c.texto + '=' + c.valor).join(' | ');
+        const esperado = 'p != NULL && n < 2=true | n > 3=true | n > 3=true | n > 3=false | i < 1=true | i < 1=false';
+        if (textos !== esperado) return 'las condiciones eran ' + textos;
+        const primera = traza.find((x) => x.condicion);
+        const lecturas = (primera.accesos || []).filter((h) => h.cond && !h.de);
+        if (lecturas.length !== 2) return 'tenia que leer p y n y leyo ' + lecturas.length + ' casillas';
+        return null;
+      },
+    },
+  },
+  {
+    nombre: 'con "preguntas", cada condicion es un paso con la pregunta y el siguiente trae la respuesta',
+    opciones: { preguntas: true },
+    codigo: String.raw`int main() {
+  int n = 0;
+  int *p = &n;
+  if (p != NULL && n < 2) {
+    n = 5;
+  }
+  while (n > 3) {
+    n = n - 1;
+  }
+  for (int i = 0; i < 1; i++) {
+    n = n + 1;
+  }
+  return 0;
+}`,
+    espera: {
+      traza: (traza) => {
+        const preguntas = traza.filter((x) => x.pregunta);
+        const textos = preguntas.map((x) => x.pregunta.texto).join(' | ');
+        const esperado = 'p != NULL && n < 2 | n > 3 | n > 3 | n > 3 | i < 1 | i < 1';
+        if (textos !== esperado) return 'las preguntas eran ' + textos;
+        if (traza.some((x) => (x.accesos || []).some((h) => h.cond))) return 'las lecturas de una condicion van en la pregunta, no en los accesos';
+        const primera = preguntas[0];
+        if (primera.linea !== 4) return 'la pregunta del if tenia que estar en la fotografia de su linea (4) y esta en la ' + primera.linea;
+        if (primera.pregunta.celdas.length !== 2) return 'tenia que leer p y n y leyo ' + primera.pregunta.celdas.length + ' casillas';
+        // el enfoque: solo la casilla del puntero (p), no la del numero (n); y ninguna en una condicion de numeros
+        if (primera.pregunta.enfoque.length !== 1) return 'el enfoque de p != NULL && n < 2 tenia que ser la casilla de p y es de ' + primera.pregunta.enfoque.length;
+        const numerica = traza.find((x) => x.pregunta && x.pregunta.texto === 'n > 3');
+        if (numerica.pregunta.enfoque.length !== 0) return 'una condicion de numeros no tiene enfoque';
+        const respuestas = traza.filter((x) => x.condicion).length;
+        if (respuestas !== 6) return 'tenia que haber 6 respuestas y hay ' + respuestas;
+        // despues de cada pregunta viene su respuesta (sin otra fotografia en el medio, salvo la del for)
+        for (const q of preguntas) {
+          const k = traza.indexOf(q);
+          if (!traza[k + 1] || !traza[k + 1].condicion || traza[k + 1].condicion.texto !== q.pregunta.texto) return 'a la pregunta ' + q.pregunta.texto + ' le tenia que seguir su respuesta';
+        }
+        // la inicializacion del for va antes de su pregunta: ahi la pregunta es una fotografia propia (misma linea que la anterior)
+        const delFor = preguntas.find((x) => x.pregunta.texto === 'i < 1');
+        const antes = traza[traza.indexOf(delFor) - 1];
+        if (!antes || antes.linea !== delFor.linea || antes.pregunta) return 'la primera pregunta del for tenia que ser un paso aparte, despues de la inicializacion';
+        return null;
+      },
+    },
+  },
 ];
 
 export function resultadoDelMotor(analizador, ejecutar, caso) {
-  const r = ejecutar(analizador, caso.codigo, { entrada: caso.entrada, traza: Boolean(caso.espera.lineas || caso.espera.traza) });
+  const r = ejecutar(analizador, caso.codigo, { entrada: caso.entrada, traza: Boolean(caso.espera.lineas || caso.espera.traza), ...(caso.opciones || {}) });
   if (caso.espera.resultado) {
     const m = caso.espera.resultado(r);
     if (m) return { bien: false, detalle: m };

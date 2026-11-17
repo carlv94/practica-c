@@ -100,6 +100,9 @@ class Interprete {
     this.enMacro = 0;
     this.traza = [];
     this.accesos = []; // los accesos por puntero desde la ultima fotografia
+    this.enCondicion = 0; // cuantas condiciones se estan evaluando (una dentro de otra: a && b)
+    this.condicionHecha = null; // la ultima condicion que se evaluo, para la proxima fotografia
+    this.fotoDePaso = null; // la fotografia con que empezo la ultima sentencia (la pregunta de una condicion se le suma)
     this.error = null;
     this.retorno = null;
   }
@@ -139,14 +142,18 @@ class Interprete {
     };
   }
 
-  instantanea(linea, error = null) {
+  instantanea(linea, error = null, pregunta = null) {
     if (this.traza.length >= MAX_TRAZA) {
       this.accesos = [];
+      this.condicionHecha = null;
       return;
     }
     const foto = fotografia(this, linea);
     if (this.accesos.length) foto.accesos = this.accesos;
     this.accesos = [];
+    if (this.condicionHecha) foto.condicion = this.condicionHecha;
+    this.condicionHecha = null;
+    if (pregunta) foto.pregunta = pregunta;
     if (error) foto.error = error;
     this.traza.push(foto);
   }
@@ -601,18 +608,19 @@ class Interprete {
     else this.copiaValor(celda, para);
   }
 
-  // La lectura de una variable puntero que no sigue ninguna flecha (en una condicion, o la que se libera):
-  // solo se resalta su casilla.
-  lectura(n) {
+  // La lectura de una variable que no sigue ninguna flecha: la de un puntero que se libera, o (en una condicion, "cond")
+  // la de cualquier variable que se pregunta (un puntero o un numero). Solo se resalta su casilla.
+  lectura(n, cond = false) {
     if (!this.opciones.traza || this.accesos.length >= 8) return;
     while (n.type === 'parenthesized_expression') n = n.namedChildren[0];
     if (n.type !== 'identifier') return;
     const v = this.buscar(n.text);
-    if (!v || !v.reserva.raiz || !v.reserva.raiz.t || v.reserva.raiz.t.k !== 'ptr') return;
+    const k = v && v.reserva.raiz && v.reserva.raiz.t ? v.reserva.raiz.t.k : null;
+    if (k !== 'ptr' && !(cond && (k === 'int' || k === 'float'))) return;
     const a = this.ubicar(v.reserva, v.reserva.raiz);
     if (!a) return;
     if (this.accesos.some((x) => (x.de ? x.de : x.a).a === a.a && (x.de ? x.de : x.a).ruta.join('/') === a.ruta.join('/'))) return;
-    this.accesos.push({ de: null, a });
+    this.accesos.push(cond ? { de: null, a, cond: true, ptr: k === 'ptr' } : { de: null, a });
   }
 
   // Los punteros que se preguntan en una condicion (p == NULL, !p, if (p)); no se entra en las llamadas ni en &x.
@@ -620,7 +628,7 @@ class Interprete {
     if (!this.opciones.traza) return;
     switch (n.type) {
       case 'identifier':
-        this.lectura(n);
+        this.lectura(n, true);
         return;
       case 'call_expression':
       case 'sizeof_expression':
@@ -680,13 +688,54 @@ class Interprete {
     this.asignarAlmacen(lv.st, rv);
   }
 
-  condicion(n) {
-    this.lecturasEnCondicion(n);
-    const rv = this.evaluar(n);
+  // "modo": 'paso' si es la condicion de una sentencia (if, while, do, for) y esta justo despues de la fotografia con que
+  // empezo; 'nuevo' si antes se hizo algo (la inicializacion de un for): la pregunta es entonces una fotografia propia.
+  // Sin modo (el ?: o una parte de a && b) es solo una expresion. Con la opcion "preguntas" la fotografia de la
+  // sentencia lleva la pregunta (el texto y las casillas que se leen) y la siguiente la respuesta.
+  condicion(n, modo) {
+    const afuera = Boolean(this.opciones.traza) && this.enCondicion === 0 && modo !== undefined;
+    let textoPregunta = null;
+    let preguntaHecha = null;
+    if (afuera) {
+      textoPregunta = (n.type === 'parenthesized_expression' ? n.namedChildren[0] : n).text.replace(/\s+/g, ' ').trim();
+      if (textoPregunta.length > 42) textoPregunta = textoPregunta.slice(0, 41) + '…';
+    }
+    if (afuera && this.opciones.preguntas) {
+      const previos = this.accesos;
+      this.accesos = [];
+      this.lecturasEnCondicion(n);
+      const lecturas = this.accesos.filter((h) => !h.de && h.cond);
+      const celdas = lecturas.map((h) => h.a);
+      this.accesos = previos;
+      // "enfoque": las casillas de punteros de las que salen las flechas que importan para responder (las que se
+      // leen, y despues las que la evaluacion recorre); las demas flechas se atenuan mientras se ve la pregunta.
+      const pregunta = { texto: textoPregunta, celdas, enfoque: lecturas.filter((h) => h.ptr).map((h) => h.a) };
+      const ultima = this.traza[this.traza.length - 1];
+      if (modo === 'paso' && ultima && ultima === this.fotoDePaso) ultima.pregunta = pregunta;
+      else this.instantanea(n.startPosition.row + 1, null, pregunta);
+      preguntaHecha = pregunta;
+    } else if (!(this.opciones.preguntas && this.enCondicion > 0)) this.lecturasEnCondicion(n); // (dentro de una condicion ya se leyeron)
+    this.enCondicion++;
+    const listaDeAccesos = this.accesos;
+    let rv;
+    try {
+      rv = this.evaluar(n);
+    } finally {
+      this.enCondicion--;
+    }
+    if (preguntaHecha && this.accesos === listaDeAccesos) {
+      // Las flechas que la evaluacion recorrio (p->sig, *lista): tambien quedan a la vista.
+      for (const h of this.accesos) {
+        if (!h.de || h.tipo || preguntaHecha.enfoque.some((e) => e.a === h.de.a && e.ruta.join('/') === h.de.ruta.join('/'))) continue;
+        preguntaHecha.enfoque.push(h.de);
+      }
+    }
     this.usable(rv);
     if (rv.t.k === 'struct') throw new ErrorDelMotor('ASIGNACION_INVALIDA', 'una estructura como condicion');
-    if (rv.t.k === 'ptr') return rv.v !== null;
-    return rv.v !== 0;
+    const valor = rv.t.k === 'ptr' ? rv.v !== null : rv.v !== 0;
+    // Para la traza: la condicion que se acaba de evaluar (la de mas afuera) y que dio.
+    if (afuera) this.condicionHecha = { texto: textoPregunta, valor };
+    return valor;
   }
 
   // El texto C de una cadena a la que apunta un puntero (hasta el 0 final).
@@ -1085,7 +1134,10 @@ class Interprete {
   paso(n) {
     if (++this.pasos > this.maxPasos) throw new ErrorDelMotor('NO_TERMINA', null, n.startPosition.row + 1);
     this.fila = n.startPosition.row + 1;
-    if (this.opciones.traza) this.instantanea(this.fila);
+    if (this.opciones.traza) {
+      this.instantanea(this.fila);
+      this.fotoDePaso = this.traza[this.traza.length - 1] || null;
+    }
   }
 
   // Ejecuta "cuerpo" en un ambito propio.
@@ -1134,7 +1186,7 @@ class Interprete {
         throw CONTINUAR;
       case 'if_statement': {
         this.paso(n);
-        if (this.condicion(n.childForFieldName('condition'))) this.ejecutar(n.childForFieldName('consequence'));
+        if (this.condicion(n.childForFieldName('condition'), 'paso')) this.ejecutar(n.childForFieldName('consequence'));
         else {
           const alt = n.childForFieldName('alternative');
           if (alt) this.ejecutar(alt.type === 'else_clause' ? alt.namedChildren[0] : alt);
@@ -1143,7 +1195,7 @@ class Interprete {
       }
       case 'while_statement':
         this.paso(n);
-        while (this.condicion(n.childForFieldName('condition'))) {
+        while (this.condicion(n.childForFieldName('condition'), 'paso')) {
           if (this.cuerpoDeCiclo(n.childForFieldName('body'))) break;
           this.paso(n);
         }
@@ -1153,7 +1205,7 @@ class Interprete {
         do {
           if (this.cuerpoDeCiclo(n.childForFieldName('body'))) break;
           this.paso(n.childForFieldName('condition'));
-        } while (this.condicion(n.childForFieldName('condition')));
+        } while (this.condicion(n.childForFieldName('condition'), 'paso'));
         return;
       }
       case 'for_statement':
@@ -1166,7 +1218,9 @@ class Interprete {
           }
           const cond = n.childForFieldName('condition');
           const act = n.childForFieldName('update');
-          while (!cond || this.condicion(cond)) {
+          let trasInicio = Boolean(ini); // la primera pregunta viene despues de la inicializacion
+          while (!cond || this.condicion(cond, trasInicio ? 'nuevo' : 'paso')) {
+            trasInicio = false;
             if (this.cuerpoDeCiclo(n.childForFieldName('body'))) break;
             if (act) this.evaluar(act);
             this.paso(n);

@@ -194,7 +194,7 @@ function fotoConLugar(foto, anterior) {
     marcos.push({ ...viejo, variables });
   }
   if (!crece) return null;
-  return { ...anterior, marcos, accesos: undefined, error: undefined };
+  return { ...anterior, marcos, accesos: undefined, condicion: undefined, error: undefined };
 }
 
 // Los bloques que se ven: los reservados, el que se libera en este paso, los liberados que algun
@@ -423,8 +423,22 @@ export class Figura {
 
   // "duracion" es la unidad de movimiento. Devuelve cuanto dura la animacion de este paso (0 si no hay).
   // "flujo": el paso viene de avanzar uno (se animan los accesos por puntero que hizo la sentencia, si los hubo).
+  // Muestra la fotografia (ver mostrarBase) y, aparte, lo que se ve fijo en este paso: la pregunta de una condicion o
+  // su respuesta (ver fijarEstado). Devuelve lo que dura la animacion.
+  mostrar(foto, anterior = null, opciones = {}) {
+    this.nodoFijo = null;
+    clearTimeout(this.finEnfoque);
+    // Las flechas que salen de estas casillas quedan a la vista en el paso de una pregunta; las demas se atenuan.
+    const enfoque = foto.pregunta && foto.pregunta.enfoque ? foto.pregunta.enfoque : [];
+    this.enfoquePregunta = enfoque.length ? new Set(enfoque.map((e) => clave(e.a, e.ruta))) : null;
+    const dur = this.mostrarBase(foto, anterior, opciones);
+    // Si la expansion de una caja va primero, lo fijo lo pone la segunda parte del paso.
+    if (!this.expansionPendiente) this.fijarEstado(foto, opciones.animar ? dur : 0);
+    return dur;
+  }
+
   // "expandir": false cuando ya se hizo la fase de expansion de este paso (ver fotoConLugar).
-  mostrar(foto, anterior = null, { animar = false, duracion = 450, flujo = false, expandir = true } = {}) {
+  mostrarBase(foto, anterior = null, { animar = false, duracion = 450, flujo = false, expandir = true } = {}) {
     this.terminarFlujo();
     clearTimeout(this.expansionPendiente);
     this.expansionPendiente = null;
@@ -474,7 +488,9 @@ export class Figura {
     this.finAparte = null;
     // Antes de que cambie nada, se ve por donde se llega a lo que la sentencia toca.
     const retardo =
-      flujo && animar && !sinMovimiento() && u > 0 && previa && foto.accesos && foto.accesos.length ? this.iniciarFlujo(previa, foto.accesos, u, escena) : 0;
+      flujo && animar && !sinMovimiento() && u > 0 && previa && ((foto.accesos && foto.accesos.length) || foto.condicion)
+        ? this.iniciarFlujo(previa, foto.accesos || [], u, escena, foto.condicion)
+        : 0;
     const mueve = animar && !sinMovimiento() && u > 0 && Boolean(previa);
     this.fundir = mueve;
     // El fundido de lo que se acaba de liberar (la flecha, el borde del bloque y su aviso) dura una unidad y
@@ -725,12 +741,14 @@ export class Figura {
   // flecha del puntero hasta lo que alcanza, y esa casilla se resalta un instante. En un acceso de dos
   // saltos (**pp) el destello pasa por el puntero del medio. Devuelve lo que dura (0 si no hay nada que ver).
   // Mientras tanto la figura nueva queda esperando: se la pone cuando termina.
-  iniciarFlujo(previa, accesos, u, escena) {
+  // Si el paso evaluo una condicion ("condicion": { texto, valor }), se ve la pregunta (un rotulo con la condicion), las
+  // casillas que se leen (con borde discontinuo) y, despues de una pausa para leer, la respuesta.
+  iniciarFlujo(previa, accesos, u, escena, condicion = null) {
     const dFlecha = 0.8 * u;
     const dResalte = 0.5 * u;
     const clon = previa.svg.cloneNode(true);
     // Los velos de un fundido que ya termino no se copian: la figura anterior se ve como quedo.
-    for (const e of clon.querySelectorAll('.rep-fundido, .rep-fundido-bloque, .rep-acceso')) e.remove();
+    for (const e of clon.querySelectorAll('.rep-fundido, .rep-fundido-bloque, .rep-acceso:not(.rep-consulta)')) e.remove();
     // Lo que cambio en el paso anterior (en ambar) ya no es novedad: en este paso se ve con el color de siempre.
     for (const g of clon.querySelectorAll('.rep-flecha-g.rep-nueva')) {
       g.classList.remove('rep-nueva');
@@ -743,15 +761,18 @@ export class Figura {
     const grupos = new Map();
     for (const g of clon.querySelectorAll('.rep-flecha-g')) grupos.set(g.getAttribute('data-k'), g);
     const conFlecha = accesos.some((h) => h.de && grupos.has(clave(h.de.a, h.de.ruta)));
-    const entrada = 0.2 * u;
-    if (conFlecha) {
+    // Si el paso anterior era la pregunta de una condicion, las flechas que no intervienen ya estan atenuadas y las
+    // que intervienen a la vista: no se vuelve a atenuar todo (se veria un parpadeo).
+    const enFoco = previa.svg.classList.contains('rep-foco-pregunta');
+    const entrada = enFoco ? 0 : 0.2 * u;
+    if (conFlecha && !enFoco) {
       for (const g of grupos.values()) if (g.animate) g.animate([{ opacity: 1 }, { opacity: ATENUADO }], { duration: entrada, fill: 'both' });
     }
     const encendidas = new Set();
     const encender = (h, cuando) => {
       const k = clave(h.de.a, h.de.ruta);
       const g = grupos.get(k);
-      if (!conFlecha || !g || encendidas.has(k)) return;
+      if (!conFlecha || enFoco || !g || encendidas.has(k)) return;
       encendidas.add(k);
       if (g.animate) g.animate([{ opacity: ATENUADO }, { opacity: 1 }], { duration: 0.2 * u, delay: cuando, fill: 'both' });
     };
@@ -773,8 +794,8 @@ export class Figura {
     // Una copia termina resaltando la casilla que recibe el valor (si no la resalto ya el recorrido hasta ella).
     let pendientePara = null;
     const resaltadas = new Set();
-    const pulso = (casilla) => {
-      const marco = el('rect', { x: casilla.x - 3, y: casilla.y - 3, width: casilla.w + 6, height: casilla.h + 6, rx: 4, class: 'rep-acceso' });
+    const pulso = (casilla, consulta = false) => {
+      const marco = el('rect', { x: casilla.x - 3, y: casilla.y - 3, width: casilla.w + 6, height: casilla.h + 6, rx: 4, class: 'rep-acceso' + (consulta ? ' rep-consulta' : '') });
       marco.style.opacity = '0';
       capa.append(marco);
       if (marco.animate) {
@@ -866,16 +887,27 @@ export class Figura {
         continue;
       }
       resaltadas.add(clave(h.a.a, h.a.ruta));
-      pulso(casilla);
+      pulso(casilla, Boolean(h.cond));
     }
     resaltarDestino();
     if (hayCopia && ultimoResalte) {
       extender(ultimoResalte, 0.3 * u);
       t += 0.3 * u;
     }
+    // La respuesta de una condicion: el rotulo con la pregunta (que ya se veia en el paso anterior) se completa con
+    // "verdadero" o "falso" despues de los accesos que haya, y se deja un momento a la vista.
+    let pregunta = null;
+    if (condicion) {
+      const r = this.crearRotulo(condicion.texto, condicion.valor, false);
+      pregunta = r.caja;
+      if (r.respuesta.animate) r.respuesta.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 0.2 * u, delay: t, fill: 'both' });
+      else r.respuesta.style.opacity = '1';
+      t += 0.8 * u;
+    }
     if (!t) return 0;
     const total = t + 0.1 * u;
     this.contenedor.replaceChildren(clon);
+    if (pregunta) this.contenedor.prepend(pregunta);
     this.flujoActivo = { svg: escena.svg, temporizador: setTimeout(() => this.terminarFlujo(), total) };
     return total;
   }
@@ -887,6 +919,75 @@ export class Figura {
     this.flujoActivo = null;
     clearTimeout(f.temporizador);
     this.contenedor.replaceChildren(f.svg);
+    if (this.nodoFijo) this.contenedor.prepend(this.nodoFijo);
+  }
+
+  // El rotulo de una condicion: "¿ condicion ?" y, si ya se sabe, "→ verdadero" o "→ falso" (visible o por aparecer).
+  crearRotulo(texto, valor, visible = true) {
+    const caja = document.createElement('div');
+    caja.className = 'rep-pregunta-g';
+    caja.setAttribute('aria-hidden', 'true');
+    const rotulo = document.createElement('span');
+    rotulo.className = 'rep-pregunta';
+    rotulo.append(document.createTextNode('¿ ' + texto + ' ?'));
+    const respuesta = document.createElement('span');
+    respuesta.className = 'rep-pregunta-resp ' + (valor ? 'rep-si' : 'rep-no');
+    if (valor === undefined || valor === null) respuesta.hidden = true;
+    else respuesta.textContent = valor ? ' → verdadero' : ' → falso';
+    respuesta.style.opacity = visible ? '1' : '0';
+    rotulo.append(respuesta);
+    caja.append(rotulo);
+    return { caja, respuesta };
+  }
+
+  // Donde queda una casilla cuando termina el paso (ver absolutoDe).
+  absolutoFinal(escena, a) {
+    if (a.bloque != null) {
+      const b = escena.bloques.get(a.bloque);
+      return b ? { x: b.hasta.x + a.x, y: b.hasta.y + a.y, w: a.w, h: a.h } : null;
+    }
+    if (a.marco != null) {
+      const m = escena.marcosG.get(a.marco);
+      return m ? { x: a.x, y: a.y + m.hasta.y, w: a.w, h: a.h } : null;
+    }
+    return a;
+  }
+
+  // Lo que se ve fijo mientras se esta en este paso: la pregunta de una condicion (el rotulo y las casillas que se
+  // leen, con borde discontinuo; aparecen cuando termina la animacion del paso, "retraso") o, en el paso siguiente,
+  // el rotulo con la respuesta.
+  fijarEstado(foto, retraso) {
+    this.nodoFijo = null;
+    const escena = this.escena;
+    if (!escena || (!foto.pregunta && !foto.condicion)) return;
+    const aparecer = (e) => {
+      if (retraso > 0 && e.animate) {
+        e.style.opacity = '0';
+        e.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200, delay: retraso, fill: 'both' });
+      }
+    };
+    let nodo;
+    if (foto.pregunta) {
+      nodo = this.crearRotulo(foto.pregunta.texto, null).caja;
+      aparecer(nodo);
+      // Las flechas que no intervienen en la pregunta se atenuan cuando termina la animacion del paso.
+      if (this.enfoquePregunta) {
+        const svg = escena.svg;
+        if (retraso > 0) this.finEnfoque = setTimeout(() => svg.classList.add('rep-foco-pregunta'), retraso);
+        else svg.classList.add('rep-foco-pregunta');
+      }
+      for (const c of foto.pregunta.celdas) {
+        const ancla = escena.anclas.get(clave(c.a, c.ruta));
+        const caja = ancla ? this.absolutoFinal(escena, ancla) : null;
+        if (!caja) continue;
+        const marco = el('rect', { x: caja.x - 3, y: caja.y - 3, width: caja.w + 6, height: caja.h + 6, rx: 4, class: 'rep-acceso rep-consulta' });
+        escena.capaResalte.append(marco);
+        aparecer(marco);
+      }
+    } else nodo = this.crearRotulo(foto.condicion.texto, foto.condicion.valor).caja;
+    this.nodoFijo = nodo;
+    // Si el paso muestra todavia la figura anterior (el recorrido previo), el rotulo se pone cuando termina.
+    if (!this.flujoActivo) this.contenedor.prepend(nodo);
   }
 
   // Los nombres de las flechas (de las que salen de una variable) se ven siempre, o solo al senalarlas.
@@ -1375,6 +1476,7 @@ export class Figura {
     });
     // Mientras se atenuan las flechas que no intervienen: la que cambia o la que recorre un acceso queda como estaba.
     if (f.cambio || f.retirada || (this.involucradas && this.involucradas.has(f.claveOrigen))) g.classList.add('rep-activa');
+    if (this.enfoquePregunta && this.enfoquePregunta.has(f.claveOrigen)) g.classList.add('rep-enfocada');
     g.puntosCompletos = puntos;
     // Una flecha nueva hacia un bloque que acaba de aparecer espera a que termine el movimiento.
     if (f.tarde && this.fase !== 'FIN') g.style.opacity = '0';
