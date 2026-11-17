@@ -197,6 +197,18 @@ function fotoConLugar(foto, anterior) {
   return { ...anterior, marcos, accesos: undefined, condicion: undefined, error: undefined };
 }
 
+// Cuando en este paso se reserva un bloque (malloc) y ademas se recorre una flecha (*p = malloc(...), p->sig = malloc(...)):
+// la fotografia anterior con el bloque ya puesto y sin ninguna flecha nueva. El bloque aparece primero (es lo que C hace
+// primero: malloc, y despues busca donde guardar la direccion) y, desde ahi, el paso de verdad: el recorrido y la flecha,
+// que si el puntero ya apuntaba a algo se redirige (el bloque ya existe en la figura de partida). Si no, null.
+function fotoConBloque(foto, anterior) {
+  const antes = new Set(anterior.monticulo.map((b) => b.id));
+  const nuevos = foto.monticulo.filter((b) => b.vivo && !antes.has(b.id));
+  if (!nuevos.length) return null;
+  if (!(foto.accesos || []).some((h) => h.de)) return null;
+  return { ...anterior, monticulo: [...anterior.monticulo, ...nuevos], accesos: undefined, condicion: undefined, pregunta: undefined, error: undefined };
+}
+
 // Los bloques que se ven: los reservados, el que se libera en este paso, los liberados que algun
 // puntero (de una variable o de un bloque en uso) todavia senala y los ultimos liberados, que quedan
 // a la vista (con su aviso) aunque el puntero ya sea NULL: la memoria liberada no desaparece.
@@ -437,8 +449,21 @@ export class Figura {
     return dur;
   }
 
-  // "expandir": false cuando ya se hizo la fase de expansion de este paso (ver fotoConLugar).
-  mostrarBase(foto, anterior = null, { animar = false, duracion = 450, flujo = false, expandir = true } = {}) {
+  // Lo que dura mostrar "foto" desde "intermedia" (que se alcanza desde "anterior"), medido en una figura de prueba
+  // (fuera de la pagina) que repite los pasos.
+  medirPaso(anterior, intermedia, foto, opciones) {
+    const sombra = new Figura(document.createElement('div'), { cabezas: this.cabezas });
+    sombra.mostrar(intermedia, anterior, { animar: false });
+    const dura = sombra.mostrar(foto, intermedia, opciones);
+    sombra.terminarFlujo();
+    if (sombra.raf) cancelAnimationFrame(sombra.raf);
+    for (const reloj of [sombra.finAtenuado, sombra.finAparte, sombra.finEnfoque, sombra.expansionPendiente]) clearTimeout(reloj);
+    return dura;
+  }
+
+  // "expandir": false cuando ya se hizo la fase de expansion de este paso (ver fotoConLugar); "bloquePrimero": false
+  // cuando ya se hizo la del bloque nuevo (ver fotoConBloque).
+  mostrarBase(foto, anterior = null, { animar = false, duracion = 450, flujo = false, expandir = true, bloquePrimero = true } = {}) {
     this.terminarFlujo();
     clearTimeout(this.expansionPendiente);
     this.expansionPendiente = null;
@@ -451,19 +476,26 @@ export class Figura {
       const intermedia = fotoConLugar(foto, anterior);
       if (intermedia) {
         const expansion = this.mostrar(intermedia, anterior, { animar: true, duracion, flujo: false, expandir: false });
-        // Lo que dura el resto se mide en una figura de prueba (fuera de la pagina), que repite los dos pasos.
-        const sombra = new Figura(document.createElement('div'), { cabezas: this.cabezas });
-        sombra.mostrar(intermedia, anterior, { animar: false });
-        const resto = sombra.mostrar(foto, intermedia, { animar, duracion, flujo, expandir: false });
-        sombra.terminarFlujo();
-        if (sombra.raf) cancelAnimationFrame(sombra.raf);
-        clearTimeout(sombra.finAtenuado);
-        clearTimeout(sombra.finAparte);
+        const resto = this.medirPaso(anterior, intermedia, foto, { animar, duracion, flujo, expandir: false });
         this.expansionPendiente = setTimeout(() => {
           this.expansionPendiente = null;
           this.mostrar(foto, intermedia, { animar, duracion, flujo, expandir: false });
         }, expansion);
         return expansion + resto;
+      }
+    }
+    // Un bloque que se reserva en un paso con recorrido aparece antes que el recorrido (y una pausa corta despues).
+    if (bloquePrimero && flujo && animar && previa && anterior && duracion > 0 && !sinMovimiento()) {
+      const intermedia = fotoConBloque(foto, anterior);
+      if (intermedia) {
+        const aparicion = this.mostrar(intermedia, anterior, { animar: true, duracion, flujo: false, expandir: false, bloquePrimero: false });
+        const espera = aparicion + 0.3 * duracion;
+        const resto = this.medirPaso(anterior, intermedia, foto, { animar, duracion, flujo, expandir: false, bloquePrimero: false });
+        this.expansionPendiente = setTimeout(() => {
+          this.expansionPendiente = null;
+          this.mostrar(foto, intermedia, { animar, duracion, flujo, expandir: false, bloquePrimero: false });
+        }, espera);
+        return espera + resto;
       }
     }
     // Donde estaban los bloques (ahora, aunque se estuvieran moviendo), contados desde el borde del monticulo.
