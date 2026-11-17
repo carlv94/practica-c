@@ -196,8 +196,46 @@
 /* en pantallas grandes (y no en toda la pantalla, que ya reparte el alto) la zona de la figura, lo que muestra el programa y
    el estado tienen una altura fija: los controles de reproduccion quedan siempre en el mismo lugar, sin importar cuanto
    crezca la figura (si no entra, se desplaza adentro) */
+.rep-franja-pregunta {
+  display: none;
+}
+/* la franja de la condicion: reservada arriba de la figura, alineada con el codigo (tambien en toda la pantalla, salvo en un
+   telefono apaisado, que es compacto); el alto se le descuenta a la figura */
+.rep-ancho:not(.rep-compacto) .rep-franja-pregunta {
+  display: block;
+  flex: 0 0 auto;
+  height: 36px;
+  margin: 0 0 4px;
+}
+.rep-franja-pregunta {
+  display: none;
+  align-items: center;
+  border-radius: 6px;
+  /* el rotulo emerge del borde izquierdo (no pasa por arriba del codigo) y su destello no se corta arriba ni abajo */
+  overflow-x: clip;
+}
+.rep-ancho:not(.rep-compacto) .rep-franja-pregunta {
+  display: flex;
+}
+/* mientras hay una condicion en la franja, tiene un fondo apenas teñido: el cambio de color tambien se nota */
+.rep-franja-pregunta:has(.rep-pregunta-g) {
+  background: color-mix(in srgb, var(--acento) 12%, transparent);
+  transition: background-color 0.25s;
+}
+.rep-franja-pregunta:has(.rep-pregunta-si) {
+  background: color-mix(in srgb, var(--bien) 14%, transparent);
+}
+.rep-franja-pregunta:has(.rep-pregunta-no) {
+  background: color-mix(in srgb, var(--falso) 16%, transparent);
+}
+.rep-franja-pregunta .rep-pregunta-g {
+  position: static;
+  height: auto;
+  text-align: left;
+  padding-left: 4px;
+}
 .rep-ancho:not(.rep-ampliado) .rep-figura {
-  height: clamp(300px, 46vh, 480px);
+  height: clamp(264px, calc(46vh - 40px), 440px);
   box-sizing: border-box;
 }
 .rep-ancho:not(.rep-ampliado) .rep-consola {
@@ -738,6 +776,7 @@
   text-align: left;
   background: var(--fondo);
   border: 2px solid var(--acento);
+  transition: border-color 0.25s;
   border-radius: 6px;
   padding: 2px 8px;
   font: 0.85rem ui-monospace, Consolas, monospace;
@@ -747,8 +786,67 @@
 .rep-pregunta-resp {
   font-weight: 700;
 }
+/* para llamar la atencion: llega desde la izquierda como un resorte (se pasa, vuelve, rebota dos veces y queda fijo) y despues
+   destella una vez; --amp escala el recorrido (en el telefono es menor) */
+.rep-pregunta-g {
+  --amp: 1;
+}
+.rep-pregunta-entra {
+  animation: rep-pregunta-entra 1.1s ease-in-out both;
+}
+@keyframes rep-pregunta-entra {
+  0% {
+    opacity: 0;
+    transform: translateX(calc(-90px * var(--amp)));
+  }
+  10% {
+    opacity: 1;
+  }
+  35% {
+    transform: translateX(calc(14px * var(--amp)));
+  }
+  55% {
+    transform: translateX(calc(-8px * var(--amp)));
+  }
+  72% {
+    transform: translateX(calc(4px * var(--amp)));
+  }
+  86% {
+    transform: translateX(calc(-2px * var(--amp)));
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+.rep-pregunta-llama {
+  animation: rep-pregunta-llama 0.8s ease-out 1;
+}
+@keyframes rep-pregunta-llama {
+  from {
+    box-shadow: 0 0 0 0 var(--acento), 0 1px 5px rgba(0, 0, 0, 0.3);
+  }
+  to {
+    box-shadow: 0 0 0 9px transparent, 0 1px 5px rgba(0, 0, 0, 0.3);
+  }
+}
+/* la respuesta: el rotulo se ensancha con un empujon corto */
+.rep-pregunta-empuja {
+  animation: rep-pregunta-empuja 0.5s ease-in-out 1;
+}
+@keyframes rep-pregunta-empuja {
+  35% {
+    transform: translateX(8px);
+  }
+  65% {
+    transform: translateX(-3px);
+  }
+}
 /* en el telefono en vertical la respuesta va en su propia linea (la condicion puede ocupar todo el ancho) */
 @media (max-width: 600px) and (orientation: portrait) {
+  .rep-pregunta-g {
+    --amp: 0.33;
+  }
   .rep-pregunta {
     font-size: 0.8rem;
   }
@@ -756,11 +854,21 @@
     display: block;
   }
 }
+.rep-pregunta-resp[hidden] {
+  display: none !important;
+}
 .rep-pregunta-resp.rep-si {
   color: var(--bien);
 }
 .rep-pregunta-resp.rep-no {
-  color: var(--error);
+  color: var(--falso);
+}
+/* el resultado pinta el borde: verde si es verdadero, gris pizarra si es falso */
+.rep-pregunta.rep-pregunta-si {
+  border-color: var(--bien);
+}
+.rep-pregunta.rep-pregunta-no {
+  border-color: var(--falso);
 }
 
 /* la flecha roja de un puntero liberado que pasa a NULL se retira como era, mas gruesa */
@@ -801,6 +909,11 @@
   100% { box-shadow: 0 0 0 0 rgba(76, 141, 255, 0); }
 }
 @media (prefers-reduced-motion: reduce) {
+  .rep-pregunta-entra,
+  .rep-pregunta-llama,
+  .rep-pregunta-empuja {
+    animation: none;
+  }
   .destello {
     animation: none;
   }

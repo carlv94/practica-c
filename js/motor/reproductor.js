@@ -199,6 +199,9 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   const estado = nodo('div', 'rep-estado');
   const figura = nodo('div', 'rep-figura');
   const dibujo = new Figura(figura, { cabezas });
+  // En pantallas grandes la condicion que se evalua se muestra en esta franja, arriba de la figura (ver el CSS).
+  const franjaPregunta = nodo('div', 'rep-franja-pregunta');
+  dibujo.franja = franjaPregunta;
   const consola = nodo('pre', 'rep-consola');
   const nota = nodo('p', 'rep-nota', 'La línea resaltada es la que está por ejecutarse. Lo que cambió con la línea anterior se marca en amarillo, también la flecha nueva.');
   const herramientas = nodo('div', 'rep-herramientas');
@@ -217,7 +220,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     dibujo.fijarNombres(casillaNombres.checked);
   };
   herramientas.append(nodo('span', '', 'Figura'), menos, mas, ajustar, etiquetaZoom, etiquetaNombres);
-  lado.append(estado, herramientas, figura, nodo('p', 'rep-subtitulo', 'Lo que muestra el programa'), consola, nota);
+  lado.append(estado, herramientas, franjaPregunta, figura, nodo('p', 'rep-subtitulo', 'Lo que muestra el programa'), consola, nota);
   cuerpo.append(columnaCodigo, lado);
   raiz.append(giro, cuerpo, barra);
   panelCodigo.append(cerrarCodigo);

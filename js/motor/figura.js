@@ -439,13 +439,15 @@ export class Figura {
   // su respuesta (ver fijarEstado). Devuelve lo que dura la animacion.
   mostrar(foto, anterior = null, opciones = {}) {
     this.nodoFijo = null;
+    if (this.franja) this.franja.replaceChildren();
     clearTimeout(this.finEnfoque);
+    clearTimeout(this.relojRespuesta);
     // Las flechas que salen de estas casillas quedan a la vista en el paso de una pregunta; las demas se atenuan.
     const enfoque = foto.pregunta && foto.pregunta.enfoque ? foto.pregunta.enfoque : [];
     this.enfoquePregunta = enfoque.length ? new Set(enfoque.map((e) => clave(e.a, e.ruta))) : null;
     const dur = this.mostrarBase(foto, anterior, opciones);
     // Si la expansion de una caja va primero, lo fijo lo pone la segunda parte del paso.
-    if (!this.expansionPendiente) this.fijarEstado(foto, opciones.animar ? dur : 0);
+    if (!this.expansionPendiente) this.fijarEstado(foto, opciones.animar ? dur : 0, Boolean(opciones.animar && opciones.flujo));
     return dur;
   }
 
@@ -952,16 +954,22 @@ export class Figura {
     // "verdadero" o "falso" despues de los accesos que haya, y se deja un momento a la vista.
     let pregunta = null;
     if (condicion) {
+      // La respuesta no ocupa lugar hasta que le toca aparecer: el rotulo se ensancha recien entonces, no mientras corre el flujo.
       const r = this.crearRotulo(condicion.texto, condicion.valor, false);
       pregunta = r.caja;
-      if (r.respuesta.animate) r.respuesta.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 0.2 * u, delay: t, fill: 'both' });
-      else r.respuesta.style.opacity = '1';
+      clearTimeout(this.relojRespuesta);
+      this.relojRespuesta = setTimeout(() => {
+        r.respuesta.hidden = false;
+        r.caja.querySelector('.rep-pregunta').classList.add(condicion.valor ? 'rep-pregunta-si' : 'rep-pregunta-no');
+        this.llamarLaAtencion(r.caja, 0, false);
+        if (r.respuesta.animate) r.respuesta.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 0.2 * u, fill: 'both' });
+      }, t);
       t += 0.8 * u;
     }
     if (!t) return 0;
     const total = t + 0.1 * u;
     this.contenedor.replaceChildren(clon);
-    if (pregunta) this.contenedor.prepend(pregunta);
+    if (pregunta) this.ponerRotulo(pregunta);
     this.flujoActivo = { svg: escena.svg, temporizador: setTimeout(() => this.terminarFlujo(), total) };
     return total;
   }
@@ -973,7 +981,7 @@ export class Figura {
     this.flujoActivo = null;
     clearTimeout(f.temporizador);
     this.contenedor.replaceChildren(f.svg);
-    if (this.nodoFijo) this.contenedor.prepend(this.nodoFijo);
+    if (this.nodoFijo) this.ponerRotulo(this.nodoFijo);
   }
 
   // El rotulo de una condicion: "¿ condicion ?" y, si ya se sabe, "→ verdadero" o "→ falso" (visible o por aparecer).
@@ -987,8 +995,12 @@ export class Figura {
     const respuesta = document.createElement('span');
     respuesta.className = 'rep-pregunta-resp ' + (valor ? 'rep-si' : 'rep-no');
     if (valor === undefined || valor === null) respuesta.hidden = true;
-    else respuesta.textContent = valor ? ' → verdadero' : ' → falso';
-    respuesta.style.opacity = visible ? '1' : '0';
+    else {
+      respuesta.textContent = valor ? ' → ✓ verdadero' : ' → ✗ falso';
+      respuesta.hidden = !visible;
+      // El borde (y el fondo de la franja) toman el color del resultado cuando se sabe.
+      if (visible) rotulo.classList.add(valor ? 'rep-pregunta-si' : 'rep-pregunta-no');
+    }
     rotulo.append(respuesta);
     caja.append(rotulo);
     return { caja, respuesta };
@@ -1010,7 +1022,7 @@ export class Figura {
   // Lo que se ve fijo mientras se esta en este paso: la pregunta de una condicion (el rotulo y las casillas que se
   // leen, con borde discontinuo; aparecen cuando termina la animacion del paso, "retraso") o, en el paso siguiente,
   // el rotulo con la respuesta.
-  fijarEstado(foto, retraso) {
+  fijarEstado(foto, retraso, adelante = false) {
     this.nodoFijo = null;
     const escena = this.escena;
     if (!escena || (!foto.pregunta && !foto.condicion)) return;
@@ -1023,7 +1035,9 @@ export class Figura {
     let nodo;
     if (foto.pregunta) {
       nodo = this.crearRotulo(foto.pregunta.texto, null).caja;
-      aparecer(nodo);
+      // Al avanzar, el rotulo llama la atencion: baja desde arriba y destella (al terminar la animacion del paso).
+      if (adelante) this.llamarLaAtencion(nodo, retraso, true);
+      else aparecer(nodo);
       // Las flechas que no intervienen en la pregunta se atenuan cuando termina la animacion del paso.
       if (this.enfoquePregunta) {
         const svg = escena.svg;
@@ -1041,7 +1055,46 @@ export class Figura {
     } else nodo = this.crearRotulo(foto.condicion.texto, foto.condicion.valor).caja;
     this.nodoFijo = nodo;
     // Si el paso muestra todavia la figura anterior (el recorrido previo), el rotulo se pone cuando termina.
-    if (!this.flujoActivo) this.contenedor.prepend(nodo);
+    if (!this.flujoActivo) this.ponerRotulo(nodo);
+  }
+
+  // El rotulo de una condicion llama la atencion: llega desde la izquierda como un resorte (se pasa, vuelve, rebota dos veces y
+  // queda fijo) y despues su borde destella una vez ("entrada"); si ya estaba (llega la respuesta), un empujon corto. Con
+  // "retraso" ms de demora y sin movimiento reducido.
+  // Una animacion de CSS empieza cuando el elemento entra en la pagina, y el rotulo puede entrar despues de lo previsto (si
+  // antes corre el recorrido por las flechas): por eso se anota cuando tiene que empezar y la demora se calcula al ponerlo.
+  llamarLaAtencion(caja, retraso, entrada) {
+    if (sinMovimiento()) return;
+    caja.atencion = { cuando: performance.now() + retraso, entrada };
+    if (caja.isConnected) this.empezarAtencion(caja);
+  }
+
+  empezarAtencion(caja) {
+    const a = caja.atencion;
+    if (!a) return;
+    caja.atencion = null;
+    const espera = Math.max(0, a.cuando - performance.now());
+    const rotulo = caja.querySelector('.rep-pregunta');
+    if (a.entrada) {
+      caja.classList.add('rep-pregunta-entra');
+      caja.style.animationDelay = espera + 'ms';
+    }
+    if (rotulo) {
+      // Al entrar: el resorte del rotulo y, cuando queda quieto (1,1 s), un destello suave. Si ya estaba (llega la respuesta
+      // y se ensancha): un empujon corto.
+      rotulo.classList.remove('rep-pregunta-llama', 'rep-pregunta-empuja');
+      rotulo.style.animationDelay = espera + (a.entrada ? 1100 : 0) + 'ms';
+      void rotulo.offsetWidth; // reinicia la animacion si ya estaba
+      rotulo.classList.add(a.entrada ? 'rep-pregunta-llama' : 'rep-pregunta-empuja');
+    }
+  }
+
+  // El rotulo de una condicion va en la franja reservada arriba de la figura (pantallas grandes: ahi no tapa nada y queda
+  // cerca del codigo) y, si no hay franja a la vista, flotando arriba de la figura.
+  ponerRotulo(nodo) {
+    this.empezarAtencion(nodo); // antes de ponerlo: la animacion empieza al entrar en la pagina
+    if (this.franja && this.franja.offsetParent !== null) this.franja.replaceChildren(nodo);
+    else this.contenedor.prepend(nodo);
   }
 
   // Los nombres de las flechas (de las que salen de una variable) se ven siempre, o solo al senalarlas.

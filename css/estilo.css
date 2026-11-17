@@ -27,6 +27,8 @@
   /* lo que el programa va a mostrar por pantalla (figura y consola del reproductor) */
   --salida: #7a3fd1;
   --salida-intensa: #6d28d9; /* de fondo, con letra blanca */
+  /* el resultado de una condicion: verdadero en verde (--bien) y falso en gris pizarra (no es un error: no usa el rojo) */
+  --falso: #475569;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -55,6 +57,7 @@
     --c-pre: #e3b341;
     --salida: #c4a1ff;
     --salida-intensa: #7c3aed;
+    --falso: #94a3b8;
   }
 }
 
