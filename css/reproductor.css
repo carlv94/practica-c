@@ -31,6 +31,11 @@
   color: var(--texto);
   cursor: pointer;
 }
+.rep-simbolo svg {
+  width: 1.1em;
+  height: 1.1em;
+  vertical-align: -0.2em;
+}
 .rep-boton:hover:not(:disabled) {
   border-color: var(--acento);
 }
@@ -440,7 +445,7 @@
 }
 .rep-compacto .rep-ver-codigo {
   display: inline-block;
-  margin-top: 6px;
+  margin: 6px 0 12px;
 }
 .rep-compacto .rep-estado-linea,
 .rep-compacto .rep-nota {
@@ -524,6 +529,49 @@
 }
 .rep-apaisado .rep-ver-codigo {
   display: none;
+}
+/* en el telefono en vertical: solo los simbolos, y la barra en tres filas (los botones; los pasos y la cuenta; la
+   velocidad y ampliar) para que no se amontone ni se corra hacia abajo */
+@media (max-width: 600px) and (orientation: portrait) {
+  .rep-barra {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 6px;
+    align-items: center;
+  }
+  .rep-barra .rep-texto-boton {
+    display: none;
+  }
+  .rep-barra .rep-boton {
+    padding: 6px 0;
+    min-width: 0;
+  }
+  .rep-barra .rep-simbolo {
+    font-size: 1.15rem;
+    line-height: 1.2;
+  }
+  .rep-barra .rep-simbolo svg {
+    width: 1.3em;
+    height: 1.3em;
+  }
+  .rep-barra > .rep-boton:last-child .rep-simbolo svg {
+    width: 1.7em;
+    height: 1.7em;
+  }
+  .rep-barra .rep-barra-pasos {
+    grid-column: span 3;
+    min-width: 0;
+  }
+  .rep-barra .rep-cuenta {
+    grid-column: span 2;
+    text-align: right;
+  }
+  .rep-barra .rep-velocidad {
+    grid-column: span 3;
+  }
+  .rep-barra > .rep-boton:last-child {
+    grid-column: span 2;
+  }
 }
 @media (pointer: coarse) {
   .rep-boton {

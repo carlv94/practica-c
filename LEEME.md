@@ -2086,6 +2086,7 @@ Ejecuta el programa completo (los archivos de la serie más la respuesta) y lo c
   doble, una posición fuera del bloque): el reproductor lo muestra. La página de pruebas comprueba que se pueda ejecutar y dibujar.
   `comparaConNulo` también acepta `*p == NULL`, `!*p` e `if (*p)` (un puntero recibido por su dirección).
 - El botón "Ver paso a paso" de un cuestionario queda fijo al pie de la ventana mientras se ven los mensajes (`#resultado > .paso-a-paso`, `position: sticky`).
+- Los botones del reproductor llevan un símbolo y un texto (`rotular` en `reproductor.js`: ⏮ Inicio, ◀ Anterior, ⏩ Reproducir / ⏸ Pausa, Siguiente ▶, Final ⏭, ⤢ Ampliar). En el teléfono en vertical (hasta 600 px de ancho) se ve solo el símbolo y la barra pasa a tres filas (los cinco botones; los pasos y la cuenta; la velocidad y ampliar). Cada botón lleva `aria-label`, porque sin texto el `title` no se ve en el celular. Los iconos que dependen de la tipografía del aparato (avanzar, pausa, ampliar, cerrar) son SVG (`ICONOS` en `reproductor.js`): el emoji ⏩ salía a colores y ⤢ salía diminuto en algunos celulares.
 - Una consigna de código cuya regla es `memoria` tiene, en el encabezado del editor, un botón "▶ Paso a paso". Solo ejecuta lo ya comprobado:
   guarda el texto comprobado (sin espacios del final ni líneas en blanco finales) y su ejecución (`r.memoria`). Si el editor cambia, el botón
   queda apagado (`aria-disabled`, sigue recibiendo el toque) y un aviso (`#aviso-paso`, con el estilo de `mensaje aviso`) explica por qué:

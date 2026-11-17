@@ -124,11 +124,36 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     b.title = ayuda;
     return b;
   };
-  const inicio = boton('⏮ Inicio', 'Volver al primer paso');
-  const anterior = boton('◀ Anterior', 'Paso anterior (flecha izquierda)');
-  const reproducir = boton('▶ Reproducir', 'Avanzar solo');
-  const siguiente = boton('Siguiente ▶', 'Paso siguiente (flecha derecha)');
-  const final = boton('Final ⏭', 'Ir al último paso');
+  // Un boton con su simbolo y su texto: en una pantalla angosta (vertical en el telefono) solo se ve el simbolo (ver el CSS).
+  // El nombre del boton para quien no lo ve (lector de pantalla) es el de la ayuda.
+  // Los iconos que dependen de la tipografia del aparato (el emoji de avanzar, la flecha fina de ampliar) se dibujan como
+  // imagen: se ven igual en todos los celulares.
+  const ICONOS = {
+    avanzar: '<path d="M3 4l9 8-9 8zM12 4l9 8-9 8z"/>',
+    pausa: '<rect x="5" y="4" width="5" height="16" rx="1"/><rect x="14" y="4" width="5" height="16" rx="1"/>',
+    ampliar: '<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>',
+    cerrar: '<path d="M5 5l14 14M19 5L5 19" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>',
+  };
+  const rotular = (b, simbolo, texto, simboloDespues = false) => {
+    const s = nodo('span', 'rep-simbolo');
+    if (ICONOS[simbolo]) s.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false">${ICONOS[simbolo]}</svg>`;
+    else s.textContent = simbolo;
+    s.setAttribute('aria-hidden', 'true');
+    const t = nodo('span', 'rep-texto-boton', texto);
+    if (simboloDespues) b.replaceChildren(t, ' ', s);
+    else b.replaceChildren(s, ' ', t);
+  };
+  const conSimbolo = (simbolo, texto, ayuda, despues = false) => {
+    const b = boton('', ayuda);
+    b.setAttribute('aria-label', ayuda);
+    rotular(b, simbolo, texto, despues);
+    return b;
+  };
+  const inicio = conSimbolo('⏮', 'Inicio', 'Volver al primer paso');
+  const anterior = conSimbolo('◀', 'Anterior', 'Paso anterior (flecha izquierda)');
+  const reproducir = conSimbolo('avanzar', 'Reproducir', 'Avanzar solo');
+  const siguiente = conSimbolo('▶', 'Siguiente', 'Paso siguiente (flecha derecha)', true);
+  const final = conSimbolo('⏭', 'Final', 'Ir al último paso', true);
   const barraPasos = document.createElement('input');
   barraPasos.type = 'range';
   barraPasos.className = 'rep-barra-pasos';
@@ -143,7 +168,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   VELOCIDADES.forEach((v, i) => velocidad.append(new Option(v.nombre, String(i))));
   velocidad.value = String(leerVelocidad());
   etiquetaVelocidad.append(velocidad);
-  const ampliarBoton = boton('⤢ Ampliar', 'Ver el paso a paso en toda la pantalla');
+  const ampliarBoton = conSimbolo('ampliar', 'Ampliar', 'Ver el paso a paso en toda la pantalla');
   barra.append(inicio, anterior, reproducir, siguiente, final, barraPasos, cuenta, etiquetaVelocidad, ampliarBoton);
   const giro = nodo('div', 'rep-giro');
   giro.hidden = true;
@@ -330,7 +355,8 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   function parar() {
     if (reloj) clearTimeout(reloj);
     reloj = null;
-    reproducir.textContent = '▶ Reproducir';
+    rotular(reproducir, 'avanzar', 'Reproducir');
+    reproducir.setAttribute('aria-label', 'Avanzar solo');
   }
 
   // El ritmo es el de la velocidad, pero un paso con animacion larga (la flecha, la pausa y el
@@ -410,7 +436,8 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     ampliado = si;
     raiz.classList.toggle('rep-ampliado', si);
     document.documentElement.classList.toggle('rep-sin-scroll', si);
-    ampliarBoton.textContent = si ? '✕ Cerrar' : '⤢ Ampliar';
+    rotular(ampliarBoton, si ? 'cerrar' : 'ampliar', si ? 'Cerrar' : 'Ampliar');
+    ampliarBoton.setAttribute('aria-label', si ? 'Salir de la pantalla completa' : 'Ver el paso a paso en toda la pantalla');
     if (si) {
       if (raiz.requestFullscreen) {
         raiz
@@ -492,7 +519,8 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   reproducir.onclick = () => {
     if (reloj) return parar();
     if (paso === traza.length - 1) ir(0);
-    reproducir.textContent = '⏸ Pausa';
+    rotular(reproducir, 'pausa', 'Pausa');
+    reproducir.setAttribute('aria-label', 'Detener la reproducción');
     arrancar();
   };
   velocidad.onchange = () => {
