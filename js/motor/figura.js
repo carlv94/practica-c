@@ -812,6 +812,15 @@ export class Figura {
     }
     for (const e of clon.querySelectorAll('.rep-etiqueta-nueva')) e.classList.remove('rep-etiqueta-nueva');
     for (const e of clon.querySelectorAll('.rep-celda.rep-cambio')) e.classList.remove('rep-cambio');
+    // Tampoco lo es el grosor 3 de una flecha que se retiro o que acababa de pasar a rojo: vuelven al grosor de siempre
+    // (con una transicion corta, antes de que empiece el recorrido) y conservan su color.
+    const gruesas = [...clon.querySelectorAll('.rep-flecha-g.rep-retirada, .rep-flecha-g.rep-roja-nueva')];
+    for (const g of gruesas) {
+      g.classList.remove('rep-retirada', 'rep-roja-nueva');
+      for (const trazo of g.querySelectorAll('.rep-flecha')) {
+        if (trazo.animate) trazo.animate([{ strokeWidth: '3px' }, { strokeWidth: '1.6px' }], { duration: 0.2 * u, easing: 'ease-out' });
+      }
+    }
     // Si algun acceso recorre una flecha, todas arrancan atenuadas (una entrada breve) y cada una se enciende, con su destello,
     // cuando le toca, y sigue encendida: queda el rastro de lo que intervino. Sin flechas que recorrer no se atenua nada.
     const grupos = new Map();
@@ -834,7 +843,7 @@ export class Figura {
     };
     const capa = el('g');
     clon.append(capa);
-    let t = conFlecha ? entrada : 0;
+    let t = Math.max(conFlecha ? entrada : 0, gruesas.length ? 0.2 * u : 0);
     // Deja encendido un resalte de un recorrido (la casilla de destino) un rato mas.
     const extender = (ultimo, extra) => {
       const { marco, animacion, delay, duracion } = ultimo;
