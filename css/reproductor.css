@@ -886,7 +886,7 @@
   border-color: var(--falso);
 }
 
-/* la flecha roja de un puntero liberado que pasa a NULL se retira como era, mas gruesa */
+/* una flecha que se retira (azul o roja) conserva su color y va mas gruesa */
 .rep-flecha-g.rep-retirada .rep-flecha {
   stroke-width: 3;
 }

@@ -1587,12 +1587,13 @@ export class Figura {
   // El grupo de dibujo de una flecha: la zona para senalarla, el trazo y, si corresponde, su nombre.
   grupoDeFlecha(f, d, puntos, indice) {
     const fin = puntos[puntos.length - 1];
-    // La flecha de un puntero liberado que pasa a NULL se retira como era: roja, y mas gruesa para que se vea que cambia.
-    const retiradaRoja = f.retirada && f.muerto && d.tipo !== 'perdida';
+    // Una flecha que se retira (el puntero pasa a NULL, el bloque se va de la vista o termina la funcion) conserva su
+    // color, azul o rojo segun adonde apuntaba, y va mas gruesa para que se vea que cambia: el ambar es solo de lo que llega.
+    const retirada = f.retirada && d.tipo !== 'perdida';
     // La que acaba de pasar a rojo porque se libero el bloque que apunta: queda mas gruesa mientras se ve este paso.
-    const rojaNueva = f.recienLiberada && f.muerto && d.tipo !== 'perdida' && !retiradaRoja;
+    const rojaNueva = f.recienLiberada && f.muerto && d.tipo !== 'perdida' && !retirada;
     const g = el('g', {
-      class: 'rep-flecha-g' + (f.cambio && !retiradaRoja ? ' rep-nueva' : '') + (retiradaRoja ? ' rep-retirada' : '') + (rojaNueva ? ' rep-roja-nueva' : '') + (f.tarde ? ' rep-tarde' : ''),
+      class: 'rep-flecha-g' + (f.cambio && !retirada ? ' rep-nueva' : '') + (retirada ? ' rep-retirada' : '') + (rojaNueva ? ' rep-roja-nueva' : '') + (f.tarde ? ' rep-tarde' : ''),
       'data-o': f.deId,
       'data-d': f.a,
       'data-i': indice,
@@ -1608,7 +1609,7 @@ export class Figura {
     // Continua y roja: apunta a un bloque liberado (el puntero sigue apuntando, pero la memoria ya no es suya).
     const punteada = f.fuera || d.tipo === 'perdida';
     const liberada = f.muerto && d.tipo !== 'perdida';
-    const marcaNormal = f.cambio && !retiradaRoja ? 'url(#rep-punta-nueva)' : 'url(#rep-punta)';
+    const marcaNormal = f.cambio && !retirada ? 'url(#rep-punta-nueva)' : 'url(#rep-punta)';
     const trazado = camino(puntos);
     // Un trazo invisible y ancho, para poder senalarla con el cursor o con el dedo.
     g.append(el('path', { d: trazado, class: 'rep-flecha-zona' }));
