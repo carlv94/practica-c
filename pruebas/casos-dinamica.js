@@ -355,7 +355,7 @@ export const CASOS_DE_DINAMICA = [
   // ===== 1. por que un puntero
   nodo(1, 'cada nodo contendria otro', '1'),
   nodo(1, 'una estructura no puede tener otra adentro', '0', ['OPCION_NO_PUEDE_ANIDAR']),
-  nodo(1, 'falta el typedef', '2', ['OPCION_FALTA_TYPEDEF']),
+  nodo(1, 'hay que usar un alias', '2', ['OPCION_FALTA_TYPEDEF']),
 
   // ===== 2. como se nombra el tipo
   nodo(2, 'struct nodo', '2'),

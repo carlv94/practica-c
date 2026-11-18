@@ -14,17 +14,17 @@
         {
           "texto": "Una estructura no puede tener adentro una variable de tipo estructura",
           "codigo": "OPCION_NO_PUEDE_ANIDAR",
-          "explicacion": "Sí puede: ya vio estructuras con un campo que es otra estructura, como una ficha con la fecha de nacimiento. Eso funciona porque la de adentro es de otro tipo, que ya está completo. El problema de esta declaración es otro."
+          "explicacion": "Sí puede: ya vio estructuras con un campo que es otra estructura, como una ficha con la fecha de nacimiento. El problema de esta declaración es otro."
         },
         {
-          "texto": "Cada nodo contendría otro nodo completo, sin terminar nunca",
+          "texto": "Una estructura no puede contener un campo de su propio tipo",
           "correcta": true,
-          "explicacion": "El campo `sig` sería un `struct nodo` entero, así que cada nodo ocuparía lo que ocupa su `dato` más lo que ocupa otro nodo completo, que a su vez ocuparía lo de su `dato` más lo de otro, y así sin fin: el compilador no podría calcular cuánto ocupa un nodo, y la declaración es un error. Para que una estructura se relacione con otra del mismo tipo se guarda la dirección de la otra, no la otra: una dirección siempre ocupa lo mismo, apunte a lo que apunte. Por eso el campo se declara `struct nodo *sig`."
+          "explicacion": "Una estructura sí puede contener otra, como la ficha y su fecha de nacimiento, siempre que sea de otro tipo, que ya está declarado y se sabe cuánto ocupa. Acá el campo `sig` sería un `struct nodo` dentro de un `struct nodo`: cada nodo ocuparía lo que ocupa su `dato` más lo que ocupa otro nodo, que a su vez ocuparía lo de su `dato` más lo de otro, y así sin fin. El compilador no podría calcular cuánto ocupa un nodo, y la declaración es un error. Para que una estructura se relacione con otra del mismo tipo se guarda la dirección de la otra, no la otra: una dirección siempre ocupa lo mismo, apunte a lo que apunte. Por eso el campo se declara `struct nodo *sig`."
         },
         {
-          "texto": "Falta el alias `TNodo`: una estructura no se puede declarar sin un `typedef`",
+          "texto": "Para declarar un campo del mismo tipo que la estructura hay que usar un alias",
           "codigo": "OPCION_FALTA_TYPEDEF",
-          "explicacion": "Una estructura se declara perfectamente con `struct` y su etiqueta, sin `typedef`: el alias es una comodidad para no repetir la palabra `struct` cada vez, no una obligación. Este error no tiene que ver con el alias."
+          "explicacion": "No: para declarar ese campo no se usa ningún alias. De hecho, dentro de la estructura el alias todavía no existe, porque se define después de la llave de cierre, así que ahí el tipo se escribe con `struct` y la etiqueta, como `struct nodo`. El alias es una comodidad para no repetir la palabra `struct` fuera de la declaración, no una obligación."
         }
       ]
     },
@@ -167,7 +167,7 @@
         {
           "texto": "Copia en `a` el nodo `b` completo",
           "codigo": "OPCION_COPIA_EL_NODO",
-          "explicacion": "Copiar un nodo entero sería `a = b;`, que copiaría su dato y lo que guarda su `sig`. Acá se guarda solo `&b`, una dirección, y en el campo `sig` de `a`."
+          "explicacion": "Copiar el nodo completo sería `a = b;`, que copiaría su dato y lo que guarda su `sig`. Acá se guarda solo `&b`, una dirección, y en el campo `sig` de `a`."
         },
         {
           "texto": "Guarda en `sig` de `a` el dato de `b`, el `9`",
