@@ -784,7 +784,12 @@ function mostrarConsigna() {
   actualizarBotonPasoAPaso();
   // Repasando, se puede traer lo que se habia respondido.
   $('usar-anterior').hidden = repasando == null;
-  $('respuesta').focus({ preventScroll: true });
+  // En un celular o tableta, enfocar abre el teclado y el navegador desplaza la
+  // pagina hasta el editor: se deja que el alumno lea primero y toque cuando quiera.
+  // Si el editor ya tenia el foco de la consigna anterior, tambien se lo quita:
+  // si no, el teclado seguiria abierto.
+  if (window.matchMedia('(pointer: coarse)').matches) $('respuesta').blur();
+  else $('respuesta').focus({ preventScroll: true });
 }
 
 // La ficha de datos: una tarjeta con el nombre de cada campo y, a su lado, el
