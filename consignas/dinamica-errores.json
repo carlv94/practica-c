@@ -29,7 +29,7 @@
         {
           "texto": "Sigue reservado, pero ya nadie lo apunta",
           "correcta": true,
-          "explicacion": "El primer bloque sigue reservado hasta que el programa termina, pero la única dirección que lo apuntaba era la que guardaba `p`, y se perdió al asignarle otra. Sin esa dirección ya no se puede usar ni liberar con `free`. Eso es una fuga de memoria: se pierde memoria que el programa no puede devolver. En la figura se ve como un bloque «sin puntero». Para evitarla hay que liberar un bloque, con `free(p);`, antes de perder su dirección."
+          "explicacion": "El primer bloque sigue reservado hasta que el programa termina, pero la única dirección que lo apuntaba era la que guardaba `p`, y se perdió al asignarle otra. Sin esa dirección ya no se puede usar ni liberar con `free`. Eso es una fuga de memoria: se pierde memoria que el programa no puede devolver. En la figura se ve como un bloque «inalcanzable». Para evitarla hay que liberar un bloque, con `free(p);`, antes de perder su dirección."
         },
         {
           "texto": "`p` apunta ahora a los dos bloques",

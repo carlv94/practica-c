@@ -6,7 +6,8 @@
 //                  asi una lista queda de izquierda a derecha)
 //   sin enlazar    bloques que solo senalan variables de la funcion en curso (el nodo que
 //                  se acaba de crear): se unen a la lista cuando algo de afuera los senala
-//   sin puntero    bloques que nadie senala (una fuga), en punteado
+//   inalcanzable   bloques a los que no llega ninguna variable, aunque otro bloque (tambien perdido) los senale
+//                  (una fuga), en punteado
 //
 // De cada puntero sale una flecha que va por canales y carriles, sin cruzar los bloques.
 // Un bloque liberado se ve mientras algo lo siga senalando, y esa flecha sigue con su punta,
@@ -229,7 +230,7 @@ function bloquesVisibles(foto, anterior) {
   return foto.monticulo.filter((b) => b.vivo || apuntados.has(b.id) || vivosAntes.has(b.id) || recientes.has(b.id));
 }
 
-// Reparte los bloques visibles en la lista, los sin enlazar y los sin puntero.
+// Reparte los bloques visibles en la lista, los sin enlazar y los inalcanzables.
 function repartir(foto, visibles, cabezas) {
   const nodos = new Map();
   const todas = [
@@ -1293,7 +1294,7 @@ export class Figura {
     const visibles = bloquesVisibles(foto, anterior);
     const { lista, sueltos, sinPuntero } = repartir(foto, visibles, this.cabezas);
     // Al terminar el programa (ya no hay funciones) los bloques se quedan donde estaban: reubicarlos
-    // por el orden de las direcciones confundiria. Solo cambia su marca ("sin puntero").
+    // por el orden de las direcciones confundiria. Solo cambia su marca ("inalcanzable").
     const fijo = Boolean(previa) && foto.marcos.length === 0 && visibles.every((b) => previa.bloques.has(b.id));
     const x0 = fijo ? previa.x0 : derechaPila + 70;
     const limite = x0 + 460;
@@ -1379,7 +1380,7 @@ export class Figura {
       // El aviso va a la derecha de la direccion; si el bloque es tan chico que no entran los dos
       // (6 px por cifra, 5,6 por letra), va debajo del bloque, centrado. Como las flechas se dibujan encima, si de una
       // casilla del bloque sale una flecha que pasaria por el aviso, este se corre a la izquierda (junto a la direccion).
-      const aviso = !b.vivo ? 'liberado' : huerfano ? 'sin puntero' : '';
+      const aviso = !b.vivo ? 'liberado' : huerfano ? 'inalcanzable' : '';
       if (aviso) {
         const claseAviso = 'rep-aviso' + (recienLiberado ? ' rep-aviso-nuevo' : '');
         const anchoDir = String(b.dir).length * 6;
