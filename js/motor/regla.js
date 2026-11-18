@@ -16,6 +16,9 @@
 //             malloc): MALLOC_FALTA, FREE_FALTA...
 //   comparaConNulo  el programa tiene que preguntar si un puntero es NULL (== NULL, != NULL, !p o
 //             if (p)): NULL_SIN_COMPROBAR. Evita "comprobar" con un numero escrito a mano.
+//   cadena    siguiendo los enlaces desde una variable de main, los datos de los nodos tienen que ser esos:
+//             { "desde": "a", "datos": [5, 8, 2], "campo": "sig", "dato": "dato" } (los dos ultimos, si se llaman asi, se omiten):
+//             CADENA_DISTINTA.
 //   cabezas   nombres de las variables que guardan el comienzo de la estructura (para el
 //             paso a paso: ver figura.js)
 //
@@ -25,7 +28,7 @@
 // fallo, si alguno fallo; si no, el primero), para mostrarlo en el reproductor.
 
 import { ejecutar } from './interprete.js';
-import { mensajeDeError, mensajeDeFugas, mensajeDeFuncionFalta, mensajeDeNuloSinComprobar, contextoDeEntrada } from './mensajes.js';
+import { mensajeDeError, mensajeDeFugas, mensajeDeFuncionFalta, mensajeDeNuloSinComprobar, mensajeDeCadenaDistinta, mensajeDeCadenaVariableFalta, contextoDeEntrada } from './mensajes.js';
 
 // Preguntar si un puntero es NULL: p == NULL, p != NULL, p == 0, !p, if (p); tambien con un
 // puntero que se recibio por su direccion: *p == NULL, !*p, if (*p).
@@ -109,6 +112,28 @@ export function corregirMemoria(analizador, fuente, respuesta, regla, { traza = 
             ? [{ titulo: 'Tiene que mostrar:', lineas: [debe] }]
             : [{ lineas: sale.split('\n') }, { titulo: 'Tiene que mostrar:', lineas: debe.split('\n') }]
         );
+        return resultado(true);
+      }
+    }
+    if (regla.cadena) {
+      const c = regla.cadena;
+      const inicio = r.finales.get(c.desde);
+      if (!inicio) {
+        diag('error', 'CADENA_VARIABLE_FALTA', mensajeDeCadenaVariableFalta(c.desde));
+        return resultado(true);
+      }
+      // Los datos que se encuentran siguiendo el campo de enlace, hasta un NULL (o un tope por si hay un ciclo).
+      const tiene = [];
+      let nodo = inicio.raiz;
+      while (nodo && nodo.campos && tiene.length < 100) {
+        const dato = nodo.campos.get(c.dato || 'dato');
+        tiene.push(dato ? dato.v : undefined);
+        const enlace = nodo.campos.get(c.campo || 'sig');
+        const p = enlace ? enlace.v : null;
+        nodo = p ? p.st : null;
+      }
+      if (JSON.stringify(tiene) !== JSON.stringify(c.datos)) {
+        diag('error', 'CADENA_DISTINTA', mensajeDeCadenaDistinta(con, c.desde, tiene.map((x) => (x === undefined ? '?' : x)), c.datos));
         return resultado(true);
       }
     }

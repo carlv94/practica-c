@@ -112,6 +112,13 @@ export const mensajeDeFugas = (con, cantidad) =>
     `el programa termina sin liberar ${cantidad === 1 ? 'un bloque' : `${cantidad} bloques`} de memoria reservados con ${BT}malloc${BT}. Cada ${BT}malloc${BT} tiene que tener su ${BT}free${BT}, cuando ya no se necesita lo que se reservó.`
   );
 
+// Siguiendo los enlaces desde una variable, la cadena de datos no es la que pide la consigna.
+export const mensajeDeCadenaDistinta = (con, desde, tiene, debe) =>
+  frase(con, `siguiendo los enlaces desde ${BT}${desde}${BT} se llega a los datos ${BT}${(tiene.length > debe.length + 2 ? [...tiene.slice(0, debe.length + 2), '...'] : tiene).join(' ') || '(ninguno)'}${BT}, y la consigna pide ${BT}${debe.join(' ')}${BT}. Revise el dato de cada nodo y a qué nodo apunta el campo ${BT}sig${BT} de cada uno.`);
+
+export const mensajeDeCadenaVariableFalta = (desde) =>
+  `La consigna pide una variable llamada ${BT}${desde}${BT}: el programa no la declara.`;
+
 export const mensajeDeNuloSinComprobar = () =>
   `La consigna pide comprobar el resultado de ${BT}malloc${BT}: el programa no pregunta si el puntero es ${BT}NULL${BT}, con ${BT}== NULL${BT}, ${BT}!= NULL${BT} o ${BT}if (p)${BT}.`;
 

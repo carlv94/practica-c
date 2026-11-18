@@ -67,9 +67,13 @@ const nodo = serie('dinamica-nodo');
 
 // Serie 4: el nodo de una lista.
 const NODO = (campo = 'struct nodo *sig;', alias = 'TNodo', etiqueta = ' nodo') => `typedef struct${etiqueta} {\n  int dato;\n  ${campo}\n} ${alias};`;
-const TRES_NODOS = (cuerpo) => `int main() {\n  TNodo a;\n  TNodo b;\n  TNodo c;\n  TNodo *p;\n\n${cuerpo}  return 0;\n}`;
-const ENLACES = '  a.dato = 5;\n  b.dato = 8;\n  c.dato = 2;\n  a.sig = &b;\n  b.sig = &c;\n  c.sig = NULL;\n  p = &a;\n';
-const RECORRER = '  while (p != NULL) {\n    printf("%d ", p->dato);\n    p = p->sig;\n  }\n';
+const TRES = (cuerpo) => `int main() {\n  TNodo a;\n  TNodo b;\n  TNodo c;\n\n${cuerpo}  return 0;\n}`;
+const ENLAZAR = '  a.dato = 5;\n  b.dato = 8;\n  c.dato = 2;\n  a.sig = &b;\n  b.sig = &c;\n  c.sig = NULL;\n';
+const RECORRER_CON_P = '  TNodo *p = &a;\n\n  while (p != NULL) {\n    printf("%d ", p->dato);\n    p = p->sig;\n  }\n';
+// Las consignas 9 y 11 parten de un archivo completo: el tipo y un main con los nodos y lo que se agrega al final.
+const ARCHIVO = (enlaces, final) => NODO() + '\n\n' + TRES(enlaces + '\n' + final);
+const ENLAZAR_SIN_NULL = ENLAZAR.replace('  c.sig = NULL;\n', '');
+const SUMAR = '  int suma = 0;\n  TNodo *p = &a;\n\n  while (p != NULL) {\n    suma = suma + p->dato;\n    p = p->sig;\n  }\n  printf("%d", suma);\n';
 
 // Serie 3: cambiar un puntero desde una funcion.
 const RESERVAR_PP = (cuerpo, tipo = 'int **p') => 'void reservar(' + tipo + ', int valor) {\n' + cuerpo + '}';
@@ -396,22 +400,34 @@ export const CASOS_DE_DINAMICA = [
   nodo(7, 'la suma de los campos', '1', ['OPCION_SUMA']),
   nodo(7, 'solo la direccion', '2', ['OPCION_SOLO_DIRECCION']),
 
-  // ===== 8. enlazar dos nodos
-  nodo(8, 'guarda la direccion', '2'),
-  nodo(8, 'copia el nodo', '0', ['OPCION_COPIA_EL_NODO']),
-  nodo(8, 'guarda el dato', '1', ['OPCION_GUARDA_EL_DATO']),
+  // ===== 8. enlazar tres nodos (no se comprueba el NULL del ultimo: lo muestra la 9)
+  nodo(8, 'la referencia', TRES(ENLAZAR)),
+  nodo(8, 'sin marcar el ultimo nodo', TRES(ENLAZAR.replace('  c.sig = NULL;\n', ''))),
+  nodo(8, 'enlazando en otro orden de instrucciones', TRES(ENLAZAR.replace('a.sig = &b;\n  b.sig = &c;', 'b.sig = &c;\n  a.sig = &b;'))),
+  nodo(8, 'sin enlazar el segundo nodo', TRES(ENLAZAR.replace('  b.sig = &c;\n', '')), ['CADENA_DISTINTA']),
+  nodo(8, 'los nodos enlazados en otro orden', TRES(ENLAZAR.replace('a.sig = &b;\n  b.sig = &c;', 'a.sig = &c;\n  c.sig = &b;').replace('  c.sig = NULL;', '  b.sig = NULL;')), ['CADENA_DISTINTA']),
+  nodo(8, 'con un dato cambiado', TRES(ENLAZAR.replace('c.dato = 2', 'c.dato = 3')), ['CADENA_DISTINTA']),
+  nodo(8, 'todos terminan en NULL', TRES(ENLAZAR.replace('a.sig = &b;\n  b.sig = &c;', 'a.sig = NULL;\n  b.sig = NULL;')), ['CADENA_DISTINTA']),
 
-  // ===== 9. enlazar tres nodos y recorrerlos
-  nodo(9, 'la referencia', TRES_NODOS(ENLACES + RECORRER)),
-  nodo(9, 'recorriendo con un for', TRES_NODOS(ENLACES + '  for (; p != NULL; p = p->sig) {\n    printf("%d ", p->dato);\n  }\n')),
-  nodo(9, 'sin marcar el ultimo nodo', TRES_NODOS(ENLACES.replace('  c.sig = NULL;\n', '') + RECORRER), ['VARIABLE_SIN_VALOR']),
-  nodo(9, 'los nodos enlazados en otro orden', TRES_NODOS(ENLACES.replace('a.sig = &b;\n  b.sig = &c;', 'a.sig = &c;\n  c.sig = &b;').replace('  c.sig = NULL;', '  b.sig = NULL;') + RECORRER), ['MUESTRA_DISTINTA']),
-  nodo(9, 'sin recorrer', TRES_NODOS(ENLACES), ['MUESTRA_FALTA']),
+  // ===== 9. un recorrido que se detiene: falta marcar el final
+  nodo(9, 'la referencia', ARCHIVO(ENLAZAR, RECORRER_CON_P)),
+  nodo(9, 'el programa tal como esta', ARCHIVO(ENLAZAR_SIN_NULL, RECORRER_CON_P), ['VARIABLE_SIN_VALOR']),
+  nodo(9, 'recorriendo con un for', ARCHIVO(ENLAZAR, '  TNodo *p = &a;\n\n  for (; p != NULL; p = p->sig) {\n    printf("%d ", p->dato);\n  }\n')),
+  nodo(9, 'cerrando la lista sobre si misma', ARCHIVO(ENLAZAR_SIN_NULL + '  c.sig = &a;\n', RECORRER_CON_P), ['NO_TERMINA']),
+  nodo(9, 'marcando el final en el nodo del medio', ARCHIVO(ENLAZAR_SIN_NULL + '  b.sig = NULL;\n', RECORRER_CON_P), ['MUESTRA_DISTINTA']),
 
-  // ===== 10. como se marca el final
-  nodo(10, 'un valor que nadie asigno', '0'),
-  nodo(10, 'toma NULL', '1', ['OPCION_SIG_NULL']),
-  nodo(10, 'el ciclo se detiene solo', '2', ['OPCION_SE_DETIENE_SOLO']),
+  // ===== 10. que indica NULL
+  nodo(10, 'que no hay otro nodo', '1'),
+  nodo(10, 'que el nodo esta vacio', '0', ['OPCION_NULL_VACIO']),
+  nodo(10, 'que el nodo se borro', '2', ['OPCION_NULL_BORRADO']),
+
+  // ===== 11. sumar los datos de la lista
+  nodo(11, 'la referencia', ARCHIVO(ENLAZAR, SUMAR)),
+  nodo(11, 'sumando con un for', ARCHIVO(ENLAZAR, '  int suma = 0;\n\n  for (TNodo *p = &a; p != NULL; p = p->sig) {\n    suma += p->dato;\n  }\n  printf("%d", suma);\n')),
+  nodo(11, 'sin inicializar la suma', ARCHIVO(ENLAZAR, SUMAR.replace('int suma = 0;', 'int suma;')), ['VARIABLE_SIN_VALOR']),
+  nodo(11, 'mostrando la suma en cada vuelta', ARCHIVO(ENLAZAR, SUMAR.replace('    p = p->sig;\n', '    p = p->sig;\n    printf("%d ", suma);\n').replace('  printf("%d", suma);\n', '')), ['MUESTRA_DISTINTA']),
+  nodo(11, 'sin avanzar el puntero', ARCHIVO(ENLAZAR, SUMAR.replace('    p = p->sig;\n', '')), ['NO_TERMINA']),
+  nodo(11, 'sin recorrer', ARCHIVO(ENLAZAR, '  int suma = 0;\n  printf("%d", suma);\n'), ['MUESTRA_DISTINTA']),
 
   ...casosLista,
   ...casosQuitar,

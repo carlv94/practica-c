@@ -107,6 +107,7 @@ class Interprete {
     this.lecturaHecha = null; // lo que acaba de leer un scanf (el trozo de la entrada y las casillas), para la proxima fotografia
     this.error = null;
     this.retorno = null;
+    this.finales = new Map(); // las variables de main, con lo que valian cuando termino: nombre -> reserva
   }
 
   // ---------------------------------------------------------------- carga
@@ -138,6 +139,7 @@ class Interprete {
       error: this.error,
       retorno: this.retorno,
       fugas: this.error ? [] : this.memoria.fugas().map((r) => ({ id: r.id, dir: r.dir, tam: r.tam })),
+      finales: this.finales,
       traza: this.traza,
       entrada: this.entrada.texto,
       pasos: this.pasos,
@@ -413,6 +415,7 @@ class Interprete {
 
   cerrarAmbito() {
     const a = this.marcos[this.marcos.length - 1].ambitos.pop();
+    if (this.marcos.length === 1) for (const v of a.values()) this.finales.set(v.reserva.nombre, v.reserva);
     for (const v of a.values()) this.memoria.matar(v.reserva, 'marco');
     this.memoria.soltarPila(a.marca);
   }

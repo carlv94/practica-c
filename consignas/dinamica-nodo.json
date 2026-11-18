@@ -199,44 +199,38 @@
       ]
     },
     {
-      "id": "nodo-q-enlazar",
-      "titulo": "Enlazar dos nodos",
-      "enunciado": "Dos nodos comunes, `a` y `b`, están declarados en `main` y ya tienen sus datos. La figura muestra la memoria justo antes de la última instrucción, `a.sig = &b;`. ¿Qué hace esa instrucción?",
-      "programa": "typedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\nint main() {\n  TNodo a;\n  TNodo b;\n\n  a.dato = 7;\n  b.dato = 9;\n  b.sig = NULL;\n  a.sig = &b;\n  return 0;\n}",
-      "dibujo": {
-        "titulo": "La memoria antes de `a.sig = &b;`:",
-        "motor": {
-          "codigo": "#include <stdio.h>\n#include <stdlib.h>\n\ntypedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\nint main() {\n  TNodo a;\n  TNodo b;\n\n  a.dato = 7;\n  b.dato = 9;\n  b.sig = NULL;\n  a.sig = &b;\n  return 0;\n}",
-          "linea": 16
-        }
-      },
-      "pasoAPaso": {
-        "guia": "Avance una línea y mire qué aparece cuando se ejecuta `a.sig = &b;`: una flecha que sale de `sig` de `a` y llega a `b`."
-      },
-      "opciones": [
-        {
-          "texto": "Copia en `a` el nodo `b` completo",
-          "codigo": "OPCION_COPIA_EL_NODO",
-          "explicacion": "Copiar el nodo completo sería `a = b;`, que copiaría su dato y lo que guarda su `sig`. Acá se guarda solo `&b`, una dirección, y en el campo `sig` de `a`."
-        },
-        {
-          "texto": "Guarda en `sig` de `a` el dato de `b`, el `9`",
-          "codigo": "OPCION_GUARDA_EL_DATO",
-          "explicacion": "Para eso se escribiría `a.sig = b.dato;`. Además, `sig` está hecho para guardar la dirección de un nodo, no un entero."
-        },
-        {
-          "texto": "Deja en `sig` de `a` la dirección de `b`",
-          "correcta": true,
-          "explicacion": "El operador `&` da la dirección de `b` y el campo `sig` de `a` la guarda: en la figura aparece una flecha que sale de `sig` y llega a `b`. Los nodos no se copian ni se mueven: `a` y `b` siguen siendo variables distintas, y se relacionan porque uno guarda la dirección del otro. Así se enlazan los nodos de una lista."
-        }
-      ]
-    },
-    {
       "id": "nodo-enlazar",
-      "titulo": "Enlazar tres nodos y recorrerlos",
+      "titulo": "Enlazar tres nodos",
       "en": "archivo",
       "dado": "typedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;",
-      "enunciado": "El tipo `TNodo` ya está declarado en el editor. Escriba un `main` que declare tres nodos comunes, `a`, `b` y `c`, es decir, variables de tipo `TNodo`, sin `malloc`. Cárguele a cada uno su dato: `5` a `a`, `8` a `b` y `2` a `c`. Enlácelos en ese orden, de modo que `a` apunte a `b` y `b` a `c`, y marque que `c` es el último. Después declare un puntero `p` que empiece apuntando a `a` y recorra los nodos hasta el final, mostrando el dato de cada uno seguido de un espacio. El programa tiene que mostrar `5 8 2`.",
+      "enunciado": "El tipo `TNodo` ya está declarado en el editor. Escriba un `main` que declare tres nodos comunes, `a`, `b` y `c`, es decir, variables de tipo `TNodo`, sin `malloc`. Cárguele a cada uno su dato: `5` a `a`, `8` a `b` y `2` a `c`. Enlácelos en ese orden, de modo que `a` apunte a `b` y `b` a `c`.",
+      "requiere": [
+        {
+          "memoria": {
+            "casos": [
+              {
+                "contexto": ""
+              }
+            ],
+            "cadena": {
+              "desde": "a",
+              "datos": [
+                5,
+                8,
+                2
+              ]
+            }
+          }
+        }
+      ],
+      "referencia": "int main() {\n  TNodo a;\n  TNodo b;\n  TNodo c;\n\n  a.dato = 5;\n  b.dato = 8;\n  c.dato = 2;\n  a.sig = &b;\n  b.sig = &c;\n  c.sig = NULL;\n  return 0;\n}"
+    },
+    {
+      "id": "nodo-corregir-final",
+      "titulo": "Un recorrido que se detiene con un error",
+      "en": "archivo",
+      "comienza": "typedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\nint main() {\n  TNodo a;\n  TNodo b;\n  TNodo c;\n\n  a.dato = 5;\n  b.dato = 8;\n  c.dato = 2;\n  a.sig = &b;\n  b.sig = &c;\n\n  TNodo *p = &a;\n\n  while (p != NULL) {\n    printf(\"%d \", p->dato);\n    p = p->sig;\n  }\n  return 0;\n}",
+      "enunciado": "Este programa enlaza tres nodos y los recorre para mostrar el dato de cada uno, pero se detiene con un error. Use el botón «Paso a paso» sobre el programa tal como está: avance hasta que se detenga y mire en qué instrucción y por qué. Después corríjalo, para que muestre `5 8 2` sin errores.",
       "requiere": [
         {
           "memoria": {
@@ -245,46 +239,54 @@
                 "salida": "5 8 2",
                 "contexto": ""
               }
-            ],
-            "sinFugas": true
+            ]
           }
         }
       ],
-      "referencia": "int main() {\n  TNodo a;\n  TNodo b;\n  TNodo c;\n  TNodo *p;\n\n  a.dato = 5;\n  b.dato = 8;\n  c.dato = 2;\n  a.sig = &b;\n  b.sig = &c;\n  c.sig = NULL;\n  p = &a;\n  while (p != NULL) {\n    printf(\"%d \", p->dato);\n    p = p->sig;\n  }\n  return 0;\n}"
+      "referencia": "typedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\nint main() {\n  TNodo a;\n  TNodo b;\n  TNodo c;\n\n  a.dato = 5;\n  b.dato = 8;\n  c.dato = 2;\n  a.sig = &b;\n  b.sig = &c;\n  c.sig = NULL;\n\n  TNodo *p = &a;\n\n  while (p != NULL) {\n    printf(\"%d \", p->dato);\n    p = p->sig;\n  }\n  return 0;\n}"
     },
     {
-      "id": "nodo-q-ultimo",
-      "titulo": "Cómo se marca el final",
-      "enunciado": "Este programa enlaza dos nodos, `a` y `b`, y los recorre con un puntero `p` mientras `p` no valga `NULL`. Pero al nodo `b` nunca se le asignó su campo `sig`. ¿Qué pasa cuando `p` llega a `b` y se ejecuta `p = p->sig;`?",
-      "programa": "typedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\nint main() {\n  TNodo a;\n  TNodo b;\n  TNodo *p;\n\n  a.dato = 5;\n  b.dato = 8;\n  a.sig = &b;\n  p = &a;\n  while (p != NULL) {\n    printf(\"%d \", p->dato);\n    p = p->sig;\n  }\n  return 0;\n}",
-      "dibujo": {
-        "titulo": "La memoria justo antes del ciclo:",
-        "motor": {
-          "codigo": "#include <stdio.h>\n#include <stdlib.h>\n\ntypedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\nint main() {\n  TNodo a;\n  TNodo b;\n  TNodo *p;\n\n  a.dato = 5;\n  b.dato = 8;\n  a.sig = &b;\n  p = &a;\n  return 0;\n}",
-          "linea": 18
-        }
-      },
-      "pasoAPaso": {
-        "codigo": "#include <stdio.h>\n#include <stdlib.h>\n\ntypedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\nint main() {\n  TNodo a;\n  TNodo b;\n  TNodo *p;\n\n  a.dato = 5;\n  b.dato = 8;\n  a.sig = &b;\n  p = &a;\n  while (p != NULL) {\n    printf(\"%d \", p->dato);\n    p = p->sig;\n  }\n  return 0;\n}",
-        "guia": "Avance hasta que `p` llega a `b` y ejecuta `p = p->sig;`: el programa se detiene con un error, porque el campo `sig` de `b` nunca recibió un valor."
-      },
+      "id": "nodo-q-null",
+      "titulo": "Qué indica NULL en el último nodo",
+      "enunciado": "En este programa el último nodo, `c`, termina con `c.sig = NULL;`. Según lo que vio en el programa anterior, ¿qué indica ese valor?",
+      "programa": "typedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\nint main() {\n  TNodo a;\n  TNodo b;\n  TNodo c;\n\n  a.dato = 5;\n  b.dato = 8;\n  c.dato = 2;\n  a.sig = &b;\n  b.sig = &c;\n  c.sig = NULL;\n  return 0;\n}",
       "opciones": [
         {
-          "texto": "`p` toma un valor que nadie asignó",
+          "texto": "Que el nodo `c` está vacío, sin dato",
+          "codigo": "OPCION_NULL_VACIO",
+          "explicacion": "El dato de `c` es otro campo: `c.dato` vale `2` y no se toca. `NULL` se guarda en `sig`, que es el campo donde va la dirección del siguiente."
+        },
+        {
+          "texto": "Que después de `c` no hay otro nodo",
           "correcta": true,
-          "explicacion": "El campo `sig` de `b` nunca se escribió, así que no tiene un valor. El ciclo pregunta si `p` es distinto de `NULL`, y como no lo sabe, sigue con una dirección que no es de ningún nodo: el programa puede mostrar un número cualquiera o fallar. Por eso el último nodo de una lista siempre se deja con `sig = NULL`: es la marca de dónde termina, y es lo que busca el ciclo."
+          "explicacion": "`NULL` es el valor que significa «ninguna dirección». El último nodo no tiene siguiente, pero su campo `sig` no puede quedar sin valor: guardaría lo que haya quedado en esa memoria, que se confundiría con una dirección, y un recorrido intentaría seguirla. Con `NULL` el recorrido tiene una marca clara: pregunta `p != NULL` y, cuando `p` vale `NULL`, sabe que ya pasó por todos los nodos. Por eso el último nodo de una lista termina siempre así."
         },
         {
-          "texto": "`p` toma el valor `NULL` y el ciclo termina",
-          "codigo": "OPCION_SIG_NULL",
-          "explicacion": "Una variable sin inicializar no vale `NULL` por sí sola: guarda lo que haya quedado en esa memoria. `NULL` es un valor que hay que asignar."
-        },
-        {
-          "texto": "El ciclo se detiene solo, porque no hay otro nodo después de `b`",
-          "codigo": "OPCION_SE_DETIENE_SOLO",
-          "explicacion": "Un ciclo no sabe cuántos nodos hay: solo pregunta por el valor de `p`. Si `sig` no dice `NULL`, el ciclo cree que todavía hay otro nodo."
+          "texto": "Que el nodo `c` se borró de la lista",
+          "codigo": "OPCION_NULL_BORRADO",
+          "explicacion": "Esa instrucción no elimina nada: `c` sigue existiendo, con su dato y su lugar en memoria. Solo cambia lo que guarda su campo `sig`."
         }
       ]
+    },
+    {
+      "id": "nodo-sumar",
+      "titulo": "Sumar los datos de la lista",
+      "en": "archivo",
+      "comienza": "typedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\nint main() {\n  TNodo a;\n  TNodo b;\n  TNodo c;\n\n  a.dato = 5;\n  b.dato = 8;\n  c.dato = 2;\n  a.sig = &b;\n  b.sig = &c;\n  c.sig = NULL;\n\n  /* su respuesta va aquí */\n\n  return 0;\n}",
+      "enunciado": "En el editor están los tres nodos, `a`, `b` y `c`, ya cargados y enlazados, y el último termina en `NULL`. Declare un puntero `p` que empiece apuntando a `a` y recorra los nodos hasta el final, sumando el dato de cada uno en una variable `suma`. Al terminar, muestre solo el total. El programa tiene que mostrar `15`.",
+      "requiere": [
+        {
+          "memoria": {
+            "casos": [
+              {
+                "salida": "15",
+                "contexto": ""
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "typedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\nint main() {\n  TNodo a;\n  TNodo b;\n  TNodo c;\n\n  a.dato = 5;\n  b.dato = 8;\n  c.dato = 2;\n  a.sig = &b;\n  b.sig = &c;\n  c.sig = NULL;\n\n  int suma = 0;\n  TNodo *p = &a;\n\n  while (p != NULL) {\n    suma = suma + p->dato;\n    p = p->sig;\n  }\n  printf(\"%d\", suma);\n  return 0;\n}"
     }
   ]
 }
