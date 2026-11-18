@@ -1375,7 +1375,13 @@ class Interprete {
         return this.reasignar(arg(0), this.bytesPedidos(this.entero(arg(1), 'realloc')));
       case 'free':
         this.lectura(nodos[0]);
-        this.liberar(arg(0).v);
+        const liberado = arg(0).v;
+        this.liberar(liberado);
+        // Se ve la casilla del puntero, el recorrido de su flecha hasta el bloque y el bloque, que es lo que se libera.
+        const origen = this.casillaDeLiberacion(nodos[0]);
+        // (la lectura de la casilla se deja: es el primer resalte, antes de que parta el flujo)
+        const bloque = origen && liberado && this.opciones.traza ? this.ubicar(liberado.reserva, liberado.reserva.raiz) : null;
+        if (bloque && this.accesos.length < 8) this.accesos.push({ de: origen, a: bloque });
         return { t: VOID, v: null };
       case 'strlen':
         return { t: TAMANO_T, v: this.cadenaDe(arg(0).v).length };
@@ -1424,6 +1430,15 @@ class Interprete {
   escribirSalida(texto) {
     this.salida += texto;
     if (this.salida.length > MAX_SALIDA) throw new ErrorDelMotor('NO_TERMINA', 'el programa muestra demasiado texto');
+  }
+
+  // La casilla del puntero que se le da a free, cuando es una variable (free(p)).
+  casillaDeLiberacion(n) {
+    while (n && n.type === 'parenthesized_expression') n = n.namedChildren[0];
+    if (!n || n.type !== 'identifier') return null;
+    const v = this.buscar(n.text);
+    if (!v || !v.reserva.raiz || !v.reserva.raiz.t || v.reserva.raiz.t.k !== 'ptr') return null;
+    return this.ubicar(v.reserva, v.reserva.raiz);
   }
 
   liberar(p) {

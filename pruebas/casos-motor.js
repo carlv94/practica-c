@@ -368,7 +368,8 @@ int main() {
 }`,
     espera: {
       traza: (traza) => {
-        const con = traza.filter((x) => x.accesos && x.accesos.some((a) => a.de));
+        // (el free recorre su flecha hasta el bloque entero: no cuenta)
+        const con = traza.filter((x) => x.accesos && x.accesos.some((a) => a.de && a.a.ruta.length > 0));
         if (con.length !== 1) return 'tenia que haber un paso con acceso y hay ' + con.length;
         if (JSON.stringify(con[0].accesos[0].a.ruta) !== '[1]') return 'el acceso tenia que llegar a la posicion 1';
         return null;
@@ -388,7 +389,7 @@ int main() {
 }`,
     espera: {
       traza: (traza) => {
-        const con = traza.filter((x) => x.accesos && x.accesos.some((a) => a.de));
+        const con = traza.filter((x) => x.accesos && x.accesos.some((a) => a.de && a.a.ruta.length > 0));
         if (con.length !== 1) return 'tenia que haber un paso con acceso y hay ' + con.length;
         if (con[0].accesos[0].a.ruta.at(-1) !== 'dato') return 'el acceso tenia que llegar al campo dato';
         return null;
@@ -396,7 +397,7 @@ int main() {
     },
   },
   {
-    nombre: 'preguntar por un puntero o liberarlo resalta su casilla, sin flecha',
+    nombre: 'preguntar por un puntero resalta su casilla, sin flecha; liberarlo, ademas, recorre su flecha',
     codigo: String.raw`#include <stdlib.h>
 int main() {
   int n = 3;
@@ -414,8 +415,10 @@ int main() {
     espera: {
       traza: (traza) => {
         const lecturas = traza.filter((x) => x.accesos && x.accesos.length >= 1 && x.accesos.every((a) => !a.de));
-        if (lecturas.length < 4) return 'tenia que resaltar el puntero en el if, en el while y en el free y hay ' + lecturas.length;
-        if (traza.some((x) => x.accesos && x.accesos.some((a) => a.de))) return 'ninguno de estos pasos sigue una flecha';
+        if (lecturas.length < 3) return 'tenia que resaltar el puntero en el if y en el while y hay ' + lecturas.length;
+        const conFlecha = traza.filter((x) => x.accesos && x.accesos.some((a) => a.de));
+        if (conFlecha.length !== 1) return 'solo el free sigue una flecha y hay ' + conFlecha.length;
+        if (!conFlecha[0].accesos.some((a) => !a.de)) return 'el free resalta ademas la casilla del puntero';
         return null;
       },
     },
@@ -446,6 +449,27 @@ int main() {
         const copias = traza.flatMap((x) => (x.accesos || []).filter((h) => h.tipo === 'copia'));
         if (copias.length !== 2) return 'tenia que haber dos copias (p = crear, q = crear) y hay ' + copias.length;
         if (copias.some((c) => c.de !== null || !c.para)) return 'la copia no lleva origen y si la casilla que recibe';
+        return null;
+      },
+    },
+  },
+  {
+    nombre: 'free(p) anota la casilla de p, el recorrido de su flecha y el bloque; free(NULL) no senala nada',
+    codigo: String.raw`#include <stdlib.h>
+int main() {
+  int *p = malloc(sizeof(int));
+  int *q = NULL;
+  free(p);
+  free(q);
+  return 0;
+}`,
+    espera: {
+      traza: (traza) => {
+        const conLectura = traza.filter((x) => (x.accesos || []).some((h) => !h.de));
+        const recorridos = traza.flatMap((x) => (x.accesos || []).filter((h) => h.de && !h.tipo));
+        if (recorridos.length !== 1) return 'tenia que haber un recorrido (free(p)) y hay ' + recorridos.length;
+        if (recorridos[0].a.ruta.length !== 0) return 'el recorrido tenia que llegar al bloque entero';
+        if (conLectura.length < 2) return 'se resalta la casilla del puntero en cada free';
         return null;
       },
     },

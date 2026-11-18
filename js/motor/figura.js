@@ -428,7 +428,8 @@ export class Figura {
     this.escalaActual = 1;
     this.fase = 'FIN';
     this.fundir = false; // se hacen los fundidos de color (cuando hay animacion)
-    this.dDestello = 0; // lo que dura el destello de la flecha que va a pasar a rojo, antes de su fundido
+    this.dDestello = 0; // lo que dura la expansion de las flechas que pasan a rojo
+    this.retrasoFlechas = 0; // cuando empiezan, contado desde que el bloque empieza a cambiar
     this.animandoA = false; // las flechas que cambiaron se estan animando, cuadro por cuadro
     this.kA = 1; // cuanto de esa animacion (0 a 1)
     this.mostrarNombres = false;
@@ -543,15 +544,17 @@ export class Figura {
     // empieza cuando termina el flujo; cuenta como parte de lo que dura el paso.
     const fundidosDeBloque = [...escena.svg.querySelectorAll('.rep-fundido-bloque, .rep-aviso-nuevo')];
     const hayFundido = mueve && (fundidosDeBloque.length > 0 || escena.flechas.some((f) => f.recienLiberada));
-    // Antes de pasar al rojo, la flecha que apuntaba al bloque que se libera destella (dos pulsos) y recien despues
-    // empieza el fundido: la flecha, el borde del bloque y su aviso cambian juntos.
+    // Primero cambia el bloque (el borde y su aviso, en el flujo que termino de recorrer la flecha de quien lo libera) y,
+    // cuando va por la mitad, las flechas que lo apuntaban se expanden y pasan al rojo: se ve que quedaron colgando
+    // como consecuencia.
     this.dDestello = mueve && escena.flechas.some((f) => f.recienLiberada && f.muerto) ? 0.9 * u : 0;
+    this.retrasoFlechas = this.dDestello && fundidosDeBloque.length ? 0.5 * u : 0;
     for (const e of fundidosDeBloque) {
       const sale = e.classList.contains('rep-fundido-bloque');
       if (!mueve) {
         if (sale) e.remove();
       } else if (e.animate) {
-        e.animate(sale ? [{ opacity: 1 }, { opacity: 0 }] : [{ opacity: 0 }, { opacity: 1 }], { duration: u, delay: retardo + this.dDestello, easing: 'ease-in-out', fill: 'both' });
+        e.animate(sale ? [{ opacity: 1 }, { opacity: 0 }] : [{ opacity: 0 }, { opacity: 1 }], { duration: u, delay: retardo, easing: 'ease-in-out', fill: 'both' });
       }
     }
     // Lo que acaba de recibir la direccion (un bloque que reservo malloc, una variable con &) parpadea cuando la flecha llego.
@@ -654,9 +657,9 @@ export class Figura {
           this.finAparte = setTimeout(() => svg.classList.remove('rep-vuelve'), 400);
         }, retardo + aparte);
       }
-      const destello = this.dDestello;
+      const dura = Math.max(hayFundido ? u : 0, this.dDestello ? this.retrasoFlechas + this.dDestello : 0);
       this.dDestello = 0;
-      return retardo + destello + (hayFundido ? u : 0) + aparte;
+      return retardo + dura + aparte;
     }
     // Si habia una flecha antes (se va a redirigir o a desvanecer), primero se la ve resaltada y quieta.
     const hayFlechaPrevia = escena.flechas.some((f) => f.cambio && f.viejo) || hayRetiradas;
@@ -707,6 +710,7 @@ export class Figura {
       this.escena.salientes = [];
       this.pintarFlechas();
       this.dDestello = 0;
+      this.retrasoFlechas = 0;
       // Las flechas hacia bloques que acaban de aparecer se dibujan al final.
       this.dibujarNuevas('.rep-tarde', u, hayTarde ? pausaNuevo : 0);
       this.parpadear(escena, objetivos.alFinal, dFinal, hayTarde ? pausaNuevo + u : 0);
@@ -1715,26 +1719,19 @@ export class Figura {
         if (roja) roja.animate([{ opacity: 0 }, { opacity: 1 }], { duration: fundido, delay: this.retardoFundido || 0, easing: 'ease-in-out', fill: 'both' });
         continue;
       }
-      // Dos pulsos (la flecha se engrosa y brilla) mientras sigue azul, y despues se desvanece y deja ver la roja.
-      const brillo = getComputedStyle(trazo).getPropertyValue('--aviso').trim() || '#f0c35b';
-      const reposo = { opacity: 1, strokeWidth: '1.6px', filter: 'drop-shadow(0 0 0 transparent)', easing: 'ease-in-out' };
-      const pulso = { opacity: 1, strokeWidth: '4.2px', filter: `drop-shadow(0 0 4px ${brillo})`, easing: 'ease-in-out' };
-      const total = destello + fundido;
-      const fin = destello / total;
-      const demora = this.retardoFundido || 0;
+      // Una expansion: la azul se engrosa y, desde el punto mas ancho, se desvanece hasta el grosor 3 mientras aparece la
+      // roja (que se queda en ese grosor hasta el paso siguiente).
+      const demora = (this.retardoFundido || 0) + (this.retrasoFlechas || 0);
       trazo.animate(
         [
-          { ...reposo, offset: 0 },
-          { ...pulso, offset: 0.2 * fin },
-          { ...reposo, offset: 0.45 * fin },
-          { ...pulso, offset: 0.7 * fin },
-          { ...reposo, offset: fin },
-          { opacity: 0, strokeWidth: '3px', filter: 'drop-shadow(0 0 0 transparent)', offset: 1 },
+          { opacity: 1, strokeWidth: '1.6px', offset: 0 },
+          { opacity: 1, strokeWidth: '4.2px', offset: 0.4 },
+          { opacity: 0, strokeWidth: '3px', offset: 1 },
         ],
-        { duration: total, delay: demora, easing: 'linear', fill: 'both' }
+        { duration: destello, delay: demora, easing: 'ease-in-out', fill: 'both' }
       );
       if (roja) {
-        roja.animate([{ opacity: 0, offset: 0 }, { opacity: 0, offset: fin }, { opacity: 1, offset: 1 }], { duration: total, delay: demora, easing: 'ease-in-out', fill: 'both' });
+        roja.animate([{ opacity: 0, offset: 0 }, { opacity: 0, offset: 0.4 }, { opacity: 1, offset: 1 }], { duration: destello, delay: demora, easing: 'ease-in-out', fill: 'both' });
       }
     }
     this.aplicarEnfoque();

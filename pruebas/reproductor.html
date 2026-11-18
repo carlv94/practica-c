@@ -150,6 +150,18 @@ int main() {
   free(v);
   return 0;
 }`,
+        'Liberar un bloque al que apuntan dos punteros': `#include <stdlib.h>
+
+int main() {
+  int *p = malloc(sizeof(int));
+  *p = 7;
+  int *q = p;
+  int *r = malloc(sizeof(int));
+  *r = 9;
+  free(p);
+  free(r);
+  return 0;
+}`,
       };
 
       // Las variables que guardan el comienzo de la lista, para los programas que lo necesitan.
