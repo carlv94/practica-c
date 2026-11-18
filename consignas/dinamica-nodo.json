@@ -7,7 +7,7 @@
   "consignas": [
     {
       "id": "nodo-q-finito",
-      "titulo": "Una estructura que se apunta a sí misma",
+      "titulo": "Un nodo dentro de otro nodo",
       "enunciado": "Se quiere guardar una secuencia de números enteros, de modo que cada elemento sepa cuál es el que sigue. Para eso se declara un nodo: una estructura con un entero, `dato`, y un campo `sig` que indica cuál es el nodo siguiente, que es otra estructura del mismo tipo. Un compañero escribe esta declaración. ¿Qué problema tiene?",
       "programa": "struct nodo {\n  int dato;\n  struct nodo sig;\n};",
       "opciones": [
@@ -19,14 +19,64 @@
         {
           "texto": "Una estructura no puede contener un campo de su propio tipo",
           "correcta": true,
-          "explicacion": "Una estructura sí puede contener otra, como la ficha y su fecha de nacimiento, siempre que sea de otro tipo, que ya está declarado y se sabe cuánto ocupa. Acá el campo `sig` sería un `struct nodo` dentro de un `struct nodo`: cada nodo ocuparía lo que ocupa su `dato` más lo que ocupa otro nodo, que a su vez ocuparía lo de su `dato` más lo de otro, y así sin fin. El compilador no podría calcular cuánto ocupa un nodo, y la declaración es un error. Para que una estructura se relacione con otra del mismo tipo se guarda la dirección de la otra, no la otra: una dirección siempre ocupa lo mismo, apunte a lo que apunte. Por eso el campo se declara `struct nodo *sig`."
+          "explicacion": "Una estructura sí puede contener otra, como la ficha y su fecha de nacimiento, siempre que sea de otro tipo, que ya está declarado y se sabe cuánto ocupa. Acá el campo `sig` sería un `struct nodo` dentro de un `struct nodo`: cada nodo ocuparía lo que ocupa su `dato` más lo que ocupa otro nodo, que a su vez ocuparía lo de su `dato` más lo de otro, y así sin fin. El compilador no podría calcular cuánto ocupa un nodo, y la declaración es un error."
         },
         {
           "texto": "Para declarar un campo del mismo tipo que la estructura hay que usar un alias",
           "codigo": "OPCION_FALTA_TYPEDEF",
-          "explicacion": "No: para declarar ese campo no se usa ningún alias. De hecho, dentro de la estructura el alias todavía no existe, porque se define después de la llave de cierre, así que ahí el tipo se escribe con `struct` y la etiqueta, como `struct nodo`. El alias es una comodidad para no repetir la palabra `struct` fuera de la declaración, no una obligación."
+          "explicacion": "No: el alias es una comodidad para no repetir la palabra `struct` fuera de la declaración, no algo que haga falta para declarar un campo. El problema de esta declaración no depende del alias."
         }
       ]
+    },
+    {
+      "id": "nodo-q-solucion",
+      "titulo": "Cómo se relaciona un nodo con otro",
+      "enunciado": "Una estructura no puede contener otra de su mismo tipo, y sin embargo cada nodo de una lista tiene que poder indicar cuál es el nodo que sigue. ¿Qué debería guardar el campo `sig` para lograrlo?",
+      "programa": "struct nodo {\n  int dato;\n  /* ¿qué se guarda para llegar al nodo siguiente? */\n};",
+      "opciones": [
+        {
+          "texto": "La dirección del otro nodo",
+          "correcta": true,
+          "explicacion": "Una dirección ocupa siempre lo mismo, sea cual sea lo que haya en el lugar al que apunta, así que el tamaño de un nodo se puede calcular: un `dato` más una dirección. Y con esa dirección se llega al nodo siguiente cuando haga falta, porque ese nodo está guardado en otro lugar de la memoria, no adentro de este. Así ningún nodo contiene a otro, que contendría a otro, y así sin fin."
+        },
+        {
+          "texto": "Una copia del nodo siguiente",
+          "codigo": "OPCION_COPIA_DEL_SIGUIENTE",
+          "explicacion": "Una copia seguiría estando adentro del nodo: ocuparía lo mismo que el otro nodo, que a su vez tendría adentro la copia de otro, y volvería el problema de antes."
+        },
+        {
+          "texto": "Solo el dato del nodo siguiente",
+          "codigo": "OPCION_DATO_DEL_SIGUIENTE",
+          "explicacion": "Con el dato del siguiente no alcanza: ese número dice qué guarda el otro nodo, pero no permite llegar a él para recorrer la lista, leer sus campos o cambiarlos."
+        }
+      ]
+    },
+    {
+      "id": "nodo-q-tamano-direccion",
+      "titulo": "Cuánto ocupa una dirección",
+      "enunciado": "Este programa mide con `sizeof` una ficha y un puntero que apunta a ella. Recuerde que un `char` ocupa 1 byte y un `int`, 4. Después de ejecutar el código de abajo, ¿qué mostraría el programa?",
+      "programa": "typedef struct {\n  int legajo;\n  char nombre[28];\n} TFicha;\n\nint main() {\n  TFicha f;\n  TFicha *p = &f;\n\n  printf(\"%d %d\", (int)sizeof(f), (int)sizeof(p));\n  return 0;\n}",
+      "opciones": [
+        {
+          "texto": "32 32",
+          "codigo": "OPCION_PUNTERO_COMO_LA_FICHA",
+          "explicacion": "`sizeof(p)` mide la variable `p`, no la ficha a la que apunta. Vuelva a pensar qué guarda `p`."
+        },
+        {
+          "texto": "32 8",
+          "correcta": true,
+          "explicacion": "La ficha ocupa lo de sus campos: 4 bytes del `legajo` más 28 del `nombre`, 32 en total. En cambio `p` guarda solo una dirección, y una dirección ocupa 8 bytes en este equipo, sin importar el tamaño de lo que haya en el lugar al que apunta: serían 8 si apuntara a una ficha de 32 bytes, de 4 o de 4000. Eso es lo que permite que un nodo guarde la dirección del nodo siguiente: ocupa siempre lo mismo, y el tamaño del nodo se puede calcular."
+        },
+        {
+          "texto": "32 4",
+          "codigo": "OPCION_DIRECCION_COMO_INT",
+          "explicacion": "Una dirección no ocupa lo mismo que un `int`: en este equipo ocupa más. La primera cantidad, 32, sí es la de la ficha."
+        }
+      ],
+      "pasoAPaso": {
+        "codigo": "#include <stdio.h>\n#include <stdlib.h>\n\ntypedef struct {\n  int legajo;\n  char nombre[28];\n} TFicha;\n\nint main() {\n  TFicha f;\n  TFicha *p = &f;\n\n  printf(\"%d %d\", (int)sizeof(f), (int)sizeof(p));\n  return 0;\n}",
+        "guia": "Avance hasta el final y señale `f` y `p` en la figura: cada una informa cuántos bytes ocupa. La salida del programa es la que acaba de calcular."
+      }
     },
     {
       "id": "nodo-q-etiqueta",

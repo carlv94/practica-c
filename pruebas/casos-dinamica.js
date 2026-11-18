@@ -357,51 +357,61 @@ export const CASOS_DE_DINAMICA = [
   nodo(1, 'una estructura no puede tener otra adentro', '0', ['OPCION_NO_PUEDE_ANIDAR']),
   nodo(1, 'hay que usar un alias', '2', ['OPCION_FALTA_TYPEDEF']),
 
-  // ===== 2. como se nombra el tipo
-  nodo(2, 'struct nodo', '2'),
-  nodo(2, 'el alias', '0', ['OPCION_ALIAS']),
-  nodo(2, 'la etiqueta sola', '1', ['OPCION_ETIQUETA_SOLA']),
+  // ===== 2. cual es la solucion
+  nodo(2, 'la direccion del otro nodo', '0'),
+  nodo(2, 'una copia del siguiente', '1', ['OPCION_COPIA_DEL_SIGUIENTE']),
+  nodo(2, 'solo el dato del siguiente', '2', ['OPCION_DATO_DEL_SIGUIENTE']),
 
-  // ===== 3. declarar el nodo
-  nodo(3, 'la referencia', NODO()),
-  nodo(3, 'con otra etiqueta', NODO('struct elemento *sig;', 'TNodo', ' elemento')),
-  nodo(3, 'con el typedef adelantado', 'typedef struct nodo TNodo;\n\nstruct nodo {\n  int dato;\n  TNodo *sig;\n};'),
-  nodo(3, 'sin el alias', 'struct nodo {\n  int dato;\n  struct nodo *sig;\n};', ['ALIAS_FALTA']),
-  nodo(3, 'sin el asterisco', NODO('struct nodo sig;'), ['CAMPO_NO_ES_PUNTERO']),
-  nodo(3, 'con el alias adentro', NODO('TNodo *sig;'), ['CAMPO_ALIAS_ADENTRO']),
-  nodo(3, 'sin etiqueta', NODO('TNodo *sig;', 'TNodo', ''), ['CAMPO_ALIAS_ADENTRO']),
-  nodo(3, 'dos asteriscos', NODO('struct nodo **sig;'), ['CAMPO_PUNTEROS_DE_MAS']),
-  nodo(3, 'apunta a un entero', NODO('int *sig;'), ['CAMPO_PUNTERO_OTRO']),
-  nodo(3, 'sin el campo sig', 'typedef struct nodo {\n  int dato;\n} TNodo;', ['CAMPO_FALTA']),
-  nodo(3, 'el dato como real', NODO().replace('int dato;', 'float dato;'), ['CAMPO_TIPO']),
+  // ===== 3. cuanto ocupa una direccion
+  nodo(3, '32 y 8', '1'),
+  nodo(3, 'la direccion como la ficha', '0', ['OPCION_PUNTERO_COMO_LA_FICHA']),
+  nodo(3, 'la direccion como un int', '2', ['OPCION_DIRECCION_COMO_INT']),
 
-  // ===== 4. corregir la declaracion
-  nodo(4, 'con la etiqueta', NODO()),
-  nodo(4, 'la declaracion con el error', NODO('TNodo *sig;', 'TNodo', ''), ['CAMPO_ALIAS_ADENTRO']),
-  nodo(4, 'con etiqueta pero con el alias adentro', NODO('TNodo *sig;'), ['CAMPO_ALIAS_ADENTRO']),
-  nodo(4, 'con la etiqueta pero sin el asterisco', NODO('struct nodo sig;'), ['CAMPO_NO_ES_PUNTERO']),
+  // ===== 4. como se nombra el tipo
+  nodo(4, 'struct nodo', '2'),
+  nodo(4, 'el alias', '0', ['OPCION_ALIAS']),
+  nodo(4, 'la etiqueta sola', '1', ['OPCION_ETIQUETA_SOLA']),
 
-  // ===== 5. cuanto ocupa un nodo
-  nodo(5, 'dieciseis', '0'),
-  nodo(5, 'la suma de los campos', '1', ['OPCION_SUMA']),
-  nodo(5, 'solo la direccion', '2', ['OPCION_SOLO_DIRECCION']),
+  // ===== 5. declarar el nodo
+  nodo(5, 'la referencia', NODO()),
+  nodo(5, 'con otra etiqueta', NODO('struct elemento *sig;', 'TNodo', ' elemento')),
+  nodo(5, 'con el typedef adelantado', 'typedef struct nodo TNodo;\n\nstruct nodo {\n  int dato;\n  TNodo *sig;\n};'),
+  nodo(5, 'sin el alias', 'struct nodo {\n  int dato;\n  struct nodo *sig;\n};', ['ALIAS_FALTA']),
+  nodo(5, 'sin el asterisco', NODO('struct nodo sig;'), ['CAMPO_NO_ES_PUNTERO']),
+  nodo(5, 'con el alias adentro', NODO('TNodo *sig;'), ['CAMPO_ALIAS_ADENTRO']),
+  nodo(5, 'sin etiqueta', NODO('TNodo *sig;', 'TNodo', ''), ['CAMPO_ALIAS_ADENTRO']),
+  nodo(5, 'dos asteriscos', NODO('struct nodo **sig;'), ['CAMPO_PUNTEROS_DE_MAS']),
+  nodo(5, 'apunta a un entero', NODO('int *sig;'), ['CAMPO_PUNTERO_OTRO']),
+  nodo(5, 'sin el campo sig', 'typedef struct nodo {\n  int dato;\n} TNodo;', ['CAMPO_FALTA']),
+  nodo(5, 'el dato como real', NODO().replace('int dato;', 'float dato;'), ['CAMPO_TIPO']),
 
-  // ===== 6. enlazar dos nodos
-  nodo(6, 'guarda la direccion', '2'),
-  nodo(6, 'copia el nodo', '0', ['OPCION_COPIA_EL_NODO']),
-  nodo(6, 'guarda el dato', '1', ['OPCION_GUARDA_EL_DATO']),
+  // ===== 6. corregir la declaracion
+  nodo(6, 'con la etiqueta', NODO()),
+  nodo(6, 'la declaracion con el error', NODO('TNodo *sig;', 'TNodo', ''), ['CAMPO_ALIAS_ADENTRO']),
+  nodo(6, 'con etiqueta pero con el alias adentro', NODO('TNodo *sig;'), ['CAMPO_ALIAS_ADENTRO']),
+  nodo(6, 'con la etiqueta pero sin el asterisco', NODO('struct nodo sig;'), ['CAMPO_NO_ES_PUNTERO']),
 
-  // ===== 7. enlazar tres nodos y recorrerlos
-  nodo(7, 'la referencia', TRES_NODOS(ENLACES + RECORRER)),
-  nodo(7, 'recorriendo con un for', TRES_NODOS(ENLACES + '  for (; p != NULL; p = p->sig) {\n    printf("%d ", p->dato);\n  }\n')),
-  nodo(7, 'sin marcar el ultimo nodo', TRES_NODOS(ENLACES.replace('  c.sig = NULL;\n', '') + RECORRER), ['VARIABLE_SIN_VALOR']),
-  nodo(7, 'los nodos enlazados en otro orden', TRES_NODOS(ENLACES.replace('a.sig = &b;\n  b.sig = &c;', 'a.sig = &c;\n  c.sig = &b;').replace('  c.sig = NULL;', '  b.sig = NULL;') + RECORRER), ['MUESTRA_DISTINTA']),
-  nodo(7, 'sin recorrer', TRES_NODOS(ENLACES), ['MUESTRA_FALTA']),
+  // ===== 7. cuanto ocupa un nodo
+  nodo(7, 'dieciseis', '0'),
+  nodo(7, 'la suma de los campos', '1', ['OPCION_SUMA']),
+  nodo(7, 'solo la direccion', '2', ['OPCION_SOLO_DIRECCION']),
 
-  // ===== 8. como se marca el final
-  nodo(8, 'un valor que nadie asigno', '0'),
-  nodo(8, 'toma NULL', '1', ['OPCION_SIG_NULL']),
-  nodo(8, 'el ciclo se detiene solo', '2', ['OPCION_SE_DETIENE_SOLO']),
+  // ===== 8. enlazar dos nodos
+  nodo(8, 'guarda la direccion', '2'),
+  nodo(8, 'copia el nodo', '0', ['OPCION_COPIA_EL_NODO']),
+  nodo(8, 'guarda el dato', '1', ['OPCION_GUARDA_EL_DATO']),
+
+  // ===== 9. enlazar tres nodos y recorrerlos
+  nodo(9, 'la referencia', TRES_NODOS(ENLACES + RECORRER)),
+  nodo(9, 'recorriendo con un for', TRES_NODOS(ENLACES + '  for (; p != NULL; p = p->sig) {\n    printf("%d ", p->dato);\n  }\n')),
+  nodo(9, 'sin marcar el ultimo nodo', TRES_NODOS(ENLACES.replace('  c.sig = NULL;\n', '') + RECORRER), ['VARIABLE_SIN_VALOR']),
+  nodo(9, 'los nodos enlazados en otro orden', TRES_NODOS(ENLACES.replace('a.sig = &b;\n  b.sig = &c;', 'a.sig = &c;\n  c.sig = &b;').replace('  c.sig = NULL;', '  b.sig = NULL;') + RECORRER), ['MUESTRA_DISTINTA']),
+  nodo(9, 'sin recorrer', TRES_NODOS(ENLACES), ['MUESTRA_FALTA']),
+
+  // ===== 10. como se marca el final
+  nodo(10, 'un valor que nadie asigno', '0'),
+  nodo(10, 'toma NULL', '1', ['OPCION_SIG_NULL']),
+  nodo(10, 'el ciclo se detiene solo', '2', ['OPCION_SE_DETIENE_SOLO']),
 
   ...casosLista,
   ...casosQuitar,
