@@ -65,7 +65,7 @@
         {
           "texto": "32 8",
           "correcta": true,
-          "explicacion": "La ficha ocupa lo de sus campos: 4 bytes del `legajo` más 28 del `nombre`, 32 en total. En cambio `p` guarda solo una dirección, y una dirección ocupa 8 bytes en este equipo, sin importar el tamaño de lo que haya en el lugar al que apunta: serían 8 si apuntara a una ficha de 32 bytes, de 4 o de 4000. Eso es lo que permite que un nodo guarde la dirección del nodo siguiente: ocupa siempre lo mismo, y el tamaño del nodo se puede calcular."
+          "explicacion": "La ficha ocupa 4 bytes del `legajo` más 28 del `nombre`: 32 en total. En cambio `p` guarda solo una dirección, y una dirección ocupa 8 bytes en este equipo, sin importar el tamaño de lo que haya en el lugar al que apunta: serían 8 si apuntara a una ficha de 32 bytes, de 4 o de 4000. Eso es lo que permite que un nodo guarde la dirección del nodo siguiente: ocupa siempre lo mismo, y el tamaño del nodo se puede calcular."
         },
         {
           "texto": "32 4",
@@ -174,29 +174,6 @@
         }
       ],
       "referencia": "typedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;"
-    },
-    {
-      "id": "nodo-q-tamano",
-      "titulo": "Cuánto ocupa un nodo",
-      "enunciado": "Con esta declaración, ¿cuánto ocupa un `TNodo` en memoria, es decir, cuánto vale `sizeof(TNodo)`? Recuerde que un entero ocupa 4 bytes y que una dirección ocupa 8.",
-      "programa": "typedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;",
-      "opciones": [
-        {
-          "texto": "16 bytes",
-          "correcta": true,
-          "explicacion": "El `dato` ocupa 4 bytes. Una dirección ocupa 8 y tiene que empezar en una posición múltiplo de 8, así que el compilador deja 4 bytes de relleno después del `dato` para que `sig` empiece donde corresponde: 4 más 4 de relleno más 8 son 16 bytes. Por eso, al reservar un nodo con `malloc`, siempre se escribe `sizeof(TNodo)` y nunca un número calculado a mano."
-        },
-        {
-          "texto": "12 bytes, la suma de sus dos campos",
-          "codigo": "OPCION_SUMA",
-          "explicacion": "Es la suma de lo que ocupa cada campo, pero el `sizeof` de una estructura no siempre es esa suma: el compilador no pega los campos uno contra otro. Vuelva a pensar en qué dirección puede empezar cada campo."
-        },
-        {
-          "texto": "8 bytes, lo que ocupa una dirección",
-          "codigo": "OPCION_SOLO_DIRECCION",
-          "explicacion": "El campo `sig` guarda solo una dirección, pero el nodo también guarda su `dato`: un nodo no es solamente el puntero que lo enlaza con el siguiente."
-        }
-      ]
     },
     {
       "id": "nodo-enlazar",
