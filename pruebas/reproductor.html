@@ -150,6 +150,28 @@ int main() {
   free(v);
   return 0;
 }`,
+        'Pasar argumentos a una función': `#include <stdio.h>
+#include <stdlib.h>
+
+int sumar(int a, int b) {
+  return a + b;
+}
+
+void poner(int *dato, int valor) {
+  *dato = valor;
+}
+
+int main() {
+  int x = 4;
+  int y = 9;
+  int *p = malloc(sizeof(int));
+  int r = sumar(x, y);
+  poner(p, r);
+  poner(&x, sumar(x, 1));
+  printf("%d %d", *p, x);
+  free(p);
+  return 0;
+}`,
         'Liberar un bloque al que apuntan dos punteros': `#include <stdlib.h>
 
 int main() {

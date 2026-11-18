@@ -475,6 +475,36 @@ int main() {
     },
   },
   {
+    nombre: 'al llamar a una funcion se anota, por cada argumento, la casilla de la que sale (si sale de una) y la del parametro',
+    codigo: String.raw`#include <stdlib.h>
+int sumar(int a, int b) {
+  return a + b;
+}
+void poner(int *dato, int valor) {
+  *dato = valor;
+}
+int main() {
+  int x = 4;
+  int *p = malloc(sizeof(int));
+  int r = sumar(x, 9);
+  poner(p, r);
+  poner(&x, 1);
+  free(p);
+  return 0;
+}`,
+    espera: {
+      traza: (traza) => {
+        const forma = (x) => (x.accesos || []).filter((h) => h.tipo === 'valor' || h.tipo === 'copia' || h.tipo === 'parametro').map((h) => h.tipo);
+        const llamadas = traza.map(forma).filter((f) => f.includes('parametro'));
+        // sumar(x, 9): x sale de una casilla y 9 no; poner(p, r): p es un puntero y r una variable; poner(&x, 1): &x sale de x.
+        const esperadas = ['valor,parametro,parametro', 'copia,parametro,valor,parametro', 'valor,parametro,parametro'];
+        const reales = llamadas.map((f) => f.join(','));
+        if (JSON.stringify(reales) !== JSON.stringify(esperadas)) return 'esperaba ' + esperadas.join(' | ') + ' y salio ' + reales.join(' | ');
+        return null;
+      },
+    },
+  },
+  {
     nombre: 'copiar un puntero anota la flecha y lo que senala; recibir una direccion nueva no es una copia',
     codigo: String.raw`#include <stdlib.h>
 int main() {

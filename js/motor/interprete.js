@@ -1142,13 +1142,44 @@ class Interprete {
     const propia = this.funciones.get(f.text);
     if (propia) {
       const args = nodos.map((h) => this.evaluar(h));
+      const origenes = this.opciones.traza ? nodos.map((h) => this.origenDeArgumento(h)) : [];
       this.fila = n.startPosition.row + 1;
-      return this.ejecutarFuncion(propia, args);
+      return this.ejecutarFuncion(propia, args, origenes);
     }
     return this.biblioteca(f.text, nodos, n);
   }
 
-  ejecutarFuncion(f, args) {
+  // La casilla de la que sale un argumento, para la traza: una variable (x) o la variable de la que se toma la direccion (&x).
+  // Cualquier otra cosa (un numero, una cuenta) no sale de ninguna casilla.
+  origenDeArgumento(n) {
+    while (n.type === 'parenthesized_expression') n = n.namedChildren[0];
+    let porDireccion = false;
+    if (n.type === 'pointer_expression' && n.children[0].text === '&') {
+      porDireccion = true;
+      n = n.namedChildren[0];
+      while (n.type === 'parenthesized_expression') n = n.namedChildren[0];
+    }
+    if (n.type !== 'identifier') return null;
+    const v = this.buscar(n.text);
+    const celda = v && v.reserva.raiz ? this.ubicar(v.reserva, v.reserva.raiz) : null;
+    return celda ? { celda, puntero: !porDireccion && v.reserva.raiz.t.k === 'ptr' } : null;
+  }
+
+  // Lo que se ve al pasar un argumento: se resalta la casilla de la que sale (con su flecha, si es un puntero) y, cuando ya
+  // se abrio la caja de la funcion, la casilla del parametro. Con mas de tres argumentos se resaltan todos a la vez.
+  anotarArgumento(origen, argumento, para, total) {
+    if (!this.opciones.traza || !para) return;
+    const junto = total > 3;
+    if (origen) {
+      const antes = this.accesos.length;
+      if (origen.puntero && argumento.v && argumento.v.reserva) this.copia(origen.celda, argumento.v, para);
+      else this.copiaValor(origen.celda, para);
+      if (junto && this.accesos.length > antes) this.accesos[this.accesos.length - 1].junto = true;
+    }
+    if (this.accesos.length < 8) this.accesos.push({ de: null, a: para, tipo: 'parametro', ...(junto ? { junto: true } : {}) });
+  }
+
+  ejecutarFuncion(f, args, origenes = []) {
     if (this.marcos.length >= MAX_MARCOS) throw new ErrorDelMotor('RECURSION_SIN_FIN', null, null, { profundidad: this.marcos.length });
     if (args.length !== f.params.length) {
       throw new ErrorDelMotor('SIN_VERIFICAR', `${f.nombre} recibe ${f.params.length} valores y se la llama con ${args.length}`);
@@ -1160,6 +1191,7 @@ class Interprete {
     f.params.forEach((p, i) => {
       const reserva = this.nuevaLocal(p.nombre, p.tipo);
       this.asignarAlmacen(reserva.raiz, args[i]);
+      this.anotarArgumento(origenes[i], args[i], this.ubicar(reserva, reserva.raiz), f.params.length);
     });
     let valor = null;
     // Las condiciones de la funcion no son parte de la condicion (a && b) que la llamo: cuentan por separado.

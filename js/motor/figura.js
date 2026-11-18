@@ -563,6 +563,11 @@ export class Figura {
     const objetivos = mueve ? this.objetivosDeParpadeo(escena) : { alLlegar: [], alFinal: [] };
     const dLlegar = objetivos.alLlegar.length ? 0.9 * u : 0;
     const dFinal = objetivos.alFinal.length ? 0.9 * u : 0;
+    // Los parametros de una llamada se resaltan cuando ya esta abierta la caja de la funcion, de a uno (mas de tres, todos a la vez).
+    const parametros = mueve ? (foto.accesos || []).filter((h) => h.tipo === 'parametro').map((h) => clave(h.a.a, h.a.ruta)) : [];
+    const juntosParametros = parametros.length > 3;
+    const dParametro = parametros.length ? 0.6 * u : 0;
+    const dParametros = juntosParametros ? dParametro : dParametro * parametros.length;
     this.dFundido = mueve ? u : 450;
     this.retardoFundido = retardo;
     let seMueven = false;
@@ -714,10 +719,12 @@ export class Figura {
       // Las flechas hacia bloques que acaban de aparecer se dibujan al final.
       this.dibujarNuevas('.rep-tarde', u, hayTarde ? pausaNuevo : 0);
       this.parpadear(escena, objetivos.alFinal, dFinal, hayTarde ? pausaNuevo + u : 0);
-      this.finAtenuado = setTimeout(quitarAtenuado, (hayTarde ? pausaNuevo + u : 0) + dFinal + 50);
+      const baseParametros = (hayTarde ? pausaNuevo + u : 0) + dFinal;
+      parametros.forEach((k, i) => this.parpadear(escena, [k], dParametro, baseParametros + (juntosParametros ? 0 : i * dParametro)));
+      this.finAtenuado = setTimeout(quitarAtenuado, baseParametros + dParametros + 50);
     };
     this.raf = requestAnimationFrame(paso);
-    return retardo + espera + duracionB + (hayTarde ? pausaNuevo + u : 0) + dFinal + (seMueven ? 0 : dLlegar);
+    return retardo + espera + duracionB + (hayTarde ? pausaNuevo + u : 0) + dFinal + dParametros + (seMueven ? 0 : dLlegar);
   }
 
   // ¿Cambio en este paso el valor de una casilla que no es un puntero y a la que llega alguna flecha (a ella, a la
@@ -881,7 +888,20 @@ export class Figura {
       const casilla = ancla ? this.absolutoDe(previa, ancla) : null;
       if (casilla) pulso(casilla);
     };
+    // Los argumentos de una llamada (mas de tres: todos a la vez): cada resalte empieza donde empezo el primero.
+    let juntoDesde = null;
+    let juntoFin = 0;
     for (const h of accesos) {
+      if (h.junto) {
+        if (juntoDesde === null) juntoDesde = t;
+        else {
+          juntoFin = Math.max(juntoFin, t);
+          t = juntoDesde;
+        }
+      } else if (juntoDesde !== null) {
+        t = Math.max(juntoFin, t);
+        juntoDesde = null;
+      }
       const copia = h.tipo === 'copia';
       const destino = previa.anclas && previa.anclas.get(copia ? this.claveDeResalte(previa, h.a.a, h.a.ruta) : clave(h.a.a, h.a.ruta));
       const casilla = destino ? this.absolutoDe(previa, destino) : null;
@@ -954,6 +974,7 @@ export class Figura {
       resaltadas.add(clave(h.a.a, h.a.ruta));
       pulso(casilla, Boolean(h.cond));
     }
+    if (juntoDesde !== null) t = Math.max(juntoFin, t);
     resaltarDestino();
     if (hayCopia && ultimoResalte) {
       extender(ultimoResalte, 0.3 * u);
