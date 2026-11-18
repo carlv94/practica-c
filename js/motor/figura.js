@@ -5,7 +5,8 @@
 //   la lista       lo que se alcanza desde las "cabezas" (en el orden en que se llega,
 //                  asi una lista queda de izquierda a derecha)
 //   sin enlazar    bloques que solo senalan variables de la funcion en curso (el nodo que
-//                  se acaba de crear): se unen a la lista cuando algo de afuera los senala
+//                  se acaba de crear): se unen a la lista cuando algo de afuera los senala.
+//                  Van en una fila aparte, sin titulo (los rotulos son para lo anomalo)
 //   inalcanzable   bloques a los que no llega ninguna variable, aunque otro bloque (tambien perdido) los senale
 //                  (una fuga), en punteado
 //
@@ -1336,7 +1337,6 @@ export class Figura {
       if (fila) by = fila.fondo + HUECO_FILAS;
     };
     raiz.append(texto(x0, 14, 'Montículo', 'rep-titulo'));
-    let tituloSueltos = null;
     if (fijo) {
       for (const f of previa.filas) filas.push({ ...f });
       for (const b of visibles) {
@@ -1345,16 +1345,13 @@ export class Figura {
       }
       by = previa.alto;
     } else {
+      // Cada grupo va en su fila; los sin enlazar no llevan titulo: el bloque aparte y la flecha de la variable local bastan.
       colocar(lista);
-      if (sueltos.length) {
-        tituloSueltos = by - 34;
-        colocar(sueltos);
-      }
+      colocar(sueltos);
       colocar(sinPuntero);
     }
     alto = Math.max(alto, by);
     const ancho = Math.max(limite + 20, ...[...lugares.values()].map((l) => l.x + l.w + 20));
-    if (tituloSueltos != null) raiz.append(texto(x0, tituloSueltos, 'Sin enlazar', 'rep-subgrupo'));
 
     // ---- dibujar cada bloque con su origen en (0, 0): despues se lo mueve
     const bloques = new Map();

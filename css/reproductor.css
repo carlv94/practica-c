@@ -385,11 +385,6 @@
 .rep-bloque-g {
   cursor: default;
 }
-.rep-svg .rep-subgrupo {
-  fill: var(--suave);
-  font-size: 10px;
-  font-style: italic;
-}
 .rep-svg .rep-etiqueta-texto {
   fill: var(--sobre-acento);
   font-size: 10px;
