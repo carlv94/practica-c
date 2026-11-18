@@ -77,6 +77,119 @@ const TBOOL = 'typedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\n';
 const ENTEROS = (cuerpo) => TBOOL + 'TBool reservarEnteros(int **v, int n) {\n' + cuerpo + '}';
 const LIBERAR = (cuerpo, tipo = 'int **p') => 'void liberar(' + tipo + ') {\n' + cuerpo + '}';
 
+const lista = serie('dinamica-lista');
+const quitar = serie('dinamica-lista-quitar');
+
+// Series 5 y 6: la lista enlazada. Las funciones que cada consigna da hechas y las que escribe el alumno.
+const L_CREAR = (cuerpo) => `TNodo *crearNodo(int dato) {\n${cuerpo}}`;
+const CREAR_REF = '  TNodo *nuevo = malloc(sizeof(TNodo));\n\n  if (nuevo == NULL) {\n    return NULL;\n  }\n  nuevo->dato = dato;\n  nuevo->sig = NULL;\n  return nuevo;\n';
+const L_MOSTRAR = (cuerpo) => `void mostrar(TNodo *lista) {\n${cuerpo}}`;
+const MOSTRAR_REF = '  TNodo *aux = lista;\n\n  while (aux != NULL) {\n    printf("%d ", aux->dato);\n    aux = aux->sig;\n  }\n';
+const L_INICIO = (cuerpo, parametro = 'TNodo **lista') => `void insertarInicio(${parametro}, int dato) {\n  TNodo *nuevo = crearNodo(dato);\n\n  if (nuevo == NULL) {\n    return;\n  }\n${cuerpo}}`;
+const L_FINAL = (cuerpo) => `void insertarFinal(TNodo **lista, int dato) {\n  TNodo *nuevo = crearNodo(dato);\n  TNodo *aux;\n\n  if (nuevo == NULL) {\n    return;\n  }\n${cuerpo}}`;
+const FINAL_REF = '  if (*lista == NULL) {\n    *lista = nuevo;\n    return;\n  }\n  aux = *lista;\n  while (aux->sig != NULL) {\n    aux = aux->sig;\n  }\n  aux->sig = nuevo;\n';
+const L_LIBERAR = (cuerpo) => `void liberarLista(TNodo **lista) {\n${cuerpo}}`;
+const LIBERAR_REF = '  TNodo *aux;\n\n  while (*lista != NULL) {\n    aux = *lista;\n    *lista = aux->sig;\n    free(aux);\n  }\n';
+const L_BUSCAR = (cuerpo) => `TNodo *buscar(TNodo *lista, int valor) {\n  TNodo *aux = lista;\n\n${cuerpo}}`;
+const L_PRIMERO = (cuerpo) => `void eliminarPrimero(TNodo **lista) {\n  TNodo *aux;\n\n${cuerpo}}`;
+const L_VALOR = (cuerpo) => `void eliminarValor(TNodo **lista, int valor) {\n  TNodo *aux = *lista;\n  TNodo *anterior = NULL;\n\n${cuerpo}}`;
+const VALOR_REF = '  while (aux != NULL && aux->dato != valor) {\n    anterior = aux;\n    aux = aux->sig;\n  }\n  if (aux == NULL) {\n    return;\n  }\n  if (anterior == NULL) {\n    *lista = aux->sig;\n  } else {\n    anterior->sig = aux->sig;\n  }\n  free(aux);\n';
+const VALOR_SIN_LIBERAR = VALOR_REF.replace('  free(aux);\n', '');
+
+// Serie 5: armar la lista.
+const casosLista = [
+  // ===== 1. crear un nodo
+  lista(1, 'la referencia', L_CREAR(CREAR_REF)),
+  lista(1, 'sin dejar sig en NULL', L_CREAR('  TNodo *nuevo = malloc(sizeof(TNodo));\n\n  if (nuevo == NULL) {\n    return NULL;\n  }\n  nuevo->dato = dato;\n  return nuevo;\n'), ['VARIABLE_SIN_VALOR']),
+  lista(1, 'sin preguntar por NULL', L_CREAR('  TNodo *nuevo = malloc(sizeof(TNodo));\n\n  nuevo->dato = dato;\n  nuevo->sig = NULL;\n  return nuevo;\n'), ['NULL_SIN_COMPROBAR']),
+  lista(1, 'reserva lo de un entero', L_CREAR('  TNodo *nuevo = malloc(sizeof(int));\n\n  if (nuevo == NULL) {\n    return NULL;\n  }\n  nuevo->dato = dato;\n  nuevo->sig = NULL;\n  return nuevo;\n'), ['FUERA_DE_BLOQUE']),
+  lista(1, 'sin malloc', L_CREAR('  return NULL;\n'), ['MALLOC_FALTA']),
+
+  // ===== 2. mostrar la lista
+  lista(2, 'la referencia', L_MOSTRAR(MOSTRAR_REF)),
+  lista(2, 'con un for', L_MOSTRAR('  for (TNodo *aux = lista; aux != NULL; aux = aux->sig) {\n    printf("%d ", aux->dato);\n  }\n')),
+  lista(2, 'avanzando con la copia que recibe', L_MOSTRAR('  while (lista != NULL) {\n    printf("%d ", lista->dato);\n    lista = lista->sig;\n  }\n')),
+  lista(2, 'se detiene en el ultimo nodo', L_MOSTRAR('  TNodo *aux = lista;\n\n  while (aux->sig != NULL) {\n    printf("%d ", aux->dato);\n    aux = aux->sig;\n  }\n'), ['DESREFERENCIA_NULA']),
+  lista(2, 'sin avanzar', L_MOSTRAR('  TNodo *aux = lista;\n\n  while (aux != NULL) {\n    printf("%d ", aux->dato);\n  }\n'), ['NO_TERMINA']),
+  lista(2, 'sin el espacio', L_MOSTRAR('  TNodo *aux = lista;\n\n  while (aux != NULL) {\n    printf("%d", aux->dato);\n    aux = aux->sig;\n  }\n'), ['MUESTRA_DISTINTA']),
+
+  // ===== 3. insertar con una copia del puntero
+  lista(3, 'solo 7', '0'),
+  lista(3, 'cuatro y siete', '1', ['OPCION_INSERTA_ADELANTE']),
+  lista(3, 'siete y cuatro', '2', ['OPCION_INSERTA_ATRAS']),
+
+  // ===== 4. insertar al inicio
+  lista(4, 'la referencia', L_INICIO('  nuevo->sig = *lista;\n  *lista = nuevo;\n')),
+  lista(4, 'con malloc directo', 'void insertarInicio(TNodo **lista, int dato) {\n  TNodo *nuevo = malloc(sizeof(TNodo));\n\n  if (nuevo == NULL) {\n    return;\n  }\n  nuevo->dato = dato;\n  nuevo->sig = *lista;\n  *lista = nuevo;\n}'),
+  lista(4, 'las dos lineas al reves', L_INICIO('  *lista = nuevo;\n  nuevo->sig = *lista;\n'), ['NO_TERMINA']),
+  lista(4, 'sin enlazar con lo que habia', L_INICIO('  *lista = nuevo;\n'), ['MUESTRA_DISTINTA']),
+  lista(4, 'lo deja al final', L_INICIO('  if (*lista == NULL) {\n    *lista = nuevo;\n    return;\n  }\n  TNodo *aux = *lista;\n\n  while (aux->sig != NULL) {\n    aux = aux->sig;\n  }\n  aux->sig = nuevo;\n'), ['MUESTRA_DISTINTA']),
+
+  // ===== 5. el orden de las dos lineas
+  lista(5, 'da igual', '0', ['OPCION_DA_IGUAL']),
+  lista(5, 'al final', '1', ['OPCION_QUEDA_AL_FINAL']),
+  lista(5, 'se apunta a si mismo', '2'),
+
+  // ===== 6. recorrer hasta el ultimo
+  lista(6, 'queda en el ultimo', '0', ['OPCION_QUEDA_EN_EL_ULTIMO']),
+  lista(6, 'queda en NULL', '1'),
+  lista(6, 'queda en el nuevo', '2', ['OPCION_QUEDA_EN_EL_NUEVO']),
+
+  // ===== 7. insertar al final
+  lista(7, 'la referencia', L_FINAL(FINAL_REF)),
+  lista(7, 'con un for', L_FINAL('  if (*lista == NULL) {\n    *lista = nuevo;\n    return;\n  }\n  for (aux = *lista; aux->sig != NULL; aux = aux->sig) {\n  }\n  aux->sig = nuevo;\n')),
+  lista(7, 'recorriendo hasta NULL', L_FINAL('  if (*lista == NULL) {\n    *lista = nuevo;\n    return;\n  }\n  aux = *lista;\n  while (aux != NULL) {\n    aux = aux->sig;\n  }\n  aux->sig = nuevo;\n'), ['DESREFERENCIA_NULA']),
+  lista(7, 'sin el caso de la lista vacia', L_FINAL('  aux = *lista;\n  while (aux->sig != NULL) {\n    aux = aux->sig;\n  }\n  aux->sig = nuevo;\n'), ['DESREFERENCIA_NULA']),
+  lista(7, 'lo inserta al principio', L_FINAL('  nuevo->sig = *lista;\n  *lista = nuevo;\n'), ['MUESTRA_DISTINTA']),
+  lista(7, 'sin enlazar el nodo nuevo', L_FINAL('  if (*lista == NULL) {\n    *lista = nuevo;\n    return;\n  }\n  aux = *lista;\n  while (aux->sig != NULL) {\n    aux = aux->sig;\n  }\n'), ['MUESTRA_DISTINTA']),
+];
+
+// Serie 6: buscar, eliminar y liberar.
+const casosQuitar = [
+  // ===== 1. liberar y leer despues
+  quitar(1, 'solo el primero', '0', ['OPCION_SOLO_EL_PRIMERO']),
+  quitar(1, 'liberar aux', '1', ['OPCION_LIBERAR_AUX']),
+  quitar(1, 'lee sig despues de liberar', '2'),
+
+  // ===== 2. liberar toda la lista
+  quitar(2, 'la referencia', L_LIBERAR(LIBERAR_REF)),
+  quitar(2, 'con un puntero al siguiente', L_LIBERAR('  TNodo *aux = *lista;\n  TNodo *siguiente;\n\n  while (aux != NULL) {\n    siguiente = aux->sig;\n    free(aux);\n    aux = siguiente;\n  }\n  *lista = NULL;\n')),
+  quitar(2, 'lee sig despues de liberar', L_LIBERAR('  TNodo *aux = *lista;\n\n  while (aux != NULL) {\n    free(aux);\n    aux = aux->sig;\n  }\n  *lista = NULL;\n'), ['USO_DE_MEMORIA_LIBERADA']),
+  quitar(2, 'sin dejar la lista en NULL', L_LIBERAR('  TNodo *aux = *lista;\n  TNodo *siguiente;\n\n  while (aux != NULL) {\n    siguiente = aux->sig;\n    free(aux);\n    aux = siguiente;\n  }\n'), ['MUESTRA_DISTINTA']),
+  quitar(2, 'solo el primero', L_LIBERAR('  if (*lista != NULL) {\n    free(*lista);\n  }\n  *lista = NULL;\n'), ['FUGA_DE_MEMORIA']),
+
+  // ===== 3. buscar
+  quitar(3, 'la referencia', L_BUSCAR('  while (aux != NULL && aux->dato != valor) {\n    aux = aux->sig;\n  }\n  return aux;\n')),
+  quitar(3, 'con un for', 'TNodo *buscar(TNodo *lista, int valor) {\n  for (TNodo *aux = lista; aux != NULL; aux = aux->sig) {\n    if (aux->dato == valor) {\n      return aux;\n    }\n  }\n  return NULL;\n}'),
+  quitar(3, 'sin comprobar el final', L_BUSCAR('  while (aux->dato != valor) {\n    aux = aux->sig;\n  }\n  return aux;\n'), ['DESREFERENCIA_NULA']),
+  quitar(3, 'devuelve siempre el primero', L_BUSCAR('  return lista;\n'), ['MUESTRA_DISTINTA']),
+
+  // ===== 4. cual recibe la direccion del puntero
+  quitar(4, 'quitarPrimero', '0'),
+  quitar(4, 'contar', '1', ['OPCION_CONTAR']),
+  quitar(4, 'buscar', '2', ['OPCION_BUSCAR']),
+
+  // ===== 5. eliminar el primero
+  quitar(5, 'la referencia', L_PRIMERO('  if (*lista == NULL) {\n    return;\n  }\n  aux = *lista;\n  *lista = aux->sig;\n  free(aux);\n')),
+  quitar(5, 'lee sig despues de liberar', L_PRIMERO('  if (*lista == NULL) {\n    return;\n  }\n  aux = *lista;\n  free(aux);\n  *lista = aux->sig;\n'), ['USO_DE_MEMORIA_LIBERADA']),
+  quitar(5, 'sin la lista vacia', L_PRIMERO('  aux = *lista;\n  *lista = aux->sig;\n  free(aux);\n'), ['DESREFERENCIA_NULA']),
+  quitar(5, 'sin liberar', L_PRIMERO('  if (*lista == NULL) {\n    return;\n  }\n  aux = *lista;\n  *lista = aux->sig;\n'), ['FREE_FALTA']),
+  quitar(5, 'libera sin mover la lista', L_PRIMERO('  if (*lista == NULL) {\n    return;\n  }\n  free(*lista);\n'), ['USO_DE_MEMORIA_LIBERADA']),
+
+  // ===== 6. eliminar uno del medio
+  quitar(6, 'free enlaza', '0', ['OPCION_FREE_ENLAZA']),
+  quitar(6, 'sig de a guarda un liberado', '1'),
+  quitar(6, 'se liberan todos', '2', ['OPCION_SE_LIBERAN_TODOS']),
+
+  // ===== 7. eliminar un valor
+  quitar(7, 'la referencia', L_VALOR(VALOR_REF)),
+  quitar(7, 'con el siguiente en una variable', 'void eliminarValor(TNodo **lista, int valor) {\n  TNodo *aux = *lista;\n  TNodo *anterior = NULL;\n\n  while (aux != NULL) {\n    if (aux->dato == valor) {\n      if (anterior == NULL) {\n        *lista = aux->sig;\n      } else {\n        anterior->sig = aux->sig;\n      }\n      free(aux);\n      return;\n    }\n    anterior = aux;\n    aux = aux->sig;\n  }\n}'),
+  quitar(7, 'sin el caso del primero', L_VALOR(VALOR_REF.replace('  if (anterior == NULL) {\n    *lista = aux->sig;\n  } else {\n    anterior->sig = aux->sig;\n  }\n', '  anterior->sig = aux->sig;\n')), ['DESREFERENCIA_NULA']),
+  quitar(7, 'sin el caso de que no este', L_VALOR(VALOR_REF.replace('aux != NULL && aux->dato', 'aux->dato').replace('  if (aux == NULL) {\n    return;\n  }\n', '')), ['DESREFERENCIA_NULA']),
+  quitar(7, 'sin liberar el nodo', L_VALOR(VALOR_SIN_LIBERAR), ['FREE_FALTA']),
+  quitar(7, 'libera antes de enlazar', L_VALOR(VALOR_SIN_LIBERAR.replace('  if (anterior == NULL) {', '  free(aux);\n  if (anterior == NULL) {')), ['USO_DE_MEMORIA_LIBERADA']),
+];
+
 export const CASOS_DE_DINAMICA = [
   // ===== 1. un arreglo de tamano fijo
   memoria(1, 'ninguno sirve: se pide al ejecutar', '1'),
@@ -289,4 +402,7 @@ export const CASOS_DE_DINAMICA = [
   nodo(8, 'un valor que nadie asigno', '0'),
   nodo(8, 'toma NULL', '1', ['OPCION_SIG_NULL']),
   nodo(8, 'el ciclo se detiene solo', '2', ['OPCION_SE_DETIENE_SOLO']),
+
+  ...casosLista,
+  ...casosQuitar,
 ];

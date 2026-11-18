@@ -171,10 +171,14 @@
         "dinamica-memoria.json",
         "dinamica-errores.json",
         "dinamica-puntero.json",
-        "dinamica-nodo.json"
+        "dinamica-nodo.json",
+        "dinamica-lista.json",
+        "dinamica-lista-quitar.json"
       ],
       "ocultas": [
-        "dinamica-nodo.json"
+        "dinamica-nodo.json",
+        "dinamica-lista.json",
+        "dinamica-lista-quitar.json"
       ]
     }
   ]
