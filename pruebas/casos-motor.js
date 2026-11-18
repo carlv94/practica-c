@@ -839,6 +839,10 @@ export const CASOS_DE_LA_REGLA = [
   { nombre: 'un programa que no muestra nada', regla: { casos: [{ entrada: '4', salida: 'Suma: 12' }] }, respuesta: PROGRAMA_BUENO.replace('  printf("Suma: %d", s);\n', ''), espera: { errores: ['MUESTRA_FALTA'] } },
   { nombre: 'usar un bloque liberado dice la linea', regla: { casos: [{ entrada: '2', salida: 'Suma: 2' }] }, respuesta: PROGRAMA_BUENO.replace('  free(v);\n', '  free(v);\n  s = v[1];\n'), espera: { errores: ['USO_DE_MEMORIA_LIBERADA'], linea: 16 } },
   { nombre: 'escribir mas alla del bloque', regla: { casos: [{ entrada: '3' }] }, respuesta: PROGRAMA_BUENO.replace('i < n; i++) {\n    v[i]', 'i <= n; i++) {\n    v[i]'), espera: { errores: ['FUERA_DE_BLOQUE'], dice: ['posición 3', '3 elementos'] } },
+  { nombre: 'guardar un numero en un puntero es un error de tipos', regla: { casos: [{}] }, respuesta: `#include <stdio.h>\nint main() {\n  int n = 3;\n  int *p = &n;\n\n  p = n;\n  return 0;\n}`, espera: { errores: ['TIPOS_INCOMPATIBLES'], linea: 6, dice: ['`int`', '`int *`', 'direcciones, no números'] } },
+  { nombre: 'guardar una direccion en un numero es un error de tipos', regla: { casos: [{}] }, respuesta: `#include <stdio.h>\nint main() {\n  int n = 3;\n  int *p = &n;\n  int m = p;\n\n  return 0;\n}`, espera: { errores: ['TIPOS_INCOMPATIBLES'], linea: 5, dice: ['`int *`', '`int`', 'guarda números'] } },
+  { nombre: 'el 0 se acepta como NULL en un puntero', regla: { casos: [{}] }, respuesta: `#include <stdio.h>\nint main() {\n  int *p = 0;\n\n  if (p == NULL) {\n    printf("nulo");\n  }\n  return 0;\n}`, espera: { ok: true } },
+  { nombre: 'una conversion explicita de un numero a puntero no se sigue', regla: { casos: [{}] }, respuesta: `#include <stdio.h>\nint main() {\n  int *p = (int *) 8;\n\n  return 0;\n}`, espera: { ok: true, avisos: ['EJECUCION_NO_VERIFICADA'] } },
   { nombre: 'un programa que usa una construccion que no se sigue da un aviso', regla: { casos: [{ entrada: '2' }] }, respuesta: `#include <stdio.h>\nint main() { int x = 1; goto fin; fin: printf("%d", x); return 0; }`, espera: { ok: true, avisos: ['EJECUCION_NO_VERIFICADA'] } },
 ];
 

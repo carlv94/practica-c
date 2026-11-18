@@ -525,21 +525,28 @@ class Interprete {
 
   // ------------------------------------------------------------ valores
 
-  convertir(rv, destino) {
+  // "explicita": viene de una conversion escrita por el programa, (int *) 8, que en C si se permite: eso el motor no lo sigue.
+  convertir(rv, destino, explicita = false) {
     this.usable(rv);
+    // Sin conversion explicita, un numero en un puntero (salvo el 0, que es NULL) o una direccion en un numero es un error de tipos.
+    const incompatibles = (haciaPuntero) => {
+      if (explicita) throw new ErrorDelMotor('SIN_VERIFICAR', haciaPuntero ? 'un numero guardado en un puntero' : 'una direccion guardada en un numero');
+      throw new ErrorDelMotor('TIPOS_INCOMPATIBLES', null, null, { de: textoDeTipo(rv.t), a: textoDeTipo(destino), haciaPuntero });
+    };
     switch (destino.k) {
       case 'int':
-        if (rv.t.k === 'ptr') throw new ErrorDelMotor('SIN_VERIFICAR', 'una direccion guardada en un entero');
+        if (rv.t.k === 'ptr') incompatibles(false);
         if (rv.t.k === 'struct') throw new ErrorDelMotor('ASIGNACION_INVALIDA', 'una estructura en un numero');
         return { t: destino, v: ajustar(rv.v, destino) };
       case 'float':
-        if (rv.t.k === 'ptr') throw new ErrorDelMotor('SIN_VERIFICAR', 'una direccion guardada en un decimal');
+        if (rv.t.k === 'ptr') incompatibles(false);
         return { t: destino, v: destino.bytes === 4 ? Math.fround(rv.v) : rv.v };
       case 'ptr': {
         if (rv.t.k === 'int') {
           if (rv.v === 0) return { t: destino, v: null };
-          throw new ErrorDelMotor('SIN_VERIFICAR', 'un numero guardado en un puntero');
+          incompatibles(true);
         }
+        if (rv.t.k === 'float') incompatibles(true);
         if (rv.t.k !== 'ptr') throw new ErrorDelMotor('SIN_VERIFICAR', 'algo que no es una direccion guardado en un puntero');
         const v = rv.v;
         if (v && v.sinTipo && destino.a.k !== 'void') {
@@ -924,7 +931,7 @@ class Interprete {
         if (t.k === 'ptr' && rv.t.k === 'ptr' && rv.v && !rv.v.sinTipo && t.a.k !== 'void' && rv.t.a.k !== 'void' && textoDeTipo(t.a) !== textoDeTipo(rv.t.a)) {
           throw new ErrorDelMotor('SIN_VERIFICAR', 'un cambio de tipo de puntero entre tipos distintos');
         }
-        return this.convertir(rv, t);
+        return this.convertir(rv, t, true);
       }
       case 'sizeof_expression': {
         const td = n.childForFieldName('type');

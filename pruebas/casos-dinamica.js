@@ -331,6 +331,7 @@ export const CASOS_DE_DINAMICA = [
   puntero(5, 'la funcion con el error', RESERVAR_PP('  p = malloc(sizeof(int));\n  *p = valor;\n', 'int *p'), ['DESREFERENCIA_NULA']),
   puntero(5, 'recibe la direccion pero asigna a la copia', RESERVAR_PP('  p = malloc(sizeof(int));\n  **p = valor;\n'), ['FUERA_DE_BLOQUE']),
   puntero(5, 'sin malloc', RESERVAR_PP('  **p = valor;\n'), ['MALLOC_FALTA']),
+  puntero(5, 'guardando el valor en el puntero con un solo asterisco', RESERVAR_PP('  *p = malloc(sizeof(int));\n  *p = valor;\n'), ['TIPOS_INCOMPATIBLES']),
 
   // ===== 5. reservar y avisar si se pudo
   puntero(6, 'la referencia', ENTEROS('  *v = malloc(n * sizeof(int));\n  if (*v == NULL) {\n    return FALSO;\n  }\n  return VERDADERO;\n')),

@@ -1991,7 +1991,7 @@ const r = ejecutar(analizador, fuente, { entrada: '3 1 2', traza: true });
   estructuras (también anidadas y autorreferidas), arreglos y tablas, enumerados, `#define`
   numérico, punteros y su aritmética, `malloc`/`calloc`/`realloc`/`free`, `sizeof` con la
   alineación de las estructuras, funciones y recursión, `switch`, `printf`, `scanf`,
-  `strlen`/`strcpy`/`strcat`/`strcmp`. Lo que no sabe seguir termina en `SIN_VERIFICAR`.
+  `strlen`/`strcpy`/`strcat`/`strcmp`. Lo que no sabe seguir termina en `SIN_VERIFICAR`. Guardar un número en un puntero (salvo el literal `0`, que es `NULL`) o una dirección en un número, sin una conversión explícita, es un error de tipos (`TIPOS_INCOMPATIBLES`, con la línea y los tipos): por ejemplo `*p = valor;` con `int **p`. Con una conversión explícita, `(int *) 8`, el motor no lo sigue.
 - `traza.js`: una fotografía por sentencia (línea, variables de cada función, montículo, con los
   punteros como `{ k: 'ptr', a: id, ruta }`) para el reproductor paso a paso. Un error deja la
   última fotografía con el estado en que se produjo.

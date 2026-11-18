@@ -29,6 +29,7 @@ export const CODIGOS = {
   NOMBRE_DESCONOCIDO: 'Se usa un nombre que no esta declarado.',
   CAMPO_DESCONOCIDO: 'Se usa un campo que la estructura no tiene.',
   ASIGNACION_INVALIDA: 'Se asigna a algo que no se puede asignar.',
+  TIPOS_INCOMPATIBLES: 'Se guarda un numero en un puntero, o una direccion en un numero, sin una conversion explicita.',
   // Lo que el motor todavia no sigue
   SIN_VERIFICAR: 'Una construccion que el motor todavia no sabe seguir.',
   INTERNO: 'Un fallo del propio motor.',

@@ -93,6 +93,13 @@ const MENSAJES = {
   NOMBRE_DESCONOCIDO: (con, d) => frase(con, `${BT}${d.nombre}${BT} no está declarado: hay que declararlo antes de usarlo.`),
   CAMPO_DESCONOCIDO: (con, d) => frase(con, `la estructura no tiene un campo llamado ${BT}${d.campo}${BT}.`),
   FUNCION_DESCONOCIDA: (con, d) => frase(con, `se llama a ${BT}${d.nombre}${BT}, que no existe: no está declarada ni es de la biblioteca.`),
+  TIPOS_INCOMPATIBLES: (con, d) =>
+    frase(
+      con,
+      d.haciaPuntero
+        ? `el programa guarda un ${BT}${d.de}${BT} en algo de tipo ${BT}${d.a}${BT}. Un puntero guarda direcciones, no números: para escribir un número en el lugar al que apunta hay que llegar hasta él con el asterisco.`
+        : `el programa guarda una dirección (${BT}${d.de}${BT}) en algo de tipo ${BT}${d.a}${BT}. Una variable de ese tipo guarda números, no direcciones: para guardar una dirección hace falta un puntero.`
+    ),
   ASIGNACION_INVALIDA: (con) => frase(con, `el programa asigna algo que no se puede asignar (por ejemplo, un arreglo entero con ${BT}=${BT}).`),
 };
 
