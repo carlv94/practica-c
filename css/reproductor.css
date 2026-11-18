@@ -891,6 +891,11 @@
   stroke-width: 3;
 }
 
+/* la flecha que acaba de pasar a rojo porque se libero el bloque: mas gruesa mientras se ve ese paso */
+.rep-flecha-g.rep-roja-nueva .rep-flecha-liberada {
+  stroke-width: 3;
+}
+
 /* un puntero a un bloque liberado: sigue apuntando, en rojo y continua */
 .rep-flecha.rep-flecha-liberada {
   stroke: var(--error);

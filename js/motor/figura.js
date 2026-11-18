@@ -424,6 +424,7 @@ export class Figura {
     this.escalaActual = 1;
     this.fase = 'FIN';
     this.fundir = false; // se hacen los fundidos de color (cuando hay animacion)
+    this.dDestello = 0; // lo que dura el destello de la flecha que va a pasar a rojo, antes de su fundido
     this.animandoA = false; // las flechas que cambiaron se estan animando, cuadro por cuadro
     this.kA = 1; // cuanto de esa animacion (0 a 1)
     this.mostrarNombres = false;
@@ -538,12 +539,15 @@ export class Figura {
     // empieza cuando termina el flujo; cuenta como parte de lo que dura el paso.
     const fundidosDeBloque = [...escena.svg.querySelectorAll('.rep-fundido-bloque, .rep-aviso-nuevo')];
     const hayFundido = mueve && (fundidosDeBloque.length > 0 || escena.flechas.some((f) => f.recienLiberada));
+    // Antes de pasar al rojo, la flecha que apuntaba al bloque que se libera destella (dos pulsos) y recien despues
+    // empieza el fundido: la flecha, el borde del bloque y su aviso cambian juntos.
+    this.dDestello = mueve && escena.flechas.some((f) => f.recienLiberada && f.muerto) ? 0.9 * u : 0;
     for (const e of fundidosDeBloque) {
       const sale = e.classList.contains('rep-fundido-bloque');
       if (!mueve) {
         if (sale) e.remove();
       } else if (e.animate) {
-        e.animate(sale ? [{ opacity: 1 }, { opacity: 0 }] : [{ opacity: 0 }, { opacity: 1 }], { duration: u, delay: retardo, easing: 'ease-in-out', fill: 'both' });
+        e.animate(sale ? [{ opacity: 1 }, { opacity: 0 }] : [{ opacity: 0 }, { opacity: 1 }], { duration: u, delay: retardo + this.dDestello, easing: 'ease-in-out', fill: 'both' });
       }
     }
     // Lo que acaba de recibir la direccion (un bloque que reservo malloc, una variable con &) parpadea cuando la flecha llego.
@@ -646,7 +650,9 @@ export class Figura {
           this.finAparte = setTimeout(() => svg.classList.remove('rep-vuelve'), 400);
         }, retardo + aparte);
       }
-      return retardo + (hayFundido ? u : 0) + aparte;
+      const destello = this.dDestello;
+      this.dDestello = 0;
+      return retardo + destello + (hayFundido ? u : 0) + aparte;
     }
     // Si habia una flecha antes (se va a redirigir o a desvanecer), primero se la ve resaltada y quieta.
     const hayFlechaPrevia = escena.flechas.some((f) => f.cambio && f.viejo) || hayRetiradas;
@@ -696,6 +702,7 @@ export class Figura {
       for (const sa of this.escena.salientes) sa.g.remove();
       this.escena.salientes = [];
       this.pintarFlechas();
+      this.dDestello = 0;
       // Las flechas hacia bloques que acaban de aparecer se dibujan al final.
       this.dibujarNuevas('.rep-tarde', u, hayTarde ? pausaNuevo : 0);
       this.parpadear(escena, objetivos.alFinal, dFinal, hayTarde ? pausaNuevo + u : 0);
@@ -1485,7 +1492,8 @@ export class Figura {
       for (const fp of previa.flechas) {
         const m = fp.origen.marco;
         if (m == null || marcosG.has(m) || !previa.marcosG.has(m) || !fp.final) continue;
-        retiradas.push({ ...fp, deId: null, nombre: null, cambio: true, tarde: false, previo: null, viejo: fp.final, escenaOrigen: previa });
+        // Con retirada: si apuntaba a un bloque liberado se contrae toda en rojo (y no con el cuerpo ambar de lo nuevo).
+        retiradas.push({ ...fp, deId: null, nombre: null, cambio: true, retirada: true, tarde: false, previo: null, viejo: fp.final, escenaOrigen: previa });
       }
     }
 
@@ -1581,8 +1589,10 @@ export class Figura {
     const fin = puntos[puntos.length - 1];
     // La flecha de un puntero liberado que pasa a NULL se retira como era: roja, y mas gruesa para que se vea que cambia.
     const retiradaRoja = f.retirada && f.muerto && d.tipo !== 'perdida';
+    // La que acaba de pasar a rojo porque se libero el bloque que apunta: queda mas gruesa mientras se ve este paso.
+    const rojaNueva = f.recienLiberada && f.muerto && d.tipo !== 'perdida' && !retiradaRoja;
     const g = el('g', {
-      class: 'rep-flecha-g' + (f.cambio && !retiradaRoja ? ' rep-nueva' : '') + (retiradaRoja ? ' rep-retirada' : '') + (f.tarde ? ' rep-tarde' : ''),
+      class: 'rep-flecha-g' + (f.cambio && !retiradaRoja ? ' rep-nueva' : '') + (retiradaRoja ? ' rep-retirada' : '') + (rojaNueva ? ' rep-roja-nueva' : '') + (f.tarde ? ' rep-tarde' : ''),
       'data-o': f.deId,
       'data-d': f.a,
       'data-i': indice,
@@ -1674,7 +1684,37 @@ export class Figura {
     }
     capaFlechas.replaceChildren(...hijos);
     for (const trazo of capaFlechas.querySelectorAll('.rep-fundido')) {
-      if (trazo.animate) trazo.animate([{ opacity: 1 }, { opacity: 0 }], { duration: this.dFundido || 450, delay: this.retardoFundido || 0, easing: 'ease-in-out', fill: 'both' });
+      if (!trazo.animate) continue;
+      const fundido = this.dFundido || 450;
+      const destello = this.dDestello || 0;
+      // La roja (que queda mas gruesa) se ve recien cuando la azul se desvanece: si no, asomaria por los costados.
+      const roja = trazo.parentNode.querySelector('.rep-flecha-liberada');
+      if (!destello) {
+        trazo.animate([{ opacity: 1 }, { opacity: 0 }], { duration: fundido, delay: this.retardoFundido || 0, easing: 'ease-in-out', fill: 'both' });
+        if (roja) roja.animate([{ opacity: 0 }, { opacity: 1 }], { duration: fundido, delay: this.retardoFundido || 0, easing: 'ease-in-out', fill: 'both' });
+        continue;
+      }
+      // Dos pulsos (la flecha se engrosa y brilla) mientras sigue azul, y despues se desvanece y deja ver la roja.
+      const brillo = getComputedStyle(trazo).getPropertyValue('--aviso').trim() || '#f0c35b';
+      const reposo = { opacity: 1, strokeWidth: '1.6px', filter: 'drop-shadow(0 0 0 transparent)', easing: 'ease-in-out' };
+      const pulso = { opacity: 1, strokeWidth: '4.2px', filter: `drop-shadow(0 0 4px ${brillo})`, easing: 'ease-in-out' };
+      const total = destello + fundido;
+      const fin = destello / total;
+      const demora = this.retardoFundido || 0;
+      trazo.animate(
+        [
+          { ...reposo, offset: 0 },
+          { ...pulso, offset: 0.2 * fin },
+          { ...reposo, offset: 0.45 * fin },
+          { ...pulso, offset: 0.7 * fin },
+          { ...reposo, offset: fin },
+          { opacity: 0, strokeWidth: '3px', filter: 'drop-shadow(0 0 0 transparent)', offset: 1 },
+        ],
+        { duration: total, delay: demora, easing: 'linear', fill: 'both' }
+      );
+      if (roja) {
+        roja.animate([{ opacity: 0, offset: 0 }, { opacity: 0, offset: fin }, { opacity: 1, offset: 1 }], { duration: total, delay: demora, easing: 'ease-in-out', fill: 'both' });
+      }
     }
     this.aplicarEnfoque();
   }
