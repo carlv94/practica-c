@@ -495,9 +495,10 @@ class Interprete {
       return;
     }
     if (tipo.k === 'ptr' || reserva) {
-      const { rv, origen, celda } = this.evaluarConOrigen(init);
+      const { rv, origen, celda, devuelto } = this.evaluarConOrigen(init);
       this.asignarAlmacen(st, rv);
-      this.registrarCopia(st, origen, celda, reserva ? this.ubicar(reserva, st) : null);
+      if (devuelto) this.copiaDevuelta(st, reserva ? this.ubicar(reserva, st) : null);
+      else this.registrarCopia(st, origen, celda, reserva ? this.ubicar(reserva, st) : null);
       return;
     }
     this.asignarAlmacen(st, this.evaluar(init));
@@ -603,6 +604,15 @@ class Interprete {
     this.accesos.push({ de: origen, a: { a: s.a, ruta: s.ruta }, tipo: 'copia', para: para || null });
   }
 
+  // Una funcion devolvio un puntero y se guardo en una casilla: es una copia sin casilla de origen (la de la funcion ya
+  // no esta): parpadean el bloque al que apunta y la casilla que lo recibe. Con NULL no hay nada que senalar.
+  copiaDevuelta(st, para) {
+    if (!this.opciones.traza || !st || st.t.k !== 'ptr' || !st.v || !st.v.reserva || this.accesos.length >= 8) return;
+    const s = serializarPuntero(st.v);
+    if (s.k !== 'ptr') return;
+    this.accesos.push({ de: null, a: { a: s.a, ruta: s.ruta }, tipo: 'copia', para: para || null });
+  }
+
   // Se copio el valor de una casilla en otra (a = b, int c = a): se resalta el origen y despues el destino.
   copiaValor(celda, para) {
     if (!this.opciones.traza || !celda || this.accesos.length >= 8) return;
@@ -697,7 +707,13 @@ class Interprete {
       default:
         break;
     }
-    if (!lv) return { rv: this.evaluar(n), origen: null, celda: null };
+    if (!lv) {
+      const rv = this.evaluar(n);
+      // Un puntero que devuelve una funcion propia: la casilla de la que salio ya no esta (se retiro el marco), pero
+      // al guardarlo se muestra como una copia.
+      const devuelto = n.type === 'call_expression' && this.funciones.has(n.childForFieldName('function').text) && Boolean(rv) && Boolean(rv.t) && rv.t.k === 'ptr';
+      return { rv, origen: null, celda: null, devuelto };
+    }
     const rv = this.valorDe(lv, n.text);
     const celda = this.ubicar(lv.reserva, lv.st);
     return { rv, origen: lv.st.t && lv.st.t.k === 'ptr' ? celda : null, celda };
@@ -1011,7 +1027,8 @@ class Interprete {
     let rv;
     let origenCopiado = null;
     let celdaCopiada = null;
-    if (op === '=') ({ rv, origen: origenCopiado, celda: celdaCopiada } = this.evaluarConOrigen(n.childForFieldName('right')));
+    let devuelto = false;
+    if (op === '=') ({ rv, origen: origenCopiado, celda: celdaCopiada, devuelto } = this.evaluarConOrigen(n.childForFieldName('right')));
     else rv = this.evaluar(n.childForFieldName('right'));
     if (op !== '=') {
       const actual = this.valorDe(lv, n.childForFieldName('left').text);
@@ -1020,7 +1037,8 @@ class Interprete {
     if (lv.st.t.k !== 'struct') rv = this.convertir(rv, lv.st.t);
     const viejo = lv.st.t.k === 'ptr' ? lv.st.v : undefined;
     this.escribir(lv, rv);
-    this.registrarCopia(lv.st, origenCopiado, celdaCopiada, this.ubicar(lv.reserva, lv.st));
+    if (devuelto) this.copiaDevuelta(lv.st, this.ubicar(lv.reserva, lv.st));
+    else this.registrarCopia(lv.st, origenCopiado, celdaCopiada, this.ubicar(lv.reserva, lv.st));
     const sobrescrito = op === '=' && lv.st.t.k === 'ptr' ? viejo : undefined;
     // Para la traza: primero lo que se guarda (el recorrido que lleva al valor y su copia) y despues donde se guarda
     // (el recorrido hasta la casilla de destino), aunque C evalue primero el lado izquierdo.

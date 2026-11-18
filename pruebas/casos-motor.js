@@ -421,6 +421,36 @@ int main() {
     },
   },
   {
+    nombre: 'guardar el puntero que devuelve una funcion propia es una copia sin casilla de origen; con NULL o con malloc no',
+    codigo: String.raw`#include <stdlib.h>
+int *crear(int v) {
+  int *n = malloc(sizeof(int));
+  *n = v;
+  return n;
+}
+int *nada(void) {
+  return NULL;
+}
+int main() {
+  int *p;
+  p = crear(5);
+  int *q = crear(7);
+  int *r = malloc(sizeof(int));
+  p = nada();
+  free(q);
+  free(r);
+  return 0;
+}`,
+    espera: {
+      traza: (traza) => {
+        const copias = traza.flatMap((x) => (x.accesos || []).filter((h) => h.tipo === 'copia'));
+        if (copias.length !== 2) return 'tenia que haber dos copias (p = crear, q = crear) y hay ' + copias.length;
+        if (copias.some((c) => c.de !== null || !c.para)) return 'la copia no lleva origen y si la casilla que recibe';
+        return null;
+      },
+    },
+  },
+  {
     nombre: 'copiar un puntero anota la flecha y lo que senala; recibir una direccion nueva no es una copia',
     codigo: String.raw`#include <stdlib.h>
 int main() {
