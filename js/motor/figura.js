@@ -1237,7 +1237,10 @@ export class Figura {
     defs.innerHTML =
       '<marker id="rep-punta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="rep-cabeza"/></marker>' +
       '<marker id="rep-punta-mala" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="rep-cabeza-mala"/></marker>' +
-      '<marker id="rep-punta-nueva" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="rep-cabeza-nueva"/></marker>';
+      '<marker id="rep-punta-nueva" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="rep-cabeza-nueva"/></marker>' +
+      '<marker id="rep-punta-vieja" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="rep-cabeza-vieja"/></marker>' +
+      // El rayado de los bloques liberados: lineas diagonales, para que no dependa solo del color.
+      '<pattern id="rep-rayado" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" class="rep-rayado-linea"/></pattern>';
 
     // ---- la pila: la funcion en curso arriba
     let y = 24;
@@ -1359,7 +1362,7 @@ export class Figura {
       const lugar = lugares.get(b.id);
       if (!lugar) continue;
       const { v, ruta } = sinEnvoltura(b.valor);
-      const g = el('g', { class: 'rep-bloque-g', 'data-id': b.id });
+      const g = el('g', { class: 'rep-bloque-g' + (b.vivo ? '' : ' rep-g-liberado'), 'data-id': b.id });
       raiz.append(g);
       p.capa = g;
       p.bloque = b.id;
@@ -1371,19 +1374,23 @@ export class Figura {
       const recienLiberado = !b.vivo && vivosPrevios.has(b.id);
       if (recienLiberado) g.append(el('rect', { x: 0, y: ENCABEZADO, width: lugar.w, height: lugar.h, rx: 5, class: 'rep-bloque rep-fundido-bloque' }));
       g.append(texto(2, 8, String(b.dir), 'rep-direccion'));
-      // El aviso va a la derecha de la direccion; si el bloque es tan chico que no entran los dos
-      // (6 px por cifra, 5,6 por letra), va debajo del bloque, centrado.
-      const aviso = !b.vivo ? 'liberado' : huerfano ? 'sin puntero' : '';
-      if (aviso) {
-        const entra = lugar.w >= String(b.dir).length * 6 + aviso.length * 5.6 + 10;
-        g.append(
-          entra
-            ? texto(lugar.w - 2, 8, aviso, 'rep-aviso' + (recienLiberado ? ' rep-aviso-nuevo' : ''), { 'text-anchor': 'end' })
-            : texto(lugar.w / 2, ENCABEZADO + lugar.h + 11, aviso, 'rep-aviso' + (recienLiberado ? ' rep-aviso-nuevo' : ''), { 'text-anchor': 'middle' })
-        );
-      }
       p.ancla(b.id, [], 0, ENCABEZADO, lugar.w, lugar.h);
       p.valor(v, PAD, ENCABEZADO + PAD, b.id, ruta);
+      // El aviso va a la derecha de la direccion; si el bloque es tan chico que no entran los dos
+      // (6 px por cifra, 5,6 por letra), va debajo del bloque, centrado. Como las flechas se dibujan encima, si de una
+      // casilla del bloque sale una flecha que pasaria por el aviso, este se corre a la izquierda (junto a la direccion).
+      const aviso = !b.vivo ? 'liberado' : huerfano ? 'sin puntero' : '';
+      if (aviso) {
+        const claseAviso = 'rep-aviso' + (recienLiberado ? ' rep-aviso-nuevo' : '');
+        const anchoDir = String(b.dir).length * 6;
+        const anchoAviso = aviso.length * 5.6;
+        const entra = lugar.w >= anchoDir + anchoAviso + 10;
+        const salidas = p.flechas.filter((f) => f.origen.bloque === b.id).map((f) => f.origen.x + f.origen.w / 2);
+        const cruza = (desde, hasta) => salidas.some((cx) => cx >= desde - 6 && cx <= hasta + 6);
+        if (!entra) g.append(texto(lugar.w / 2, ENCABEZADO + lugar.h + 11, aviso, claseAviso, { 'text-anchor': 'middle' }));
+        else if (!cruza(lugar.w - 2 - anchoAviso, lugar.w - 2)) g.append(texto(lugar.w - 2, 8, aviso, claseAviso, { 'text-anchor': 'end' }));
+        else g.append(texto(2 + anchoDir + 6, 8, aviso, claseAviso, { 'text-anchor': 'start' }));
+      }
       p.bloque = null;
       p.capa = raiz;
       bloques.set(b.id, { id: b.id, g, hasta: { x: lugar.x, y: lugar.y }, ...lugar });
@@ -1440,13 +1447,22 @@ export class Figura {
     };
     const flechas = [];
     const vivosAntes = new Set(anterior ? anterior.monticulo.filter((b) => b.vivo).map((b) => b.id) : []);
+    const liberadosVisibles = new Set(visibles.filter((b) => !b.vivo).map((b) => b.id));
     const ctFinal = contador();
     const ctPrevio = contador();
     for (const f of p.flechas) {
       const final = describirEn(f, bloques, ctFinal, marcosG);
       const previo = previa && anterior ? describirEn(f, previa.bloques, ctPrevio, previa.marcosG) : null;
       // Una flecha nueva hacia un bloque que acaba de aparecer espera al final del movimiento.
-      flechas.push({ ...f, final, previo, tarde: Boolean(f.cambio && !previo), recienLiberada: Boolean(f.muerto && vivosAntes.has(f.a)) });
+      flechas.push({
+        ...f,
+        final,
+        previo,
+        tarde: Boolean(f.cambio && !previo),
+        recienLiberada: Boolean(f.muerto && vivosAntes.has(f.a)),
+        // Sale de un bloque liberado: es un dato viejo que quedo en la memoria, no un enlace que valga.
+        deLiberado: f.origen.bloque != null && liberadosVisibles.has(f.origen.bloque),
+      });
     }
 
     const svg = el('svg', {
@@ -1609,7 +1625,11 @@ export class Figura {
     // Continua y roja: apunta a un bloque liberado (el puntero sigue apuntando, pero la memoria ya no es suya).
     const punteada = f.fuera || d.tipo === 'perdida';
     const liberada = f.muerto && d.tipo !== 'perdida';
-    const marcaNormal = f.cambio && !retirada ? 'url(#rep-punta-nueva)' : 'url(#rep-punta)';
+    // La que sale de un bloque liberado (y no apunta a otro liberado ni a algo que no esta) se apaga en gris: el dato sigue
+    // ahi, pero ya no es un enlace de la lista.
+    const vieja = Boolean(f.deLiberado) && !liberada && !punteada && !f.cambio && !retirada;
+    if (vieja) g.classList.add('rep-de-liberado');
+    const marcaNormal = vieja ? 'url(#rep-punta-vieja)' : f.cambio && !retirada ? 'url(#rep-punta-nueva)' : 'url(#rep-punta)';
     const trazado = camino(puntos);
     // Un trazo invisible y ancho, para poder senalarla con el cursor o con el dedo.
     g.append(el('path', { d: trazado, class: 'rep-flecha-zona' }));

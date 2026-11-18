@@ -302,6 +302,34 @@
   opacity: 0.5;
   stroke-dasharray: 3 3;
 }
+/* un bloque liberado va rayado (no solo de otro color): su contenido sigue ahi, pero ya no vale */
+.rep-bloque.rep-liberado {
+  opacity: 0.8;
+  fill: url(#rep-rayado);
+  stroke: var(--suave);
+  stroke-dasharray: 1.5 3.5;
+  stroke-linecap: round;
+}
+.rep-rayado-linea {
+  stroke: var(--suave);
+  stroke-width: 1.4;
+  stroke-opacity: 0.5;
+}
+/* sus casillas dejan ver el rayado, y el puntero que guardan (dato viejo) se apaga */
+.rep-g-liberado .rep-celda {
+  fill-opacity: 0.6;
+}
+.rep-g-liberado .rep-punto:not(.rep-muerto) {
+  fill: var(--suave);
+}
+.rep-cabeza-vieja {
+  fill: var(--suave);
+}
+/* la flecha que sale de un bloque liberado: gris y mas tenue */
+.rep-flecha-g.rep-de-liberado .rep-flecha {
+  stroke: var(--suave);
+  opacity: 0.7;
+}
 .rep-celda {
   fill: var(--fondo);
   stroke: var(--borde);
