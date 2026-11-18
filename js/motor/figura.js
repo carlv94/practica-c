@@ -81,7 +81,9 @@ function etiqueta(v) {
   }
 }
 
-const anchoDeCasilla = (v) => (v.k === 'ptr' ? 36 : Math.max(CW, etiqueta(v).length * LETRA + 14));
+// Una casilla de puntero mide siempre lo mismo (CW), guarde una direccion (el punto), NULL o nada: asi no cambia de
+// tamano, ni el bloque que la contiene, cuando el puntero recibe una direccion.
+const anchoDeCasilla = (v) => (v.k === 'ptr' ? CW : Math.max(CW, etiqueta(v).length * LETRA + 14));
 
 // Una cadena: todo el texto en una sola casilla.
 const esCadena = (v) => v.k === 'arr' && v.texto !== undefined;
