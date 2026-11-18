@@ -1205,7 +1205,7 @@ export function corregir(
       const campo = def.campos.find((c) => c.nombre === esperado.nombre);
       if (campo) {
         sinUsar.delete(campo);
-        verificarCampo(campo, esperado, modelo);
+        verificarCampo(campo, esperado, modelo, def);
         continue;
       }
 
@@ -1227,7 +1227,7 @@ export function corregir(
           (soloMayusculas ? ': en C las mayúsculas y las minúsculas son letras distintas.' : '.'),
         parecido.fila
       );
-      verificarCampo(parecido, esperado, modelo);
+      verificarCampo(parecido, esperado, modelo, def);
     }
 
     for (const campo of sinUsar) {
@@ -1254,7 +1254,7 @@ export function corregir(
     }
   }
 
-  function verificarCampo(campo, esperado, modelo) {
+  function verificarCampo(campo, esperado, modelo, def) {
     const real = resolver(campo.tipo, modelo);
     if (real.clase === 'desconocido') return; // ya lo dijo revisarNombres
     const base = real.clase === 'primitivo' ? real.nombre : null;
@@ -1424,6 +1424,43 @@ export function corregir(
         error(
           'CAMPO_TIPO',
           `\`${n}\` tiene que ser de tipo \`${pedido}\`: es ${esperado.tipo === 'union' ? 'una unión dentro de la estructura' : 'una estructura dentro de otra'}. ${declarado}`,
+          campo.fila
+        );
+      }
+      return;
+    }
+
+    // Un campo que apunta a una estructura: "tipo": "puntero", "de": "misma" (a la estructura que se esta declarando: el
+    // campo "sig" de un nodo) o "de": "TNodo" (a otra).
+    if (esperado.tipo === 'puntero') {
+      const pideMisma = esperado.de === 'misma';
+      const destino = pideMisma ? def : resolver(tipoDesdeTexto(valorDe(esperado.de)), modelo).def;
+      const apunta = pideMisma ? 'a la misma estructura' : `a una estructura \`${valorDe(esperado.de)}\``;
+      const esDestino = real.clase === 'struct' && real.def === destino;
+      if (campo.arreglo.length) {
+        error('CAMPO_ES_ARREGLO', `\`${n}\` tiene que ser un solo puntero que apunte ${apunta}, no un arreglo. ${declarado}`, campo.fila);
+      } else if (!campo.punteros) {
+        if (esDestino) {
+          error(
+            'CAMPO_NO_ES_PUNTERO',
+            `\`${n}\` es ${enPalabras(campo)}: así cada estructura guardaría adentro otra igual, que guardaría otra, y así sin terminar: no tendría un tamaño finito. Para enlazar una estructura con otra se guarda la dirección de la otra: falta el \`*\`.`,
+            campo.fila
+          );
+        } else {
+          error('CAMPO_TIPO', `\`${n}\` tiene que ser un puntero que apunte ${apunta}. ${declarado}`, campo.fila);
+        }
+      } else if (campo.punteros > 1) {
+        error('CAMPO_PUNTEROS_DE_MAS', `\`${n}\` tiene ${campo.punteros} \`*\`: tiene que apuntar ${apunta} con un solo \`*\`. ${declarado}`, campo.fila);
+      } else if (!esDestino) {
+        error('CAMPO_PUNTERO_OTRO', `\`${n}\` tiene que apuntar ${apunta}, y apunta a \`${textoDeTipo(campo.tipo)}\`. ${declarado}`, campo.fila);
+      } else if (pideMisma && campo.tipo.clase === 'nombre' && modelo.aliases.some((a) => a.nombre === campo.tipo.nombre && a.tipo.defId === destino.id)) {
+        // Escrito con el alias del typedef que envuelve a la propia declaracion: ahi todavia no existe.
+        error(
+          'CAMPO_ALIAS_ADENTRO',
+          `Dentro de la declaración todavía no existe el alias \`${campo.tipo.nombre}\`: el \`typedef\` se completa recién al final. ` +
+            (destino.etiqueta
+              ? `El tipo de \`${n}\` se escribe con la etiqueta de la estructura: \`struct ${destino.etiqueta} *${n};\`.`
+              : `Para poder nombrarse a sí misma, la estructura necesita una etiqueta, entre \`struct\` y la llave, y el campo se escribe con ella: \`struct etiqueta *${n};\`.`),
           campo.fila
         );
       }

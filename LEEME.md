@@ -611,6 +611,8 @@ Estructuras, serie "Usar los campos"):
   primero), si ya se dijo `ASIGNACION_DE_ARREGLO`, ni cuando el campo de más
   es de otra estructura de adentro (`CAMPO_OTRA_ESTRUCTURA`).
 
+**Una estructura que se apunta a sí misma** (serie "El nodo de una lista", `dinamica-nodo.json`): la regla `struct` acepta un campo `{ "nombre": "sig", "tipo": "puntero", "de": "misma" }`, un puntero a la estructura que se está declarando (con `"de": "TNodo"` apunta a otra). Errores: `CAMPO_NO_ES_PUNTERO` (el campo es la estructura entera: tamaño infinito, falta el `*`), `CAMPO_ALIAS_ADENTRO` (escrito con el alias del `typedef` que envuelve a la declaración, que ahí todavía no existe: hay que usar la etiqueta `struct nodo *sig`, y si no tiene etiqueta se la pide), `CAMPO_PUNTEROS_DE_MAS`, `CAMPO_PUNTERO_OTRO` (apunta a otro tipo), `CAMPO_ES_ARREGLO` y `CAMPO_TIPO`. Un `typedef struct nodo TNodo;` antes de la estructura sí permite escribir `TNodo *sig`. La serie tiene 8 consignas: por qué `sig` es un puntero, cómo se nombra el tipo ahí adentro, declarar el nodo, corregir la declaración, cuánto ocupa un nodo (16, con relleno), enlazar dos nodos, enlazar tres y recorrerlos, y cómo se marca el final.
+
 **Estructuras dentro de estructuras** (serie "Estructuras dentro de estructuras"):
 
 - `{ "struct": { "campos": [{ "nombre": "nacimiento", "tipo": "estructura", "de":
