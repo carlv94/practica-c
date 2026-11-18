@@ -170,7 +170,11 @@
       "series": [
         "dinamica-memoria.json",
         "dinamica-errores.json",
-        "dinamica-puntero.json"
+        "dinamica-puntero.json",
+        "dinamica-nodo.json"
+      ],
+      "ocultas": [
+        "dinamica-nodo.json"
       ]
     }
   ]

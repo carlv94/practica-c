@@ -1,0 +1,240 @@
+{
+  "id": "dinamica-nodo",
+  "titulo": "El nodo de una lista",
+  "continua": false,
+  "descripcion": "Una lista enlazada se arma con nodos: cada uno guarda un dato y la dirección del nodo que sigue. Antes de reservar nodos con `malloc`, se aprende a declarar un tipo que se apunta a sí mismo y a enlazar nodos comunes a mano.",
+  "cabecera": "#include <stdio.h>\n#include <stdlib.h>",
+  "consignas": [
+    {
+      "id": "nodo-q-finito",
+      "titulo": "Una estructura que se apunta a sí misma",
+      "enunciado": "Se quiere guardar una secuencia de números enteros, de modo que cada elemento sepa cuál es el que sigue. Para eso se declara un nodo: una estructura con un entero, `dato`, y un campo `sig` que indica cuál es el nodo siguiente, que es otra estructura del mismo tipo. Un compañero escribe esta declaración. ¿Qué problema tiene?",
+      "programa": "struct nodo {\n  int dato;\n  struct nodo sig;\n};",
+      "opciones": [
+        {
+          "texto": "Una estructura no puede tener adentro una variable de tipo estructura",
+          "codigo": "OPCION_NO_PUEDE_ANIDAR",
+          "explicacion": "Sí puede: ya vio estructuras con un campo que es otra estructura, como una ficha con la fecha de nacimiento. Eso funciona porque la de adentro es de otro tipo, que ya está completo. El problema de esta declaración es otro."
+        },
+        {
+          "texto": "Cada nodo contendría otro nodo completo, sin terminar nunca",
+          "correcta": true,
+          "explicacion": "El campo `sig` sería un `struct nodo` entero, así que cada nodo ocuparía lo que ocupa su `dato` más lo que ocupa otro nodo completo, que a su vez ocuparía lo de su `dato` más lo de otro, y así sin fin: el compilador no podría calcular cuánto ocupa un nodo, y la declaración es un error. Para que una estructura se relacione con otra del mismo tipo se guarda la dirección de la otra, no la otra: una dirección siempre ocupa lo mismo, apunte a lo que apunte. Por eso el campo se declara `struct nodo *sig`."
+        },
+        {
+          "texto": "Falta el alias `TNodo`: una estructura no se puede declarar sin un `typedef`",
+          "codigo": "OPCION_FALTA_TYPEDEF",
+          "explicacion": "Una estructura se declara perfectamente con `struct` y su etiqueta, sin `typedef`: el alias es una comodidad para no repetir la palabra `struct` cada vez, no una obligación. Este error no tiene que ver con el alias."
+        }
+      ]
+    },
+    {
+      "id": "nodo-q-etiqueta",
+      "titulo": "Cómo se nombra el tipo dentro de la declaración",
+      "enunciado": "El campo `sig` tiene que ser un puntero a otro nodo. En esta declaración falta escribir de qué tipo es ese puntero, en el lugar donde está el signo de interrogación. ¿Cuál de estas opciones es válida?",
+      "programa": "typedef struct nodo {\n  int dato;\n  ? *sig;\n} TNodo;",
+      "opciones": [
+        {
+          "texto": "`TNodo`",
+          "codigo": "OPCION_ALIAS",
+          "explicacion": "El alias `TNodo` lo crea el `typedef`, y el `typedef` se completa recién en la última línea, después de la llave de cierre. Dentro de las llaves todavía no existe, y el compilador no sabría qué es."
+        },
+        {
+          "texto": "`nodo`",
+          "codigo": "OPCION_ETIQUETA_SOLA",
+          "explicacion": "La etiqueta sola no es un tipo: hay que escribir antes la palabra `struct`, como en cualquier variable de un tipo estructura. Declarar `nodo *sig;` es un error."
+        },
+        {
+          "texto": "`struct nodo`",
+          "correcta": true,
+          "explicacion": "Dentro de la declaración la estructura solo puede nombrarse con su etiqueta, la palabra que va después de `struct`: `struct nodo`. Es lo único que ya existe en ese lugar, y por eso la estructura necesita una etiqueta aunque después tenga un alias. Fuera de la declaración ya se puede escribir `TNodo`, que es más corto."
+        }
+      ]
+    },
+    {
+      "id": "nodo-declarar",
+      "titulo": "Declarar el nodo",
+      "en": "archivo",
+      "enunciado": "Una lista enlazada guarda números enteros. Cada elemento de la lista es un nodo: guarda un entero y la dirección del nodo que sigue. Declare la estructura del nodo, con los campos que se muestran a continuación, y póngale el alias `TNodo` para poder usarla sin repetir la palabra `struct`. Los campos se llaman así:\n[ficha]",
+      "ficha": {
+        "titulo": "Nodo",
+        "campos": [
+          {
+            "nombre": "dato"
+          },
+          {
+            "nombre": "sig"
+          }
+        ]
+      },
+      "requiere": [
+        {
+          "struct": {
+            "capturar": "S",
+            "campos": [
+              {
+                "nombre": "dato",
+                "tipo": "entero"
+              },
+              {
+                "nombre": "sig",
+                "tipo": "puntero",
+                "de": "misma"
+              }
+            ]
+          }
+        },
+        {
+          "alias": {
+            "de": "$S",
+            "nombre": "TNodo"
+          }
+        }
+      ],
+      "referencia": "typedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;"
+    },
+    {
+      "id": "nodo-corregir",
+      "titulo": "Corregir la declaración del nodo",
+      "en": "archivo",
+      "comienza": "typedef struct {\n  int dato;\n  TNodo *sig;\n} TNodo;",
+      "enunciado": "Esta declaración de un nodo no compila: dentro de la estructura se usa un nombre que todavía no existe. Corríjala para que cada nodo pueda apuntar al nodo que sigue. El nodo guarda un entero, `dato`, y la dirección del siguiente, `sig`, y se sigue usando con el alias `TNodo`.",
+      "requiere": [
+        {
+          "struct": {
+            "capturar": "S",
+            "campos": [
+              {
+                "nombre": "dato",
+                "tipo": "entero"
+              },
+              {
+                "nombre": "sig",
+                "tipo": "puntero",
+                "de": "misma"
+              }
+            ]
+          }
+        },
+        {
+          "alias": {
+            "de": "$S",
+            "nombre": "TNodo"
+          }
+        }
+      ],
+      "referencia": "typedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;"
+    },
+    {
+      "id": "nodo-q-tamano",
+      "titulo": "Cuánto ocupa un nodo",
+      "enunciado": "Con esta declaración, ¿cuánto ocupa un `TNodo` en memoria, es decir, cuánto vale `sizeof(TNodo)`? Recuerde que un entero ocupa 4 bytes y que una dirección ocupa 8.",
+      "programa": "typedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;",
+      "opciones": [
+        {
+          "texto": "16 bytes",
+          "correcta": true,
+          "explicacion": "El `dato` ocupa 4 bytes. Una dirección ocupa 8 y tiene que empezar en una posición múltiplo de 8, así que el compilador deja 4 bytes de relleno después del `dato` para que `sig` empiece donde corresponde: 4 más 4 de relleno más 8 son 16 bytes. Por eso, al reservar un nodo con `malloc`, siempre se escribe `sizeof(TNodo)` y nunca un número calculado a mano."
+        },
+        {
+          "texto": "12 bytes, la suma de sus dos campos",
+          "codigo": "OPCION_SUMA",
+          "explicacion": "Es la suma de lo que ocupa cada campo, pero el `sizeof` de una estructura no siempre es esa suma: el compilador no pega los campos uno contra otro. Vuelva a pensar en qué dirección puede empezar cada campo."
+        },
+        {
+          "texto": "8 bytes, lo que ocupa una dirección",
+          "codigo": "OPCION_SOLO_DIRECCION",
+          "explicacion": "El campo `sig` guarda solo una dirección, pero el nodo también guarda su `dato`: un nodo no es solamente el puntero que lo enlaza con el siguiente."
+        }
+      ]
+    },
+    {
+      "id": "nodo-q-enlazar",
+      "titulo": "Enlazar dos nodos",
+      "enunciado": "Dos nodos comunes, `a` y `b`, están declarados en `main` y ya tienen sus datos. La figura muestra la memoria justo antes de la última instrucción, `a.sig = &b;`. ¿Qué hace esa instrucción?",
+      "programa": "typedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\nint main() {\n  TNodo a;\n  TNodo b;\n\n  a.dato = 7;\n  b.dato = 9;\n  b.sig = NULL;\n  a.sig = &b;\n  return 0;\n}",
+      "dibujo": {
+        "titulo": "La memoria antes de `a.sig = &b;`:",
+        "motor": {
+          "codigo": "#include <stdio.h>\n#include <stdlib.h>\n\ntypedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\nint main() {\n  TNodo a;\n  TNodo b;\n\n  a.dato = 7;\n  b.dato = 9;\n  b.sig = NULL;\n  a.sig = &b;\n  return 0;\n}",
+          "linea": 16
+        }
+      },
+      "pasoAPaso": {
+        "guia": "Avance una línea y mire qué aparece cuando se ejecuta `a.sig = &b;`: una flecha que sale de `sig` de `a` y llega a `b`."
+      },
+      "opciones": [
+        {
+          "texto": "Copia en `a` el nodo `b` completo",
+          "codigo": "OPCION_COPIA_EL_NODO",
+          "explicacion": "Copiar un nodo entero sería `a = b;`, que copiaría su dato y lo que guarda su `sig`. Acá se guarda solo `&b`, una dirección, y en el campo `sig` de `a`."
+        },
+        {
+          "texto": "Guarda en `sig` de `a` el dato de `b`, el `9`",
+          "codigo": "OPCION_GUARDA_EL_DATO",
+          "explicacion": "Para eso se escribiría `a.sig = b.dato;`. Además, `sig` está hecho para guardar la dirección de un nodo, no un entero."
+        },
+        {
+          "texto": "Deja en `sig` de `a` la dirección de `b`",
+          "correcta": true,
+          "explicacion": "El operador `&` da la dirección de `b` y el campo `sig` de `a` la guarda: en la figura aparece una flecha que sale de `sig` y llega a `b`. Los nodos no se copian ni se mueven: `a` y `b` siguen siendo variables distintas, y se relacionan porque uno guarda la dirección del otro. Así se enlazan los nodos de una lista."
+        }
+      ]
+    },
+    {
+      "id": "nodo-enlazar",
+      "titulo": "Enlazar tres nodos y recorrerlos",
+      "en": "archivo",
+      "dado": "typedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;",
+      "enunciado": "El tipo `TNodo` ya está declarado en el editor. Escriba un `main` que declare tres nodos comunes, `a`, `b` y `c`, es decir, variables de tipo `TNodo`, sin `malloc`. Cárguele a cada uno su dato: `5` a `a`, `8` a `b` y `2` a `c`. Enlácelos en ese orden, de modo que `a` apunte a `b` y `b` a `c`, y marque que `c` es el último. Después declare un puntero `p` que empiece apuntando a `a` y recorra los nodos hasta el final, mostrando el dato de cada uno seguido de un espacio. El programa tiene que mostrar `5 8 2`.",
+      "requiere": [
+        {
+          "memoria": {
+            "casos": [
+              {
+                "salida": "5 8 2",
+                "contexto": ""
+              }
+            ],
+            "sinFugas": true
+          }
+        }
+      ],
+      "referencia": "int main() {\n  TNodo a;\n  TNodo b;\n  TNodo c;\n  TNodo *p;\n\n  a.dato = 5;\n  b.dato = 8;\n  c.dato = 2;\n  a.sig = &b;\n  b.sig = &c;\n  c.sig = NULL;\n  p = &a;\n  while (p != NULL) {\n    printf(\"%d \", p->dato);\n    p = p->sig;\n  }\n  return 0;\n}"
+    },
+    {
+      "id": "nodo-q-ultimo",
+      "titulo": "Cómo se marca el final",
+      "enunciado": "Este programa enlaza dos nodos, `a` y `b`, y los recorre con un puntero `p` mientras `p` no valga `NULL`. Pero al nodo `b` nunca se le asignó su campo `sig`. ¿Qué pasa cuando `p` llega a `b` y se ejecuta `p = p->sig;`?",
+      "programa": "typedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\nint main() {\n  TNodo a;\n  TNodo b;\n  TNodo *p;\n\n  a.dato = 5;\n  b.dato = 8;\n  a.sig = &b;\n  p = &a;\n  while (p != NULL) {\n    printf(\"%d \", p->dato);\n    p = p->sig;\n  }\n  return 0;\n}",
+      "dibujo": {
+        "titulo": "La memoria justo antes del ciclo:",
+        "motor": {
+          "codigo": "#include <stdio.h>\n#include <stdlib.h>\n\ntypedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\nint main() {\n  TNodo a;\n  TNodo b;\n  TNodo *p;\n\n  a.dato = 5;\n  b.dato = 8;\n  a.sig = &b;\n  p = &a;\n  return 0;\n}",
+          "linea": 18
+        }
+      },
+      "pasoAPaso": {
+        "codigo": "#include <stdio.h>\n#include <stdlib.h>\n\ntypedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\nint main() {\n  TNodo a;\n  TNodo b;\n  TNodo *p;\n\n  a.dato = 5;\n  b.dato = 8;\n  a.sig = &b;\n  p = &a;\n  while (p != NULL) {\n    printf(\"%d \", p->dato);\n    p = p->sig;\n  }\n  return 0;\n}",
+        "guia": "Avance hasta que `p` llega a `b` y ejecuta `p = p->sig;`: el programa se detiene con un error, porque el campo `sig` de `b` nunca recibió un valor."
+      },
+      "opciones": [
+        {
+          "texto": "`p` toma un valor que nadie asignó",
+          "correcta": true,
+          "explicacion": "El campo `sig` de `b` nunca se escribió, así que no tiene un valor. El ciclo pregunta si `p` es distinto de `NULL`, y como no lo sabe, sigue con una dirección que no es de ningún nodo: el programa puede mostrar un número cualquiera o fallar. Por eso el último nodo de una lista siempre se deja con `sig = NULL`: es la marca de dónde termina, y es lo que busca el ciclo."
+        },
+        {
+          "texto": "`p` toma el valor `NULL` y el ciclo termina",
+          "codigo": "OPCION_SIG_NULL",
+          "explicacion": "Una variable sin inicializar no vale `NULL` por sí sola: guarda lo que haya quedado en esa memoria. `NULL` es un valor que hay que asignar."
+        },
+        {
+          "texto": "El ciclo se detiene solo, porque no hay otro nodo después de `b`",
+          "codigo": "OPCION_SE_DETIENE_SOLO",
+          "explicacion": "Un ciclo no sabe cuántos nodos hay: solo pregunta por el valor de `p`. Si `sig` no dice `NULL`, el ciclo cree que todavía hay otro nodo."
+        }
+      ]
+    }
+  ]
+}

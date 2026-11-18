@@ -63,6 +63,14 @@ ${cuerpo}}`;
 
 const puntero = serie('dinamica-puntero');
 
+const nodo = serie('dinamica-nodo');
+
+// Serie 4: el nodo de una lista.
+const NODO = (campo = 'struct nodo *sig;', alias = 'TNodo', etiqueta = ' nodo') => `typedef struct${etiqueta} {\n  int dato;\n  ${campo}\n} ${alias};`;
+const TRES_NODOS = (cuerpo) => `int main() {\n  TNodo a;\n  TNodo b;\n  TNodo c;\n  TNodo *p;\n\n${cuerpo}  return 0;\n}`;
+const ENLACES = '  a.dato = 5;\n  b.dato = 8;\n  c.dato = 2;\n  a.sig = &b;\n  b.sig = &c;\n  c.sig = NULL;\n  p = &a;\n';
+const RECORRER = '  while (p != NULL) {\n    printf("%d ", p->dato);\n    p = p->sig;\n  }\n';
+
 // Serie 3: cambiar un puntero desde una funcion.
 const RESERVAR_PP = (cuerpo, tipo = 'int **p') => 'void reservar(' + tipo + ', int valor) {\n' + cuerpo + '}';
 const TBOOL = 'typedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\n';
@@ -230,4 +238,55 @@ export const CASOS_DE_DINAMICA = [
   puntero(9, 'dos asteriscos con p', '1'),
   puntero(9, 'dos asteriscos con pp', '0', ['OPCION_DOBLE_ASTERISCO_PP']),
   puntero(9, 'pp en NULL', '2', ['OPCION_PP_NULL']),
+
+  // ===== 1. por que un puntero
+  nodo(1, 'cada nodo contendria otro', '1'),
+  nodo(1, 'una estructura no puede tener otra adentro', '0', ['OPCION_NO_PUEDE_ANIDAR']),
+  nodo(1, 'falta el typedef', '2', ['OPCION_FALTA_TYPEDEF']),
+
+  // ===== 2. como se nombra el tipo
+  nodo(2, 'struct nodo', '2'),
+  nodo(2, 'el alias', '0', ['OPCION_ALIAS']),
+  nodo(2, 'la etiqueta sola', '1', ['OPCION_ETIQUETA_SOLA']),
+
+  // ===== 3. declarar el nodo
+  nodo(3, 'la referencia', NODO()),
+  nodo(3, 'con otra etiqueta', NODO('struct elemento *sig;', 'TNodo', ' elemento')),
+  nodo(3, 'con el typedef adelantado', 'typedef struct nodo TNodo;\n\nstruct nodo {\n  int dato;\n  TNodo *sig;\n};'),
+  nodo(3, 'sin el alias', 'struct nodo {\n  int dato;\n  struct nodo *sig;\n};', ['ALIAS_FALTA']),
+  nodo(3, 'sin el asterisco', NODO('struct nodo sig;'), ['CAMPO_NO_ES_PUNTERO']),
+  nodo(3, 'con el alias adentro', NODO('TNodo *sig;'), ['CAMPO_ALIAS_ADENTRO']),
+  nodo(3, 'sin etiqueta', NODO('TNodo *sig;', 'TNodo', ''), ['CAMPO_ALIAS_ADENTRO']),
+  nodo(3, 'dos asteriscos', NODO('struct nodo **sig;'), ['CAMPO_PUNTEROS_DE_MAS']),
+  nodo(3, 'apunta a un entero', NODO('int *sig;'), ['CAMPO_PUNTERO_OTRO']),
+  nodo(3, 'sin el campo sig', 'typedef struct nodo {\n  int dato;\n} TNodo;', ['CAMPO_FALTA']),
+  nodo(3, 'el dato como real', NODO().replace('int dato;', 'float dato;'), ['CAMPO_TIPO']),
+
+  // ===== 4. corregir la declaracion
+  nodo(4, 'con la etiqueta', NODO()),
+  nodo(4, 'la declaracion con el error', NODO('TNodo *sig;', 'TNodo', ''), ['CAMPO_ALIAS_ADENTRO']),
+  nodo(4, 'con etiqueta pero con el alias adentro', NODO('TNodo *sig;'), ['CAMPO_ALIAS_ADENTRO']),
+  nodo(4, 'con la etiqueta pero sin el asterisco', NODO('struct nodo sig;'), ['CAMPO_NO_ES_PUNTERO']),
+
+  // ===== 5. cuanto ocupa un nodo
+  nodo(5, 'dieciseis', '0'),
+  nodo(5, 'la suma de los campos', '1', ['OPCION_SUMA']),
+  nodo(5, 'solo la direccion', '2', ['OPCION_SOLO_DIRECCION']),
+
+  // ===== 6. enlazar dos nodos
+  nodo(6, 'guarda la direccion', '2'),
+  nodo(6, 'copia el nodo', '0', ['OPCION_COPIA_EL_NODO']),
+  nodo(6, 'guarda el dato', '1', ['OPCION_GUARDA_EL_DATO']),
+
+  // ===== 7. enlazar tres nodos y recorrerlos
+  nodo(7, 'la referencia', TRES_NODOS(ENLACES + RECORRER)),
+  nodo(7, 'recorriendo con un for', TRES_NODOS(ENLACES + '  for (; p != NULL; p = p->sig) {\n    printf("%d ", p->dato);\n  }\n')),
+  nodo(7, 'sin marcar el ultimo nodo', TRES_NODOS(ENLACES.replace('  c.sig = NULL;\n', '') + RECORRER), ['VARIABLE_SIN_VALOR']),
+  nodo(7, 'los nodos enlazados en otro orden', TRES_NODOS(ENLACES.replace('a.sig = &b;\n  b.sig = &c;', 'a.sig = &c;\n  c.sig = &b;').replace('  c.sig = NULL;', '  b.sig = NULL;') + RECORRER), ['MUESTRA_DISTINTA']),
+  nodo(7, 'sin recorrer', TRES_NODOS(ENLACES), ['MUESTRA_FALTA']),
+
+  // ===== 8. como se marca el final
+  nodo(8, 'un valor que nadie asigno', '0'),
+  nodo(8, 'toma NULL', '1', ['OPCION_SIG_NULL']),
+  nodo(8, 'el ciclo se detiene solo', '2', ['OPCION_SE_DETIENE_SOLO']),
 ];
