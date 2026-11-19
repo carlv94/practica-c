@@ -542,6 +542,7 @@
 }
 .rep-traz-capa {
   display: inline-block;
+  transform-origin: left center;
 }
 .rep-traz-fin {
   position: absolute;
@@ -556,11 +557,15 @@
 }
 .rep-traz-a {
   display: inline-block;
+  transform-origin: center;
 }
+/* El valor emerge en el centro del hueco que deja la llamada; al cerrarse el hueco queda a la izquierda. */
 .rep-traz-b {
   position: absolute;
-  left: 0;
+  left: 50%;
   top: 0;
+  translate: -50% 0;
+  transform-origin: center;
   opacity: 0;
 }
 .rep-traz-pieza {

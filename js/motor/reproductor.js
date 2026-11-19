@@ -344,11 +344,12 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     const { e1, e2, e3 } = estadosDe(r);
     return r.vuelta && r.vuelta.paso <= k ? e3 ?? e2 ?? e1 : e1;
   };
-  // Lo que dura la transicion de una fila al llegar su vuelta: la llamada se reemplaza (1,3 unidades), el valor queda un momento
-  // en su lugar (0,8) y la cuenta se resuelve (0,8).
+  // Lo que dura la transicion de una fila al llegar su vuelta: la llamada se reemplaza por su valor (1,9 unidades: brilla, se
+  // contrae, el valor emerge y lo de la derecha cierra el hueco), el valor queda un momento en su lugar (0,8) y la cuenta se
+  // resuelve (0,9: se contrae y emerge el resultado).
   const duracionDeFila = (r, u) => {
     const { e2, e3 } = estadosDe(r);
-    return (e2 ? 1.3 * u : 0) + (e2 && e3 ? 0.8 * u : 0) + (e3 ? 0.8 * u : 0);
+    return (e2 ? 1.9 * u : 0) + (e2 && e3 ? 0.8 * u : 0) + (e3 ? 0.9 * u : 0);
   };
   // Un fundido es corto, pero no tanto que no se vea con las velocidades rapidas.
   const fundidoDe = (u) => Math.max(0.4 * u, 150);
@@ -402,8 +403,16 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     const con = { transform: 'scale(' + escala + ')', filter: 'drop-shadow(0 0 5px ' + halo + ')', opacity: 1 };
     el.animate([{ ...sin, opacity: 0 }, { ...con, offset: 0.3 }, { ...con, offset: 0.6 }, { ...sin, opacity: 1 }], { duration: duracion, delay: retraso, easing: 'ease-in-out', fill: 'backwards' });
   };
-  // La cuenta de una fila que cambia: la llamada brilla (y el valor de la fila de la que sale, a la vez), se reemplaza por su
-  // valor y lo de la derecha se corre de a poco; despues la cuenta se resuelve. Se arma con la tabla ya en la pagina para medir.
+  // Lo que se resuelve se contrae hasta desaparecer y de ahi emerge el valor nuevo (crece de mas y se acomoda).
+  const contraer = (el, retraso, duracion) => el.animate([{ transform: 'scale(1)', opacity: 1 }, { transform: 'scale(0)', opacity: 0 }], { duration: duracion, delay: retraso, easing: 'ease-in', fill: 'forwards' });
+  const emerger = (el, retraso, duracion) =>
+    el.animate(
+      [{ transform: 'scale(0)', opacity: 0 }, { transform: 'scale(1.2)', opacity: 1, offset: 0.6 }, { transform: 'scale(1)', opacity: 1 }],
+      { duration: duracion, delay: retraso, easing: 'ease-out', fill: 'forwards' }
+    );
+  // La cuenta de una fila que cambia: la llamada brilla (y el valor de la fila de la que sale, a la vez), se contrae hasta
+  // desaparecer y en su lugar emerge el valor, y lo de la derecha se corre para cerrar el hueco; despues la cuenta entera se
+  // contrae hacia su borde izquierdo y emerge el resultado. Se arma con la tabla ya en la pagina para medir.
   const transformar = (td, r, u, celdasDeValor) => {
     const { e2, e3 } = estadosDe(r);
     const contenedor = nodo('span', 'rep-traz-cuenta');
@@ -432,18 +441,17 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
         const nuevo = c.b.offsetWidth;
         c.w.style.width = ancho + 'px';
         resplandor(c.a, 0, 0.6 * u);
-        c.a.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 0.3 * u, delay: 0.6 * u, fill: 'forwards' });
-        c.b.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 0.3 * u, delay: 0.6 * u, fill: 'forwards' });
-        c.w.animate([{ width: ancho + 'px' }, { width: nuevo + 'px' }], { duration: 0.7 * u, delay: 0.6 * u, easing: 'ease-in-out', fill: 'forwards' });
+        contraer(c.a, 0.6 * u, 0.4 * u); // la llamada se contrae sobre su centro...
+        emerger(c.b, 1.0 * u, 0.5 * u); // ...y de ahi emerge el valor (centrado en el hueco)
+        c.w.animate([{ width: ancho + 'px' }, { width: nuevo + 'px' }], { duration: 0.6 * u, delay: 1.3 * u, easing: 'ease-in-out', fill: 'forwards' });
         resplandor(celdasDeValor.get(c.id), 0, 0.8 * u);
       }
-      t = 1.3 * u;
+      t = 1.9 * u;
     }
     if (capaB) {
       if (e2) t += 0.8 * u;
-      capaA.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 0.4 * u, delay: t, fill: 'forwards' });
-      capaB.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 0.4 * u, delay: t, fill: 'forwards' });
-      resplandor(capaB, t + 0.2 * u, 0.6 * u);
+      contraer(capaA, t, 0.4 * u); // la cuenta se contrae hacia su borde izquierdo...
+      emerger(capaB, t + 0.4 * u, 0.5 * u); // ...y de ahi emerge el resultado
     }
   };
   // Los espacios de adentro de una llamada no se parten: quitar(213, 1) no pasa a dos renglones.
@@ -530,11 +538,17 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     const celdasDeLlamada = new Map();
     const celdasQueAparecen = []; // [celda, retraso]: lo que aparece de golpe y entra con un fundido
     const bases = []; // las llamadas que llegan a su caso base justo ahora
+    const filasNuevas = new Map(); // las filas de las llamadas que se abren justo ahora, todavia ocultas
     const porTransformar = [];
     const conMovimiento = animar && u > 0 && !sinMovimiento();
     const d = fundidoDe(u);
     for (const r of visibles) {
       const fila = cuerpoTabla.insertRow();
+      // Una fila nueva se agrega en el momento en que aparece su texto (ver mostrarFila), no antes.
+      if (conMovimiento && r.desde === k) {
+        fila.style.display = 'none';
+        filasNuevas.set(r.id, fila);
+      }
       if (r === actual) fila.classList.add('rep-traz-actual');
       else if (r.hasta != null && k >= r.hasta) fila.classList.add('rep-traz-cerrada');
       const celda = (contenido, nuevo = false, sangria = 0) => {
@@ -559,7 +573,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
       const sinLlamadas = r.ida ? llamadasDe(r).length === 0 : true;
       if (unaColumna) {
         const llega = r.vuelta && r.vuelta.paso === k && r.ida && r.ida.paso <= k;
-        const transiciona = conMovimiento && llega && duracionDeFila(r, u) > 0;
+        const transiciona = conMovimiento && llega && r.base !== k && duracionDeFila(r, u) > 0;
         const vueltaHecha = r.vuelta && r.vuelta.paso <= k;
         const contenido = !r.ida || r.ida.paso > k ? '' : vueltaHecha ? textoQuieto(r, k) : idaConPiezas(r);
         const nuevo = r.base !== k && (Boolean(r.ida && r.ida.paso === k && sinLlamadas) || (llega && !transiciona));
@@ -583,6 +597,17 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
       if (vuelta && r.vuelta.paso === k && r.base !== k) celdasQueAparecen.push([tdVuelta, 0]);
     }
     trazado.replaceChildren(tabla);
+    // La fila de una llamada que se abre entra (con un fundido) cuando empieza a aparecer su texto.
+    const mostrarFila = (id, retraso, duracion) => {
+      const fila = filasNuevas.get(id);
+      if (!fila) return;
+      const entrar = () => {
+        fila.style.display = '';
+        if (fila.animate) fila.animate([{ opacity: 0 }, { opacity: 1 }], { duration: duracion, easing: 'ease-in-out' });
+      };
+      if (retraso > 0) tiempo.esperar(entrar, retraso);
+      else entrar();
+    };
     if (conMovimiento) {
       for (const r of visibles) {
         if (r.desde !== k) continue;
@@ -590,6 +615,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
         const tdPadre = padre && padre.ida && padre.ida.paso <= k ? celdasDeIda.get(padre.id) : null;
         if (!tdPadre) {
           aparecerCelda(celdasDeLlamada.get(r.id), 0, d);
+          mostrarFila(r.id, 0, d);
           continue;
         }
         // La ida de quien la hace aparece sola (si recien se escribe), hay un respiro, la llamada brilla y, en lo mas alto del brillo,
@@ -601,6 +627,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
         }
         resplandor(tdPadre.querySelector('[data-id="' + r.id + '"]'), t, 2 * d, 1.12);
         resplandorQueAparece(celdasDeLlamada.get(r.id).firstElementChild, t, 2 * d, 1.12);
+        mostrarFila(r.id, t, 0.6 * d); // la fila entra a la vez que su texto (que llega a verse del todo a los 0,6 fundidos)
       }
       // El caso base: el resto de la tabla se atenua; el valor de la ida y la etiqueta rebotan a la vez (con oscilaciones cada vez
       // menores); la tabla vuelve a la normalidad y, despues de una espera, rebota la vuelta.
