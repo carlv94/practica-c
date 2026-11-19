@@ -806,7 +806,7 @@ class Interprete {
     if (rv.t.k === 'struct') throw new ErrorDelMotor('ASIGNACION_INVALIDA', 'una estructura como condicion');
     const valor = rv.t.k === 'ptr' ? rv.v !== null : rv.v !== 0;
     // Para la traza: la condicion que se acaba de evaluar (la de mas afuera) y que dio.
-    if (afuera) this.condicionHecha = { texto: textoPregunta, valor };
+    if (afuera) this.condicionHecha = { texto: textoPregunta, valor, ...(preguntaHecha ? { celdas: preguntaHecha.celdas } : {}) };
     return valor;
   }
 

@@ -22,8 +22,8 @@
 //   lectura:   (solo con la opcion "preguntas", si la sentencia anterior fue un scanf) { desde, hasta, celdas, agotada }: el trozo de
 //              la entrada que se leyo (posiciones en el texto), las casillas que recibieron los valores y si la entrada ya
 //              no tenia nada que leer
-//   condicion: (si la sentencia anterior evaluo una condicion) { texto, valor }: la condicion tal como esta escrita y
-//              si dio verdadero o falso
+//   condicion: (si la sentencia anterior evaluo una condicion) { texto, valor, celdas }: la condicion tal como esta escrita,
+//              si dio verdadero o falso y (con la opcion "preguntas") las casillas que se leyeron para responderla
 //
 // Cada variable o bloque es { id, nombre, tipo, dir, tam, vivo, valor }. Un valor es:
 //   { k: 'num', v, t }                un numero (t: el tipo)

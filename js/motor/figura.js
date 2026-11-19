@@ -467,8 +467,8 @@ export class Figura {
     this.enfoquePregunta = enfoque.length ? new Set(enfoque.map((e) => clave(e.a, e.ruta))) : null;
     const dur = this.mostrarBase(foto, anterior, opciones);
     // Si la expansion de una caja va primero, lo fijo lo pone la segunda parte del paso.
-    const extra = this.expansionPendiente ? 0 : this.fijarEstado(foto, opciones.animar ? dur : 0, Boolean(opciones.animar && opciones.flujo), opciones.duracion ?? 450);
-    return dur + (extra || 0);
+    if (!this.expansionPendiente) this.fijarEstado(foto, opciones.animar ? dur : 0, Boolean(opciones.animar && opciones.flujo));
+    return dur;
   }
 
   // Lo que dura mostrar "foto" desde "intermedia" (que se alcanza desde "anterior"), medido en una figura de prueba
@@ -1081,6 +1081,12 @@ export class Figura {
       const casilla = ancla ? this.absolutoDe(previa, ancla) : null;
       if (casilla) pulso(casilla);
     };
+    // Los valores que se leen para responder una condicion resplandecen primero (los punteros a un bloque no tienen texto: no
+    // se ven); despues viene el recorrido por las flechas y, al final, el resultado.
+    if (condicion && condicion.celdas && condicion.celdas.length && this.ayudas.brilloCondiciones) {
+      const claves = condicion.celdas.map((c) => clave(c.a, c.ruta));
+      if (this.brillar({ svg: clon }, claves, t, 0.8 * u)) t += 0.8 * u;
+    }
     // Los argumentos de una llamada (mas de tres: todos a la vez): cada resalte empieza donde empezo el primero.
     let juntoDesde = null;
     let juntoFin = 0;
@@ -1270,11 +1276,10 @@ export class Figura {
   // Lo que se ve fijo mientras se esta en este paso: la pregunta de una condicion (el rotulo y las casillas que se
   // leen, con borde discontinuo; aparecen cuando termina la animacion del paso, "retraso") o, en el paso siguiente,
   // el rotulo con la respuesta.
-  fijarEstado(foto, retraso, adelante = false, unidad = 450) {
+  fijarEstado(foto, retraso, adelante = false) {
     this.nodoFijo = null;
     const escena = this.escena;
-    if (!escena || (!foto.pregunta && !foto.condicion)) return 0;
-    let brillo = 0; // lo que dura el brillo de los valores que se leen (el paso lo espera)
+    if (!escena || (!foto.pregunta && !foto.condicion)) return;
     const aparecer = (e) => {
       if (retraso > 0 && e.animate) {
         e.style.opacity = '0';
@@ -1300,14 +1305,11 @@ export class Figura {
         const marco = el('rect', { x: caja.x - 3, y: caja.y - 3, width: caja.w + 6, height: caja.h + 6, rx: 4, class: 'rep-acceso rep-consulta' });
         escena.capaResalte.append(marco);
         aparecer(marco);
-        // Los valores que se leen resplandecen cuando aparece la pregunta (los punteros a un bloque no tienen texto: no se ven).
-        if (adelante && this.ayudas.brilloCondiciones && this.brillar(escena, [clave(c.a, c.ruta)], retraso, 0.8 * unidad)) brillo = 0.8 * unidad;
       }
     } else nodo = this.crearRotulo(foto.condicion.texto, foto.condicion.valor).caja;
     this.nodoFijo = nodo;
     // Si el paso muestra todavia la figura anterior (el recorrido previo), el rotulo se pone cuando termina.
     if (!this.flujoActivo) this.ponerRotulo(nodo);
-    return brillo;
   }
 
   // El rotulo de una condicion llama la atencion: llega desde la izquierda como un resorte (se pasa, vuelve, rebota dos veces y
