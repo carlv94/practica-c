@@ -467,8 +467,8 @@ export class Figura {
     this.enfoquePregunta = enfoque.length ? new Set(enfoque.map((e) => clave(e.a, e.ruta))) : null;
     const dur = this.mostrarBase(foto, anterior, opciones);
     // Si la expansion de una caja va primero, lo fijo lo pone la segunda parte del paso.
-    if (!this.expansionPendiente) this.fijarEstado(foto, opciones.animar ? dur : 0, Boolean(opciones.animar && opciones.flujo), opciones.duracion ?? 450);
-    return dur;
+    const extra = this.expansionPendiente ? 0 : this.fijarEstado(foto, opciones.animar ? dur : 0, Boolean(opciones.animar && opciones.flujo), opciones.duracion ?? 450);
+    return dur + (extra || 0);
   }
 
   // Lo que dura mostrar "foto" desde "intermedia" (que se alcanza desde "anterior"), medido en una figura de prueba
@@ -813,18 +813,21 @@ export class Figura {
   // en el origen y en el destino a la vez. El resplandor se ve poco sobre el fondo ambar de lo que cambio; el cambio de
   // tamaño se nota igual (tambien con la figura chica o sin distinguir colores).
   brillar(escena, claves, retraso, duracion) {
-    if (!escena.svg || !duracion || sinMovimiento()) return;
+    let animados = 0;
+    if (!escena.svg || !duracion || sinMovimiento()) return animados;
     for (const k of claves) {
       for (const t of escena.svg.querySelectorAll(`text[data-k="${k}"]`)) {
         if (!t.animate) continue;
+        animados++;
         t.style.transformBox = 'fill-box';
         t.style.transformOrigin = 'center';
-        const halo = getComputedStyle(t).getPropertyValue('--acento').trim() || '#3b82f6';
+        const halo = getComputedStyle(this.contenedor).getPropertyValue('--acento').trim() || '#3b82f6';
         const sin = { transform: 'scale(1)', filter: 'drop-shadow(0 0 0 transparent)' };
         const con = { transform: 'scale(1.4)', filter: `drop-shadow(0 0 5px ${halo})` };
         t.animate([{ ...sin }, { ...con, offset: 0.3 }, { ...con, offset: 0.6 }, { ...sin }], { duration: duracion, delay: retraso, easing: 'ease-in-out' });
       }
     }
+    return animados;
   }
 
   // El trazo de una flecha que parpadea (como cuando un acceso la recorre).
@@ -1162,7 +1165,10 @@ export class Figura {
         continue;
       }
       resaltadas.add(clave(h.a.a, h.a.ruta));
+      // En una condicion, el valor de la casilla a la que se llego siguiendo un puntero (p->dato, *p) tambien resplandece.
+      const brilla = condicion && h.de && this.ayudas.brilloCondiciones ? this.brillar({ svg: clon }, [clave(h.a.a, h.a.ruta)], t, 0.8 * u) : 0;
       pulso(casilla, Boolean(h.cond));
+      if (brilla) t += 0.8 * u - dResalte;
     }
     if (juntoDesde !== null) t = Math.max(juntoFin, t);
     resaltarDestino();
@@ -1267,7 +1273,8 @@ export class Figura {
   fijarEstado(foto, retraso, adelante = false, unidad = 450) {
     this.nodoFijo = null;
     const escena = this.escena;
-    if (!escena || (!foto.pregunta && !foto.condicion)) return;
+    if (!escena || (!foto.pregunta && !foto.condicion)) return 0;
+    let brillo = 0; // lo que dura el brillo de los valores que se leen (el paso lo espera)
     const aparecer = (e) => {
       if (retraso > 0 && e.animate) {
         e.style.opacity = '0';
@@ -1294,12 +1301,13 @@ export class Figura {
         escena.capaResalte.append(marco);
         aparecer(marco);
         // Los valores que se leen resplandecen cuando aparece la pregunta (los punteros a un bloque no tienen texto: no se ven).
-        if (adelante && this.ayudas.brilloCondiciones) this.brillar(escena, [clave(c.a, c.ruta)], retraso, 0.8 * unidad);
+        if (adelante && this.ayudas.brilloCondiciones && this.brillar(escena, [clave(c.a, c.ruta)], retraso, 0.8 * unidad)) brillo = 0.8 * unidad;
       }
     } else nodo = this.crearRotulo(foto.condicion.texto, foto.condicion.valor).caja;
     this.nodoFijo = nodo;
     // Si el paso muestra todavia la figura anterior (el recorrido previo), el rotulo se pone cuando termina.
     if (!this.flujoActivo) this.ponerRotulo(nodo);
+    return brillo;
   }
 
   // El rotulo de una condicion llama la atencion: llega desde la izquierda como un resorte (se pasa, vuelve, rebota dos veces y
