@@ -49,6 +49,9 @@ function textoDeValor(rv) {
   return t === null ? '' : t.replace(/^\((-?\d+(?:\.\d+)?)\)$/, '$1');
 }
 
+// Las sentencias en las que puede estar una llamada (ver sentenciaDe).
+const SENTENCIAS = new Set(['declaration', 'expression_statement', 'return_statement', 'if_statement', 'while_statement', 'do_statement', 'for_statement', 'switch_statement']);
+
 class Retorno {
   constructor(valor) {
     this.valor = valor;
@@ -1294,6 +1297,102 @@ class Interprete {
     if (!marco.hechas) marco.hechas = new Map();
     marco.hechas.set(n.id, { registro, valor: textoDeValor(resultado) });
     if (registro.llamador) this.anotarLlamador(registro, n, marco);
+    if (marco.registro) this.anotarLineaDeLlamada(marco, n);
+  }
+
+  // La sentencia en la que esta una llamada (declaration, expression_statement, if...).
+  sentenciaDe(n) {
+    for (let p = n.parent; p; p = p.parent) if (SENTENCIAS.has(p.type)) return p;
+    return null;
+  }
+
+  contieneLlamadaHecha(n, hechas) {
+    return (n.type === 'call_expression' && hechas.has(n.id)) || n.namedChildren.some((h) => this.contieneLlamadaHecha(h, hechas));
+  }
+
+  // La linea que hace la llamada, para la ida y la vuelta de una funcion recursiva cuya llamada no esta en el return (int resto =
+  // f(n / 10);, a = f(x);, if (f(x) > 3)): { texto, partes } con las llamadas (ida) o con lo que devolvieron (vuelta); null si no.
+  lineaDeLlamada(st, hechas, modo) {
+    const con = (prefijo, s) => ({ texto: prefijo + s.texto, partes: [prefijo, ...s.partes] });
+    switch (st.type) {
+      case 'declaration': {
+        for (const d of st.namedChildren) {
+          if (d.type !== 'init_declarator') continue;
+          const valor = d.childForFieldName('value');
+          if (valor && this.contieneLlamadaHecha(valor, hechas)) return con(d.childForFieldName('declarator').text + ' = ', this.sustituir(valor, hechas, modo));
+        }
+        return null;
+      }
+      case 'expression_statement': {
+        const e = st.namedChildren.find((h) => h.type !== 'comment');
+        if (!e) return null;
+        if (e.type === 'assignment_expression') {
+          const derecha = e.childForFieldName('right');
+          if (!this.contieneLlamadaHecha(derecha, hechas)) return null;
+          return con(e.childForFieldName('left').text + ' ' + e.childForFieldName('operator').text + ' ', this.sustituir(derecha, hechas, modo));
+        }
+        return this.contieneLlamadaHecha(e, hechas) ? this.sustituir(e, hechas, modo) : null;
+      }
+      case 'if_statement':
+      case 'while_statement':
+      case 'do_statement':
+      case 'switch_statement': {
+        const condicion = st.childForFieldName('condition');
+        if (!condicion || !this.contieneLlamadaHecha(condicion, hechas)) return null;
+        return con(st.type.replace('_statement', '') + ' ', this.sustituir(condicion, hechas, modo));
+      }
+      default:
+        return null;
+    }
+  }
+
+  // Una llamada que no esta en un return (esta en una declaracion, una asignacion, una condicion...): la ida de la fila pasa a ser
+  // esa linea (una por sentencia, cada una en su renglon) y la vuelta, la misma con lo que devolvieron las llamadas; lo que devuelve
+  // la funcion (el valor final) se agrega en su return (ver el return_statement).
+  anotarLineaDeLlamada(marco, n) {
+    if (marco.hechas.get(n.id).valor === '') return; // una funcion sin valor: nada que mostrar
+    const st = this.sentenciaDe(n);
+    if (!st || st.type === 'return_statement') return;
+    if (!marco.lineas) marco.lineas = new Map();
+    marco.lineas.set(st.id, st);
+    marco.pasoCuenta = this.traza.length;
+    this.armarFilaConLineas(marco, null);
+  }
+
+  // "retorno": null (todavia no devolvio) o { expr, devuelto, conLlamada, paso }: el return de la funcion, con su valor y la
+  // fotografia desde la que se conoce; si el return tambien llama a la funcion, es una linea mas.
+  armarFilaConLineas(marco, retorno) {
+    const r = marco.registro;
+    const idas = [];
+    const vueltas = [];
+    for (const st of marco.lineas.values()) {
+      const ida = this.lineaDeLlamada(st, marco.hechas, 'ida');
+      if (!ida) continue;
+      idas.push(ida);
+      vueltas.push(this.lineaDeLlamada(st, marco.hechas, 'vuelta'));
+    }
+    if (retorno && retorno.conLlamada) {
+      const ida = this.sustituir(retorno.expr, marco.hechas, 'ida');
+      idas.push({ texto: 'return ' + ida.texto, partes: ['return ', ...ida.partes] });
+      vueltas.push({ texto: 'return ' + this.sustituir(retorno.expr, marco.hechas, 'vuelta').texto });
+    }
+    if (!idas.length) return;
+    const partes = [];
+    idas.forEach((l, i) => {
+      if (i) partes.push('\n');
+      partes.push(...l.partes);
+    });
+    const desde = Math.min(...partes.filter((p) => typeof p === 'object').map((p) => this.registroLlamadas[p.id].desde));
+    // La vuelta se conoce cuando vuelve la ultima llamada; el valor final, en el return (si no llama, en su propia fotografia).
+    const pasoCuenta = retorno ? (retorno.conLlamada ? retorno.paso : Math.min(marco.pasoCuenta ?? retorno.paso, retorno.paso)) : marco.pasoCuenta;
+    r.ida = { texto: idas.map((l) => l.texto).join('\n'), paso: desde, partes };
+    r.vuelta = {
+      texto: vueltas.map((l) => l.texto).join('\n'),
+      valor: retorno ? textoDeValor(retorno.devuelto) : null,
+      paso: pasoCuenta,
+      pasoValor: retorno ? retorno.paso : null,
+      flecha: !(retorno && retorno.conLlamada),
+    };
   }
 
   // La fila de quien hace la llamada de mas arriba: su ida es la llamada (o, si esta dentro de una cuenta algebraica, la cuenta
@@ -1457,11 +1556,11 @@ class Interprete {
     const hechas = marco.hechas || new Map();
     const ida = this.sustituir(expr, hechas, 'ida');
     const vuelta = this.sustituir(expr, hechas, 'vuelta');
-    // La ida se conoce cuando empieza la primera llamada que hace; sin llamadas, en la fotografia del return.
-    const primera = ida.registros.length ? Math.min(...ida.registros.map((x) => x.desde)) : this.traza.length - 1;
+    // La ida se conoce cuando empieza la primera llamada que hace; sin llamadas, en la fotografia de retorno ("por devolver").
+    const primera = ida.registros.length ? Math.min(...ida.registros.map((x) => x.desde)) : this.traza.length;
     r.ida = { texto: ida.texto, paso: primera, partes: ida.partes };
     // La vuelta, cuando la caja esta por cerrarse (la fotografia de retorno que se saca a continuacion).
-    r.vuelta = { texto: vuelta.texto, valor: textoDeValor(devuelto), paso: conLlamada ? this.traza.length : this.traza.length - 1 };
+    r.vuelta = { texto: vuelta.texto, valor: textoDeValor(devuelto), paso: this.traza.length };
   }
 
   ejecutarFuncion(f, args, origenes = [], registro = null) {
@@ -1574,10 +1673,17 @@ class Interprete {
         // Lo que devuelve se escribe con el tipo de retorno de la funcion (un enumerado: FALSO y no 0, aunque la cuenta sea de int).
         const tipoDeRetorno = this.funciones.get(nombre) && this.funciones.get(nombre).tipoRetorno;
         const escrito = devuelto && tipoDeRetorno && tipoDeRetorno.enumerados && typeof devuelto.v === 'number' ? { t: tipoDeRetorno, v: devuelto.v } : devuelto;
+        // Toda llamada de una funcion recursiva que devuelve un valor termina con un paso "por devolver X" (la fotografia de retorno,
+        // con el cursor sobre el return): ahi se conoce lo que devuelve y, si es el caso base, se anuncia.
+        const conRetorno = Boolean(devuelto) && (conLlamada || Boolean(actual.registro));
+        const pasoRetorno = conRetorno ? this.traza.length : fotoDelReturn;
         // Un return de una llamada registrada que no hizo ninguna otra llamada a la funcion es su caso base.
-        if (actual.registro && actual.registro.base === null && !(actual.hechas && actual.hechas.size)) actual.registro.base = fotoDelReturn;
-        if (devuelto && actual.registro && v && this.opciones.traza) this.anotarRetorno(actual, v, escrito, conLlamada);
-        if (conLlamada) this.fotoDeRetorno(n, escrito);
+        if (actual.registro && actual.registro.base === null && !(actual.hechas && actual.hechas.size)) actual.registro.base = pasoRetorno;
+        if (devuelto && actual.registro && v && this.opciones.traza) {
+          if (actual.lineas && actual.lineas.size) this.armarFilaConLineas(actual, { expr: v, devuelto: escrito, conLlamada, paso: pasoRetorno });
+          else this.anotarRetorno(actual, v, escrito, conLlamada);
+        }
+        if (conRetorno) this.fotoDeRetorno(n, escrito);
         throw new Retorno(devuelto);
       }
       case 'break_statement':

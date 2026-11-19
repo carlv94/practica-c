@@ -355,7 +355,7 @@ int main() {
     },
   },
   {
-    nombre: 'una recursion saca una fotografia por cada caja que se cierra con un valor calculado con otra llamada; la base y las funciones comunes no',
+    nombre: 'una recursion saca una fotografia "por devolver" por cada llamada que devuelve un valor (tambien la base); las funciones comunes no',
     codigo: String.raw`#include <stdio.h>
 int doble(int x) {
   return x * 2;
@@ -378,14 +378,14 @@ int main() {
       salida: '232',
       traza: (traza) => {
         const con = traza.filter((f) => f.retorno);
-        // quitar(2132), quitar(213), quitar(21), quitar(2): cuatro cajas que devuelven algo calculado con otra llamada
-        if (con.length !== 4) return 'tenia que haber 4 retornos y hay ' + con.length;
+        // quitar(0) (la base), quitar(2), quitar(21), quitar(213), quitar(2132): cinco llamadas que devuelven un valor
+        if (con.length !== 5) return 'tenia que haber 5 retornos y hay ' + con.length;
         const valores = con.map((f) => f.retorno.texto).join();
-        // el primero en cerrarse es el de quitar(2), que devuelve 2; el ultimo, el de quitar(2132), que devuelve 232
-        if (valores !== '2,2,23,232') return 'los valores de los retornos tenian que ser 2,2,23,232 y son ' + valores;
+        // el primero en cerrarse es el de la base, que devuelve 0; el ultimo, el de quitar(2132), que devuelve 232
+        if (valores !== '0,2,2,23,232') return 'los valores de los retornos tenian que ser 0,2,2,23,232 y son ' + valores;
         // en cada una, la caja que esta por cerrarse es la de arriba y las de abajo siguen
         const hondos = con.map((f) => f.marcos.length).join();
-        if (hondos !== '5,4,3,2') return 'la pila de cada retorno tenia que tener 5,4,3,2 cajas y tiene ' + hondos;
+        if (hondos !== '6,5,4,3,2') return 'la pila de cada retorno tenia que tener 6,5,4,3,2 cajas y tiene ' + hondos;
         return null;
       },
     },
@@ -470,13 +470,90 @@ int main() {
         const reales = r.llamadas.map((l) => `${l.vuelta.valor}`);
         if (reales.join() !== 'VERDADERO,VERDADERO,VERDADERO') return 'los valores de las vueltas tenian que ser VERDADERO y son ' + reales + ' (' + filas.join(' // ') + ')';
         const retornos = traza.filter((f) => f.retorno).map((f) => f.retorno.texto);
-        if (retornos.join() !== 'VERDADERO,VERDADERO') return 'los carteles de retorno tenian que ser VERDADERO,VERDADERO y son ' + retornos;
+        if (retornos.join() !== 'VERDADERO,VERDADERO,VERDADERO') return 'los carteles de retorno tenian que ser VERDADERO,VERDADERO,VERDADERO y son ' + retornos;
         // la variable de tipo enumerado lleva el nombre del valor
         const fin = traza.filter((f) => f.marcos.length === 1 && f.marcos[0].variables.some((v) => v.nombre === 'r' && v.valor.k === 'num'));
         const ultima = fin[fin.length - 1];
         const valorDeR = ultima && ultima.marcos[0].variables.find((v) => v.nombre === 'r').valor;
         if (!valorDeR || valorDeR.v !== 1 || valorDeR.enum !== 'VERDADERO') return 'la variable r tenia que valer 1 con el nombre VERDADERO y es ' + JSON.stringify(valorDeR);
         void esperadas;
+        return null;
+      },
+    },
+  },
+  {
+    nombre: 'una recursion que llama en una linea y devuelve despues: la ida es la linea, la vuelta la linea con el valor y lo que devuelve va aparte',
+    codigo: String.raw`#include <stdio.h>
+int mayorDigito(int n) {
+  if (n < 10) {
+    return n;
+  }
+  int resto = mayorDigito(n / 10);
+  if (n % 10 > resto) {
+    return n % 10;
+  }
+  return resto;
+}
+int main() {
+  printf("%d\n", mayorDigito(4172));
+  return 0;
+}`,
+    espera: {
+      salida: '7\n',
+      traza: (traza, r) => {
+        const filas = r.llamadas.map((l) => `${l.llamada} | ${l.ida.texto} | ${l.vuelta.texto} | ${l.vuelta.valor} ${l.vuelta.flecha ? '(→)' : ''}`);
+        const esperadas = [
+          'mayorDigito(4172) | resto = mayorDigito(417) | resto = 7 | 7 (→)',
+          'mayorDigito(417) | resto = mayorDigito(41) | resto = 4 | 7 (→)',
+          'mayorDigito(41) | resto = mayorDigito(4) | resto = 4 | 4 (→)',
+          'mayorDigito(4) | 4 | 4 | 4 ',
+        ];
+        if (filas.join('\n') !== esperadas.join('\n')) return 'las filas tenian que ser\n' + esperadas.join('\n') + '\ny son\n' + filas.join('\n');
+        const l = r.llamadas;
+        // la vuelta de la linea se conoce cuando vuelve la llamada de abajo; lo que devuelve, en el return (mas tarde)
+        for (const x of l.slice(0, 3)) {
+          if (!(x.vuelta.paso < x.vuelta.pasoValor)) return `en ${x.llamada} la vuelta (${x.vuelta.paso}) tenia que conocerse antes que lo que devuelve (${x.vuelta.pasoValor})`;
+        }
+        if (l[0].vuelta.paso !== l[1].hasta) return 'la vuelta de la primera tenia que conocerse cuando termina la segunda';
+        if (traza[l[1].vuelta.pasoValor].linea !== 8) return 'lo que devuelve mayorDigito(417) tenia que conocerse en la linea 8 (return n % 10) y es la ' + traza[l[1].vuelta.pasoValor].linea;
+        if (traza[l[2].vuelta.pasoValor].linea !== 10) return 'lo que devuelve mayorDigito(41) tenia que conocerse en la linea 10 (return resto) y es la ' + traza[l[2].vuelta.pasoValor].linea;
+        return null;
+      },
+    },
+  },
+  {
+    nombre: 'una recursion con varias lineas que llaman: cada sentencia en su renglon, sin tocar las funciones void',
+    codigo: String.raw`#include <stdio.h>
+int fib(int n) {
+  if (n < 2) {
+    return n;
+  }
+  int a = fib(n - 1);
+  int b = fib(n - 2);
+  return a + b;
+}
+void bajar(int n) {
+  if (n == 0) {
+    return;
+  }
+  bajar(n - 1);
+}
+int main() {
+  printf("%d\n", fib(3));
+  bajar(2);
+  return 0;
+}`,
+    espera: {
+      salida: '2\n',
+      traza: (traza, r) => {
+        const fibs = r.llamadas.filter((x) => x.funcion === 'fib');
+        const primera = fibs[0];
+        if (primera.ida.texto !== 'a = fib(2)\nb = fib(1)') return 'la ida de fib(3) tenia que ser dos renglones y es ' + JSON.stringify(primera.ida.texto);
+        if (primera.vuelta.texto !== 'a = 1\nb = 1') return 'la vuelta de fib(3) tenia que ser "a = 1\\nb = 1" y es ' + JSON.stringify(primera.vuelta.texto);
+        if (primera.vuelta.valor !== '2') return 'fib(3) devuelve 2 y la vuelta dice ' + primera.vuelta.valor;
+        // una funcion void no tiene ida ni vuelta
+        const bajan = r.llamadas.filter((x) => x.funcion === 'bajar');
+        if (bajan.some((x) => x.ida || x.vuelta)) return 'bajar (void) no tiene ida ni vuelta';
         return null;
       },
     },

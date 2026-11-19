@@ -347,8 +347,21 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     partesDe(r)
       .map((p) => (typeof p === 'string' ? p : conValor ? p.valor : p.llamada))
       .join('')
-      .replace(/\s+/g, ' ')
+      .replace(/[ \t]+/g, ' ')
+      .replace(/ ?\n ?/g, '\n')
       .trim();
+  // Los pasos en que se conoce cada cosa de la vuelta: cuando vuelven las llamadas (p1) y cuando se sabe lo que devuelve la
+  // llamada (p3: el mismo paso si el return es la llamada; mas tarde, en su return, si la llamada estaba en otra linea).
+  const pasosDe = (r) => ({ p1: r.vuelta.paso, p3: r.vuelta.pasoValor ?? (r.vuelta.valor === null ? Infinity : r.vuelta.paso) });
+  // Que llega a la vuelta en el paso k: 'todo' (las llamadas y el valor a la vez), 'cuenta' (solo las llamadas se reemplazan),
+  // 'resultado' (solo el valor que devuelve) o null.
+  const faseDe = (r, k) => {
+    const { p1, p3 } = pasosDe(r);
+    if (k === p1 && k === p3) return 'todo';
+    if (k === p1) return 'cuenta';
+    if (k === p3) return 'resultado';
+    return null;
+  };
   // Los tres estados de la cuenta de una fila: la ida (con la llamada), la llamada reemplazada por su valor y el resultado.
   // Un estado que no cambia nada (la llamada sola, o un caso base) es null.
   const estadosDe = (r) => {
@@ -361,22 +374,29 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   const textoQuieto = (r, k) => {
     if (!r.ida || r.ida.paso > k) return '';
     const { e1, e2, e3 } = estadosDe(r);
-    return r.vuelta && r.vuelta.paso <= k ? e3 ?? e2 ?? e1 : e1;
+    if (!r.vuelta) return e1;
+    const { p1, p3 } = pasosDe(r);
+    if (k >= p3) return e3 ?? e2 ?? e1;
+    return k >= p1 ? e2 ?? e1 : e1;
   };
   // Lo que dura la transicion de una fila al llegar su vuelta: la llamada se reemplaza por su valor (1,9 unidades: brilla, se
   // contrae, el valor emerge y lo de la derecha cierra el hueco), el valor queda un momento en su lugar (0,8) y la cuenta se
   // resuelve (0,9: se contrae y emerge el resultado).
-  const duracionDeFila = (r, u) => {
+  const duracionDeFila = (r, u, fase = 'todo') => {
     const { e2, e3 } = estadosDe(r);
-    return (e2 ? 1.9 * u : 0) + (e2 && e3 ? 0.8 * u : 0) + (e3 ? 0.9 * u : 0);
+    const cuenta = fase !== 'resultado' && e2 ? 1.9 * u : 0;
+    const resultado = fase !== 'cuenta' && e3 ? 0.9 * u : 0;
+    return cuenta + (cuenta && resultado ? 0.8 * u : 0) + resultado;
   };
   // Un fundido es corto, pero no tanto que no se vea con las velocidades rapidas.
   const fundidoDe = (u) => Math.max(0.4 * u, 150);
   // Lo que dura la vuelta en tres columnas: aparece la misma expresion de la ida (un fundido), la llamada se reemplaza por su valor
   // (1,9 unidades), una pausa (0,3) y entra el "= valor" (0,5). Sin llamada que reemplazar, solo el fundido.
-  const duracionVuelta3 = (r, u, d) => {
-    if (estadosDe(r).e2 === null) return d;
-    return d + 1.9 * u + (r.vuelta.texto !== r.vuelta.valor ? 0.8 * u : 0);
+  const duracionVuelta3 = (r, u, d, fase = 'todo') => {
+    if (fase === 'resultado') return 1.5 * d; // solo entra lo que devuelve, con un rebote
+    const base = estadosDe(r).e2 === null ? d : d + 1.9 * u;
+    const hayIgual = fase === 'todo' && r.vuelta.valor !== null && (r.vuelta.flecha || r.vuelta.texto !== r.vuelta.valor);
+    return base + (hayIgual ? 0.8 * u : 0);
   };
   // La fila que hace cada llamada (la que la tiene en su ida): de ahi sale la llamada, y la resaltamos al abrirse.
   const padreDe = new Map();
@@ -404,7 +424,8 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
       if (r.base === k) total = Math.max(total, apertura + duracionBase(r, d, unaColumna));
       if (!r.ida) continue;
       if (r.ida.paso === k && r.desde !== k && r.base !== k) total = Math.max(total, d);
-      if (r.vuelta && r.vuelta.paso === k && r.desde <= k && r.base !== k) total = Math.max(total, unaColumna ? duracionDeFila(r, u) : duracionVuelta3(r, u, d));
+      const fase = r.vuelta ? faseDe(r, k) : null;
+      if (fase && r.desde <= k && r.base !== k) total = Math.max(total, unaColumna ? duracionDeFila(r, u, fase) : duracionVuelta3(r, u, d, fase));
     }
     return total;
   };
@@ -438,22 +459,29 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   // La cuenta de una fila que cambia: la llamada brilla (y el valor de la fila de la que sale, a la vez), se contrae hasta
   // desaparecer y en su lugar emerge el valor, y lo de la derecha se corre para cerrar el hueco; despues la cuenta entera se
   // contrae hacia su borde izquierdo y emerge el resultado. Se arma con la tabla ya en la pagina para medir.
-  const transformar = (td, r, u, celdasDeValor) => {
-    const { e2, e3 } = estadosDe(r);
+  // "fase": 'todo', o solo 'cuenta' (la llamada se reemplaza por su valor) o 'resultado' (la cuenta se resuelve), cuando la funcion
+  // llama en una linea y devuelve despues, en otro paso.
+  const transformar = (td, r, u, celdasDeValor, fase = 'todo') => {
+    const { e1, e2: e2Real, e3: e3Real } = estadosDe(r);
+    const e2 = fase === 'resultado' ? null : e2Real;
+    const e3 = fase === 'cuenta' ? null : e3Real;
     const contenedor = nodo('span', 'rep-traz-cuenta');
     const capaA = nodo('span', 'rep-traz-capa');
     const llamadasEnCapa = [];
-    for (const p of partesDe(r)) {
-      if (typeof p === 'string') {
-        capaA.append(p);
-        continue;
+    if (fase === 'resultado') capaA.append(e2Real ?? e1); // ya con las llamadas reemplazadas
+    else {
+      for (const p of partesDe(r)) {
+        if (typeof p === 'string') {
+          capaA.append(p);
+          continue;
+        }
+        const w = nodo('span', 'rep-traz-llamada');
+        const a = nodo('span', 'rep-traz-a', p.llamada);
+        const b = nodo('span', 'rep-traz-b', p.valor);
+        w.append(a, b);
+        capaA.append(w);
+        llamadasEnCapa.push({ w, a, b, id: p.id });
       }
-      const w = nodo('span', 'rep-traz-llamada');
-      const a = nodo('span', 'rep-traz-a', p.llamada);
-      const b = nodo('span', 'rep-traz-b', p.valor);
-      w.append(a, b);
-      capaA.append(w);
-      llamadasEnCapa.push({ w, a, b, id: p.id });
     }
     contenedor.append(capaA);
     const capaB = e3 ? nodo('span', 'rep-traz-capa rep-traz-fin', e3) : null;
@@ -488,7 +516,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   // La vuelta en tres columnas: aparece la misma expresion que en la ida; la llamada brilla (y el valor de la fila de la que sale),
   // se contrae hasta desaparecer y emerge su valor, lo de la derecha cierra el hueco y, despues de una pausa, entra el "= valor".
   // El fondo amarillo entra al final. Se arma con la tabla ya en la pagina para medir.
-  const transformarVuelta = (td, r, u, d, celdasDeValor) => {
+  const transformarVuelta = (td, r, u, d, celdasDeValor, fase = 'todo') => {
     const contenedor = nodo('span', 'rep-traz-cuenta');
     const capaA = nodo('span', 'rep-traz-capa');
     const llamadasEnCapa = [];
@@ -505,8 +533,8 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
       llamadasEnCapa.push({ w, a, b, id: p.id });
     }
     contenedor.append(capaA);
-    const hayIgual = r.vuelta.texto !== r.vuelta.valor;
-    const igual = hayIgual ? nodo('span', 'rep-traz-igual', ' = ' + r.vuelta.valor) : null;
+    const hayIgual = fase === 'todo' && r.vuelta.valor !== null && (r.vuelta.flecha || r.vuelta.texto !== r.vuelta.valor);
+    const igual = hayIgual ? nodo('span', 'rep-traz-igual', (r.vuelta.flecha ? ' → ' : ' = ') + r.vuelta.valor) : null;
     if (igual) contenedor.append(igual);
     td.replaceChildren(contenedor);
     contenedor.animate([{ opacity: 0 }, { opacity: 1 }], { duration: d, easing: 'ease-in-out', fill: 'backwards' });
@@ -521,16 +549,26 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
       resplandor(celdasDeValor.get(c.id), d, 0.8 * u);
     }
     if (igual) emerger(igual, d + 1.9 * u + 0.3 * u, 0.5 * u);
-    const total = duracionVuelta3(r, u, d);
+    const total = duracionVuelta3(r, u, d, fase);
     ambarEn(td, total - 0.5 * u, 0.5 * u);
   };
   // La vuelta de una fila quieta: la cuenta con sus valores y, si es distinta del valor, "= valor" (el valor como fragmento propio,
   // para poder hacerlo brillar cuando sube a la fila de arriba).
-  const vueltaConValor = (r) => {
+  const vueltaConValor = (r, k) => {
     const codigo = nodo('code', '');
     const texto = sinCortes(r.vuelta.texto);
-    if (r.vuelta.texto === r.vuelta.valor) codigo.append(nodo('span', 'rep-traz-valor', texto));
-    else codigo.append(texto + ' = ', nodo('span', 'rep-traz-valor', r.vuelta.valor));
+    // Si la llamada esta en otra linea y todavia no devolvio, solo la linea con lo que devolvieron las llamadas.
+    if (r.vuelta.valor === null || k < pasosDe(r).p3) {
+      codigo.append(texto);
+      return codigo;
+    }
+    if (!r.vuelta.flecha && r.vuelta.texto === r.vuelta.valor) codigo.append(nodo('span', 'rep-traz-valor', texto));
+    else {
+      // lo que devuelve va en su propio fragmento (para que entre con su rebote y para hacerlo brillar al subir)
+      const final = nodo('span', 'rep-traz-final');
+      final.append(r.vuelta.flecha ? ' → ' : ' = ', nodo('span', 'rep-traz-valor', r.vuelta.valor));
+      codigo.append(texto, final);
+    }
     return codigo;
   };
   // Los espacios de adentro de una llamada no se parten: quitar(213, 1) no pasa a dos renglones.
@@ -621,6 +659,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     const filasNuevas = new Map(); // las filas de las llamadas que se abren justo ahora, todavia ocultas
     const porTransformar = [];
     const porTransformarVuelta = [];
+    const valoresQueLlegan = [];
     const conMovimiento = animar && u > 0 && !sinMovimiento();
     const d = fundidoDe(u);
     for (const r of visibles) {
@@ -654,8 +693,9 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
       if (!conValores) continue;
       const sinLlamadas = r.ida ? llamadasDe(r).length === 0 : true;
       if (unaColumna) {
-        const llega = r.vuelta && r.vuelta.paso === k && r.ida && r.ida.paso <= k;
-        const transiciona = conMovimiento && llega && r.base !== k && duracionDeFila(r, u) > 0;
+        const fase = r.vuelta && r.ida && r.ida.paso <= k ? faseDe(r, k) : null;
+        const llega = fase !== null;
+        const transiciona = conMovimiento && llega && r.base !== k && duracionDeFila(r, u, fase) > 0;
         const vueltaHecha = r.vuelta && r.vuelta.paso <= k;
         const contenido = !r.ida || r.ida.paso > k ? '' : vueltaHecha ? textoQuieto(r, k) : idaConPiezas(r);
         const nuevo = r.base !== k && (Boolean(r.ida && r.ida.paso === k && sinLlamadas) || (llega && !transiciona));
@@ -663,7 +703,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
         celdasDeIda.set(r.id, td);
         celdasDeValor.set(r.id, td.querySelector('code'));
         base.tdIda = td;
-        if (transiciona) porTransformar.push([td, r]);
+        if (transiciona) porTransformar.push([td, r, fase]);
         else if (r.ida && r.ida.paso === k && r.desde !== k && r.base !== k && sinLlamadas) celdasQueAparecen.push([td, 0]);
         continue;
       }
@@ -671,16 +711,19 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
       const tdIda = celda(ida ? idaConPiezas(r) : '', Boolean(ida && r.ida.paso === k && sinLlamadas && r.base !== k));
       celdasDeIda.set(r.id, tdIda);
       const vuelta = r.vuelta && r.vuelta.paso <= k;
-      const llegaVuelta = Boolean(vuelta && r.vuelta.paso === k);
+      const faseVuelta = r.vuelta ? faseDe(r, k) : null;
+      const llegaVuelta = faseVuelta !== null;
       // La vuelta con llamadas se anima en su lugar (ver transformarVuelta); el amarillo de "lo nuevo" entra al final de la animacion.
-      const animaVuelta = conMovimiento && llegaVuelta && r.base !== k && estadosDe(r).e2 !== null;
-      const amarilloYa = llegaVuelta && (!conMovimiento || (r.base !== k && !animaVuelta));
-      const tdVuelta = celda(vuelta ? vueltaConValor(r) : '', amarilloYa);
+      const animaVuelta = conMovimiento && (faseVuelta === 'todo' || faseVuelta === 'cuenta') && r.base !== k && estadosDe(r).e2 !== null;
+      const animaValor = conMovimiento && faseVuelta === 'resultado';
+      const amarilloYa = llegaVuelta && (!conMovimiento || (r.base !== k && !animaVuelta && !animaValor));
+      const tdVuelta = celda(vuelta ? vueltaConValor(r, k) : '', amarilloYa);
       celdasDeValor.set(r.id, tdVuelta.querySelector('.rep-traz-valor'));
       base.tdIda = tdIda;
       base.tdVuelta = tdVuelta;
       if (r.ida && r.ida.paso === k && r.desde !== k && r.base !== k && sinLlamadas) celdasQueAparecen.push([tdIda, 0]);
-      if (animaVuelta) porTransformarVuelta.push([tdVuelta, r]);
+      if (animaVuelta) porTransformarVuelta.push([tdVuelta, r, faseVuelta]);
+      else if (animaValor && r.base !== k) valoresQueLlegan.push([tdVuelta, r]);
       else if (llegaVuelta && r.base !== k) celdasQueAparecen.push([tdVuelta, 0]);
     }
     trazado.replaceChildren(tabla);
@@ -744,8 +787,13 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
       }
       for (const [td, retraso] of celdasQueAparecen) aparecerCelda(td, retraso, d);
     }
-    for (const [td, r] of porTransformar) transformar(td, r, u, celdasDeValor);
-    for (const [td, r] of porTransformarVuelta) transformarVuelta(td, r, u, d, celdasDeValor);
+    for (const [td, r, fase] of porTransformar) transformar(td, r, u, celdasDeValor, fase);
+    for (const [td, r, fase] of porTransformarVuelta) transformarVuelta(td, r, u, d, celdasDeValor, fase);
+    // Lo que devuelve la llamada, cuando se agrega a una vuelta que ya estaba: entra con su rebote y el amarillo al final.
+    for (const [td] of valoresQueLlegan) {
+      rebote(td.querySelector('.rep-traz-final'), 0, 1.5 * d);
+      ambarEn(td, d, d);
+    }
     // La fila de la que trata el paso (la ultima abierta) a la vista; si es nueva, lo hace mostrarFila cuando entra.
     if (actual && !filasNuevas.has(actual.id)) aLaVista(filasDom.get(actual.id), conMovimiento);
   };

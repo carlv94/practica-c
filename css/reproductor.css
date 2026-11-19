@@ -559,12 +559,16 @@
 .rep-traz-cuenta {
   position: relative;
   display: inline-block;
-  white-space: pre;
+  white-space: pre-wrap;
   font-family: Consolas, "Cascadia Mono", Menlo, monospace;
 }
 .rep-traz-capa {
   display: inline-block;
   transform-origin: left center;
+}
+/* Las celdas de la ida y la vuelta pueden tener varios renglones (una linea por cada sentencia que llama). */
+.rep-tabla-trazado td:not(:first-child) code {
+  white-space: pre-wrap;
 }
 /* El "= valor" de la vuelta entra despues de reemplazar la llamada. */
 .rep-traz-igual {
