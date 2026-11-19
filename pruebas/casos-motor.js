@@ -444,6 +444,44 @@ int main() {
     },
   },
   {
+    nombre: 'el llamador de la llamada de mas arriba: la llamada sola, o la cuenta algebraica que la rodea',
+    codigo: String.raw`#include <stdio.h>
+int fact(int n) {
+  if (n == 0) {
+    return 1;
+  }
+  return n * fact(n - 1);
+}
+int main() {
+  printf("%d\n", fact(3));
+  int r = fact(3) * 2 + 1;
+  int s = fact(2) + fact(3);
+  if (fact(3) > 5) {
+    r = 0;
+  }
+  return 0;
+}`,
+    espera: {
+      salida: '6\n',
+      traza: (traza, r) => {
+        const raices = r.llamadas.filter((x) => x.llamador);
+        if (raices.length !== 5) return 'tenia que haber 5 llamadas de mas arriba (fact(3), fact(3), fact(2), fact(3), fact(3)) y hay ' + raices.length;
+        if (raices.some((x) => x.llamador.funcion !== 'main')) return 'quien las hace tenia que ser main';
+        if (r.llamadas.filter((x) => !x.llamador).length !== r.llamadas.length - 5) return 'solo las de mas arriba llevan llamador';
+        const filas = raices.map((x) => `${x.llamador.ida.texto} | ${x.llamador.vuelta.texto} = ${x.llamador.valorFinal}`);
+        const esperadas = [
+          'fact(3) | 6 = 6', // printf("%d\n", fact(3)): la llamada sola
+          'fact(3) * 2 + 1 | 6 * 2 + 1 = 13', // una cuenta algebraica: se muestra entera
+          'fact(2) | 2 = 2', // otra llamada en la misma cuenta: cada una sola
+          'fact(3) | 6 = 6',
+          'fact(3) | 6 = 6', // una comparacion no es una cuenta algebraica
+        ];
+        if (filas.join('\n') !== esperadas.join('\n')) return 'el llamador tenia que ser\n' + esperadas.join('\n') + '\ny es\n' + filas.join('\n');
+        return null;
+      },
+    },
+  },
+  {
     nombre: 'el registro de una recursion sin valores (void): sin ida ni vuelta, y el caso base es la llamada que no se llama a si misma',
     codigo: String.raw`#include <stdio.h>
 void binario(int n) {

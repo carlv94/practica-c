@@ -25,7 +25,8 @@
 //   condicion: (si la sentencia anterior evaluo una condicion) { texto, valor, celdas }: la condicion tal como esta escrita,
 //              si dio verdadero o falso y (con la opcion "preguntas") las casillas que se leyeron para responderla
 //   (Aparte de las fotografias, el motor devuelve "llamadas": el registro de las llamadas de las funciones recursivas, con la
-//   llamada, su ida, su vuelta y desde que fotografia se conoce cada cosa; ver abrirRegistro en interprete.js.)
+//   llamada, su ida, su vuelta y desde que fotografia se conoce cada cosa; la llamada de mas arriba lleva ademas "llamador":
+//   quien la hace (main) y su ida y su vuelta; ver abrirRegistro y anotarLlamador en interprete.js.)
 //   retorno:   (solo en una recursion) { texto }: la funcion en curso esta por devolver ese valor, calculado con una llamada a si
 //              misma; la fotografia se saca justo antes de cerrar su caja, asi las cajas se cierran de a una
 //   escrituras: (si la sentencia anterior guardo un valor que no sale de otra casilla) [{ a, ruta }]: las casillas escritas

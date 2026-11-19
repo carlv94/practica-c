@@ -122,6 +122,7 @@ class Interprete {
     this.escrituras = []; // las casillas donde se guardo un valor que no sale de otra casilla (un literal, una cuenta), idem
     this.llamadasDe = new Map(); // cuantas veces se llamo a cada funcion (para saber si un return llamo a la suya)
     this.registroLlamadas = []; // las llamadas de las funciones recursivas, para el trazado (ver abrirRegistro)
+    this.seguidas = new Map(); // expresion algebraica que rodea una llamada de mas arriba -> su registro (ver anotarLlamador)
     this.enCondicion = 0; // cuantas condiciones se estan evaluando (una dentro de otra: a && b)
     this.condicionHecha = null; // la ultima condicion que se evaluo, para la proxima fotografia
     this.fotoDePaso = null; // la fotografia con que empezo la ultima sentencia (la pregunta de una condicion se le suma)
@@ -953,8 +954,13 @@ class Interprete {
         return this.actualizacion(n);
       case 'assignment_expression':
         return this.asignacion(n);
-      case 'binary_expression':
-        return this.binaria(n);
+      case 'binary_expression': {
+        const rv = this.binaria(n);
+        // La cuenta algebraica que rodea una llamada de mas arriba: se anota lo que vale cuando termina de evaluarse.
+        const registro = this.seguidas.size ? this.seguidas.get(n.id) : null;
+        if (registro && registro.llamador) registro.llamador.valorFinal = textoDeValor(rv);
+        return rv;
+      }
       case 'call_expression':
         return this.llamada(n);
       case 'field_expression':
@@ -1250,8 +1256,11 @@ class Interprete {
   abrirRegistro(f, nodos, args) {
     if (this.registroLlamadas.length >= 300) return null;
     const textos = args.map((a, i) => (nodos[i].type === 'char_literal' ? nodos[i].text : textoEscalar(a)) ?? nodos[i].text.replace(/\s+/g, ' '));
+    // Quien la llama (casi siempre main), si no es la misma funcion: es una llamada de mas arriba de la recursion.
+    const llamador = this.marcos[this.marcos.length - 1].funcion;
     const registro = {
       id: this.registroLlamadas.length,
+      llamador: llamador !== f.nombre ? { funcion: llamador } : null,
       base: null, // la fotografia donde esta llamada llega a su caso base (no hace otra llamada a la funcion), o null
       funcion: f.nombre,
       llamada: `${f.nombre}(${textos.join(', ')})`,
@@ -1271,6 +1280,46 @@ class Interprete {
     const marco = this.marcos[this.marcos.length - 1];
     if (!marco.hechas) marco.hechas = new Map();
     marco.hechas.set(n.id, { registro, valor: textoDeValor(resultado) });
+    if (registro.llamador) this.anotarLlamador(registro, n, marco);
+  }
+
+  // La fila de quien hace la llamada de mas arriba: su ida es la llamada (o, si esta dentro de una cuenta algebraica, la cuenta
+  // entera: fact(3) * 2 + 1) y su vuelta, la misma con lo que devolvio la llamada (6 * 2 + 1) y lo que vale al resolverla
+  // ("valorFinal", que se anota cuando termina de evaluarse la cuenta: ver el hook de binary_expression).
+  anotarLlamador(registro, n, marco) {
+    const valor = marco.hechas.get(n.id).valor;
+    const L = registro.llamador;
+    L.valorFinal = valor;
+    L.ida = { texto: registro.llamada, partes: [{ llamada: registro.llamada, valor, id: registro.id }] };
+    L.vuelta = { texto: valor };
+    // La cuenta algebraica (+ - * / %) mas grande que rodea a la llamada, si no tiene otras llamadas.
+    let externa = null;
+    let actual = n;
+    while (actual.parent) {
+      const p = actual.parent;
+      if (p.type === 'parenthesized_expression' || (p.type === 'unary_expression' && p.children[0].text === '-')) {
+        actual = p;
+        continue;
+      }
+      if (p.type === 'binary_expression' && ['+', '-', '*', '/', '%'].includes(p.childForFieldName('operator').text)) {
+        externa = p;
+        actual = p;
+        continue;
+      }
+      break;
+    }
+    if (!externa || this.tieneOtraLlamada(externa, n)) return;
+    const ida = this.sustituir(externa, marco.hechas, 'ida');
+    const vuelta = this.sustituir(externa, marco.hechas, 'vuelta');
+    L.ida = { texto: ida.texto, partes: ida.partes };
+    L.vuelta = { texto: vuelta.texto };
+    L.valorFinal = null;
+    this.seguidas.set(externa.id, registro);
+  }
+
+  tieneOtraLlamada(nodo, llamada) {
+    if (nodo.type === 'call_expression') return nodo.id !== llamada.id;
+    return nodo.namedChildren.some((h) => this.tieneOtraLlamada(h, llamada));
   }
 
   // El valor de una variable escalar, para escribirla en una cuenta (null si no es un numero).

@@ -313,6 +313,25 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   // los pasos. Dos modos (panel de ajustes): la ida y la vuelta en dos columnas, o una sola donde la cuenta se va transformando
   // (la llamada se reemplaza por su valor y despues se resuelve). Si el programa no usa memoria dinamica, reemplaza a la figura.
   const registros = Array.isArray(llamadas) ? llamadas : [];
+  // Las filas de la tabla: la de quien hace la llamada de mas arriba (casi siempre main; ida: la llamada, o la cuenta que la rodea;
+  // vuelta: lo que vale cuando la llamada devuelve) va antes de esa llamada.
+  const filas = [];
+  for (const r of registros) {
+    if (r.llamador) {
+      const L = r.llamador;
+      filas.push({
+        id: 'l' + r.id,
+        llamada: L.funcion,
+        nivel: r.nivel - 1,
+        desde: r.desde,
+        hasta: null,
+        base: null,
+        ida: L.ida ? { texto: L.ida.texto, paso: r.desde, partes: L.ida.partes } : null,
+        vuelta: L.ida && r.hasta != null && L.valorFinal ? { texto: L.vuelta.texto, valor: L.valorFinal, paso: r.hasta } : null,
+      });
+    }
+    filas.push(r);
+  }
   const conValores = registros.some((r) => r.ida);
   const sinMonticulo = traza.every((f) => !(f.monticulo && f.monticulo.length));
   const nivelBase = registros.length ? Math.min(...registros.map((r) => r.nivel)) : 0;
@@ -335,8 +354,8 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   const estadosDe = (r) => {
     const e1 = textoDePartes(r, false);
     const e2 = llamadasDe(r).length ? textoDePartes(r, true) : null;
-    const e3 = r.vuelta.valor;
-    return { e1, e2: e2 !== null && e2 !== e1 ? e2 : null, e3: e3 !== (e2 ?? e1) ? e3 : null };
+    const e3 = r.vuelta ? r.vuelta.valor : null;
+    return { e1, e2: e2 !== null && e2 !== e1 ? e2 : null, e3: e3 !== null && e3 !== (e2 ?? e1) ? e3 : null };
   };
   // Lo que se ve en esa fila, quieta, en el paso k.
   const textoQuieto = (r, k) => {
@@ -361,7 +380,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   };
   // La fila que hace cada llamada (la que la tiene en su ida): de ahi sale la llamada, y la resaltamos al abrirse.
   const padreDe = new Map();
-  for (const p of registros) if (p.ida) for (const x of partesDe(p)) if (typeof x === 'object') padreDe.set(x.id, p);
+  for (const p of filas) if (p.ida) for (const x of partesDe(p)) if (typeof x === 'object') padreDe.set(x.id, p);
   // Cuanto dura que se abra una llamada: su ida aparece (1 fundido) y respira (1,5) si recien se escribe y despues la llamada brilla
   // (2) mientras aparece el texto de la fila nueva; sin fila que la haga (la primera llamada), solo el fundido de su texto.
   const duracionApertura = (r, k, d) => {
@@ -379,7 +398,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     const d = fundidoDe(u);
     const unaColumna = enUnaColumna();
     let total = 0;
-    for (const r of registros) {
+    for (const r of filas) {
       const apertura = r.desde === k ? duracionApertura(r, k, d) : 0;
       if (r.desde === k) total = Math.max(total, apertura);
       if (r.base === k) total = Math.max(total, apertura + duracionBase(r, d, unaColumna));
@@ -586,7 +605,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     raiz.classList.toggle('rep-sin-figura', activo && sinMonticulo);
     if (!activo) return;
     const unaColumna = enUnaColumna();
-    const visibles = registros.filter((r) => r.desde <= k);
+    const visibles = filas.filter((r) => r.desde <= k);
     const abiertas = visibles.filter((r) => r.hasta == null || k < r.hasta);
     const actual = abiertas.length ? abiertas[abiertas.length - 1] : null;
     const tabla = nodo('table', 'rep-tabla-trazado');
