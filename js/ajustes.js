@@ -31,6 +31,21 @@ export const AYUDAS = [
     detalle: 'Cuando se evalúa una condición, resplandecen los valores de las variables que se leen.',
   },
   {
+    clave: 'trazado',
+    almacen: 'ajuste-trazado',
+    porDefecto: false,
+    titulo: 'Trazado de las llamadas recursivas',
+    detalle: 'En una recursión, una tabla con cada llamada, su ida y su vuelta. Si el programa no usa memoria dinámica, reemplaza a la figura.',
+  },
+  {
+    clave: 'trazadoUnaColumna',
+    almacen: 'ajuste-trazado-una-columna',
+    porDefecto: false,
+    depende: 'trazado',
+    titulo: 'Reemplazar la llamada por su valor, en una sola columna',
+    detalle: 'En lugar de la ida y la vuelta una al lado de la otra, una columna donde la llamada se reemplaza por lo que devolvió y la cuenta se resuelve.',
+  },
+  {
     clave: 'nombresFlechas',
     almacen: 'reproductor-nombres', // la clave de antes, para no perder lo que cada uno ya tenia elegido
     porDefecto: false,
@@ -40,8 +55,8 @@ export const AYUDAS = [
 ];
 
 export const PERFILES = [
-  { id: 'practica', nombre: 'Práctica', valores: { brilloCopias: true, brilloAsignaciones: false, brilloCondiciones: false, nombresFlechas: false } },
-  { id: 'explicacion', nombre: 'Explicación', valores: { brilloCopias: true, brilloAsignaciones: true, brilloCondiciones: true, nombresFlechas: true } },
+  { id: 'practica', nombre: 'Práctica', valores: { brilloCopias: true, brilloAsignaciones: false, brilloCondiciones: false, trazado: false, trazadoUnaColumna: false, nombresFlechas: false } },
+  { id: 'explicacion', nombre: 'Explicación', valores: { brilloCopias: true, brilloAsignaciones: true, brilloCondiciones: true, trazado: true, trazadoUnaColumna: false, nombresFlechas: true } },
 ];
 
 const estado = new Map();
@@ -161,7 +176,7 @@ export function montarAjustes(panel, abrir) {
   detalle.append(nodo('summary', '', 'Personalizar'));
   const casillas = new Map();
   for (const a of AYUDAS) {
-    const fila = nodo('label', 'casilla');
+    const fila = nodo('label', 'casilla' + (a.depende ? ' ajustes-sub' : ''));
     const c = document.createElement('input');
     c.type = 'checkbox';
     c.onchange = () => ajustes.fijar(a.clave, c.checked);
@@ -177,7 +192,12 @@ export function montarAjustes(panel, abrir) {
   const mostrar = () => {
     const id = ajustes.perfil();
     selector.value = id ?? '';
-    for (const [clave, c] of casillas) c.checked = ajustes.valor(clave);
+    for (const [clave, c] of casillas) {
+      c.checked = ajustes.valor(clave);
+      const a = AYUDAS.find((x) => x.clave === clave);
+      // Una casilla que depende de otra (el trazado por columnas) no se puede tocar si la otra esta apagada.
+      c.disabled = Boolean(a.depende) && !ajustes.valor(a.depende);
+    }
     if (id == null) detalle.open = true;
   };
   mostrar();

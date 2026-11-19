@@ -11,6 +11,7 @@
 //   cabezas    nombres de las variables que guardan el comienzo de la estructura (ver figura.js)
 //   funciones  r.funciones: donde empieza y termina cada funcion; el codigo de afuera de
 //              la que se esta ejecutando se ve atenuado
+//   llamadas   r.llamadas: el registro de las llamadas de las funciones recursivas, para el trazado (ver el motor)
 
 import { Figura } from './figura.js';
 import { tiempo } from './tiempo.js';
@@ -124,7 +125,7 @@ const guardarVelocidad = (v) => {
   }
 };
 
-export function crearReproductor({ codigo, traza, error = null, titulo = '', funciones = [], cabezas = null, entrada = '' }) {
+export function crearReproductor({ codigo, traza, error = null, titulo = '', funciones = [], cabezas = null, entrada = '', llamadas = [] }) {
   const raiz = nodo('section', 'rep');
   raiz.tabIndex = 0;
   raiz.setAttribute('aria-label', titulo ? `Paso a paso: ${titulo}` : 'Paso a paso');
@@ -239,8 +240,13 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   };
   aplicarAyudas();
   const olvidarAyudas = ajustes.alCambiar(() => {
-    if (!raiz.isConnected) olvidarAyudas(); // este reproductor ya no esta en la pagina
-    else aplicarAyudas();
+    if (!raiz.isConnected) {
+      olvidarAyudas(); // este reproductor ya no esta en la pagina
+      return;
+    }
+    aplicarAyudas();
+    pintarTrazado(paso);
+    dibujo.fijarEscala({}); // la figura puede haber vuelto a aparecer
   });
   // Explicar: detener y repetir (la barra espaciadora y la tecla R funcionan siempre) en lugar de inicio, reproducir y final
   // (las teclas Inicio y Fin y la barra de pasos siguen). Asi la barra se queda con cuatro botones.
@@ -303,7 +309,155 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     if (agotadaEn[indice]) partes.push(nodo('span', 'rep-entrada-leida', ' ⏎'));
     cajaDeEntrada.replaceChildren(...partes);
   };
-  lado.append(estado, herramientas, franjaPregunta, figura, nodo('p', 'rep-subtitulo', 'Lo que muestra el programa'), consola);
+  // El trazado de las llamadas recursivas (ver el registro de llamadas del motor): una tabla con cada llamada que se completa con
+  // los pasos. Dos modos (panel de ajustes): la ida y la vuelta en dos columnas, o una sola donde la cuenta se va transformando
+  // (la llamada se reemplaza por su valor y despues se resuelve). Si el programa no usa memoria dinamica, reemplaza a la figura.
+  const registros = Array.isArray(llamadas) ? llamadas : [];
+  const conValores = registros.some((r) => r.ida);
+  const sinMonticulo = traza.every((f) => !(f.monticulo && f.monticulo.length));
+  const nivelBase = registros.length ? Math.min(...registros.map((r) => r.nivel)) : 0;
+  // Con dos llamadas en el mismo return (un arbol) la sangria ayuda a ver que cuelga de que; si no, todo va a la izquierda.
+  const ramifica = registros.some((r) => r.ida && r.ida.texto.split(r.funcion + '(').length > 2);
+  const trazado = nodo('div', 'rep-trazado');
+  trazado.hidden = true;
+  const trazadoActivo = () => registros.length > 0 && ajustes.valor('trazado');
+  const enUnaColumna = () => conValores && ajustes.valor('trazadoUnaColumna');
+  const partesDe = (r) => (r.ida.partes && r.ida.partes.length ? r.ida.partes : [r.ida.texto]);
+  const llamadasDe = (r) => partesDe(r).filter((p) => typeof p === 'object');
+  const textoDePartes = (r, conValor) =>
+    partesDe(r)
+      .map((p) => (typeof p === 'string' ? p : conValor ? p.valor : p.llamada))
+      .join('')
+      .replace(/\s+/g, ' ')
+      .trim();
+  // Los tres estados de la cuenta de una fila: la ida (con la llamada), la llamada reemplazada por su valor y el resultado.
+  // Un estado que no cambia nada (la llamada sola, o un caso base) es null.
+  const estadosDe = (r) => {
+    const e1 = textoDePartes(r, false);
+    const e2 = llamadasDe(r).length ? textoDePartes(r, true) : null;
+    const e3 = r.vuelta.valor;
+    return { e1, e2: e2 !== null && e2 !== e1 ? e2 : null, e3: e3 !== (e2 ?? e1) ? e3 : null };
+  };
+  // Lo que se ve en esa fila, quieta, en el paso k.
+  const textoQuieto = (r, k) => {
+    if (!r.ida || r.ida.paso > k) return '';
+    const { e1, e2, e3 } = estadosDe(r);
+    return r.vuelta && r.vuelta.paso <= k ? e3 ?? e2 ?? e1 : e1;
+  };
+  // Lo que dura la transicion de una fila al llegar su vuelta: la llamada se reemplaza (1,3 unidades), el valor queda un momento
+  // en su lugar (0,8) y la cuenta se resuelve (0,8).
+  const duracionDeFila = (r, u) => {
+    const { e2, e3 } = estadosDe(r);
+    return (e2 ? 1.3 * u : 0) + (e2 && e3 ? 0.8 * u : 0) + (e3 ? 0.8 * u : 0);
+  };
+  const duracionTrazado = (k, u) => {
+    if (!trazadoActivo() || !enUnaColumna() || sinMovimiento()) return 0;
+    return Math.max(0, ...registros.filter((r) => r.ida && r.vuelta && r.vuelta.paso === k && r.desde <= k).map((r) => duracionDeFila(r, u)));
+  };
+  // Un texto que resplandece y crece un instante (como el valor que se copia en la figura).
+  const resplandor = (el, retraso, duracion) => {
+    if (!el || !el.animate || !duracion) return;
+    el.classList.add('rep-traz-brilla');
+    const halo = getComputedStyle(raiz).getPropertyValue('--acento').trim() || '#3b82f6';
+    const sin = { transform: 'scale(1)', filter: 'drop-shadow(0 0 0 transparent)' };
+    const con = { transform: 'scale(1.4)', filter: 'drop-shadow(0 0 5px ' + halo + ')' };
+    el.animate([{ ...sin }, { ...con, offset: 0.3 }, { ...con, offset: 0.6 }, { ...sin }], { duration: duracion, delay: retraso, easing: 'ease-in-out' });
+  };
+  // La cuenta de una fila que cambia: la llamada brilla (y el valor de la fila de la que sale, a la vez), se reemplaza por su
+  // valor y lo de la derecha se corre de a poco; despues la cuenta se resuelve. Se arma con la tabla ya en la pagina para medir.
+  const transformar = (td, r, u, celdasDeValor) => {
+    const { e2, e3 } = estadosDe(r);
+    const contenedor = nodo('span', 'rep-traz-cuenta');
+    const capaA = nodo('span', 'rep-traz-capa');
+    const llamadasEnCapa = [];
+    for (const p of partesDe(r)) {
+      if (typeof p === 'string') {
+        capaA.append(p);
+        continue;
+      }
+      const w = nodo('span', 'rep-traz-llamada');
+      const a = nodo('span', 'rep-traz-a', p.llamada);
+      const b = nodo('span', 'rep-traz-b', p.valor);
+      w.append(a, b);
+      capaA.append(w);
+      llamadasEnCapa.push({ w, a, b, id: p.id });
+    }
+    contenedor.append(capaA);
+    const capaB = e3 ? nodo('span', 'rep-traz-capa rep-traz-fin', e3) : null;
+    if (capaB) contenedor.append(capaB);
+    td.replaceChildren(contenedor);
+    let t = 0;
+    if (e2) {
+      for (const c of llamadasEnCapa) {
+        const ancho = c.a.offsetWidth;
+        const nuevo = c.b.offsetWidth;
+        c.w.style.width = ancho + 'px';
+        resplandor(c.a, 0, 0.6 * u);
+        c.a.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 0.3 * u, delay: 0.6 * u, fill: 'forwards' });
+        c.b.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 0.3 * u, delay: 0.6 * u, fill: 'forwards' });
+        c.w.animate([{ width: ancho + 'px' }, { width: nuevo + 'px' }], { duration: 0.7 * u, delay: 0.6 * u, easing: 'ease-in-out', fill: 'forwards' });
+        resplandor(celdasDeValor.get(c.id), 0, 0.8 * u);
+      }
+      t = 1.3 * u;
+    }
+    if (capaB) {
+      if (e2) t += 0.8 * u;
+      capaA.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 0.4 * u, delay: t, fill: 'forwards' });
+      capaB.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 0.4 * u, delay: t, fill: 'forwards' });
+      resplandor(capaB, t + 0.2 * u, 0.6 * u);
+    }
+  };
+  // "animar": se llego avanzando un paso y se hacen las transiciones de las filas cuya vuelta llega justo ahora; "u" es la
+  // unidad de movimiento (ver pintarPaso).
+  const pintarTrazado = (k, { animar = false, u = 0 } = {}) => {
+    const activo = trazadoActivo();
+    trazado.hidden = !activo;
+    raiz.classList.toggle('rep-sin-figura', activo && sinMonticulo);
+    if (!activo) return;
+    const unaColumna = enUnaColumna();
+    const visibles = registros.filter((r) => r.desde <= k);
+    const abiertas = visibles.filter((r) => r.hasta == null || k < r.hasta);
+    const actual = abiertas.length ? abiertas[abiertas.length - 1] : null;
+    const tabla = nodo('table', 'rep-tabla-trazado');
+    const cabeza = tabla.createTHead().insertRow();
+    for (const t of unaColumna ? ['Llamada', 'Devuelve'] : conValores ? ['Llamada', 'Ida', 'Vuelta'] : ['Llamada']) cabeza.append(nodo('th', '', t));
+    const cuerpoTabla = tabla.createTBody();
+    const celdasDeValor = new Map(); // la celda de la cuenta de cada llamada, por su numero
+    const porTransformar = [];
+    const conMovimiento = animar && u > 0 && !sinMovimiento();
+    for (const r of visibles) {
+      const fila = cuerpoTabla.insertRow();
+      if (r === actual) fila.classList.add('rep-traz-actual');
+      else if (r.hasta != null && k >= r.hasta) fila.classList.add('rep-traz-cerrada');
+      const celda = (texto, nuevo, sangria = 0) => {
+        const td = fila.insertCell();
+        // Los espacios de adentro de una llamada no se parten: quitar(213, 1) no pasa a dos renglones.
+        const sinCortes = texto.replace(/\([^)]*\)/g, (m) => m.replace(/ /g, '\u00a0'));
+        td.append(nodo('code', '', sinCortes));
+        if (nuevo) td.classList.add('rep-traz-nuevo');
+        if (sangria) td.style.paddingLeft = (6 + sangria * 10) + 'px';
+        return td;
+      };
+      celda(r.llamada, r.desde === k, ramifica ? r.nivel - nivelBase : 0);
+      if (!conValores) continue;
+      if (unaColumna) {
+        const llega = r.vuelta && r.vuelta.paso === k && r.ida && r.ida.paso <= k;
+        const transiciona = conMovimiento && llega && duracionDeFila(r, u) > 0;
+        const td = celda(textoQuieto(r, k), Boolean(r.ida && r.ida.paso === k) || (llega && !transiciona));
+        celdasDeValor.set(r.id, td.querySelector('code'));
+        if (transiciona) porTransformar.push([td, r]);
+        continue;
+      }
+      const ida = r.ida && r.ida.paso <= k;
+      celda(ida ? r.ida.texto : '', ida && r.ida.paso === k);
+      const vuelta = r.vuelta && r.vuelta.paso <= k;
+      const textoVuelta = vuelta ? (r.vuelta.texto === r.vuelta.valor ? r.vuelta.texto : r.vuelta.texto + ' = ' + r.vuelta.valor) : '';
+      celda(textoVuelta, vuelta && r.vuelta.paso === k);
+    }
+    trazado.replaceChildren(tabla);
+    for (const [td, r] of porTransformar) transformar(td, r, u, celdasDeValor);
+  };
+  lado.append(estado, herramientas, franjaPregunta, trazado, figura, nodo('p', 'rep-subtitulo', 'Lo que muestra el programa'), consola);
   if (conEntrada) lado.append(nodo('p', 'rep-subtitulo', 'Lo que ingresa el usuario'), cajaDeEntrada);
   lado.append(nota);
   cuerpo.append(columnaCodigo, lado);
@@ -314,6 +468,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   let marcada = null;
   let reloj = null;
   let ultimaAnimacion = 0; // lo que dura la animacion del paso que se esta mostrando
+  let relojTrazado = null; // el trazado que espera a que termine la animacion de la figura
   let funcionAnterior = null;
   let zoom = leerZoom();
   let ampliado = false;
@@ -430,7 +585,19 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
           }
         : null;
     // La unidad de movimiento sale de la velocidad: lo que dura dibujar una flecha o mover los nodos.
-    ultimaAnimacion = dibujo.mostrar(foto, antes, { animar, duracion: VELOCIDADES[Number(velocidad.value)].ms * 0.5, flujo: adelante });
+    const unidad = VELOCIDADES[Number(velocidad.value)].ms * 0.5;
+    tiempo.cancelar(relojTrazado);
+    relojTrazado = null;
+    // Sin memoria dinamica el trazado reemplaza a la figura: no se la anima (nadie la ve) y las transiciones de la tabla empiezan ya.
+    const sinFigura = trazadoActivo() && sinMonticulo;
+    const dFigura = dibujo.mostrar(foto, antes, { animar: animar && !sinFigura, duracion: unidad, flujo: adelante });
+    const dTrazado = adelante && animar ? duracionTrazado(paso, unidad) : 0;
+    ultimaAnimacion = dFigura + dTrazado;
+    if (dTrazado > 0) {
+      const arrancar = () => pintarTrazado(paso, { animar: true, u: unidad });
+      if (dFigura > 0) relojTrazado = tiempo.esperar(arrancar, dFigura);
+      else arrancar();
+    }
     etiquetaZoom.textContent = `${Math.round(dibujo.escalaActual * 100)} %`;
 
     const aplicar = () => {
@@ -446,6 +613,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
       }
       funcionAnterior = f;
       mostrarEstado(foto);
+      pintarTrazado(paso); // al terminar, la tabla queda quieta en su estado final
       consola.textContent = foto.salida || ' ';
       pintarEntrada(paso);
     };

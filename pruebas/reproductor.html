@@ -197,7 +197,7 @@ int main() {
         const codigo = PROGRAMAS[eleccion.value];
         const r = ejecutar(analizador, codigo, { traza: true, preguntas: true });
         const error = r.error ? { ...r.error, ...mensajeDeError(r.error) } : null;
-        lugar.replaceChildren(crearReproductor({ codigo, traza: r.traza, error, titulo: eleccion.value, funciones: r.funciones, cabezas: cabezasDe[eleccion.value] }));
+        lugar.replaceChildren(crearReproductor({ codigo, traza: r.traza, error, titulo: eleccion.value, funciones: r.funciones, cabezas: cabezasDe[eleccion.value], llamadas: r.llamadas }));
       }
       eleccion.onchange = mostrar;
       mostrar();

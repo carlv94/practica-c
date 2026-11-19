@@ -391,6 +391,57 @@ int main() {
     },
   },
   {
+    nombre: 'el registro de llamadas de una recursion: cada llamada con su ida, su vuelta y desde que fotografia se conocen',
+    codigo: String.raw`#include <stdio.h>
+int doble(int x) {
+  return x * 2;
+}
+int quitar(int n, int d) {
+  if (n == 0) {
+    return 0;
+  }
+  if (n % 10 == d) {
+    return quitar(n / 10, d);
+  }
+  return quitar(n / 10, d) * 10 + n % 10;
+}
+int main() {
+  int a = doble(4);
+  printf("%d", quitar(2132, 1));
+  return 0;
+}`,
+    espera: {
+      salida: '232',
+      traza: (traza, r) => {
+        const filas = r.llamadas.map((l) => `${l.llamada} | ${l.ida && l.ida.texto} | ${l.vuelta && l.vuelta.texto} = ${l.vuelta && l.vuelta.valor}`);
+        const esperadas = [
+          'quitar(2132, 1) | quitar(213, 1) * 10 + 2 | 23 * 10 + 2 = 232',
+          'quitar(213, 1) | quitar(21, 1) * 10 + 3 | 2 * 10 + 3 = 23',
+          'quitar(21, 1) | quitar(2, 1) | 2 = 2',
+          'quitar(2, 1) | quitar(0, 1) * 10 + 2 | 0 * 10 + 2 = 2',
+          'quitar(0, 1) | 0 | 0 = 0',
+        ];
+        if (filas.join('\n') !== esperadas.join('\n')) return 'el registro tenia que ser\n' + esperadas.join('\n') + '\ny es\n' + filas.join('\n');
+        // la funcion comun (doble) no se registra, y cada llamada tiene caja desde su "desde" hasta su "hasta"
+        const l = r.llamadas;
+        if (l.some((x) => x.funcion !== 'quitar')) return 'solo se registran las funciones recursivas';
+        for (const x of l) {
+          const hondo = (i) => traza[i].marcos.filter((m) => m.funcion === 'quitar').length;
+          if (hondo(x.desde) < x.nivel) return `la llamada ${x.llamada} tenia que tener caja desde la fotografia ${x.desde}`;
+          if (x.vuelta.paso < x.desde) return `la vuelta de ${x.llamada} no puede conocerse antes de empezar`;
+        }
+        // la ida de una llamada se conoce cuando empieza la que hace; la vuelta, cuando se cierra su caja (su fotografia de retorno)
+        if (l[0].ida.paso !== l[1].desde) return 'la ida de la primera tenia que conocerse cuando empieza la segunda';
+        if (!traza[l[0].vuelta.paso].retorno) return 'la vuelta de la primera tenia que conocerse en su fotografia de retorno';
+        // la ida en partes: el texto y, en cada llamada, lo que va a devolver (para reemplazarla por su valor)
+        const partes = JSON.stringify(l[1].ida.partes);
+        if (partes !== '[{"llamada":"quitar(21, 1)","valor":"2","id":2}," * 10 + 3"]') return 'las partes de la ida de la segunda no son las esperadas: ' + partes;
+        if (JSON.stringify(l[4].ida.partes) !== '["0"]') return 'la ida de la ultima tenia que ser solo el texto 0';
+        return null;
+      },
+    },
+  },
+  {
     nombre: 'un valor que no sale de otra casilla anota la casilla donde se guarda (el que sale de una casilla es una copia)',
     codigo: String.raw`#include <stdio.h>
 int main() {
@@ -863,7 +914,7 @@ export function resultadoDelMotor(analizador, ejecutar, caso) {
     if (JSON.stringify(tiene) !== JSON.stringify(esp.lineas)) problemas.push(`lineas: esperaba ${JSON.stringify(esp.lineas)} y recorrio ${JSON.stringify(tiene)}`);
   }
   if (esp.traza) {
-    const m = esp.traza(r.traza);
+    const m = esp.traza(r.traza, r);
     if (m) problemas.push(m);
   }
   return { bien: !problemas.length, detalle: problemas.join('\n') };

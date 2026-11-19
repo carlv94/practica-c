@@ -1528,3 +1528,12 @@ table.pila .vivo {
   font-size: 0.85rem;
   color: var(--suave);
 }
+
+/* Una ayuda que depende de otra: va sangrada y se apaga si la otra esta apagada. */
+.ajustes .ajustes-sub {
+  margin-left: 26px;
+}
+
+.ajustes .ajustes-sub:has(input:disabled) {
+  opacity: 0.55;
+}

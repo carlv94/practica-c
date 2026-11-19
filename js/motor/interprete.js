@@ -28,6 +28,25 @@ const MAX_MARCOS = 200;
 const MAX_TRAZA = 5000;
 const MAX_SALIDA = 1000000;
 
+// Un valor escrito para una tabla o un cartel: un numero tal cual, NULL, o (un puntero a algo) "una dirección".
+function textoEscalar(rv) {
+  if (!rv || !rv.t) return null;
+  // Una letra se escribe como letra ('a'); el 0 del final de una cadena, '\0'.
+  if (rv.t.esChar && typeof rv.v === 'number') {
+    if (rv.v === 0) return "'\\0'";
+    if (rv.v === 10) return "'\\n'";
+    if (rv.v > 31 && rv.v < 127 && rv.v !== 39 && rv.v !== 92) return `'${String.fromCharCode(rv.v)}'`;
+  }
+  if ((rv.t.k === 'int' || rv.t.k === 'float') && typeof rv.v === 'number') return rv.v < 0 ? `(${rv.v})` : String(rv.v);
+  if (rv.t.k === 'ptr') return rv.v === null ? 'NULL' : null;
+  return null;
+}
+function textoDeValor(rv) {
+  if (rv && rv.t && rv.t.k === 'ptr' && rv.v !== null) return 'una dirección';
+  const t = textoEscalar(rv);
+  return t === null ? '' : t.replace(/^\((-?\d+(?:\.\d+)?)\)$/, '$1');
+}
+
 class Retorno {
   constructor(valor) {
     this.valor = valor;
@@ -102,6 +121,7 @@ class Interprete {
     this.accesos = []; // los accesos por puntero desde la ultima fotografia
     this.escrituras = []; // las casillas donde se guardo un valor que no sale de otra casilla (un literal, una cuenta), idem
     this.llamadasDe = new Map(); // cuantas veces se llamo a cada funcion (para saber si un return llamo a la suya)
+    this.registroLlamadas = []; // las llamadas de las funciones recursivas, para el trazado (ver abrirRegistro)
     this.enCondicion = 0; // cuantas condiciones se estan evaluando (una dentro de otra: a && b)
     this.condicionHecha = null; // la ultima condicion que se evaluo, para la proxima fotografia
     this.fotoDePaso = null; // la fotografia con que empezo la ultima sentencia (la pregunta de una condicion se le suma)
@@ -143,6 +163,7 @@ class Interprete {
       fugas: this.error ? [] : this.memoria.fugas().map((r) => ({ id: r.id, dir: r.dir, tam: r.tam })),
       finales: this.finales,
       traza: this.traza,
+      llamadas: this.registroLlamadas,
       entrada: this.entrada.texto,
       pasos: this.pasos,
       funciones: [...this.funciones.values()].map((f) => ({ nombre: f.nombre, desde: f.desde, hasta: f.hasta })),
@@ -1168,7 +1189,10 @@ class Interprete {
       const args = nodos.map((h) => this.evaluar(h));
       const origenes = this.opciones.traza ? nodos.map((h) => this.origenDeArgumento(h)) : [];
       this.fila = n.startPosition.row + 1;
-      return this.ejecutarFuncion(propia, args, origenes);
+      const registro = this.opciones.traza && this.esRecursiva(propia) ? this.abrirRegistro(propia, nodos, args) : null;
+      const resultado = this.ejecutarFuncion(propia, args, origenes, registro);
+      if (registro) this.cerrarRegistro(registro, n, resultado);
+      return resultado;
     }
     return this.biblioteca(f.text, nodos, n);
   }
@@ -1206,14 +1230,185 @@ class Interprete {
     if (this.accesos.length < 8) this.accesos.push({ de: null, a: para, tipo: 'parametro', llamada: true, ...(junto ? { junto: true } : {}) });
   }
 
-  ejecutarFuncion(f, args, origenes = []) {
+  // ------------------------------------------------- el trazado de una recursion
+  //
+  // Por cada llamada a una funcion recursiva (una que se llama a si misma en su cuerpo) se anota un registro con lo que hace la
+  // llamada: { funcion, llamada: "quitar(213, 1)", nivel, desde, hasta, ida, vuelta }. "desde" y "hasta" son lugares de la traza
+  // (la llamada tiene caja desde la fotografia "desde" y hasta antes de la "hasta"; "hasta" es null si no termino). "ida" es el
+  // return con lo que vale cada variable y con las llamadas que hace (quitar(21, 1) * 10 + 3) y "vuelta", con el valor que
+  // devolvio cada una (23 * 10 + 3); cada uno con el lugar de la traza desde el que se conoce ("paso"), y la vuelta con el
+  // valor que devuelve. Una llamada sin return (void, o sin valor) no tiene ida ni vuelta.
+
+  esRecursiva(f) {
+    if (f.recursiva === undefined) {
+      const busca = (n) => (n.type === 'call_expression' && n.childForFieldName('function').text === f.nombre) || n.namedChildren.some(busca);
+      f.recursiva = Boolean(f.cuerpo) && busca(f.cuerpo);
+    }
+    return f.recursiva;
+  }
+
+  abrirRegistro(f, nodos, args) {
+    if (this.registroLlamadas.length >= 300) return null;
+    const textos = args.map((a, i) => (nodos[i].type === 'char_literal' ? nodos[i].text : textoEscalar(a)) ?? nodos[i].text.replace(/\s+/g, ' '));
+    const registro = {
+      id: this.registroLlamadas.length,
+      funcion: f.nombre,
+      llamada: `${f.nombre}(${textos.join(', ')})`,
+      nivel: this.marcos.length,
+      desde: this.traza.length,
+      hasta: null,
+      ida: null,
+      vuelta: null,
+    };
+    this.registroLlamadas.push(registro);
+    return registro;
+  }
+
+  // Termino la llamada: se anota donde (para que la funcion que la hizo arme su ida y su vuelta) y lo que devolvio.
+  cerrarRegistro(registro, n, resultado) {
+    registro.hasta = this.traza.length;
+    const marco = this.marcos[this.marcos.length - 1];
+    if (!marco.hechas) marco.hechas = new Map();
+    marco.hechas.set(n.id, { registro, valor: textoDeValor(resultado) });
+  }
+
+  // El valor de una variable escalar, para escribirla en una cuenta (null si no es un numero).
+  textoDeVariable(nombre) {
+    const v = this.buscar(nombre);
+    const raiz = v && v.reserva.raiz;
+    if (!raiz || !raiz.t || (raiz.t.k !== 'int' && raiz.t.k !== 'float') || typeof raiz.v !== 'number') return null;
+    return textoEscalar({ t: raiz.t, v: raiz.v });
+  }
+
+  // Una cuenta hecha solo de numeros, variables escalares y operadores (sin llamadas ni asignaciones).
+  cuentaSinLlamadas(n) {
+    switch (n.type) {
+      case 'number_literal':
+        return true;
+      case 'identifier':
+        return this.textoDeVariable(n.text) !== null;
+      case 'parenthesized_expression':
+      case 'binary_expression':
+        return n.namedChildren.every((h) => this.cuentaSinLlamadas(h));
+      default:
+        return false;
+    }
+  }
+
+  // Un elemento de un arreglo o un campo (v[2], p->dato, a.x) que se elige sin llamar a nada.
+  lecturaSinLlamadas(n) {
+    switch (n.type) {
+      case 'identifier':
+        return true;
+      case 'number_literal':
+        return true;
+      case 'parenthesized_expression':
+      case 'binary_expression':
+        return this.cuentaSinLlamadas(n);
+      case 'subscript_expression':
+        return n.namedChildren.every((h) => this.lecturaSinLlamadas(h));
+      case 'field_expression':
+        return this.lecturaSinLlamadas(n.childForFieldName('argument'));
+      default:
+        return false;
+    }
+  }
+
+  // La expresion de un return escrita con lo que valen las variables y, en "ida", las llamadas que hizo con sus argumentos (o,
+  // en "vuelta", con lo que devolvieron). Devuelve { texto, registros }: las llamadas que se reemplazaron.
+  sustituir(expr, hechas, modo) {
+    const original = expr.text;
+    if (!/^[\x00-\x7f]*$/.test(original)) return { texto: original.replace(/\s+/g, ' '), registros: [], partes: [original.replace(/\s+/g, ' ')] };
+    const cambios = [];
+    const registros = [];
+    const recorrer = (n) => {
+      if (n.type === 'call_expression') {
+        const h = hechas.get(n.id);
+        if (h) {
+          cambios.push([n.startIndex, n.endIndex, modo === 'ida' ? h.registro.llamada : h.valor, h]);
+          registros.push(h.registro);
+          return;
+        }
+        const nombre = n.childForFieldName('function');
+        for (const x of n.namedChildren) if (x.id !== nombre.id) recorrer(x);
+        return;
+      }
+      if (n.type === 'identifier') {
+        const t = this.textoDeVariable(n.text);
+        if (t !== null) cambios.push([n.startIndex, n.endIndex, t]);
+        return;
+      }
+      // Una cuenta que no llama a nada (n % 10) se escribe ya hecha: 3, y no 213 % 10. La expresion entera no: se queda
+      // como cuenta (3 * 2) y su resultado se escribe aparte.
+      const cuenta = n.type === 'binary_expression' && this.cuentaSinLlamadas(n);
+      const lectura = (n.type === 'subscript_expression' || n.type === 'field_expression') && this.lecturaSinLlamadas(n);
+      if (n.id !== expr.id && (cuenta || lectura)) {
+        // Se evalua sin dejar rastro: lo que anota una lectura (flechas recorridas) es de la sentencia, no de este cartel.
+        const accesos = [...this.accesos];
+        const escrituras = this.escrituras.length;
+        try {
+          const t = textoEscalar(this.evaluar(n));
+          if (t !== null) {
+            cambios.push([n.startIndex, n.endIndex, t]);
+            return;
+          }
+        } catch (e) {
+          // no se pudo hacer: queda como esta escrita
+        } finally {
+          this.accesos.splice(0, this.accesos.length, ...accesos);
+          this.escrituras.length = escrituras;
+        }
+      }
+      for (const x of n.namedChildren) recorrer(x);
+    };
+    recorrer(expr);
+    // La expresion en partes: el texto de siempre y, en cada llamada, { llamada, valor, id }; con eso la vista puede reemplazar
+    // una llamada por su valor sin buscarla en el texto.
+    const partes = [];
+    let cursor = 0;
+    for (const [desde, hasta, nuevo, h] of [...cambios].sort((a, b) => a[0] - b[0])) {
+      const antes = original.slice(cursor, desde - expr.startIndex);
+      if (antes) partes.push(antes);
+      partes.push(h ? { llamada: h.registro.llamada, valor: h.valor, id: h.registro.id } : nuevo);
+      cursor = hasta - expr.startIndex;
+    }
+    if (cursor < original.length) partes.push(original.slice(cursor));
+    const juntas = [];
+    for (const p of partes) {
+      const t = typeof p === 'string' ? p.replace(/\s+/g, ' ') : null;
+      if (t !== null && typeof juntas[juntas.length - 1] === 'string') juntas[juntas.length - 1] += t;
+      else juntas.push(t !== null ? t : p);
+    }
+    if (typeof juntas[0] === 'string') juntas[0] = juntas[0].replace(/^ /, '');
+    if (typeof juntas[juntas.length - 1] === 'string') juntas[juntas.length - 1] = juntas[juntas.length - 1].replace(/ $/, '');
+    let texto = original;
+    for (const [desde, hasta, nuevo] of cambios.sort((a, b) => b[0] - a[0])) {
+      texto = texto.slice(0, desde - expr.startIndex) + nuevo + texto.slice(hasta - expr.startIndex);
+    }
+    return { texto: texto.replace(/\s+/g, ' '), registros, partes: juntas.filter((p) => p !== '') };
+  }
+
+  // El return de una llamada registrada: su ida y su vuelta, y desde que fotografia se conocen.
+  anotarRetorno(marco, expr, devuelto, conLlamada) {
+    const r = marco.registro;
+    const hechas = marco.hechas || new Map();
+    const ida = this.sustituir(expr, hechas, 'ida');
+    const vuelta = this.sustituir(expr, hechas, 'vuelta');
+    // La ida se conoce cuando empieza la primera llamada que hace; sin llamadas, en la fotografia del return.
+    const primera = ida.registros.length ? Math.min(...ida.registros.map((x) => x.desde)) : this.traza.length - 1;
+    r.ida = { texto: ida.texto, paso: primera, partes: ida.partes };
+    // La vuelta, cuando la caja esta por cerrarse (la fotografia de retorno que se saca a continuacion).
+    r.vuelta = { texto: vuelta.texto, valor: textoDeValor(devuelto), paso: conLlamada ? this.traza.length : this.traza.length - 1 };
+  }
+
+  ejecutarFuncion(f, args, origenes = [], registro = null) {
     if (this.marcos.length >= MAX_MARCOS) throw new ErrorDelMotor('RECURSION_SIN_FIN', null, null, { profundidad: this.marcos.length });
     if (args.length !== f.params.length) {
       throw new ErrorDelMotor('SIN_VERIFICAR', `${f.nombre} recibe ${f.params.length} valores y se la llama con ${args.length}`);
     }
     this.llamadasDe.set(f.nombre, (this.llamadasDe.get(f.nombre) || 0) + 1);
     const marca = this.memoria.marcaDePila();
-    const marco = { funcion: f.nombre, ambitos: [new Map()], declaraciones: f.declaraciones, cuerpoId: f.cuerpo ? f.cuerpo.id : null };
+    const marco = { funcion: f.nombre, ambitos: [new Map()], declaraciones: f.declaraciones, cuerpoId: f.cuerpo ? f.cuerpo.id : null, registro };
     marco.ambitos[0].marca = marca;
     this.marcos.push(marco);
     f.params.forEach((p, i) => {
@@ -1251,11 +1446,8 @@ class Interprete {
   // con el valor escrito. No toca los accesos ni lo demas que espera la proxima fotografia.
   fotoDeRetorno(n, rv) {
     if (!this.opciones.traza || this.traza.length >= MAX_TRAZA || rv.t.k === 'struct' || rv.t.k === 'void') return;
-    let texto;
-    if (rv.t.k === 'ptr') texto = rv.v === null ? 'NULL' : 'una dirección';
-    else texto = String(rv.v);
     const foto = fotografia(this, n.startPosition.row + 1);
-    foto.retorno = { texto };
+    foto.retorno = { texto: textoDeValor(rv) };
     this.traza.push(foto);
   }
 
@@ -1311,7 +1503,10 @@ class Interprete {
         const devuelto = v ? this.evaluar(v) : null;
         // Una funcion que devuelve algo calculado con una llamada a si misma (una recursion): antes de cerrar su caja se
         // muestra lo que devuelve, asi las cajas se cierran de a una y se ve el valor que sube.
-        if (devuelto && (this.llamadasDe.get(nombre) || 0) > antes) this.fotoDeRetorno(n, devuelto);
+        const conLlamada = Boolean(devuelto) && (this.llamadasDe.get(nombre) || 0) > antes;
+        const actual = this.marcos[this.marcos.length - 1];
+        if (devuelto && actual.registro && v && this.opciones.traza) this.anotarRetorno(actual, v, devuelto, conLlamada);
+        if (conLlamada) this.fotoDeRetorno(n, devuelto);
         throw new Retorno(devuelto);
       }
       case 'break_statement':

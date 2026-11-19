@@ -501,6 +501,85 @@
 .rep-cerrar-codigo {
   display: none;
 }
+/* El trazado de las llamadas recursivas: una tabla que se completa con los pasos. */
+.rep-trazado {
+  margin-bottom: 8px;
+  overflow-x: auto;
+}
+.rep-tabla-trazado {
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  width: 100%;
+}
+.rep-tabla-trazado th {
+  text-align: left;
+  font-weight: 600;
+  color: var(--suave);
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--borde);
+}
+.rep-tabla-trazado td {
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--borde);
+  background: transparent;
+  transition: background 0.3s;
+}
+/* la llamada no se parte; la ida y la vuelta si, para que la tabla entre en el ancho */
+.rep-tabla-trazado td:first-child {
+  white-space: nowrap;
+}
+.rep-tabla-trazado td code {
+  font-size: inherit;
+  background: none;
+  padding: 0;
+}
+/* La cuenta que se transforma (modo de una sola columna): la llamada se reemplaza por su valor y el resto se corre. */
+.rep-traz-cuenta {
+  position: relative;
+  display: inline-block;
+  white-space: pre;
+  font-family: Consolas, "Cascadia Mono", Menlo, monospace;
+}
+.rep-traz-capa {
+  display: inline-block;
+}
+.rep-traz-fin {
+  position: absolute;
+  left: 0;
+  top: 0;
+  opacity: 0;
+}
+.rep-traz-llamada {
+  position: relative;
+  display: inline-block;
+  vertical-align: bottom;
+}
+.rep-traz-a {
+  display: inline-block;
+}
+.rep-traz-b {
+  position: absolute;
+  left: 0;
+  top: 0;
+  opacity: 0;
+}
+.rep-traz-brilla {
+  display: inline-block;
+}
+.rep-traz-actual td:first-child {
+  box-shadow: inset 3px 0 0 var(--acento);
+  font-weight: 600;
+}
+.rep-traz-cerrada {
+  color: var(--suave);
+}
+.rep-tabla-trazado td.rep-traz-nuevo {
+  background: var(--aviso-fondo);
+}
+/* Sin memoria dinamica, el trazado reemplaza a la figura. */
+.rep-sin-figura .rep-figura {
+  display: none;
+}
 .rep-herramientas {
   position: relative;
   display: flex;
