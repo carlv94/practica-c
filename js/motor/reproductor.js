@@ -353,6 +353,12 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   };
   // Un fundido es corto, pero no tanto que no se vea con las velocidades rapidas.
   const fundidoDe = (u) => Math.max(0.4 * u, 150);
+  // Lo que dura la vuelta en tres columnas: aparece la misma expresion de la ida (un fundido), la llamada se reemplaza por su valor
+  // (1,9 unidades), una pausa (0,3) y entra el "= valor" (0,5). Sin llamada que reemplazar, solo el fundido.
+  const duracionVuelta3 = (r, u, d) => {
+    if (estadosDe(r).e2 === null) return d;
+    return d + 1.9 * u + (r.vuelta.texto !== r.vuelta.valor ? 0.8 * u : 0);
+  };
   // La fila que hace cada llamada (la que la tiene en su ida): de ahi sale la llamada, y la resaltamos al abrirse.
   const padreDe = new Map();
   for (const p of registros) if (p.ida) for (const x of partesDe(p)) if (typeof x === 'object') padreDe.set(x.id, p);
@@ -379,7 +385,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
       if (r.base === k) total = Math.max(total, apertura + duracionBase(r, d, unaColumna));
       if (!r.ida) continue;
       if (r.ida.paso === k && r.desde !== k && r.base !== k) total = Math.max(total, d);
-      if (r.vuelta && r.vuelta.paso === k && r.desde <= k && r.base !== k) total = Math.max(total, unaColumna ? duracionDeFila(r, u) : d);
+      if (r.vuelta && r.vuelta.paso === k && r.desde <= k && r.base !== k) total = Math.max(total, unaColumna ? duracionDeFila(r, u) : duracionVuelta3(r, u, d));
     }
     return total;
   };
@@ -453,6 +459,60 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
       contraer(capaA, t, 0.4 * u); // la cuenta se contrae hacia su borde izquierdo...
       emerger(capaB, t + 0.4 * u, 0.5 * u); // ...y de ahi emerge el resultado
     }
+  };
+  // El fondo de "lo nuevo" (amarillo) entra al final de la animacion de una celda y se queda.
+  const ambarEn = (td, retraso, duracion) => {
+    if (!td || !td.animate) return;
+    const color = getComputedStyle(raiz).getPropertyValue('--aviso-fondo').trim() || '#fff4d6';
+    td.animate([{ backgroundColor: 'transparent' }, { backgroundColor: color }], { duration: duracion, delay: retraso, fill: 'forwards' });
+  };
+  // La vuelta en tres columnas: aparece la misma expresion que en la ida; la llamada brilla (y el valor de la fila de la que sale),
+  // se contrae hasta desaparecer y emerge su valor, lo de la derecha cierra el hueco y, despues de una pausa, entra el "= valor".
+  // El fondo amarillo entra al final. Se arma con la tabla ya en la pagina para medir.
+  const transformarVuelta = (td, r, u, d, celdasDeValor) => {
+    const contenedor = nodo('span', 'rep-traz-cuenta');
+    const capaA = nodo('span', 'rep-traz-capa');
+    const llamadasEnCapa = [];
+    for (const p of partesDe(r)) {
+      if (typeof p === 'string') {
+        capaA.append(p);
+        continue;
+      }
+      const w = nodo('span', 'rep-traz-llamada');
+      const a = nodo('span', 'rep-traz-a', p.llamada);
+      const b = nodo('span', 'rep-traz-b', p.valor);
+      w.append(a, b);
+      capaA.append(w);
+      llamadasEnCapa.push({ w, a, b, id: p.id });
+    }
+    contenedor.append(capaA);
+    const hayIgual = r.vuelta.texto !== r.vuelta.valor;
+    const igual = hayIgual ? nodo('span', 'rep-traz-igual', ' = ' + r.vuelta.valor) : null;
+    if (igual) contenedor.append(igual);
+    td.replaceChildren(contenedor);
+    contenedor.animate([{ opacity: 0 }, { opacity: 1 }], { duration: d, easing: 'ease-in-out', fill: 'backwards' });
+    for (const c of llamadasEnCapa) {
+      const ancho = c.a.offsetWidth;
+      const nuevo = c.b.offsetWidth;
+      c.w.style.width = ancho + 'px';
+      resplandor(c.a, d, 0.6 * u);
+      contraer(c.a, d + 0.6 * u, 0.4 * u);
+      emerger(c.b, d + 1.0 * u, 0.5 * u);
+      c.w.animate([{ width: ancho + 'px' }, { width: nuevo + 'px' }], { duration: 0.6 * u, delay: d + 1.3 * u, easing: 'ease-in-out', fill: 'forwards' });
+      resplandor(celdasDeValor.get(c.id), d, 0.8 * u);
+    }
+    if (igual) emerger(igual, d + 1.9 * u + 0.3 * u, 0.5 * u);
+    const total = duracionVuelta3(r, u, d);
+    ambarEn(td, total - 0.5 * u, 0.5 * u);
+  };
+  // La vuelta de una fila quieta: la cuenta con sus valores y, si es distinta del valor, "= valor" (el valor como fragmento propio,
+  // para poder hacerlo brillar cuando sube a la fila de arriba).
+  const vueltaConValor = (r) => {
+    const codigo = nodo('code', '');
+    const texto = sinCortes(r.vuelta.texto);
+    if (r.vuelta.texto === r.vuelta.valor) codigo.append(nodo('span', 'rep-traz-valor', texto));
+    else codigo.append(texto + ' = ', nodo('span', 'rep-traz-valor', r.vuelta.valor));
+    return codigo;
   };
   // Los espacios de adentro de una llamada no se parten: quitar(213, 1) no pasa a dos renglones.
   const sinCortes = (texto) => texto.replace(/\([^)]*\)/g, (m) => m.replace(/ /g, '\u00a0'));
@@ -540,6 +600,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     const bases = []; // las llamadas que llegan a su caso base justo ahora
     const filasNuevas = new Map(); // las filas de las llamadas que se abren justo ahora, todavia ocultas
     const porTransformar = [];
+    const porTransformarVuelta = [];
     const conMovimiento = animar && u > 0 && !sinMovimiento();
     const d = fundidoDe(u);
     for (const r of visibles) {
@@ -589,12 +650,17 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
       const tdIda = celda(ida ? idaConPiezas(r) : '', Boolean(ida && r.ida.paso === k && sinLlamadas && r.base !== k));
       celdasDeIda.set(r.id, tdIda);
       const vuelta = r.vuelta && r.vuelta.paso <= k;
-      const textoVuelta = vuelta ? (r.vuelta.texto === r.vuelta.valor ? r.vuelta.texto : r.vuelta.texto + ' = ' + r.vuelta.valor) : '';
-      const tdVuelta = celda(textoVuelta, Boolean(vuelta && r.vuelta.paso === k && r.base !== k));
+      const llegaVuelta = Boolean(vuelta && r.vuelta.paso === k);
+      // La vuelta con llamadas se anima en su lugar (ver transformarVuelta); el amarillo de "lo nuevo" entra al final de la animacion.
+      const animaVuelta = conMovimiento && llegaVuelta && r.base !== k && estadosDe(r).e2 !== null;
+      const amarilloYa = llegaVuelta && (!conMovimiento || (r.base !== k && !animaVuelta));
+      const tdVuelta = celda(vuelta ? vueltaConValor(r) : '', amarilloYa);
+      celdasDeValor.set(r.id, tdVuelta.querySelector('.rep-traz-valor'));
       base.tdIda = tdIda;
       base.tdVuelta = tdVuelta;
       if (r.ida && r.ida.paso === k && r.desde !== k && r.base !== k && sinLlamadas) celdasQueAparecen.push([tdIda, 0]);
-      if (vuelta && r.vuelta.paso === k && r.base !== k) celdasQueAparecen.push([tdVuelta, 0]);
+      if (animaVuelta) porTransformarVuelta.push([tdVuelta, r]);
+      else if (llegaVuelta && r.base !== k) celdasQueAparecen.push([tdVuelta, 0]);
     }
     trazado.replaceChildren(tabla);
     // La fila de una llamada que se abre entra (con un fundido) cuando empieza a aparecer su texto.
@@ -636,11 +702,15 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
         focoEnFila(cuerpoTabla, b.fila, t, d);
         if (b.tdIda && b.r.ida) reboteAmortiguado(b.tdIda.firstElementChild, t + 0.5 * d, 2.5 * d);
         reboteAmortiguado(b.pastilla, t + 0.5 * d, 2.5 * d);
-        if (b.tdVuelta) rebote(b.tdVuelta.firstElementChild, t + 4 * d, 1.5 * d);
+        if (b.tdVuelta) {
+          rebote(b.tdVuelta.firstElementChild, t + 4 * d, 1.5 * d);
+          ambarEn(b.tdVuelta, t + 4.5 * d, d); // el amarillo entra cuando el rebote termina
+        }
       }
       for (const [td, retraso] of celdasQueAparecen) aparecerCelda(td, retraso, d);
     }
     for (const [td, r] of porTransformar) transformar(td, r, u, celdasDeValor);
+    for (const [td, r] of porTransformarVuelta) transformarVuelta(td, r, u, d, celdasDeValor);
   };
   lado.append(estado, herramientas, franjaPregunta, trazado, figura, nodo('p', 'rep-subtitulo', 'Lo que muestra el programa'), consola);
   if (conEntrada) lado.append(nodo('p', 'rep-subtitulo', 'Lo que ingresa el usuario'), cajaDeEntrada);

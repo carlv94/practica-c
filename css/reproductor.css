@@ -544,6 +544,13 @@
   display: inline-block;
   transform-origin: left center;
 }
+/* El "= valor" de la vuelta entra despues de reemplazar la llamada. */
+.rep-traz-igual {
+  display: inline-block;
+  white-space: pre;
+  transform-origin: left center;
+  opacity: 0;
+}
 .rep-traz-fin {
   position: absolute;
   left: 0;
