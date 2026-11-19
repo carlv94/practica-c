@@ -460,6 +460,7 @@ export class Figura {
   // su respuesta (ver fijarEstado). Devuelve lo que dura la animacion.
   mostrar(foto, anterior = null, opciones = {}) {
     this.etapas = [];
+    this.destello = null;
     this.nodoFijo = null;
     if (this.franja) this.franja.replaceChildren();
     tiempo.cancelar(this.finEnfoque);
@@ -475,8 +476,15 @@ export class Figura {
 
   // Una etapa de la animacion de este paso: algo con nombre que empieza en el momento "t" (en ms, desde que empieza el
   // paso). El reproductor las lee de "etapas" apenas termina mostrar() para detenerse entre una y otra.
+  // Si lo anterior fue un resalte que termina justo ahora, la pausa de esta etapa cae en la meseta de ese resalte (cuando
+  // esta del todo encendido: "pausa"), no cuando ya se apago: asi se ve en que estado quedo la etapa anterior.
   anotar(t, nombre) {
-    if (this.etapas) this.etapas.push({ t, nombre });
+    if (!this.etapas) return;
+    const e = { t, nombre };
+    const d = this.destello;
+    if (d && Math.abs(d.fin - t) < 30 && d.meseta < t) e.pausa = d.meseta;
+    this.destello = null;
+    this.etapas.push(e);
   }
 
   // Como se llama una casilla (a: id de su variable o bloque, ruta: donde dentro de ella): «lista» de «main»,
@@ -521,7 +529,7 @@ export class Figura {
       if (intermedia) {
         const expansion = this.mostrar(intermedia, anterior, { animar: true, duracion, flujo: false, expandir: false });
         const resto = this.medirPaso(anterior, intermedia, foto, { animar, duracion, flujo, expandir: false });
-        this.etapas = [{ t: 0, nombre: 'Se agranda la caja de la función' }, ...this.etapasMedidas.map((m) => ({ t: m.t + expansion, nombre: m.nombre }))];
+        this.etapas = [{ t: 0, nombre: 'Se agranda la caja de la función' }, ...this.etapasMedidas.map((m) => ({ ...m, t: m.t + expansion, ...(m.pausa != null ? { pausa: m.pausa + expansion } : {}) }))];
         this.expansionPendiente = tiempo.esperar(() => {
           this.expansionPendiente = null;
           this.mostrar(foto, intermedia, { animar, duracion, flujo, expandir: false });
@@ -536,7 +544,7 @@ export class Figura {
         const aparicion = this.mostrar(intermedia, anterior, { animar: true, duracion, flujo: false, expandir: false, bloquePrimero: false });
         const espera = aparicion + 0.3 * duracion;
         const resto = this.medirPaso(anterior, intermedia, foto, { animar, duracion, flujo, expandir: false, bloquePrimero: false });
-        this.etapas = [{ t: 0, nombre: 'Aparece el bloque reservado' }, ...this.etapasMedidas.map((m) => ({ t: m.t + espera, nombre: m.nombre }))];
+        this.etapas = [{ t: 0, nombre: 'Aparece el bloque reservado' }, ...this.etapasMedidas.map((m) => ({ ...m, t: m.t + espera, ...(m.pausa != null ? { pausa: m.pausa + espera } : {}) }))];
         this.expansionPendiente = tiempo.esperar(() => {
           this.expansionPendiente = null;
           this.mostrar(foto, intermedia, { animar, duracion, flujo, expandir: false, bloquePrimero: false });
@@ -698,6 +706,7 @@ export class Figura {
     const marcarCambio = (tFlecha, tTarde, tMover) => {
       if (!mueve) return;
       let algo = false;
+      let acomodo = false;
       if (hayFundido && (escena.flechas.some((x) => x.recienLiberada) || fundidosDeBloque.some((e) => e.classList.contains('rep-fundido-bloque')))) {
         this.anotar(retardo, 'Se libera el bloque: queda marcado como liberado');
         algo = true;
@@ -716,10 +725,21 @@ export class Figura {
         if (nueva) this.anotar(tMover, 'Se abre la caja de la función que empieza');
         if (sale) this.anotar(tMover, 'Se cierra la caja de la función que termina');
         if (bloqueNuevo && !nueva) this.anotar(tMover, 'Aparece el bloque nuevo');
-        if (!nueva && !sale && !bloqueNuevo) this.anotar(tMover, 'Se acomodan los bloques y las cajas');
+        acomodo = !nueva && !sale && !bloqueNuevo;
+        if (!acomodo) algo = true;
+      }
+      // El valor que llega a una casilla (a = b, nuevo->dato = x): resplandece en las dos (con la ayuda de las copias) o en el destino.
+      const brilla = this.ayudas.brilloCopias ? ': brillan las dos casillas' : '';
+      for (const h of (foto.accesos || []).filter((y) => !y.llamada && y.tipo === 'valor' && y.de && y.para)) {
+        this.anotar(retardo, `Se guarda el valor de ${this.nombreCelda(escena, h.de.a, h.de.ruta)} en ${this.nombreCelda(escena, h.para.a, h.para.ruta)}${brilla}`);
         algo = true;
       }
-      if (!algo) this.anotar(retardo, 'Cambia la figura');
+      for (const c of foto.escrituras || []) {
+        this.anotar(retardo, `Se guarda un valor nuevo en ${this.nombreCelda(escena, c.a, c.ruta)}${this.ayudas.brilloAsignaciones ? ': brilla la casilla' : ''}`);
+        algo = true;
+      }
+      if (!algo && acomodo) this.anotar(tMover, 'Se acomodan los bloques y las cajas');
+      else if (!algo) this.anotar(retardo, 'Cambia la figura');
     };
     if (!mueve || (!animA && !seMueven)) {
       // Cambio el valor de una casilla (no un puntero) a la que llega alguna flecha: las flechas quedan difuminadas un
@@ -1113,6 +1133,7 @@ export class Figura {
       const largo = duracion + extra;
       const borde = (0.25 * duracion) / largo;
       marco.animate([{ opacity: 0 }, { opacity: 1, offset: borde }, { opacity: 1, offset: 1 - borde }, { opacity: 0 }], { duration: largo, delay, fill: 'both' });
+      this.destello = { fin: delay + largo, meseta: delay + largo * (1 - borde) };
     };
     // El ultimo resalte de un recorrido: si es el de la casilla donde se va a guardar una copia (despues de mostrar lo
     // que se guarda), queda encendido una pausa corta antes de que se dibuje la flecha nueva.
@@ -1132,6 +1153,7 @@ export class Figura {
         );
         ultimoResalte = { marco, animacion, delay: t, duracion: dResalte };
       }
+      this.destello = { fin: t + dResalte, meseta: t + 0.75 * dResalte };
       t += dResalte;
     };
     const resaltarDestino = () => {
@@ -1153,6 +1175,7 @@ export class Figura {
       const claves = condicion.celdas.map((c) => clave(c.a, c.ruta));
       if (this.brillar({ svg: clon }, claves, t, 0.8 * u)) {
         this.anotar(t, 'Brillan los valores de la condición');
+        this.destello = { fin: t + 0.8 * u, meseta: t + 0.6 * 0.8 * u };
         t += 0.8 * u;
       }
     }
@@ -1298,6 +1321,8 @@ export class Figura {
     }
     if (!t) return 0;
     const total = t + 0.1 * u;
+    // El flujo termina un poco despues de su ultimo resalte: lo que sigue (la figura nueva) empieza en "total".
+    if (this.destello && Math.abs(this.destello.fin - t) < 1) this.destello.fin = total;
     this.contenedor.replaceChildren(clon);
     if (pregunta) this.ponerRotulo(pregunta);
     this.flujoActivo = { svg: escena.svg, temporizador: tiempo.esperar(() => this.terminarFlujo(), total) };

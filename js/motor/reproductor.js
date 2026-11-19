@@ -1120,7 +1120,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
           pausaDeEtapa = true;
           tiempo.pausar();
           mostrarEtapa(i - 1, true);
-        }, e.t)
+        }, e.pausa != null ? e.pausa : e.t)
       );
     });
   }
@@ -1196,7 +1196,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
       const marcas = [];
       if (dFigura > 0) {
         const deLaFigura = dibujo.etapas && dibujo.etapas.length ? dibujo.etapas : [{ t: 0, nombre: 'Cambia la figura' }];
-        for (const m of deLaFigura) marcas.push({ t: m.t, nombre: m.nombre });
+        for (const m of deLaFigura) marcas.push({ t: m.t, nombre: m.nombre, ...(m.pausa != null ? { pausa: m.pausa } : {}) });
       }
       if (dTrazado > 0) for (const m of etapasDelTrazado(paso, unidad)) marcas.push({ t: dFigura + m.t, nombre: m.nombre });
       if (entrando) marcas.push({ t: dFigura + dTrazado, nombre: 'Se resalta la función' });
