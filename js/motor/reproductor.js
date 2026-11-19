@@ -342,7 +342,9 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     const f = funcionDe(foto);
     const cabecera = nodo('p', 'rep-estado-texto');
     cabecera.append(f ? `En ` : 'Por ejecutar, ');
-    if (f) cabecera.append(nodo('code', '', `${f.nombre}()`), ', por ejecutar ');
+    if (f) cabecera.append(nodo('code', '', `${f.nombre}()`), foto.retorno ? ', por devolver ' : ', por ejecutar ');
+    else if (foto.retorno) cabecera.append('por devolver ');
+    if (foto.retorno) cabecera.append(nodo('code', '', foto.retorno.texto), ', ');
     cabecera.append(`línea ${foto.linea}:`);
     const linea = nodo('pre', 'rep-estado-linea');
     const trozos = lineasPintadas((codigo.split('\n')[foto.linea - 1] || '').trim());

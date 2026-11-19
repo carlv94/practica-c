@@ -355,6 +355,42 @@ int main() {
     },
   },
   {
+    nombre: 'una recursion saca una fotografia por cada caja que se cierra con un valor calculado con otra llamada; la base y las funciones comunes no',
+    codigo: String.raw`#include <stdio.h>
+int doble(int x) {
+  return x * 2;
+}
+int quitar(int n, int d) {
+  if (n == 0) {
+    return 0;
+  }
+  if (n % 10 == d) {
+    return quitar(n / 10, d);
+  }
+  return quitar(n / 10, d) * 10 + n % 10;
+}
+int main() {
+  int a = doble(4);
+  printf("%d", quitar(2132, 1));
+  return 0;
+}`,
+    espera: {
+      salida: '232',
+      traza: (traza) => {
+        const con = traza.filter((f) => f.retorno);
+        // quitar(2132), quitar(213), quitar(21), quitar(2): cuatro cajas que devuelven algo calculado con otra llamada
+        if (con.length !== 4) return 'tenia que haber 4 retornos y hay ' + con.length;
+        const valores = con.map((f) => f.retorno.texto).join();
+        // el primero en cerrarse es el de quitar(2), que devuelve 2; el ultimo, el de quitar(2132), que devuelve 232
+        if (valores !== '2,2,23,232') return 'los valores de los retornos tenian que ser 2,2,23,232 y son ' + valores;
+        // en cada una, la caja que esta por cerrarse es la de arriba y las de abajo siguen
+        const hondos = con.map((f) => f.marcos.length).join();
+        if (hondos !== '5,4,3,2') return 'la pila de cada retorno tenia que tener 5,4,3,2 cajas y tiene ' + hondos;
+        return null;
+      },
+    },
+  },
+  {
     nombre: 'un valor que no sale de otra casilla anota la casilla donde se guarda (el que sale de una casilla es una copia)',
     codigo: String.raw`#include <stdio.h>
 int main() {

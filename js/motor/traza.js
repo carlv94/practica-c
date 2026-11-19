@@ -24,6 +24,9 @@
 //              no tenia nada que leer
 //   condicion: (si la sentencia anterior evaluo una condicion) { texto, valor, celdas }: la condicion tal como esta escrita,
 //              si dio verdadero o falso y (con la opcion "preguntas") las casillas que se leyeron para responderla
+//   retorno:   (solo en una recursion) { texto }: la funcion en curso esta por devolver ese valor, calculado con una llamada a si
+//              misma; la fotografia se saca justo antes de cerrar su caja, asi las cajas se cierran de a una
+//   escrituras: (si la sentencia anterior guardo un valor que no sale de otra casilla) [{ a, ruta }]: las casillas escritas
 //
 // Cada variable o bloque es { id, nombre, tipo, dir, tam, vivo, valor }. Un valor es:
 //   { k: 'num', v, t }                un numero (t: el tipo)

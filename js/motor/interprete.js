@@ -101,6 +101,7 @@ class Interprete {
     this.traza = [];
     this.accesos = []; // los accesos por puntero desde la ultima fotografia
     this.escrituras = []; // las casillas donde se guardo un valor que no sale de otra casilla (un literal, una cuenta), idem
+    this.llamadasDe = new Map(); // cuantas veces se llamo a cada funcion (para saber si un return llamo a la suya)
     this.enCondicion = 0; // cuantas condiciones se estan evaluando (una dentro de otra: a && b)
     this.condicionHecha = null; // la ultima condicion que se evaluo, para la proxima fotografia
     this.fotoDePaso = null; // la fotografia con que empezo la ultima sentencia (la pregunta de una condicion se le suma)
@@ -1210,6 +1211,7 @@ class Interprete {
     if (args.length !== f.params.length) {
       throw new ErrorDelMotor('SIN_VERIFICAR', `${f.nombre} recibe ${f.params.length} valores y se la llama con ${args.length}`);
     }
+    this.llamadasDe.set(f.nombre, (this.llamadasDe.get(f.nombre) || 0) + 1);
     const marca = this.memoria.marcaDePila();
     const marco = { funcion: f.nombre, ambitos: [new Map()], declaraciones: f.declaraciones, cuerpoId: f.cuerpo ? f.cuerpo.id : null };
     marco.ambitos[0].marca = marca;
@@ -1243,6 +1245,18 @@ class Interprete {
     this.marcos.pop();
     this.memoria.soltarPila(marca);
     return resultado;
+  }
+
+  // La fotografia de una funcion que esta por devolver un valor (solo la de una recursion; ver el return): lleva "retorno"
+  // con el valor escrito. No toca los accesos ni lo demas que espera la proxima fotografia.
+  fotoDeRetorno(n, rv) {
+    if (!this.opciones.traza || this.traza.length >= MAX_TRAZA || rv.t.k === 'struct' || rv.t.k === 'void') return;
+    let texto;
+    if (rv.t.k === 'ptr') texto = rv.v === null ? 'NULL' : 'una dirección';
+    else texto = String(rv.v);
+    const foto = fotografia(this, n.startPosition.row + 1);
+    foto.retorno = { texto };
+    this.traza.push(foto);
   }
 
   // ----------------------------------------------------------- sentencias
@@ -1292,7 +1306,13 @@ class Interprete {
       case 'return_statement': {
         this.paso(n);
         const v = n.namedChildren.find((h) => h.type !== 'comment');
-        throw new Retorno(v ? this.evaluar(v) : null);
+        const nombre = this.marcos[this.marcos.length - 1].funcion;
+        const antes = this.llamadasDe.get(nombre) || 0;
+        const devuelto = v ? this.evaluar(v) : null;
+        // Una funcion que devuelve algo calculado con una llamada a si misma (una recursion): antes de cerrar su caja se
+        // muestra lo que devuelve, asi las cajas se cierran de a una y se ve el valor que sube.
+        if (devuelto && (this.llamadasDe.get(nombre) || 0) > antes) this.fotoDeRetorno(n, devuelto);
+        throw new Retorno(devuelto);
       }
       case 'break_statement':
         this.paso(n);
