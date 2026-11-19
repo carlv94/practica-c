@@ -1534,6 +1534,10 @@ table.pila .vivo {
   margin-left: 26px;
 }
 
+.ajustes .ajustes-sub-2 {
+  margin-left: 52px;
+}
+
 .ajustes .ajustes-sub:has(input:disabled) {
   opacity: 0.55;
 }

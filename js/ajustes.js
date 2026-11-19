@@ -53,6 +53,22 @@ export const AYUDAS = [
     detalle: 'En lugar de la ida y la vuelta una al lado de la otra, una columna donde la llamada se reemplaza por lo que devolvió y la cuenta se resuelve.',
   },
   {
+    clave: 'preguntasTabla',
+    almacen: 'ajuste-preguntas-tabla',
+    porDefecto: false,
+    depende: 'trazado',
+    titulo: 'Preguntas de las llamadas',
+    detalle: 'Muestra, en cada llamada, lo que preguntó (los if) y lo que dio: ✓ verdadero, ✗ falso. Pasada la pregunta queda el símbolo; al tocar la fila se ve el texto.',
+  },
+  {
+    clave: 'preguntasTexto',
+    almacen: 'ajuste-preguntas-texto',
+    porDefecto: false,
+    depende: 'preguntasTabla',
+    titulo: 'Mostrar siempre el texto de cada pregunta',
+    detalle: 'En lugar del símbolo solo, el texto completo de todas las preguntas, siempre a la vista.',
+  },
+  {
     clave: 'nombresFlechas',
     almacen: 'reproductor-nombres', // la clave de antes, para no perder lo que cada uno ya tenia elegido
     porDefecto: false,
@@ -62,8 +78,8 @@ export const AYUDAS = [
 ];
 
 export const PERFILES = [
-  { id: 'practica', nombre: 'Práctica', valores: { brilloCopias: true, brilloAsignaciones: false, brilloCondiciones: false, resaltarFuncion: false, trazado: false, trazadoUnaColumna: false, nombresFlechas: false } },
-  { id: 'explicacion', nombre: 'Explicación', valores: { brilloCopias: true, brilloAsignaciones: true, brilloCondiciones: true, resaltarFuncion: true, trazado: true, trazadoUnaColumna: false, nombresFlechas: true } },
+  { id: 'practica', nombre: 'Práctica', valores: { brilloCopias: true, brilloAsignaciones: false, brilloCondiciones: false, resaltarFuncion: false, trazado: false, trazadoUnaColumna: false, preguntasTabla: false, preguntasTexto: false, nombresFlechas: false } },
+  { id: 'explicacion', nombre: 'Explicación', valores: { brilloCopias: true, brilloAsignaciones: true, brilloCondiciones: true, resaltarFuncion: true, trazado: true, trazadoUnaColumna: false, preguntasTabla: true, preguntasTexto: false, nombresFlechas: true } },
 ];
 
 const estado = new Map();
@@ -143,6 +159,13 @@ export const ajustes = {
   },
 };
 
+// Una ayuda que depende de otra se puede tocar solo si la otra (y la de la que ella depende) esta encendida.
+function habilitada(a) {
+  if (!a.depende) return true;
+  const padre = AYUDAS.find((x) => x.clave === a.depende);
+  return ajustes.valor(a.depende) && habilitada(padre);
+}
+
 function nodo(etiqueta, clase, texto) {
   const e = document.createElement(etiqueta);
   if (clase) e.className = clase;
@@ -183,7 +206,7 @@ export function montarAjustes(panel, abrir) {
   detalle.append(nodo('summary', '', 'Personalizar'));
   const casillas = new Map();
   for (const a of AYUDAS) {
-    const fila = nodo('label', 'casilla' + (a.depende ? ' ajustes-sub' : ''));
+    const fila = nodo('label', 'casilla' + (a.depende ? ' ajustes-sub' : '') + (a.depende && AYUDAS.find((x) => x.clave === a.depende).depende ? ' ajustes-sub-2' : ''));
     const c = document.createElement('input');
     c.type = 'checkbox';
     c.onchange = () => ajustes.fijar(a.clave, c.checked);
@@ -203,7 +226,7 @@ export function montarAjustes(panel, abrir) {
       c.checked = ajustes.valor(clave);
       const a = AYUDAS.find((x) => x.clave === clave);
       // Una casilla que depende de otra (el trazado por columnas) no se puede tocar si la otra esta apagada.
-      c.disabled = Boolean(a.depende) && !ajustes.valor(a.depende);
+      c.disabled = !habilitada(a);
     }
     if (id == null) detalle.open = true;
   };

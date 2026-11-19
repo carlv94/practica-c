@@ -522,6 +522,47 @@ int main() {
     },
   },
   {
+    nombre: 'las preguntas de cada llamada de una recursion: el texto con los valores puestos, lo que dio y en que fotografias se ve y se responde',
+    opciones: { preguntas: true },
+    codigo: String.raw`#include <stdio.h>
+int mayorDigito(int n) {
+  if (n < 10) {
+    return n;
+  }
+  int resto = mayorDigito(n / 10);
+  if (n % 10 > resto) {
+    return n % 10;
+  }
+  return resto;
+}
+int main() {
+  printf("%d\n", mayorDigito(417));
+  return 0;
+}`,
+    espera: {
+      salida: '7\n',
+      traza: (traza, r) => {
+        const filas = r.llamadas.map((l) => l.llamada + ': ' + l.preguntas.map((q) => `${q.texto} ${q.valor ? 'V' : 'F'} ${q.fase}`).join(' ; '));
+        const esperadas = [
+          'mayorDigito(417): 417 < 10 F ida ; 7 > 4 V vuelta',
+          'mayorDigito(41): 41 < 10 F ida ; 1 > 4 F vuelta',
+          'mayorDigito(4): 4 < 10 V ida',
+        ];
+        if (filas.join('\n') !== esperadas.join('\n')) return 'las preguntas tenian que ser\n' + esperadas.join('\n') + '\ny son\n' + filas.join('\n');
+        for (const l of r.llamadas) {
+          for (const q of l.preguntas) {
+            const p = traza[q.pregunta];
+            const respuesta = traza[q.respuesta];
+            if (!p || !p.pregunta || p.pregunta.texto !== q.simbolico) return `la pregunta ${q.simbolico} de ${l.llamada} tenia que verse en la fotografia ${q.pregunta}`;
+            if (!respuesta || !respuesta.condicion || respuesta.condicion.valor !== q.valor) return `la respuesta de ${q.simbolico} en ${l.llamada} tenia que conocerse en la fotografia ${q.respuesta}`;
+            if (!(q.pregunta < q.respuesta)) return 'la pregunta se ve antes que su respuesta';
+          }
+        }
+        return null;
+      },
+    },
+  },
+  {
     nombre: 'una recursion con varias lineas que llaman: cada sentencia en su renglon, sin tocar las funciones void',
     codigo: String.raw`#include <stdio.h>
 int fib(int n) {

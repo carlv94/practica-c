@@ -583,17 +583,22 @@
   top: 0;
   opacity: 0;
 }
+/* El texto de la llamada no se parte en renglones: el cuadro tiene el ancho justo que midio, y si el texto se partiera el valor que
+   emerge quedaria arriba, separado del resto de la cuenta. */
 .rep-traz-llamada {
   position: relative;
   display: inline-block;
   vertical-align: bottom;
+  white-space: nowrap;
 }
 .rep-traz-a {
   display: inline-block;
   transform-origin: center;
+  white-space: nowrap;
 }
 /* El valor emerge en el centro del hueco que deja la llamada; al cerrarse el hueco queda a la izquierda. */
 .rep-traz-b {
+  white-space: nowrap;
   position: absolute;
   left: 50%;
   top: 0;
@@ -604,6 +609,62 @@
 .rep-traz-pieza {
   display: inline-block;
   border-radius: 3px;
+}
+/* Las preguntas que hizo una llamada, una por renglon bajo ella: el texto con los valores puestos y lo que dio. */
+.rep-traz-preguntas {
+  margin-bottom: 3px;
+}
+.rep-traz-pregunta {
+  margin-top: 2px;
+  font-size: 0.75rem;
+}
+/* La flecha de una pregunta en el modo de una columna: baja (ida) o sube (vuelta), en gris tenue. */
+.rep-traz-fase {
+  margin-right: 4px;
+  color: var(--suave);
+  opacity: 0.8;
+}
+.rep-traz-pregunta-texto {
+  color: var(--suave);
+  font-size: inherit;
+  background: none;
+  padding: 0;
+}
+/* Lo que dio una pregunta: un tilde (verdadero, verde) o una equis (falso, gris pizarra: no es un error). */
+.rep-traz-icono {
+  display: inline-block;
+  margin-left: 4px;
+  font-weight: 700;
+}
+.rep-traz-si {
+  color: var(--bien);
+}
+.rep-traz-no {
+  color: var(--falso);
+}
+/* Las preguntas que ya pasaron: solo sus simbolos, en un boton que amplia la fila. */
+.rep-traz-resumen {
+  display: inline-block;
+  margin: 0 0 2px;
+  padding: 0 4px;
+  font: inherit;
+  font-size: 0.8rem;
+  line-height: 1.3;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.rep-traz-resumen:hover,
+.rep-traz-resumen:focus-visible {
+  border-color: var(--borde);
+}
+.rep-traz-resumen .rep-traz-icono:first-child,
+.rep-traz-resumen .rep-traz-fase + .rep-traz-icono {
+  margin-left: 0;
+}
+.rep-traz-ampliable {
+  cursor: pointer;
 }
 /* La etiqueta del caso base va en su propio renglon, debajo de la llamada. */
 .rep-traz-base {

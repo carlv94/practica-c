@@ -805,6 +805,7 @@ class Interprete {
     const afuera = Boolean(this.opciones.traza) && this.enCondicion === 0 && modo !== undefined;
     let textoPregunta = null;
     let preguntaHecha = null;
+    let pasoPregunta = null; // la fotografia que lleva la pregunta (ver anotarPregunta)
     if (afuera) {
       textoPregunta = (n.type === 'parenthesized_expression' ? n.namedChildren[0] : n).text.replace(/\s+/g, ' ').trim();
       if (textoPregunta.length > 42) textoPregunta = textoPregunta.slice(0, 41) + '…';
@@ -823,6 +824,7 @@ class Interprete {
       if (modo === 'paso' && ultima && ultima === this.fotoDePaso) ultima.pregunta = pregunta;
       else this.instantanea(n.startPosition.row + 1, null, pregunta);
       preguntaHecha = pregunta;
+      pasoPregunta = this.traza.length - 1;
     } else if (!(this.opciones.preguntas && this.enCondicion > 0)) this.lecturasEnCondicion(n); // (dentro de una condicion ya se leyeron)
     this.enCondicion++;
     const listaDeAccesos = this.accesos;
@@ -844,6 +846,7 @@ class Interprete {
     const valor = rv.t.k === 'ptr' ? rv.v !== null : rv.v !== 0;
     // Para la traza: la condicion que se acaba de evaluar (la de mas afuera) y que dio.
     if (afuera) this.condicionHecha = { texto: textoPregunta, valor, ...(preguntaHecha ? { celdas: preguntaHecha.celdas } : {}) };
+    if (afuera) this.anotarPregunta(n, textoPregunta, valor, pasoPregunta);
     return valor;
   }
 
@@ -1276,6 +1279,7 @@ class Interprete {
     const llamador = this.marcos[this.marcos.length - 1].funcion;
     const registro = {
       id: this.registroLlamadas.length,
+      preguntas: [], // lo que pregunto la llamada (ver anotarPregunta)
       llamador: llamador !== f.nombre ? { funcion: llamador } : null,
       base: null, // la fotografia donde esta llamada llega a su caso base (no hace otra llamada a la funcion), o null
       funcion: f.nombre,
@@ -1298,6 +1302,27 @@ class Interprete {
     marco.hechas.set(n.id, { registro, valor: textoDeValor(resultado) });
     if (registro.llamador) this.anotarLlamador(registro, n, marco);
     if (marco.registro) this.anotarLineaDeLlamada(marco, n);
+  }
+
+  // Una pregunta (if, while...) que hace una llamada de una funcion recursiva, para el trazado: { texto (con los valores puestos: 4172 < 10),
+  // simbolico (n < 10), valor, fase ('ida': antes de la primera llamada que vuelve; 'vuelta': despues), pregunta (la fotografia en que se la ve, con el cursor sobre el if), respuesta (la fotografia en
+  // que se sabe lo que dio) }.
+  anotarPregunta(n, simbolico, valor, pasoPregunta) {
+    const marco = this.marcos[this.marcos.length - 1];
+    const r = marco && marco.registro;
+    if (!r) return;
+    if (!r.preguntas) r.preguntas = [];
+    if (r.preguntas.length >= 8) return;
+    const interna = n.type === 'parenthesized_expression' ? n.namedChildren[0] : n;
+    let texto = simbolico;
+    try {
+      texto = this.sustituir(interna, marco.hechas || new Map(), 'vuelta').texto;
+    } catch (e) {
+      // se deja escrita como esta
+    }
+    // De la ida si todavia no volvio ninguna llamada de esta funcion; de la vuelta si ya volvio alguna (o si la pregunta la lleva).
+    const fase = marco.hechas && marco.hechas.size ? 'vuelta' : 'ida';
+    r.preguntas.push({ texto, simbolico, valor, fase, pregunta: pasoPregunta ?? this.traza.length, respuesta: this.traza.length });
   }
 
   // La sentencia en la que esta una llamada (declaration, expression_statement, if...).

@@ -339,6 +339,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   const ramifica = registros.some((r) => r.ida && r.ida.texto.split(r.funcion + '(').length > 2);
   const trazado = nodo('div', 'rep-trazado');
   trazado.hidden = true;
+  const expandidas = new Set(); // las filas cuyas preguntas el alumno amplio (con el texto a la vista)
   const trazadoActivo = () => registros.length > 0 && ajustes.valor('trazado');
   const enUnaColumna = () => conValores && ajustes.valor('trazadoUnaColumna');
   const partesDe = (r) => (r.ida.partes && r.ida.partes.length ? r.ida.partes : [r.ida.texto]);
@@ -424,6 +425,8 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
       if (r.base === k) total = Math.max(total, apertura + duracionBase(r, d, unaColumna));
       if (!r.ida) continue;
       if (r.ida.paso === k && r.desde !== k && r.base !== k) total = Math.max(total, d);
+      // La respuesta de una pregunta de la llamada: el valor que se leyo brilla y despues entra "verdadero" o "falso" con un rebote.
+      for (const q of ajustes.valor('preguntasTabla') ? r.preguntas || [] : []) if (q.respuesta === k && r.desde <= k) total = Math.max(total, (ajustes.valor('brilloCondiciones') ? 0.6 * u : 0) + 1.5 * d);
       const fase = r.vuelta ? faseDe(r, k) : null;
       if (fase && r.desde <= k && r.base !== k) total = Math.max(total, unaColumna ? duracionDeFila(r, u, fase) : duracionVuelta3(r, u, d, fase));
     }
@@ -486,7 +489,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     contenedor.append(capaA);
     const capaB = e3 ? nodo('span', 'rep-traz-capa rep-traz-fin', e3) : null;
     if (capaB) contenedor.append(capaB);
-    td.replaceChildren(contenedor);
+    td.lastElementChild.replaceWith(contenedor);
     let t = 0;
     if (e2) {
       for (const c of llamadasEnCapa) {
@@ -506,6 +509,21 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
       contraer(capaA, t, 0.4 * u); // la cuenta se contrae hacia su borde izquierdo...
       emerger(capaB, t + 0.4 * u, 0.5 * u); // ...y de ahi emerge el resultado
     }
+  };
+  // El texto de una celda: en la ida, la vuelta y la cuenta, las preguntas van arriba (un contenedor aparte) y el texto, ultimo.
+  const textoDeCelda = (td) => (td.firstElementChild && td.firstElementChild.classList.contains('rep-traz-preguntas') ? td.lastElementChild : td.firstElementChild);
+  // El simbolo de lo que dio una pregunta: ✓ (verdadero, verde) o ✗ (falso, gris pizarra: no es un error). Lleva su significado en el
+  // aviso y para los lectores de pantalla.
+  const iconoDe = (valor) => {
+    const e = nodo('span', 'rep-traz-icono ' + (valor ? 'rep-traz-si' : 'rep-traz-no'), valor ? '✓' : '✗');
+    e.title = valor ? 'verdadero' : 'falso';
+    e.setAttribute('role', 'img');
+    e.setAttribute('aria-label', valor ? 'verdadero' : 'falso');
+    return e;
+  };
+  // Un renglon (una pregunta) aparece con un fundido.
+  const aparecerLinea = (linea, retraso, duracion) => {
+    if (linea && linea.animate && duracion) linea.animate([{ opacity: 0 }, { opacity: 1 }], { duration: duracion, delay: retraso, easing: 'ease-in-out', fill: 'backwards' });
   };
   // El fondo de "lo nuevo" (amarillo) entra al final de la animacion de una celda y se queda.
   const ambarEn = (td, retraso, duracion) => {
@@ -536,7 +554,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     const hayIgual = fase === 'todo' && r.vuelta.valor !== null && (r.vuelta.flecha || r.vuelta.texto !== r.vuelta.valor);
     const igual = hayIgual ? nodo('span', 'rep-traz-igual', (r.vuelta.flecha ? ' → ' : ' = ') + r.vuelta.valor) : null;
     if (igual) contenedor.append(igual);
-    td.replaceChildren(contenedor);
+    td.lastElementChild.replaceWith(contenedor);
     contenedor.animate([{ opacity: 0 }, { opacity: 1 }], { duration: d, easing: 'ease-in-out', fill: 'backwards' });
     for (const c of llamadasEnCapa) {
       const ancho = c.a.offsetWidth;
@@ -589,7 +607,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   // El texto de una celda aparece con un fundido (y, si es una celda nueva en amarillo, el color tambien).
   const aparecerCelda = (td, retraso, duracion) => {
     if (!td || !td.animate || !duracion) return;
-    const texto = td.firstElementChild;
+    const texto = textoDeCelda(td);
     if (texto) texto.animate([{ opacity: 0 }, { opacity: 1 }], { duration: duracion, delay: retraso, fill: 'backwards' });
     if (td.classList.contains('rep-traz-nuevo')) {
       td.animate([{ backgroundColor: 'transparent' }, { backgroundColor: getComputedStyle(td).backgroundColor }], { duration: duracion, delay: retraso, fill: 'backwards' });
@@ -637,7 +655,9 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   // secuencia (su ida aparece, respira, la llamada brilla en ella y aparece el texto de la fila nueva), el caso base muestra su valor,
   // se marca y recien despues da la vuelta, y las filas cuya vuelta llega justo ahora hacen sus transiciones (modo de una columna).
   // "u" es la unidad de movimiento (ver pintarPaso).
-  const pintarTrazado = (k, { animar = false, u = 0 } = {}) => {
+  // "preguntaNueva": la pregunta que se ve en este paso (con el cursor sobre el if) entra con un fundido; se pide al poner el cursor, que
+  // es cuando aparece (en la primera pasada de un paso animado no se dibuja todavia).
+  const pintarTrazado = (k, { animar = false, u = 0, preguntaNueva = false, sinDesplazar = false } = {}) => {
     const activo = trazadoActivo();
     trazado.hidden = !activo;
     raiz.classList.toggle('rep-sin-figura', activo && sinMonticulo);
@@ -660,11 +680,26 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     const porTransformar = [];
     const porTransformarVuelta = [];
     const valoresQueLlegan = [];
+    const respuestasQueLlegan = []; // las respuestas que se conocen justo ahora
+    const preguntasNuevas = []; // las preguntas que se ven justo ahora (entran con el cursor)
     const conMovimiento = animar && u > 0 && !sinMovimiento();
     const d = fundidoDe(u);
     for (const r of visibles) {
       const fila = cuerpoTabla.insertRow();
       filasDom.set(r.id, fila);
+      // Tocar una fila con preguntas amplia (o vuelve a achicar) el texto de todas las suyas, en todas sus celdas.
+      if (r.preguntas && r.preguntas.length && ajustes.valor('preguntasTabla') && !ajustes.valor('preguntasTexto')) {
+        fila.classList.add('rep-traz-ampliable');
+        fila.addEventListener('click', () => {
+          const seleccion = typeof getSelection === 'function' ? getSelection() : null;
+          if (seleccion && !seleccion.isCollapsed) return; // el alumno esta seleccionando texto
+          if (expandidas.has(r.id)) expandidas.delete(r.id);
+          else expandidas.add(r.id);
+          const arriba = trazado.scrollTop; // la tabla no se mueve: el alumno esta mirando esa fila
+          pintarTrazado(paso, { u: 0, sinDesplazar: true });
+          trazado.scrollTop = arriba;
+        });
+      }
       // Una fila nueva se agrega en el momento en que aparece su texto (ver mostrarFila), no antes.
       if (conMovimiento && r.desde === k) {
         fila.style.display = 'none';
@@ -672,8 +707,9 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
       }
       if (r === actual) fila.classList.add('rep-traz-actual');
       else if (r.hasta != null && k >= r.hasta) fila.classList.add('rep-traz-cerrada');
-      const celda = (contenido, nuevo = false, sangria = 0) => {
+      const celda = (contenido, nuevo = false, sangria = 0, preguntas = null) => {
         const td = fila.insertCell();
+        if (preguntas) td.append(preguntas); // (arriba del texto)
         td.append(typeof contenido === 'string' ? nodo('code', '', sinCortes(contenido)) : contenido);
         if (nuevo) td.classList.add('rep-traz-nuevo');
         if (sangria) td.style.paddingLeft = 6 + sangria * 10 + 'px';
@@ -682,6 +718,69 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
       // El texto de la llamada que se abre no se marca en amarillo: brilla (temporalmente) en la ida de quien la hace.
       const tdLlamada = celda(r.llamada, false, ramifica ? r.nivel - nivelBase : 0);
       celdasDeLlamada.set(r.id, tdLlamada);
+      // Las preguntas que hizo la llamada, de las fases pedidas (cada una en su renglon, con los valores puestos y lo que dio): la
+      // pregunta se ve con el cursor sobre el if y la respuesta en el paso siguiente. En tres columnas, las de la ida van arriba
+      // de la ida y las de la vuelta arriba de la vuelta; en una, todas arriba, con una flecha (baja: ida; sube: vuelta); en una
+      // funcion sin ida ni vuelta (void), bajo la llamada.
+      const armarPreguntas = (fases, conFlecha) => {
+        if (!ajustes.valor('preguntasTabla')) return null;
+        // Con el texto siempre a la vista, o con la fila ampliada, todas con su texto; si no, la pregunta se ve con su texto mientras
+        // pasa (el paso de la pregunta y el de su respuesta) y despues queda solo su simbolo.
+        const conTexto = ajustes.valor('preguntasTexto') || expandidas.has(r.id);
+        const contenedor = nodo('div', 'rep-traz-preguntas');
+        const pasadas = [];
+        const lineas = [];
+        for (const q of (r.preguntas || []).filter((x) => fases.includes(x.fase || 'ida'))) {
+          const separada = q.pregunta !== q.respuesta;
+          if (q.pregunta > k || (animar && separada && q.pregunta === k)) continue; // todavia no (o llega junto con el cursor)
+          if (!conTexto && k > q.respuesta) {
+            pasadas.push(q);
+            continue;
+          }
+          const linea = nodo('div', 'rep-traz-pregunta');
+          if (conFlecha) {
+            const fase = nodo('span', 'rep-traz-fase', q.fase === 'vuelta' ? '↑' : '↓');
+            fase.title = q.fase === 'vuelta' ? 'Pregunta de la vuelta' : 'Pregunta de la ida';
+            linea.append(fase);
+          }
+          const texto = nodo('code', 'rep-traz-pregunta-texto', sinCortes('¿' + q.texto + '?'));
+          texto.title = q.simbolico;
+          linea.append(texto);
+          let resp = null;
+          if (q.respuesta <= k) {
+            resp = iconoDe(q.valor);
+            linea.append(resp);
+          }
+          lineas.push(linea);
+          if (conMovimiento && q.respuesta === k) respuestasQueLlegan.push({ texto, linea, resp, sola: !separada });
+          else if (preguntaNueva && separada && q.pregunta === k) preguntasNuevas.push(linea);
+        }
+        if (pasadas.length) {
+          // Las que ya pasaron: una fila de simbolos (un boton: tocarlo amplia la fila).
+          const resumen = nodo('button', 'rep-traz-resumen');
+          resumen.type = 'button';
+          resumen.setAttribute('aria-expanded', 'false');
+          resumen.setAttribute('aria-label', 'Preguntas de la llamada: ' + pasadas.map((q) => (q.valor ? 'verdadero' : 'falso')).join(', ') + '. Activar para ver el texto.');
+          let faseAnterior = null;
+          for (const q of pasadas) {
+            if (conFlecha && q.fase !== faseAnterior) {
+              const fase = nodo('span', 'rep-traz-fase', q.fase === 'vuelta' ? '↑' : '↓');
+              resumen.append(fase);
+              faseAnterior = q.fase;
+            }
+            resumen.append(iconoDe(q.valor));
+          }
+          contenedor.append(resumen);
+          // los que acaban de pasar (este paso es el siguiente a su respuesta) entran con un fundido
+          if (preguntaNueva && pasadas.some((q) => q.respuesta + 1 === k)) preguntasNuevas.push(resumen);
+        }
+        for (const linea of lineas) contenedor.append(linea);
+        return contenedor.childElementCount ? contenedor : null;
+      };
+      if (!conValores) {
+        const preguntas = armarPreguntas(['ida', 'vuelta'], false);
+        if (preguntas) tdLlamada.append(preguntas);
+      }
       // Una llamada que llego a su caso base lleva una etiqueta (en su propio renglon, para no ensanchar la columna).
       let pastilla = null;
       if (r.base != null && r.base <= k) {
@@ -699,16 +798,16 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
         const vueltaHecha = r.vuelta && r.vuelta.paso <= k;
         const contenido = !r.ida || r.ida.paso > k ? '' : vueltaHecha ? textoQuieto(r, k) : idaConPiezas(r);
         const nuevo = r.base !== k && (Boolean(r.ida && r.ida.paso === k && sinLlamadas) || (llega && !transiciona));
-        const td = celda(contenido, nuevo);
+        const td = celda(contenido, nuevo, 0, armarPreguntas(['ida', 'vuelta'], true));
         celdasDeIda.set(r.id, td);
-        celdasDeValor.set(r.id, td.querySelector('code'));
+        celdasDeValor.set(r.id, td.lastElementChild);
         base.tdIda = td;
         if (transiciona) porTransformar.push([td, r, fase]);
         else if (r.ida && r.ida.paso === k && r.desde !== k && r.base !== k && sinLlamadas) celdasQueAparecen.push([td, 0]);
         continue;
       }
       const ida = r.ida && r.ida.paso <= k;
-      const tdIda = celda(ida ? idaConPiezas(r) : '', Boolean(ida && r.ida.paso === k && sinLlamadas && r.base !== k));
+      const tdIda = celda(ida ? idaConPiezas(r) : '', Boolean(ida && r.ida.paso === k && sinLlamadas && r.base !== k), 0, armarPreguntas(['ida'], false));
       celdasDeIda.set(r.id, tdIda);
       const vuelta = r.vuelta && r.vuelta.paso <= k;
       const faseVuelta = r.vuelta ? faseDe(r, k) : null;
@@ -717,7 +816,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
       const animaVuelta = conMovimiento && (faseVuelta === 'todo' || faseVuelta === 'cuenta') && r.base !== k && estadosDe(r).e2 !== null;
       const animaValor = conMovimiento && faseVuelta === 'resultado';
       const amarilloYa = llegaVuelta && (!conMovimiento || (r.base !== k && !animaVuelta && !animaValor));
-      const tdVuelta = celda(vuelta ? vueltaConValor(r, k) : '', amarilloYa);
+      const tdVuelta = celda(vuelta ? vueltaConValor(r, k) : '', amarilloYa, 0, armarPreguntas(['vuelta'], false));
       celdasDeValor.set(r.id, tdVuelta.querySelector('.rep-traz-valor'));
       base.tdIda = tdIda;
       base.tdVuelta = tdVuelta;
@@ -770,7 +869,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
           t = 2.5 * d;
         }
         resplandor(tdPadre.querySelector('[data-id="' + r.id + '"]'), t, 2 * d, 1.12);
-        resplandorQueAparece(celdasDeLlamada.get(r.id).firstElementChild, t, 2 * d, 1.12);
+        resplandorQueAparece(textoDeCelda(celdasDeLlamada.get(r.id)), t, 2 * d, 1.12);
         mostrarFila(r.id, t, 0.6 * d); // la fila entra a la vez que su texto (que llega a verse del todo a los 0,6 fundidos)
       }
       // El caso base: el resto de la tabla se atenua; el valor de la ida y la etiqueta rebotan a la vez (con oscilaciones cada vez
@@ -778,10 +877,10 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
       for (const b of bases) {
         const t = b.r.desde === k ? duracionApertura(b.r, k, d) : 0;
         focoEnFila(cuerpoTabla, b.fila, t, d);
-        if (b.tdIda && b.r.ida) reboteAmortiguado(b.tdIda.firstElementChild, t + 0.5 * d, 2.5 * d);
+        if (b.tdIda && b.r.ida) reboteAmortiguado(textoDeCelda(b.tdIda), t + 0.5 * d, 2.5 * d);
         reboteAmortiguado(b.pastilla, t + 0.5 * d, 2.5 * d);
         if (b.tdVuelta) {
-          rebote(b.tdVuelta.firstElementChild, t + 4 * d, 1.5 * d);
+          rebote(textoDeCelda(b.tdVuelta), t + 4 * d, 1.5 * d);
           ambarEn(b.tdVuelta, t + 4.5 * d, d); // el amarillo entra cuando el rebote termina
         }
       }
@@ -789,13 +888,22 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     }
     for (const [td, r, fase] of porTransformar) transformar(td, r, u, celdasDeValor, fase);
     for (const [td, r, fase] of porTransformarVuelta) transformarVuelta(td, r, u, d, celdasDeValor, fase);
+    // Las preguntas: la nueva entra con un fundido; en una respuesta, el texto de la pregunta (con los valores que se leyeron) brilla y
+    // despues entra "verdadero" o "falso" con un rebote.
+    for (const linea of preguntasNuevas) aparecerLinea(linea, 0, d);
+    for (const { texto, linea, resp, sola } of respuestasQueLlegan) {
+      if (sola) aparecerLinea(linea, 0, d);
+      const brilla = ajustes.valor('brilloCondiciones');
+      if (brilla) resplandor(texto, 0, 0.8 * u, 1.1);
+      rebote(resp, brilla ? 0.6 * u : 0, 1.5 * d);
+    }
     // Lo que devuelve la llamada, cuando se agrega a una vuelta que ya estaba: entra con su rebote y el amarillo al final.
     for (const [td] of valoresQueLlegan) {
       rebote(td.querySelector('.rep-traz-final'), 0, 1.5 * d);
       ambarEn(td, d, d);
     }
     // La fila de la que trata el paso (la ultima abierta) a la vista; si es nueva, lo hace mostrarFila cuando entra.
-    if (actual && !filasNuevas.has(actual.id)) aLaVista(filasDom.get(actual.id), conMovimiento);
+    if (actual && !filasNuevas.has(actual.id) && !sinDesplazar) aLaVista(filasDom.get(actual.id), conMovimiento);
   };
   lado.append(estado, herramientas, franjaPregunta, trazado, figura, nodo('p', 'rep-subtitulo', 'Lo que muestra el programa'), consola);
   if (conEntrada) lado.append(nodo('p', 'rep-subtitulo', 'Lo que ingresa el usuario'), cajaDeEntrada);
@@ -983,7 +1091,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
       }
       funcionAnterior = f;
       mostrarEstado(foto);
-      pintarTrazado(paso); // al terminar, la tabla queda quieta en su estado final
+      pintarTrazado(paso, { u: unidad, preguntaNueva: adelante && animar }); // al terminar, la tabla queda quieta en su estado final
       consola.textContent = foto.salida || ' ';
       pintarEntrada(paso);
     };
