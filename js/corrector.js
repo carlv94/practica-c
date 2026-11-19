@@ -4507,6 +4507,37 @@ export function corregir(
     if (r.ejecucion) ejecucionMemoria = { fuente, ...r.ejecucion };
   }
 
+  // El programa de la respuesta con un main que llama a la funcion con los datos de un caso (los arreglos y los textos con sus
+  // valores) y muestra lo que devuelve; null si el caso no se puede escribir asi (una tabla, una estructura).
+  function programaParaElMotor(modelo, caso) {
+    const llamada = valorDe(caso.llama).trim().replace(/;\s*$/, '');
+    const m = /^([A-Za-z_]\w*)\s*\(/.exec(llamada);
+    const f = m ? modelo.funciones.findLast((x) => !x.prototipo && x.nombre === m[1]) : null;
+    if (!f) return null;
+    const lineas = [];
+    for (const [nombre, valor] of Object.entries(caso.datos || {})) {
+      if (!/^[A-Za-z_]\w*$/.test(nombre)) continue;
+      if (typeof valor === 'string') {
+        lineas.push('  char ' + nombre + '[] = "' + valor.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '";');
+        continue;
+      }
+      const lista = Array.isArray(valor) ? valor : [valor];
+      if (lista.some((v) => typeof v === 'object' && v !== null)) return null; // una tabla
+      if (lista.some((v) => v !== null && typeof v !== 'number')) return null;
+      const tipo = lista.every((v) => v === null || Number.isInteger(v)) ? 'int' : 'double';
+      const escritos = lista.map((v) => (v === null ? 0 : v)).join(', ');
+      lineas.push(Array.isArray(valor) ? '  ' + tipo + ' ' + nombre + '[] = {' + escritos + '};' : '  ' + tipo + ' ' + nombre + ' = ' + escritos + ';');
+    }
+    const sinValor = f.tipo.clase === 'primitivo' && f.tipo.nombre === 'void' && !f.punteros;
+    if (sinValor) lineas.push('  ' + llamada + ';');
+    else {
+      const decimal = f.tipo.clase === 'primitivo' && ['float', 'double'].includes(f.tipo.nombre) && !f.punteros;
+      lineas.push('  printf("' + (decimal ? '%g' : '%d') + '\\n", ' + llamada + ');');
+    }
+    const cabecera = /#include\s*<stdio\.h>/.test(fuente) ? '' : '#include <stdio.h>\n';
+    return cabecera + fuente.replace(/\s+$/, '') + '\n\nint main() {\n' + lineas.join('\n') + '\n  return 0;\n}\n';
+  }
+
   function reglaEjecuta(regla, modelo) {
     if (regla.conCiclo && !modelo.ciclos.some((c) => c.nuevo)) {
       error('CICLO_FALTA', 'La consigna pide un ciclo: una sentencia que se repite, como `for` o `while`.');
@@ -4559,6 +4590,14 @@ export function corregir(
     }
     if (bibliotecaFalta(modelo)) return;
     const entrada = regla.entrada || [];
+
+    // El paso a paso de una funcion recursiva: se arma un programa (con un main que la llama con el primer caso visible) para
+    // seguirlo con el motor de memoria, aunque la respuesta tenga errores (asi se ve por que no anda).
+    if (regla.casos && !ejecucionMemoria && consigna.requiere?.some((x) => x.funcion && x.funcion.recursiva)) {
+      const primero = regla.casos.find((c) => c.visible && c.llama) || regla.casos.find((c) => c.llama);
+      const programa = primero ? programaParaElMotor(modelo, primero) : null;
+      if (programa) ejecucionMemoria = { fuente: programa, entrada: '' };
+    }
 
     // Varios conjuntos de valores para los arreglos, cada uno con lo que tiene
     // que dar: asi no vale escribir el resultado a mano.

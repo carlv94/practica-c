@@ -417,6 +417,33 @@ import { corregir } from '../js/corrector.js';
           }
         }
 
+        // El paso a paso de las consignas de codigo con una funcion recursiva: con la solucion de referencia, el corrector arma un
+        // programa con un main que llama a la funcion con el primer caso visible; corre sin error y muestra lo que el caso espera.
+        for (const s of todas) {
+          s.consignas.forEach((c, i) => {
+            if (!c.referencia || !c.requiere || !c.requiere.some((x) => x.funcion && x.funcion.recursiva)) return;
+            const titulo = `paso a paso de ${c.id} (con código)`;
+            try {
+              const previo = llegarHasta(s, i + 1, []);
+              const r = corregirPaso(analizador, s, i, previo, c.referencia);
+              if (!r.memoria) throw new Error('el corrector no armó el programa para el paso a paso');
+              const caso = c.requiere.find((x) => x.ejecuta).ejecuta.casos.find((x) => x.visible && x.llama);
+              const m = ejecutarMotor(analizador, r.memoria.fuente, { entrada: '', traza: true });
+              if (m.error) throw new Error('el programa dio un error: ' + m.error.codigo);
+              if (!m.llamadas.length) throw new Error('no se registró ninguna llamada recursiva');
+              const enumeradores = { FALSO: '0', VERDADERO: '1' };
+              // (el corrector compara la salida sin los espacios del final: el motor deja el de "3 2 1 ")
+              const esperado = caso.salida !== undefined ? caso.salida.trim() : String(enumeradores[caso.devuelve] ?? caso.devuelve);
+              const salidaMotor = m.salida.trim();
+              if (salidaMotor !== esperado) throw new Error('mostró "' + salidaMotor + '" y el caso espera "' + esperado + '"');
+              m.traza.forEach((foto, k) => dibujarFotografia(foto, k ? m.traza[k - 1] : null));
+              anotar(true, titulo);
+            } catch (e) {
+              anotar(false, titulo, e.stack || e.message);
+            }
+          });
+        }
+
         for (const caso of CASOS_DE_LA_REGLA) {
           const r = resultadoDeLaRegla(analizador, corregir, caso);
           anotar(r.bien, `regla memoria: ${caso.nombre}`, r.detalle);
