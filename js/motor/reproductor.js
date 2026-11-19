@@ -13,9 +13,11 @@
 //              la que se esta ejecutando se ve atenuado
 
 import { Figura } from './figura.js';
+import { tiempo } from './tiempo.js';
 import { pintar } from '../editor.js';
 
 const VELOCIDADES = [
+  { nombre: 'Cámara lenta', ms: 4800 },
   { nombre: 'Muy lenta', ms: 2400 },
   { nombre: 'Lenta', ms: 1500 },
   { nombre: 'Normal', ms: 900 },
@@ -24,6 +26,7 @@ const VELOCIDADES = [
 ];
 const sinMovimiento = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 const CLAVE_VELOCIDAD = 'reproductor-velocidad';
+const CLAVE_VELOCIDAD_NOMBRE = 'reproductor-velocidad-nombre';
 const CLAVE_ZOOM = 'reproductor-zoom';
 const CLAVE_NOMBRES = 'reproductor-nombres';
 const NIVELES_DE_ZOOM = [0.4, 0.5, 0.6, 0.8, 1, 1.25, 1.5, 2];
@@ -66,12 +69,20 @@ function lineasPintadas(codigo) {
   return lineas;
 }
 
+// La velocidad se guardaba por su posicion; con la lista de antes de "Cámara lenta", la posicion 0 era "Muy lenta".
+const VELOCIDADES_ANTES = ['Muy lenta', 'Lenta', 'Normal', 'Rápida', 'Muy rápida'];
+const POR_DEFECTO = VELOCIDADES.findIndex((v) => v.nombre === 'Normal');
 const leerVelocidad = () => {
   try {
-    const v = Number(localStorage.getItem(CLAVE_VELOCIDAD));
-    return Number.isInteger(v) && v >= 0 && v < VELOCIDADES.length ? v : 2;
+    const nombre = localStorage.getItem(CLAVE_VELOCIDAD_NOMBRE);
+    let i = VELOCIDADES.findIndex((v) => v.nombre === nombre);
+    if (i < 0 && nombre == null) {
+      const antes = VELOCIDADES_ANTES[Number(localStorage.getItem(CLAVE_VELOCIDAD))];
+      i = VELOCIDADES.findIndex((v) => v.nombre === antes);
+    }
+    return i >= 0 ? i : POR_DEFECTO;
   } catch (e) {
-    return 2;
+    return POR_DEFECTO;
   }
 };
 const leerZoom = () => {
@@ -96,6 +107,22 @@ const leerNombres = () => {
     return false;
   }
 };
+// Los botones para explicar un paso (detener y repetir) se ven solo si se pide.
+const CLAVE_EXPLICAR = 'reproductor-explicar';
+const leerExplicar = () => {
+  try {
+    return localStorage.getItem(CLAVE_EXPLICAR) === '1';
+  } catch (e) {
+    return false;
+  }
+};
+const guardarExplicar = (si) => {
+  try {
+    localStorage.setItem(CLAVE_EXPLICAR, si ? '1' : '0');
+  } catch (e) {
+    // sin almacenamiento: no se recuerda
+  }
+};
 const guardarNombres = (si) => {
   try {
     localStorage.setItem(CLAVE_NOMBRES, si ? '1' : '0');
@@ -105,7 +132,7 @@ const guardarNombres = (si) => {
 };
 const guardarVelocidad = (v) => {
   try {
-    localStorage.setItem(CLAVE_VELOCIDAD, String(v));
+    localStorage.setItem(CLAVE_VELOCIDAD_NOMBRE, VELOCIDADES[v].nombre);
   } catch (e) {
     // sin almacenamiento: no se recuerda la eleccion
   }
@@ -131,6 +158,9 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   const ICONOS = {
     avanzar: '<path d="M3 4l9 8-9 8zM12 4l9 8-9 8z"/>',
     pausa: '<rect x="5" y="4" width="5" height="16" rx="1"/><rect x="14" y="4" width="5" height="16" rx="1"/>',
+    detener: '<rect x="6" y="6" width="12" height="12" rx="2"/>',
+    seguir: '<path d="M7 4l13 8-13 8z"/>',
+    repetir: '<path d="M20 12a8 8 0 1 1-2.6-5.9" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M20 3.5V9h-5.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>',
     ampliar: '<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>',
     cerrar: '<path d="M5 5l14 14M19 5L5 19" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>',
   };
@@ -154,6 +184,11 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   const reproducir = conSimbolo('avanzar', 'Reproducir', 'Avanzar solo');
   const siguiente = conSimbolo('▶', 'Siguiente', 'Paso siguiente (flecha derecha)', true);
   const final = conSimbolo('⏭', 'Final', 'Ir al último paso', true);
+  // Detener la animacion del paso en el momento en que esta (y seguir despues), y volver a verla desde el principio.
+  const detener = conSimbolo('detener', 'Detener', 'Detener la animación (barra espaciadora)');
+  const repetir = conSimbolo('repetir', 'Repetir', 'Repetir la animación de este paso (tecla R)');
+  detener.classList.add('rep-explicar');
+  repetir.classList.add('rep-explicar');
   const barraPasos = document.createElement('input');
   barraPasos.type = 'range';
   barraPasos.className = 'rep-barra-pasos';
@@ -162,14 +197,16 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   barraPasos.value = '0';
   barraPasos.setAttribute('aria-label', 'Paso');
   const cuenta = nodo('span', 'rep-cuenta');
-  const etiquetaVelocidad = nodo('label', 'rep-velocidad', 'Velocidad ');
+  const etiquetaVelocidad = nodo('label', 'rep-velocidad');
+  etiquetaVelocidad.append(nodo('span', 'rep-velocidad-rotulo', 'Velocidad'));
   const velocidad = document.createElement('select');
   velocidad.setAttribute('aria-label', 'Velocidad de reproducción');
   VELOCIDADES.forEach((v, i) => velocidad.append(new Option(v.nombre, String(i))));
   velocidad.value = String(leerVelocidad());
   etiquetaVelocidad.append(velocidad);
   const ampliarBoton = conSimbolo('ampliar', 'Ampliar', 'Ver el paso a paso en toda la pantalla');
-  barra.append(inicio, anterior, reproducir, siguiente, final, barraPasos, cuenta, etiquetaVelocidad, ampliarBoton);
+  ampliarBoton.classList.add('rep-ampliar');
+  barra.append(inicio, anterior, reproducir, siguiente, final, detener, repetir, barraPasos, cuenta, etiquetaVelocidad, ampliarBoton);
   const giro = nodo('div', 'rep-giro');
   giro.hidden = true;
   const giroTexto = nodo('span', '', 'Gire el teléfono para ver mejor la figura.');
@@ -219,7 +256,28 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     guardarNombres(casillaNombres.checked);
     dibujo.fijarNombres(casillaNombres.checked);
   };
-  herramientas.append(nodo('span', '', 'Figura'), menos, mas, ajustar, etiquetaZoom, etiquetaNombres);
+  // Explicar: detener y repetir (la barra espaciadora y la tecla R funcionan siempre) en lugar de inicio, reproducir y final
+  // (las teclas Inicio y Fin y la barra de pasos siguen). Asi la barra se queda con cuatro botones.
+  const etiquetaExplicar = nodo('label', 'rep-nombres');
+  etiquetaExplicar.title =
+    'Para explicar un paso con calma: muestra los botones Detener y Repetir y oculta Inicio, Reproducir y Final. La barra espaciadora, la tecla R y las teclas Inicio y Fin funcionan siempre.';
+  const casillaExplicar = document.createElement('input');
+  casillaExplicar.type = 'checkbox';
+  casillaExplicar.checked = leerExplicar();
+  etiquetaExplicar.append(casillaExplicar, ' Explicar');
+  const mostrarExplicar = () => {
+    const si = casillaExplicar.checked;
+    detener.hidden = repetir.hidden = !si;
+    inicio.hidden = reproducir.hidden = final.hidden = si;
+    raiz.classList.toggle('rep-explicando', si);
+  };
+  mostrarExplicar();
+  casillaExplicar.onchange = () => {
+    guardarExplicar(casillaExplicar.checked);
+    if (casillaExplicar.checked) parar(); // el avance solo no va con explicar
+    mostrarExplicar();
+  };
+  herramientas.append(nodo('span', '', 'Figura'), menos, mas, ajustar, etiquetaZoom, etiquetaNombres, etiquetaExplicar);
   // Lo que ingresa el usuario: el texto de la entrada, con lo que ya se leyo atenuado (solo si el programa tiene entrada).
   const textoDeEntrada = entrada || '';
   const cajaDeEntrada = nodo('pre', 'rep-entrada');
@@ -340,7 +398,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   // "adelante": se llego avanzando un paso (la unica vez que se espera a la animacion).
   function pintarPaso(animar = false, adelante = false) {
     if (marcaPendiente) {
-      clearTimeout(marcaPendiente.reloj);
+      tiempo.cancelar(marcaPendiente.reloj);
       const pendiente = marcaPendiente;
       marcaPendiente = null;
       pendiente.aplicar();
@@ -354,7 +412,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
 
     // El texto nuevo de la consola (un printf) aparece, en violeta y negrita, a la vez que se encienden las casillas de las que
     // salio, y vuelve a ser normal cuando se apagan (la figura avisa cuando: alMuestra).
-    for (const r of relojesDeSalida) clearTimeout(r);
+    for (const r of relojesDeSalida) tiempo.cancelar(r);
     relojesDeSalida = [];
     const antesDeSalida = antes && antes.salida ? antes.salida : '';
     const nuevoEnSalida = adelante && animar && foto.salida && foto.salida.length > antesDeSalida.length && foto.salida.startsWith(antesDeSalida) ? foto.salida.slice(antesDeSalida.length) : '';
@@ -363,13 +421,13 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
       nuevoEnSalida || lectura
         ? (desde, hasta) => {
             relojesDeSalida.push(
-              setTimeout(() => {
+              tiempo.esperar(() => {
                 if (nuevoEnSalida) consola.replaceChildren(antesDeSalida, nodo('span', 'rep-salida-nueva', nuevoEnSalida));
                 if (lectura) pintarEntrada(paso, lectura);
               }, desde)
             );
             relojesDeSalida.push(
-              setTimeout(() => {
+              tiempo.esperar(() => {
                 if (nuevoEnSalida) consola.textContent = foto.salida || ' ';
                 if (lectura) pintarEntrada(paso);
               }, hasta)
@@ -397,7 +455,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
       pintarEntrada(paso);
     };
     if (adelante && animar && ultimaAnimacion > 0) {
-      const reloj = setTimeout(() => {
+      const reloj = tiempo.esperar(() => {
         marcaPendiente = null;
         aplicar();
       }, ultimaAnimacion);
@@ -408,6 +466,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   }
 
   function ir(n) {
+    tiempo.continuar();
     const nuevo = Math.max(0, Math.min(traza.length - 1, n));
     const animar = Math.abs(nuevo - paso) === 1;
     const adelante = nuevo === paso + 1;
@@ -415,8 +474,43 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     pintarPaso(animar, adelante);
   }
 
+  // Detener la animacion es detener el reloj (los temporizadores y lo que se calcula cuadro a cuadro, ver tiempo.js) y las
+  // animaciones del navegador que estaban corriendo; seguir las reanuda desde donde quedaron. Avanzar, retroceder o repetir
+  // un paso lo reanuda.
+  let congeladas = [];
+  tiempo.alCambiar((pausado) => {
+    if (pausado) {
+      congeladas = raiz.getAnimations ? raiz.getAnimations({ subtree: true }).filter((a) => a.playState === 'running') : [];
+      congeladas.forEach((a) => a.pause());
+    } else {
+      congeladas.forEach((a) => a.play());
+      congeladas = [];
+    }
+    rotular(detener, pausado ? 'seguir' : 'detener', pausado ? 'Seguir' : 'Detener');
+    detener.setAttribute('aria-label', pausado ? 'Seguir con la animación (barra espaciadora)' : 'Detener la animación (barra espaciadora)');
+    detener.title = detener.getAttribute('aria-label');
+  });
+  function alternarPausa() {
+    if (tiempo.pausado) tiempo.continuar();
+    else tiempo.pausar();
+  }
+  function repetirPaso() {
+    tiempo.continuar();
+    if (paso > 0) {
+      paso -= 1;
+      pintarPaso(false, false);
+      paso += 1;
+    }
+    pintarPaso(true, true);
+  }
+  detener.onclick = alternarPausa;
+  repetir.onclick = () => {
+    parar();
+    repetirPaso();
+  };
+
   function parar() {
-    if (reloj) clearTimeout(reloj);
+    if (reloj) tiempo.cancelar(reloj);
     reloj = null;
     rotular(reproducir, 'avanzar', 'Reproducir');
     reproducir.setAttribute('aria-label', 'Avanzar solo');
@@ -426,7 +520,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   // movimiento) se espera a que termine, con un descanso, antes de pasar al que sigue.
   function programar() {
     const base = VELOCIDADES[Number(velocidad.value)].ms;
-    reloj = setTimeout(() => {
+    reloj = tiempo.esperar(() => {
       if (paso >= traza.length - 1) {
         parar();
         return;
@@ -437,7 +531,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   }
 
   function arrancar() {
-    if (reloj) clearTimeout(reloj);
+    if (reloj) tiempo.cancelar(reloj);
     programar();
   }
 
@@ -597,10 +691,19 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
       return;
     }
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
-    if (e.key === 'ArrowRight') (parar(), ir(paso + 1), e.preventDefault());
+    if (e.key === ' ') (alternarPausa(), e.preventDefault());
+    else if ((e.key === 'r' || e.key === 'R') && !e.ctrlKey && !e.metaKey && !e.altKey) (parar(), repetirPaso(), e.preventDefault());
+    else if (e.key === 'Home') (parar(), ir(0), e.preventDefault());
+    else if (e.key === 'End') (parar(), ir(traza.length - 1), e.preventDefault());
+    else if (e.key === 'ArrowRight') (parar(), ir(paso + 1), e.preventDefault());
     else if (e.key === 'ArrowLeft') (parar(), ir(paso - 1), e.preventDefault());
   });
 
+  // La barra espaciadora sobre un boton lo activaria al soltarla: aca detiene la animacion y nada mas.
+  raiz.addEventListener('keyup', (e) => {
+    if (e.key === ' ' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'SELECT') e.preventDefault();
+  });
+  tiempo.continuar();
   pintarPaso();
   // El panel todavia no esta en la pagina: se adapta cuando se lo pueda medir.
   requestAnimationFrame(() => {
