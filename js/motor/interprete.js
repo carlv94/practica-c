@@ -31,6 +31,8 @@ const MAX_SALIDA = 1000000;
 // Un valor escrito para una tabla o un cartel: un numero tal cual, NULL, o (un puntero a algo) "una dirección".
 function textoEscalar(rv) {
   if (!rv || !rv.t) return null;
+  // El valor de un enumerado se escribe con su nombre (si tiene).
+  if (rv.t.enumerados && typeof rv.v === 'number' && rv.t.enumerados.has(rv.v)) return rv.t.enumerados.get(rv.v);
   // Una letra se escribe como letra ('a'); el 0 del final de una cadena, '\0'.
   if (rv.t.esChar && typeof rv.v === 'number') {
     if (rv.v === 0) return "'\\0'";
@@ -341,17 +343,26 @@ class Interprete {
         return t;
       }
       case 'enum_specifier': {
+        // Un enumerado es un int que recuerda como se llama cada valor (el primer nombre, si dos valen lo mismo): asi la traza
+        // puede escribir FALSO y no 0. Sin cuerpo (enum Color c;), es el que se declaro antes con esa etiqueta.
+        const nombre = n.childForFieldName('name');
         const cuerpo = n.childForFieldName('body');
-        if (cuerpo) {
-          let valor = 0;
-          for (const e of cuerpo.namedChildren) {
-            if (e.type !== 'enumerator') continue;
-            const v = e.childForFieldName('value');
-            if (v) valor = this.constante(v);
-            this.constantes.set(e.childForFieldName('name').text, valor++);
-          }
+        const clave = nombre ? 'enum ' + nombre.text : null;
+        if (!cuerpo) return (clave && this.etiquetas.get(clave)) || INT;
+        const enumerados = new Map();
+        let valor = 0;
+        for (const e of cuerpo.namedChildren) {
+          if (e.type !== 'enumerator') continue;
+          const v = e.childForFieldName('value');
+          if (v) valor = this.constante(v);
+          const nom = e.childForFieldName('name').text;
+          this.constantes.set(nom, valor);
+          if (!enumerados.has(valor)) enumerados.set(valor, nom);
+          valor++;
         }
-        return INT;
+        const t = { ...INT, enumerados };
+        if (clave) this.etiquetas.set(clave, t);
+        return t;
       }
       default:
         throw new ErrorDelMotor('SIN_VERIFICAR', `el tipo ${n.type}`, n.startPosition.row + 1);
@@ -1255,7 +1266,9 @@ class Interprete {
 
   abrirRegistro(f, nodos, args) {
     if (this.registroLlamadas.length >= 300) return null;
-    const textos = args.map((a, i) => (nodos[i].type === 'char_literal' ? nodos[i].text : textoEscalar(a)) ?? nodos[i].text.replace(/\s+/g, ' '));
+    // (un argumento que recibe un parametro de un enumerado se escribe con el nombre del valor)
+    const deParametro = (a, i) => (f.params[i] && f.params[i].tipo.enumerados && a && typeof a.v === 'number' ? { t: f.params[i].tipo, v: a.v } : a);
+    const textos = args.map((a, i) => (nodos[i].type === 'char_literal' ? nodos[i].text : textoEscalar(deParametro(a, i))) ?? nodos[i].text.replace(/\s+/g, ' '));
     // Quien la llama (casi siempre main), si no es la misma funcion: es una llamada de mas arriba de la recursion.
     const llamador = this.marcos[this.marcos.length - 1].funcion;
     const registro = {
@@ -1558,10 +1571,13 @@ class Interprete {
         // muestra lo que devuelve, asi las cajas se cierran de a una y se ve el valor que sube.
         const conLlamada = Boolean(devuelto) && (this.llamadasDe.get(nombre) || 0) > antes;
         const actual = this.marcos[this.marcos.length - 1];
+        // Lo que devuelve se escribe con el tipo de retorno de la funcion (un enumerado: FALSO y no 0, aunque la cuenta sea de int).
+        const tipoDeRetorno = this.funciones.get(nombre) && this.funciones.get(nombre).tipoRetorno;
+        const escrito = devuelto && tipoDeRetorno && tipoDeRetorno.enumerados && typeof devuelto.v === 'number' ? { t: tipoDeRetorno, v: devuelto.v } : devuelto;
         // Un return de una llamada registrada que no hizo ninguna otra llamada a la funcion es su caso base.
         if (actual.registro && actual.registro.base === null && !(actual.hechas && actual.hechas.size)) actual.registro.base = fotoDelReturn;
-        if (devuelto && actual.registro && v && this.opciones.traza) this.anotarRetorno(actual, v, devuelto, conLlamada);
-        if (conLlamada) this.fotoDeRetorno(n, devuelto);
+        if (devuelto && actual.registro && v && this.opciones.traza) this.anotarRetorno(actual, v, escrito, conLlamada);
+        if (conLlamada) this.fotoDeRetorno(n, escrito);
         throw new Retorno(devuelto);
       }
       case 'break_statement':

@@ -32,7 +32,7 @@
 //   escrituras: (si la sentencia anterior guardo un valor que no sale de otra casilla) [{ a, ruta }]: las casillas escritas
 //
 // Cada variable o bloque es { id, nombre, tipo, dir, tam, vivo, valor }. Un valor es:
-//   { k: 'num', v, t }                un numero (t: el tipo)
+//   { k: 'num', v, t, enum? }         un numero (t: el tipo; enum: el nombre del valor, si es de un enumerado)
 //   { k: 'sinvalor', t }              todavia sin valor
 //   { k: 'nulo' }                     un puntero NULL
 //   { k: 'ptr', a, ruta, fuera }      un puntero al bloque o variable "a"; "ruta" es el camino
@@ -89,7 +89,9 @@ export function serializar(st) {
   }
   if (tipo.k === 'ptr') return serializarPuntero(st.v);
   if (st.v === undefined) return { k: 'sinvalor', t: textoDeTipo(tipo) };
-  return { k: 'num', v: st.v, t: tipo.nombre };
+  // Un enumerado lleva ademas el nombre del valor (enum): FALSO, y no solo 0.
+  const nombre = tipo.enumerados && tipo.enumerados.get(st.v);
+  return { k: 'num', v: st.v, t: tipo.nombre, ...(nombre ? { enum: nombre } : {}) };
 }
 
 const deLaReserva = (r) => ({

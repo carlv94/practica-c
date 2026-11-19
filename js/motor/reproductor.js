@@ -612,6 +612,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     const cabeza = tabla.createTHead().insertRow();
     for (const t of unaColumna ? ['Llamada', 'Devuelve'] : conValores ? ['Llamada', 'Ida', 'Vuelta'] : ['Llamada']) cabeza.append(nodo('th', '', t));
     const cuerpoTabla = tabla.createTBody();
+    const filasDom = new Map(); // la fila de cada llamada, por su numero
     const celdasDeValor = new Map(); // el texto de la cuenta de cada llamada, por su numero
     const celdasDeIda = new Map(); // la celda donde esta su ida (o su cuenta, en una columna)
     const celdasDeLlamada = new Map();
@@ -624,6 +625,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     const d = fundidoDe(u);
     for (const r of visibles) {
       const fila = cuerpoTabla.insertRow();
+      filasDom.set(r.id, fila);
       // Una fila nueva se agrega en el momento en que aparece su texto (ver mostrarFila), no antes.
       if (conMovimiento && r.desde === k) {
         fila.style.display = 'none';
@@ -682,6 +684,19 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
       else if (llegaVuelta && r.base !== k) celdasQueAparecen.push([tdVuelta, 0]);
     }
     trazado.replaceChildren(tabla);
+    // La zona de la tabla tiene un alto maximo y se desplaza sola: la fila a la que se refiere el paso queda a la vista (lo
+    // minimo que haga falta, con un margen de una fila); el encabezado, fijo arriba, no la tapa.
+    const aLaVista = (fila, suave) => {
+      if (!fila || !fila.isConnected || fila.style.display === 'none') return;
+      const caja = trazado.getBoundingClientRect();
+      const r = fila.getBoundingClientRect();
+      const cabecera = tabla.tHead ? tabla.tHead.getBoundingClientRect().height : 0;
+      const arriba = r.top - r.height - (caja.top + cabecera);
+      const abajo = r.bottom + r.height - caja.bottom;
+      const delta = arriba < 0 ? arriba : abajo > 0 ? abajo : 0;
+      if (Math.abs(delta) < 1) return;
+      trazado.scrollBy({ top: delta, behavior: suave && !sinMovimiento() ? 'smooth' : 'auto' });
+    };
     // La fila de una llamada que se abre entra (con un fundido) cuando empieza a aparecer su texto.
     const mostrarFila = (id, retraso, duracion) => {
       const fila = filasNuevas.get(id);
@@ -689,6 +704,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
       const entrar = () => {
         fila.style.display = '';
         if (fila.animate) fila.animate([{ opacity: 0 }, { opacity: 1 }], { duration: duracion, easing: 'ease-in-out' });
+        aLaVista(fila, true); // la fila nueva (y la etiqueta del caso base, que ya ocupa su lugar) quedan a la vista
       };
       if (retraso > 0) tiempo.esperar(entrar, retraso);
       else entrar();
@@ -730,6 +746,8 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     }
     for (const [td, r] of porTransformar) transformar(td, r, u, celdasDeValor);
     for (const [td, r] of porTransformarVuelta) transformarVuelta(td, r, u, d, celdasDeValor);
+    // La fila de la que trata el paso (la ultima abierta) a la vista; si es nueva, lo hace mostrarFila cuando entra.
+    if (actual && !filasNuevas.has(actual.id)) aLaVista(filasDom.get(actual.id), conMovimiento);
   };
   lado.append(estado, herramientas, franjaPregunta, trazado, figura, nodo('p', 'rep-subtitulo', 'Lo que muestra el programa'), consola);
   if (conEntrada) lado.append(nodo('p', 'rep-subtitulo', 'Lo que ingresa el usuario'), cajaDeEntrada);

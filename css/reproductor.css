@@ -502,9 +502,26 @@
   display: none;
 }
 /* El trazado de las llamadas recursivas: una tabla que se completa con los pasos. */
+/* La zona de la tabla crece con sus filas hasta un alto maximo (casi dos tercios de la ventana) y ahi se desplaza sola: el resto del
+   panel no se mueve cuando se agregan filas, salvo mientras la tabla va creciendo. */
 .rep-trazado {
   margin-bottom: 8px;
-  overflow-x: auto;
+  max-height: clamp(14rem, 62vh, 36rem);
+  overflow: auto;
+}
+/* Con ancho (el codigo a la izquierda y esto a la derecha) las dos columnas miden lo mismo, y a la tabla le toca el alto que le
+   sobra a la de la derecha. */
+@media (min-width: 761px) {
+  .rep:not(.rep-chico) .rep-cuerpo {
+    align-items: stretch;
+  }
+  .rep:not(.rep-chico) .rep-lado {
+    display: flex;
+    flex-direction: column;
+  }
+  .rep:not(.rep-chico) .rep-lado > .rep-trazado {
+    flex: 1 1 auto;
+  }
 }
 .rep-tabla-trazado {
   border-collapse: collapse;
@@ -512,6 +529,11 @@
   width: 100%;
 }
 .rep-tabla-trazado th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--panel);
+  box-shadow: inset 0 -1px 0 var(--borde);
   text-align: left;
   font-weight: 600;
   color: var(--suave);

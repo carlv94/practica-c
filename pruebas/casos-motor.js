@@ -444,6 +444,44 @@ int main() {
     },
   },
   {
+    nombre: 'un enumerado recuerda los nombres de sus valores: la traza y el trazado los escriben (FALSO y no 0)',
+    codigo: String.raw`#include <stdio.h>
+typedef enum {
+  FALSO,
+  VERDADERO
+} TBool;
+TBool pares(int n) {
+  if (n == 0) {
+    return VERDADERO;
+  }
+  return n % 2 == 0 && pares(n / 10);
+}
+int main() {
+  TBool r = pares(24);
+  printf("%d", r);
+  return 0;
+}`,
+    espera: {
+      salida: '1',
+      traza: (traza, r) => {
+        const filas = r.llamadas.map((l) => `${l.llamada} | ${l.ida.texto} | ${l.vuelta ? l.vuelta.texto + ' = ' + l.vuelta.valor : '-'}`);
+        const esperadas = ['pares(24) | n % 2 == 0 && pares(2) | pares(2) = VERDADERO', 'pares(2) | n % 2 == 0 && pares(0) | pares(0) = VERDADERO', 'pares(0) | VERDADERO | VERDADERO = VERDADERO'];
+        // (la ida y la vuelta de una cuenta con enumerados: lo que se sustituye es el valor de cada llamada)
+        const reales = r.llamadas.map((l) => `${l.vuelta.valor}`);
+        if (reales.join() !== 'VERDADERO,VERDADERO,VERDADERO') return 'los valores de las vueltas tenian que ser VERDADERO y son ' + reales + ' (' + filas.join(' // ') + ')';
+        const retornos = traza.filter((f) => f.retorno).map((f) => f.retorno.texto);
+        if (retornos.join() !== 'VERDADERO,VERDADERO') return 'los carteles de retorno tenian que ser VERDADERO,VERDADERO y son ' + retornos;
+        // la variable de tipo enumerado lleva el nombre del valor
+        const fin = traza.filter((f) => f.marcos.length === 1 && f.marcos[0].variables.some((v) => v.nombre === 'r' && v.valor.k === 'num'));
+        const ultima = fin[fin.length - 1];
+        const valorDeR = ultima && ultima.marcos[0].variables.find((v) => v.nombre === 'r').valor;
+        if (!valorDeR || valorDeR.v !== 1 || valorDeR.enum !== 'VERDADERO') return 'la variable r tenia que valer 1 con el nombre VERDADERO y es ' + JSON.stringify(valorDeR);
+        void esperadas;
+        return null;
+      },
+    },
+  },
+  {
     nombre: 'el llamador de la llamada de mas arriba: la llamada sola, o la cuenta algebraica que la rodea',
     codigo: String.raw`#include <stdio.h>
 int fact(int n) {

@@ -76,6 +76,7 @@ const clave = (id, ruta) => `${id}|${ruta.join('/')}`;
 function etiqueta(v) {
   switch (v.k) {
     case 'num': {
+      if (v.enum) return v.enum;
       if (v.t === 'char' && v.v >= 32 && v.v < 127) return `'${String.fromCharCode(v.v)}'`;
       return Number.isInteger(v.v) ? String(v.v) : String(Number(v.v.toFixed(4)));
     }
@@ -2157,6 +2158,7 @@ export class Figura {
     const decir = (c, r) => {
       switch (c.k) {
         case 'num':
+          if (c.enum) return c.enum + ' (' + c.v + ')';
           return c.t === 'char' && c.v >= 32 && c.v < 127 ? `'${String.fromCharCode(c.v)}' (código ${c.v})` : String(Number.isInteger(c.v) ? c.v : Number(c.v.toFixed(6)));
         case 'sinvalor':
           return 'todavía sin valor';
