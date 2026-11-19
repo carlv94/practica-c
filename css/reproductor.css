@@ -31,6 +31,9 @@
   color: var(--texto);
   cursor: pointer;
 }
+.rep-barra .rep-boton[hidden] {
+  display: none;
+}
 .rep-simbolo svg {
   width: 1.1em;
   height: 1.1em;
@@ -156,14 +159,38 @@
   font-size: 0.85rem;
   white-space: pre;
 }
+/* El rotulo y el desplegable van centrados en la fila, y el desplegable tiene la tipografia, el relleno y el borde de un
+   boton (asi mide lo mismo). La regla general de label le agrega un margen abajo y negrita, que aca no van. */
 .rep-velocidad {
-  font-size: 0.85rem;
-  color: var(--suave);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font: inherit;
+  font-weight: 400;
   white-space: nowrap;
 }
+.rep-velocidad-rotulo {
+  font-size: 0.85rem;
+  color: var(--suave);
+}
+/* como los botones (y como el desplegable del informe): borde, esquinas, fondo y colores de la aplicacion */
 .rep-velocidad select {
+  margin: 0; /* la regla general de select le agrega un margen abajo */
   font: inherit;
-  margin-left: 4px;
+  /* el alto de un boton: la linea (1,55 de la letra) mas el relleno y el borde; un select no usa la altura de linea heredada */
+  min-height: calc(1.55em + 10px);
+  min-width: 0;
+  max-width: 100%;
+  padding: 4px 6px;
+  color: var(--texto);
+  background: var(--fondo);
+  border: 1px solid var(--borde);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.rep-velocidad select:hover {
+  border-color: var(--acento);
 }
 .rep-estado-error {
   color: var(--error);
@@ -630,10 +657,6 @@
     width: 1.3em;
     height: 1.3em;
   }
-  .rep-barra > .rep-boton:last-child .rep-simbolo svg {
-    width: 1.7em;
-    height: 1.7em;
-  }
   .rep-barra .rep-barra-pasos {
     grid-column: span 3;
     min-width: 0;
@@ -643,15 +666,29 @@
     text-align: right;
   }
   .rep-barra .rep-velocidad {
-    grid-column: span 3;
+    grid-column: span 4;
   }
-  .rep-barra > .rep-boton:last-child {
+  .rep-barra > .rep-ampliar {
+    grid-column: span 1;
+  }
+  /* explicando: cuatro botones (anterior, siguiente, detener, repetir), asi que cuatro columnas */
+  .rep-explicando .rep-barra {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .rep-explicando .rep-barra .rep-barra-pasos,
+  .rep-explicando .rep-barra .rep-cuenta {
     grid-column: span 2;
+  }
+  .rep-explicando .rep-barra .rep-velocidad {
+    grid-column: span 3;
   }
 }
 @media (pointer: coarse) {
-  .rep-boton {
+  .rep-boton,
+  .rep-velocidad select {
     min-height: 42px;
+  }
+  .rep-boton {
     padding: 6px 12px;
   }
   .rep-herramientas .rep-boton {
@@ -699,8 +736,13 @@
   min-height: 0;
 }
 .rep-apaisado .rep-cuenta,
-.rep-apaisado .rep-velocidad {
+.rep-apaisado .rep-velocidad-rotulo {
   font-size: 0.75rem;
+}
+.rep-apaisado .rep-velocidad select {
+  min-height: 34px;
+  padding: 2px 8px;
+  font-size: 0.8rem;
 }
 
 /* la flecha que acaba de cambiar, y adonde apuntaba antes */
@@ -756,6 +798,15 @@
   stroke: var(--texto);
   stroke-width: 3;
   filter: drop-shadow(0 0 4px var(--acento));
+}
+/* el & junto a la casilla de la que se pasa la direccion (no el contenido) a una funcion */
+.rep-ampersand rect {
+  fill: var(--texto);
+}
+.rep-svg .rep-ampersand-texto {
+  fill: var(--fondo);
+  font-weight: 700;
+  font-size: 16px;
 }
 /* lo que se lee para responder una condicion: borde discontinuo, como una pregunta */
 .rep-acceso.rep-consulta {

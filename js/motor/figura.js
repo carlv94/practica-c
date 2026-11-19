@@ -37,8 +37,14 @@
 const NS = 'http://www.w3.org/2000/svg';
 let contadorDeCortes = 0; // para dar un id distinto a cada recorte de una caja que se abre o se cierra
 // Lo que no interviene en un paso (las flechas de afuera) se atenua hasta esta opacidad.
+import { tiempo } from './tiempo.js';
+
 const ATENUADO = 0.38;
 // Un parpadeo: aparece, casi se apaga y vuelve a aparecer.
+// Algo que aparece, se queda y se va (el & de la direccion de una variable).
+const APARECE = [{ opacity: 0 }, { opacity: 1, offset: 0.1 }, { opacity: 1, offset: 0.85 }, { opacity: 0 }];
+// Un pulso: se enciende, se queda un momento y se apaga. Los de una llamada (planDeLlamada) usan este y no el parpadeo.
+const PULSO = [{ opacity: 0 }, { opacity: 1, offset: 0.2 }, { opacity: 1, offset: 0.8 }, { opacity: 0 }];
 const PARPADEO = [{ opacity: 0 }, { opacity: 1, offset: 0.2 }, { opacity: 0.1, offset: 0.45 }, { opacity: 1, offset: 0.7 }, { opacity: 0 }];
 const CW = 52; // ancho de una casilla
 const CH = 26; // alto de una casilla
@@ -453,8 +459,8 @@ export class Figura {
   mostrar(foto, anterior = null, opciones = {}) {
     this.nodoFijo = null;
     if (this.franja) this.franja.replaceChildren();
-    clearTimeout(this.finEnfoque);
-    clearTimeout(this.relojRespuesta);
+    tiempo.cancelar(this.finEnfoque);
+    tiempo.cancelar(this.relojRespuesta);
     // Las flechas que salen de estas casillas quedan a la vista en el paso de una pregunta; las demas se atenuan.
     const enfoque = foto.pregunta && foto.pregunta.enfoque ? foto.pregunta.enfoque : [];
     this.enfoquePregunta = enfoque.length ? new Set(enfoque.map((e) => clave(e.a, e.ruta))) : null;
@@ -472,7 +478,7 @@ export class Figura {
     const dura = sombra.mostrar(foto, intermedia, opciones);
     sombra.terminarFlujo();
     if (sombra.raf) cancelAnimationFrame(sombra.raf);
-    for (const reloj of [sombra.finAtenuado, sombra.finAparte, sombra.finEnfoque, sombra.expansionPendiente]) clearTimeout(reloj);
+    for (const reloj of [sombra.finAtenuado, sombra.finAparte, sombra.finEnfoque, sombra.expansionPendiente]) tiempo.cancelar(reloj);
     return dura;
   }
 
@@ -480,7 +486,7 @@ export class Figura {
   // cuando ya se hizo la del bloque nuevo (ver fotoConBloque).
   mostrarBase(foto, anterior = null, { animar = false, duracion = 450, flujo = false, expandir = true, bloquePrimero = true } = {}) {
     this.terminarFlujo();
-    clearTimeout(this.expansionPendiente);
+    tiempo.cancelar(this.expansionPendiente);
     this.expansionPendiente = null;
     if (this.raf) cancelAnimationFrame(this.raf);
     this.raf = null;
@@ -492,7 +498,7 @@ export class Figura {
       if (intermedia) {
         const expansion = this.mostrar(intermedia, anterior, { animar: true, duracion, flujo: false, expandir: false });
         const resto = this.medirPaso(anterior, intermedia, foto, { animar, duracion, flujo, expandir: false });
-        this.expansionPendiente = setTimeout(() => {
+        this.expansionPendiente = tiempo.esperar(() => {
           this.expansionPendiente = null;
           this.mostrar(foto, intermedia, { animar, duracion, flujo, expandir: false });
         }, expansion);
@@ -506,7 +512,7 @@ export class Figura {
         const aparicion = this.mostrar(intermedia, anterior, { animar: true, duracion, flujo: false, expandir: false, bloquePrimero: false });
         const espera = aparicion + 0.3 * duracion;
         const resto = this.medirPaso(anterior, intermedia, foto, { animar, duracion, flujo, expandir: false, bloquePrimero: false });
-        this.expansionPendiente = setTimeout(() => {
+        this.expansionPendiente = tiempo.esperar(() => {
           this.expansionPendiente = null;
           this.mostrar(foto, intermedia, { animar, duracion, flujo, expandir: false, bloquePrimero: false });
         }, espera);
@@ -529,9 +535,9 @@ export class Figura {
 
     const u = duracion;
     this.involucradas = new Set((foto.accesos || []).filter((h) => h.de).map((h) => clave(h.de.a, h.de.ruta)));
-    clearTimeout(this.finAtenuado);
+    tiempo.cancelar(this.finAtenuado);
     this.finAtenuado = null;
-    clearTimeout(this.finAparte);
+    tiempo.cancelar(this.finAparte);
     this.finAparte = null;
     // Antes de que cambie nada, se ve por donde se llega a lo que la sentencia toca.
     // (los accesos de una llamada, argumento y parametro, se animan al final, con la caja de la funcion ya abierta)
@@ -657,10 +663,10 @@ export class Figura {
       if (aparte) {
         const svg = escena.svg;
         svg.classList.add('rep-aparte');
-        this.finAparte = setTimeout(() => {
+        this.finAparte = tiempo.esperar(() => {
           svg.classList.remove('rep-aparte');
           svg.classList.add('rep-vuelve');
-          this.finAparte = setTimeout(() => svg.classList.remove('rep-vuelve'), 400);
+          this.finAparte = tiempo.esperar(() => svg.classList.remove('rep-vuelve'), 400);
         }, retardo + aparte);
       }
       const dura = Math.max(hayFundido ? u : 0, this.dDestello ? this.retrasoFlechas + this.dDestello : 0);
@@ -679,9 +685,9 @@ export class Figura {
     const hayTarde = seMueven && escena.flechas.some((f) => f.tarde);
     // Entre que aparece el bloque y se dibuja la flecha que lo apunta, una pausa corta.
     const pausaNuevo = 0.2 * u;
-    const inicio = performance.now() + retardo;
+    const inicio = tiempo.ahora() + retardo;
     const paso = (ahora) => {
-      const t = ahora - inicio;
+      const t = tiempo.ahora(ahora) - inicio;
       if (this.animandoA && t < duracionA) {
         this.kA = suavizar(Math.max(0, t - retencion) / u);
         this.pintarFlechas();
@@ -696,7 +702,7 @@ export class Figura {
       }
       if (!seMueven) {
         this.raf = null;
-        this.finAtenuado = setTimeout(quitarAtenuado, dLlegar + 50);
+        this.finAtenuado = tiempo.esperar(quitarAtenuado, dLlegar + 50);
         return;
       }
       if (t < espera) {
@@ -721,7 +727,7 @@ export class Figura {
       this.dibujarNuevas('.rep-tarde', u, hayTarde ? pausaNuevo : 0, plan ? plan.flechas : null);
       this.parpadear(escena, objetivos.alFinal, dFinal, hayTarde ? pausaNuevo + u : 0);
       if (plan) plan.ejecutar();
-      this.finAtenuado = setTimeout(quitarAtenuado, Math.max((hayTarde ? pausaNuevo + u : 0) + dFinal, dPlan) + 50);
+      this.finAtenuado = tiempo.esperar(quitarAtenuado, Math.max((hayTarde ? pausaNuevo + u : 0) + dFinal, dPlan) + 50);
     };
     this.raf = requestAnimationFrame(paso);
     return retardo + espera + duracionB + Math.max((hayTarde ? pausaNuevo + u : 0) + dFinal, dPlan) + (seMueven ? 0 : dLlegar);
@@ -764,23 +770,40 @@ export class Figura {
     return salida;
   }
 
-  parpadear(escena, objetivos, duracion, retraso) {
+  parpadear(escena, objetivos, duracion, retraso, cuadros = PARPADEO) {
     if (!escena.capaResalte || !duracion || sinMovimiento()) return;
     for (const k of objetivos) {
       const ancla = escena.anclas.get(k);
       const caja = ancla ? this.absolutoDe(escena, ancla) : null;
-      if (caja) this.parpadeo(escena.capaResalte, caja, duracion, retraso);
+      if (caja) this.parpadeo(escena.capaResalte, caja, duracion, retraso, cuadros);
+    }
+  }
+
+  // Un & junto a una casilla: lo que se pasa de ella no es su contenido sino su direccion.
+  marcaDeDireccion(escena, k, duracion, retraso) {
+    if (!escena.capaResalte || !duracion || sinMovimiento()) return;
+    const ancla = escena.anclas.get(k);
+    const caja = ancla ? this.absolutoDe(escena, ancla) : null;
+    if (!caja) return;
+    const marca = el('g', { class: 'rep-ampersand' });
+    marca.style.opacity = '0';
+    marca.append(el('rect', { x: caja.x + caja.w - 19, y: caja.y - 13, width: 22, height: 19, rx: 4 }));
+    marca.append(texto(caja.x + caja.w - 8, caja.y + 2, '&', 'rep-ampersand-texto', { 'text-anchor': 'middle' }));
+    escena.capaResalte.append(marca);
+    if (marca.animate) {
+      const a = marca.animate(APARECE, { duration: duracion, delay: retraso, fill: 'both' });
+      a.onfinish = () => marca.remove();
     }
   }
 
   // El trazo de una flecha que parpadea (como cuando un acceso la recorre).
-  parpadeoDeFlecha(escena, flecha, duracion, retraso) {
+  parpadeoDeFlecha(escena, flecha, duracion, retraso, cuadros = PARPADEO) {
     if (!escena.capaResalte || !duracion || sinMovimiento()) return;
     const trazo = el('path', { d: camino(this.rutaPuntos(flecha, flecha.final, escena.filas, escena)), class: 'rep-flujo' });
     trazo.style.opacity = '0';
     escena.capaResalte.append(trazo);
     if (trazo.animate) {
-      const a = trazo.animate(PARPADEO, { duration: duracion, delay: retraso, fill: 'both' });
+      const a = trazo.animate(cuadros, { duration: duracion, delay: retraso, fill: 'both' });
       a.onfinish = () => trazo.remove();
     }
   }
@@ -802,37 +825,48 @@ export class Figura {
     }
     if (!parejas.length || !escena.capaResalte) return null;
     const juntos = parejas.length > 3;
-    const dValor = 0.5 * u;
-    const dCopia = 0.9 * u;
-    const dParam = 0.6 * u;
-    const dDestino = 0.9 * u;
+    // Cada pulso dura una unidad; el siguiente empieza un poco antes de que termine el anterior (lo que se copia "pasa" de
+    // una casilla a la otra) y el & de una direccion queda hasta que ya empezo el del parametro.
+    const dPulso = u;
+    const adelanto = 0.8 * u;
     const acciones = [];
     const destinos = new Set();
     const flechas = new Set();
     const resaltado = new Set();
+    let fin = 0;
+    const dura = (en, d) => {
+      fin = Math.max(fin, en + d);
+    };
 
+    // Cada uno devuelve cuanto hay que esperar para que empiece lo que sigue.
     const origenDe = (p, en) => {
       const h = p.origen;
       if (!h) return 0;
       const celda = clave(h.de.a, h.de.ruta);
       resaltado.add(celda);
+      dura(en, dPulso);
       if (h.tipo !== 'copia') {
-        acciones.push(() => this.parpadear(escena, [celda], dValor, en));
-        return dValor;
+        acciones.push(() => {
+          this.parpadear(escena, [celda], dPulso, en, PULSO);
+          if (h.direccion) this.marcaDeDireccion(escena, celda, 1.4 * u, en);
+        });
+        if (h.direccion) dura(en, 1.4 * u);
+        return adelanto;
       }
       const flecha = escena.flechas.find((f) => f.claveOrigen === celda && f.final);
       const bloque = this.claveDeResalte(escena, h.a.a, h.a.ruta);
       resaltado.add(bloque);
       acciones.push(() => {
-        this.parpadear(escena, [celda, bloque], dCopia, en);
-        if (flecha) this.parpadeoDeFlecha(escena, flecha, dCopia, en);
+        this.parpadear(escena, [celda, bloque], dPulso, en, PULSO);
+        if (flecha) this.parpadeoDeFlecha(escena, flecha, dPulso, en, PULSO);
       });
-      return dCopia;
+      return adelanto;
     };
     const parametroDe = (p, en) => {
       resaltado.add(p.param);
-      acciones.push(() => this.parpadear(escena, [p.param], dParam, en));
-      return dParam;
+      dura(en, dPulso);
+      acciones.push(() => this.parpadear(escena, [p.param], dPulso, en, PULSO));
+      return dPulso;
     };
     const flechaDe = (p, en) => {
       const f = escena.flechas.find((x) => x.claveOrigen === p.param && x.tarde && x.final);
@@ -840,11 +874,13 @@ export class Figura {
       const destino = this.claveDeResalte(escena, f.a, f.ruta);
       destinos.add(destino);
       flechas.add(p.param);
+      dura(en, u);
       acciones.push(() => this.dibujarNuevas(`.rep-tarde[data-k="${p.param}"]`, u, en));
       if (resaltado.has(destino)) return u;
       resaltado.add(destino);
-      acciones.push(() => this.parpadear(escena, [destino], dDestino, en + u));
-      return u + dDestino;
+      dura(en + u, dPulso);
+      acciones.push(() => this.parpadear(escena, [destino], dPulso, en + u, PULSO));
+      return u + dPulso;
     };
 
     let t = 0;
@@ -861,16 +897,16 @@ export class Figura {
         t += flechaDe(p, t);
       }
     }
-    return { acciones, duracion: t, destinos, flechas, ejecutar: () => acciones.forEach((a) => a()) };
+    return { acciones, duracion: Math.max(t, fin), destinos, flechas, ejecutar: () => acciones.forEach((a) => a()) };
   }
 
   // Un marco que parpadea alrededor de una casilla o de un bloque (y se quita al terminar).
-  parpadeo(capa, caja, duracion, retraso) {
+  parpadeo(capa, caja, duracion, retraso, cuadros = PARPADEO) {
     const marco = el('rect', { x: caja.x - 3, y: caja.y - 3, width: caja.w + 6, height: caja.h + 6, rx: 4, class: 'rep-acceso' });
     marco.style.opacity = '0';
     capa.append(marco);
     if (marco.animate) {
-      const a = marco.animate(PARPADEO, { duration: duracion, delay: retraso, fill: 'both' });
+      const a = marco.animate(cuadros, { duration: duracion, delay: retraso, fill: 'both' });
       a.onfinish = () => marco.remove();
     }
     return marco;
@@ -1100,8 +1136,8 @@ export class Figura {
       // La respuesta no ocupa lugar hasta que le toca aparecer: el rotulo se ensancha recien entonces, no mientras corre el flujo.
       const r = this.crearRotulo(condicion.texto, condicion.valor, false);
       pregunta = r.caja;
-      clearTimeout(this.relojRespuesta);
-      this.relojRespuesta = setTimeout(() => {
+      tiempo.cancelar(this.relojRespuesta);
+      this.relojRespuesta = tiempo.esperar(() => {
         r.respuesta.hidden = false;
         r.caja.querySelector('.rep-pregunta').classList.add(condicion.valor ? 'rep-pregunta-si' : 'rep-pregunta-no');
         this.llamarLaAtencion(r.caja, 0, false);
@@ -1113,7 +1149,7 @@ export class Figura {
     const total = t + 0.1 * u;
     this.contenedor.replaceChildren(clon);
     if (pregunta) this.ponerRotulo(pregunta);
-    this.flujoActivo = { svg: escena.svg, temporizador: setTimeout(() => this.terminarFlujo(), total) };
+    this.flujoActivo = { svg: escena.svg, temporizador: tiempo.esperar(() => this.terminarFlujo(), total) };
     return total;
   }
 
@@ -1122,7 +1158,7 @@ export class Figura {
     const f = this.flujoActivo;
     if (!f) return;
     this.flujoActivo = null;
-    clearTimeout(f.temporizador);
+    tiempo.cancelar(f.temporizador);
     this.contenedor.replaceChildren(f.svg);
     if (this.nodoFijo) this.ponerRotulo(this.nodoFijo);
   }
@@ -1184,7 +1220,7 @@ export class Figura {
       // Las flechas que no intervienen en la pregunta se atenuan cuando termina la animacion del paso.
       if (this.enfoquePregunta) {
         const svg = escena.svg;
-        if (retraso > 0) this.finEnfoque = setTimeout(() => svg.classList.add('rep-foco-pregunta'), retraso);
+        if (retraso > 0) this.finEnfoque = tiempo.esperar(() => svg.classList.add('rep-foco-pregunta'), retraso);
         else svg.classList.add('rep-foco-pregunta');
       }
       for (const c of foto.pregunta.celdas) {
@@ -1208,7 +1244,7 @@ export class Figura {
   // antes corre el recorrido por las flechas): por eso se anota cuando tiene que empezar y la demora se calcula al ponerlo.
   llamarLaAtencion(caja, retraso, entrada) {
     if (sinMovimiento()) return;
-    caja.atencion = { cuando: performance.now() + retraso, entrada };
+    caja.atencion = { cuando: tiempo.ahora() + retraso, entrada };
     if (caja.isConnected) this.empezarAtencion(caja);
   }
 
@@ -1216,7 +1252,7 @@ export class Figura {
     const a = caja.atencion;
     if (!a) return;
     caja.atencion = null;
-    const espera = Math.max(0, a.cuando - performance.now());
+    const espera = Math.max(0, a.cuando - tiempo.ahora());
     const rotulo = caja.querySelector('.rep-pregunta');
     if (a.entrada) {
       caja.classList.add('rep-pregunta-entra');
@@ -1277,7 +1313,7 @@ export class Figura {
     if (!this.escena || sinMovimiento()) return;
     const grupos = [...this.escena.capaFlechas.querySelectorAll(selector)].filter((g) => g.puntosCompletos && !(excluir && excluir.has(g.getAttribute('data-k'))));
     if (!grupos.length) return;
-    const inicio = performance.now() + retraso;
+    const inicio = tiempo.ahora() + retraso;
     // Devuelve si todavia queda algo por dibujar.
     const dibujar = (k) => {
       const avance = 1 - (1 - k) * (1 - k);
@@ -1296,7 +1332,7 @@ export class Figura {
     // El primer estado (sin dibujar) se pone ya: si se esperara al proximo cuadro, se veria un instante la flecha completa.
     if (!dibujar(0)) return;
     const paso = (ahora) => {
-      if (dibujar(Math.min(1, Math.max(0, (ahora - inicio) / milisegundos)))) requestAnimationFrame(paso);
+      if (dibujar(Math.min(1, Math.max(0, (tiempo.ahora(ahora) - inicio) / milisegundos)))) requestAnimationFrame(paso);
     };
     requestAnimationFrame(paso);
   }

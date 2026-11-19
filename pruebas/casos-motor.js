@@ -500,6 +500,9 @@ int main() {
         const esperadas = ['valor,parametro,parametro', 'copia,parametro,valor,parametro', 'valor,parametro,parametro'];
         const reales = llamadas.map((f) => f.join(','));
         if (JSON.stringify(reales) !== JSON.stringify(esperadas)) return 'esperaba ' + esperadas.join(' | ') + ' y salio ' + reales.join(' | ');
+        // Solo el argumento &x pasa una direccion en lugar del contenido de la casilla: lo marca la figura con un &.
+        const conDireccion = traza.flatMap((x) => (x.accesos || []).filter((h) => h.direccion));
+        if (conDireccion.length !== 1) return 'tenia que haber un solo argumento con direccion (&x) y hay ' + conDireccion.length;
         return null;
       },
     },

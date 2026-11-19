@@ -1169,7 +1169,7 @@ class Interprete {
     if (n.type !== 'identifier') return null;
     const v = this.buscar(n.text);
     const celda = v && v.reserva.raiz ? this.ubicar(v.reserva, v.reserva.raiz) : null;
-    return celda ? { celda, puntero: !porDireccion && v.reserva.raiz.t.k === 'ptr' } : null;
+    return celda ? { celda, puntero: !porDireccion && v.reserva.raiz.t.k === 'ptr', porDireccion } : null;
   }
 
   // Lo que se ve al pasar un argumento, ya con la caja de la funcion abierta: se resalta la casilla de la que sale (con su
@@ -1183,7 +1183,8 @@ class Interprete {
       const antes = this.accesos.length;
       if (origen.puntero && argumento.v && argumento.v.reserva) this.copia(origen.celda, argumento.v, para);
       else this.copiaValor(origen.celda, para);
-      if (this.accesos.length > antes) this.accesos[this.accesos.length - 1].llamada = true;
+      // "direccion": lo que se pasa no es lo que hay en la casilla sino su direccion (&x): la figura lo marca con un &.
+      if (this.accesos.length > antes) Object.assign(this.accesos[this.accesos.length - 1], { llamada: true, ...(origen.porDireccion ? { direccion: true } : {}) });
     }
     if (this.accesos.length < 8) this.accesos.push({ de: null, a: para, tipo: 'parametro', llamada: true, ...(junto ? { junto: true } : {}) });
   }
