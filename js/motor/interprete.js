@@ -1252,6 +1252,7 @@ class Interprete {
     const textos = args.map((a, i) => (nodos[i].type === 'char_literal' ? nodos[i].text : textoEscalar(a)) ?? nodos[i].text.replace(/\s+/g, ' '));
     const registro = {
       id: this.registroLlamadas.length,
+      base: null, // la fotografia donde esta llamada llega a su caso base (no hace otra llamada a la funcion), o null
       funcion: f.nombre,
       llamada: `${f.nombre}(${textos.join(', ')})`,
       nivel: this.marcos.length,
@@ -1428,6 +1429,8 @@ class Interprete {
     } finally {
       this.enCondicion = condicionesAfuera;
     }
+    // Una funcion que termina sin return (void) y no hizo ninguna llamada a si misma: su caso base es el cierre de la llave.
+    if (registro && registro.base === null && !(marco.hechas && marco.hechas.size)) registro.base = Math.max(0, this.traza.length - 1);
     let resultado;
     if (f.tipoRetorno.k === 'void') resultado = { t: VOID, v: null };
     else if (valor === null) resultado = { t: VOID, v: null, sinValor: true };
@@ -1497,6 +1500,7 @@ class Interprete {
         return;
       case 'return_statement': {
         this.paso(n);
+        const fotoDelReturn = this.traza.length - 1;
         const v = n.namedChildren.find((h) => h.type !== 'comment');
         const nombre = this.marcos[this.marcos.length - 1].funcion;
         const antes = this.llamadasDe.get(nombre) || 0;
@@ -1505,6 +1509,8 @@ class Interprete {
         // muestra lo que devuelve, asi las cajas se cierran de a una y se ve el valor que sube.
         const conLlamada = Boolean(devuelto) && (this.llamadasDe.get(nombre) || 0) > antes;
         const actual = this.marcos[this.marcos.length - 1];
+        // Un return de una llamada registrada que no hizo ninguna otra llamada a la funcion es su caso base.
+        if (actual.registro && actual.registro.base === null && !(actual.hechas && actual.hechas.size)) actual.registro.base = fotoDelReturn;
         if (devuelto && actual.registro && v && this.opciones.traza) this.anotarRetorno(actual, v, devuelto, conLlamada);
         if (conLlamada) this.fotoDeRetorno(n, devuelto);
         throw new Retorno(devuelto);

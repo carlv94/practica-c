@@ -437,6 +437,36 @@ int main() {
         const partes = JSON.stringify(l[1].ida.partes);
         if (partes !== '[{"llamada":"quitar(21, 1)","valor":"2","id":2}," * 10 + 3"]') return 'las partes de la ida de la segunda no son las esperadas: ' + partes;
         if (JSON.stringify(l[4].ida.partes) !== '["0"]') return 'la ida de la ultima tenia que ser solo el texto 0';
+        // el caso base: la unica llamada que no hace otra a la funcion, en la fotografia de su return
+        if (l.map((x) => x.base).join() !== ',,,,' + l[4].ida.paso) return 'solo la ultima llamada tenia que tener caso base, en la fotografia de su return: ' + l.map((x) => x.base).join();
+        return null;
+      },
+    },
+  },
+  {
+    nombre: 'el registro de una recursion sin valores (void): sin ida ni vuelta, y el caso base es la llamada que no se llama a si misma',
+    codigo: String.raw`#include <stdio.h>
+void binario(int n) {
+  if (n == 0) {
+    return;
+  }
+  binario(n / 2);
+  printf("%d", n % 2);
+}
+int main() {
+  binario(6);
+  return 0;
+}`,
+    espera: {
+      salida: '110',
+      traza: (traza, r) => {
+        const l = r.llamadas;
+        if (l.map((x) => x.llamada).join() !== 'binario(6),binario(3),binario(1),binario(0)') return 'las llamadas no son las esperadas: ' + l.map((x) => x.llamada);
+        if (l.some((x) => x.ida || x.vuelta)) return 'una funcion void no tiene ida ni vuelta';
+        // solo binario(0) no se llama a si misma: su caso base es el return; de la fotografia (la linea del return)
+        const bases = l.map((x) => x.base);
+        if (bases.slice(0, 3).some((b) => b !== null) || bases[3] === null) return 'solo la ultima llamada tenia que tener caso base: ' + bases.join();
+        if (traza[bases[3]].linea !== 4) return 'el caso base tenia que estar en la linea del return (4) y esta en la ' + traza[bases[3]].linea;
         return null;
       },
     },

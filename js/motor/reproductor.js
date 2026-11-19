@@ -350,18 +350,57 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     const { e2, e3 } = estadosDe(r);
     return (e2 ? 1.3 * u : 0) + (e2 && e3 ? 0.8 * u : 0) + (e3 ? 0.8 * u : 0);
   };
+  // Un fundido es corto, pero no tanto que no se vea con las velocidades rapidas.
+  const fundidoDe = (u) => Math.max(0.4 * u, 150);
+  // La fila que hace cada llamada (la que la tiene en su ida): de ahi sale la llamada, y la resaltamos al abrirse.
+  const padreDe = new Map();
+  for (const p of registros) if (p.ida) for (const x of partesDe(p)) if (typeof x === 'object') padreDe.set(x.id, p);
+  // Cuanto dura que se abra una llamada: su ida aparece (1 fundido) y respira (1,5) si recien se escribe y despues la llamada brilla
+  // (2) mientras aparece el texto de la fila nueva; sin fila que la haga (la primera llamada), solo el fundido de su texto.
+  const duracionApertura = (r, k, d) => {
+    const padre = padreDe.get(r.id);
+    if (!conValores || !padre || !padre.ida) return d;
+    return (padre.ida.paso === k ? 2.5 * d : 0) + 2 * d;
+  };
+  // Cuanto dura el caso base: el foco sobre su fila (3,5 fundidos: el resto de la tabla se atenua, rebotan el valor de la ida y la
+  // etiqueta y todo vuelve) y, en tres columnas, despues de una espera (1) el rebote de la vuelta (1,5): 5,5 en total.
+  const duracionBase = (r, d, unaColumna) => (conValores && r.ida && !unaColumna ? 5.5 : 3.5) * d;
+  // Lo que dura todo lo que se anima al llegar al paso k: llamadas que se abren, lo que aparece de golpe (1 fundido), el caso base
+  // y las transiciones del modo de una columna.
   const duracionTrazado = (k, u) => {
-    if (!trazadoActivo() || !enUnaColumna() || sinMovimiento()) return 0;
-    return Math.max(0, ...registros.filter((r) => r.ida && r.vuelta && r.vuelta.paso === k && r.desde <= k).map((r) => duracionDeFila(r, u)));
+    if (!trazadoActivo() || sinMovimiento()) return 0;
+    const d = fundidoDe(u);
+    const unaColumna = enUnaColumna();
+    let total = 0;
+    for (const r of registros) {
+      const apertura = r.desde === k ? duracionApertura(r, k, d) : 0;
+      if (r.desde === k) total = Math.max(total, apertura);
+      if (r.base === k) total = Math.max(total, apertura + duracionBase(r, d, unaColumna));
+      if (!r.ida) continue;
+      if (r.ida.paso === k && r.desde !== k && r.base !== k) total = Math.max(total, d);
+      if (r.vuelta && r.vuelta.paso === k && r.desde <= k && r.base !== k) total = Math.max(total, unaColumna ? duracionDeFila(r, u) : d);
+    }
+    return total;
   };
   // Un texto que resplandece y crece un instante (como el valor que se copia en la figura).
-  const resplandor = (el, retraso, duracion) => {
+  const resplandor = (el, retraso, duracion, escala = 1.4) => {
     if (!el || !el.animate || !duracion) return;
     el.classList.add('rep-traz-brilla');
     const halo = getComputedStyle(raiz).getPropertyValue('--acento').trim() || '#3b82f6';
     const sin = { transform: 'scale(1)', filter: 'drop-shadow(0 0 0 transparent)' };
-    const con = { transform: 'scale(1.4)', filter: 'drop-shadow(0 0 5px ' + halo + ')' };
+    const con = { transform: 'scale(' + escala + ')', filter: 'drop-shadow(0 0 5px ' + halo + ')' };
     el.animate([{ ...sin }, { ...con, offset: 0.3 }, { ...con, offset: 0.6 }, { ...sin }], { duration: duracion, delay: retraso, easing: 'ease-in-out' });
+  };
+  // El texto de una fila nueva aparece ya expandido, en lo mas alto del brillo de la llamada de la ida, y se contrae con ella: es la
+  // misma animacion que la del resplandor, pero invisible hasta ahi. Anclado a la izquierda para que se achique hacia el margen.
+  const resplandorQueAparece = (el, retraso, duracion, escala) => {
+    if (!el || !el.animate || !duracion) return;
+    el.classList.add('rep-traz-brilla');
+    el.style.transformOrigin = 'left center';
+    const halo = getComputedStyle(raiz).getPropertyValue('--acento').trim() || '#3b82f6';
+    const sin = { transform: 'scale(1)', filter: 'drop-shadow(0 0 0 transparent)' };
+    const con = { transform: 'scale(' + escala + ')', filter: 'drop-shadow(0 0 5px ' + halo + ')', opacity: 1 };
+    el.animate([{ ...sin, opacity: 0 }, { ...con, offset: 0.3 }, { ...con, offset: 0.6 }, { ...sin, opacity: 1 }], { duration: duracion, delay: retraso, easing: 'ease-in-out', fill: 'backwards' });
   };
   // La cuenta de una fila que cambia: la llamada brilla (y el valor de la fila de la que sale, a la vez), se reemplaza por su
   // valor y lo de la derecha se corre de a poco; despues la cuenta se resuelve. Se arma con la tabla ya en la pagina para medir.
@@ -407,8 +446,72 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
       resplandor(capaB, t + 0.2 * u, 0.6 * u);
     }
   };
-  // "animar": se llego avanzando un paso y se hacen las transiciones de las filas cuya vuelta llega justo ahora; "u" es la
-  // unidad de movimiento (ver pintarPaso).
+  // Los espacios de adentro de una llamada no se parten: quitar(213, 1) no pasa a dos renglones.
+  const sinCortes = (texto) => texto.replace(/\([^)]*\)/g, (m) => m.replace(/ /g, '\u00a0'));
+  // La ida de una fila con cada llamada como un fragmento propio (para resaltar la que se abre).
+  const idaConPiezas = (r) => {
+    const codigo = nodo('code', '');
+    for (const p of partesDe(r)) {
+      if (typeof p === 'string') codigo.append(sinCortes(p));
+      else {
+        const pieza = nodo('span', 'rep-traz-pieza', sinCortes(p.llamada));
+        pieza.dataset.id = String(p.id);
+        codigo.append(pieza);
+      }
+    }
+    return codigo;
+  };
+  // El texto de una celda aparece con un fundido (y, si es una celda nueva en amarillo, el color tambien).
+  const aparecerCelda = (td, retraso, duracion) => {
+    if (!td || !td.animate || !duracion) return;
+    const texto = td.firstElementChild;
+    if (texto) texto.animate([{ opacity: 0 }, { opacity: 1 }], { duration: duracion, delay: retraso, fill: 'backwards' });
+    if (td.classList.contains('rep-traz-nuevo')) {
+      td.animate([{ backgroundColor: 'transparent' }, { backgroundColor: getComputedStyle(td).backgroundColor }], { duration: duracion, delay: retraso, fill: 'backwards' });
+    }
+  };
+  // La llamada que se abre se resalta en la ida de la fila que la hace: el resalte sube, se queda y se apaga.
+  const resaltar = (pieza, retraso, duracion) => {
+    if (!pieza || !pieza.animate) return;
+    const color = getComputedStyle(raiz).getPropertyValue('--aviso-fondo').trim() || '#fff4d6';
+    pieza.animate(
+      [{ backgroundColor: 'transparent' }, { backgroundColor: color, offset: 0.23 }, { backgroundColor: color, offset: 0.77 }, { backgroundColor: 'transparent' }],
+      { duration: duracion, delay: retraso }
+    );
+  };
+  // La vuelta del caso base aparece con un rebote: chica, crece de mas y se acomoda.
+  const rebote = (el, retraso, duracion) => {
+    if (!el || !el.animate) return;
+    if (!el.classList.contains('rep-traz-base')) el.classList.add('rep-traz-brilla'); // (la etiqueta ya es un bloque)
+    el.animate(
+      [{ transform: 'scale(0.5)', opacity: 0 }, { transform: 'scale(1.2)', opacity: 1, offset: 0.6 }, { transform: 'scale(1)', opacity: 1 }],
+      { duration: duracion, delay: retraso, easing: 'ease-out', fill: 'backwards' }
+    );
+  };
+  // El golpe del caso base: la etiqueta y el valor de la ida aparecen chicos, crecen mucho y rebotan con oscilaciones cada vez
+  // menores (como una pelota que pica en el piso) hasta acomodarse.
+  const reboteAmortiguado = (el, retraso, duracion) => {
+    if (!el || !el.animate) return;
+    if (!el.classList.contains('rep-traz-base')) el.classList.add('rep-traz-brilla'); // (la etiqueta ya es un bloque)
+    const cuadro = (escala, offset, opacidad = 1) => ({ transform: 'scale(' + escala + ')', opacity: opacidad, offset, easing: 'ease-in-out' });
+    el.animate([cuadro(0.5, 0, 0), cuadro(1.5, 0.25), cuadro(0.9, 0.45), cuadro(1.25, 0.62), cuadro(0.97, 0.78), cuadro(1.08, 0.9), cuadro(1, 1)], {
+      duration: duracion,
+      delay: retraso,
+      fill: 'backwards',
+    });
+  };
+  // El foco: mientras ocurre el caso base, el resto de las filas se atenua (medio fundido), se queda y vuelve a la normalidad.
+  const focoEnFila = (cuerpoTabla, fila, retraso, d) => {
+    const total = 3.5 * d;
+    for (const otra of cuerpoTabla.rows) {
+      if (otra === fila || !otra.animate) continue;
+      otra.animate([{ opacity: 1 }, { opacity: 0.35, offset: (0.5 * d) / total }, { opacity: 0.35, offset: (3 * d) / total }, { opacity: 1 }], { duration: total, delay: retraso });
+    }
+  };
+  // "animar": se llego avanzando un paso. Entonces lo que aparece lo hace con un fundido; una llamada que se abre sigue una
+  // secuencia (su ida aparece, respira, la llamada brilla en ella y aparece el texto de la fila nueva), el caso base muestra su valor,
+  // se marca y recien despues da la vuelta, y las filas cuya vuelta llega justo ahora hacen sus transiciones (modo de una columna).
+  // "u" es la unidad de movimiento (ver pintarPaso).
   const pintarTrazado = (k, { animar = false, u = 0 } = {}) => {
     const activo = trazadoActivo();
     trazado.hidden = !activo;
@@ -422,39 +525,94 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     const cabeza = tabla.createTHead().insertRow();
     for (const t of unaColumna ? ['Llamada', 'Devuelve'] : conValores ? ['Llamada', 'Ida', 'Vuelta'] : ['Llamada']) cabeza.append(nodo('th', '', t));
     const cuerpoTabla = tabla.createTBody();
-    const celdasDeValor = new Map(); // la celda de la cuenta de cada llamada, por su numero
+    const celdasDeValor = new Map(); // el texto de la cuenta de cada llamada, por su numero
+    const celdasDeIda = new Map(); // la celda donde esta su ida (o su cuenta, en una columna)
+    const celdasDeLlamada = new Map();
+    const celdasQueAparecen = []; // [celda, retraso]: lo que aparece de golpe y entra con un fundido
+    const bases = []; // las llamadas que llegan a su caso base justo ahora
     const porTransformar = [];
     const conMovimiento = animar && u > 0 && !sinMovimiento();
+    const d = fundidoDe(u);
     for (const r of visibles) {
       const fila = cuerpoTabla.insertRow();
       if (r === actual) fila.classList.add('rep-traz-actual');
       else if (r.hasta != null && k >= r.hasta) fila.classList.add('rep-traz-cerrada');
-      const celda = (texto, nuevo, sangria = 0) => {
+      const celda = (contenido, nuevo = false, sangria = 0) => {
         const td = fila.insertCell();
-        // Los espacios de adentro de una llamada no se parten: quitar(213, 1) no pasa a dos renglones.
-        const sinCortes = texto.replace(/\([^)]*\)/g, (m) => m.replace(/ /g, '\u00a0'));
-        td.append(nodo('code', '', sinCortes));
+        td.append(typeof contenido === 'string' ? nodo('code', '', sinCortes(contenido)) : contenido);
         if (nuevo) td.classList.add('rep-traz-nuevo');
-        if (sangria) td.style.paddingLeft = (6 + sangria * 10) + 'px';
+        if (sangria) td.style.paddingLeft = 6 + sangria * 10 + 'px';
         return td;
       };
-      celda(r.llamada, r.desde === k, ramifica ? r.nivel - nivelBase : 0);
+      // El texto de la llamada que se abre no se marca en amarillo: brilla (temporalmente) en la ida de quien la hace.
+      const tdLlamada = celda(r.llamada, false, ramifica ? r.nivel - nivelBase : 0);
+      celdasDeLlamada.set(r.id, tdLlamada);
+      // Una llamada que llego a su caso base lleva una etiqueta (en su propio renglon, para no ensanchar la columna).
+      let pastilla = null;
+      if (r.base != null && r.base <= k) {
+        pastilla = nodo('span', 'rep-traz-base', '↩ caso base');
+        tdLlamada.append(pastilla);
+      }
+      const base = { r, fila, pastilla, tdIda: null, tdVuelta: null };
+      if (r.base === k) bases.push(base);
       if (!conValores) continue;
+      const sinLlamadas = r.ida ? llamadasDe(r).length === 0 : true;
       if (unaColumna) {
         const llega = r.vuelta && r.vuelta.paso === k && r.ida && r.ida.paso <= k;
         const transiciona = conMovimiento && llega && duracionDeFila(r, u) > 0;
-        const td = celda(textoQuieto(r, k), Boolean(r.ida && r.ida.paso === k) || (llega && !transiciona));
+        const vueltaHecha = r.vuelta && r.vuelta.paso <= k;
+        const contenido = !r.ida || r.ida.paso > k ? '' : vueltaHecha ? textoQuieto(r, k) : idaConPiezas(r);
+        const nuevo = r.base !== k && (Boolean(r.ida && r.ida.paso === k && sinLlamadas) || (llega && !transiciona));
+        const td = celda(contenido, nuevo);
+        celdasDeIda.set(r.id, td);
         celdasDeValor.set(r.id, td.querySelector('code'));
+        base.tdIda = td;
         if (transiciona) porTransformar.push([td, r]);
+        else if (r.ida && r.ida.paso === k && r.desde !== k && r.base !== k && sinLlamadas) celdasQueAparecen.push([td, 0]);
         continue;
       }
       const ida = r.ida && r.ida.paso <= k;
-      celda(ida ? r.ida.texto : '', ida && r.ida.paso === k);
+      const tdIda = celda(ida ? idaConPiezas(r) : '', Boolean(ida && r.ida.paso === k && sinLlamadas && r.base !== k));
+      celdasDeIda.set(r.id, tdIda);
       const vuelta = r.vuelta && r.vuelta.paso <= k;
       const textoVuelta = vuelta ? (r.vuelta.texto === r.vuelta.valor ? r.vuelta.texto : r.vuelta.texto + ' = ' + r.vuelta.valor) : '';
-      celda(textoVuelta, vuelta && r.vuelta.paso === k);
+      const tdVuelta = celda(textoVuelta, Boolean(vuelta && r.vuelta.paso === k && r.base !== k));
+      base.tdIda = tdIda;
+      base.tdVuelta = tdVuelta;
+      if (r.ida && r.ida.paso === k && r.desde !== k && r.base !== k && sinLlamadas) celdasQueAparecen.push([tdIda, 0]);
+      if (vuelta && r.vuelta.paso === k && r.base !== k) celdasQueAparecen.push([tdVuelta, 0]);
     }
     trazado.replaceChildren(tabla);
+    if (conMovimiento) {
+      for (const r of visibles) {
+        if (r.desde !== k) continue;
+        const padre = conValores ? padreDe.get(r.id) : null;
+        const tdPadre = padre && padre.ida && padre.ida.paso <= k ? celdasDeIda.get(padre.id) : null;
+        if (!tdPadre) {
+          aparecerCelda(celdasDeLlamada.get(r.id), 0, d);
+          continue;
+        }
+        // La ida de quien la hace aparece sola (si recien se escribe), hay un respiro, la llamada brilla y, en lo mas alto del brillo,
+        // aparece el texto de la fila nueva.
+        let t = 0;
+        if (padre.ida.paso === k) {
+          aparecerCelda(tdPadre, 0, d);
+          t = 2.5 * d;
+        }
+        resplandor(tdPadre.querySelector('[data-id="' + r.id + '"]'), t, 2 * d, 1.12);
+        resplandorQueAparece(celdasDeLlamada.get(r.id).firstElementChild, t, 2 * d, 1.12);
+      }
+      // El caso base: el resto de la tabla se atenua; el valor de la ida y la etiqueta rebotan a la vez (con oscilaciones cada vez
+      // menores); la tabla vuelve a la normalidad y, despues de una espera, rebota la vuelta.
+      for (const b of bases) {
+        const t = b.r.desde === k ? duracionApertura(b.r, k, d) : 0;
+        focoEnFila(cuerpoTabla, b.fila, t, d);
+        if (b.tdIda && b.r.ida) reboteAmortiguado(b.tdIda.firstElementChild, t + 0.5 * d, 2.5 * d);
+        reboteAmortiguado(b.pastilla, t + 0.5 * d, 2.5 * d);
+        if (b.tdVuelta) rebote(b.tdVuelta.firstElementChild, t + 4 * d, 1.5 * d);
+      }
+      for (const [td, retraso] of celdasQueAparecen) aparecerCelda(td, retraso, d);
+    }
     for (const [td, r] of porTransformar) transformar(td, r, u, celdasDeValor);
   };
   lado.append(estado, herramientas, franjaPregunta, trazado, figura, nodo('p', 'rep-subtitulo', 'Lo que muestra el programa'), consola);
@@ -469,6 +627,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   let reloj = null;
   let ultimaAnimacion = 0; // lo que dura la animacion del paso que se esta mostrando
   let relojTrazado = null; // el trazado que espera a que termine la animacion de la figura
+  let relojEditor = null; // el resalte de la funcion que espera a que termine lo anterior
   let funcionAnterior = null;
   let zoom = leerZoom();
   let ampliado = false;
@@ -539,6 +698,29 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     else if (abajo > desde + alto - margen) ir(abajo + margen - alto);
   }
 
+  // Al entrar en una funcion (tambien en cada llamada de una recursion) se lleva la vista a su comienzo y se resalta todo su
+  // codigo (el fondo sube, se queda y se apaga) antes de que aparezca el cursor en su primera linea. "d" es un fundido.
+  function resaltarFuncion(f, d) {
+    lineas.forEach((fila, i) => fila.classList.toggle('rep-fuera', i + 1 < f.desde || i + 1 > f.hasta));
+    if (marcada) marcada.classList.remove('rep-ahora', 'rep-error'); // el cursor vuelve cuando termina el resalte
+    const cabecera = lineas[f.desde - 1];
+    if (cabecera) panelCodigo.scrollTo({ top: Math.max(0, cabecera.offsetTop - 4), behavior: sinMovimiento() ? 'auto' : 'smooth' });
+    // El color del cursor (ver .rep-ahora en el CSS), resuelto con un elemento de prueba para poder animarlo.
+    const prueba = nodo('div', '');
+    prueba.style.cssText = 'position:absolute;visibility:hidden;background:color-mix(in srgb, var(--acento) 24%, var(--codigo))';
+    raiz.append(prueba);
+    const color = getComputedStyle(prueba).backgroundColor || '#cfe0fb';
+    prueba.remove();
+    const total = 3.5 * d;
+    for (let i = f.desde - 1; i <= f.hasta - 1; i++) {
+      if (!lineas[i] || !lineas[i].animate) continue;
+      lineas[i].animate(
+        [{ backgroundColor: 'transparent' }, { backgroundColor: color, offset: d / total }, { backgroundColor: color, offset: (2.5 * d) / total }, { backgroundColor: 'transparent' }],
+        { duration: total }
+      );
+    }
+  }
+
   // La marca de la linea (y lo que la acompana: el cuadro "por ejecutar" y lo que muestra el programa)
   // espera a que termine la animacion de lo que hizo la linea anterior; si se avanza antes, se pone ya.
   let marcaPendiente = null;
@@ -588,11 +770,17 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     const unidad = VELOCIDADES[Number(velocidad.value)].ms * 0.5;
     tiempo.cancelar(relojTrazado);
     relojTrazado = null;
+    tiempo.cancelar(relojEditor);
+    relojEditor = null;
     // Sin memoria dinamica el trazado reemplaza a la figura: no se la anima (nadie la ve) y las transiciones de la tabla empiezan ya.
     const sinFigura = trazadoActivo() && sinMonticulo;
     const dFigura = dibujo.mostrar(foto, antes, { animar: animar && !sinFigura, duracion: unidad, flujo: adelante });
     const dTrazado = adelante && animar ? duracionTrazado(paso, unidad) : 0;
-    ultimaAnimacion = dFigura + dTrazado;
+    // Una llamada nueva (la pila crece): si se pide, se resalta toda su funcion antes de que aparezca el cursor.
+    const entrando = adelante && animar && !sinMovimiento() && antes && foto.marcos.length > antes.marcos.length && ajustes.valor('resaltarFuncion') ? funcionDe(foto) : null;
+    const dEditor = entrando ? 3.5 * fundidoDe(unidad) : 0;
+    ultimaAnimacion = dFigura + dTrazado + dEditor;
+    if (entrando) relojEditor = tiempo.esperar(() => resaltarFuncion(entrando, fundidoDe(unidad)), dFigura + dTrazado);
     if (dTrazado > 0) {
       const arrancar = () => pintarTrazado(paso, { animar: true, u: unidad });
       if (dFigura > 0) relojTrazado = tiempo.esperar(arrancar, dFigura);

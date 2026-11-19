@@ -563,6 +563,22 @@
   top: 0;
   opacity: 0;
 }
+.rep-traz-pieza {
+  display: inline-block;
+  border-radius: 3px;
+}
+/* La etiqueta del caso base va en su propio renglon, debajo de la llamada. */
+.rep-traz-base {
+  display: block;
+  width: fit-content;
+  margin-top: 2px;
+  padding: 0 6px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--bien);
+  background: var(--bien-fondo);
+  border-radius: 999px;
+}
 .rep-traz-brilla {
   display: inline-block;
 }

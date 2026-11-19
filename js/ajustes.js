@@ -31,6 +31,13 @@ export const AYUDAS = [
     detalle: 'Cuando se evalúa una condición, resplandecen los valores de las variables que se leen.',
   },
   {
+    clave: 'resaltarFuncion',
+    almacen: 'ajuste-resaltar-funcion',
+    porDefecto: false,
+    titulo: 'Resaltar la función cuando se la llama',
+    detalle: 'Al entrar en una función (también en cada llamada de una recursión), se resalta todo su código un momento antes de que aparezca el cursor en su primera línea.',
+  },
+  {
     clave: 'trazado',
     almacen: 'ajuste-trazado',
     porDefecto: false,
@@ -55,8 +62,8 @@ export const AYUDAS = [
 ];
 
 export const PERFILES = [
-  { id: 'practica', nombre: 'Práctica', valores: { brilloCopias: true, brilloAsignaciones: false, brilloCondiciones: false, trazado: false, trazadoUnaColumna: false, nombresFlechas: false } },
-  { id: 'explicacion', nombre: 'Explicación', valores: { brilloCopias: true, brilloAsignaciones: true, brilloCondiciones: true, trazado: true, trazadoUnaColumna: false, nombresFlechas: true } },
+  { id: 'practica', nombre: 'Práctica', valores: { brilloCopias: true, brilloAsignaciones: false, brilloCondiciones: false, resaltarFuncion: false, trazado: false, trazadoUnaColumna: false, nombresFlechas: false } },
+  { id: 'explicacion', nombre: 'Explicación', valores: { brilloCopias: true, brilloAsignaciones: true, brilloCondiciones: true, resaltarFuncion: true, trazado: true, trazadoUnaColumna: false, nombresFlechas: true } },
 ];
 
 const estado = new Map();
