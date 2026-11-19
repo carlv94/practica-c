@@ -122,7 +122,11 @@
       "series": [
         "recursion-a-mano.json",
         "recursion-escribir.json",
-        "recursion-arreglos.json"
+        "recursion-arreglos.json",
+        "recursion-digitos.json"
+      ],
+      "ocultas": [
+        "recursion-digitos.json"
       ]
     },
     {
