@@ -1172,18 +1172,20 @@ class Interprete {
     return celda ? { celda, puntero: !porDireccion && v.reserva.raiz.t.k === 'ptr' } : null;
   }
 
-  // Lo que se ve al pasar un argumento: se resalta la casilla de la que sale (con su flecha, si es un puntero) y, cuando ya
-  // se abrio la caja de la funcion, la casilla del parametro. Con mas de tres argumentos se resaltan todos a la vez.
+  // Lo que se ve al pasar un argumento, ya con la caja de la funcion abierta: se resalta la casilla de la que sale (con su
+  // flecha y el bloque, si es un puntero), despues la del parametro y, si el parametro es un puntero, se dibuja su flecha.
+  // Con mas de tres argumentos se resaltan todos a la vez (ver planDeLlamada en figura.js).
   anotarArgumento(origen, argumento, para, total) {
     if (!this.opciones.traza || !para) return;
+    // Con la marca "llamada" la figura no los anima antes de abrir la caja: lo hace despues, pareja por pareja.
     const junto = total > 3;
     if (origen) {
       const antes = this.accesos.length;
       if (origen.puntero && argumento.v && argumento.v.reserva) this.copia(origen.celda, argumento.v, para);
       else this.copiaValor(origen.celda, para);
-      if (junto && this.accesos.length > antes) this.accesos[this.accesos.length - 1].junto = true;
+      if (this.accesos.length > antes) this.accesos[this.accesos.length - 1].llamada = true;
     }
-    if (this.accesos.length < 8) this.accesos.push({ de: null, a: para, tipo: 'parametro', ...(junto ? { junto: true } : {}) });
+    if (this.accesos.length < 8) this.accesos.push({ de: null, a: para, tipo: 'parametro', llamada: true, ...(junto ? { junto: true } : {}) });
   }
 
   ejecutarFuncion(f, args, origenes = []) {

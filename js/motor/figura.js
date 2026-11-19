@@ -534,9 +534,11 @@ export class Figura {
     clearTimeout(this.finAparte);
     this.finAparte = null;
     // Antes de que cambie nada, se ve por donde se llega a lo que la sentencia toca.
+    // (los accesos de una llamada, argumento y parametro, se animan al final, con la caja de la funcion ya abierta)
+    const accesosDelFlujo = (foto.accesos || []).filter((h) => !h.llamada);
     const retardo =
-      flujo && animar && !sinMovimiento() && u > 0 && previa && ((foto.accesos && foto.accesos.length) || foto.condicion || foto.muestra || foto.lectura)
-        ? this.iniciarFlujo(previa, foto.accesos || [], u, escena, foto.condicion, enciende(foto))
+      flujo && animar && !sinMovimiento() && u > 0 && previa && (accesosDelFlujo.length || foto.condicion || foto.muestra || foto.lectura)
+        ? this.iniciarFlujo(previa, accesosDelFlujo, u, escena, foto.condicion, enciende(foto))
         : 0;
     const mueve = animar && !sinMovimiento() && u > 0 && Boolean(previa);
     this.fundir = mueve;
@@ -561,13 +563,12 @@ export class Figura {
     // Los que reciben una flecha que se anima en el tiempo A parpadean apenas ella termina de llegar (antes de que los
     // bloques se reubiquen); los de una flecha hacia un bloque que acaba de aparecer, cuando se termina de dibujar.
     const objetivos = mueve ? this.objetivosDeParpadeo(escena) : { alLlegar: [], alFinal: [] };
+    // Los argumentos de una llamada y sus parametros (ver planDeLlamada): lo que señalan sus flechas lo resalta el plan.
+    const plan = mueve ? this.planDeLlamada(escena, foto, u) : null;
+    if (plan) objetivos.alFinal = objetivos.alFinal.filter((k) => !plan.destinos.has(k));
     const dLlegar = objetivos.alLlegar.length ? 0.9 * u : 0;
     const dFinal = objetivos.alFinal.length ? 0.9 * u : 0;
-    // Los parametros de una llamada se resaltan cuando ya esta abierta la caja de la funcion, de a uno (mas de tres, todos a la vez).
-    const parametros = mueve ? (foto.accesos || []).filter((h) => h.tipo === 'parametro').map((h) => clave(h.a.a, h.a.ruta)) : [];
-    const juntosParametros = parametros.length > 3;
-    const dParametro = parametros.length ? 0.6 * u : 0;
-    const dParametros = juntosParametros ? dParametro : dParametro * parametros.length;
+    const dPlan = plan ? plan.duracion : 0;
     this.dFundido = mueve ? u : 450;
     this.retardoFundido = retardo;
     let seMueven = false;
@@ -717,14 +718,13 @@ export class Figura {
       this.dDestello = 0;
       this.retrasoFlechas = 0;
       // Las flechas hacia bloques que acaban de aparecer se dibujan al final.
-      this.dibujarNuevas('.rep-tarde', u, hayTarde ? pausaNuevo : 0);
+      this.dibujarNuevas('.rep-tarde', u, hayTarde ? pausaNuevo : 0, plan ? plan.flechas : null);
       this.parpadear(escena, objetivos.alFinal, dFinal, hayTarde ? pausaNuevo + u : 0);
-      const baseParametros = (hayTarde ? pausaNuevo + u : 0) + dFinal;
-      parametros.forEach((k, i) => this.parpadear(escena, [k], dParametro, baseParametros + (juntosParametros ? 0 : i * dParametro)));
-      this.finAtenuado = setTimeout(quitarAtenuado, baseParametros + dParametros + 50);
+      if (plan) plan.ejecutar();
+      this.finAtenuado = setTimeout(quitarAtenuado, Math.max((hayTarde ? pausaNuevo + u : 0) + dFinal, dPlan) + 50);
     };
     this.raf = requestAnimationFrame(paso);
-    return retardo + espera + duracionB + (hayTarde ? pausaNuevo + u : 0) + dFinal + dParametros + (seMueven ? 0 : dLlegar);
+    return retardo + espera + duracionB + Math.max((hayTarde ? pausaNuevo + u : 0) + dFinal, dPlan) + (seMueven ? 0 : dLlegar);
   }
 
   // ¿Cambio en este paso el valor de una casilla que no es un puntero y a la que llega alguna flecha (a ella, a la
@@ -771,6 +771,97 @@ export class Figura {
       const caja = ancla ? this.absolutoDe(escena, ancla) : null;
       if (caja) this.parpadeo(escena.capaResalte, caja, duracion, retraso);
     }
+  }
+
+  // El trazo de una flecha que parpadea (como cuando un acceso la recorre).
+  parpadeoDeFlecha(escena, flecha, duracion, retraso) {
+    if (!escena.capaResalte || !duracion || sinMovimiento()) return;
+    const trazo = el('path', { d: camino(this.rutaPuntos(flecha, flecha.final, escena.filas, escena)), class: 'rep-flujo' });
+    trazo.style.opacity = '0';
+    escena.capaResalte.append(trazo);
+    if (trazo.animate) {
+      const a = trazo.animate(PARPADEO, { duration: duracion, delay: retraso, fill: 'both' });
+      a.onfinish = () => trazo.remove();
+    }
+  }
+
+  // Lo que se ve al pasar los argumentos de una llamada, con la caja de la funcion ya abierta. Por cada argumento, de a
+  // uno: parpadea la casilla de la que sale (si sale de una; con un puntero tambien su flecha y el bloque, como en
+  // q = p), parpadea la del parametro y, si el parametro es un puntero, se dibuja su flecha y parpadea lo que señala
+  // (salvo que ya haya parpadeado). Con mas de tres argumentos, cada paso se hace para todos a la vez.
+  // Devuelve null si no es una llamada, o { acciones, duracion, destinos, flechas, ejecutar }: "destinos" son las casillas
+  // que señalan las flechas de los parametros (el plan las resalta) y "flechas", las claves de esas flechas (se dibujan aparte).
+  planDeLlamada(escena, foto, u) {
+    const parejas = [];
+    let origen = null;
+    for (const h of (foto.accesos || []).filter((x) => x.llamada)) {
+      if (h.tipo === 'parametro') {
+        parejas.push({ origen, param: clave(h.a.a, h.a.ruta) });
+        origen = null;
+      } else origen = h;
+    }
+    if (!parejas.length || !escena.capaResalte) return null;
+    const juntos = parejas.length > 3;
+    const dValor = 0.5 * u;
+    const dCopia = 0.9 * u;
+    const dParam = 0.6 * u;
+    const dDestino = 0.9 * u;
+    const acciones = [];
+    const destinos = new Set();
+    const flechas = new Set();
+    const resaltado = new Set();
+
+    const origenDe = (p, en) => {
+      const h = p.origen;
+      if (!h) return 0;
+      const celda = clave(h.de.a, h.de.ruta);
+      resaltado.add(celda);
+      if (h.tipo !== 'copia') {
+        acciones.push(() => this.parpadear(escena, [celda], dValor, en));
+        return dValor;
+      }
+      const flecha = escena.flechas.find((f) => f.claveOrigen === celda && f.final);
+      const bloque = this.claveDeResalte(escena, h.a.a, h.a.ruta);
+      resaltado.add(bloque);
+      acciones.push(() => {
+        this.parpadear(escena, [celda, bloque], dCopia, en);
+        if (flecha) this.parpadeoDeFlecha(escena, flecha, dCopia, en);
+      });
+      return dCopia;
+    };
+    const parametroDe = (p, en) => {
+      resaltado.add(p.param);
+      acciones.push(() => this.parpadear(escena, [p.param], dParam, en));
+      return dParam;
+    };
+    const flechaDe = (p, en) => {
+      const f = escena.flechas.find((x) => x.claveOrigen === p.param && x.tarde && x.final);
+      if (!f) return 0;
+      const destino = this.claveDeResalte(escena, f.a, f.ruta);
+      destinos.add(destino);
+      flechas.add(p.param);
+      acciones.push(() => this.dibujarNuevas(`.rep-tarde[data-k="${p.param}"]`, u, en));
+      if (resaltado.has(destino)) return u;
+      resaltado.add(destino);
+      acciones.push(() => this.parpadear(escena, [destino], dDestino, en + u));
+      return u + dDestino;
+    };
+
+    let t = 0;
+    if (juntos) {
+      for (const hacer of [origenDe, parametroDe, flechaDe]) {
+        let mas = 0;
+        for (const p of parejas) mas = Math.max(mas, hacer(p, t));
+        t += mas;
+      }
+    } else {
+      for (const p of parejas) {
+        t += origenDe(p, t);
+        t += parametroDe(p, t);
+        t += flechaDe(p, t);
+      }
+    }
+    return { acciones, duracion: t, destinos, flechas, ejecutar: () => acciones.forEach((a) => a()) };
   }
 
   // Un marco que parpadea alrededor de una casilla o de un bloque (y se quita al terminar).
@@ -1181,9 +1272,10 @@ export class Figura {
 
   // Las flechas (sus grupos) que cumplen el selector se van dibujando desde su origen hasta su destino. La punta
   // viaja con el extremo del trazo: un trazo punteado que avanza dejaria la punta ya puesta en el destino.
-  dibujarNuevas(selector, milisegundos, retraso = 0) {
+  // "excluir": las claves (data-k) de las flechas que se dibujan aparte.
+  dibujarNuevas(selector, milisegundos, retraso = 0, excluir = null) {
     if (!this.escena || sinMovimiento()) return;
-    const grupos = [...this.escena.capaFlechas.querySelectorAll(selector)].filter((g) => g.puntosCompletos);
+    const grupos = [...this.escena.capaFlechas.querySelectorAll(selector)].filter((g) => g.puntosCompletos && !(excluir && excluir.has(g.getAttribute('data-k'))));
     if (!grupos.length) return;
     const inicio = performance.now() + retraso;
     // Devuelve si todavia queda algo por dibujar.
