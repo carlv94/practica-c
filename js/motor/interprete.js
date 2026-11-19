@@ -100,6 +100,7 @@ class Interprete {
     this.enMacro = 0;
     this.traza = [];
     this.accesos = []; // los accesos por puntero desde la ultima fotografia
+    this.escrituras = []; // las casillas donde se guardo un valor que no sale de otra casilla (un literal, una cuenta), idem
     this.enCondicion = 0; // cuantas condiciones se estan evaluando (una dentro de otra: a && b)
     this.condicionHecha = null; // la ultima condicion que se evaluo, para la proxima fotografia
     this.fotoDePaso = null; // la fotografia con que empezo la ultima sentencia (la pregunta de una condicion se le suma)
@@ -150,6 +151,7 @@ class Interprete {
   instantanea(linea, error = null, pregunta = null) {
     if (this.traza.length >= MAX_TRAZA) {
       this.accesos = [];
+      this.escrituras = [];
       this.condicionHecha = null;
       this.muestraHecha = null;
       this.lecturaHecha = null;
@@ -158,6 +160,8 @@ class Interprete {
     const foto = fotografia(this, linea);
     if (this.accesos.length) foto.accesos = this.accesos;
     this.accesos = [];
+    if (this.escrituras.length) foto.escrituras = this.escrituras;
+    this.escrituras = [];
     if (this.condicionHecha) foto.condicion = this.condicionHecha;
     this.condicionHecha = null;
     if (pregunta) foto.pregunta = pregunta;
@@ -502,6 +506,7 @@ class Interprete {
       this.asignarAlmacen(st, rv);
       if (devuelto) this.copiaDevuelta(st, reserva ? this.ubicar(reserva, st) : null);
       else this.registrarCopia(st, origen, celda, reserva ? this.ubicar(reserva, st) : null);
+      if (!celda && !devuelto) this.escritura(reserva, st);
       return;
     }
     this.asignarAlmacen(st, this.evaluar(init));
@@ -621,6 +626,15 @@ class Interprete {
     const s = serializarPuntero(st.v);
     if (s.k !== 'ptr') return;
     this.accesos.push({ de: null, a: { a: s.a, ruta: s.ruta }, tipo: 'copia', para: para || null });
+  }
+
+  // Se guardo en esta casilla un valor que no sale de otra casilla (un literal, una cuenta, NULL): la figura puede hacer
+  // resplandecer el valor nuevo. Un arreglo o una estructura no tienen un valor que mostrar.
+  escritura(reserva, st) {
+    if (!this.opciones.traza || !reserva || !st || !st.t || this.escrituras.length >= 8) return;
+    if (st.t.k === 'struct' || st.t.k === 'arr') return;
+    const c = this.ubicar(reserva, st);
+    if (c) this.escrituras.push(c);
   }
 
   // Se copio el valor de una casilla en otra (a = b, int c = a): se resalta el origen y despues el destino.
@@ -1026,6 +1040,7 @@ class Interprete {
     else if (antes.t.k === 'int' || antes.t.k === 'float') despues = this.convertir({ t: antes.t, v: antes.v + (mas ? 1 : -1) }, antes.t);
     else throw new ErrorDelMotor('SIN_VERIFICAR', 'un ++ sobre algo que no es un numero ni un puntero');
     this.escribir(lv, despues);
+    if (antes.t.k !== 'ptr') this.escritura(lv.reserva, lv.st);
     return prefijo ? despues : antes;
   }
 
@@ -1049,6 +1064,7 @@ class Interprete {
     this.escribir(lv, rv);
     if (devuelto) this.copiaDevuelta(lv.st, this.ubicar(lv.reserva, lv.st));
     else this.registrarCopia(lv.st, origenCopiado, celdaCopiada, this.ubicar(lv.reserva, lv.st));
+    if ((op !== '=' || !celdaCopiada) && !devuelto) this.escritura(lv.reserva, lv.st);
     const sobrescrito = op === '=' && lv.st.t.k === 'ptr' ? viejo : undefined;
     // Para la traza: primero lo que se guarda (el recorrido que lleva al valor y su copia) y despues donde se guarda
     // (el recorrido hasta la casilla de destino), aunque C evalue primero el lado izquierdo.

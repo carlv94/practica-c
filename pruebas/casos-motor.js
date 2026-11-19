@@ -355,6 +355,31 @@ int main() {
     },
   },
   {
+    nombre: 'un valor que no sale de otra casilla anota la casilla donde se guarda (el que sale de una casilla es una copia)',
+    codigo: String.raw`#include <stdio.h>
+int main() {
+  int x = 5;
+  int y = x;
+  x = y + 2;
+  x++;
+  int *p = NULL;
+  int a[2] = {1, 2};
+  return 0;
+}`,
+    espera: {
+      salida: '',
+      traza: (traza) => {
+        const con = traza.filter((f) => f.escrituras && f.escrituras.length);
+        if (con.length !== 4) return 'tenia que haber 4 pasos con una casilla escrita (x = 5, x = y + 2, x++, p = NULL) y hay ' + con.length;
+        if (con.some((f) => f.escrituras.length !== 1)) return 'cada paso escribe una sola casilla';
+        const copia = traza.filter((f) => (f.accesos || []).some((h) => h.tipo === 'valor'));
+        if (copia.length !== 1) return 'tenia que haber una copia de valor (y = x) y hay ' + copia.length;
+        if (copia[0].escrituras) return 'una copia no se anota tambien como escritura';
+        return null;
+      },
+    },
+  },
+  {
     nombre: 'un acceso a un arreglo comun no se anota, el de un bloque con malloc si',
     codigo: String.raw`#include <stdlib.h>
 int main() {

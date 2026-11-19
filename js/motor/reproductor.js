@@ -235,7 +235,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   // Las ayudas visuales (nombres de las flechas, brillo de los valores) se eligen en el panel de ajustes (ver js/ajustes.js).
   const aplicarAyudas = () => {
     dibujo.fijarNombres(ajustes.valor('nombresFlechas'));
-    dibujo.fijarAyudas({ brilloCopias: ajustes.valor('brilloCopias') });
+    dibujo.fijarAyudas(ajustes.todos());
   };
   aplicarAyudas();
   const olvidarAyudas = ajustes.alCambiar(() => {

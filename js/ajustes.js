@@ -17,6 +17,20 @@ export const AYUDAS = [
     detalle: 'Cuando un valor pasa de una variable a otra, o a un parámetro, resplandece en las dos casillas.',
   },
   {
+    clave: 'brilloAsignaciones',
+    almacen: 'ajuste-brillo-asignaciones',
+    porDefecto: false,
+    titulo: 'Brillo del valor que se asigna',
+    detalle: 'Cuando se guarda un valor nuevo que no sale de otra variable (un número, una cuenta, NULL), resplandece en su casilla.',
+  },
+  {
+    clave: 'brilloCondiciones',
+    almacen: 'ajuste-brillo-condiciones',
+    porDefecto: false,
+    titulo: 'Brillo de los valores de una condición',
+    detalle: 'Cuando se evalúa una condición, resplandecen los valores de las variables que se leen.',
+  },
+  {
     clave: 'nombresFlechas',
     almacen: 'reproductor-nombres', // la clave de antes, para no perder lo que cada uno ya tenia elegido
     porDefecto: false,
@@ -26,8 +40,8 @@ export const AYUDAS = [
 ];
 
 export const PERFILES = [
-  { id: 'practica', nombre: 'Práctica', valores: { brilloCopias: true, nombresFlechas: false } },
-  { id: 'explicacion', nombre: 'Explicación', valores: { brilloCopias: true, nombresFlechas: true } },
+  { id: 'practica', nombre: 'Práctica', valores: { brilloCopias: true, brilloAsignaciones: false, brilloCondiciones: false, nombresFlechas: false } },
+  { id: 'explicacion', nombre: 'Explicación', valores: { brilloCopias: true, brilloAsignaciones: true, brilloCondiciones: true, nombresFlechas: true } },
 ];
 
 const estado = new Map();

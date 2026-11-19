@@ -204,7 +204,7 @@ function fotoConLugar(foto, anterior) {
     marcos.push({ ...viejo, variables });
   }
   if (!crece) return null;
-  return { ...anterior, marcos, accesos: undefined, condicion: undefined, muestra: undefined, lectura: undefined, error: undefined };
+  return { ...anterior, marcos, accesos: undefined, escrituras: undefined, condicion: undefined, muestra: undefined, lectura: undefined, error: undefined };
 }
 
 // Las casillas que se encienden en violeta en este paso: de las que salieron los valores de un printf y las que recibieron los de
@@ -223,7 +223,7 @@ function fotoConBloque(foto, anterior) {
   const nuevos = foto.monticulo.filter((b) => b.vivo && !antes.has(b.id));
   if (!nuevos.length) return null;
   if (!(foto.accesos || []).some((h) => h.de)) return null;
-  return { ...anterior, monticulo: [...anterior.monticulo, ...nuevos], accesos: undefined, condicion: undefined, pregunta: undefined, muestra: undefined, lectura: undefined, error: undefined };
+  return { ...anterior, monticulo: [...anterior.monticulo, ...nuevos], accesos: undefined, escrituras: undefined, condicion: undefined, pregunta: undefined, muestra: undefined, lectura: undefined, error: undefined };
 }
 
 // Los bloques que se ven: los reservados, el que se libera en este paso, los liberados que algun
@@ -439,7 +439,7 @@ export class Figura {
     this.animandoA = false; // las flechas que cambiaron se estan animando, cuadro por cuadro
     this.kA = 1; // cuanto de esa animacion (0 a 1)
     this.mostrarNombres = false;
-    this.ayudas = { brilloCopias: true }; // ayudas visuales que se pueden apagar (ver js/ajustes.js)
+    this.ayudas = { brilloCopias: true, brilloAsignaciones: false, brilloCondiciones: false }; // ayudas visuales que se pueden apagar (ver js/ajustes.js)
     this.enfoqueFlecha = null; // la flecha que se esta senalando
     this.fijada = null; // la flecha a la que se le hizo clic
     contenedor.classList.add('rep-figura-base');
@@ -467,7 +467,7 @@ export class Figura {
     this.enfoquePregunta = enfoque.length ? new Set(enfoque.map((e) => clave(e.a, e.ruta))) : null;
     const dur = this.mostrarBase(foto, anterior, opciones);
     // Si la expansion de una caja va primero, lo fijo lo pone la segunda parte del paso.
-    if (!this.expansionPendiente) this.fijarEstado(foto, opciones.animar ? dur : 0, Boolean(opciones.animar && opciones.flujo));
+    if (!this.expansionPendiente) this.fijarEstado(foto, opciones.animar ? dur : 0, Boolean(opciones.animar && opciones.flujo), opciones.duracion ?? 450);
     return dur;
   }
 
@@ -580,8 +580,11 @@ export class Figura {
     // Una copia de valor (de una casilla a otra): cuando llega la figura nueva, el valor ya puesto resplandece en las dos casillas.
     // (Con un puntero a un bloque no: ahi estan la flecha y el bloque; con una cuenta tampoco: no sale de una casilla.)
     const copiasDeValor = this.ayudas.brilloCopias && flujo && mueve ? (foto.accesos || []).filter((h) => !h.llamada && h.tipo === 'valor' && h.de && h.para) : [];
-    const dBrillo = copiasDeValor.length ? 0.8 * u : 0;
+    // Un valor nuevo que no sale de otra casilla (un literal, una cuenta, NULL): resplandece solo el destino.
+    const escrituras = this.ayudas.brilloAsignaciones && flujo && mueve ? foto.escrituras || [] : [];
+    const dBrillo = copiasDeValor.length || escrituras.length ? 0.8 * u : 0;
     for (const h of copiasDeValor) this.brillar(escena, [clave(h.de.a, h.de.ruta), clave(h.para.a, h.para.ruta)], retardo, dBrillo);
+    for (const c of escrituras) this.brillar(escena, [clave(c.a, c.ruta)], retardo, dBrillo);
     const dLlegar = objetivos.alLlegar.length ? 0.9 * u : 0;
     const dFinal = objetivos.alFinal.length ? 0.9 * u : 0;
     const dPlan = plan ? plan.duracion : 0;
@@ -1261,7 +1264,7 @@ export class Figura {
   // Lo que se ve fijo mientras se esta en este paso: la pregunta de una condicion (el rotulo y las casillas que se
   // leen, con borde discontinuo; aparecen cuando termina la animacion del paso, "retraso") o, en el paso siguiente,
   // el rotulo con la respuesta.
-  fijarEstado(foto, retraso, adelante = false) {
+  fijarEstado(foto, retraso, adelante = false, unidad = 450) {
     this.nodoFijo = null;
     const escena = this.escena;
     if (!escena || (!foto.pregunta && !foto.condicion)) return;
@@ -1290,6 +1293,8 @@ export class Figura {
         const marco = el('rect', { x: caja.x - 3, y: caja.y - 3, width: caja.w + 6, height: caja.h + 6, rx: 4, class: 'rep-acceso rep-consulta' });
         escena.capaResalte.append(marco);
         aparecer(marco);
+        // Los valores que se leen resplandecen cuando aparece la pregunta (los punteros a un bloque no tienen texto: no se ven).
+        if (adelante && this.ayudas.brilloCondiciones) this.brillar(escena, [clave(c.a, c.ruta)], retraso, 0.8 * unidad);
       }
     } else nodo = this.crearRotulo(foto.condicion.texto, foto.condicion.valor).caja;
     this.nodoFijo = nodo;
