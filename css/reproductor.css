@@ -501,6 +501,33 @@
 .rep-cerrar-codigo {
   display: none;
 }
+/* Avanzar por etapas: el nombre de la etapa y una barra fina con las etapas del paso (la actual resaltada). */
+.rep-estado-etapa {
+  margin: 0 0 6px;
+  font-size: 0.85rem;
+  color: var(--suave);
+}
+.rep-estado-etapa[hidden],
+.rep-etapas[hidden] {
+  display: none;
+}
+.rep-etapas {
+  display: flex;
+  gap: 3px;
+  height: 6px;
+  margin-top: 6px;
+}
+.rep-etapa-seg {
+  flex: 1;
+  background: var(--borde);
+  border-radius: 3px;
+}
+.rep-etapa-hecha {
+  background: color-mix(in srgb, var(--acento) 45%, var(--borde));
+}
+.rep-etapa-actual {
+  background: var(--acento);
+}
 /* El trazado de las llamadas recursivas: una tabla que se completa con los pasos. */
 /* La zona de la tabla crece con sus filas hasta un alto maximo (casi dos tercios de la ventana) y ahi se desplaza sola: el resto del
    panel no se mueve cuando se agregan filas, salvo mientras la tabla va creciendo. */

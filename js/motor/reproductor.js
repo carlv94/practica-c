@@ -432,6 +432,56 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     }
     return total;
   };
+  // Las ETAPAS de la animacion del trazado en el paso k: [{ t, nombre }], con t en ms desde que empieza (ver pintarPaso). Repite la
+  // estructura de los tiempos de pintarTrazado (duracionApertura, duracionBase, duracionVuelta3...): cada vez que algo de la animacion
+  // empieza en otro momento, es una etapa.
+  const etapasDelTrazado = (k, u) => {
+    if (!trazadoActivo() || sinMovimiento()) return [];
+    const d = fundidoDe(u);
+    const unaColumna = enUnaColumna();
+    const marcas = [];
+    const poner = (t, nombre) => marcas.push({ t, nombre });
+    for (const r of filas) {
+      if (r.desde > k) continue;
+      const apertura = r.desde === k ? duracionApertura(r, k, d) : 0;
+      if (r.desde === k) {
+        const padre = conValores ? padreDe.get(r.id) : null;
+        if (padre && padre.ida) {
+          if (padre.ida.paso === k) {
+            poner(0, 'Se escribe lo que hace «' + padre.llamada + '»');
+            poner(2.5 * d, 'La llamada brilla y se abre su fila');
+          } else poner(0, 'La llamada brilla y se abre su fila');
+        } else poner(0, typeof r.id === 'string' ? 'Aparece la fila de «' + r.llamada + '»' : 'Aparece la llamada «' + r.llamada + '»');
+      } else if (r.ida && r.ida.paso === k && r.base !== k && llamadasDe(r).length === 0) poner(0, 'Se escribe lo que devuelve «' + r.llamada + '»');
+      if (r.base === k) {
+        poner(apertura, 'Se anuncia el caso base de «' + r.llamada + '»');
+        if (conValores && r.ida && !unaColumna) poner(apertura + 4 * d, 'Vuelve el valor del caso base');
+      }
+      for (const q of ajustes.valor('preguntasTabla') ? r.preguntas || [] : []) {
+        if (q.respuesta !== k) continue;
+        if (ajustes.valor('brilloCondiciones')) {
+          poner(0, 'Brillan los valores de la pregunta ¿' + q.texto + '?');
+          poner(0.6 * u, 'La pregunta se responde: ' + (q.valor ? 'verdadero' : 'falso'));
+        } else poner(0, 'La pregunta ¿' + q.texto + '? se responde: ' + (q.valor ? 'verdadero' : 'falso'));
+      }
+      const fase = r.vuelta && r.base !== k ? faseDe(r, k) : null;
+      if (fase) {
+        const { e2, e3 } = estadosDe(r);
+        const hayIgual = fase === 'todo' && r.vuelta.valor !== null && (r.vuelta.flecha || r.vuelta.texto !== r.vuelta.valor);
+        if (unaColumna) {
+          if (fase !== 'resultado' && e2) poner(0, 'La llamada de «' + r.llamada + '» se reemplaza por su valor');
+          if (fase !== 'cuenta' && e3) poner(fase === 'resultado' ? 0 : e2 ? 1.9 * u + 0.8 * u : 0, 'La cuenta de «' + r.llamada + '» se resuelve');
+        } else if (fase === 'resultado') poner(0, 'Se agrega lo que devuelve «' + r.llamada + '»');
+        else {
+          poner(0, 'Aparece en la Vuelta la expresión de la Ida');
+          if (e2) poner(d, 'La llamada se reemplaza por su valor');
+          if (hayIgual) poner(e2 ? d + 1.9 * u + 0.3 * u : d, 'Se agrega lo que devuelve «' + r.llamada + '»');
+        }
+      }
+    }
+    return marcas;
+  };
+  raiz.marcasDelTrazado = (k, u = 400) => etapasDelTrazado(k, u); // (para las pruebas)
   // Un texto que resplandece y crece un instante (como el valor que se copia en la figura).
   const resplandor = (el, retraso, duracion, escala = 1.4) => {
     if (!el || !el.animate || !duracion) return;
@@ -905,11 +955,17 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     // La fila de la que trata el paso (la ultima abierta) a la vista; si es nueva, lo hace mostrarFila cuando entra.
     if (actual && !filasNuevas.has(actual.id) && !sinDesplazar) aLaVista(filasDom.get(actual.id), conMovimiento);
   };
-  lado.append(estado, herramientas, franjaPregunta, trazado, figura, nodo('p', 'rep-subtitulo', 'Lo que muestra el programa'), consola);
+  const etiquetaEtapa = nodo('p', 'rep-estado-etapa'); // "Etapa 2 de 5: ..." (con la ayuda "Avanzar por etapas")
+  etiquetaEtapa.hidden = true;
+  etiquetaEtapa.setAttribute('aria-live', 'polite');
+  lado.append(estado, etiquetaEtapa, herramientas, franjaPregunta, trazado, figura, nodo('p', 'rep-subtitulo', 'Lo que muestra el programa'), consola);
   if (conEntrada) lado.append(nodo('p', 'rep-subtitulo', 'Lo que ingresa el usuario'), cajaDeEntrada);
   lado.append(nota);
   cuerpo.append(columnaCodigo, lado);
-  raiz.append(giro, cuerpo, barra);
+  const barraEtapas = nodo('div', 'rep-etapas'); // una barra fina dividida en las etapas del paso
+  barraEtapas.hidden = true;
+  barraEtapas.setAttribute('aria-hidden', 'true');
+  raiz.append(giro, cuerpo, barra, barraEtapas);
   panelCodigo.append(cerrarCodigo);
 
   let paso = 0;
@@ -917,6 +973,10 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   let reloj = null;
   let ultimaAnimacion = 0; // lo que dura la animacion del paso que se esta mostrando
   let relojTrazado = null; // el trazado que espera a que termine la animacion de la figura
+  let relojesEtapas = []; // las pausas entre etapa y etapa del paso (ver programarEtapas)
+  let etapasDelPaso = []; // [{ t, nombre }] del paso en curso, si se avanza por etapas
+  let etapaActual = -1;
+  let pausaDeEtapa = false; // el reloj esta detenido porque termino una etapa (Siguiente sigue con la que viene)
   let relojEditor = null; // el resalte de la funcion que espera a que termine lo anterior
   let funcionAnterior = null;
   let zoom = leerZoom();
@@ -1016,9 +1076,70 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   let marcaPendiente = null;
   let relojesDeSalida = [];
 
+  // ---- avanzar por etapas: el paso se anima hasta el comienzo de la proxima etapa, ahi se detiene el reloj (y con el, todo lo que
+  // se mueve) y Siguiente sigue con la que viene; la ultima etapa es la llegada del cursor a la linea.
+  function mostrarEtapa(i, terminada) {
+    if (!etapasDelPaso.length) return;
+    etapaActual = i;
+    const n = etapasDelPaso.length;
+    etiquetaEtapa.hidden = false;
+    etiquetaEtapa.textContent =
+      'Etapa ' + (i + 1) + ' de ' + n + ': ' + etapasDelPaso[i].nombre + (terminada ? (i + 1 < n ? ' ✓. Sigue: ' + etapasDelPaso[i + 1].nombre : ' ✓') : '');
+    barraEtapas.hidden = false;
+    barraEtapas.replaceChildren(
+      ...etapasDelPaso.map((e, j) => nodo('span', 'rep-etapa-seg' + (j < i || (j === i && terminada) ? ' rep-etapa-hecha' : '') + (j === i ? ' rep-etapa-actual' : '')))
+    );
+  }
+  function limpiarEtapas() {
+    for (const e of relojesEtapas) tiempo.cancelar(e);
+    relojesEtapas = [];
+    etapasDelPaso = [];
+    etapaActual = -1;
+    pausaDeEtapa = false;
+    etiquetaEtapa.hidden = true;
+    barraEtapas.hidden = true;
+  }
+  // Une las marcas que caen casi juntas, las ordena y programa la pausa al comienzo de cada etapa (menos la primera). Con una sola
+  // etapa no hay nada que separar.
+  function programarEtapas(marcas) {
+    const ordenadas = [...marcas].sort((a, b) => a.t - b.t);
+    const etapas = [];
+    for (const m of ordenadas) {
+      const ultima = etapas[etapas.length - 1];
+      if (ultima && m.t - ultima.t < 25) {
+        if (!ultima.nombre.includes(m.nombre)) ultima.nombre += ' y ' + m.nombre.charAt(0).toLowerCase() + m.nombre.slice(1);
+      } else etapas.push({ ...m });
+    }
+    if (etapas.length < 2) return;
+    etapasDelPaso = etapas;
+    mostrarEtapa(0, false);
+    etapas.forEach((e, i) => {
+      if (i === 0) return;
+      relojesEtapas.push(
+        tiempo.esperar(() => {
+          pausaDeEtapa = true;
+          tiempo.pausar();
+          mostrarEtapa(i - 1, true);
+        }, e.t)
+      );
+    });
+  }
+  // Siguiente: si el reloj esta detenido al final de una etapa, sigue con la que viene; si no, pasa al paso que sigue (por etapas, si se pide).
+  function avanzar() {
+    parar();
+    if (pausaDeEtapa) {
+      pausaDeEtapa = false;
+      mostrarEtapa(etapaActual + 1, false);
+      tiempo.continuar();
+      return;
+    }
+    ir(paso + 1, true);
+  }
+
   // "animar": se mueven los bloques del paso anterior al de ahora (si no, aparecen en su lugar).
   // "adelante": se llego avanzando un paso (la unica vez que se espera a la animacion).
-  function pintarPaso(animar = false, adelante = false) {
+  function pintarPaso(animar = false, adelante = false, porEtapas = false) {
+    limpiarEtapas();
     if (marcaPendiente) {
       tiempo.cancelar(marcaPendiente.reloj);
       const pendiente = marcaPendiente;
@@ -1070,6 +1191,18 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     const entrando = adelante && animar && !sinMovimiento() && antes && foto.marcos.length > antes.marcos.length && ajustes.valor('resaltarFuncion') ? funcionDe(foto) : null;
     const dEditor = entrando ? 3.5 * fundidoDe(unidad) : 0;
     ultimaAnimacion = dFigura + dTrazado + dEditor;
+    // Las etapas (antes de programar lo demas: a la misma hora, la pausa va primero)
+    if (porEtapas) {
+      const marcas = [];
+      if (dFigura > 0) {
+        const deLaFigura = dibujo.etapas && dibujo.etapas.length ? dibujo.etapas : [{ t: 0, nombre: 'Cambia la figura' }];
+        for (const m of deLaFigura) marcas.push({ t: m.t, nombre: m.nombre });
+      }
+      if (dTrazado > 0) for (const m of etapasDelTrazado(paso, unidad)) marcas.push({ t: dFigura + m.t, nombre: m.nombre });
+      if (entrando) marcas.push({ t: dFigura + dTrazado, nombre: 'Se resalta la función' });
+      if (ultimaAnimacion > 0 && foto.linea != null) marcas.push({ t: ultimaAnimacion, nombre: 'Llega el cursor a la línea ' + foto.linea });
+      programarEtapas(marcas);
+    }
     if (entrando) relojEditor = tiempo.esperar(() => resaltarFuncion(entrando, fundidoDe(unidad)), dFigura + dTrazado);
     if (dTrazado > 0) {
       const arrancar = () => pintarTrazado(paso, { animar: true, u: unidad });
@@ -1094,6 +1227,8 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
       pintarTrazado(paso, { u: unidad, preguntaNueva: adelante && animar }); // al terminar, la tabla queda quieta en su estado final
       consola.textContent = foto.salida || ' ';
       pintarEntrada(paso);
+      etiquetaEtapa.hidden = true; // (el paso terminado: ya no hay etapa en curso)
+      barraEtapas.hidden = true;
     };
     if (adelante && animar && ultimaAnimacion > 0) {
       const reloj = tiempo.esperar(() => {
@@ -1106,13 +1241,14 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     }
   }
 
-  function ir(n) {
+  // "porEtapas": se llego con Siguiente (o la flecha derecha): con la ayuda "Avanzar por etapas", el paso se detiene entre etapa y etapa.
+  function ir(n, porEtapas = false) {
     tiempo.continuar();
     const nuevo = Math.max(0, Math.min(traza.length - 1, n));
     const animar = Math.abs(nuevo - paso) === 1;
     const adelante = nuevo === paso + 1;
     paso = nuevo;
-    pintarPaso(animar, adelante);
+    pintarPaso(animar, adelante, porEtapas && animar && adelante && ajustes.valor('avanzarPorEtapas'));
   }
 
   // Detener la animacion es detener el reloj (los temporizadores y lo que se calcula cuadro a cuadro, ver tiempo.js) y las
@@ -1126,6 +1262,8 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     } else {
       congeladas.forEach((a) => a.play());
       congeladas = [];
+      // (y las que nacieron ya detenidas, ver Figura.mostrarBase)
+      if (raiz.getAnimations) for (const a of raiz.getAnimations({ subtree: true })) if (a.playState === 'paused') a.play();
     }
     rotular(detener, pausado ? 'seguir' : 'detener', pausado ? 'Seguir' : 'Detener');
     detener.setAttribute('aria-label', pausado ? 'Seguir con la animación (barra espaciadora)' : 'Detener la animación (barra espaciadora)');
@@ -1142,7 +1280,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
       pintarPaso(false, false);
       paso += 1;
     }
-    pintarPaso(true, true);
+    pintarPaso(true, true, ajustes.valor('avanzarPorEtapas'));
   }
   detener.onclick = alternarPausa;
   repetir.onclick = () => {
@@ -1311,7 +1449,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
 
   inicio.onclick = () => (parar(), ir(0));
   anterior.onclick = () => (parar(), ir(paso - 1));
-  siguiente.onclick = () => (parar(), ir(paso + 1));
+  siguiente.onclick = avanzar;
   final.onclick = () => (parar(), ir(traza.length - 1));
   barraPasos.oninput = () => (parar(), ir(Number(barraPasos.value)));
   reproducir.onclick = () => {
@@ -1336,7 +1474,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     else if ((e.key === 'r' || e.key === 'R') && !e.ctrlKey && !e.metaKey && !e.altKey) (parar(), repetirPaso(), e.preventDefault());
     else if (e.key === 'Home') (parar(), ir(0), e.preventDefault());
     else if (e.key === 'End') (parar(), ir(traza.length - 1), e.preventDefault());
-    else if (e.key === 'ArrowRight') (parar(), ir(paso + 1), e.preventDefault());
+    else if (e.key === 'ArrowRight') (avanzar(), e.preventDefault());
     else if (e.key === 'ArrowLeft') (parar(), ir(paso - 1), e.preventDefault());
   });
 

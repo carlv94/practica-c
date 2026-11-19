@@ -444,6 +444,71 @@ import { corregir } from '../js/corrector.js';
           });
         }
 
+        // Las etapas del trazado (ayuda "Avanzar por etapas"): cada paso con animacion en la tabla entrega sus marcas, con nombre y en
+        // un orden que no se pisa, y las de una llamada que se abre, un caso base y una respuesta existen.
+        {
+          const titulo = 'etapas del trazado: las marcas de cada paso';
+          try {
+            const { crearReproductor } = await import('../js/motor/reproductor.js');
+            const { ajustes } = await import('../js/ajustes.js');
+            const fuente =
+              '#include <stdio.h>\nint mayorDigito(int n) {\n  if (n < 10) {\n    return n;\n  }\n  int resto = mayorDigito(n / 10);\n  if (n % 10 > resto) {\n    return n % 10;\n  }\n  return resto;\n}\nint main() {\n  printf("%d\\n", mayorDigito(417));\n  return 0;\n}';
+            ajustes.fijarPerfil('explicacion');
+            const m = ejecutarMotor(analizador, fuente, { traza: true, preguntas: true });
+            const rep = crearReproductor({ codigo: fuente, traza: m.traza, funciones: m.funciones, llamadas: m.llamadas });
+            const nombres = [];
+            m.traza.forEach((f, k) => {
+              const marcas = rep.marcasDelTrazado(k, 400);
+              for (const x of marcas) {
+                if (typeof x.nombre !== 'string' || !x.nombre || !(x.t >= 0)) throw new Error('una marca sin nombre o con un momento que no es: ' + JSON.stringify(x));
+                nombres.push(x.nombre);
+              }
+            });
+            const hay = (t) => nombres.some((n) => n.includes(t));
+            for (const t of ['La llamada brilla y se abre su fila', 'Se anuncia el caso base', 'La pregunta se responde', 'La llamada se reemplaza por su valor', 'Se agrega lo que devuelve']) {
+              if (!hay(t)) throw new Error('ningun paso tiene la etapa "' + t + '"');
+            }
+            ajustes.fijarPerfil('practica');
+            anotar(true, titulo);
+          } catch (e) {
+            anotar(false, titulo, e.stack || e.message);
+          }
+        }
+
+        // Las etapas de la figura (ayuda "Avanzar por etapas"): los recorridos de las flechas, los punteros que cambian de destino, el
+        // free y los argumentos de una llamada tienen su marca, con nombre y en orden.
+        {
+          const titulo = 'etapas de la figura: recorridos de flechas, cambio de destino, free y argumentos';
+          try {
+            const { Figura } = await import('../js/motor/figura.js');
+            const fuente =
+              '#include <stdlib.h>\ntypedef struct nodo { int dato; struct nodo *sig; } Nodo;\nvoid agregar(Nodo **lista, int d) {\n  Nodo *n = malloc(sizeof(Nodo));\n  n->dato = d;\n  n->sig = *lista;\n  *lista = n;\n}\nint main() {\n  Nodo *lista = NULL;\n  agregar(&lista, 1);\n  agregar(&lista, 2);\n  free(lista);\n  return 0;\n}';
+            const m = ejecutarMotor(analizador, fuente, { traza: true });
+            if (m.error) throw new Error('el programa dio un error: ' + m.error.codigo);
+            const cont = document.createElement('div');
+            document.body.append(cont);
+            const dibujo = new Figura(cont, {});
+            const nombres = [];
+            m.traza.forEach((foto, k) => {
+              dibujo.mostrar(foto, k ? m.traza[k - 1] : null, { animar: k > 0, duracion: 400, flujo: k > 0 });
+              let antes = -1;
+              for (const e of dibujo.etapas) {
+                if (typeof e.nombre !== 'string' || !e.nombre || !(e.t >= 0)) throw new Error('una marca sin nombre o con un momento que no es: ' + JSON.stringify(e));
+                nombres.push(e.nombre);
+                antes = Math.max(antes, e.t);
+              }
+            });
+            cont.remove();
+            const hay = (t) => nombres.some((n) => n.includes(t));
+            for (const t of ['hasta «lista» de «main»', 'pasa a apuntar a', 'Se libera el bloque', 'Se pasa', 'al parámetro «lista» de «agregar»']) {
+              if (!hay(t)) throw new Error('ningun paso tiene la etapa "' + t + '"; hay: ' + [...new Set(nombres)].join(' | '));
+            }
+            anotar(true, titulo);
+          } catch (e) {
+            anotar(false, titulo, e.stack || e.message);
+          }
+        }
+
         for (const caso of CASOS_DE_LA_REGLA) {
           const r = resultadoDeLaRegla(analizador, corregir, caso);
           anotar(r.bien, `regla memoria: ${caso.nombre}`, r.detalle);

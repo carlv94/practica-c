@@ -69,6 +69,13 @@ export const AYUDAS = [
     detalle: 'En lugar del símbolo solo, el texto completo de todas las preguntas, siempre a la vista.',
   },
   {
+    clave: 'avanzarPorEtapas',
+    almacen: 'ajuste-avanzar-por-etapas',
+    porDefecto: false,
+    titulo: 'Avanzar por etapas',
+    detalle: 'Siguiente (y la flecha derecha) avanza etapa por etapa dentro de cada paso, deteniéndose entre una y otra y diciendo cuál es. La reproducción automática las ignora.',
+  },
+  {
     clave: 'nombresFlechas',
     almacen: 'reproductor-nombres', // la clave de antes, para no perder lo que cada uno ya tenia elegido
     porDefecto: false,
@@ -78,8 +85,8 @@ export const AYUDAS = [
 ];
 
 export const PERFILES = [
-  { id: 'practica', nombre: 'Práctica', valores: { brilloCopias: true, brilloAsignaciones: false, brilloCondiciones: false, resaltarFuncion: false, trazado: false, trazadoUnaColumna: false, preguntasTabla: false, preguntasTexto: false, nombresFlechas: false } },
-  { id: 'explicacion', nombre: 'Explicación', valores: { brilloCopias: true, brilloAsignaciones: true, brilloCondiciones: true, resaltarFuncion: true, trazado: true, trazadoUnaColumna: false, preguntasTabla: true, preguntasTexto: false, nombresFlechas: true } },
+  { id: 'practica', nombre: 'Práctica', valores: { brilloCopias: true, brilloAsignaciones: false, brilloCondiciones: false, resaltarFuncion: false, trazado: false, trazadoUnaColumna: false, preguntasTabla: false, preguntasTexto: false, avanzarPorEtapas: false, nombresFlechas: false } },
+  { id: 'explicacion', nombre: 'Explicación', valores: { brilloCopias: true, brilloAsignaciones: true, brilloCondiciones: true, resaltarFuncion: true, trazado: true, trazadoUnaColumna: false, preguntasTabla: true, preguntasTexto: false, avanzarPorEtapas: false, nombresFlechas: true } },
 ];
 
 const estado = new Map();

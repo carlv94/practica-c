@@ -459,6 +459,7 @@ export class Figura {
   // Muestra la fotografia (ver mostrarBase) y, aparte, lo que se ve fijo en este paso: la pregunta de una condicion o
   // su respuesta (ver fijarEstado). Devuelve lo que dura la animacion.
   mostrar(foto, anterior = null, opciones = {}) {
+    this.etapas = [];
     this.nodoFijo = null;
     if (this.franja) this.franja.replaceChildren();
     tiempo.cancelar(this.finEnfoque);
@@ -472,12 +473,32 @@ export class Figura {
     return dur;
   }
 
+  // Una etapa de la animacion de este paso: algo con nombre que empieza en el momento "t" (en ms, desde que empieza el
+  // paso). El reproductor las lee de "etapas" apenas termina mostrar() para detenerse entre una y otra.
+  anotar(t, nombre) {
+    if (this.etapas) this.etapas.push({ t, nombre });
+  }
+
+  // Como se llama una casilla (a: id de su variable o bloque, ruta: donde dentro de ella): «lista» de «main»,
+  // «sig» del bloque en 5000.
+  nombreCelda(escena, a, ruta = []) {
+    const d = escena && escena.datos ? escena.datos.get(a) : null;
+    if (!d || !d.reserva) return 'una casilla';
+    const r = d.reserva;
+    let rr = ruta || [];
+    if (d.bloque && r.valor && r.valor.k === 'arr' && r.valor.elems.length === 1 && typeof rr[0] === 'number') rr = rr.slice(1);
+    const camino = rr.map((x) => (typeof x === 'number' ? `[${x}]` : `.${x}`)).join('');
+    if (d.bloque) return camino ? `«${camino.replace(/^\./, '')}» del bloque en ${r.dir}` : `el bloque en ${r.dir}`;
+    return `«${r.nombre}${camino}»` + (d.funcion ? ` de «${d.funcion.replace(/\(\)$/, '')}»` : '');
+  }
+
   // Lo que dura mostrar "foto" desde "intermedia" (que se alcanza desde "anterior"), medido en una figura de prueba
-  // (fuera de la pagina) que repite los pasos.
+  // (fuera de la pagina) que repite los pasos. Las etapas de esa figura quedan en "etapasMedidas".
   medirPaso(anterior, intermedia, foto, opciones) {
     const sombra = new Figura(document.createElement('div'), { cabezas: this.cabezas });
     sombra.mostrar(intermedia, anterior, { animar: false });
     const dura = sombra.mostrar(foto, intermedia, opciones);
+    this.etapasMedidas = sombra.etapas || [];
     sombra.terminarFlujo();
     if (sombra.raf) cancelAnimationFrame(sombra.raf);
     for (const reloj of [sombra.finAtenuado, sombra.finAparte, sombra.finEnfoque, sombra.expansionPendiente]) tiempo.cancelar(reloj);
@@ -500,6 +521,7 @@ export class Figura {
       if (intermedia) {
         const expansion = this.mostrar(intermedia, anterior, { animar: true, duracion, flujo: false, expandir: false });
         const resto = this.medirPaso(anterior, intermedia, foto, { animar, duracion, flujo, expandir: false });
+        this.etapas = [{ t: 0, nombre: 'Se agranda la caja de la función' }, ...this.etapasMedidas.map((m) => ({ t: m.t + expansion, nombre: m.nombre }))];
         this.expansionPendiente = tiempo.esperar(() => {
           this.expansionPendiente = null;
           this.mostrar(foto, intermedia, { animar, duracion, flujo, expandir: false });
@@ -514,6 +536,7 @@ export class Figura {
         const aparicion = this.mostrar(intermedia, anterior, { animar: true, duracion, flujo: false, expandir: false, bloquePrimero: false });
         const espera = aparicion + 0.3 * duracion;
         const resto = this.medirPaso(anterior, intermedia, foto, { animar, duracion, flujo, expandir: false, bloquePrimero: false });
+        this.etapas = [{ t: 0, nombre: 'Aparece el bloque reservado' }, ...this.etapasMedidas.map((m) => ({ t: m.t + espera, nombre: m.nombre }))];
         this.expansionPendiente = tiempo.esperar(() => {
           this.expansionPendiente = null;
           this.mostrar(foto, intermedia, { animar, duracion, flujo, expandir: false, bloquePrimero: false });
@@ -670,6 +693,34 @@ export class Figura {
     }
     this.pintarFlechas();
     this.retardoFundido = 0;
+    // Las etapas del cambio de la figura (despues del flujo, que ya anoto las suyas): lo que se libera, las flechas
+    // que cambian de destino y los bloques y cajas que se mueven. "tFlecha" y "tTarde": cuando se dibujan las flechas.
+    const marcarCambio = (tFlecha, tTarde, tMover) => {
+      if (!mueve) return;
+      let algo = false;
+      if (hayFundido && (escena.flechas.some((x) => x.recienLiberada) || fundidosDeBloque.some((e) => e.classList.contains('rep-fundido-bloque')))) {
+        this.anotar(retardo, 'Se libera el bloque: queda marcado como liberado');
+        algo = true;
+        if (this.dDestello) this.anotar(retardo + this.retrasoFlechas, 'Las flechas que apuntaban al bloque quedan colgando');
+      }
+      for (const x of escena.flechas) {
+        if (!x.cambio || !x.final || x.muerto || x.fuera) continue;
+        if (x.tarde && plan && plan.flechas.has(clave(x.deId, x.rutaOrigen))) continue;
+        this.anotar(x.tarde ? tTarde : tFlecha, `La flecha de ${this.nombreCelda(escena, x.deId, x.rutaOrigen)} pasa a apuntar ${this.nombreCelda(escena, x.a, x.ruta).replace(/^el /, 'al ').replace(/^(?!al )/, 'a ')}`);
+        algo = true;
+      }
+      if (seMueven) {
+        const nueva = [...escena.marcosG.values()].some((m) => m.nuevo);
+        const sale = escena.salientes.length > 0;
+        const bloqueNuevo = [...escena.bloques.values()].some((b) => b.nuevo);
+        if (nueva) this.anotar(tMover, 'Se abre la caja de la función que empieza');
+        if (sale) this.anotar(tMover, 'Se cierra la caja de la función que termina');
+        if (bloqueNuevo && !nueva) this.anotar(tMover, 'Aparece el bloque nuevo');
+        if (!nueva && !sale && !bloqueNuevo) this.anotar(tMover, 'Se acomodan los bloques y las cajas');
+        algo = true;
+      }
+      if (!algo) this.anotar(retardo, 'Cambia la figura');
+    };
     if (!mueve || (!animA && !seMueven)) {
       // Cambio el valor de una casilla (no un puntero) a la que llega alguna flecha: las flechas quedan difuminadas un
       // momento, para que se vea la casilla en ambar, y despues recuperan su color con un fundido.
@@ -683,6 +734,7 @@ export class Figura {
           this.finAparte = tiempo.esperar(() => svg.classList.remove('rep-vuelve'), 400);
         }, retardo + aparte);
       }
+      marcarCambio(retardo, retardo, retardo);
       const dura = Math.max(hayFundido ? u : 0, this.dDestello ? this.retrasoFlechas + this.dDestello : 0, dBrillo);
       this.dDestello = 0;
       return retardo + dura + aparte;
@@ -699,6 +751,8 @@ export class Figura {
     const hayTarde = seMueven && escena.flechas.some((f) => f.tarde);
     // Entre que aparece el bloque y se dibuja la flecha que lo apunta, una pausa corta.
     const pausaNuevo = 0.2 * u;
+    marcarCambio(retardo + retencion, retardo + espera + duracionB + pausaNuevo, retardo + espera);
+    if (plan) for (const e of plan.etapas) this.anotar(retardo + espera + duracionB + e.t, e.nombre);
     const inicio = tiempo.ahora() + retardo;
     const paso = (ahora) => {
       const t = tiempo.ahora(ahora) - inicio;
@@ -741,6 +795,8 @@ export class Figura {
       this.dibujarNuevas('.rep-tarde', u, hayTarde ? pausaNuevo : 0, plan ? plan.flechas : null);
       this.parpadear(escena, objetivos.alFinal, dFinal, hayTarde ? pausaNuevo + u : 0);
       if (plan) plan.ejecutar();
+      // Si el reloj se detuvo justo aca (una pausa de etapa), lo que se acaba de crear nace detenido tambien.
+      if (tiempo.pausado && escena.svg.getAnimations) for (const a of escena.svg.getAnimations({ subtree: true })) if (a.playState === 'running') a.pause();
       this.finAtenuado = tiempo.esperar(quitarAtenuado, Math.max((hayTarde ? pausaNuevo + u : 0) + dFinal, dPlan) + 50);
     };
     this.raf = requestAnimationFrame(paso);
@@ -854,7 +910,7 @@ export class Figura {
     let origen = null;
     for (const h of (foto.accesos || []).filter((x) => x.llamada)) {
       if (h.tipo === 'parametro') {
-        parejas.push({ origen, param: clave(h.a.a, h.a.ruta) });
+        parejas.push({ origen, param: clave(h.a.a, h.a.ruta), nombre: this.nombreCelda(escena, h.a.a, h.a.ruta) });
         origen = null;
       } else origen = h;
     }
@@ -919,6 +975,7 @@ export class Figura {
       const destino = this.claveDeResalte(escena, f.a, f.ruta);
       destinos.add(destino);
       flechas.add(p.param);
+      if (!juntos) etapas.push({ t: en, nombre: `Se dibuja la flecha de ${p.nombre} hasta ${this.nombreCelda(escena, f.a, f.ruta)}` });
       dura(en, u);
       acciones.push(() => this.dibujarNuevas(`.rep-tarde[data-k="${p.param}"]`, u, en));
       if (resaltado.has(destino)) return u;
@@ -929,6 +986,8 @@ export class Figura {
     };
 
     let t = 0;
+    const etapas = [];
+    if (juntos) etapas.push({ t: 0, nombre: 'Se pasan los argumentos a los parámetros' });
     if (juntos) {
       for (const hacer of [origenDe, parametroDe, flechaDe]) {
         let mas = 0;
@@ -937,6 +996,8 @@ export class Figura {
       }
     } else {
       for (const p of parejas) {
+        const h = p.origen;
+        etapas.push({ t, nombre: h && h.de ? `Se pasa ${this.nombreCelda(escena, h.de.a, h.de.ruta)} al parámetro ${p.nombre}` : `Se pasa el argumento al parámetro ${p.nombre}` });
         t += origenDe(p, t);
         t += parametroDe(p, t);
         t += flechaDe(p, t);
@@ -948,7 +1009,7 @@ export class Figura {
         for (const e of escena.svg.querySelectorAll(`[data-k^="${p.param.split('|')[0]}|"]`)) e.style.opacity = '0';
       }
     };
-    return { acciones, duracion: Math.max(t, fin), destinos, flechas, ejecutar: () => acciones.forEach((a) => a()), ocultarParametros };
+    return { acciones, etapas, duracion: Math.max(t, fin), destinos, flechas, ejecutar: () => acciones.forEach((a) => a()), ocultarParametros };
   }
 
   // El valor de una casilla (y todo lo de su variable) aparece: estaba escondido (opacidad 0) y se muestra con un fundido.
@@ -1075,18 +1136,25 @@ export class Figura {
     };
     const resaltarDestino = () => {
       if (!pendientePara) return;
-      const k = clave(pendientePara.a, pendientePara.ruta);
+      const pendiente = pendientePara;
+      const k = clave(pendiente.a, pendiente.ruta);
       pendientePara = null;
       if (resaltadas.has(k)) return;
       const ancla = previa.anclas && previa.anclas.get(k);
       const casilla = ancla ? this.absolutoDe(previa, ancla) : null;
-      if (casilla) pulso(casilla);
+      if (casilla) {
+        this.anotar(t, `Se resalta ${this.nombreCelda(previa, pendiente.a, pendiente.ruta)}, que va a recibir el valor`);
+        pulso(casilla);
+      }
     };
     // Los valores que se leen para responder una condicion resplandecen primero (los punteros a un bloque no tienen texto: no
     // se ven); despues viene el recorrido por las flechas y, al final, el resultado.
     if (condicion && condicion.celdas && condicion.celdas.length && this.ayudas.brilloCondiciones) {
       const claves = condicion.celdas.map((c) => clave(c.a, c.ruta));
-      if (this.brillar({ svg: clon }, claves, t, 0.8 * u)) t += 0.8 * u;
+      if (this.brillar({ svg: clon }, claves, t, 0.8 * u)) {
+        this.anotar(t, 'Brillan los valores de la condición');
+        t += 0.8 * u;
+      }
     }
     // Los argumentos de una llamada (mas de tres: todos a la vez): cada resalte empieza donde empezo el primero.
     let juntoDesde = null;
@@ -1112,6 +1180,7 @@ export class Figura {
         // sigue encendida mientras tanto (no se resalta el bloque al que apuntaba: no interviene).
         if (!flecha) continue;
         resaltarDestino();
+        this.anotar(t, `Se ve la flecha que tenía ${this.nombreCelda(previa, h.de.a, h.de.ruta)} antes de cambiar`);
         encender(h, t);
         const dDestello = 0.8 * u;
         const trazo = el('path', { d: camino(this.rutaPuntos(flecha, flecha.final, previa.filas, previa)), class: 'rep-flujo' });
@@ -1133,6 +1202,7 @@ export class Figura {
         // El origen de la copia (la casilla del puntero) parpadea junto con su flecha y el bloque.
         const origen = h.de && previa.anclas && previa.anclas.get(clave(h.de.a, h.de.ruta));
         const cajaOrigen = origen ? this.absolutoDe(previa, origen) : null;
+        this.anotar(t, h.de ? `Se copia el puntero ${this.nombreCelda(previa, h.de.a, h.de.ruta)}: parpadean su flecha y lo que señala` : 'Se recibe el puntero que devolvió la función');
         if (cajaOrigen) this.parpadeo(capa, cajaOrigen, dParpadeo, t);
         if (flecha) {
           encender(h, t);
@@ -1146,6 +1216,7 @@ export class Figura {
         continue;
       }
       if (flecha) {
+        this.anotar(t, `Se recorre la flecha de ${this.nombreCelda(previa, h.de.a, h.de.ruta)} hasta ${this.nombreCelda(previa, h.a.a, h.a.ruta)}`);
         encender(h, t);
         const puntos = this.rutaPuntos(flecha, flecha.final, previa.filas, previa);
         const largo = largoDe(puntos);
@@ -1168,10 +1239,12 @@ export class Figura {
       if (h.tipo === 'valor') {
         // Se copia el valor de una casilla en otra: primero se resalta el origen.
         pendientePara = h.para;
+        if (!flecha) this.anotar(t, `Se lee el valor de ${this.nombreCelda(previa, h.a.a, h.a.ruta)}`);
         pulso(casilla);
         continue;
       }
       resaltadas.add(clave(h.a.a, h.a.ruta));
+      if (!flecha) this.anotar(t, `Se lee ${this.nombreCelda(previa, h.a.a, h.a.ruta)}`);
       // En una condicion, el valor de la casilla a la que se llego siguiendo un puntero (p->dato, *p) tambien resplandece.
       const brilla = condicion && h.de && this.ayudas.brilloCondiciones ? this.brillar({ svg: clon }, [clave(h.a.a, h.a.ruta)], t, 0.8 * u) : 0;
       pulso(casilla, Boolean(h.cond));
@@ -1201,6 +1274,7 @@ export class Figura {
         }
       }
       if (hay) {
+        this.anotar(t, 'Se muestran en la consola los valores impresos');
         if (this.alMuestra) this.alMuestra(t, t + dura);
         t += dura;
       }
@@ -1212,6 +1286,7 @@ export class Figura {
       // La respuesta no ocupa lugar hasta que le toca aparecer: el rotulo se ensancha recien entonces, no mientras corre el flujo.
       const r = this.crearRotulo(condicion.texto, condicion.valor, false);
       pregunta = r.caja;
+      this.anotar(t, `La condición da ${condicion.valor ? 'verdadero' : 'falso'}`);
       tiempo.cancelar(this.relojRespuesta);
       this.relojRespuesta = tiempo.esperar(() => {
         r.respuesta.hidden = false;
