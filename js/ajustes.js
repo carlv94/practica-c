@@ -131,7 +131,13 @@ function nodo(etiqueta, clase, texto) {
 // El panel: un boton (el engranaje del reproductor) que abre y cierra una tarjeta con el perfil y, debajo, cada ayuda.
 export function montarAjustes(panel, abrir) {
   panel.replaceChildren();
-  panel.append(nodo('h4', 'ajustes-titulo-panel', 'Ayudas visuales'));
+  const cabeza = nodo('div', 'ajustes-cabeza');
+  const cerrarBoton = nodo('button', 'ajustes-cerrar', '✕');
+  cerrarBoton.type = 'button';
+  cerrarBoton.title = 'Cerrar';
+  cerrarBoton.setAttribute('aria-label', 'Cerrar');
+  cabeza.append(nodo('h4', 'ajustes-titulo-panel', 'Ayudas visuales'), cerrarBoton);
+  panel.append(cabeza);
   panel.append(
     nodo('p', 'ayuda', 'Cambian lo que se resalta en el paso a paso, no lo que se corrige. Se recuerdan en este navegador.')
   );
@@ -183,6 +189,10 @@ export function montarAjustes(panel, abrir) {
   const cerrar = () => {
     panel.hidden = true;
     abrir.setAttribute('aria-expanded', 'false');
+  };
+  cerrarBoton.onclick = () => {
+    cerrar();
+    abrir.focus();
   };
   abrir.setAttribute('aria-expanded', 'false');
   abrir.setAttribute('aria-controls', panel.id);

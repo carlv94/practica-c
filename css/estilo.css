@@ -1430,14 +1430,19 @@ table.pila .vivo {
 }
 
 /* Las ayudas visuales: una tarjeta que abre el engranaje del reproductor (ver js/ajustes.js). */
+/* Flota sobre la pagina, con su propio desplazamiento: en un celular apaisado no entra entera. */
 .ajustes {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  left: 0;
+  position: fixed;
+  top: 8px;
+  right: 8px;
+  left: 8px;
   max-width: 380px;
-  margin: 4px 0 0 auto;
-  z-index: 20;
+  max-height: calc(100vh - 16px);
+  max-height: calc(100dvh - 16px);
+  margin-left: auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  z-index: 1000;
   font-size: 1rem;
   color: var(--texto);
   padding: 12px 16px;
@@ -1451,9 +1456,21 @@ table.pila .vivo {
   display: none;
 }
 
-.ajustes-titulo-panel {
+.ajustes-cabeza {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   margin: 0 0 6px;
+}
+
+.ajustes-titulo-panel {
+  margin: 0;
   font-size: 1.05rem;
+}
+
+.ajustes-cerrar {
+  padding: 2px 10px;
 }
 
 .ajustes .ayuda {
