@@ -439,6 +439,7 @@ export class Figura {
     this.animandoA = false; // las flechas que cambiaron se estan animando, cuadro por cuadro
     this.kA = 1; // cuanto de esa animacion (0 a 1)
     this.mostrarNombres = false;
+    this.ayudas = { brilloCopias: true }; // ayudas visuales que se pueden apagar (ver js/ajustes.js)
     this.enfoqueFlecha = null; // la flecha que se esta senalando
     this.fijada = null; // la flecha a la que se le hizo clic
     contenedor.classList.add('rep-figura-base');
@@ -578,7 +579,7 @@ export class Figura {
     }
     // Una copia de valor (de una casilla a otra): cuando llega la figura nueva, el valor ya puesto resplandece en las dos casillas.
     // (Con un puntero a un bloque no: ahi estan la flecha y el bloque; con una cuenta tampoco: no sale de una casilla.)
-    const copiasDeValor = flujo && mueve ? (foto.accesos || []).filter((h) => !h.llamada && h.tipo === 'valor' && h.de && h.para) : [];
+    const copiasDeValor = this.ayudas.brilloCopias && flujo && mueve ? (foto.accesos || []).filter((h) => !h.llamada && h.tipo === 'valor' && h.de && h.para) : [];
     const dBrillo = copiasDeValor.length ? 0.8 * u : 0;
     for (const h of copiasDeValor) this.brillar(escena, [clave(h.de.a, h.de.ruta), clave(h.para.a, h.para.ruta)], retardo, dBrillo);
     const dLlegar = objetivos.alLlegar.length ? 0.9 * u : 0;
@@ -892,7 +893,7 @@ export class Figura {
     // El parametro recibe su valor cuando termina de destellar (se va apagando el marco) y ahi resplandece el valor, tambien
     // en la casilla de la que sale si el argumento es un valor (no la direccion de algo, ni un puntero a un bloque).
     const recibe = 0.6 * u;
-    const dBrillo = 0.8 * u;
+    const dBrillo = this.ayudas.brilloCopias ? 0.8 * u : 0;
     const parametroDe = (p, en) => {
       resaltado.add(p.param);
       dura(en, recibe + dBrillo);
@@ -1333,6 +1334,11 @@ export class Figura {
     this.empezarAtencion(nodo); // antes de ponerlo: la animacion empieza al entrar en la pagina
     if (this.franja && this.franja.offsetParent !== null) this.franja.replaceChildren(nodo);
     else this.contenedor.prepend(nodo);
+  }
+
+  // Las ayudas visuales que se pueden apagar: { brilloCopias }. Valen desde el proximo paso que se muestre.
+  fijarAyudas(ayudas) {
+    this.ayudas = { ...this.ayudas, ...ayudas };
   }
 
   // Los nombres de las flechas (de las que salen de una variable) se ven siempre, o solo al senalarlas.

@@ -2030,7 +2030,7 @@ const r = ejecutar(analizador, fuente, { entrada: '3 1 2', traza: true });
   antes, primero se la ve resaltada y quieta, 0,6 de la unidad de movimiento), una pausa con todo quieto (1,1 veces lo que dura el dibujo) y después los bloques se
   reubican; las flechas hacia un bloque que acaba de aparecer se dibujan al final. `mostrar()` devuelve lo
   que dura la animación, para que la reproducción espere. Los nombres de las flechas que salen de una variable
-  están ocultos y se ven con la casilla «Nombres de las flechas» (se recuerda), o al señalar una flecha, una
+  están ocultos y se ven con la ayuda «Nombres de las flechas» del panel de ajustes (se recuerda), o al señalar una flecha, una
   variable o un bloque; las flechas tienen un trazo ancho invisible para poder señalarlas, el cuadro dice
   de dónde sale y a dónde va, y un clic la deja fija hasta otro clic. Al terminar el programa (ya no hay
   funciones) los bloques se quedan donde estaban, solo con la marca «inalcanzable». Las cajas de la pila también
@@ -2045,8 +2045,15 @@ const r = ejecutar(analizador, fuente, { entrada: '3 1 2', traza: true });
   está por ejecutarse resaltada y el código de afuera de la función en curso atenuado (`r.funciones` dice
   dónde empieza y termina cada una), la figura, lo que muestra el programa y los controles (botones, barra,
   flechas del teclado y velocidad, que se recuerda; la velocidad fija la unidad de movimiento y la reproducción
-  espera a que termine la animación de cada paso, con un descanso). La velocidad más lenta es «Cámara lenta» (4,8 s por paso) y se guarda por su nombre. Los botones «Detener» (o la barra espaciadora) y «Repetir» (o la tecla R) sirven para explicar un paso con calma; solo se ven si se tilda «Explicar», junto a «Nombres de las flechas» (se recuerda); en ese modo se ocultan Inicio, Reproducir y Final (quedan la barra de pasos y las teclas Inicio y Fin) y la barra se queda con cuatro botones. Las teclas funcionan siempre: detener congela la animación donde está y seguir la reanuda; avanzar, retroceder o repetir la reanudan. Para poder congelarlo todo, los temporizadores y la hora de las animaciones calculadas cuadro a cuadro salen del reloj de `js/motor/tiempo.js` (`tiempo.esperar`, `tiempo.cancelar`, `tiempo.ahora`) y no de `setTimeout` ni `performance.now`; las animaciones del navegador se pausan con `getAnimations`. Los pulsos del paso de argumentos de una llamada duran una unidad y se solapan un poco (`PULSO`, en `figura.js`). Una función que termina sin `return` muestra un paso
+  espera a que termine la animación de cada paso, con un descanso). La velocidad más lenta es «Cámara lenta» (4,8 s por paso) y se guarda por su nombre. Los botones «Detener» (o la barra espaciadora) y «Repetir» (o la tecla R) sirven para explicar un paso con calma; solo se ven si se tilda «Explicar» (se recuerda); en ese modo se ocultan Inicio, Reproducir y Final (quedan la barra de pasos y las teclas Inicio y Fin) y la barra se queda con cuatro botones. Las teclas funcionan siempre: detener congela la animación donde está y seguir la reanuda; avanzar, retroceder o repetir la reanudan. Para poder congelarlo todo, los temporizadores y la hora de las animaciones calculadas cuadro a cuadro salen del reloj de `js/motor/tiempo.js` (`tiempo.esperar`, `tiempo.cancelar`, `tiempo.ahora`) y no de `setTimeout` ni `performance.now`; las animaciones del navegador se pausan con `getAnimations`. Los pulsos del paso de argumentos de una llamada duran una unidad y se solapan un poco (`PULSO`, en `figura.js`). Una función que termina sin `return` muestra un paso
   en su llave de cierre, con sus variables todavía en la pila. Los estilos están en `css/reproductor.css`.
+  Las ayudas visuales se eligen en un panel de ajustes (el engranaje de las herramientas del reproductor, `js/ajustes.js`): dos perfiles,
+  «Práctica» y «Explicación», que fijan todas de una vez, y «Personalizar», con una casilla por ayuda (si no coincide con
+  ningún perfil, se lee «Personalizado»). Se guardan en este navegador y solo cambian lo que se dibuja, nunca lo que
+  corrige el motor. Hoy son «Brillo de los valores que se copian» (activada de fábrica: el valor resplandece en el origen
+  y el destino de una copia y en el parámetro que lo recibe) y «Nombres de las flechas». Para sumar una, se agrega una
+  entrada a `AYUDAS` (con su valor en cada perfil de `PERFILES`) y el panel la muestra sola; el reproductor la lee con
+  `ajustes.valor(clave)` y la figura la recibe con `fijarAyudas`. «Explicar» y la velocidad siguen en la barra.
   Se adapta al espacio: con mucho ancho el código ocupa menos y la figura puede crecer hasta 1,5 veces su
   tamaño; con poco ancho la figura va arriba, a una escala legible (nunca menos de 70 %, se desplaza) y el
   código pasa a una ventana de cinco líneas centrada en la que se va a ejecutar, con un botón «Ver todo el

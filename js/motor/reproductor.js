@@ -15,6 +15,7 @@
 import { Figura } from './figura.js';
 import { tiempo } from './tiempo.js';
 import { pintar } from '../editor.js';
+import { ajustes, montarAjustes } from '../ajustes.js';
 
 const VELOCIDADES = [
   { nombre: 'Cámara lenta', ms: 4800 },
@@ -28,7 +29,6 @@ const sinMovimiento = () => typeof matchMedia === 'function' && matchMedia('(pre
 const CLAVE_VELOCIDAD = 'reproductor-velocidad';
 const CLAVE_VELOCIDAD_NOMBRE = 'reproductor-velocidad-nombre';
 const CLAVE_ZOOM = 'reproductor-zoom';
-const CLAVE_NOMBRES = 'reproductor-nombres';
 const NIVELES_DE_ZOOM = [0.4, 0.5, 0.6, 0.8, 1, 1.25, 1.5, 2];
 
 function nodo(etiqueta, clase, contenido) {
@@ -100,13 +100,6 @@ const guardarZoom = (z) => {
     // sin almacenamiento: no se recuerda
   }
 };
-const leerNombres = () => {
-  try {
-    return localStorage.getItem(CLAVE_NOMBRES) === '1';
-  } catch (e) {
-    return false;
-  }
-};
 // Los botones para explicar un paso (detener y repetir) se ven solo si se pide.
 const CLAVE_EXPLICAR = 'reproductor-explicar';
 const leerExplicar = () => {
@@ -119,13 +112,6 @@ const leerExplicar = () => {
 const guardarExplicar = (si) => {
   try {
     localStorage.setItem(CLAVE_EXPLICAR, si ? '1' : '0');
-  } catch (e) {
-    // sin almacenamiento: no se recuerda
-  }
-};
-const guardarNombres = (si) => {
-  try {
-    localStorage.setItem(CLAVE_NOMBRES, si ? '1' : '0');
   } catch (e) {
     // sin almacenamiento: no se recuerda
   }
@@ -246,16 +232,16 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   const mas = boton('+', 'Agrandar la figura');
   const ajustar = boton('Ajustar', 'Que la figura entre en el espacio disponible');
   const etiquetaZoom = nodo('span', 'rep-zoom-valor');
-  const etiquetaNombres = nodo('label', 'rep-nombres');
-  const casillaNombres = document.createElement('input');
-  casillaNombres.type = 'checkbox';
-  casillaNombres.checked = leerNombres();
-  dibujo.fijarNombres(casillaNombres.checked);
-  etiquetaNombres.append(casillaNombres, ' Nombres de las flechas');
-  casillaNombres.onchange = () => {
-    guardarNombres(casillaNombres.checked);
-    dibujo.fijarNombres(casillaNombres.checked);
+  // Las ayudas visuales (nombres de las flechas, brillo de los valores) se eligen en el panel de ajustes (ver js/ajustes.js).
+  const aplicarAyudas = () => {
+    dibujo.fijarNombres(ajustes.valor('nombresFlechas'));
+    dibujo.fijarAyudas({ brilloCopias: ajustes.valor('brilloCopias') });
   };
+  aplicarAyudas();
+  const olvidarAyudas = ajustes.alCambiar(() => {
+    if (!raiz.isConnected) olvidarAyudas(); // este reproductor ya no esta en la pagina
+    else aplicarAyudas();
+  });
   // Explicar: detener y repetir (la barra espaciadora y la tecla R funcionan siempre) en lugar de inicio, reproducir y final
   // (las teclas Inicio y Fin y la barra de pasos siguen). Asi la barra se queda con cuatro botones.
   const etiquetaExplicar = nodo('label', 'rep-nombres');
@@ -277,7 +263,14 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     if (casillaExplicar.checked) parar(); // el avance solo no va con explicar
     mostrarExplicar();
   };
-  herramientas.append(nodo('span', '', 'Figura'), menos, mas, ajustar, etiquetaZoom, etiquetaNombres, etiquetaExplicar);
+  // El engranaje abre el panel de ayudas visuales (perfiles y casillas), debajo de esta fila.
+  const abrirAjustes = boton('⚙', 'Ayudas visuales');
+  abrirAjustes.classList.add('rep-ajustes-boton');
+  abrirAjustes.setAttribute('aria-label', 'Ayudas visuales');
+  const panelAjustes = nodo('section', 'ajustes');
+  panelAjustes.hidden = true;
+  montarAjustes(panelAjustes, abrirAjustes);
+  herramientas.append(nodo('span', '', 'Figura'), menos, mas, ajustar, etiquetaZoom, etiquetaExplicar, abrirAjustes, panelAjustes);
   // Lo que ingresa el usuario: el texto de la entrada, con lo que ya se leyo atenuado (solo si el programa tiene entrada).
   const textoDeEntrada = entrada || '';
   const cajaDeEntrada = nodo('pre', 'rep-entrada');

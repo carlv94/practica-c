@@ -502,6 +502,7 @@
   display: none;
 }
 .rep-herramientas {
+  position: relative;
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
@@ -512,6 +513,9 @@
 }
 .rep-herramientas .rep-boton {
   padding: 1px 9px;
+}
+.rep-herramientas .rep-ajustes-boton {
+  margin-left: auto;
 }
 .rep-zoom-valor {
   min-width: 3.2em;

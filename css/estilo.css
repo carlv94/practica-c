@@ -1428,3 +1428,86 @@ table.pila .vivo {
     margin-bottom: 2px;
   }
 }
+
+/* Las ayudas visuales: una tarjeta que abre el engranaje del reproductor (ver js/ajustes.js). */
+.ajustes {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  left: 0;
+  max-width: 380px;
+  margin: 4px 0 0 auto;
+  z-index: 20;
+  font-size: 1rem;
+  color: var(--texto);
+  padding: 12px 16px;
+  background: var(--panel);
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
+}
+
+.ajustes[hidden] {
+  display: none;
+}
+
+.ajustes-titulo-panel {
+  margin: 0 0 6px;
+  font-size: 1.05rem;
+}
+
+.ajustes .ayuda {
+  margin: 0 0 10px;
+  color: var(--suave);
+  font-size: 0.85rem;
+}
+
+.ajustes-perfil {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+}
+
+.ajustes-perfil select {
+  font: inherit;
+  padding: 4px 6px;
+  color: var(--texto);
+  background: var(--fondo);
+  border: 1px solid var(--borde);
+  border-radius: 6px;
+}
+
+.ajustes-detalle summary {
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: var(--suave);
+  margin-bottom: 8px;
+}
+
+.ajustes .casilla {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0 0 10px;
+  font-weight: 400;
+  color: var(--texto);
+}
+
+.ajustes .casilla input {
+  margin-top: 5px;
+}
+
+.ajustes-texto {
+  display: flex;
+  flex-direction: column;
+}
+
+.ajustes-titulo {
+  font-weight: 600;
+}
+
+.ajustes-ayuda {
+  font-size: 0.85rem;
+  color: var(--suave);
+}

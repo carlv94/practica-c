@@ -1,0 +1,191 @@
+// Las ayudas visuales del reproductor paso a paso: cada una se puede activar o no, y se guardan en este navegador.
+// No cambian nada de lo que corrige el motor: solo lo que se dibuja. Hay dos perfiles ("Practica" y "Explicacion") que fijan
+// todas de una vez, y cada ayuda se puede cambiar por separado ("Personalizado").
+//
+//   import { ajustes, montarAjustes } from './ajustes.js';
+//   ajustes.valor('brilloCopias');            // true o false
+//   const olvidar = ajustes.alCambiar(fn);    // fn() se llama cuando cambia alguna; devuelve como dejar de escuchar
+//
+// Para sumar una ayuda: una entrada en AYUDAS (con su valor en cada perfil) y listo; el panel la muestra solo.
+
+export const AYUDAS = [
+  {
+    clave: 'brilloCopias',
+    almacen: 'ajuste-brillo-copias',
+    porDefecto: true,
+    titulo: 'Brillo de los valores que se copian',
+    detalle: 'Cuando un valor pasa de una variable a otra, o a un parámetro, resplandece en las dos casillas.',
+  },
+  {
+    clave: 'nombresFlechas',
+    almacen: 'reproductor-nombres', // la clave de antes, para no perder lo que cada uno ya tenia elegido
+    porDefecto: false,
+    titulo: 'Nombres de las flechas',
+    detalle: 'Cada flecha lleva escrito el nombre de la variable de la que sale (si no, se ve al señalarla).',
+  },
+];
+
+export const PERFILES = [
+  { id: 'practica', nombre: 'Práctica', valores: { brilloCopias: true, nombresFlechas: false } },
+  { id: 'explicacion', nombre: 'Explicación', valores: { brilloCopias: true, nombresFlechas: true } },
+];
+
+const estado = new Map();
+const oyentes = new Set();
+let cargado = false;
+
+function cargar() {
+  if (cargado) return;
+  cargado = true;
+  for (const a of AYUDAS) {
+    let v = a.porDefecto;
+    try {
+      const guardado = localStorage.getItem(a.almacen);
+      if (guardado === '1') v = true;
+      else if (guardado === '0') v = false;
+    } catch (e) {
+      // sin almacenamiento: queda lo de fabrica
+    }
+    estado.set(a.clave, v);
+  }
+}
+
+function guardar(a) {
+  try {
+    localStorage.setItem(a.almacen, estado.get(a.clave) ? '1' : '0');
+  } catch (e) {
+    // sin almacenamiento: no se recuerda
+  }
+}
+
+const avisar = () => {
+  for (const f of [...oyentes]) f();
+};
+
+export const ajustes = {
+  valor(clave) {
+    cargar();
+    return estado.get(clave) ?? false;
+  },
+  // Todas las ayudas con su valor, como un objeto.
+  todos() {
+    cargar();
+    return Object.fromEntries(AYUDAS.map((a) => [a.clave, estado.get(a.clave)]));
+  },
+  fijar(clave, valor) {
+    cargar();
+    const a = AYUDAS.find((x) => x.clave === clave);
+    if (!a || estado.get(clave) === Boolean(valor)) return;
+    estado.set(clave, Boolean(valor));
+    guardar(a);
+    avisar();
+  },
+  // El perfil que coincide con lo elegido, o null si es una combinacion propia.
+  perfil() {
+    cargar();
+    const p = PERFILES.find((p) => AYUDAS.every((a) => Boolean(p.valores[a.clave]) === estado.get(a.clave)));
+    return p ? p.id : null;
+  },
+  fijarPerfil(id) {
+    cargar();
+    const p = PERFILES.find((x) => x.id === id);
+    if (!p) return;
+    let cambio = false;
+    for (const a of AYUDAS) {
+      const v = Boolean(p.valores[a.clave]);
+      if (estado.get(a.clave) !== v) {
+        estado.set(a.clave, v);
+        guardar(a);
+        cambio = true;
+      }
+    }
+    if (cambio) avisar();
+  },
+  alCambiar(f) {
+    oyentes.add(f);
+    return () => oyentes.delete(f);
+  },
+};
+
+function nodo(etiqueta, clase, texto) {
+  const e = document.createElement(etiqueta);
+  if (clase) e.className = clase;
+  if (texto != null) e.textContent = texto;
+  return e;
+}
+
+// El panel: un boton (el engranaje del reproductor) que abre y cierra una tarjeta con el perfil y, debajo, cada ayuda.
+export function montarAjustes(panel, abrir) {
+  panel.replaceChildren();
+  panel.append(nodo('h4', 'ajustes-titulo-panel', 'Ayudas visuales'));
+  panel.append(
+    nodo('p', 'ayuda', 'Cambian lo que se resalta en el paso a paso, no lo que se corrige. Se recuerdan en este navegador.')
+  );
+
+  const etiquetaPerfil = nodo('label', 'ajustes-perfil');
+  etiquetaPerfil.append(nodo('span', '', 'Perfil'));
+  const selector = document.createElement('select');
+  for (const p of PERFILES) {
+    const o = nodo('option', '', p.nombre);
+    o.value = p.id;
+    selector.append(o);
+  }
+  const propio = nodo('option', '', 'Personalizado');
+  propio.value = '';
+  propio.disabled = true;
+  selector.append(propio);
+  etiquetaPerfil.append(selector);
+  panel.append(etiquetaPerfil);
+
+  const detalle = nodo('details', 'ajustes-detalle');
+  detalle.append(nodo('summary', '', 'Personalizar'));
+  const casillas = new Map();
+  for (const a of AYUDAS) {
+    const fila = nodo('label', 'casilla');
+    const c = document.createElement('input');
+    c.type = 'checkbox';
+    c.onchange = () => ajustes.fijar(a.clave, c.checked);
+    casillas.set(a.clave, c);
+    const textos = nodo('span', 'ajustes-texto');
+    textos.append(nodo('span', 'ajustes-titulo', a.titulo), nodo('span', 'ajustes-ayuda', a.detalle));
+    fila.append(c, textos);
+    detalle.append(fila);
+  }
+  panel.append(detalle);
+
+  selector.onchange = () => ajustes.fijarPerfil(selector.value);
+  const mostrar = () => {
+    const id = ajustes.perfil();
+    selector.value = id ?? '';
+    for (const [clave, c] of casillas) c.checked = ajustes.valor(clave);
+    if (id == null) detalle.open = true;
+  };
+  mostrar();
+  const olvidar = ajustes.alCambiar(() => {
+    if (panel.isConnected) mostrar();
+    else olvidar(); // el reproductor ya no esta en la pagina
+  });
+
+  const cerrar = () => {
+    panel.hidden = true;
+    abrir.setAttribute('aria-expanded', 'false');
+  };
+  abrir.setAttribute('aria-expanded', 'false');
+  abrir.setAttribute('aria-controls', panel.id);
+  abrir.onclick = () => {
+    panel.hidden = !panel.hidden;
+    abrir.setAttribute('aria-expanded', String(!panel.hidden));
+    if (!panel.hidden) selector.focus();
+  };
+  panel.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      cerrar();
+      abrir.focus();
+    }
+  });
+  const alHacerClic = (e) => {
+    if (!panel.isConnected) document.removeEventListener('click', alHacerClic);
+    else if (!panel.hidden && !panel.contains(e.target) && !abrir.contains(e.target)) cerrar();
+  };
+  document.addEventListener('click', alHacerClic);
+}
