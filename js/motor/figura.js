@@ -327,7 +327,7 @@ class Pintor {
     const k = clave(id, ruta);
     if (v.k === 'ptr') {
       this.casilla(x, y, m.w, CH, '', 'rep-puntero', k);
-      this.capa.append(el('circle', { cx: x + m.w / 2, cy: y + CH / 2, r: 4, class: 'rep-punto' + (v.muerto ? ' rep-muerto' : '') }));
+      this.capa.append(el('circle', { cx: x + m.w / 2, cy: y + CH / 2, r: 4, class: 'rep-punto' + (v.muerto ? ' rep-muerto' : ''), 'data-k': k }));
       const nombre =
         this.dueno && this.dueno.nombre
           ? ruta.reduce((s, r) => (typeof r === 'number' ? `${s}[${r}]` : `${s}.${r}`), this.dueno.nombre)
@@ -354,7 +354,7 @@ class Pintor {
   casilla(x, y, w, h, contenido, clase, k) {
     const cambio = this.cambios.has(k) ? ' rep-cambio' : '';
     this.capa.append(el('rect', { x, y, width: w, height: h, rx: 3, class: `rep-celda ${clase}${cambio}` }));
-    if (contenido) this.capa.append(texto(x + w / 2, y + h / 2 + 4, contenido, 'rep-texto', { 'text-anchor': 'middle' }));
+    if (contenido) this.capa.append(texto(x + w / 2, y + h / 2 + 4, contenido, 'rep-texto', { 'text-anchor': 'middle', 'data-k': k }));
   }
 }
 
@@ -571,7 +571,16 @@ export class Figura {
     const objetivos = mueve ? this.objetivosDeParpadeo(escena) : { alLlegar: [], alFinal: [] };
     // Los argumentos de una llamada y sus parametros (ver planDeLlamada): lo que señalan sus flechas lo resalta el plan.
     const plan = mueve ? this.planDeLlamada(escena, foto, u) : null;
-    if (plan) objetivos.alFinal = objetivos.alFinal.filter((k) => !plan.destinos.has(k));
+    if (plan) {
+      objetivos.alFinal = objetivos.alFinal.filter((k) => !plan.destinos.has(k));
+      // La caja se abre con los parametros todavia sin valor: lo reciben despues de su pulso.
+      plan.ocultarParametros();
+    }
+    // Una copia de valor (de una casilla a otra): cuando llega la figura nueva, el valor ya puesto resplandece en las dos casillas.
+    // (Con un puntero a un bloque no: ahi estan la flecha y el bloque; con una cuenta tampoco: no sale de una casilla.)
+    const copiasDeValor = flujo && mueve ? (foto.accesos || []).filter((h) => !h.llamada && h.tipo === 'valor' && h.de && h.para) : [];
+    const dBrillo = copiasDeValor.length ? 0.8 * u : 0;
+    for (const h of copiasDeValor) this.brillar(escena, [clave(h.de.a, h.de.ruta), clave(h.para.a, h.para.ruta)], retardo, dBrillo);
     const dLlegar = objetivos.alLlegar.length ? 0.9 * u : 0;
     const dFinal = objetivos.alFinal.length ? 0.9 * u : 0;
     const dPlan = plan ? plan.duracion : 0;
@@ -669,7 +678,7 @@ export class Figura {
           this.finAparte = tiempo.esperar(() => svg.classList.remove('rep-vuelve'), 400);
         }, retardo + aparte);
       }
-      const dura = Math.max(hayFundido ? u : 0, this.dDestello ? this.retrasoFlechas + this.dDestello : 0);
+      const dura = Math.max(hayFundido ? u : 0, this.dDestello ? this.retrasoFlechas + this.dDestello : 0, dBrillo);
       this.dDestello = 0;
       return retardo + dura + aparte;
     }
@@ -796,6 +805,24 @@ export class Figura {
     }
   }
 
+  // El texto del valor de estas casillas (por su clave) resplandece y crece un instante: el valor que se acaba de copiar,
+  // en el origen y en el destino a la vez. El resplandor se ve poco sobre el fondo ambar de lo que cambio; el cambio de
+  // tamaño se nota igual (tambien con la figura chica o sin distinguir colores).
+  brillar(escena, claves, retraso, duracion) {
+    if (!escena.svg || !duracion || sinMovimiento()) return;
+    for (const k of claves) {
+      for (const t of escena.svg.querySelectorAll(`text[data-k="${k}"]`)) {
+        if (!t.animate) continue;
+        t.style.transformBox = 'fill-box';
+        t.style.transformOrigin = 'center';
+        const halo = getComputedStyle(t).getPropertyValue('--acento').trim() || '#3b82f6';
+        const sin = { transform: 'scale(1)', filter: 'drop-shadow(0 0 0 transparent)' };
+        const con = { transform: 'scale(1.4)', filter: `drop-shadow(0 0 5px ${halo})` };
+        t.animate([{ ...sin }, { ...con, offset: 0.3 }, { ...con, offset: 0.6 }, { ...sin }], { duration: duracion, delay: retraso, easing: 'ease-in-out' });
+      }
+    }
+  }
+
   // El trazo de una flecha que parpadea (como cuando un acceso la recorre).
   parpadeoDeFlecha(escena, flecha, duracion, retraso, cuadros = PARPADEO) {
     if (!escena.capaResalte || !duracion || sinMovimiento()) return;
@@ -862,10 +889,20 @@ export class Figura {
       });
       return adelanto;
     };
+    // El parametro recibe su valor cuando termina de destellar (se va apagando el marco) y ahi resplandece el valor, tambien
+    // en la casilla de la que sale si el argumento es un valor (no la direccion de algo, ni un puntero a un bloque).
+    const recibe = 0.6 * u;
+    const dBrillo = 0.8 * u;
     const parametroDe = (p, en) => {
       resaltado.add(p.param);
-      dura(en, dPulso);
-      acciones.push(() => this.parpadear(escena, [p.param], dPulso, en, PULSO));
+      dura(en, recibe + dBrillo);
+      const h = p.origen;
+      const copiaDeValor = h && h.tipo === 'valor' && !h.direccion;
+      acciones.push(() => {
+        this.parpadear(escena, [p.param], dPulso, en, PULSO);
+        this.revelar(escena, p.param, en + recibe, 0.2 * u);
+        this.brillar(escena, copiaDeValor ? [p.param, clave(h.de.a, h.de.ruta)] : [p.param], en + recibe, dBrillo);
+      });
       return dPulso;
     };
     const flechaDe = (p, en) => {
@@ -897,7 +934,29 @@ export class Figura {
         t += flechaDe(p, t);
       }
     }
-    return { acciones, duracion: Math.max(t, fin), destinos, flechas, ejecutar: () => acciones.forEach((a) => a()) };
+    // Los valores de los parametros se esconden desde que llega la figura (la caja se abre sin ellos): ver revelar.
+    const ocultarParametros = () => {
+      for (const p of parejas) {
+        for (const e of escena.svg.querySelectorAll(`[data-k^="${p.param.split('|')[0]}|"]`)) e.style.opacity = '0';
+      }
+    };
+    return { acciones, duracion: Math.max(t, fin), destinos, flechas, ejecutar: () => acciones.forEach((a) => a()), ocultarParametros };
+  }
+
+  // El valor de una casilla (y todo lo de su variable) aparece: estaba escondido (opacidad 0) y se muestra con un fundido.
+  revelar(escena, k, retraso, duracion) {
+    const id = k.split('|')[0];
+    for (const e of escena.svg.querySelectorAll(`[data-k^="${id}|"]`)) {
+      if (!e.animate || sinMovimiento()) {
+        e.style.opacity = '';
+        continue;
+      }
+      const a = e.animate([{ opacity: 0 }, { opacity: 1 }], { duration: duracion, delay: retraso, fill: 'both' });
+      a.onfinish = () => {
+        e.style.opacity = '';
+        a.cancel();
+      };
+    }
   }
 
   // Un marco que parpadea alrededor de una casilla o de un bloque (y se quita al terminar).
