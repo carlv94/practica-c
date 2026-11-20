@@ -13,7 +13,7 @@
 //              la que se esta ejecutando se ve atenuado
 //   llamadas   r.llamadas: el registro de las llamadas de las funciones recursivas, para el trazado (ver el motor)
 
-import { Figura } from './figura.js';
+import { Figura, textoPorPartes } from './figura.js';
 import { tiempo } from './tiempo.js';
 import { pintar } from '../editor.js';
 import { ajustes, montarAjustes } from '../ajustes.js';
@@ -399,6 +399,14 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     const hayIgual = fase === 'todo' && r.vuelta.valor !== null && (r.vuelta.flecha || r.vuelta.texto !== r.vuelta.valor);
     return base + (hayIgual ? 0.8 * u : 0);
   };
+  // El detalle de una pregunta de la tabla (ayuda "Detallar las preguntas de las llamadas"): sus estados, o null si no se pide o no se pudo.
+  // En el paso de la respuesta, el texto pasa por cada uno (2 unidades cada uno) y despues entra el simbolo.
+  const detalleDe = (q) => (ajustes.valor('detalleCondicionesTabla') && q.pasos && q.partes && q.pasos.length > 1 ? q : null);
+  const duracionRespuesta = (q, u, d) => {
+    const detalle = detalleDe(q);
+    if (detalle) return 2 * u * (detalle.pasos.length - 1) + 1.5 * d;
+    return (ajustes.valor('brilloCondiciones') ? 0.6 * u : 0) + 1.5 * d;
+  };
   // La fila que hace cada llamada (la que la tiene en su ida): de ahi sale la llamada, y la resaltamos al abrirse.
   const padreDe = new Map();
   for (const p of filas) if (p.ida) for (const x of partesDe(p)) if (typeof x === 'object') padreDe.set(x.id, p);
@@ -426,7 +434,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
       if (!r.ida) continue;
       if (r.ida.paso === k && r.desde !== k && r.base !== k) total = Math.max(total, d);
       // La respuesta de una pregunta de la llamada: el valor que se leyo brilla y despues entra "verdadero" o "falso" con un rebote.
-      for (const q of ajustes.valor('preguntasTabla') ? r.preguntas || [] : []) if (q.respuesta === k && r.desde <= k) total = Math.max(total, (ajustes.valor('brilloCondiciones') ? 0.6 * u : 0) + 1.5 * d);
+      for (const q of ajustes.valor('preguntasTabla') ? r.preguntas || [] : []) if (q.respuesta === k && r.desde <= k) total = Math.max(total, duracionRespuesta(q, u, d));
       const fase = r.vuelta ? faseDe(r, k) : null;
       if (fase && r.desde <= k && r.base !== k) total = Math.max(total, unaColumna ? duracionDeFila(r, u, fase) : duracionVuelta3(r, u, d, fase));
     }
@@ -459,7 +467,11 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
       }
       for (const q of ajustes.valor('preguntasTabla') ? r.preguntas || [] : []) {
         if (q.respuesta !== k) continue;
-        if (ajustes.valor('brilloCondiciones')) {
+        const detalle = detalleDe(q);
+        if (detalle) {
+          for (let i = 1; i < detalle.pasos.length; i++) poner(2 * u * (i - 1), (i === 1 ? 'Se ponen los valores en la pregunta: ¿' : 'Se resuelve la pregunta: ¿') + detalle.pasos[i] + '?');
+          poner(2 * u * (detalle.pasos.length - 1), 'La pregunta se responde: ' + (q.valor ? 'verdadero' : 'falso'));
+        } else if (ajustes.valor('brilloCondiciones')) {
           poner(0, 'Brillan los valores de la pregunta ¿' + q.texto + '?');
           poner(0.6 * u, 'La pregunta se responde: ' + (q.valor ? 'verdadero' : 'falso'));
         } else poner(0, 'La pregunta ¿' + q.texto + '? se responde: ' + (q.valor ? 'verdadero' : 'falso'));
@@ -793,7 +805,10 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
             fase.title = q.fase === 'vuelta' ? 'Pregunta de la vuelta' : 'Pregunta de la ida';
             linea.append(fase);
           }
-          const texto = nodo('code', 'rep-traz-pregunta-texto', sinCortes('¿' + q.texto + '?'));
+          // Con el detalle, la pregunta se ve escrita como en el codigo hasta el paso de su respuesta, en que va pasando por sus estados.
+          const detalle = detalleDe(q);
+          const escrita = detalle && (k < q.respuesta || (q.respuesta === k && conMovimiento));
+          const texto = nodo('code', 'rep-traz-pregunta-texto', sinCortes('¿' + (escrita ? detalle.pasos[0] : q.texto) + '?'));
           texto.title = q.simbolico;
           linea.append(texto);
           let resp = null;
@@ -802,7 +817,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
             linea.append(resp);
           }
           lineas.push(linea);
-          if (conMovimiento && q.respuesta === k) respuestasQueLlegan.push({ texto, linea, resp, sola: !separada });
+          if (conMovimiento && q.respuesta === k) respuestasQueLlegan.push({ texto, linea, resp, sola: !separada, detalle });
           else if (preguntaNueva && separada && q.pregunta === k) preguntasNuevas.push(linea);
         }
         if (pasadas.length) {
@@ -941,8 +956,15 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     // Las preguntas: la nueva entra con un fundido; en una respuesta, el texto de la pregunta (con los valores que se leyeron) brilla y
     // despues entra "verdadero" o "falso" con un rebote.
     for (const linea of preguntasNuevas) aparecerLinea(linea, 0, d);
-    for (const { texto, linea, resp, sola } of respuestasQueLlegan) {
+    for (const { texto, linea, resp, sola, detalle } of respuestasQueLlegan) {
       if (sola) aparecerLinea(linea, 0, d);
+      if (detalle) {
+        // Cada estado de la pregunta (solo lo que cambia se contrae y emerge) y, despues del ultimo, entra el simbolo.
+        const halo = getComputedStyle(raiz).getPropertyValue('--acento').trim() || '#3b82f6';
+        for (let i = 1; i < detalle.pasos.length; i++) textoPorPartes(texto, detalle.partes[i], 2 * u * (i - 1), u, { antes: '¿', despues: '?', halo });
+        rebote(resp, 2 * u * (detalle.pasos.length - 1), 1.5 * d);
+        continue;
+      }
       const brilla = ajustes.valor('brilloCondiciones');
       if (brilla) resplandor(texto, 0, 0.8 * u, 1.1);
       rebote(resp, brilla ? 0.6 * u : 0, 1.5 * d);

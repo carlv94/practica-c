@@ -847,7 +847,7 @@ class Interprete {
     // Para la traza: la condicion que se acaba de evaluar (la de mas afuera) y que dio.
     const pasos = afuera ? this.pasosDeCondicion(n) : null;
     if (afuera) this.condicionHecha = { texto: textoPregunta, valor, ...(preguntaHecha ? { celdas: preguntaHecha.celdas } : {}), ...(pasos ? { pasos: pasos.pasos, partes: pasos.partes } : {}) };
-    if (afuera) this.anotarPregunta(n, textoPregunta, valor, pasoPregunta);
+    if (afuera) this.anotarPregunta(n, textoPregunta, valor, pasoPregunta, pasos);
     return valor;
   }
 
@@ -1424,7 +1424,7 @@ class Interprete {
   // Una pregunta (if, while...) que hace una llamada de una funcion recursiva, para el trazado: { texto (con los valores puestos: 4172 < 10),
   // simbolico (n < 10), valor, fase ('ida': antes de la primera llamada que vuelve; 'vuelta': despues), pregunta (la fotografia en que se la ve, con el cursor sobre el if), respuesta (la fotografia en
   // que se sabe lo que dio) }.
-  anotarPregunta(n, simbolico, valor, pasoPregunta) {
+  anotarPregunta(n, simbolico, valor, pasoPregunta, pasos = null) {
     const marco = this.marcos[this.marcos.length - 1];
     const r = marco && marco.registro;
     if (!r) return;
@@ -1439,7 +1439,8 @@ class Interprete {
     }
     // De la ida si todavia no volvio ninguna llamada de esta funcion; de la vuelta si ya volvio alguna (o si la pregunta la lleva).
     const fase = marco.hechas && marco.hechas.size ? 'vuelta' : 'ida';
-    r.preguntas.push({ texto, simbolico, valor, fase, pregunta: pasoPregunta ?? this.traza.length, respuesta: this.traza.length });
+    // "pasos" y "partes": el detalle de la pregunta (ver pasosDeCondicion), si se pudo hacer.
+    r.preguntas.push({ texto, simbolico, valor, fase, pregunta: pasoPregunta ?? this.traza.length, respuesta: this.traza.length, ...(pasos ? { pasos: pasos.pasos, partes: pasos.partes } : {}) });
   }
 
   // La sentencia en la que esta una llamada (declaration, expression_statement, if...).

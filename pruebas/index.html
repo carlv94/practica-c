@@ -468,6 +468,13 @@ import { corregir } from '../js/corrector.js';
             for (const t of ['La llamada brilla y se abre su fila', 'Se anuncia el caso base', 'La pregunta se responde', 'La llamada se reemplaza por su valor', 'Se agrega lo que devuelve']) {
               if (!hay(t)) throw new Error('ningun paso tiene la etapa "' + t + '"');
             }
+            // Con el detalle de las preguntas de la tabla, la respuesta se parte en los estados de la pregunta.
+            ajustes.fijar('detalleCondicionesTabla', true);
+            const conDetalle = [];
+            m.traza.forEach((f, k) => rep.marcasDelTrazado(k, 400).forEach((x) => conDetalle.push(x.nombre)));
+            for (const t of ['Se ponen los valores en la pregunta', 'La pregunta se responde']) {
+              if (!conDetalle.some((n) => n.includes(t))) throw new Error('con el detalle, ningun paso tiene la etapa "' + t + '"');
+            }
             ajustes.fijarPerfil('practica');
             anotar(true, titulo);
           } catch (e) {

@@ -76,6 +76,14 @@ export const AYUDAS = [
     detalle: 'En lugar del símbolo solo, el texto completo de todas las preguntas, siempre a la vista.',
   },
   {
+    clave: 'detalleCondicionesTabla',
+    almacen: 'ajuste-detalle-condiciones-tabla',
+    porDefecto: false,
+    depende: 'preguntasTabla',
+    titulo: 'Detallar las preguntas de las llamadas',
+    detalle: 'Cada pregunta de la tabla del trazado se muestra escrita, con los valores puestos y resolviéndose parte por parte (n % 10 == d, 127 % 10 == 5, 7 == 5) antes de dar ✓ o ✗.',
+  },
+  {
     clave: 'avanzarPorEtapas',
     almacen: 'ajuste-avanzar-por-etapas',
     porDefecto: false,
@@ -92,8 +100,8 @@ export const AYUDAS = [
 ];
 
 export const PERFILES = [
-  { id: 'practica', nombre: 'Práctica', valores: { brilloCopias: true, brilloAsignaciones: false, brilloCondiciones: false, detalleCondiciones: false, resaltarFuncion: false, trazado: false, trazadoUnaColumna: false, preguntasTabla: false, preguntasTexto: false, avanzarPorEtapas: false, nombresFlechas: false } },
-  { id: 'explicacion', nombre: 'Explicación', valores: { brilloCopias: true, brilloAsignaciones: true, brilloCondiciones: true, detalleCondiciones: false, resaltarFuncion: true, trazado: true, trazadoUnaColumna: false, preguntasTabla: true, preguntasTexto: false, avanzarPorEtapas: false, nombresFlechas: true } },
+  { id: 'practica', nombre: 'Práctica', valores: { brilloCopias: true, brilloAsignaciones: false, brilloCondiciones: false, detalleCondiciones: false, resaltarFuncion: false, trazado: false, trazadoUnaColumna: false, preguntasTabla: false, detalleCondicionesTabla: false, preguntasTexto: false, avanzarPorEtapas: false, nombresFlechas: false } },
+  { id: 'explicacion', nombre: 'Explicación', valores: { brilloCopias: true, brilloAsignaciones: true, brilloCondiciones: true, detalleCondiciones: false, resaltarFuncion: true, trazado: true, trazadoUnaColumna: false, preguntasTabla: true, detalleCondicionesTabla: false, preguntasTexto: false, avanzarPorEtapas: false, nombresFlechas: true } },
 ];
 
 const estado = new Map();

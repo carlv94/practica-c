@@ -422,6 +422,54 @@ function camino(puntos) {
 const sinMovimiento = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 const suavizar = (k) => (k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2);
 
+// El texto de "nodo" pasa a las "partes" de un paso (ver pasosDeCondicion) a partir de "cuando" (ms): solo lo que cambio se contrae hasta
+// desaparecer y de ahi emerge lo nuevo, con un destello; el resto del texto no se mueve. "antes" y "despues" rodean al texto (la
+// pregunta: "¿ " y " ?"). Una parte vieja sale en 0,6 u y la nueva emerge en 0,8 u.
+export function textoPorPartes(nodo, partes, cuando, u, { antes = '¿ ', despues = ' ?', halo = '#3b82f6' } = {}) {
+  const construir = (nuevo) => {
+    const cambiantes = [];
+    nodo.replaceChildren(document.createTextNode(antes));
+    for (const p of partes) {
+      if (!p.nuevo) {
+        nodo.append(document.createTextNode(p.t));
+        continue;
+      }
+      const parte = document.createElement('span');
+      parte.className = 'rep-pregunta-parte';
+      parte.textContent = nuevo ? p.t : p.antes;
+      nodo.append(parte);
+      cambiantes.push([parte, p]);
+    }
+    nodo.append(document.createTextNode(despues));
+    return cambiantes;
+  };
+  if (sinMovimiento() || !nodo.animate) {
+    tiempo.esperar(() => construir(true), cuando);
+    return;
+  }
+  const sale = 0.6 * u;
+  let cambiantes = [];
+  tiempo.esperar(() => {
+    cambiantes = construir(false);
+    for (const [parte] of cambiantes) parte.animate([{ opacity: 1, transform: 'scale(1)' }, { opacity: 0, transform: 'scale(0.2)' }], { duration: sale, easing: 'ease-in', fill: 'both' });
+  }, cuando);
+  tiempo.esperar(() => {
+    const destello = `color-mix(in srgb, ${halo} 45%, transparent)`;
+    for (const [parte, p] of cambiantes) {
+      for (const a of parte.getAnimations()) a.cancel();
+      parte.textContent = p.t;
+      parte.animate(
+        [
+          { opacity: 0, transform: 'scale(1.6)', backgroundColor: destello },
+          { opacity: 1, transform: 'scale(1)', backgroundColor: destello, offset: 0.4 },
+          { opacity: 1, transform: 'scale(1)', backgroundColor: 'transparent' },
+        ],
+        { duration: 0.8 * u, easing: 'ease-out' }
+      );
+    }
+  }, cuando + sale);
+}
+
 export class Figura {
   constructor(contenedor, opciones = {}) {
     this.contenedor = contenedor;
@@ -1397,52 +1445,9 @@ export class Figura {
     return { caja, respuesta, texto: letras };
   }
 
-  // El texto del rotulo de una condicion pasa a las "partes" de un paso a partir de "cuando" (ver pasosDeCondicion): solo lo que
-  // cambio se contrae hasta desaparecer y de ahi emerge lo nuevo, con un destello; el resto del texto no se mueve.
+  // El texto del rotulo de una condicion pasa a las "partes" de un paso (ver textoPorPartes).
   cambiarPartes(nodo, partes, cuando, u) {
-    const construir = (nuevo) => {
-      const cambiantes = [];
-      nodo.replaceChildren(document.createTextNode('¿ '));
-      for (const p of partes) {
-        if (!p.nuevo) {
-          nodo.append(document.createTextNode(p.t));
-          continue;
-        }
-        const parte = document.createElement('span');
-        parte.className = 'rep-pregunta-parte';
-        parte.textContent = nuevo ? p.t : p.antes;
-        nodo.append(parte);
-        cambiantes.push([parte, p]);
-      }
-      nodo.append(document.createTextNode(' ?'));
-      return cambiantes;
-    };
-    if (sinMovimiento() || !nodo.animate) {
-      tiempo.esperar(() => construir(true), cuando);
-      return;
-    }
-    const sale = 0.6 * u;
-    let cambiantes = [];
-    tiempo.esperar(() => {
-      cambiantes = construir(false);
-      for (const [parte] of cambiantes) parte.animate([{ opacity: 1, transform: 'scale(1)' }, { opacity: 0, transform: 'scale(0.2)' }], { duration: sale, easing: 'ease-in', fill: 'both' });
-    }, cuando);
-    tiempo.esperar(() => {
-      const halo = getComputedStyle(this.contenedor).getPropertyValue('--acento').trim() || '#3b82f6';
-      const destello = `color-mix(in srgb, ${halo} 45%, transparent)`;
-      for (const [parte, p] of cambiantes) {
-        for (const a of parte.getAnimations()) a.cancel();
-        parte.textContent = p.t;
-        parte.animate(
-          [
-            { opacity: 0, transform: 'scale(1.6)', backgroundColor: destello },
-            { opacity: 1, transform: 'scale(1)', backgroundColor: destello, offset: 0.4 },
-            { opacity: 1, transform: 'scale(1)', backgroundColor: 'transparent' },
-          ],
-          { duration: 0.8 * u, easing: 'ease-out' }
-        );
-      }
-    }, cuando + sale);
+    textoPorPartes(nodo, partes, cuando, u, { halo: getComputedStyle(this.contenedor).getPropertyValue('--acento').trim() || '#3b82f6' });
   }
 
   // Donde queda una casilla cuando termina el paso (ver absolutoDe).
