@@ -66,7 +66,7 @@
       "id": "apoyo-invertir",
       "titulo": "Invertir un número",
       "en": "archivo",
-      "enunciado": "Escriba dos funciones para invertir un entero `n`, mayor o igual que `0`, o sea escribir sus dígitos al revés:\n- Una función recursiva que recibe `n` y un parámetro de apoyo con el número que lleva armado.\n- Una función que recibe solo `n`, no es recursiva y devuelve el resultado: llama a la recursiva con el valor inicial del apoyo.\n\nPor ejemplo:\n- Con `123` devuelve `321`.\n- Con `1200` devuelve `21`: los ceros del final quedan al principio y no se escriben.\n\nEs el mismo patrón de los programas anteriores. Escriba primero la recursiva, así la otra ya la conoce y no hace falta un prototipo. Póngales el nombre que quiera.",
+      "enunciado": "Invertir un número `n`, mayor o igual que `0`, es escribir sus dígitos al revés. Por ejemplo:\n- Con `123` devuelve `321`.\n- Con `1200` devuelve `21`: los ceros del final quedan al principio y no se escriben.\n\nComo en la [[recursion-apoyo#apoyo-q-base]] y la [[recursion-apoyo#apoyo-q-inicial]], escriba dos funciones: una recursiva, que lleva un parámetro de apoyo con el número que va armando, y otra que recibe solo `n`, no es recursiva y devuelve el resultado llamando a la recursiva. Escriba primero la recursiva, así la otra ya la conoce y no hace falta un prototipo. Póngales el nombre que quiera.",
       "requiere": [
         {
           "apoyo": {
@@ -123,7 +123,7 @@
       "id": "apoyo-binario",
       "titulo": "Un número en binario, como entero",
       "en": "archivo",
-      "enunciado": "Escriba dos funciones que reciban un entero `n`, mayor o igual que `0` y menor que `1024`, y devuelvan su escritura en binario como un entero:\n- Una función recursiva que recibe `n` y un parámetro de apoyo con el valor del lugar que está escribiendo (`1`, después `10`, después `100`...).\n- Una función que recibe solo `n`, no es recursiva y devuelve el resultado: llama a la recursiva con el valor inicial del apoyo.\n\nPor ejemplo:\n- Con `13` devuelve `1101`.\n- Con `8` devuelve `1000`.\n\nPóngales el nombre que quiera.",
+      "enunciado": "Se pide la escritura en binario de un número `n`, mayor o igual que `0` y menor que `1024`, como un entero. Por ejemplo:\n- Con `13` devuelve `1101`.\n- Con `8` devuelve `1000`.\n\nEscriba las dos funciones: la recursiva lleva un parámetro de apoyo con el valor del lugar que está escribiendo (unidades, decenas, centenas...), y la otra recibe solo `n`. Póngales el nombre que quiera.",
       "requiere": [
         {
           "apoyo": {
@@ -180,7 +180,6 @@
       "id": "apoyo-posicion",
       "titulo": "La posición de un valor",
       "en": "archivo",
-      "enunciado": "Escriba dos funciones que reciban un arreglo de enteros, su cantidad de elementos y un valor, y devuelvan la posición de la primera aparición del valor, o `-1` si no está:\n- Una función recursiva que recibe además la posición `i` que está mirando.\n- Una función que recibe solo el arreglo, la cantidad y el valor, no es recursiva y devuelve el resultado: llama a la recursiva con la posición inicial.\n\nPor ejemplo, con el arreglo `4, 7, 9, 7`:\n- Con el valor `7` devuelve `1`.\n- Con el valor `5` devuelve `-1`.\n\nPóngales el nombre que quiera.",
       "requiere": [
         {
           "apoyo": {
@@ -273,14 +272,28 @@
           }
         }
       ],
-      "referencia": "int posicionDesde(int v[], int n, int valor, int i) {\n  if (i == n) {\n    return -1;\n  }\n  if (v[i] == valor) {\n    return i;\n  }\n  return posicionDesde(v, n, valor, i + 1);\n}\n\nint posicion(int v[], int n, int valor) {\n  return posicionDesde(v, n, valor, 0);\n}"
+      "referencia": "int posicionDesde(int v[], int n, int valor, int i) {\n  if (i == n) {\n    return -1;\n  }\n  if (v[i] == valor) {\n    return i;\n  }\n  return posicionDesde(v, n, valor, i + 1);\n}\n\nint posicion(int v[], int n, int valor) {\n  return posicionDesde(v, n, valor, 0);\n}",
+      "enunciado": "Se pide la posición de la primera aparición de un valor en un arreglo de enteros, a partir del arreglo, su cantidad de elementos y el valor. Devuelve `-1` si el valor no está. Por ejemplo, con el arreglo `v` del dibujo de abajo:\n- Con el valor `7` devuelve `1`.\n- Con el valor `5` devuelve `-1`.\n\nEscriba las dos funciones: la recursiva recibe además la posición que está mirando, y la otra recibe solo el arreglo, la cantidad y el valor. Póngales el nombre que quiera.",
+      "dibujo": {
+        "titulo": "El arreglo `v`, con las apariciones de `7` resaltadas:",
+        "valores": [
+          4,
+          7,
+          9,
+          7
+        ],
+        "resaltar": [
+          1,
+          3
+        ]
+      }
     },
     {
       "id": "apoyo-capicua",
       "titulo": "¿Es capicúa?",
       "en": "archivo",
       "archivoDado": "typedef enum {\n  FALSO,\n  VERDADERO\n} TBool;",
-      "enunciado": "El enumerado `TBool`, con los valores `FALSO` y `VERDADERO`, ya está declarado. Un número es capicúa si se lee igual de izquierda a derecha que de derecha a izquierda, como `12321`. Escriba dos funciones que reciban un entero `n`, mayor o igual que `0`, y devuelvan `VERDADERO` si es capicúa y `FALSO` si no:\n- Una función recursiva que recibe `n` y dos parámetros de apoyo: el número que lleva armado al revés y el número original. Cuando `n` llega a `0`, compara los dos.\n- Una función que recibe solo `n`, no es recursiva y devuelve el resultado: llama a la recursiva con los valores iniciales de los apoyos.\n\nPor ejemplo:\n- Con `12321` devuelve `VERDADERO`.\n- Con `1234` devuelve `FALSO`.\n- Con `120` devuelve `FALSO`: al revés es `21`.\n\nPóngales el nombre que quiera.",
+      "enunciado": "Se pide saber si un número `n`, mayor o igual que `0`, es capicúa: se lee igual de izquierda a derecha que de derecha a izquierda, como `12321`. Devuelve `VERDADERO` si lo es y `FALSO` si no (el enumerado `TBool`, con esos valores, ya está declarado). Por ejemplo:\n- Con `12321` devuelve `VERDADERO`.\n- Con `1234` devuelve `FALSO`.\n- Con `120` devuelve `FALSO`: al revés es `21`.\n\nEscriba las dos funciones: la recursiva lleva dos parámetros de apoyo, y la otra recibe solo `n`. Póngales el nombre que quiera.",
       "requiere": [
         {
           "apoyo": {

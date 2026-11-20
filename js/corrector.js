@@ -4809,7 +4809,9 @@ export function corregir(
               `${con}${BT}${llamada}${BT} devuelve ${BT}${decir(dio.valor)}${BT} y debería devolver ${BT}${decir(debe)}${BT}.` +
                 (divisionEntera
                   ? ' Dividir dos enteros da un entero, sin decimales: para que el resultado los tenga, al menos uno de los dos tiene que ser decimal (por ejemplo `2.0`, o con `(float)` adelante).'
-                  : '')
+                  : '') +
+              // Con parametros de apoyo, un valor inicial equivocado da un resultado distinto sin ningun error a la vista.
+              (consigna.requiere?.some((x) => x.apoyo) ? ' Revise el valor con que la primera función llama a la recursiva.' : '')
             );
             return;
           }

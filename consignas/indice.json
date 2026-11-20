@@ -125,9 +125,6 @@
         "recursion-arreglos.json",
         "recursion-digitos.json",
         "recursion-apoyo.json"
-      ],
-      "ocultas": [
-        "recursion-apoyo.json"
       ]
     },
     {

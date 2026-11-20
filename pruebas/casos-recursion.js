@@ -336,7 +336,9 @@ export const CASOS_DE_RECURSION = [
     ['FUNCION_NO_RECURSIVA']
   ),
   conApoyo(3, 'sin llamar a la recursiva', INVERTIR_AUX + '\n\n' + FUNCION('int invertir(int n)', '  return n % 10;'), ['APOYO_NO_LLAMA']),
-  conApoyo(3, 'con el valor inicial equivocado', INVERTIR_AUX + '\n\n' + FUNCION('int invertir(int n)', '  return invertirAux(n, 1);'), ['DEVUELVE_DISTINTO']),
+  conApoyo(3, 'con el valor inicial equivocado', INVERTIR_AUX + '\n\n' + FUNCION('int invertir(int n)', '  return invertirAux(n, 1);'), ['DEVUELVE_DISTINTO'], {
+    dice: ['Revise el valor con que la primera función llama a la recursiva'],
+  }),
   conApoyo(
     3,
     'la recursiva devuelve decimales',
