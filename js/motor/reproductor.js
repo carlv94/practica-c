@@ -787,6 +787,12 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
       fill: 'backwards',
     });
   };
+  // El pulso de la linea del cursor cuando el paso no la cambia: el fondo sube un instante y vuelve a su color (la linea no desaparece).
+  const pulsarLinea = (fila, color, d) => {
+    if (!fila || !fila.animate) return;
+    const mezcla = (p) => `color-mix(in srgb, var(${color}) ${p}%, var(--codigo))`;
+    fila.animate([{ backgroundColor: mezcla(24) }, { backgroundColor: mezcla(60), offset: 0.3 }, { backgroundColor: mezcla(24) }], { duration: 2 * d, easing: 'ease-in-out' });
+  };
   // El foco: mientras ocurre el caso base, el resto de las filas se atenua (medio fundido), se queda y vuelve a la normalidad.
   const focoEnFila = (cuerpoTabla, fila, retraso, d) => {
     const total = 3.5 * d;
@@ -1331,7 +1337,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
       }
       if (dTrazado > 0) for (const m of etapasDelTrazado(paso, unidad)) marcas.push({ t: dFigura + m.t, nombre: m.nombre });
       if (entrando) marcas.push({ t: dFigura + dTrazado, nombre: 'Se resalta la función' });
-      if (ultimaAnimacion > 0 && foto.linea != null) marcas.push({ t: ultimaAnimacion, nombre: 'Llega el cursor a la línea ' + foto.linea });
+      if (ultimaAnimacion > 0 && foto.linea != null) marcas.push({ t: ultimaAnimacion, nombre: marcada && marcada === lineas[foto.linea - 1] ? 'El cursor sigue en la línea ' + foto.linea + ': la línea pulsa' : 'Llega el cursor a la línea ' + foto.linea });
       programarEtapas(marcas, inicioPaso);
     }
     if (entrando) relojEditor = tiempo.esperar(() => resaltarFuncion(entrando, fundidoDe(unidad)), dFigura + dTrazado);
@@ -1347,11 +1353,14 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
       const f = funcionDe(foto);
       const cambioDeFuncion = Boolean(f) && (!funcionAnterior || funcionAnterior.nombre !== f.nombre);
       lineas.forEach((fila, i) => fila.classList.toggle('rep-fuera', Boolean(f) && (i + 1 < f.desde || i + 1 > f.hasta)));
+      const anterior = marcada;
       if (marcada) marcada.classList.remove('rep-ahora', 'rep-error');
       marcada = foto.linea != null ? lineas[foto.linea - 1] : null;
       if (marcada) {
         marcada.classList.add(foto.error ? 'rep-error' : 'rep-ahora');
         seguirLinea(cambioDeFuncion, animar, foto);
+        // Si el paso deja el cursor en la misma linea (la vuelta de una funcion con un solo return), la linea pulsa: avisa que se avanzo.
+        if (animar && marcada === anterior && unidad > 0) pulsarLinea(marcada, foto.error ? '--error' : '--acento', fundidoDe(unidad));
       }
       funcionAnterior = f;
       mostrarEstado(foto);
