@@ -622,7 +622,8 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     }
   };
   // El texto de una celda: en la ida, la vuelta y la cuenta, las preguntas van arriba (un contenedor aparte) y el texto, ultimo.
-  const textoDeCelda = (td) => (td.firstElementChild && td.firstElementChild.classList.contains('rep-traz-preguntas') ? td.lastElementChild : td.firstElementChild);
+  // (lo que acompaña al texto, las preguntas y la etiqueta del caso base, va arriba de el)
+  const textoDeCelda = (td) => [...td.children].find((e) => !e.classList.contains('rep-traz-preguntas') && !e.classList.contains('rep-traz-base')) || null;
   // El simbolo de lo que dio una pregunta: ✓ (verdadero, verde) o ✗ (falso, gris pizarra: no es un error). Lleva su significado en el
   // aviso y para los lectores de pantalla.
   const iconoDe = (valor) => {
@@ -953,7 +954,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
       let pastilla = null;
       if (r.base != null && r.base <= k) {
         pastilla = nodo('span', 'rep-traz-base', '↩ caso base');
-        tdLlamada.append(pastilla);
+        tdLlamada.prepend(pastilla); // (arriba del texto: el texto de las tres columnas queda alineado al pie)
       }
       const base = { r, fila, pastilla, tdIda: null, tdVuelta: null };
       if (r.base === k) bases.push(base);

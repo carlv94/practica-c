@@ -588,7 +588,9 @@
   padding: 4px 6px;
   border-bottom: 1px solid var(--borde);
 }
+/* El texto de la llamada, la ida y la vuelta queda alineado al pie; lo que lo acompaña (preguntas, etiqueta del caso base) va arriba. */
 .rep-tabla-trazado td {
+  vertical-align: bottom;
   padding: 4px 6px;
   border-bottom: 1px solid var(--borde);
   background: transparent;
@@ -718,7 +720,7 @@
 .rep-traz-base {
   display: block;
   width: fit-content;
-  margin-top: 2px;
+  margin-bottom: 2px;
   padding: 0 6px;
   font-size: 0.7rem;
   font-weight: 600;
