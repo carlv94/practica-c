@@ -444,6 +444,41 @@ import { corregir } from '../js/corrector.js';
           });
         }
 
+        // El banco de casos del paso a paso: con la consigna aprobada, el corrector ofrece todos los casos con llamada (cada uno con su
+        // programa, que corre y muestra lo que el caso espera); antes de aprobar, solo los que el enunciado muestra.
+        for (const s of todas) {
+          s.consignas.forEach((c, i) => {
+            if (!c.referencia || !c.requiere || !c.requiere.some((x) => x.funcion && x.funcion.recursiva)) return;
+            const titulo = `banco de casos de ${c.id}`;
+            try {
+              const previo = llegarHasta(s, i + 1, []);
+              const casos = c.requiere.find((x) => x.ejecuta).ejecuta.casos.filter((x) => x.llama);
+              const r = corregirPaso(analizador, s, i, previo, c.referencia);
+              const banco = r.memoria?.banco;
+              if (!banco || banco.length !== casos.length) throw new Error('el banco tiene ' + (banco ? banco.length : 0) + ' casos y la consigna ' + casos.length);
+              if (banco[r.memoria.actual].fuente !== r.memoria.fuente) throw new Error('el caso actual no es el que se ejecuta');
+              const enumeradores = { FALSO: '0', VERDADERO: '1' };
+              banco.forEach((b, k) => {
+                if (!b.llamada) throw new Error('el caso ' + k + ' no tiene llamada');
+                const m = ejecutarMotor(analizador, b.fuente, { entrada: '', traza: true });
+                if (m.error) throw new Error('el caso "' + b.llamada + '" dio un error: ' + m.error.codigo);
+                const esperado = casos[k].salida !== undefined ? casos[k].salida.trim() : String(enumeradores[casos[k].devuelve] ?? casos[k].devuelve);
+                if (m.salida.trim() !== esperado) throw new Error('el caso "' + b.llamada + '" mostro "' + m.salida.trim() + '" y espera "' + esperado + '"');
+              });
+              // sin aprobar (una respuesta que no anda), solo el caso que el enunciado muestra: no hay nada que elegir
+              if (casos.filter((x) => x.visible).length === 1) {
+                const mala = c.referencia.replace(/\breturn\b[^;]*;/g, 'return 0;');
+                const rm = corregirPaso(analizador, s, i, previo, mala);
+                if (rm.correcto) throw new Error('la respuesta de prueba no deberia aprobar: ' + mala + ' / ' + JSON.stringify(rm.diagnosticos));
+                if (rm.memoria?.banco) throw new Error('sin aprobar se ofrecio el banco');
+              }
+              anotar(true, titulo);
+            } catch (e) {
+              anotar(false, titulo, e.stack || e.message);
+            }
+          });
+        }
+
         // Las etapas del trazado (ayuda "Avanzar por etapas"): cada paso con animacion en la tabla entrega sus marcas, con nombre y en
         // un orden que no se pisa, y las de una llamada que se abre, un caso base y una respuesta existen.
         {

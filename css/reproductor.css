@@ -15,6 +15,27 @@
   margin: 0 0 8px;
   font-size: 1rem;
 }
+/* El selector de casos de prueba, encima del reproductor. */
+.rep-banco {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.rep-banco-etiqueta {
+  font-size: 0.92rem;
+  color: var(--suave);
+}
+.rep-banco-lista {
+  font: inherit;
+  max-width: 100%;
+  padding: 4px 8px;
+  border: 1px solid var(--borde);
+  border-radius: 6px;
+  background: var(--fondo);
+  color: var(--texto);
+}
 .rep-barra {
   display: flex;
   flex-wrap: wrap;

@@ -1218,8 +1218,41 @@ async function dibujarMotor(caja, motor) {
 }
 
 // El reproductor de un programa: lo ejecuta con el motor de memoria y arma el reproductor.
-// "datos" es { fuente, entrada, cabezas }.
+// "datos" es { fuente, entrada, cabezas } y, si hay varios casos para probar, "banco" ([{ etiqueta, llamada, fuente }]) y "actual":
+// con un selector encima, que arma de nuevo el reproductor con el caso elegido.
 async function reproductorDe(datos, consigna) {
+  const primero = await reproductorDeUnCaso(datos, consigna);
+  if (!datos.banco || datos.banco.length < 2) return primero;
+  const caja = elemento('div', 'rep-con-banco');
+  const fila = elemento('div', 'rep-banco');
+  const etiqueta = elemento('label', 'rep-banco-etiqueta', 'Probar con:');
+  const lista = elemento('select', 'rep-banco-lista');
+  lista.id = 'rep-banco-' + (++contadorDeBancos);
+  etiqueta.htmlFor = lista.id;
+  datos.banco.forEach((c, i) => {
+    const opcion = elemento('option', '', c.etiqueta ? c.etiqueta + ' — ' + c.llamada : c.llamada);
+    opcion.value = String(i);
+    lista.append(opcion);
+  });
+  lista.value = String(datos.actual || 0);
+  const lugar = elemento('div', 'rep-banco-reproductor');
+  lugar.append(primero);
+  lista.addEventListener('change', async () => {
+    const caso = datos.banco[Number(lista.value)];
+    try {
+      lugar.replaceChildren(await reproductorDeUnCaso({ ...datos, fuente: caso.fuente, entrada: '' }, consigna));
+    } catch (error) {
+      console.error('No se pudo armar el paso a paso de este caso:', error);
+      lugar.replaceChildren(mensaje('aviso', 'No se pudo seguir este caso paso a paso.'));
+    }
+  });
+  fila.append(etiqueta, lista);
+  caja.append(fila, lugar);
+  return caja;
+}
+let contadorDeBancos = 0;
+
+async function reproductorDeUnCaso(datos, consigna) {
   const [{ ejecutar }, { crearReproductor }, { mensajeDeError }] = await Promise.all([
     import('./motor/interprete.js'),
     import('./motor/reproductor.js'),

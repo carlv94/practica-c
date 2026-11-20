@@ -341,6 +341,8 @@ export function corregir(
   let ultimaLlamada = [];
   // El programa que ejecuto la regla "memoria" (para el paso a paso): { fuente, entrada, cabezas }.
   let ejecucionMemoria = null;
+  // Los casos con los que se puede seguir la funcion recursiva paso a paso: [{ etiqueta, llamada, fuente, visible }].
+  let banco = null;
   const nuevas = { ...capturas };
 
   // "fila" es la del codigo completo; al alumno se le dice la linea de SU respuesta.
@@ -380,8 +382,18 @@ export function corregir(
       sinVerificar,
       diagnosticos: informados,
       capturas: correcto ? nuevas : capturas,
-      memoria: ejecucionMemoria,
+      memoria: conElBanco(ejecucionMemoria, correcto),
     };
+  }
+
+  // El banco de casos del paso a paso (ver bancoDeCasos): con la consigna aprobada se ofrecen todos; antes, solo los que el enunciado
+  // ya muestra ("visible"), para que los demas sigan sirviendo de prueba. Con uno solo no hay nada que elegir.
+  function conElBanco(memoria, aprobada) {
+    if (!memoria || !banco) return memoria;
+    const casos = banco.filter((c) => aprobada || c.visible);
+    if (casos.length < 2) return memoria;
+    const actual = casos.findIndex((c) => c.fuente === memoria.fuente);
+    return { ...memoria, banco: casos.map(({ etiqueta, llamada, fuente }) => ({ etiqueta, llamada, fuente })), actual: Math.max(0, actual) };
   }
 
   if (!respuesta.trim()) {
@@ -4538,6 +4550,16 @@ export function corregir(
     return cabecera + fuente.replace(/\s+$/, '') + '\n\nint main() {\n' + lineas.join('\n') + '\n  return 0;\n}\n';
   }
 
+  // La llamada de un caso como se la lee: `mayorDigito(4172)`, y con sus datos si los tiene: `sumar(v, 4) con v = {1, 2, 3, 4}`.
+  function llamadaDelCaso(caso) {
+    const llamada = valorDe(caso.llama).trim().replace(/;\s*$/, '');
+    const datos = Object.entries(caso.datos || {}).map(([nombre, valor]) => {
+      if (typeof valor === 'string') return nombre + ' = "' + valor + '"';
+      return nombre + ' = ' + (Array.isArray(valor) ? '{' + valor.map((v) => (v === null ? 0 : v)).join(', ') + '}' : valor);
+    });
+    return datos.length ? llamada + ' con ' + datos.join(', ') : llamada;
+  }
+
   function reglaEjecuta(regla, modelo) {
     if (regla.conCiclo && !modelo.ciclos.some((c) => c.nuevo)) {
       error('CICLO_FALTA', 'La consigna pide un ciclo: una sentencia que se repite, como `for` o `while`.');
@@ -4597,6 +4619,13 @@ export function corregir(
       const primero = regla.casos.find((c) => c.visible && c.llama) || regla.casos.find((c) => c.llama);
       const programa = primero ? programaParaElMotor(modelo, primero) : null;
       if (programa) ejecucionMemoria = { fuente: programa, entrada: '' };
+      // Cada caso con llamada, con su programa (el que no se puede escribir asi, como una tabla, no entra).
+      banco = [];
+      for (const c of regla.casos) {
+        if (!c.llama) continue;
+        const fuentePrograma = c === primero ? programa : programaParaElMotor(modelo, c);
+        if (fuentePrograma) banco.push({ etiqueta: c.etiqueta || '', llamada: llamadaDelCaso(c), fuente: fuentePrograma, visible: !!c.visible });
+      }
     }
 
     // Varios conjuntos de valores para los arreglos, cada uno con lo que tiene

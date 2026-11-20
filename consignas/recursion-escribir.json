@@ -81,10 +81,12 @@
                 "visible": true
               },
               {
+                "etiqueta": "cero: el caso base",
                 "llama": "$S(0)",
                 "devuelve": 0
               },
               {
+                "etiqueta": "uno",
                 "llama": "$S(1)",
                 "devuelve": 1
               },
@@ -125,10 +127,12 @@
                 "visible": true
               },
               {
+                "etiqueta": "cero: el caso base",
                 "llama": "$F(0)",
                 "devuelve": 1
               },
               {
+                "etiqueta": "uno",
                 "llama": "$F(1)",
                 "devuelve": 1
               },
@@ -172,6 +176,7 @@
                 "visible": true
               },
               {
+                "etiqueta": "exponente cero",
                 "llama": "$P(5, 0)",
                 "devuelve": 1
               },
@@ -180,10 +185,12 @@
                 "devuelve": 9
               },
               {
+                "etiqueta": "exponente grande",
                 "llama": "$P(2, 10)",
                 "devuelve": 1024
               },
               {
+                "etiqueta": "exponente uno",
                 "llama": "$P(7, 1)",
                 "devuelve": 7
               }
@@ -220,18 +227,22 @@
                 "visible": true
               },
               {
+                "etiqueta": "un solo dígito",
                 "llama": "$D(7)",
                 "devuelve": 1
               },
               {
+                "etiqueta": "cero",
                 "llama": "$D(0)",
                 "devuelve": 1
               },
               {
+                "etiqueta": "termina en cero",
                 "llama": "$D(10)",
                 "devuelve": 2
               },
               {
+                "etiqueta": "muchos dígitos iguales",
                 "llama": "$D(99999)",
                 "devuelve": 5
               }
@@ -268,18 +279,22 @@
                 "visible": true
               },
               {
+                "etiqueta": "un solo dígito",
                 "llama": "$D(7)",
                 "devuelve": 7
               },
               {
+                "etiqueta": "cero",
                 "llama": "$D(0)",
                 "devuelve": 0
               },
               {
+                "etiqueta": "un cero en el medio",
                 "llama": "$D(505)",
                 "devuelve": 10
               },
               {
+                "etiqueta": "dos dígitos grandes",
                 "llama": "$D(99)",
                 "devuelve": 18
               }
@@ -316,10 +331,12 @@
                 "visible": true
               },
               {
+                "etiqueta": "cero: no muestra nada",
                 "llama": "$M(0)",
                 "salida": ""
               },
               {
+                "etiqueta": "uno",
                 "llama": "$M(1)",
                 "salida": "1"
               },
@@ -360,10 +377,12 @@
                 "visible": true
               },
               {
+                "etiqueta": "cero: no muestra nada",
                 "llama": "$M(0)",
                 "salida": ""
               },
               {
+                "etiqueta": "uno",
                 "llama": "$M(1)",
                 "salida": "1"
               },

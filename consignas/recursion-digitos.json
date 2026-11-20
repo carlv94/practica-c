@@ -33,22 +33,27 @@
                 "visible": true
               },
               {
+                "etiqueta": "un solo dígito",
                 "llama": "$D(5)",
                 "devuelve": 5
               },
               {
+                "etiqueta": "cero",
                 "llama": "$D(0)",
                 "devuelve": 0
               },
               {
+                "etiqueta": "el mayor es el primero",
                 "llama": "$D(9310)",
                 "devuelve": 9
               },
               {
+                "etiqueta": "el mayor es el último",
                 "llama": "$D(1234)",
                 "devuelve": 4
               },
               {
+                "etiqueta": "termina en cero",
                 "llama": "$D(80)",
                 "devuelve": 8
               }
@@ -88,22 +93,27 @@
                 "visible": true
               },
               {
+                "etiqueta": "el dígito no aparece",
                 "llama": "$C(4151, 7)",
                 "devuelve": 0
               },
               {
+                "etiqueta": "un solo dígito que coincide",
                 "llama": "$C(7, 7)",
                 "devuelve": 1
               },
               {
+                "etiqueta": "dos ceros en el medio",
                 "llama": "$C(1001, 0)",
                 "devuelve": 2
               },
               {
+                "etiqueta": "todos los dígitos coinciden",
                 "llama": "$C(3333, 3)",
                 "devuelve": 4
               },
               {
+                "etiqueta": "un cero en el medio",
                 "llama": "$C(908, 0)",
                 "devuelve": 1
               }
@@ -142,26 +152,32 @@
                 "visible": true
               },
               {
+                "etiqueta": "un dígito impar",
                 "llama": "$E(2478)",
                 "devuelve": "FALSO"
               },
               {
+                "etiqueta": "cero",
                 "llama": "$E(0)",
                 "devuelve": "VERDADERO"
               },
               {
+                "etiqueta": "un solo dígito impar",
                 "llama": "$E(5)",
                 "devuelve": "FALSO"
               },
               {
+                "etiqueta": "con ceros",
                 "llama": "$E(4020)",
                 "devuelve": "VERDADERO"
               },
               {
+                "etiqueta": "el primer dígito es impar",
                 "llama": "$E(1000)",
                 "devuelve": "FALSO"
               },
               {
+                "etiqueta": "dos dígitos pares",
                 "llama": "$E(86)",
                 "devuelve": "VERDADERO"
               }
@@ -231,34 +247,42 @@
                 "visible": true
               },
               {
+                "etiqueta": "los mismos dígitos en otro orden",
                 "llama": "$E(92, 1925)",
                 "devuelve": "FALSO"
               },
               {
+                "etiqueta": "es el mismo número",
                 "llama": "$E(1925, 1925)",
                 "devuelve": "VERDADERO"
               },
               {
+                "etiqueta": "el sufijo tiene más dígitos que el número",
                 "llama": "$E(1925, 25)",
                 "devuelve": "FALSO"
               },
               {
+                "etiqueta": "un solo dígito que coincide",
                 "llama": "$E(5, 1925)",
                 "devuelve": "VERDADERO"
               },
               {
+                "etiqueta": "un solo dígito que no coincide",
                 "llama": "$E(4, 1925)",
                 "devuelve": "FALSO"
               },
               {
+                "etiqueta": "los dos con un solo dígito",
                 "llama": "$E(7, 7)",
                 "devuelve": "VERDADERO"
               },
               {
+                "etiqueta": "el sufijo termina en cero",
                 "llama": "$E(100, 2100)",
                 "devuelve": "VERDADERO"
               },
               {
+                "etiqueta": "coincide el último dígito pero no el siguiente",
                 "llama": "$E(10, 5100)",
                 "devuelve": "FALSO"
               }
@@ -326,26 +350,32 @@
                 "visible": true
               },
               {
+                "etiqueta": "se quitan ceros",
                 "llama": "$Q(1050, 0)",
                 "devuelve": 15
               },
               {
+                "etiqueta": "se quitan todos los dígitos",
                 "llama": "$Q(777, 7)",
                 "devuelve": 0
               },
               {
+                "etiqueta": "el dígito no está",
                 "llama": "$Q(4829, 3)",
                 "devuelve": 4829
               },
               {
+                "etiqueta": "el dígito está en el medio",
                 "llama": "$Q(1203, 2)",
                 "devuelve": 103
               },
               {
+                "etiqueta": "quedan solo ceros",
                 "llama": "$Q(101, 1)",
                 "devuelve": 0
               },
               {
+                "etiqueta": "cero",
                 "llama": "$Q(0, 3)",
                 "devuelve": 0
               }
@@ -382,22 +412,27 @@
                 "visible": true
               },
               {
+                "etiqueta": "termina en cero",
                 "llama": "$D(70)",
                 "devuelve": 7700
               },
               {
+                "etiqueta": "un solo dígito",
                 "llama": "$D(5)",
                 "devuelve": 55
               },
               {
+                "etiqueta": "cero",
                 "llama": "$D(0)",
                 "devuelve": 0
               },
               {
+                "etiqueta": "un cero en el medio",
                 "llama": "$D(1905)",
                 "devuelve": 11990055
               },
               {
+                "etiqueta": "dos dígitos",
                 "llama": "$D(38)",
                 "devuelve": 3388
               }
@@ -434,14 +469,17 @@
                 "visible": true
               },
               {
+                "etiqueta": "uno",
                 "llama": "$B(1)",
                 "salida": "1"
               },
               {
+                "etiqueta": "la primera potencia de dos",
                 "llama": "$B(2)",
                 "salida": "10"
               },
               {
+                "etiqueta": "una potencia de dos",
                 "llama": "$B(8)",
                 "salida": "1000"
               },
@@ -450,6 +488,7 @@
                 "salida": "1010"
               },
               {
+                "etiqueta": "todos unos",
                 "llama": "$B(255)",
                 "salida": "11111111"
               }

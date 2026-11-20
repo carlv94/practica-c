@@ -45,6 +45,7 @@
                 "visible": true
               },
               {
+                "etiqueta": "un solo elemento",
                 "datos": {
                   "v": [
                     5
@@ -54,6 +55,7 @@
                 "devuelve": 5
               },
               {
+                "etiqueta": "con un negativo",
                 "datos": {
                   "v": [
                     3,
@@ -65,6 +67,7 @@
                 "devuelve": 4
               },
               {
+                "etiqueta": "ningún elemento",
                 "datos": {
                   "v": [
                     9
@@ -122,6 +125,7 @@
                 "visible": true
               },
               {
+                "etiqueta": "el valor no está",
                 "datos": {
                   "v": [
                     4,
@@ -133,6 +137,7 @@
                 "devuelve": "FALSO"
               },
               {
+                "etiqueta": "está en la primera posición",
                 "datos": {
                   "v": [
                     4,
@@ -144,6 +149,7 @@
                 "devuelve": "VERDADERO"
               },
               {
+                "etiqueta": "ningún elemento",
                 "datos": {
                   "v": [
                     4,
@@ -198,6 +204,7 @@
                 "visible": true
               },
               {
+                "etiqueta": "un solo elemento",
                 "datos": {
                   "v": [
                     8
@@ -207,6 +214,7 @@
                 "salida": "8"
               },
               {
+                "etiqueta": "cuatro elementos",
                 "datos": {
                   "v": [
                     4,
@@ -219,6 +227,7 @@
                 "salida": "7 6 5 4"
               },
               {
+                "etiqueta": "ningún elemento: no muestra nada",
                 "datos": {
                   "v": [
                     4
@@ -267,6 +276,7 @@
                 "visible": true
               },
               {
+                "etiqueta": "desde la mitad de la cadena",
                 "datos": {
                   "texto": "banana"
                 },
@@ -274,6 +284,7 @@
                 "devuelve": 4
               },
               {
+                "etiqueta": "una cadena corta",
                 "datos": {
                   "texto": "sol"
                 },
@@ -337,6 +348,7 @@
                 "devuelve": 2
               },
               {
+                "etiqueta": "la letra no aparece",
                 "datos": {
                   "texto": "banana"
                 },
@@ -344,6 +356,7 @@
                 "devuelve": 0
               },
               {
+                "etiqueta": "desde la mitad de la cadena",
                 "datos": {
                   "texto": "banana"
                 },
@@ -419,6 +432,7 @@
                 "visible": true
               },
               {
+                "etiqueta": "no es un palíndromo",
                 "datos": {
                   "texto": "hola"
                 },
@@ -426,6 +440,7 @@
                 "devuelve": "FALSO"
               },
               {
+                "etiqueta": "palíndromo de longitud impar",
                 "datos": {
                   "texto": "ana"
                 },
@@ -433,6 +448,7 @@
                 "devuelve": "VERDADERO"
               },
               {
+                "etiqueta": "otro palíndromo de longitud impar",
                 "datos": {
                   "texto": "oso"
                 },
@@ -440,6 +456,7 @@
                 "devuelve": "VERDADERO"
               },
               {
+                "etiqueta": "no es un palíndromo, cuatro letras",
                 "datos": {
                   "texto": "casa"
                 },
