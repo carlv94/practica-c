@@ -101,6 +101,20 @@ const promover = (a, b) => {
   return ta.sinSigno ? ta : tb;
 };
 
+// Junta las partes sin cambio que quedaron una al lado de otra y arregla los espacios (los textos de un detalle, ver detalleDeIda).
+function juntarPartes(partes) {
+  const lista = [];
+  for (const p of partes) {
+    const q = { ...p, t: p.t.replace(/\s+/g, ' ') };
+    const ultima = lista[lista.length - 1];
+    if (ultima && !ultima.nuevo && !q.nuevo) ultima.t += q.t;
+    else lista.push(q);
+  }
+  if (lista.length && !lista[0].nuevo) lista[0].t = lista[0].t.replace(/^ /, '');
+  if (lista.length && !lista[lista.length - 1].nuevo) lista[lista.length - 1].t = lista[lista.length - 1].t.replace(/ $/, '');
+  return lista.filter((p) => p.t !== '' || p.nuevo);
+}
+
 class Interprete {
   constructor(analizador, arbol, opciones) {
     this.analizador = analizador;
@@ -1329,8 +1343,16 @@ class Interprete {
       const args = nodos.map((h) => this.evaluar(h));
       const origenes = this.opciones.traza ? nodos.map((h) => this.origenDeArgumento(h)) : [];
       this.fila = n.startPosition.row + 1;
+      const texto = this.opciones.traza ? this.textoDeLlamada(propia, nodos, args) : null;
+      // La funcion que llama (si no es una recursiva, que ya tiene sus filas) anota que llamo y el detalle de esa llamada, para su fila
+      // en el trazado: de main a sumaDigitos(x), de sumaDigitos a sumaAux(n, 0) (ver cadenaDeLlamadores).
+      const quien = this.marcos[this.marcos.length - 1];
+      if (this.opciones.traza && quien && !quien.registro) {
+        const st = this.sentenciaDe(n);
+        quien.llamando = { detalle: st ? this.detalleDeIda(n, new Map(), '', quien.fotos && quien.fotos.get(st.id), texto, n.id) : null };
+      }
       const registro = this.opciones.traza && this.esRecursiva(propia) ? this.abrirRegistro(propia, nodos, args) : null;
-      const resultado = this.ejecutarFuncion(propia, args, origenes, registro, this.opciones.traza ? this.textoDeLlamada(propia, nodos, args) : null);
+      const resultado = this.ejecutarFuncion(propia, args, origenes, registro, texto);
       if (registro) this.cerrarRegistro(registro, n, resultado);
       return resultado;
     }
@@ -1425,6 +1447,8 @@ class Interprete {
     const marcos = this.marcos;
     const entrada = (m) => {
       const e = { funcion: m.funcion, llamada: m.llamadaTexto ?? null, desde: m.desde };
+      // (el detalle de la llamada que hace a la que sigue)
+      if (m.llamando && m.llamando.detalle) e.detalle = m.llamando.detalle;
       (m.cadenas ||= []).push(e);
       return e;
     };
@@ -1555,6 +1579,13 @@ class Interprete {
     // La vuelta se conoce cuando vuelve la ultima llamada; el valor final, en el return (si no llama, en su propia fotografia).
     const pasoCuenta = retorno ? (retorno.conLlamada ? retorno.paso : Math.min(marco.pasoCuenta ?? retorno.paso, retorno.paso)) : marco.pasoCuenta;
     r.ida = { texto: idas.map((l) => l.texto).join('\n'), paso: desde, partes };
+    // Con una sola linea (sin return que llame) tambien se detalla la ida.
+    if (idas.length === 1 && !(retorno && retorno.conLlamada)) {
+      const st = [...marco.lineas.values()].find((x) => this.exprDeLinea(x, marco.hechas));
+      const l = st ? this.exprDeLinea(st, marco.hechas) : null;
+      const detalle = l ? this.detalleDeIda(l.expr, marco.hechas, l.prefijo, marco.fotos && marco.fotos.get(st.id), idas[0].texto) : null;
+      if (detalle && detalle.paso0 < desde) r.ida.detalle = detalle;
+    }
     r.vuelta = {
       texto: vueltas.map((l) => l.texto).join('\n'),
       valor: retorno ? textoDeValor(retorno.devuelto) : null,
@@ -1595,6 +1626,7 @@ class Interprete {
     L.ida = { texto: ida.texto, partes: ida.partes };
     L.vuelta = { texto: vuelta.texto };
     L.valorFinal = null;
+    delete L.detalle;
     this.seguidas.set(externa.id, registro);
   }
 
@@ -1719,8 +1751,157 @@ class Interprete {
     return { texto: texto.replace(/\s+/g, ' '), registros, partes: juntas.filter((p) => p !== '') };
   }
 
+  // El detalle de la ida de una fila (ayuda "Detallar la ida de las llamadas"): la linea tal cual esta en el codigo, con las variables
+  // reemplazadas por su valor y con las cuentas resueltas ("resto = mayorDigito(n / 10)", "resto = mayorDigito(2132 / 10)", "resto =
+  // mayorDigito(213)"). Es lo mismo que hace pasosDeCondicion con una pregunta, pero las llamadas que se hicieron son un tope: se
+  // resuelven sus argumentos y la llamada queda escrita (se reemplaza por su valor en la vuelta). Devuelve { paso0, pasos, partes }, con
+  // "paso0" la fotografia en que el cursor esta en esa linea, o null si no se sabe hacer (algo que no es un numero, una llamada que no se
+  // anoto) o si el ultimo estado no es la ida que ya se muestra ("esperado").
+  // "extraId": una llamada que se detalla aunque no se registro (la de main a sumaDigitos: ver llamada).
+  detalleDeIda(expr, hechas, prefijo, paso0, esperado, extraId = null) {
+    if (!this.opciones.traza || paso0 == null || !/^[\x00-\x7f]*$/.test(expr.text)) return null;
+    const accesos = [...this.accesos];
+    const escrituras = this.escrituras.length;
+    const sinComentarios = (n) => n.namedChildren.filter((x) => x.type !== 'comment');
+    const valorDe = (n) => {
+      const t = textoEscalar(this.evaluar(n));
+      if (t === null) throw new Error('un valor sin texto');
+      return t;
+    };
+    const conocida = (n) => n.type === 'call_expression' && (hechas.has(n.id) || n.id === extraId);
+    const conLlamada = (n) => conocida(n) || n.namedChildren.some(conLlamada);
+    // "s": en que estado ya esta resuelto el nodo (0: no cambia; Infinity: una llamada o lo que la rodea, que no se resuelve en la ida).
+    const analizar = (n) => {
+      if (n.type === 'call_expression') {
+        if (!conocida(n)) throw new Error('una llamada que no se anoto');
+        return { n, s: Infinity, llamada: true, hijos: sinComentarios(n.childForFieldName('arguments')).map(analizar) };
+      }
+      if (conLlamada(n)) {
+        if (!['parenthesized_expression', 'unary_expression', 'binary_expression'].includes(n.type)) throw new Error('algo que no se sabe detallar');
+        return { n, s: Infinity, hijos: sinComentarios(n).map(analizar) };
+      }
+      switch (n.type) {
+        case 'number_literal':
+        case 'char_literal':
+        case 'string_literal':
+          return { n, s: 0, hijos: [] };
+        case 'identifier':
+          return this.textoDeVariable(n.text) !== null ? { n, s: 1, valor: valorDe(n), hijos: [] } : { n, s: 0, hijos: [] };
+        case 'subscript_expression':
+        case 'field_expression':
+          if (!this.lecturaSinLlamadas(n)) throw new Error('una lectura que no se sabe detallar');
+          return { n, s: 1, valor: valorDe(n), hijos: [] };
+        case 'parenthesized_expression': {
+          const h = analizar(n.namedChildren[0]);
+          return { n, s: h.s, ...(h.s > 0 ? { valor: valorDe(n) } : {}), hijos: [h] };
+        }
+        case 'unary_expression': {
+          const h = analizar(n.childForFieldName('argument'));
+          return { n, s: 1 + h.s, valor: valorDe(n), hijos: [h] };
+        }
+        case 'binary_expression': {
+          const izq = analizar(n.childForFieldName('left'));
+          const der = analizar(n.childForFieldName('right'));
+          // La cuenta de toda la expresion (n + 1) se queda como cuenta: su resultado va en la vuelta.
+          if (n.id === expr.id) return { n, s: Infinity, hijos: [izq, der] };
+          return { n, s: 1 + Math.max(izq.s, der.s), valor: valorDe(n), hijos: [izq, der] };
+        }
+        default:
+          throw new Error('algo que no se sabe detallar');
+      }
+    };
+    const nombreDe = (a) => a.n.childForFieldName('function').text;
+    const dibujar = (a, k) => {
+      if (a.s > 0 && a.s <= k) return a.valor;
+      if (a.llamada) return nombreDe(a) + '(' + a.hijos.map((h) => dibujar(h, k)).join(', ') + ')';
+      let t = a.n.text;
+      for (const h of [...a.hijos].sort((x, y) => y.n.startIndex - x.n.startIndex)) {
+        t = t.slice(0, h.n.startIndex - a.n.startIndex) + dibujar(h, k) + t.slice(h.n.endIndex - a.n.startIndex);
+      }
+      return t;
+    };
+    const partesDe = (a, k) => {
+      if (a.s > 0 && a.s <= k) return [a.s === k ? { t: a.valor, antes: dibujar(a, k - 1).replace(/\s+/g, ' '), nuevo: true } : { t: a.valor }];
+      if (a.llamada) {
+        const salida = [{ t: nombreDe(a) + '(' }];
+        a.hijos.forEach((h, i) => {
+          if (i) salida.push({ t: ', ' });
+          salida.push(...partesDe(h, k));
+        });
+        salida.push({ t: ')' });
+        return salida;
+      }
+      const texto = a.n.text;
+      const base = a.n.startIndex;
+      const salida = [];
+      let cursor = 0;
+      for (const h of [...a.hijos].sort((x, y) => x.n.startIndex - y.n.startIndex)) {
+        const desde = h.n.startIndex - base;
+        if (desde > cursor) salida.push({ t: texto.slice(cursor, desde) });
+        salida.push(...partesDe(h, k));
+        cursor = h.n.endIndex - base;
+      }
+      if (cursor < texto.length) salida.push({ t: texto.slice(cursor) });
+      return salida;
+    };
+    const ultimo = (a) => Math.max(0, ...(Number.isFinite(a.s) ? [a.s] : []), ...a.hijos.map(ultimo));
+    try {
+      const arbol = analizar(expr);
+      const pasos = [];
+      const partes = [];
+      for (let k = 0; k <= ultimo(arbol); k++) {
+        const lista = juntarPartes([{ t: prefijo }, ...partesDe(arbol, k)]);
+        // el primero es la linea tal cual esta escrita
+        const t = k === 0 ? (prefijo + expr.text).replace(/\s+/g, ' ') : lista.map((p) => p.t).join('');
+        if (t.length > 110) return null;
+        if (pasos[pasos.length - 1] !== t) {
+          pasos.push(t);
+          partes.push(lista);
+        }
+      }
+      if (pasos.length < 2 || pasos[pasos.length - 1] !== esperado.replace(/\s+/g, ' ')) return null;
+      return { paso0, pasos, partes };
+    } catch (e) {
+      return null;
+    } finally {
+      this.accesos.splice(0, this.accesos.length, ...accesos);
+      this.escrituras.length = escrituras;
+    }
+  }
+
+  // Lo que escribe la fila de una linea con una llamada hecha (ver lineaDeLlamada): { prefijo, expr }, o null.
+  exprDeLinea(st, hechas) {
+    switch (st.type) {
+      case 'declaration':
+        for (const d of st.namedChildren) {
+          if (d.type !== 'init_declarator') continue;
+          const valor = d.childForFieldName('value');
+          if (valor && this.contieneLlamadaHecha(valor, hechas)) return { prefijo: d.childForFieldName('declarator').text + ' = ', expr: valor };
+        }
+        return null;
+      case 'expression_statement': {
+        const e = st.namedChildren.find((h) => h.type !== 'comment');
+        if (!e) return null;
+        if (e.type === 'assignment_expression') {
+          const derecha = e.childForFieldName('right');
+          return this.contieneLlamadaHecha(derecha, hechas) ? { prefijo: e.childForFieldName('left').text + ' ' + e.childForFieldName('operator').text + ' ', expr: derecha } : null;
+        }
+        return this.contieneLlamadaHecha(e, hechas) ? { prefijo: '', expr: e } : null;
+      }
+      case 'if_statement':
+      case 'while_statement':
+      case 'do_statement':
+      case 'switch_statement': {
+        const condicion = st.childForFieldName('condition');
+        return condicion && this.contieneLlamadaHecha(condicion, hechas) ? { prefijo: st.type.replace('_statement', '') + ' ', expr: condicion } : null;
+      }
+      default:
+        return null;
+    }
+  }
+
   // El return de una llamada registrada: su ida y su vuelta, y desde que fotografia se conocen.
-  anotarRetorno(marco, expr, devuelto, conLlamada) {
+  anotarRetorno(marco, expr, devuelto, conLlamada, retorno = null) {
     const r = marco.registro;
     const hechas = marco.hechas || new Map();
     const ida = this.sustituir(expr, hechas, 'ida');
@@ -1728,6 +1909,8 @@ class Interprete {
     // La ida se conoce cuando empieza la primera llamada que hace; sin llamadas, en la fotografia de retorno ("por devolver").
     const primera = ida.registros.length ? Math.min(...ida.registros.map((x) => x.desde)) : this.traza.length;
     r.ida = { texto: ida.texto, paso: primera, partes: ida.partes };
+    const detalle = retorno ? this.detalleDeIda(expr, hechas, '', marco.fotos && marco.fotos.get(retorno.id), ida.texto) : null;
+    if (detalle && detalle.paso0 < primera) r.ida.detalle = detalle;
     // La vuelta, cuando la caja esta por cerrarse (la fotografia de retorno que se saca a continuacion).
     r.vuelta = { texto: vuelta.texto, valor: textoDeValor(devuelto), paso: this.traza.length };
   }
@@ -1798,6 +1981,9 @@ class Interprete {
     if (this.opciones.traza) {
       this.instantanea(this.fila);
       this.fotoDePaso = this.traza[this.traza.length - 1] || null;
+      // La fotografia de cada sentencia de la funcion en curso (el cursor esta en ella): ver detalleDeIda.
+      const marco = this.marcos[this.marcos.length - 1];
+      if (marco && n.id != null) (marco.fotos ||= new Map()).set(n.id, this.traza.length - 1);
     }
   }
 
@@ -1857,7 +2043,7 @@ class Interprete {
         if (actual.registro && actual.registro.base === null && !(actual.hechas && actual.hechas.size)) actual.registro.base = pasoRetorno;
         if (devuelto && actual.registro && v && this.opciones.traza) {
           if (actual.lineas && actual.lineas.size) this.armarFilaConLineas(actual, { expr: v, devuelto: escrito, conLlamada, paso: pasoRetorno });
-          else this.anotarRetorno(actual, v, escrito, conLlamada);
+          else this.anotarRetorno(actual, v, escrito, conLlamada, n);
         }
         if (conRetorno) this.fotoDeRetorno(n, escrito);
         throw new Retorno(devuelto);

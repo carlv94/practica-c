@@ -333,7 +333,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
           desde: sig.desde,
           hasta: null,
           base: null,
-          ida: { texto: llamadaSig, paso: sig.desde, partes: [{ llamada: llamadaSig, valor: sig.valor ?? null, id: sigId }] },
+          ida: { texto: llamadaSig, paso: sig.desde, partes: [{ llamada: llamadaSig, valor: sig.valor ?? null, id: sigId }], ...(e.detalle ? { detalle: e.detalle } : {}) },
           vuelta: sig.valor != null && sig.hasta != null ? { texto: sig.valor, valor: sig.valor, paso: sig.hasta } : null,
         });
       });
@@ -346,7 +346,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
         desde: L.llamada && L.desde != null ? L.desde : r.desde,
         hasta: null,
         base: null,
-        ida: L.ida ? { texto: L.ida.texto, paso: r.desde, partes: L.ida.partes } : null,
+        ida: L.ida ? { texto: L.ida.texto, paso: r.desde, partes: L.ida.partes, ...(L.detalle ? { detalle: L.detalle } : {}) } : null,
         vuelta: L.ida && r.hasta != null && L.valorFinal ? { texto: L.vuelta.texto, valor: L.valorFinal, paso: r.hasta } : null,
       });
     }
@@ -393,7 +393,8 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   };
   // Lo que se ve en esa fila, quieta, en el paso k.
   const textoQuieto = (r, k) => {
-    if (!r.ida || r.ida.paso > k) return '';
+    if (!r.ida || pasoDeIda(r) > k) return '';
+    if (k < r.ida.paso) return detalleIdaDe(r).pasos[0];
     const { e1, e2, e3 } = estadosDe(r);
     if (!r.vuelta) return e1;
     const { p1, p3 } = pasosDe(r);
@@ -432,10 +433,11 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   for (const p of filas) if (p.ida) for (const x of partesDe(p)) if (typeof x === 'object') padreDe.set(x.id, p);
   // Cuanto dura que se abra una llamada: su ida aparece (1 fundido) y respira (1,5) si recien se escribe y despues la llamada brilla
   // (2) mientras aparece el texto de la fila nueva; sin fila que la haga (la primera llamada), solo el fundido de su texto.
-  const duracionApertura = (r, k, d) => {
+  const duracionApertura = (r, k, d, u = 0) => {
     const padre = padreDe.get(r.id);
     if (!conValores || !padre || !padre.ida) return d;
-    return (padre.ida.paso === k ? 2.5 * d : 0) + 2 * d;
+    const detalle = padre.ida.paso === k ? duracionDetalleIda(padre, u) : 0;
+    return (padre.ida.paso === k ? (detalle ? detalle + d : 2.5 * d) : 0) + 2 * d;
   };
   // Cuanto dura el caso base: el foco sobre su fila (3,5 fundidos: el resto de la tabla se atenua, rebotan el valor de la ida y la
   // etiqueta y todo vuelve) y, en tres columnas, despues de una espera (1) el rebote de la vuelta (1,5): 5,5 en total.
@@ -448,9 +450,12 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     const unaColumna = enUnaColumna();
     let total = 0;
     for (const r of filas) {
-      const apertura = r.desde === k ? duracionApertura(r, k, d) : 0;
+      const apertura = r.desde === k ? duracionApertura(r, k, d, u) : 0;
       if (r.desde === k) total = Math.max(total, apertura);
-      if (r.base === k) total = Math.max(total, apertura + duracionBase(r, d, unaColumna));
+      // La linea que llega con el cursor (con el detalle de la ida) entra despues de las respuestas de la fila.
+      const detalleIda = detalleIdaDe(r);
+      if (detalleIda && detalleIda.paso0 === k && r.desde !== k && !esDeBase(r)) total = Math.max(total, retrasoDeEscrita(r, k, u, d) + d);
+      if (r.base === k) total = Math.max(total, apertura + (r.ida && r.ida.paso === k ? duracionDetalleIda(r, u) : 0) + duracionBase(r, d, unaColumna));
       if (!r.ida) continue;
       if (r.ida.paso === k && r.desde !== k && r.base !== k) total = Math.max(total, d);
       // La respuesta de una pregunta de la llamada: el valor que se leyo brilla y despues entra "verdadero" o "falso" con un rebote.
@@ -471,19 +476,29 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     const poner = (t, nombre) => marcas.push({ t, nombre });
     for (const r of filas) {
       if (r.desde > k) continue;
-      const apertura = r.desde === k ? duracionApertura(r, k, d) : 0;
+      const apertura = r.desde === k ? duracionApertura(r, k, d, u) : 0;
+      const detalleIda = detalleIdaDe(r);
+      if (detalleIda && detalleIda.paso0 === k && r.desde !== k && !esDeBase(r)) poner(retrasoDeEscrita(r, k, u, d), 'Se escribe «' + detalleIda.pasos[0] + '», tal cual está en el código');
       if (r.desde === k) {
         const padre = conValores ? padreDe.get(r.id) : null;
         if (padre && padre.ida) {
-          if (padre.ida.paso === k) {
+          const detallePadre = padre.ida.paso === k ? detalleIdaDe(padre) : null;
+          if (detallePadre) {
+            for (let i = 1; i < detallePadre.pasos.length; i++) poner(2 * u * (i - 1), rotuloDeEstadoIda(i, detallePadre.pasos.length) + ': ' + detallePadre.pasos[i]);
+            poner(duracionDetalleIda(padre, u) + d, 'La llamada brilla y se abre su fila');
+          } else if (padre.ida.paso === k) {
             poner(0, 'Se escribe lo que hace «' + padre.llamada + '»');
             poner(2.5 * d, 'La llamada brilla y se abre su fila');
           } else poner(0, 'La llamada brilla y se abre su fila');
         } else poner(0, typeof r.id === 'string' ? 'Aparece la fila de «' + r.llamada + '»' : 'Aparece la llamada «' + r.llamada + '»');
       } else if (r.ida && r.ida.paso === k && r.base !== k && llamadasDe(r).length === 0) poner(0, 'Se escribe lo que devuelve «' + r.llamada + '»');
       if (r.base === k) {
-        poner(apertura, 'Se anuncia el caso base de «' + r.llamada + '»');
-        if (conValores && r.ida && !unaColumna) poner(apertura + 4 * d, 'Vuelve el valor del caso base');
+        // (con el detalle de la ida, la linea se ve tal cual y, cuando termina el foco, pasa a su valor; recien despues vuelve el valor)
+        const detalleBase = r.ida && r.ida.paso === k ? detalleIdaDe(r) : null;
+        poner(apertura, 'Se anuncia el caso base de «' + r.llamada + '»' + (detalleBase ? ' con «' + detalleBase.pasos[0] + '», tal cual está en el código' : ''));
+        if (detalleBase) for (let i = 1; i < detalleBase.pasos.length; i++) poner(apertura + 3.5 * d + 2 * u * (i - 1), rotuloDeEstadoIda(i, detalleBase.pasos.length) + ': ' + detalleBase.pasos[i]);
+        const demora = detalleBase ? duracionDetalleIda(r, u) : 0;
+        if (conValores && r.ida && !unaColumna) poner(apertura + demora + 4 * d, 'Vuelve el valor del caso base');
       }
       for (const q of ajustes.valor('preguntasTabla') ? r.preguntas || [] : []) {
         if (q.respuesta !== k) continue;
@@ -686,6 +701,32 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     }
     return codigo;
   };
+  // El detalle de la ida de una fila (ayuda "Detallar la ida de las llamadas"): la linea tal cual esta en el codigo cuando el cursor llega
+  // a ella ("paso0") y, al abrirse la llamada, sus estados (las variables por su valor, las cuentas resueltas), o null si no se pide o no hay.
+  const detalleIdaDe = (r) => (conValores && ajustes.valor('detalleIda') && r.ida && r.ida.detalle && r.ida.detalle.pasos.length > 1 && r.ida.detalle.paso0 < r.ida.paso ? r.ida.detalle : null);
+  // El caso base: la llamada que llega a su return sin hacer otra llamada, en el paso en que ese return se ejecuta.
+  const esDeBase = (r) => Boolean(r.ida && r.base != null && r.ida.paso === r.base);
+  // El primer paso en que la ida se ve en la tabla.
+  const pasoDeIda = (r) => {
+    const detalle = detalleIdaDe(r);
+    // (la fila de quien llama puede aparecer despues de que el cursor llega a su linea: entonces entra con la linea escrita)
+    // (la del caso base, en cambio, cuando el return se ejecuta: no antes)
+    return detalle ? (esDeBase(r) ? r.ida.paso : Math.max(detalle.paso0, r.desde)) : r.ida.paso;
+  };
+  // La ida escrita tal cual, antes de que se abra la llamada.
+  const idaEscrita = (r) => nodo('code', '', sinCortes(detalleIdaDe(r).pasos[0]));
+  // Lo que dura pasar por los estados de la ida al abrirse la llamada: dos unidades cada uno.
+  const duracionDetalleIda = (r, u) => {
+    const detalle = detalleIdaDe(r);
+    return detalle ? 2 * u * (detalle.pasos.length - 1) : 0;
+  };
+  // En el paso en que el cursor llega a la linea, la ida entra despues de las respuestas de las preguntas de esa fila (si las hay).
+  const retrasoDeEscrita = (r, k, u, d) => {
+    let retraso = 0;
+    if (ajustes.valor('preguntasTabla')) for (const q of r.preguntas || []) if (q.respuesta === k) retraso = Math.max(retraso, duracionRespuesta(q, u, d));
+    return retraso;
+  };
+  const rotuloDeEstadoIda = (i, n) => (n === 2 ? 'Se reemplazan las variables y se resuelven las cuentas' : i === 1 ? 'Se reemplazan las variables por su valor' : 'Se resuelven las cuentas');
   // El texto de una celda aparece con un fundido (y, si es una celda nueva en amarillo, el color tambien).
   const aparecerCelda = (td, retraso, duracion) => {
     if (!td || !td.animate || !duracion) return;
@@ -694,6 +735,27 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     if (td.classList.contains('rep-traz-nuevo')) {
       td.animate([{ backgroundColor: 'transparent' }, { backgroundColor: getComputedStyle(td).backgroundColor }], { duration: duracion, delay: retraso, fill: 'backwards' });
     }
+  };
+  // La ida pasa por sus estados (solo cambia lo que se reemplaza: ver textoPorPartes) y, al final, vuelve a su forma de siempre (con cada
+  // llamada como un fragmento, para resaltar la que se abre).
+  const animarDetalleIda = (td, r, u, retraso = 0) => {
+    const detalle = detalleIdaDe(r);
+    const codigo = td && textoDeCelda(td);
+    if (!detalle || !codigo) return;
+    const finales = [...idaConPiezas(r).childNodes];
+    const halo = getComputedStyle(raiz).getPropertyValue('--acento').trim() || '#3b82f6';
+    // (como en la ida quieta, los espacios de adentro de una llamada no se parten: el texto de cada estado se arma entero y se reparte)
+    const sinPartirLlamadas = (partes) => {
+      const total = sinCortes(partes.map((p) => p.t).join(''));
+      let i = 0;
+      return partes.map((p) => {
+        const t = total.slice(i, i + p.t.length);
+        i += p.t.length;
+        return { ...p, t };
+      });
+    };
+    for (let i = 1; i < detalle.pasos.length; i++) textoPorPartes(codigo, sinPartirLlamadas(detalle.partes[i]), retraso + 2 * u * (i - 1), u, { antes: '', despues: '', halo });
+    tiempo.esperar(() => codigo.replaceChildren(...finales), retraso + duracionDetalleIda(r, u));
   };
   // La llamada que se abre se resalta en la ida de la fila que la hace: el resalte sube, se queda y se apaga.
   const resaltar = (pieza, retraso, duracion) => {
@@ -881,7 +943,9 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
         const llega = fase !== null;
         const transiciona = conMovimiento && llega && r.base !== k && duracionDeFila(r, u, fase) > 0;
         const vueltaHecha = r.vuelta && r.vuelta.paso <= k;
-        const contenido = !r.ida || r.ida.paso > k ? '' : vueltaHecha ? textoQuieto(r, k) : idaConPiezas(r);
+        // (con el detalle, la ida se ve escrita tal cual desde que el cursor llega a la linea, y al abrirse la llamada pasa por sus estados)
+        const idaEscritaAun = Boolean(r.ida && detalleIdaDe(r) && pasoDeIda(r) <= k && (k < r.ida.paso || (conMovimiento && r.ida.paso === k)));
+        const contenido = !r.ida || pasoDeIda(r) > k ? '' : idaEscritaAun ? idaEscrita(r) : vueltaHecha ? textoQuieto(r, k) : idaConPiezas(r);
         const nuevo = r.base !== k && (Boolean(r.ida && r.ida.paso === k && sinLlamadas) || (llega && !transiciona));
         const td = celda(contenido, nuevo, 0, armarPreguntas(['ida', 'vuelta'], true));
         celdasDeIda.set(r.id, td);
@@ -889,10 +953,13 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
         base.tdIda = td;
         if (transiciona) porTransformar.push([td, r, fase]);
         else if (r.ida && r.ida.paso === k && r.desde !== k && r.base !== k && sinLlamadas) celdasQueAparecen.push([td, 0]);
+        else if (conMovimiento && r.ida && detalleIdaDe(r) && detalleIdaDe(r).paso0 === k && r.desde !== k && !esDeBase(r)) celdasQueAparecen.push([td, retrasoDeEscrita(r, k, u, d)]);
         continue;
       }
       const ida = r.ida && r.ida.paso <= k;
-      const tdIda = celda(ida ? idaConPiezas(r) : '', Boolean(ida && r.ida.paso === k && sinLlamadas && r.base !== k), 0, armarPreguntas(['ida'], false));
+      const idaVisible = Boolean(r.ida && pasoDeIda(r) <= k);
+      const idaEscritaAun = Boolean(idaVisible && detalleIdaDe(r) && (k < r.ida.paso || (conMovimiento && r.ida.paso === k)));
+      const tdIda = celda(idaVisible ? (idaEscritaAun ? idaEscrita(r) : idaConPiezas(r)) : '', Boolean(ida && r.ida.paso === k && sinLlamadas && r.base !== k), 0, armarPreguntas(['ida'], false));
       celdasDeIda.set(r.id, tdIda);
       const vuelta = r.vuelta && r.vuelta.paso <= k;
       const faseVuelta = r.vuelta ? faseDe(r, k) : null;
@@ -906,6 +973,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
       base.tdIda = tdIda;
       base.tdVuelta = tdVuelta;
       if (r.ida && r.ida.paso === k && r.desde !== k && r.base !== k && sinLlamadas) celdasQueAparecen.push([tdIda, 0]);
+      else if (conMovimiento && r.ida && detalleIdaDe(r) && detalleIdaDe(r).paso0 === k && r.desde !== k && !esDeBase(r)) celdasQueAparecen.push([tdIda, retrasoDeEscrita(r, k, u, d)]);
       if (animaVuelta) porTransformarVuelta.push([tdVuelta, r, faseVuelta]);
       else if (animaValor && r.base !== k) valoresQueLlegan.push([tdVuelta, r]);
       else if (llegaVuelta && r.base !== k) celdasQueAparecen.push([tdVuelta, 0]);
@@ -952,27 +1020,39 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
         // La ida de quien la hace aparece sola (si recien se escribe), hay un respiro, la llamada brilla y, en lo mas alto del brillo,
         // aparece el texto de la fila nueva.
         let t = 0;
+        const detallePadre = padre.ida.paso === k ? detalleIdaDe(padre) : null;
         if (padre.ida.paso === k) {
-          aparecerCelda(tdPadre, 0, d);
+          if (detallePadre) {
+            animarDetalleIda(tdPadre, padre, u);
+            t = duracionDetalleIda(padre, u) + d;
+          } else {
+            aparecerCelda(tdPadre, 0, d);
+            t = 2.5 * d;
+          }
           // Esa ida agranda la fila de quien la hace, que puede quedar fuera de la zona visible: se la lleva a la vista ya, sin esperar a
           // que entre la fila nueva (que despues hace su propio desplazamiento).
           aLaVista(filasDom.get(padre.id), true);
-          t = 2.5 * d;
         }
-        resplandor(tdPadre.querySelector('[data-id="' + r.id + '"]'), t, 2 * d, 1.12);
+        // (con el detalle, la llamada se busca cuando la ida ya volvio a su forma de siempre)
+        if (detallePadre) tiempo.esperar(() => resplandor(tdPadre.querySelector('[data-id="' + r.id + '"]'), 0, 2 * d, 1.12), t);
+        else resplandor(tdPadre.querySelector('[data-id="' + r.id + '"]'), t, 2 * d, 1.12);
         resplandorQueAparece(textoDeCelda(celdasDeLlamada.get(r.id)), t, 2 * d, 1.12);
         mostrarFila(r.id, t, 0.6 * d); // la fila entra a la vez que su texto (que llega a verse del todo a los 0,6 fundidos)
       }
       // El caso base: el resto de la tabla se atenua; el valor de la ida y la etiqueta rebotan a la vez (con oscilaciones cada vez
       // menores); la tabla vuelve a la normalidad y, despues de una espera, rebota la vuelta.
       for (const b of bases) {
-        const t = b.r.desde === k ? duracionApertura(b.r, k, d) : 0;
+        const t = b.r.desde === k ? duracionApertura(b.r, k, d, u) : 0;
+        // (con el detalle de la ida, el nombre se ve durante el foco; cuando termina pasa a su valor y recien despues vuelve el valor)
+        const detalleBase = b.r.ida && b.r.ida.paso === k ? detalleIdaDe(b.r) : null;
+        if (detalleBase) animarDetalleIda(b.tdIda, b.r, u, t + 3.5 * d);
+        const espera = detalleBase ? duracionDetalleIda(b.r, u) : 0;
         focoEnFila(cuerpoTabla, b.fila, t, d);
         if (b.tdIda && b.r.ida) reboteAmortiguado(textoDeCelda(b.tdIda), t + 0.5 * d, 2.5 * d);
         reboteAmortiguado(b.pastilla, t + 0.5 * d, 2.5 * d);
         if (b.tdVuelta) {
-          rebote(textoDeCelda(b.tdVuelta), t + 4 * d, 1.5 * d);
-          ambarEn(b.tdVuelta, t + 4.5 * d, d); // el amarillo entra cuando el rebote termina
+          rebote(textoDeCelda(b.tdVuelta), t + espera + 4 * d, 1.5 * d);
+          ambarEn(b.tdVuelta, t + espera + 4.5 * d, d); // el amarillo entra cuando el rebote termina
         }
       }
       for (const [td, retraso] of celdasQueAparecen) aparecerCelda(td, retraso, d);

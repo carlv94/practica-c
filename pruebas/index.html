@@ -510,6 +510,14 @@ import { corregir } from '../js/corrector.js';
             for (const t of ['Se ponen los valores en la pregunta', 'La pregunta se responde']) {
               if (!conDetalle.some((n) => n.includes(t))) throw new Error('con el detalle, ningun paso tiene la etapa "' + t + '"');
             }
+            // Con el detalle de la ida, la linea llega tal cual esta en el codigo y, al abrirse la llamada, pasa por sus estados.
+            ajustes.fijar('detalleCondicionesTabla', false);
+            ajustes.fijar('detalleIda', true);
+            const conIda = [];
+            m.traza.forEach((f, k) => rep.marcasDelTrazado(k, 400).forEach((x) => conIda.push(x.nombre)));
+            for (const t of ['tal cual está en el código', 'Se reemplazan las variables por su valor: resto = mayorDigito(417 / 10)', 'Se resuelven las cuentas: resto = mayorDigito(41)']) {
+              if (!conIda.some((n) => n.includes(t))) throw new Error('con el detalle de la ida, ningun paso tiene la etapa "' + t + '"');
+            }
             ajustes.fijarPerfil('practica');
             anotar(true, titulo);
           } catch (e) {

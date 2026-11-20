@@ -968,6 +968,98 @@ int main() {
     },
   },
   {
+    nombre: 'el detalle de la ida: la linea escrita, con los valores y con los argumentos resueltos, desde la fotografia en que el cursor llega a ella',
+    codigo: String.raw`#include <stdio.h>
+int quitar(int n, int d) {
+  if (n == 0) {
+    return 0;
+  }
+  if (n % 10 == d) {
+    return quitar(n / 10, d);
+  }
+  return quitar(n / 10, d) * 10 + n % 10;
+}
+int mayor(int n) {
+  if (n < 10) {
+    return n;
+  }
+  int resto = mayor(n / 10);
+  if (n % 10 > resto) {
+    return n % 10;
+  }
+  return resto;
+}
+int main() {
+  printf("%d", quitar(2132, 1));
+  printf("%d", mayor(4172));
+  return 0;
+}`,
+    espera: {
+      traza: (traza, r) => {
+        const dice = (l) => (l.ida && l.ida.detalle ? l.ida.detalle.pasos.join(' => ') : 'sin detalle');
+        const casos = [
+          ['quitar(2132, 1)', 'quitar(n / 10, d) * 10 + n % 10 => quitar(2132 / 10, 1) * 10 + 2132 % 10 => quitar(213, 1) * 10 + 2', 9],
+          ['quitar(21, 1)', 'quitar(n / 10, d) => quitar(21 / 10, 1) => quitar(2, 1)', 7],
+          ['mayor(4172)', 'resto = mayor(n / 10) => resto = mayor(4172 / 10) => resto = mayor(417)', 15],
+        ];
+        for (const [llamada, esperado, linea] of casos) {
+          const l = r.llamadas.find((x) => x.llamada === llamada);
+          if (!l) return 'no hay la llamada ' + llamada;
+          if (dice(l) !== esperado) return llamada + ' tenia que decir\n' + esperado + '\ny dice\n' + dice(l);
+          // el cursor esta en la linea que llama, antes de que se abra la llamada
+          const { paso0 } = l.ida.detalle;
+          if (traza[paso0].linea !== linea) return llamada + ': el cursor estaba en la linea ' + traza[paso0].linea + ' y era la ' + linea;
+          if (!(paso0 < l.ida.paso)) return llamada + ': el detalle empieza en ' + paso0 + ' y la ida en ' + l.ida.paso;
+        }
+        // lo que cambia en cada estado: las variables y despues la cuenta
+        const partes = r.llamadas.find((x) => x.llamada === 'mayor(4172)').ida.detalle.partes.map((p) => p.filter((x) => x.nuevo).map((x) => x.antes + '>' + x.t).join(','));
+        if (partes.join(' | ') !== ' | n>4172 | 4172 / 10>417') return 'las partes que cambian eran "' + partes.join(' | ') + '"';
+        // una llamada sin nada que reemplazar (el caso base) no lleva detalle
+        const base = r.llamadas.find((x) => x.llamada === 'quitar(0, 1)');
+        if (base && base.ida.detalle) return 'el caso base no tiene que llevar detalle';
+        return null;
+      },
+    },
+  },
+  {
+    nombre: 'el detalle de la ida de quienes llaman a la recursion (main, la que prepara) y del caso base que devuelve una variable',
+    codigo: String.raw`#include <stdio.h>
+int sumaAux(int n, int suma) {
+  if (n == 0) {
+    return suma;
+  }
+  return sumaAux(n / 10, suma + n % 10);
+}
+int sumaDigitos(int n) {
+  return sumaAux(n, 0);
+}
+int main() {
+  int x = 123;
+  printf("%d", sumaDigitos(x));
+  return 0;
+}`,
+    espera: {
+      traza: (traza, r) => {
+        const dice = (d) => (d ? d.pasos.join(' => ') : 'sin detalle');
+        const primera = r.llamadas.find((x) => x.llamada === 'sumaAux(123, 0)');
+        const base = r.llamadas.find((x) => x.llamada === 'sumaAux(0, 6)');
+        if (!primera || !base) return 'faltan llamadas del registro';
+        const casos = [
+          ['la fila de sumaDigitos', primera.llamador.detalle, 'sumaAux(n, 0) => sumaAux(123, 0)', 9],
+          ['la fila de main', primera.llamador.anteriores[0].detalle, 'sumaDigitos(x) => sumaDigitos(123)', 13],
+          ['la ida de sumaAux(123, 0)', primera.ida.detalle, 'sumaAux(n / 10, suma + n % 10) => sumaAux(123 / 10, 0 + 123 % 10) => sumaAux(12, 0 + 3) => sumaAux(12, 3)', 6],
+          ['el caso base', base.ida.detalle, 'suma => 6', 4],
+        ];
+        for (const [que, detalle, esperado, linea] of casos) {
+          if (dice(detalle) !== esperado) return que + ' tenia que decir\n' + esperado + '\ny dice\n' + dice(detalle);
+          if (traza[detalle.paso0].linea !== linea) return que + ': el cursor estaba en la linea ' + traza[detalle.paso0].linea + ' y era la ' + linea;
+        }
+        // lo que ya estaba escrito con numeros (la llamada a sumaAux del caso base no existe) no lleva detalle donde no hay nada que reemplazar
+        return null;
+      },
+    },
+  },
+  {
     nombre: 'el detalle de una condicion: escrita, con los valores y con las cuentas hechas (sin efectos, con cortocircuito)',
     codigo: String.raw`typedef struct nodo { int dato; struct nodo *sig; } Nodo;
 int main() {
