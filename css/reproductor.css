@@ -17,11 +17,118 @@
 }
 /* El selector de casos de prueba, encima del reproductor. */
 .rep-banco {
+  position: relative;
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   align-items: center;
   margin-bottom: 8px;
+}
+.rep-banco-otros {
+  font: inherit;
+  padding: 4px 10px;
+  border: 1px solid var(--borde);
+  border-radius: 6px;
+  background: var(--fondo);
+  color: var(--texto);
+  cursor: pointer;
+}
+.rep-banco-otros:hover {
+  border-color: var(--acento);
+}
+.rep-banco-propio {
+  font-size: 0.92rem;
+  color: var(--suave);
+}
+/* La tarjeta para escribir los valores de una llamada: flota bajo el boton, sin tapar el resto de la pagina. */
+.rep-propios {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 20;
+  box-sizing: border-box;
+  width: min(360px, 100%);
+  padding: 12px;
+  border: 2px solid var(--acento);
+  border-radius: 8px;
+  background: var(--fondo);
+  background: color-mix(in srgb, var(--acento) 7%, var(--fondo));
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+}
+/* Lo que queda detras de la tarjeta se atenua (la tarjeta no es modal: tocar afuera la cierra). */
+.rep-propios-velo {
+  position: fixed;
+  inset: 0;
+  z-index: 19;
+  background: rgba(0, 0, 0, 0.3);
+}
+.rep-propios-velo[hidden] {
+  display: none;
+}
+.rep-propios[hidden] {
+  display: none;
+}
+.rep-propios-titulo {
+  margin: 0 0 4px;
+  font-weight: 600;
+}
+.rep-propios-llamada {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--suave);
+  word-break: break-all;
+}
+.rep-propios-campo {
+  margin-bottom: 8px;
+}
+.rep-propios-etiqueta {
+  display: block;
+  margin-bottom: 2px;
+  font-size: 0.88rem;
+  color: var(--suave);
+}
+.rep-propios-entrada {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 5px 8px;
+  border: 1px solid var(--borde);
+  border-radius: 6px;
+  background: var(--fondo);
+  color: var(--texto);
+  font: inherit;
+  font-family: Consolas, "Cascadia Mono", Menlo, monospace;
+}
+.rep-propios-entrada[aria-invalid='true'] {
+  border-color: var(--error);
+}
+.rep-propios-error {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.85rem;
+  color: var(--error);
+}
+.rep-propios-error[hidden] {
+  display: none;
+}
+.rep-propios-botones {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+.rep-propios-aceptar,
+.rep-propios-cancelar {
+  font: inherit;
+  padding: 4px 12px;
+  border: 1px solid var(--borde);
+  border-radius: 6px;
+  background: var(--fondo);
+  color: var(--texto);
+  cursor: pointer;
+}
+.rep-propios-aceptar {
+  border-color: var(--acento);
+  background: var(--acento);
+  color: #fff;
 }
 .rep-banco-etiqueta {
   font-size: 0.92rem;

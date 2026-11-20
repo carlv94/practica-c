@@ -446,6 +446,7 @@ import { corregir } from '../js/corrector.js';
 
         // El banco de casos del paso a paso: con la consigna aprobada, el corrector ofrece todos los casos con llamada (cada uno con su
         // programa, que corre y muestra lo que el caso espera); antes de aprobar, solo los que el enunciado muestra.
+        let propiosProbados = 0;
         for (const s of todas) {
           s.consignas.forEach((c, i) => {
             if (!c.referencia || !c.requiere || !c.requiere.some((x) => (x.funcion && x.funcion.recursiva) || x.apoyo)) return;
@@ -465,6 +466,19 @@ import { corregir } from '../js/corrector.js';
                 const esperado = casos[k].salida !== undefined ? casos[k].salida.trim() : String(enumeradores[casos[k].devuelve] ?? casos[k].devuelve);
                 if (m.salida.trim() !== esperado) throw new Error('el caso "' + b.llamada + '" mostro "' + m.salida.trim() + '" y espera "' + esperado + '"');
               });
+              // Los valores propios (si la funcion recibe solo numeros): con los argumentos del caso que se ejecuta, el programa armado con
+              // "cabeza" da lo mismo que ese caso.
+              const propios = r.memoria.propios;
+              if (propios) {
+                if (!propios.parametros.length || !propios.inicial) throw new Error('los valores propios no tienen parametros o caso inicial');
+                const argumentos = propios.inicial.slice(propios.inicial.indexOf('(') + 1, propios.inicial.lastIndexOf(')'));
+                const llamada = propios.funcion + '(' + argumentos + ')';
+                const fuentePropia = propios.cabeza + '  ' + (propios.formato ? 'printf("' + propios.formato + '\\n", ' + llamada + ');' : llamada + ';') + '\n  return 0;\n}\n';
+                const propia = ejecutarMotor(analizador, fuentePropia, { entrada: '', traza: true });
+                const actual = ejecutarMotor(analizador, r.memoria.fuente, { entrada: '', traza: true });
+                if (propia.error || propia.salida !== actual.salida) throw new Error('con los valores propios (' + llamada + ') salio "' + propia.salida + '" y el caso da "' + actual.salida + '"' + (propia.error ? ' / ' + propia.error.codigo : ''));
+                propiosProbados++;
+              }
               // sin aprobar (una respuesta que no anda), solo el caso que el enunciado muestra: no hay nada que elegir
               if (casos.filter((x) => x.visible).length === 1) {
                 const mala = c.referencia.replace(/\breturn\b[^;]*;/g, 'return 0;');
@@ -478,6 +492,8 @@ import { corregir } from '../js/corrector.js';
             }
           });
         }
+
+        anotar(propiosProbados > 5, 'valores propios: hay consignas recursivas con parametros numericos', 'se probaron ' + propiosProbados);
 
         // Las etapas del trazado (ayuda "Avanzar por etapas"): cada paso con animacion en la tabla entrega sus marcas, con nombre y en
         // un orden que no se pisa, y las de una llamada que se abre, un caso base y una respuesta existen.

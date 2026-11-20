@@ -1219,38 +1219,243 @@ async function dibujarMotor(caja, motor) {
 
 // El reproductor de un programa: lo ejecuta con el motor de memoria y arma el reproductor.
 // "datos" es { fuente, entrada, cabezas } y, si hay varios casos para probar, "banco" ([{ etiqueta, llamada, fuente }]) y "actual":
-// con un selector encima, que arma de nuevo el reproductor con el caso elegido.
+// con un selector encima, que arma de nuevo el reproductor con el caso elegido. Con "propios" (ver propiosDeLaFuncion en el corrector) hay
+// ademas un boton "Otros valores..." que abre una tarjeta para escribir los argumentos de la llamada.
 async function reproductorDe(datos, consigna) {
   const primero = await reproductorDeUnCaso(datos, consigna);
-  if (!datos.banco || datos.banco.length < 2) return primero;
+  const hayBanco = Boolean(datos.banco && datos.banco.length >= 2);
+  const propios = datos.propios || null;
+  if (!hayBanco && !propios) return primero;
   const caja = elemento('div', 'rep-con-banco');
   const fila = elemento('div', 'rep-banco');
-  const etiqueta = elemento('label', 'rep-banco-etiqueta', 'Probar con:');
-  const lista = elemento('select', 'rep-banco-lista');
-  lista.id = 'rep-banco-' + (++contadorDeBancos);
-  etiqueta.htmlFor = lista.id;
-  datos.banco.forEach((c, i) => {
-    const opcion = elemento('option', '', c.etiqueta ? c.etiqueta + ' — ' + c.llamada : c.llamada);
-    opcion.value = String(i);
-    lista.append(opcion);
-  });
-  lista.value = String(datos.actual || 0);
   const lugar = elemento('div', 'rep-banco-reproductor');
   lugar.append(primero);
-  lista.addEventListener('change', async () => {
-    const caso = datos.banco[Number(lista.value)];
-    try {
-      lugar.replaceChildren(await reproductorDeUnCaso({ ...datos, fuente: caso.fuente, entrada: '' }, consigna));
-    } catch (error) {
-      console.error('No se pudo armar el paso a paso de este caso:', error);
-      lugar.replaceChildren(mensaje('aviso', 'No se pudo seguir este caso paso a paso.'));
-    }
-  });
-  fila.append(etiqueta, lista);
+  const estado = elemento('span', 'rep-banco-propio');
+  estado.hidden = true;
+  let lista = null;
+  // los argumentos del caso elegido (para precargar la tarjeta) y los que el alumno escribio la ultima vez
+  let base = argumentosDeLaLlamada(hayBanco ? datos.banco[datos.actual || 0].llamada : propios ? propios.inicial : null);
+  let aceptados = propios ? valoresPropiosRecordados.get(claveDePropios(consigna, propios)) || null : null;
+  let casoCambiado = false;
+  if (hayBanco) {
+    const etiqueta = elemento('label', 'rep-banco-etiqueta', 'Probar con:');
+    lista = elemento('select', 'rep-banco-lista');
+    lista.id = 'rep-banco-' + (++contadorDeBancos);
+    etiqueta.htmlFor = lista.id;
+    datos.banco.forEach((c, i) => {
+      const opcion = elemento('option', '', c.etiqueta ? c.etiqueta + ' — ' + c.llamada : c.llamada);
+      opcion.value = String(i);
+      lista.append(opcion);
+    });
+    lista.value = String(datos.actual || 0);
+    lista.addEventListener('change', async () => {
+      const caso = datos.banco[Number(lista.value)];
+      base = argumentosDeLaLlamada(caso.llamada);
+      casoCambiado = true;
+      estado.hidden = true;
+      try {
+        lugar.replaceChildren(await reproductorDeUnCaso({ ...datos, fuente: caso.fuente, entrada: '' }, consigna));
+      } catch (error) {
+        console.error('No se pudo armar el paso a paso de este caso:', error);
+        lugar.replaceChildren(mensaje('aviso', 'No se pudo seguir este caso paso a paso.'));
+      }
+    });
+    fila.append(etiqueta, lista);
+  }
+  if (propios) {
+    const abrir = elemento('button', 'rep-banco-otros', 'Otros valores…');
+    abrir.type = 'button';
+    abrir.setAttribute('aria-haspopup', 'dialog');
+    abrir.setAttribute('aria-expanded', 'false');
+    const tarjeta = tarjetaDeValoresPropios(propios, {
+      valoresIniciales: () => (aceptados && !casoCambiado ? aceptados : base),
+      alAceptar: async (valores) => {
+        aceptados = valores;
+        casoCambiado = false;
+        valoresPropiosRecordados.set(claveDePropios(consigna, propios), valores);
+        const llamada = propios.funcion + '(' + valores.join(', ') + ')';
+        try {
+          lugar.replaceChildren(await reproductorDeUnCaso({ ...datos, fuente: fuenteConValoresPropios(propios, valores), entrada: '', propio: true }, consigna));
+          estado.textContent = 'Probando con ' + llamada;
+          estado.hidden = false;
+          if (lista) lista.selectedIndex = -1;
+        } catch (error) {
+          console.error('No se pudo armar el paso a paso con estos valores:', error);
+          lugar.replaceChildren(mensaje('aviso', 'No se pudo seguir esta llamada paso a paso.'));
+        }
+      },
+      alCerrar: () => {
+        abrir.setAttribute('aria-expanded', 'false');
+        abrir.focus();
+      },
+    });
+    abrir.addEventListener('click', () => {
+      if (tarjeta.hidden) {
+        abrir.setAttribute('aria-expanded', 'true');
+        tarjeta.abrir(abrir);
+      } else tarjeta.cerrar();
+    });
+    fila.append(abrir, estado, tarjeta);
+  }
   caja.append(fila, lugar);
   return caja;
 }
 let contadorDeBancos = 0;
+const valoresPropiosRecordados = new Map(); // los ultimos valores escritos, por consigna y funcion (mientras dura la sesion)
+const claveDePropios = (consigna, propios) => (consigna && consigna.id ? consigna.id : '') + ':' + propios.funcion + '/' + propios.parametros.length;
+
+// Los argumentos de una llamada escrita ("quitar(2132, 1)"): ["2132", "1"], o null.
+function argumentosDeLaLlamada(llamada) {
+  if (!llamada) return null;
+  const a = llamada.indexOf('(');
+  const b = llamada.lastIndexOf(')');
+  if (a < 0 || b < a) return null;
+  const argumentos = [];
+  let profundidad = 0;
+  let actual = '';
+  for (const c of llamada.slice(a + 1, b)) {
+    if (c === ',' && profundidad === 0) {
+      argumentos.push(actual.trim());
+      actual = '';
+      continue;
+    }
+    if ('([{'.includes(c)) profundidad++;
+    if (')]}'.includes(c)) profundidad--;
+    actual += c;
+  }
+  if (actual.trim() || argumentos.length) argumentos.push(actual.trim());
+  return argumentos;
+}
+
+// Un valor escrito por el alumno para un parametro numerico: { valor } (como se escribe en C) o { error }. Un entero se normaliza (007 en C
+// es un octal) y tiene que entrar en un int.
+function validarValorPropio(texto, tipo) {
+  const t = texto.trim();
+  if (!t) return { error: 'Escribe un valor.' };
+  if (tipo === 'entero') {
+    if (!/^[+-]?\d+$/.test(t)) return { error: 'Tiene que ser un número entero, sin decimales ni letras.' };
+    const n = Number(t);
+    if (!Number.isSafeInteger(n) || n > 2147483647 || n < -2147483648) return { error: 'No entra en un int (de -2147483648 a 2147483647).' };
+    return { valor: String(n) };
+  }
+  if (!/^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/.test(t)) return { error: 'Tiene que ser un número; los decimales van con punto (2.5).' };
+  const n = Number(t);
+  if (!Number.isFinite(n)) return { error: 'Es demasiado grande.' };
+  return { valor: String(n) };
+}
+
+// El programa con un main que llama a la funcion con esos valores.
+function fuenteConValoresPropios(propios, valores) {
+  const llamada = propios.funcion + '(' + valores.join(', ') + ')';
+  return propios.cabeza + '  ' + (propios.formato ? 'printf("' + propios.formato + '\\n", ' + llamada + ');' : llamada + ';') + '\n  return 0;\n}\n';
+}
+
+// La tarjeta para escribir los valores de la llamada: no modal (el enunciado y el codigo siguen a la vista), con un campo por parametro,
+// la llamada que se va a ejecutar a la vista y la validacion al aceptar (si algo esta mal, no se cierra). Enter acepta y Esc cierra.
+function tarjetaDeValoresPropios(propios, { valoresIniciales, alAceptar, alCerrar }) {
+  const tarjeta = elemento('form', 'rep-propios');
+  tarjeta.hidden = true;
+  // El fondo se atenua mientras la tarjeta esta abierta: se ve donde empieza y donde termina.
+  const velo = elemento('div', 'rep-propios-velo');
+  velo.hidden = true;
+  tarjeta.setAttribute('role', 'dialog');
+  tarjeta.setAttribute('aria-label', 'Probar con otros valores');
+  tarjeta.noValidate = true;
+  const titulo = elemento('p', 'rep-propios-titulo', 'Probar con otros valores');
+  const vista = elemento('code', 'rep-propios-llamada');
+  vista.setAttribute('aria-live', 'polite');
+  const campos = propios.parametros.map((p, i) => {
+    const grupo = elemento('div', 'rep-propios-campo');
+    const id = 'rep-propios-' + (++contadorDeBancos);
+    const etiqueta = elemento('label', 'rep-propios-etiqueta', (p.nombre || 'valor ' + (i + 1)) + ' (' + (p.tipo === 'real' ? 'número con decimales' : 'entero') + ')');
+    etiqueta.htmlFor = id;
+    const entrada = elemento('input', 'rep-propios-entrada');
+    entrada.id = id;
+    entrada.type = 'text';
+    entrada.autocomplete = 'off';
+    entrada.spellcheck = false;
+    entrada.inputMode = p.tipo === 'real' ? 'decimal' : 'numeric';
+    const error = elemento('span', 'rep-propios-error');
+    error.id = id + '-error';
+    error.hidden = true;
+    entrada.setAttribute('aria-describedby', error.id);
+    grupo.append(etiqueta, entrada, error);
+    return { grupo, entrada, error, p };
+  });
+  const dibujarVista = () => {
+    vista.textContent = propios.funcion + '(' + campos.map((c, i) => c.entrada.value.trim() || (c.p.nombre || 'valor ' + (i + 1))).join(', ') + ')';
+  };
+  const aceptar = elemento('button', 'rep-propios-aceptar', 'Probar');
+  aceptar.type = 'submit';
+  const cancelar = elemento('button', 'rep-propios-cancelar', 'Cancelar');
+  cancelar.type = 'button';
+  const botones = elemento('div', 'rep-propios-botones');
+  botones.append(aceptar, cancelar);
+  tarjeta.append(titulo, vista, ...campos.map((c) => c.grupo), botones);
+  for (const c of campos) {
+    c.entrada.addEventListener('input', () => {
+      c.error.hidden = true;
+      c.entrada.removeAttribute('aria-invalid');
+      dibujarVista();
+    });
+  }
+  const fuera = (e) => {
+    if (!tarjeta.contains(e.target) && !(tarjeta.disparador && tarjeta.disparador.contains(e.target))) tarjeta.cerrar(false);
+  };
+  tarjeta.abrir = (disparador) => {
+    tarjeta.disparador = disparador;
+    const iniciales = valoresIniciales();
+    campos.forEach((c, i) => {
+      c.entrada.value = iniciales && iniciales[i] !== undefined ? iniciales[i] : '';
+      c.error.hidden = true;
+      c.entrada.removeAttribute('aria-invalid');
+    });
+    dibujarVista();
+    if (!velo.isConnected) tarjeta.before(velo);
+    velo.hidden = false;
+    tarjeta.hidden = false;
+    document.addEventListener('pointerdown', fuera, true);
+    campos[0].entrada.focus();
+    campos[0].entrada.select();
+  };
+  // "devolverFoco": al cerrar con Esc o con los botones el foco vuelve al boton; al tocar afuera, no (el alumno ya eligio donde ir).
+  tarjeta.cerrar = (devolverFoco = true) => {
+    tarjeta.hidden = true;
+    velo.hidden = true;
+    document.removeEventListener('pointerdown', fuera, true);
+    if (devolverFoco) alCerrar();
+    else if (tarjeta.disparador) tarjeta.disparador.setAttribute('aria-expanded', 'false');
+  };
+  cancelar.addEventListener('click', () => tarjeta.cerrar());
+  tarjeta.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      tarjeta.cerrar();
+    }
+  });
+  tarjeta.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const valores = [];
+    let primeroMalo = null;
+    for (const c of campos) {
+      const r = validarValorPropio(c.entrada.value, c.p.tipo);
+      if (r.error) {
+        c.error.textContent = r.error;
+        c.error.hidden = false;
+        c.entrada.setAttribute('aria-invalid', 'true');
+        primeroMalo = primeroMalo || c.entrada;
+      } else valores.push(r.valor);
+    }
+    if (primeroMalo) {
+      primeroMalo.focus();
+      return;
+    }
+    tarjeta.cerrar();
+    alAceptar(valores);
+  });
+  return tarjeta;
+}
 
 async function reproductorDeUnCaso(datos, consigna) {
   const [{ ejecutar }, { crearReproductor }, { mensajeDeError }] = await Promise.all([
@@ -1261,6 +1466,10 @@ async function reproductorDeUnCaso(datos, consigna) {
   const res = ejecutar(analizador, datos.fuente, { entrada: datos.entrada || '', traza: true, preguntas: true });
   if (!res.traza.length) throw new Error('el programa no tiene nada que seguir');
   const error = res.error ? { ...res.error, ...mensajeDeError(res.error) } : null;
+  // Con valores propios, pasar del limite de llamadas seguidas no quiere decir que la recursion no termine: puede ser un valor grande.
+  if (error && datos.propio && error.codigo === 'RECURSION_SIN_FIN') {
+    error.mensaje = 'Con estos valores la función se llamó a sí misma más de 200 veces seguidas y el paso a paso se corta ahí. Si el programa está bien, prueba con un valor más chico; si no, puede faltar el caso base o que el argumento no se acerque a él en cada llamada.';
+  }
   return crearReproductor({ codigo: datos.fuente, traza: res.traza, error, titulo: consigna.titulo, funciones: res.funciones, cabezas: datos.cabezas, entrada: res.entrada, llamadas: res.llamadas });
 }
 

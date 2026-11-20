@@ -343,6 +343,8 @@ export function corregir(
   let ejecucionMemoria = null;
   // Los casos con los que se puede seguir la funcion recursiva paso a paso: [{ etiqueta, llamada, fuente, visible }].
   let banco = null;
+  // Lo que hace falta para probar esa funcion con valores que escribe el alumno (ver propiosDeLaFuncion), o null.
+  let propios = null;
   const nuevas = { ...capturas };
 
   // "fila" es la del codigo completo; al alumno se le dice la linea de SU respuesta.
@@ -390,10 +392,12 @@ export function corregir(
   // ya muestra ("visible"), para que los demas sigan sirviendo de prueba. Con uno solo no hay nada que elegir.
   function conElBanco(memoria, aprobada) {
     if (!memoria || !banco) return memoria;
+    // (los valores propios no dependen de haber aprobado: el programa solo corre el codigo del alumno, no revela los casos del corrector)
+    const conPropios = propios ? { ...memoria, propios } : memoria;
     const casos = banco.filter((c) => aprobada || c.visible);
-    if (casos.length < 2) return memoria;
+    if (casos.length < 2) return conPropios;
     const actual = casos.findIndex((c) => c.fuente === memoria.fuente);
-    return { ...memoria, banco: casos.map(({ etiqueta, llamada, fuente }) => ({ etiqueta, llamada, fuente })), actual: Math.max(0, actual) };
+    return { ...conPropios, banco: casos.map(({ etiqueta, llamada, fuente }) => ({ etiqueta, llamada, fuente })), actual: Math.max(0, actual) };
   }
 
   if (!respuesta.trim()) {
@@ -4635,6 +4639,29 @@ export function corregir(
     return cabecera + fuente.replace(/\s+$/, '') + '\n\nint main() {\n' + lineas.join('\n') + '\n  return 0;\n}\n';
   }
 
+  // Probar la funcion con valores que escribe el alumno (el reproductor arma el main): { funcion, parametros: [{ nombre, tipo: 'entero' | 'real' }],
+  // formato, cabeza }. "cabeza" es el programa hasta el `{` del main; "formato" lo que usa el printf del resultado (null si no devuelve). Solo con
+  // parametros que son un solo numero (los arreglos, las cadenas, los punteros y los enumerados quedan fuera: null).
+  function propiosDeLaFuncion(modelo, caso) {
+    const llamada = valorDe(caso.llama).trim().replace(/;\s*$/, '');
+    const m = /^([A-Za-z_]\w*)\s*\(/.exec(llamada);
+    const f = m ? modelo.funciones.findLast((x) => !x.prototipo && x.nombre === m[1]) : null;
+    if (!f || !f.parametros.length) return null;
+    const parametros = [];
+    for (const p of f.parametros) {
+      if (p.punteros || (p.arreglo && p.arreglo.length)) return null;
+      const t = resolver(p.tipo, modelo);
+      if (!t || t.clase !== 'primitivo') return null;
+      const real = ['float', 'double'].includes(t.nombre);
+      if (!real && !/^(signed )?(int|short|long|long long)$/.test(t.nombre)) return null;
+      parametros.push({ nombre: p.nombre || '', tipo: real ? 'real' : 'entero' });
+    }
+    const sinValor = f.tipo.clase === 'primitivo' && f.tipo.nombre === 'void' && !f.punteros;
+    const decimal = f.tipo.clase === 'primitivo' && ['float', 'double'].includes(f.tipo.nombre) && !f.punteros;
+    const cabecera = /#include\s*<stdio\.h>/.test(fuente) ? '' : '#include <stdio.h>\n';
+    return { funcion: f.nombre, parametros, formato: sinValor ? null : decimal ? '%g' : '%d', cabeza: cabecera + fuente.replace(/\s+$/, '') + '\n\nint main() {\n' };
+  }
+
   // La llamada de un caso como se la lee: `mayorDigito(4172)`, y con sus datos si los tiene: `sumar(v, 4) con v = {1, 2, 3, 4}`.
   function llamadaDelCaso(caso) {
     const llamada = valorDe(caso.llama).trim().replace(/;\s*$/, '');
@@ -4711,6 +4738,9 @@ export function corregir(
         const fuentePrograma = c === primero ? programa : programaParaElMotor(modelo, c);
         if (fuentePrograma) banco.push({ etiqueta: c.etiqueta || '', llamada: llamadaDelCaso(c), fuente: fuentePrograma, visible: !!c.visible });
       }
+      const deBase = primero || regla.casos.find((c) => c.llama);
+      propios = deBase ? propiosDeLaFuncion(modelo, deBase) : null;
+      if (propios && primero && programa) propios.inicial = llamadaDelCaso(primero);
     }
 
     // Varios conjuntos de valores para los arreglos, cada uno con lo que tiene
