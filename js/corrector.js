@@ -670,6 +670,15 @@ export function corregir(
       );
       return;
     }
+    // "unica": la consigna pide definir solo esa funcion, sin otras que la ayuden.
+    if (regla.unica && candidatas.length > 1) {
+      error(
+        'FUNCION_DE_MAS',
+        `La consigna pide definir una sola función, y acá hay ${candidatas.length}: ${enLista(candidatas.map((c) => c.nombre))}. Deje solo la función que resuelve el problema.`,
+        candidatas[1].fila
+      );
+      return;
+    }
     // Una operacion que el .h declara y falta definir la avisa "defineTodo": acá
     // no se la confunde con otra funcion que tiene otro nombre.
     if (

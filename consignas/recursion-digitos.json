@@ -3,14 +3,14 @@
   "titulo": "Recursión con dígitos",
   "continua": false,
   "dentroDeMain": true,
-  "descripcion": "Funciones recursivas que trabajan con los dígitos de un número: se saca el último con `n % 10` y se lo descarta con `n / 10`. Casos base distintos, resultados que se arman al volver y orden de lo que se muestra.",
+  "descripcion": "Funciones recursivas que trabajan con los dígitos de un número. Casos base distintos, resultados que se arman al volver y orden de lo que se muestra.",
   "cabecera": "#include <stdio.h>",
   "consignas": [
     {
       "id": "dig-mayor",
       "titulo": "El dígito mayor",
       "en": "archivo",
-      "enunciado": "Escriba una función recursiva que reciba un entero `n`, mayor o igual que `0`, y devuelva el mayor de sus dígitos. Con `4172` devuelve `7`, y con `5` devuelve `5`. El último dígito de un número es el resto de dividirlo por `10`, y los demás forman `n / 10`. Póngale el nombre que quiera.",
+      "enunciado": "Escriba una función recursiva que reciba un entero `n`, mayor o igual que `0`, y devuelva el mayor de sus dígitos. Defina solo esa función. Por ejemplo:\n- Con `4172` devuelve `7`.\n- Con `5` devuelve `5`.\n\nPóngale el nombre que quiera.",
       "requiere": [
         {
           "funcion": {
@@ -21,7 +21,8 @@
               }
             ],
             "recursiva": true,
-            "capturar": "D"
+            "capturar": "D",
+            "unica": true
           }
         },
         {
@@ -67,7 +68,7 @@
       "id": "dig-contar",
       "titulo": "Contar las apariciones de un dígito",
       "en": "archivo",
-      "enunciado": "Escriba una función recursiva que reciba un entero `n`, mayor que `0`, y un dígito `d`, de `0` a `9`, y devuelva cuántas veces aparece `d` en `n`. Con `4151` y `1` devuelve `2`, y con `4151` y `7` devuelve `0`. Póngale el nombre que quiera.",
+      "enunciado": "Escriba una función recursiva que reciba un entero `n`, mayor que `0`, y un dígito `d`, de `0` a `9`, y devuelva cuántas veces aparece `d` en `n`. Por ejemplo:\n- Con `4151` y `1` devuelve `2`.\n- Con `4151` y `7` devuelve `0`.\n\nPóngale el nombre que quiera.",
       "requiere": [
         {
           "funcion": {
@@ -128,7 +129,7 @@
       "titulo": "¿Todos los dígitos son pares?",
       "en": "archivo",
       "archivoDado": "typedef enum {\n  FALSO,\n  VERDADERO\n} TBool;",
-      "enunciado": "El enumerado `TBool`, con los valores `FALSO` y `VERDADERO`, ya está declarado. Escriba una función recursiva que reciba un entero `n`, mayor o igual que `0`, y devuelva `VERDADERO` si todos sus dígitos son pares y `FALSO` si alguno es impar. Con `2468` devuelve `VERDADERO`, y con `2478`, `FALSO`. El `0` es par, así que con `0` devuelve `VERDADERO`. Póngale el nombre que quiera.",
+      "enunciado": "El enumerado `TBool`, con los valores `FALSO` y `VERDADERO`, ya está declarado. Escriba una función recursiva que reciba un entero `n`, mayor o igual que `0`, y devuelva `VERDADERO` si todos sus dígitos son pares y `FALSO` si alguno es impar. Por ejemplo:\n- Con `2468` devuelve `VERDADERO`.\n- Con `2478` devuelve `FALSO`.\n- Con `0` devuelve `VERDADERO`, porque el `0` es par.\n\nPóngale el nombre que quiera.",
       "requiere": [
         {
           "funcion": {
@@ -188,39 +189,11 @@
       "referencia": "TBool todosPares(int n) {\n  if (n == 0) {\n    return VERDADERO;\n  }\n  if (n % 2 == 1) {\n    return FALSO;\n  }\n  return todosPares(n / 10);\n}"
     },
     {
-      "id": "dig-q-sufijo-base",
-      "titulo": "Los casos base de un sufijo",
-      "archivo": "typedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\nTBool esSufijo(int s, int n) {\n  if (s == 0) {\n    return VERDADERO;\n  }\n  if (n == 0) {\n    return FALSO;\n  }\n  if (s % 10 != n % 10) {\n    return FALSO;\n  }\n  return esSufijo(s / 10, n / 10);\n}",
-      "codigo": "if (esSufijo(125, 25) == VERDADERO) {\n  printf(\"Es sufijo\\n\");\n} else {\n  printf(\"No es sufijo\\n\");\n}",
-      "enunciado": "La función `esSufijo` decide si `s` es sufijo de `n`, es decir, si `n` termina con los dígitos de `s`. Tiene dos casos base distintos. ¿Qué pasa al ejecutar este programa?",
-      "opciones": [
-        {
-          "texto": "Muestra `Es sufijo`, porque `125` y `25` terminan igual.",
-          "codigo": "OPCION_ES_SUFIJO",
-          "explicacion": "Siga las llamadas con `s` valiendo `125` y `n` valiendo `25`: en cada una se comparan los últimos dígitos y se pasa a los siguientes, hasta que alguno de los dos números llega a `0`. El primero que llega es el que decide."
-        },
-        {
-          "texto": "Muestra `No es sufijo`.",
-          "correcta": true,
-          "explicacion": "`esSufijo(125, 25)` compara los últimos dígitos, `5` con `5` y `2` con `2`, y sigue con `s` valiendo `1` y `n` valiendo `0`. Ahí `s` todavía no llegó a `0` (le queda un dígito sin encontrar) pero `n` ya se quedó sin dígitos: se cumple el caso base `n == 0`, que devuelve `FALSO`. Si `n` se agota antes que `s`, `s` tiene más dígitos que `n` y no puede ser su sufijo. El otro caso base, `s == 0`, es el contrario: todos los dígitos de `s` ya se encontraron, y devuelve `VERDADERO`."
-        },
-        {
-          "texto": "Las llamadas no paran y el programa no termina.",
-          "codigo": "OPCION_NO_TERMINA",
-          "explicacion": "En cada llamada `s` y `n` se dividen por `10`, así que los dos terminan llegando a `0`, y en ese momento un `if` devuelve sin llamar otra vez."
-        }
-      ],
-      "pasoAPaso": {
-        "guia": "Avance siguiendo las llamadas a `esSufijo` hasta que se cumpla un caso base, y mire cuál de los dos números se quedó sin dígitos primero.",
-        "codigo": "#include <stdio.h>\n\ntypedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\nTBool esSufijo(int s, int n) {\n  if (s == 0) {\n    return VERDADERO;\n  }\n  if (n == 0) {\n    return FALSO;\n  }\n  if (s % 10 != n % 10) {\n    return FALSO;\n  }\n  return esSufijo(s / 10, n / 10);\n}\n\nint main() {\n  if (esSufijo(125, 25) == VERDADERO) {\n    printf(\"Es sufijo\\n\");\n  } else {\n    printf(\"No es sufijo\\n\");\n  }\n  return 0;\n}"
-      }
-    },
-    {
       "id": "dig-sufijo",
       "titulo": "Un número es sufijo de otro",
       "en": "archivo",
       "archivoDado": "typedef enum {\n  FALSO,\n  VERDADERO\n} TBool;",
-      "enunciado": "El enumerado `TBool`, con los valores `FALSO` y `VERDADERO`, ya está declarado. Escriba una función recursiva que reciba dos enteros positivos, `s` y `n`, y devuelva `VERDADERO` si `s` es sufijo de `n`, es decir, si `n` termina con los dígitos de `s`, y `FALSO` si no. Con `25` y `1925` devuelve `VERDADERO`, y con `92` y `1925` devuelve `FALSO`. Póngale el nombre que quiera.",
+      "enunciado": "El enumerado `TBool`, con los valores `FALSO` y `VERDADERO`, ya está declarado. Escriba una función recursiva que reciba dos enteros positivos, `s` y `n`, y devuelva `VERDADERO` si `s` es sufijo de `n`, es decir, si `n` termina con los dígitos de `s`, y `FALSO` si no. Por ejemplo:\n- Con `25` y `1925` devuelve `VERDADERO`.\n- Con `92` y `1925` devuelve `FALSO`.\n\nPóngale el nombre que quiera.",
       "requiere": [
         {
           "funcion": {
@@ -293,38 +266,10 @@
       "referencia": "TBool esSufijo(int s, int n) {\n  if (s == 0) {\n    return VERDADERO;\n  }\n  if (n == 0) {\n    return FALSO;\n  }\n  if (s % 10 != n % 10) {\n    return FALSO;\n  }\n  return esSufijo(s / 10, n / 10);\n}"
     },
     {
-      "id": "dig-q-quitar-vuelta",
-      "titulo": "Qué arma la vuelta",
-      "archivo": "int quitar(int n, int d) {\n  if (n == 0) {\n    return 0;\n  }\n  if (n % 10 == d) {\n    return quitar(n / 10, d);\n  }\n  return quitar(n / 10, d) + n % 10;\n}",
-      "codigo": "printf(\"%d\\n\", quitar(2132, 1));",
-      "enunciado": "La función `quitar` debería devolver `n` sin las apariciones del dígito `d`. Cuando el último dígito no es `d`, lo que devuelve la llamada se combina con ese dígito. ¿Qué muestra este programa?",
-      "opciones": [
-        {
-          "texto": "Muestra `232`, que es `2132` sin el `1`.",
-          "codigo": "OPCION_MUESTRA_232",
-          "explicacion": "Siga las llamadas hasta el final: `quitar(2132, 1)` espera lo que devuelve `quitar(213, 1)`, y esa lo que devuelve `quitar(21, 1)`, y así. Fíjese qué operación une, en la última línea, lo que devuelve cada llamada con el último dígito."
-        },
-        {
-          "texto": "Muestra `2`, porque el `1` hace que termine.",
-          "codigo": "OPCION_MUESTRA_DOS",
-          "explicacion": "El único caso base es `n == 0`. Cuando el último dígito es `d`, la función no termina: sigue con `n / 10`, y todavía le quedan dígitos por atender."
-        },
-        {
-          "texto": "Muestra `7`.",
-          "correcta": true,
-          "explicacion": "La última línea suma el último dígito en lugar de ubicarlo en su lugar. `quitar(2132, 1)` es `quitar(213, 1) + 2`. Esa es `quitar(21, 1) + 3`, y `quitar(21, 1)` descarta el `1` y sigue con `quitar(2, 1)`, que es `quitar(0, 1) + 2`, o sea `2`. Todo junto: `2 + 3 + 2`, que da `7`. Los dígitos se suman, pero no conservan el lugar que tenían en `n`."
-        }
-      ],
-      "pasoAPaso": {
-        "guia": "Avance hasta que las llamadas empiecen a volver y mire cómo se combina cada dígito con el resultado de la llamada que hizo.",
-        "codigo": "#include <stdio.h>\n\nint quitar(int n, int d) {\n  if (n == 0) {\n    return 0;\n  }\n  if (n % 10 == d) {\n    return quitar(n / 10, d);\n  }\n  return quitar(n / 10, d) + n % 10;\n}\n\nint main() {\n  printf(\"%d\\n\", quitar(2132, 1));\n  return 0;\n}"
-      }
-    },
-    {
       "id": "dig-quitar",
       "titulo": "Eliminar un dígito de un número",
       "en": "archivo",
-      "enunciado": "Escriba una función recursiva que reciba un entero `n`, mayor o igual que `0`, y un dígito `d`, de `0` a `9`, y devuelva `n` sin las apariciones de `d`. Con `2132` y `1` devuelve `232`, y con `1050` y `0` devuelve `15`. Si `n` solo tiene dígitos `d`, devuelve `0`. Póngale el nombre que quiera.",
+      "enunciado": "Escriba una función recursiva que reciba un entero `n`, mayor o igual que `0`, y un dígito `d`, de `0` a `9`, y devuelva `n` sin las apariciones de `d`. Si `n` solo tiene dígitos `d`, devuelve `0`. Por ejemplo:\n- Con `2132` y `1` devuelve `232`.\n- Con `1050` y `0` devuelve `15`.\n\nPóngale el nombre que quiera.",
       "requiere": [
         {
           "funcion": {
@@ -389,7 +334,7 @@
       "id": "dig-duplicar",
       "titulo": "Duplicar cada dígito",
       "en": "archivo",
-      "enunciado": "Escriba una función recursiva que reciba un entero `n`, mayor o igual que `0` y de hasta cuatro dígitos, y devuelva el número que resulta de escribir cada dígito dos veces seguidas. Con `123` devuelve `112233`, y con `70` devuelve `7700`. Póngale el nombre que quiera.",
+      "enunciado": "Escriba una función recursiva que reciba un entero `n`, mayor o igual que `0` y de hasta cuatro dígitos, y devuelva el número que resulta de escribir cada dígito dos veces seguidas. Por ejemplo:\n- Con `123` devuelve `112233`.\n- Con `70` devuelve `7700`.\n\nPóngale el nombre que quiera.",
       "requiere": [
         {
           "funcion": {
