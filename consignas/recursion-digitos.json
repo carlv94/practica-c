@@ -189,6 +189,75 @@
       "referencia": "TBool todosPares(int n) {\n  if (n == 0) {\n    return VERDADERO;\n  }\n  if (n % 2 == 1) {\n    return FALSO;\n  }\n  return todosPares(n / 10);\n}"
     },
     {
+      "id": "dig-creciente",
+      "titulo": "¿Los dígitos están en orden creciente?",
+      "en": "archivo",
+      "archivoDado": "typedef enum {\n  FALSO,\n  VERDADERO\n} TBool;",
+      "enunciado": "El enumerado `TBool`, con los valores `FALSO` y `VERDADERO`, ya está declarado. Escriba una función recursiva que reciba un entero `n`, mayor o igual que `0`, y devuelva `VERDADERO` si sus dígitos están en orden creciente y `FALSO` si no. Los dígitos están en orden creciente si, leídos de izquierda a derecha, cada uno es mayor o igual que el anterior. Por ejemplo:\n- Con `1359` devuelve `VERDADERO`.\n- Con `1329` devuelve `FALSO`.\n- Con `1223` devuelve `VERDADERO`: un dígito repetido no rompe el orden.\n- Con `7` devuelve `VERDADERO`, porque un solo dígito siempre está en orden.\n\nPóngale el nombre que quiera.",
+      "requiere": [
+        {
+          "funcion": {
+            "retorna": "enumerado",
+            "parametros": [
+              {
+                "tipo": "entero"
+              }
+            ],
+            "recursiva": true,
+            "capturar": "O",
+            "soloEnumeradores": true
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "llama": "$O(1359)",
+                "devuelve": "VERDADERO",
+                "visible": true
+              },
+              {
+                "etiqueta": "baja en el medio",
+                "llama": "$O(1329)",
+                "devuelve": "FALSO"
+              },
+              {
+                "etiqueta": "un solo dígito",
+                "llama": "$O(7)",
+                "devuelve": "VERDADERO"
+              },
+              {
+                "etiqueta": "cero",
+                "llama": "$O(0)",
+                "devuelve": "VERDADERO"
+              },
+              {
+                "etiqueta": "un dígito repetido",
+                "llama": "$O(1223)",
+                "devuelve": "VERDADERO"
+              },
+              {
+                "etiqueta": "orden decreciente",
+                "llama": "$O(9871)",
+                "devuelve": "FALSO"
+              },
+              {
+                "etiqueta": "termina en cero",
+                "llama": "$O(10)",
+                "devuelve": "FALSO"
+              },
+              {
+                "etiqueta": "dos dígitos",
+                "llama": "$O(12)",
+                "devuelve": "VERDADERO"
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "TBool enOrden(int n) {\n  if (n < 10) {\n    return VERDADERO;\n  }\n  if (n / 10 % 10 > n % 10) {\n    return FALSO;\n  }\n  return enOrden(n / 10);\n}"
+    },
+    {
       "id": "dig-sufijo",
       "titulo": "Un número es sufijo de otro",
       "en": "archivo",

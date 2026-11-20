@@ -227,82 +227,125 @@ export const CASOS_DE_RECURSION = [
     FUNCION('TBool todosPares(int n)', '  if (n == 0) {\n    return 1;\n  }\n  if (n % 2 == 1) {\n    return 0;\n  }\n  return todosPares(n / 10);'),
     ['RETORNO_NUMERO_EN_ENUMERADO']
   ),
-  // ---- 4: un numero es sufijo de otro ----
+  // ---- 4: los digitos en orden creciente ----
   conDigitos(
     4,
+    'comparando los dos ultimos digitos',
+    FUNCION('TBool enOrden(int n)', '  if (n < 10) {\n    return VERDADERO;\n  }\n  if (n / 10 % 10 > n % 10) {\n    return FALSO;\n  }\n  return enOrden(n / 10);'),
+    'ok',
+    { mejoras: [] }
+  ),
+  conDigitos(
+    4,
+    'con el caso base en cero',
+    FUNCION('TBool enOrden(int n)', '  if (n == 0) {\n    return VERDADERO;\n  }\n  if (n / 10 % 10 > n % 10) {\n    return FALSO;\n  }\n  return enOrden(n / 10);')
+  ),
+  conDigitos(
+    4,
+    'con una sola condicion',
+    FUNCION('TBool enOrden(int n)', '  if (n < 10) {\n    return VERDADERO;\n  }\n  return n / 10 % 10 <= n % 10 && enOrden(n / 10);')
+  ),
+  conDigitos(
+    4,
+    'comparando al reves',
+    FUNCION('TBool enOrden(int n)', '  if (n < 10) {\n    return VERDADERO;\n  }\n  if (n / 10 % 10 < n % 10) {\n    return FALSO;\n  }\n  return enOrden(n / 10);'),
+    ['DEVUELVE_DISTINTO']
+  ),
+  conDigitos(
+    4,
+    'rechazando los digitos repetidos',
+    FUNCION('TBool enOrden(int n)', '  if (n < 10) {\n    return VERDADERO;\n  }\n  if (n / 10 % 10 >= n % 10) {\n    return FALSO;\n  }\n  return enOrden(n / 10);'),
+    ['DEVUELVE_DISTINTO']
+  ),
+  conDigitos(4, 'solo los dos ultimos', FUNCION('TBool enOrden(int n)', '  if (n / 10 % 10 > n % 10) {\n    return FALSO;\n  }\n  return VERDADERO;'), ['FUNCION_NO_RECURSIVA']),
+  conDigitos(
+    4,
+    'sin caso base',
+    FUNCION('TBool enOrden(int n)', '  if (n / 10 % 10 > n % 10) {\n    return FALSO;\n  }\n  return enOrden(n / 10);'),
+    ['RECURSION_SIN_FIN']
+  ),
+  conDigitos(
+    4,
+    'devolviendo numeros en lugar del enumerado',
+    FUNCION('TBool enOrden(int n)', '  if (n < 10) {\n    return 1;\n  }\n  if (n / 10 % 10 > n % 10) {\n    return 0;\n  }\n  return enOrden(n / 10);'),
+    ['RETORNO_NUMERO_EN_ENUMERADO']
+  ),
+  // ---- 5: un numero es sufijo de otro ----
+  conDigitos(
+    5,
     'con los dos casos base',
     FUNCION('TBool esSufijo(int s, int n)', '  if (s == 0) {\n    return VERDADERO;\n  }\n  if (n == 0) {\n    return FALSO;\n  }\n  if (s % 10 != n % 10) {\n    return FALSO;\n  }\n  return esSufijo(s / 10, n / 10);'),
     'ok',
     { mejoras: [] }
   ),
   conDigitos(
-    4,
+    5,
     'sin el caso de n (comparar con cero alcanza)',
     FUNCION('TBool esSufijo(int s, int n)', '  if (s == 0) {\n    return VERDADERO;\n  }\n  if (s % 10 != n % 10) {\n    return FALSO;\n  }\n  return esSufijo(s / 10, n / 10);')
   ),
   conDigitos(
-    4,
+    5,
     'sin el caso de s',
     FUNCION('TBool esSufijo(int s, int n)', '  if (n == 0) {\n    return FALSO;\n  }\n  if (s % 10 != n % 10) {\n    return FALSO;\n  }\n  return esSufijo(s / 10, n / 10);'),
     ['DEVUELVE_DISTINTO']
   ),
   conDigitos(
-    4,
+    5,
     'devolviendo numeros en lugar del enumerado',
     FUNCION('TBool esSufijo(int s, int n)', '  if (s == 0) {\n    return 1;\n  }\n  if (s % 10 != n % 10) {\n    return 0;\n  }\n  return esSufijo(s / 10, n / 10);'),
     ['RETORNO_NUMERO_EN_ENUMERADO']
   ),
-  // ---- 5: eliminar un digito ----
+  // ---- 6: eliminar un digito ----
   conDigitos(
-    5,
+    6,
     'multiplicando por diez al volver',
     FUNCION('int quitar(int n, int d)', '  if (n == 0) {\n    return 0;\n  }\n  if (n % 10 == d) {\n    return quitar(n / 10, d);\n  }\n  return quitar(n / 10, d) * 10 + n % 10;'),
     'ok',
     { mejoras: [] }
   ),
   conDigitos(
-    5,
+    6,
     'con el resultado en una variable',
     FUNCION('int quitar(int n, int d)', '  if (n == 0) {\n    return 0;\n  }\n  int resto = quitar(n / 10, d);\n  if (n % 10 == d) {\n    return resto;\n  }\n  return resto * 10 + n % 10;')
   ),
   conDigitos(
-    5,
+    6,
     'sumando en lugar de ubicar el digito',
     FUNCION('int quitar(int n, int d)', '  if (n == 0) {\n    return 0;\n  }\n  if (n % 10 == d) {\n    return quitar(n / 10, d);\n  }\n  return quitar(n / 10, d) + n % 10;'),
     ['DEVUELVE_DISTINTO']
   ),
   conDigitos(
-    5,
+    6,
     'quitando solo la primera aparicion',
     FUNCION('int quitar(int n, int d)', '  if (n == 0) {\n    return 0;\n  }\n  if (n % 10 == d) {\n    return n / 10;\n  }\n  return quitar(n / 10, d) * 10 + n % 10;'),
     ['DEVUELVE_DISTINTO']
   ),
-  conDigitos(5, 'sin caso base', FUNCION('int quitar(int n, int d)', '  if (n % 10 == d) {\n    return quitar(n / 10, d);\n  }\n  return quitar(n / 10, d) * 10 + n % 10;'), ['RECURSION_SIN_FIN']),
-  // ---- 6: duplicar cada digito ----
+  conDigitos(6, 'sin caso base', FUNCION('int quitar(int n, int d)', '  if (n % 10 == d) {\n    return quitar(n / 10, d);\n  }\n  return quitar(n / 10, d) * 10 + n % 10;'), ['RECURSION_SIN_FIN']),
+  // ---- 7: duplicar cada digito ----
   conDigitos(
-    6,
+    7,
     'con cien y once',
     FUNCION('int duplicar(int n)', '  if (n == 0) {\n    return 0;\n  }\n  return duplicar(n / 10) * 100 + n % 10 * 11;'),
     'ok',
     { mejoras: [] }
   ),
   conDigitos(
-    6,
+    7,
     'con el digito en una variable',
     FUNCION('int duplicar(int n)', '  if (n == 0) {\n    return 0;\n  }\n  int u = n % 10;\n  return duplicar(n / 10) * 100 + u * 10 + u;')
   ),
-  conDigitos(6, 'sin duplicar', FUNCION('int duplicar(int n)', '  if (n == 0) {\n    return 0;\n  }\n  return duplicar(n / 10) * 10 + n % 10;'), ['DEVUELVE_DISTINTO']),
-  conDigitos(6, 'sin correr el resto', FUNCION('int duplicar(int n)', '  if (n == 0) {\n    return 0;\n  }\n  return duplicar(n / 10) + n % 10 * 11;'), ['DEVUELVE_DISTINTO']),
-  // ---- 7: mostrar en binario ----
+  conDigitos(7, 'sin duplicar', FUNCION('int duplicar(int n)', '  if (n == 0) {\n    return 0;\n  }\n  return duplicar(n / 10) * 10 + n % 10;'), ['DEVUELVE_DISTINTO']),
+  conDigitos(7, 'sin correr el resto', FUNCION('int duplicar(int n)', '  if (n == 0) {\n    return 0;\n  }\n  return duplicar(n / 10) + n % 10 * 11;'), ['DEVUELVE_DISTINTO']),
+  // ---- 8: mostrar en binario ----
   conDigitos(
-    7,
+    8,
     'mostrando despues de llamar',
     FUNCION('void binario(int n)', '  if (n == 0) {\n    return;\n  }\n  binario(n / 2);\n  printf("%d", n % 2);'),
     'ok',
     { mejoras: [] }
   ),
-  conDigitos(7, 'mostrando antes de llamar', FUNCION('void binario(int n)', '  if (n == 0) {\n    return;\n  }\n  printf("%d", n % 2);\n  binario(n / 2);'), ['MUESTRA_DISTINTA']),
-  conDigitos(7, 'sin caso base', FUNCION('void binario(int n)', '  binario(n / 2);\n  printf("%d", n % 2);'), ['RECURSION_SIN_FIN']),
+  conDigitos(8, 'mostrando antes de llamar', FUNCION('void binario(int n)', '  if (n == 0) {\n    return;\n  }\n  printf("%d", n % 2);\n  binario(n / 2);'), ['MUESTRA_DISTINTA']),
+  conDigitos(8, 'sin caso base', FUNCION('void binario(int n)', '  binario(n / 2);\n  printf("%d", n % 2);'), ['RECURSION_SIN_FIN']),
   // ===== Recursion con un parametro de apoyo =====
   // ---- 1 y 2: dos cuestionarios con la suma de los digitos ----
   conApoyo(1, 'devuelve cero', '1'),
