@@ -152,6 +152,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     cerrar: '<path d="M5 5l14 14M19 5L5 19" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>',
     paradaAnterior: '<circle cx="17" cy="12" r="4.5"/><path d="M11 5l-8 7 8 7z"/>',
     paradaSiguiente: '<circle cx="7" cy="12" r="4.5"/><path d="M13 5l8 7-8 7z"/>',
+    casoBase: '<path d="M12 3v11M6.5 9.5L12 15l5.5-5.5M5 20h14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>',
   };
   const rotular = (b, simbolo, texto, simboloDespues = false) => {
     const s = nodo('span', 'rep-simbolo');
@@ -176,9 +177,10 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   // Los puntos de parada (ayuda visual): saltar a la parada anterior o a la siguiente.
   const paradaAnterior = conSimbolo('paradaAnterior', 'Parada', 'Ir al punto de parada anterior');
   const paradaSiguiente = conSimbolo('paradaSiguiente', 'Parada', 'Ir al punto de parada siguiente', true);
-  paradaAnterior.classList.add('rep-boton-parada');
-  paradaSiguiente.classList.add('rep-boton-parada');
-  paradaAnterior.hidden = paradaSiguiente.hidden = true;
+  // El atajo de la recursion (con los puntos de parada): ir a donde la primera llamada llega a su caso base.
+  const irCasoBase = conSimbolo('casoBase', 'Caso base', 'Ir al caso base: la primera llamada que no vuelve a llamarse');
+  for (const b of [paradaAnterior, paradaSiguiente, irCasoBase]) b.classList.add('rep-boton-parada');
+  paradaAnterior.hidden = paradaSiguiente.hidden = irCasoBase.hidden = true;
   // Detener la animacion del paso en el momento en que esta (y seguir despues), y volver a verla desde el principio.
   const detener = conSimbolo('detener', 'Detener', 'Detener la animación (barra espaciadora)');
   const repetir = conSimbolo('repetir', 'Repetir', 'Repetir la animación de este paso (tecla R)');
@@ -201,7 +203,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   etiquetaVelocidad.append(velocidad);
   const ampliarBoton = conSimbolo('ampliar', 'Ampliar', 'Ver el paso a paso en toda la pantalla');
   ampliarBoton.classList.add('rep-ampliar');
-  barra.append(inicio, anterior, reproducir, siguiente, final, paradaAnterior, paradaSiguiente, detener, repetir, barraPasos, cuenta, etiquetaVelocidad, ampliarBoton);
+  barra.append(inicio, anterior, reproducir, siguiente, final, paradaAnterior, paradaSiguiente, irCasoBase, detener, repetir, barraPasos, cuenta, etiquetaVelocidad, ampliarBoton);
   const giro = nodo('div', 'rep-giro');
   giro.hidden = true;
   const giroTexto = nodo('span', '', 'Gire el teléfono para ver mejor la figura.');
@@ -266,6 +268,11 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   // una linea marcada (antes de ejecutarla) y dos botones saltan a la parada anterior o a la siguiente. "puntos" (opcional) es un Set de
   // lineas que quien arma el reproductor conserva entre un caso y otro.
   const paradas = puntos || new Set();
+  // El atajo de la recursion sale del registro de llamadas: el caso base es el primer paso en que una llamada llega al suyo (no vuelve a
+  // llamarse). -1 si no hay (no es recursiva). (Una "primera vuelta" no hace falta: es el paso que sigue al caso base.)
+  const minimo = (lista) => (lista.length ? Math.min(...lista) : -1);
+  const registrosDeAtajos = Array.isArray(llamadas) ? llamadas : [];
+  const pasoCasoBase = minimo(registrosDeAtajos.filter((r) => r.base != null).map((r) => r.base));
   const ejecutadas = new Set(traza.map((f) => f.linea));
   const textoDeLaNota = nota.textContent;
   const conParadas = () => ajustes.valor('puntosDeParada');
@@ -292,6 +299,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     const activo = conParadas();
     raiz.classList.toggle('rep-con-puntos', activo);
     paradaAnterior.hidden = paradaSiguiente.hidden = !activo;
+    irCasoBase.hidden = !activo || pasoCasoBase < 0;
     nota.textContent = textoDeLaNota + (activo ? ' Toca el número de una línea para ponerle un punto de parada.' : '');
     numeros.forEach((numero, i) => {
       if (activo) {
@@ -307,6 +315,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   const actualizarParadas = () => {
     paradaAnterior.disabled = anteriorParada(paso) < 0;
     paradaSiguiente.disabled = siguienteParada(paso) < 0;
+    irCasoBase.disabled = paso === pasoCasoBase;
   };
   const alternarParada = (i) => {
     if (!conParadas()) return;
@@ -1751,6 +1760,8 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   }
   paradaAnterior.onclick = () => irAParada(anteriorParada(paso));
   paradaSiguiente.onclick = () => irAParada(siguienteParada(paso));
+  irCasoBase.onclick = () => irAParada(pasoCasoBase);
+  raiz.pasoDelCasoBase = () => pasoCasoBase; // (para las pruebas)
   inicio.onclick = () => (parar(), ir(0));
   anterior.onclick = () => (parar(), ir(paso - 1));
   siguiente.onclick = avanzar;

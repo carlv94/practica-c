@@ -558,6 +558,13 @@ import { corregir } from '../js/corrector.js';
             if (rep.siguienteParada(primero) !== pasosDe4[1]) throw new Error('la parada que sigue a la primera no es la segunda vez de la linea');
             if (rep.siguienteParada(pasosDe4[pasosDe4.length - 1]) !== -1) throw new Error('despues de la ultima no tiene que haber parada');
             if (rep.anteriorParada(pasosDe4[1]) !== pasosDe4[0] || rep.anteriorParada(pasosDe4[0]) !== -1) throw new Error('la parada anterior no es la que se espera');
+            // el atajo de la recursion: el caso base (la llamada con n == 0)
+            const atajo = rep.pasoDelCasoBase();
+            const base = Math.min(...m.llamadas.filter((r) => r.base != null).map((r) => r.base));
+            if (atajo !== base || base < 0) throw new Error('el atajo del caso base era ' + atajo + ' y el caso base esta en el paso ' + base);
+            const sinRecursion = ejecutarMotor(analizador, '#include <stdio.h>\nint main() {\n  printf("hola\\n");\n  return 0;\n}', { traza: true, preguntas: true });
+            const repPlano = crearReproductor({ codigo: '#include <stdio.h>\nint main() {\n  printf("hola\\n");\n  return 0;\n}', traza: sinRecursion.traza, funciones: sinRecursion.funciones, llamadas: sinRecursion.llamadas });
+            if (repPlano.pasoDelCasoBase() !== -1) throw new Error('un programa sin recursion no tiene atajo');
             ajustes.fijar('puntosDeParada', false);
             if (rep.siguienteParada(-1) !== -1) throw new Error('con la ayuda apagada no hay paradas');
             ajustes.fijarPerfil('practica');
