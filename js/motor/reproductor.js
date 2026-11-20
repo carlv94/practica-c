@@ -1334,9 +1334,11 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     const antesDeSalida = antes && antes.salida ? antes.salida : '';
     const nuevoEnSalida = adelante && animar && foto.salida && foto.salida.length > antesDeSalida.length && foto.salida.startsWith(antesDeSalida) ? foto.salida.slice(antesDeSalida.length) : '';
     const lectura = adelante && animar && foto.lectura && foto.lectura.hasta > foto.lectura.desde ? foto.lectura : null;
+    let muestraDeLaFigura = false; // la figura enciende las casillas de lo que se imprimio (y avisa para resaltar el texto)
     dibujo.alMuestra =
       nuevoEnSalida || lectura
         ? (desde, hasta) => {
+            muestraDeLaFigura = true;
             relojesDeSalida.push(
               tiempo.esperar(() => {
                 if (nuevoEnSalida) consola.replaceChildren(antesDeSalida, nodo('span', 'rep-salida-nueva', nuevoEnSalida));
@@ -1407,6 +1409,11 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
       if (adelante && animar && foto.condicion) dibujo.retirarRotulo(fundidoDe(unidad));
       pintarTrazado(paso, { u: unidad, preguntaNueva: adelante && animar }); // al terminar, la tabla queda quieta en su estado final
       consola.textContent = foto.salida || ' ';
+      // Un texto que no sale de ninguna casilla (un printf o un puts con solo texto) se resalta igual, cuando llega, y despues vuelve a ser normal.
+      if (nuevoEnSalida && !muestraDeLaFigura) {
+        consola.replaceChildren(antesDeSalida, nodo('span', 'rep-salida-nueva', nuevoEnSalida));
+        relojesDeSalida.push(tiempo.esperar(() => (consola.textContent = foto.salida || ' '), 2 * unidad));
+      }
       pintarEntrada(paso);
       etiquetaEtapa.hidden = true; // (el paso terminado: ya no hay etapa en curso)
       barraEtapas.hidden = true;
