@@ -319,11 +319,31 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   for (const r of registros) {
     if (r.llamador) {
       const L = r.llamador;
+      // Las funciones que llamaron a la que prepara la recursion (main llama a sumaDigitos, que llama a sumaAux): una fila por cada
+      // una, que aparece cuando se abre la llamada que hace (su ida es esa llamada) y vuelve cuando esa llamada devuelve.
+      const cadena = L.anteriores || [];
+      cadena.forEach((e, i) => {
+        const sig = i + 1 < cadena.length ? cadena[i + 1] : L;
+        const sigId = i + 1 < cadena.length ? 'c' + r.id + '_' + (i + 1) : 'l' + r.id;
+        const llamadaSig = sig.llamada || sig.funcion;
+        filas.push({
+          id: 'c' + r.id + '_' + i,
+          llamada: e.llamada || e.funcion,
+          nivel: r.nivel - 1 - (cadena.length - i),
+          desde: sig.desde,
+          hasta: null,
+          base: null,
+          ida: { texto: llamadaSig, paso: sig.desde, partes: [{ llamada: llamadaSig, valor: sig.valor ?? null, id: sigId }] },
+          vuelta: sig.valor != null && sig.hasta != null ? { texto: sig.valor, valor: sig.valor, paso: sig.hasta } : null,
+        });
+      });
       filas.push({
         id: 'l' + r.id,
-        llamada: L.funcion,
+        llamada: L.llamada || L.funcion,
         nivel: r.nivel - 1,
-        desde: r.desde,
+        // La fila de una funcion llamada (sumaDigitos(1234)) aparece cuando se abre su caja, como la de cualquier llamada, y su ida
+        // cuando hace la llamada a la recursion; la de main, recien con esa llamada.
+        desde: L.llamada && L.desde != null ? L.desde : r.desde,
         hasta: null,
         base: null,
         ida: L.ida ? { texto: L.ida.texto, paso: r.desde, partes: L.ida.partes } : null,

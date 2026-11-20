@@ -1330,7 +1330,7 @@ class Interprete {
       const origenes = this.opciones.traza ? nodos.map((h) => this.origenDeArgumento(h)) : [];
       this.fila = n.startPosition.row + 1;
       const registro = this.opciones.traza && this.esRecursiva(propia) ? this.abrirRegistro(propia, nodos, args) : null;
-      const resultado = this.ejecutarFuncion(propia, args, origenes, registro);
+      const resultado = this.ejecutarFuncion(propia, args, origenes, registro, this.opciones.traza ? this.textoDeLlamada(propia, nodos, args) : null);
       if (registro) this.cerrarRegistro(registro, n, resultado);
       return resultado;
     }
@@ -1387,20 +1387,25 @@ class Interprete {
     return f.recursiva;
   }
 
-  abrirRegistro(f, nodos, args) {
-    if (this.registroLlamadas.length >= 300) return null;
+  // La llamada escrita con lo que valen sus argumentos: quitar(213, 1).
+  textoDeLlamada(f, nodos, args) {
     // (un argumento que recibe un parametro de un enumerado se escribe con el nombre del valor)
     const deParametro = (a, i) => (f.params[i] && f.params[i].tipo.enumerados && a && typeof a.v === 'number' ? { t: f.params[i].tipo, v: a.v } : a);
     const textos = args.map((a, i) => (nodos[i].type === 'char_literal' ? nodos[i].text : textoEscalar(deParametro(a, i))) ?? nodos[i].text.replace(/\s+/g, ' '));
+    return `${f.nombre}(${textos.join(', ')})`;
+  }
+
+  abrirRegistro(f, nodos, args) {
+    if (this.registroLlamadas.length >= 300) return null;
     // Quien la llama (casi siempre main), si no es la misma funcion: es una llamada de mas arriba de la recursion.
     const llamador = this.marcos[this.marcos.length - 1].funcion;
     const registro = {
       id: this.registroLlamadas.length,
       preguntas: [], // lo que pregunto la llamada (ver anotarPregunta)
-      llamador: llamador !== f.nombre ? { funcion: llamador } : null,
+      llamador: llamador !== f.nombre ? this.cadenaDeLlamadores() : null,
       base: null, // la fotografia donde esta llamada llega a su caso base (no hace otra llamada a la funcion), o null
       funcion: f.nombre,
-      llamada: `${f.nombre}(${textos.join(', ')})`,
+      llamada: this.textoDeLlamada(f, nodos, args),
       nivel: this.marcos.length,
       desde: this.traza.length,
       hasta: null,
@@ -1409,6 +1414,27 @@ class Interprete {
     };
     this.registroLlamadas.push(registro);
     return registro;
+  }
+
+  // Quien llama a una recursion: { funcion, llamada, desde, anteriores }. "funcion" es la que la llama (casi siempre main, o la que no es
+  // recursiva y la prepara: sumaDigitos, que llama a sumaAux con el valor inicial), con "llamada" (como se la llamo) y "desde" (la
+  // fotografia en que se abrio su caja). "anteriores" son las que llamaron a esa, de la primera (main) para adelante, con lo mismo:
+  // cada una tiene su fila en el trazado. Se corta en la primera que es recursiva (esa ya tiene sus filas). Cada una recibe, al
+  // terminar, "valor" (lo que devolvio) y "hasta" (la fotografia en que termina): ver ejecutarFuncion.
+  cadenaDeLlamadores() {
+    const marcos = this.marcos;
+    const entrada = (m) => {
+      const e = { funcion: m.funcion, llamada: m.llamadaTexto ?? null, desde: m.desde };
+      (m.cadenas ||= []).push(e);
+      return e;
+    };
+    const inmediato = entrada(marcos[marcos.length - 1]);
+    const anteriores = [];
+    if (!marcos[marcos.length - 1].registro) {
+      for (let i = marcos.length - 2; i >= 0 && !marcos[i].registro; i--) anteriores.unshift(entrada(marcos[i]));
+    }
+    inmediato.anteriores = anteriores;
+    return inmediato;
   }
 
   // Termino la llamada: se anota donde (para que la funcion que la hizo arme su ida y su vuelta) y lo que devolvio.
@@ -1706,14 +1732,15 @@ class Interprete {
     r.vuelta = { texto: vuelta.texto, valor: textoDeValor(devuelto), paso: this.traza.length };
   }
 
-  ejecutarFuncion(f, args, origenes = [], registro = null) {
+  // "texto": la llamada escrita con lo que valen sus argumentos (sumaDigitos(1234)), para la fila de quien la hace en el trazado.
+  ejecutarFuncion(f, args, origenes = [], registro = null, texto = null) {
     if (this.marcos.length >= MAX_MARCOS) throw new ErrorDelMotor('RECURSION_SIN_FIN', null, null, { profundidad: this.marcos.length });
     if (args.length !== f.params.length) {
       throw new ErrorDelMotor('SIN_VERIFICAR', `${f.nombre} recibe ${f.params.length} valores y se la llama con ${args.length}`);
     }
     this.llamadasDe.set(f.nombre, (this.llamadasDe.get(f.nombre) || 0) + 1);
     const marca = this.memoria.marcaDePila();
-    const marco = { funcion: f.nombre, ambitos: [new Map()], declaraciones: f.declaraciones, cuerpoId: f.cuerpo ? f.cuerpo.id : null, registro };
+    const marco = { funcion: f.nombre, ambitos: [new Map()], declaraciones: f.declaraciones, cuerpoId: f.cuerpo ? f.cuerpo.id : null, registro, llamadaTexto: texto, desde: this.traza.length };
     marco.ambitos[0].marca = marca;
     this.marcos.push(marco);
     f.params.forEach((p, i) => {
@@ -1743,6 +1770,11 @@ class Interprete {
       copiar(copia, valor.v);
       resultado = { t: f.tipoRetorno, v: copia };
     } else resultado = this.convertir(valor, f.tipoRetorno);
+    // Una funcion que esta en la cadena de quienes llaman a una recursion (ver abrirRegistro): lo que devolvio y cuando termino.
+    for (const e of marco.cadenas || []) {
+      e.valor = resultado && !resultado.sinValor && resultado.t.k !== 'void' ? textoDeValor(resultado) : null;
+      e.hasta = this.traza.length;
+    }
     while (marco.ambitos.length) this.cerrarAmbito();
     this.marcos.pop();
     this.memoria.soltarPila(marca);
@@ -1818,7 +1850,8 @@ class Interprete {
         const escrito = devuelto && tipoDeRetorno && tipoDeRetorno.enumerados && typeof devuelto.v === 'number' ? { t: tipoDeRetorno, v: devuelto.v } : devuelto;
         // Toda llamada de una funcion recursiva que devuelve un valor termina con un paso "por devolver X" (la fotografia de retorno,
         // con el cursor sobre el return): ahi se conoce lo que devuelve y, si es el caso base, se anuncia.
-        const conRetorno = Boolean(devuelto) && (conLlamada || Boolean(actual.registro));
+        // (tambien la de una funcion que prepara una recursion, como sumaDigitos: asi su fila vuelve en su propio paso)
+        const conRetorno = Boolean(devuelto) && (conLlamada || Boolean(actual.registro) || Boolean(actual.cadenas && actual.llamadaTexto != null));
         const pasoRetorno = conRetorno ? this.traza.length : fotoDelReturn;
         // Un return de una llamada registrada que no hizo ninguna otra llamada a la funcion es su caso base.
         if (actual.registro && actual.registro.base === null && !(actual.hechas && actual.hechas.size)) actual.registro.base = pasoRetorno;
