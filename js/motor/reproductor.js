@@ -922,7 +922,10 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
       const abajo = r.bottom + r.height - caja.bottom;
       const delta = arriba < 0 ? arriba : abajo > 0 ? abajo : 0;
       if (Math.abs(delta) < 1) return;
-      trazado.scrollBy({ top: delta, behavior: suave && !sinMovimiento() ? 'smooth' : 'auto' });
+      // Una fila que esta del todo fuera de la zona visible (la vuelta de una recursion profunda, que sube por la tabla) se lleva de golpe: con
+      // un desplazamiento suave su texto nuevo se veria recien cuando termina; si esta a medias, se mueve suave.
+      const fuera = r.top >= caja.bottom || r.bottom <= caja.top + cabecera;
+      trazado.scrollBy({ top: delta, behavior: suave && !fuera && !sinMovimiento() ? 'smooth' : 'auto' });
     };
     // La fila de una llamada que se abre entra (con un fundido) cuando empieza a aparecer su texto.
     const mostrarFila = (id, retraso, duracion) => {
