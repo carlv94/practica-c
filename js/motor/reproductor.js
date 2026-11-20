@@ -668,6 +668,13 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     if (igual) contenedor.append(igual);
     td.lastElementChild.replaceWith(contenedor);
     contenedor.animate([{ opacity: 0 }, { opacity: 1 }], { duration: d, easing: 'ease-in-out', fill: 'backwards' });
+    // El "= valor" (invisible hasta el final) no ocupa lugar: si no cupiera a la par de la cuenta con las llamadas todavia sin reemplazar, bajaria a
+    // un renglon propio y el texto quedaria arriba hasta que termina la animacion. Va fuera del flujo, donde quedara cuando se cierren los huecos.
+    if (igual && capaA.offsetHeight <= igual.offsetHeight) {
+      igual.style.position = 'absolute';
+      igual.style.top = '0';
+      igual.style.left = capaA.offsetWidth - llamadasEnCapa.reduce((suma, c) => suma + c.a.offsetWidth - c.b.offsetWidth, 0) + 'px';
+    }
     for (const c of llamadasEnCapa) {
       const ancho = c.a.offsetWidth;
       const nuevo = c.b.offsetWidth;
