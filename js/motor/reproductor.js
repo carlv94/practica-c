@@ -125,7 +125,7 @@ const guardarVelocidad = (v) => {
   }
 };
 
-export function crearReproductor({ codigo, traza, error = null, titulo = '', funciones = [], cabezas = null, entrada = '', llamadas = [] }) {
+export function crearReproductor({ codigo, traza, error = null, titulo = '', funciones = [], cabezas = null, entrada = '', llamadas = [], puntos = null }) {
   const raiz = nodo('section', 'rep');
   raiz.tabIndex = 0;
   raiz.setAttribute('aria-label', titulo ? `Paso a paso: ${titulo}` : 'Paso a paso');
@@ -150,6 +150,8 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     repetir: '<path d="M20 12a8 8 0 1 1-2.6-5.9" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M20 3.5V9h-5.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>',
     ampliar: '<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>',
     cerrar: '<path d="M5 5l14 14M19 5L5 19" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>',
+    paradaAnterior: '<circle cx="17" cy="12" r="4.5"/><path d="M11 5l-8 7 8 7z"/>',
+    paradaSiguiente: '<circle cx="7" cy="12" r="4.5"/><path d="M13 5l8 7-8 7z"/>',
   };
   const rotular = (b, simbolo, texto, simboloDespues = false) => {
     const s = nodo('span', 'rep-simbolo');
@@ -171,6 +173,12 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   const reproducir = conSimbolo('avanzar', 'Reproducir', 'Avanzar solo');
   const siguiente = conSimbolo('▶', 'Siguiente', 'Paso siguiente (flecha derecha)', true);
   const final = conSimbolo('⏭', 'Final', 'Ir al último paso', true);
+  // Los puntos de parada (ayuda visual): saltar a la parada anterior o a la siguiente.
+  const paradaAnterior = conSimbolo('paradaAnterior', 'Parada', 'Ir al punto de parada anterior');
+  const paradaSiguiente = conSimbolo('paradaSiguiente', 'Parada', 'Ir al punto de parada siguiente', true);
+  paradaAnterior.classList.add('rep-boton-parada');
+  paradaSiguiente.classList.add('rep-boton-parada');
+  paradaAnterior.hidden = paradaSiguiente.hidden = true;
   // Detener la animacion del paso en el momento en que esta (y seguir despues), y volver a verla desde el principio.
   const detener = conSimbolo('detener', 'Detener', 'Detener la animación (barra espaciadora)');
   const repetir = conSimbolo('repetir', 'Repetir', 'Repetir la animación de este paso (tecla R)');
@@ -193,7 +201,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   etiquetaVelocidad.append(velocidad);
   const ampliarBoton = conSimbolo('ampliar', 'Ampliar', 'Ver el paso a paso en toda la pantalla');
   ampliarBoton.classList.add('rep-ampliar');
-  barra.append(inicio, anterior, reproducir, siguiente, final, detener, repetir, barraPasos, cuenta, etiquetaVelocidad, ampliarBoton);
+  barra.append(inicio, anterior, reproducir, siguiente, final, paradaAnterior, paradaSiguiente, detener, repetir, barraPasos, cuenta, etiquetaVelocidad, ampliarBoton);
   const giro = nodo('div', 'rep-giro');
   giro.hidden = true;
   const giroTexto = nodo('span', '', 'Gire el teléfono para ver mejor la figura.');
@@ -210,12 +218,15 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   const bloqueCodigo = nodo('div', 'rep-lineas');
   panelCodigo.append(bloqueCodigo);
   columnaCodigo.append(panelCodigo, verCodigo);
+  const numeros = []; // el numero de cada linea (con los puntos de parada, se toca para ponerlos)
   const lineas = lineasPintadas(codigo.replace(/\s+$/, '')).map((trozos, i) => {
     const fila = nodo('div', 'rep-linea');
     const fuente = nodo('span', 'rep-fuente');
     if (trozos.length) fuente.append(...trozos);
     else fuente.append(' ');
-    fila.append(nodo('span', 'rep-numero', String(i + 1)), fuente);
+    const numero = nodo('span', 'rep-numero', String(i + 1));
+    numeros.push(numero);
+    fila.append(numero, fuente);
     bloqueCodigo.append(fila);
     return fila;
   });
@@ -245,9 +256,75 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
       return;
     }
     aplicarAyudas();
+    aplicarPuntos();
+    actualizarParadas();
     pintarTrazado(paso);
     dibujo.fijarEscala({}); // la figura puede haber vuelto a aparecer
   });
+
+  // ---- los puntos de parada (ayuda "Puntos de parada"): el numero de una linea los pone y los saca; Reproducir se detiene cuando el cursor llega a
+  // una linea marcada (antes de ejecutarla) y dos botones saltan a la parada anterior o a la siguiente. "puntos" (opcional) es un Set de
+  // lineas que quien arma el reproductor conserva entre un caso y otro.
+  const paradas = puntos || new Set();
+  const ejecutadas = new Set(traza.map((f) => f.linea));
+  const textoDeLaNota = nota.textContent;
+  const conParadas = () => ajustes.valor('puntosDeParada');
+  const esParada = (k) => conParadas() && Boolean(traza[k]) && traza[k].linea != null && paradas.has(traza[k].linea);
+  const siguienteParada = (desde) => {
+    for (let k = desde + 1; k < traza.length; k++) if (esParada(k)) return k;
+    return -1;
+  };
+  const anteriorParada = (desde) => {
+    for (let k = desde - 1; k >= 0; k--) if (esParada(k)) return k;
+    return -1;
+  };
+  // El punto de una linea: lleno si la linea se ejecuta con estos valores y vacio si no (asi el alumno ve que esa rama no pasa).
+  const marcarNumero = (i) => {
+    const n = i + 1;
+    const puesta = paradas.has(n);
+    lineas[i].classList.toggle('rep-parada-puesta', conParadas() && puesta);
+    lineas[i].classList.toggle('rep-parada-sin-uso', conParadas() && puesta && !ejecutadas.has(n));
+    numeros[i].setAttribute('aria-pressed', String(puesta));
+    numeros[i].setAttribute('aria-label', 'Punto de parada en la línea ' + n);
+    numeros[i].title = !puesta ? 'Poner un punto de parada' : ejecutadas.has(n) ? 'Quitar el punto de parada' : 'Punto de parada: esta línea no se ejecuta con estos valores';
+  };
+  const aplicarPuntos = () => {
+    const activo = conParadas();
+    raiz.classList.toggle('rep-con-puntos', activo);
+    paradaAnterior.hidden = paradaSiguiente.hidden = !activo;
+    nota.textContent = textoDeLaNota + (activo ? ' Toca el número de una línea para ponerle un punto de parada.' : '');
+    numeros.forEach((numero, i) => {
+      if (activo) {
+        numero.setAttribute('role', 'button');
+        numero.tabIndex = 0;
+        marcarNumero(i);
+      } else {
+        for (const a of ['role', 'tabindex', 'aria-pressed', 'aria-label', 'title']) numero.removeAttribute(a);
+        lineas[i].classList.remove('rep-parada-puesta', 'rep-parada-sin-uso');
+      }
+    });
+  };
+  const actualizarParadas = () => {
+    paradaAnterior.disabled = anteriorParada(paso) < 0;
+    paradaSiguiente.disabled = siguienteParada(paso) < 0;
+  };
+  const alternarParada = (i) => {
+    if (!conParadas()) return;
+    if (paradas.has(i + 1)) paradas.delete(i + 1);
+    else paradas.add(i + 1);
+    marcarNumero(i);
+    actualizarParadas();
+  };
+  numeros.forEach((numero, i) => {
+    numero.addEventListener('click', () => alternarParada(i));
+    numero.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      e.preventDefault();
+      e.stopPropagation(); // (la barra espaciadora del reproductor detiene la animacion)
+      alternarParada(i);
+    });
+  });
+  aplicarPuntos();
   // Explicar: detener y repetir (la barra espaciadora y la tecla R funcionan siempre) en lugar de inicio, reproducir y final
   // (las teclas Inicio y Fin y la barra de pasos siguen). Asi la barra se queda con cuatro botones.
   const etiquetaExplicar = nodo('label', 'rep-nombres');
@@ -555,6 +632,8 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     return marcas;
   };
   raiz.marcasDelTrazado = (k, u = 400) => etapasDelTrazado(k, u); // (para las pruebas)
+  raiz.siguienteParada = (k) => siguienteParada(k); // (para las pruebas)
+  raiz.anteriorParada = (k) => anteriorParada(k); // (para las pruebas)
   raiz.franjaNecesaria = () => franjaNecesaria(); // (para las pruebas)
   raiz.preguntaEnLaTabla = (k) => preguntaEnLaTabla(k); // (para las pruebas)
   // Un texto que resplandece y crece un instante (como el valor que se copia en la figura).
@@ -1341,6 +1420,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     barraPasos.value = String(paso);
     anterior.disabled = inicio.disabled = paso === 0;
     siguiente.disabled = final.disabled = paso === traza.length - 1;
+    actualizarParadas();
 
     // El texto nuevo de la consola (un printf) aparece, en violeta y negrita, a la vez que se encienden las casillas de las que
     // salio, y vuelve a ser normal cuando se apagan (la figura avisa cuando: alMuestra).
@@ -1511,6 +1591,11 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
         return;
       }
       ir(paso + 1);
+      // (un punto de parada: la reproduccion se detiene con el cursor en esa linea, antes de ejecutarla)
+      if (esParada(paso)) {
+        parar();
+        return;
+      }
       programar();
     }, Math.max(base, ultimaAnimacion + base * 0.45));
   }
@@ -1653,6 +1738,19 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     { passive: true }
   );
 
+  // Saltar a una parada: el paso de llegada se anima (se muestra quieto el anterior y se avanza uno), si se viene de adelante.
+  function irAParada(k) {
+    if (k < 0) return;
+    parar();
+    if (k > paso + 1) {
+      tiempo.continuar();
+      paso = k - 1;
+      pintarPaso(false, false);
+    }
+    ir(k);
+  }
+  paradaAnterior.onclick = () => irAParada(anteriorParada(paso));
+  paradaSiguiente.onclick = () => irAParada(siguienteParada(paso));
   inicio.onclick = () => (parar(), ir(0));
   anterior.onclick = () => (parar(), ir(paso - 1));
   siguiente.onclick = avanzar;

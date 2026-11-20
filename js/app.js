@@ -1470,7 +1470,31 @@ async function reproductorDeUnCaso(datos, consigna) {
   if (error && datos.propio && error.codigo === 'RECURSION_SIN_FIN') {
     error.mensaje = 'Con estos valores la función se llamó a sí misma más de 200 veces seguidas y el paso a paso se corta ahí. Si el programa está bien, prueba con un valor más chico; si no, puede faltar el caso base o que el argumento no se acerque a él en cada llamada.';
   }
-  return crearReproductor({ codigo: datos.fuente, traza: res.traza, error, titulo: consigna.titulo, funciones: res.funciones, cabezas: datos.cabezas, entrada: res.entrada, llamadas: res.llamadas });
+  return crearReproductor({
+    codigo: datos.fuente,
+    traza: res.traza,
+    error,
+    titulo: consigna.titulo,
+    funciones: res.funciones,
+    cabezas: datos.cabezas,
+    entrada: res.entrada,
+    llamadas: res.llamadas,
+    puntos: puntosDeParadaDe(consigna, datos.fuente),
+  });
+}
+
+// Los puntos de parada de una consigna se conservan al cambiar de caso o de valores (mientras dura la sesion); si el codigo de la
+// respuesta cambia (lo de antes del main), las lineas ya no son las mismas y se empieza de cero.
+const puntosDeParadaGuardados = new Map();
+function puntosDeParadaDe(consigna, fuente) {
+  const id = consigna && consigna.id ? consigna.id : '';
+  const i = fuente.lastIndexOf('int main');
+  const previo = i >= 0 ? fuente.slice(0, i) : fuente;
+  const guardado = puntosDeParadaGuardados.get(id);
+  if (guardado && guardado.previo === previo) return guardado.puntos;
+  const puntos = new Set();
+  puntosDeParadaGuardados.set(id, { previo, puntos });
+  return puntos;
 }
 
 // El paso a paso de un cuestionario: junto a "Siguiente", solo despues de acertar (no adelanta la

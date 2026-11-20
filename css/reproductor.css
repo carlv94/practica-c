@@ -245,6 +245,36 @@
   border-left-color: var(--error);
   box-shadow: inset 3px 0 0 var(--error);
 }
+/* Los puntos de parada (ayuda visual): el numero de la linea se toca; el punto va entre el numero y el codigo. */
+.rep-con-puntos .rep-numero {
+  cursor: pointer;
+}
+.rep-con-puntos .rep-numero:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 1px;
+  border-radius: 3px;
+}
+.rep-con-puntos .rep-numero::after {
+  content: '';
+  position: absolute;
+  right: -7px;
+  top: 50%;
+  box-sizing: border-box;
+  width: 7px;
+  height: 7px;
+  margin-top: -3.5px;
+  border-radius: 50%;
+  background: var(--error);
+  opacity: 0;
+}
+/* (sin vista previa al pasar el puntero: en algunos telefonos el hover queda pegado despues de tocar y parece un punto puesto) */
+.rep-con-puntos .rep-parada-puesta .rep-numero::after {
+  opacity: 1;
+}
+.rep-parada-sin-uso .rep-numero::after {
+  background: transparent;
+  border: 1.5px solid var(--error);
+}
 .rep-ahora .rep-numero,
 .rep-error .rep-numero {
   font-weight: 700;
@@ -1089,6 +1119,10 @@
   padding: 2px 8px;
   font-size: 0.8rem;
   white-space: nowrap;
+}
+/* apaisado: solo los simbolos; los botones de parada conservan la palabra para no confundirse con anterior y siguiente */
+.rep-apaisado .rep-barra .rep-boton:not(.rep-boton-parada) .rep-texto-boton {
+  display: none;
 }
 .rep-apaisado .rep-barra-pasos {
   flex: 1 1 80px;

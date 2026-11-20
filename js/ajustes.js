@@ -92,6 +92,13 @@ export const AYUDAS = [
     detalle: 'La columna Ida (o Devuelve) muestra la línea tal cual está en el código cuando el cursor llega a ella y, al abrirse la llamada, se reemplazan las variables por sus valores y se resuelven las cuentas (resto = mayorDigito(n / 10), mayorDigito(2132 / 10), mayorDigito(213)).',
   },
   {
+    clave: 'puntosDeParada',
+    almacen: 'ajuste-puntos-de-parada',
+    porDefecto: false,
+    titulo: 'Puntos de parada',
+    detalle: 'Tocar el número de una línea del código le pone un punto de parada: Reproducir se detiene cuando el cursor llega a ella, y dos botones saltan al punto de parada anterior o al siguiente. Un punto vacío es una línea que no se ejecuta con estos valores.',
+  },
+  {
     clave: 'avanzarPorEtapas',
     almacen: 'ajuste-avanzar-por-etapas',
     porDefecto: false,
@@ -108,8 +115,8 @@ export const AYUDAS = [
 ];
 
 export const PERFILES = [
-  { id: 'practica', nombre: 'Práctica', valores: { brilloCopias: true, brilloAsignaciones: false, brilloCondiciones: false, detalleCondiciones: false, resaltarFuncion: false, trazado: false, trazadoUnaColumna: false, preguntasTabla: false, detalleCondicionesTabla: false, detalleIda: false, preguntasTexto: false, avanzarPorEtapas: false, nombresFlechas: false } },
-  { id: 'explicacion', nombre: 'Explicación', valores: { brilloCopias: true, brilloAsignaciones: true, brilloCondiciones: true, detalleCondiciones: false, resaltarFuncion: true, trazado: true, trazadoUnaColumna: false, preguntasTabla: true, detalleCondicionesTabla: false, detalleIda: false, preguntasTexto: false, avanzarPorEtapas: false, nombresFlechas: true } },
+  { id: 'practica', nombre: 'Práctica', valores: { brilloCopias: true, brilloAsignaciones: false, brilloCondiciones: false, detalleCondiciones: false, resaltarFuncion: false, trazado: false, trazadoUnaColumna: false, preguntasTabla: false, detalleCondicionesTabla: false, detalleIda: false, preguntasTexto: false, puntosDeParada: false, avanzarPorEtapas: false, nombresFlechas: false } },
+  { id: 'explicacion', nombre: 'Explicación', valores: { brilloCopias: true, brilloAsignaciones: true, brilloCondiciones: true, detalleCondiciones: false, resaltarFuncion: true, trazado: true, trazadoUnaColumna: false, preguntasTabla: true, detalleCondicionesTabla: false, detalleIda: false, preguntasTexto: false, puntosDeParada: true, avanzarPorEtapas: false, nombresFlechas: true } },
 ];
 
 const estado = new Map();

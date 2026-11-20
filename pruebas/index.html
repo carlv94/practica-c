@@ -541,6 +541,32 @@ import { corregir } from '../js/corrector.js';
           }
         }
 
+        // Los puntos de parada (ayuda "Puntos de parada"): el reproductor sabe a que paso saltar desde cualquiera; con la ayuda apagada no hay.
+        {
+          const titulo = 'puntos de parada: la parada anterior y la siguiente';
+          try {
+            const { crearReproductor } = await import('../js/motor/reproductor.js');
+            const { ajustes } = await import('../js/ajustes.js');
+            const fuente = '#include <stdio.h>\nint suma(int n) {\n  if (n == 0) {\n    return 0;\n  }\n  return suma(n - 1) + n;\n}\nint main() {\n  printf("%d\\n", suma(2));\n  return 0;\n}';
+            ajustes.fijarPerfil('explicacion');
+            const m = ejecutarMotor(analizador, fuente, { traza: true, preguntas: true });
+            const pasosDe4 = m.traza.map((f, k) => (f.linea === 4 ? k : -1)).filter((k) => k >= 0);
+            if (pasosDe4.length < 2) throw new Error('la linea 4 deberia ejecutarse mas de una vez');
+            const rep = crearReproductor({ codigo: fuente, traza: m.traza, funciones: m.funciones, llamadas: m.llamadas, puntos: new Set([4]) });
+            const primero = rep.siguienteParada(-1);
+            if (primero !== pasosDe4[0]) throw new Error('la primera parada era ' + primero + ' y la linea 4 empieza en el paso ' + pasosDe4[0]);
+            if (rep.siguienteParada(primero) !== pasosDe4[1]) throw new Error('la parada que sigue a la primera no es la segunda vez de la linea');
+            if (rep.siguienteParada(pasosDe4[pasosDe4.length - 1]) !== -1) throw new Error('despues de la ultima no tiene que haber parada');
+            if (rep.anteriorParada(pasosDe4[1]) !== pasosDe4[0] || rep.anteriorParada(pasosDe4[0]) !== -1) throw new Error('la parada anterior no es la que se espera');
+            ajustes.fijar('puntosDeParada', false);
+            if (rep.siguienteParada(-1) !== -1) throw new Error('con la ayuda apagada no hay paradas');
+            ajustes.fijarPerfil('practica');
+            anotar(true, titulo);
+          } catch (e) {
+            anotar(false, titulo, e.stack || e.message);
+          }
+        }
+
         // Las etapas de la figura (ayuda "Avanzar por etapas"): los recorridos de las flechas, los punteros que cambian de destino, el
         // free y los argumentos de una llamada tienen su marca, con nombre y en orden.
         {
