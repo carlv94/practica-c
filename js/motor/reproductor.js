@@ -951,6 +951,9 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
         let t = 0;
         if (padre.ida.paso === k) {
           aparecerCelda(tdPadre, 0, d);
+          // Esa ida agranda la fila de quien la hace, que puede quedar fuera de la zona visible: se la lleva a la vista ya, sin esperar a
+          // que entre la fila nueva (que despues hace su propio desplazamiento).
+          aLaVista(filasDom.get(padre.id), true);
           t = 2.5 * d;
         }
         resplandor(tdPadre.querySelector('[data-id="' + r.id + '"]'), t, 2 * d, 1.12);
