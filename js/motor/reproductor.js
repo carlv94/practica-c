@@ -1258,6 +1258,9 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   tiempo.alCambiar((pausado) => {
     if (pausado) {
       congeladas = raiz.getAnimations ? raiz.getAnimations({ subtree: true }).filter((a) => a.playState === 'running') : [];
+      // Y las de la figura nueva, que espera (fuera de la pagina) a que termine el recorrido de la anterior: si no, correrian durante
+      // la pausa y se habrian gastado cuando aparezca (el navegador no las lista: las junta la figura).
+      for (const a of dibujo.animacionesDelPaso || []) if (a.playState === 'running' && !congeladas.includes(a)) congeladas.push(a);
       congeladas.forEach((a) => a.pause());
     } else {
       congeladas.forEach((a) => a.play());

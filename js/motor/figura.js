@@ -459,6 +459,28 @@ export class Figura {
   // Muestra la fotografia (ver mostrarBase) y, aparte, lo que se ve fijo en este paso: la pregunta de una condicion o
   // su respuesta (ver fijarEstado). Devuelve lo que dura la animacion.
   mostrar(foto, anterior = null, opciones = {}) {
+    if (this.recolectando) return this.mostrarInterno(foto, anterior, opciones);
+    // Las animaciones de la figura nueva se crean sobre elementos que todavia no estan en la pagina (la figura vieja se
+    // sigue viendo mientras corre el recorrido) y el navegador no las lista en ninguna parte: se las junta aca para que
+    // el reproductor pueda detenerlas cuando detiene el reloj ("animacionesDelPaso").
+    const original = Element.prototype.animate;
+    const lista = [];
+    Element.prototype.animate = function (...args) {
+      const animacion = original.apply(this, args);
+      lista.push(animacion);
+      return animacion;
+    };
+    this.recolectando = true;
+    try {
+      return this.mostrarInterno(foto, anterior, opciones);
+    } finally {
+      Element.prototype.animate = original;
+      this.recolectando = false;
+      this.animacionesDelPaso = lista;
+    }
+  }
+
+  mostrarInterno(foto, anterior = null, opciones = {}) {
     this.etapas = [];
     this.destello = null;
     this.nodoFijo = null;
