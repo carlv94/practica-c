@@ -424,7 +424,7 @@ const suavizar = (k) => (k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2);
 
 // El texto de "nodo" pasa a las "partes" de un paso (ver pasosDeCondicion) a partir de "cuando" (ms): solo lo que cambio se contrae hasta
 // desaparecer y de ahi emerge lo nuevo, con un destello; el resto del texto no se mueve. "antes" y "despues" rodean al texto (la
-// pregunta: "¿ " y " ?"). Una parte vieja sale en 0,6 u y la nueva emerge en 0,8 u.
+// pregunta: "¿ " y " ?"). Una parte vieja sale en 0,6 u y la nueva emerge en 1,1 u, con un rebote suave.
 export function textoPorPartes(nodo, partes, cuando, u, { antes = '¿ ', despues = ' ?', halo = '#3b82f6' } = {}) {
   const construir = (nuevo) => {
     const cambiantes = [];
@@ -460,11 +460,14 @@ export function textoPorPartes(nodo, partes, cuando, u, { antes = '¿ ', despues
       parte.textContent = p.t;
       parte.animate(
         [
-          { opacity: 0, transform: 'scale(1.6)', backgroundColor: destello },
-          { opacity: 1, transform: 'scale(1)', backgroundColor: destello, offset: 0.4 },
+          { opacity: 0, transform: 'scale(0.2)', backgroundColor: destello },
+          // crece un poco de mas, se hunde un poco y se asienta: un rebote suave (cada tramo con su suavizado)
+          { opacity: 1, transform: 'scale(1.12)', backgroundColor: destello, offset: 0.4, easing: 'ease-in-out' },
+          { opacity: 1, transform: 'scale(0.97)', backgroundColor: destello, offset: 0.65, easing: 'ease-in-out' },
+          { opacity: 1, transform: 'scale(1)', backgroundColor: destello, offset: 0.85 },
           { opacity: 1, transform: 'scale(1)', backgroundColor: 'transparent' },
         ],
-        { duration: 0.8 * u, easing: 'ease-out' }
+        { duration: 1.1 * u, easing: 'ease-out' }
       );
     }
   }, cuando + sale);
