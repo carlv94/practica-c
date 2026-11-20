@@ -442,6 +442,14 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   // Cuanto dura el caso base: el foco sobre su fila (3,5 fundidos: el resto de la tabla se atenua, rebotan el valor de la ida y la
   // etiqueta y todo vuelve) y, en tres columnas, despues de una espera (1) el rebote de la vuelta (1,5): 5,5 en total.
   const duracionBase = (r, d, unaColumna) => (conValores && r.ida && !unaColumna ? 5.5 : 3.5) * d;
+  // Cuando una fila se atenua porque su llamada termino en el paso k (despues de lo que pasa en su vuelta), o null; y si en k vuelven a su
+  // color las que ya estaban atenuadas (el fin del programa).
+  const atenuacionDe = (r, k, u, d) => {
+    if (k >= traza.length - 1 || r.hasta !== k || r.desde > k) return null;
+    const fase = r.vuelta ? faseDe(r, k) : null;
+    return fase ? (enUnaColumna() ? duracionDeFila(r, u, fase) : duracionVuelta3(r, u, d, fase)) : 0;
+  };
+  const vuelveAlColor = (r, k) => k >= traza.length - 1 && r.hasta != null && r.hasta < k;
   // Lo que dura todo lo que se anima al llegar al paso k: llamadas que se abren, lo que aparece de golpe (1 fundido), el caso base
   // y las transiciones del modo de una columna.
   const duracionTrazado = (k, u) => {
@@ -452,6 +460,9 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     for (const r of filas) {
       const apertura = r.desde === k ? duracionApertura(r, k, d, u) : 0;
       if (r.desde === k) total = Math.max(total, apertura);
+      const atenuada = atenuacionDe(r, k, u, d);
+      if (atenuada !== null) total = Math.max(total, atenuada + 1.5 * d);
+      if (vuelveAlColor(r, k)) total = Math.max(total, 2 * d);
       // La linea que llega con el cursor (con el detalle de la ida) entra despues de las respuestas de la fila.
       const detalleIda = detalleIdaDe(r);
       if (detalleIda && detalleIda.paso0 === k && r.desde !== k && !esDeBase(r)) total = Math.max(total, retrasoDeEscrita(r, k, u, d) + d);
@@ -477,6 +488,9 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     for (const r of filas) {
       if (r.desde > k) continue;
       const apertura = r.desde === k ? duracionApertura(r, k, d, u) : 0;
+      const atenuada = atenuacionDe(r, k, u, d);
+      if (atenuada !== null) poner(atenuada, 'La fila de «' + r.llamada + '» queda atrás: se atenúa');
+      if (vuelveAlColor(r, k) && !marcas.some((x) => x.nombre === 'Las filas vuelven a su color')) poner(0, 'Las filas vuelven a su color');
       const detalleIda = detalleIdaDe(r);
       if (detalleIda && detalleIda.paso0 === k && r.desde !== k && !esDeBase(r)) poner(retrasoDeEscrita(r, k, u, d), 'Se escribe «' + detalleIda.pasos[0] + '», tal cual está en el código');
       if (r.desde === k) {
@@ -834,6 +848,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     const preguntasNuevas = []; // las preguntas que se ven justo ahora (entran con el cursor)
     const conMovimiento = animar && u > 0 && !sinMovimiento();
     const d = fundidoDe(u);
+    const finDelPrograma = k >= traza.length - 1; // (ahi las filas que quedaron atras vuelven a su color)
     for (const r of visibles) {
       const fila = cuerpoTabla.insertRow();
       filasDom.set(r.id, fila);
@@ -856,7 +871,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
         filasNuevas.set(r.id, fila);
       }
       if (r === actual) fila.classList.add('rep-traz-actual');
-      else if (r.hasta != null && k >= r.hasta) fila.classList.add('rep-traz-cerrada');
+      else if (r.hasta != null && k >= r.hasta && !finDelPrograma) fila.classList.add('rep-traz-cerrada');
       const celda = (contenido, nuevo = false, sangria = 0, preguntas = null) => {
         const td = fila.insertCell();
         if (preguntas) td.append(preguntas); // (arriba del texto)
@@ -1013,6 +1028,21 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
       if (retraso > 0) tiempo.esperar(entrar, retraso);
       else entrar();
     };
+    // Las filas que quedaron atras (su llamada ya termino) se atenuan, menos lo que devolvieron: la llamada y la ida bajan a una opacidad
+    // menor (ver .rep-traz-atras) y la vuelta queda como estaba. Al llegar a su cierre lo hacen con un fundido, cuando termina lo que
+    // pasa en su vuelta; al terminar el programa todo vuelve a su color.
+    for (const r of visibles) {
+      const fila = filasDom.get(r.id);
+      if (!fila) continue;
+      const celdas = [...fila.cells].slice(0, conValores && !unaColumna ? 2 : 1);
+      if (fila.classList.contains('rep-traz-cerrada')) {
+        for (const td of celdas) td.classList.add('rep-traz-atras');
+        const espera = atenuacionDe(r, k, u, d);
+        if (conMovimiento && espera !== null) for (const td of celdas) if (td.animate) td.animate([{ opacity: 1 }, { opacity: 0.55 }], { duration: 1.5 * d, delay: espera, fill: 'backwards' });
+      } else if (conMovimiento && vuelveAlColor(r, k)) {
+        for (const td of celdas) if (td.animate) td.animate([{ opacity: 0.55 }, { opacity: 1 }], { duration: 2 * d });
+      }
+    }
     if (conMovimiento) {
       for (const r of visibles) {
         if (r.desde !== k) continue;

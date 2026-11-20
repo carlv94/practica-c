@@ -733,8 +733,9 @@
   box-shadow: inset 3px 0 0 var(--acento);
   font-weight: 600;
 }
-.rep-traz-cerrada {
-  color: var(--suave);
+/* Una llamada que ya termino: su llamada y su ida se atenuan; lo que devolvio queda como estaba (ver pintarTrazado). */
+.rep-traz-atras {
+  opacity: 0.55;
 }
 .rep-tabla-trazado td.rep-traz-nuevo {
   background: var(--aviso-fondo);
