@@ -1329,7 +1329,7 @@ const AVISOS_DEL_PASO = {
 // La consigna actual, si es de codigo y se corrige ejecutando el programa.
 function consignaConPaso() {
   const consigna = serie?.consignas[repasando ?? hechas.length];
-  return consigna && !consigna.opciones && !consigna.pila && consigna.requiere?.some((regla) => regla.memoria || (regla.funcion && regla.funcion.recursiva)) ? consigna : null;
+  return consigna && !consigna.opciones && !consigna.pila && consigna.requiere?.some((regla) => regla.memoria || regla.apoyo || (regla.funcion && regla.funcion.recursiva)) ? consigna : null;
 }
 
 // 'listo' (se puede ver), 'sin' (nunca se comprobo), 'cambio' (se edito despues) o 'noejecuta'

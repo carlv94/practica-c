@@ -484,6 +484,7 @@ export function corregir(
     if (regla.struct) return reglaStruct(regla.struct, modelo);
     if (regla.union) return reglaStruct(regla.union, modelo, true);
     if (regla.funcion) return reglaFuncion(regla.funcion, modelo);
+    if (regla.apoyo) return reglaApoyo(regla.apoyo, modelo);
     if (regla.prototipo) return reglaPrototipo(regla.prototipo, modelo);
     if (regla.encabezado) return reglaEncabezado(regla.encabezado, modelo);
     if (regla.incluyeLocal) return reglaIncluyeLocal(regla.incluyeLocal, modelo);
@@ -867,6 +868,81 @@ export function corregir(
       return;
     }
     if (regla.capturar) nuevas[regla.capturar] = f.nombre;
+  }
+
+  // Una recursion con parametros de apoyo: dos funciones. Una recibe solo lo que pide la consigna, no es recursiva y llama a la otra con el
+  // valor inicial del apoyo; la otra es recursiva y recibe lo mismo mas los parametros de apoyo.
+  //   { "apoyo": { "retorna": "entero", "parametros": [{ "tipo": "entero" }], "extra": 1, "capturar": "S" } }
+  // "extra" es cuantos parametros de apoyo lleva la recursiva. Lo demas (retorna, parametros, soloEnumeradores, capturar) se pide de la
+  // primera, la que usa quien llama: de ahi sale el nombre capturado y la que prueban los casos.
+  function reglaApoyo(regla, modelo) {
+    const cuantos = (n) => (n === 0 ? 'ninguno' : n === 1 ? 'un parámetro' : n + ' parámetros');
+    const pedidos = (regla.parametros || []).length;
+    const extra = regla.extra || 1;
+    const definidas = modelo.funciones.filter((f) => f.nuevo && !f.prototipo && !NO_ES_DEL_ALUMNO.includes(f.nombre));
+    const base = { retorna: regla.retorna, parametros: regla.parametros, soloEnumeradores: regla.soloEnumeradores, capturar: regla.capturar };
+    if (!definidas.length) return reglaFuncion(base, modelo);
+    if (definidas.length !== 2) {
+      const sola = definidas.length === 1 ? definidas[0] : null;
+      error(
+        'APOYO_CANTIDAD',
+        sola
+          ? 'La consigna pide dos funciones, y acá hay una sola: ' +
+              (sola.parametros.length === pedidos
+                ? 'falta la función recursiva, la que además lleva el parámetro de apoyo y se llama a sí misma.'
+                : 'falta la función que recibe solo ' + cuantos(pedidos) + ', no es recursiva y llama a la recursiva con el valor inicial del apoyo.')
+          : 'La consigna pide dos funciones, y acá hay ' + definidas.length + ': ' + enLista(definidas.map((c) => c.nombre)) + '. Deje solo las dos que piden.',
+        (sola || definidas[2]).fila
+      );
+      return;
+    }
+    const publica = definidas.find((f) => f.parametros.length === pedidos);
+    const auxiliar = definidas.find((f) => f.parametros.length === pedidos + extra);
+    if (!publica || !auxiliar || publica === auxiliar) {
+      error(
+        'APOYO_PARAMETROS',
+        'La consigna pide una función que reciba ' + cuantos(pedidos) + ' y otra, la recursiva, que reciba esos mismos y ' + cuantos(extra) + ' más de apoyo, ' + (pedidos + extra) + ' en total. Las que escribió reciben ' + definidas.map((f) => f.parametros.length).join(' y ') + '.',
+        definidas[0].fila
+      );
+      return;
+    }
+    // La primera cumple la consigna (lo que devuelve, sus parametros) y se captura su nombre.
+    const antes = diagnosticos.length;
+    reglaFuncion({ ...base, nombre: publica.nombre }, modelo);
+    if (diagnosticos.length > antes) return;
+    if (publica.recursiva) {
+      error(
+        'APOYO_PUBLICA_RECURSIVA',
+        BT + publica.nombre + BT + ' recibe solo ' + cuantos(pedidos) + ' y no tiene que ser recursiva: tiene que llamar a ' + BT + auxiliar.nombre + BT + ', que es la que lleva el parámetro de apoyo y se llama a sí misma, dándole el valor inicial del apoyo.',
+        publica.fila
+      );
+      return;
+    }
+    if (!auxiliar.recursiva) {
+      error(
+        'FUNCION_NO_RECURSIVA',
+        'La consigna pide que la función con el parámetro de apoyo sea recursiva, o sea que se llame a sí misma, y ' + BT + auxiliar.nombre + BT + ' no se llama a sí misma' + (auxiliar.conCiclo ? ': resuelve el problema con un ciclo' : '') + '.',
+        auxiliar.fila
+      );
+      return;
+    }
+    const llama = modelo.llamadas.some((l) => l.nuevo && l.funcion === auxiliar.nombre && l.posicion >= publica.posicion && l.fin <= publica.fin);
+    if (!llama) {
+      error(
+        'APOYO_NO_LLAMA',
+        BT + publica.nombre + BT + ' tiene que llamar a ' + BT + auxiliar.nombre + BT + ': es la que hace el trabajo, y la primera solo le da el valor inicial del parámetro de apoyo y devuelve lo que ella devuelve.',
+        publica.fila
+      );
+      return;
+    }
+    const mismo = (a, b) => mismoTipo(resolver(a.tipo, modelo), resolver(b.tipo, modelo)) && a.punteros === b.punteros;
+    if (!mismo(publica, auxiliar)) {
+      error(
+        'APOYO_RETORNO',
+        BT + auxiliar.nombre + BT + ' tiene que devolver lo mismo que ' + BT + publica.nombre + BT + ': ' + BT + textoDeTipo(publica.tipo) + BT + '. Está declarada como ' + BT + textoDeTipo(auxiliar.tipo) + BT + '.',
+        auxiliar.fila
+      );
+    }
   }
 
   // La consigna pide declarar una variable global: afuera de todas las funciones.
@@ -4624,7 +4700,7 @@ export function corregir(
 
     // El paso a paso de una funcion recursiva: se arma un programa (con un main que la llama con el primer caso visible) para
     // seguirlo con el motor de memoria, aunque la respuesta tenga errores (asi se ve por que no anda).
-    if (regla.casos && !ejecucionMemoria && consigna.requiere?.some((x) => x.funcion && x.funcion.recursiva)) {
+    if (regla.casos && !ejecucionMemoria && consigna.requiere?.some((x) => (x.funcion && x.funcion.recursiva) || x.apoyo)) {
       const primero = regla.casos.find((c) => c.visible && c.llama) || regla.casos.find((c) => c.llama);
       const programa = primero ? programaParaElMotor(modelo, primero) : null;
       if (programa) ejecucionMemoria = { fuente: programa, entrada: '' };

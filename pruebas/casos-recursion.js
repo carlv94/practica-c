@@ -13,8 +13,13 @@ const serie = (id) => (paso, nombre, respuesta, espera = 'ok', extra = {}) => ({
 const escribir = serie('recursion-escribir');
 const conArreglos = serie('recursion-arreglos');
 const conDigitos = serie('recursion-digitos');
+const conApoyo = serie('recursion-apoyo');
 
 const FUNCION = (encabezado, cuerpo) => `${encabezado} {\n${cuerpo}\n}`;
+
+// Las dos funciones de "Invertir un numero", que repiten varios casos de la serie de apoyo.
+const INVERTIR_AUX = FUNCION('int invertirAux(int n, int invertido)', '  if (n == 0) {\n    return invertido;\n  }\n  return invertirAux(n / 10, invertido * 10 + n % 10);');
+const INVERTIR = FUNCION('int invertir(int n)', '  return invertirAux(n, 0);');
 
 export const CASOS_DE_RECURSION = [
   // ===== Escribir funciones recursivas =====
@@ -298,4 +303,63 @@ export const CASOS_DE_RECURSION = [
   ),
   conDigitos(7, 'mostrando antes de llamar', FUNCION('void binario(int n)', '  if (n == 0) {\n    return;\n  }\n  printf("%d", n % 2);\n  binario(n / 2);'), ['MUESTRA_DISTINTA']),
   conDigitos(7, 'sin caso base', FUNCION('void binario(int n)', '  binario(n / 2);\n  printf("%d", n % 2);'), ['RECURSION_SIN_FIN']),
+  // ===== Recursion con un parametro de apoyo =====
+  // ---- 1 y 2: dos cuestionarios con la suma de los digitos ----
+  conApoyo(1, 'devuelve cero', '1'),
+  conApoyo(1, 'la suma de los digitos', '0', ['OPCION_MUESTRA_DIEZ']),
+  conApoyo(1, 'no termina', '2', ['OPCION_NO_TERMINA']),
+  conApoyo(2, 'arranca en cinco', '1'),
+  conApoyo(2, 'la suma de los digitos', '0', ['OPCION_MUESTRA_DIEZ']),
+  conApoyo(2, 'el valor inicial', '2', ['OPCION_MUESTRA_CINCO']),
+  // ---- 3: invertir un numero ----
+  conApoyo(3, 'la recursiva y la que la usa', INVERTIR_AUX + '\n\n' + INVERTIR, 'ok', { mejoras: [] }),
+  conApoyo(
+    3,
+    'con otros nombres',
+    FUNCION('int dar(int numero, int armado)', '  if (numero == 0) {\n    return armado;\n  }\n  return dar(numero / 10, armado * 10 + numero % 10);') + '\n\n' + FUNCION('int alReves(int numero)', '  return dar(numero, 0);')
+  ),
+  conApoyo(3, 'la que la usa primero, con prototipo', 'int invertirAux(int n, int invertido);\n\n' + INVERTIR + '\n\n' + INVERTIR_AUX),
+  conApoyo(3, 'solo la recursiva', INVERTIR_AUX, ['APOYO_CANTIDAD']),
+  conApoyo(3, 'solo la que la usa', INVERTIR, ['APOYO_CANTIDAD', 'FUNCION_NO_DECLARADA']),
+  conApoyo(3, 'tres funciones', FUNCION('int ultimo(int n)', '  return n % 10;') + '\n\n' + INVERTIR_AUX + '\n\n' + INVERTIR, ['APOYO_CANTIDAD']),
+  conApoyo(3, 'las dos con un parametro', FUNCION('int invertirAux(int n)', '  return n;') + '\n\n' + FUNCION('int invertir(int n)', '  return invertirAux(n);'), ['APOYO_PARAMETROS']),
+  conApoyo(
+    3,
+    'la que la usa tambien es recursiva',
+    INVERTIR_AUX + '\n\n' + FUNCION('int invertir(int n)', '  if (n == 0) {\n    return 0;\n  }\n  return invertirAux(n, 0) + invertir(n / 100);'),
+    ['APOYO_PUBLICA_RECURSIVA']
+  ),
+  conApoyo(
+    3,
+    'la del apoyo con un ciclo',
+    FUNCION('int invertirAux(int n, int invertido)', '  while (n > 0) {\n    invertido = invertido * 10 + n % 10;\n    n = n / 10;\n  }\n  return invertido;') + '\n\n' + INVERTIR,
+    ['FUNCION_NO_RECURSIVA']
+  ),
+  conApoyo(3, 'sin llamar a la recursiva', INVERTIR_AUX + '\n\n' + FUNCION('int invertir(int n)', '  return n % 10;'), ['APOYO_NO_LLAMA']),
+  conApoyo(3, 'con el valor inicial equivocado', INVERTIR_AUX + '\n\n' + FUNCION('int invertir(int n)', '  return invertirAux(n, 1);'), ['DEVUELVE_DISTINTO']),
+  conApoyo(
+    3,
+    'la recursiva devuelve decimales',
+    FUNCION('double invertirAux(int n, int invertido)', '  if (n == 0) {\n    return invertido;\n  }\n  return invertirAux(n / 10, invertido * 10 + n % 10);') + '\n\n' + INVERTIR,
+    ['APOYO_RETORNO']
+  ),
+  conApoyo(
+    3,
+    'armandolo al reves',
+    FUNCION('int invertirAux(int n, int invertido)', '  if (n == 0) {\n    return invertido;\n  }\n  return invertirAux(n / 10, invertido + n % 10);') + '\n\n' + INVERTIR,
+    ['DEVUELVE_DISTINTO']
+  ),
+  // ---- 4: un numero en binario, como entero ----
+  conApoyo(4, 'la recursiva y la que la usa', FUNCION('int binarioAux(int n, int lugar)', '  if (n == 0) {\n    return 0;\n  }\n  return n % 2 * lugar + binarioAux(n / 2, lugar * 10);') + '\n\n' + FUNCION('int binario(int n)', '  return binarioAux(n, 1);'), 'ok', { mejoras: [] }),
+  conApoyo(4, 'con el lugar inicial en cero', FUNCION('int binarioAux(int n, int lugar)', '  if (n == 0) {\n    return 0;\n  }\n  return n % 2 * lugar + binarioAux(n / 2, lugar * 10);') + '\n\n' + FUNCION('int binario(int n)', '  return binarioAux(n, 0);'), ['DEVUELVE_DISTINTO']),
+  conApoyo(4, 'multiplicando por dos', FUNCION('int binarioAux(int n, int lugar)', '  if (n == 0) {\n    return 0;\n  }\n  return n % 2 * lugar + binarioAux(n / 2, lugar * 2);') + '\n\n' + FUNCION('int binario(int n)', '  return binarioAux(n, 1);'), ['DEVUELVE_DISTINTO']),
+  // ---- 5: la posicion de un valor ----
+  conApoyo(5, 'la recursiva y la que la usa', FUNCION('int posicionDesde(int v[], int n, int valor, int i)', '  if (i == n) {\n    return -1;\n  }\n  if (v[i] == valor) {\n    return i;\n  }\n  return posicionDesde(v, n, valor, i + 1);') + '\n\n' + FUNCION('int posicion(int v[], int n, int valor)', '  return posicionDesde(v, n, valor, 0);'), 'ok', { mejoras: [] }),
+  conApoyo(5, 'con la posicion inicial equivocada', FUNCION('int posicionDesde(int v[], int n, int valor, int i)', '  if (i == n) {\n    return -1;\n  }\n  if (v[i] == valor) {\n    return i;\n  }\n  return posicionDesde(v, n, valor, i + 1);') + '\n\n' + FUNCION('int posicion(int v[], int n, int valor)', '  return posicionDesde(v, n, valor, 1);'), ['DEVUELVE_DISTINTO']),
+  conApoyo(5, 'sin el parametro de apoyo', FUNCION('int posicionDesde(int v[], int n, int valor)', '  if (n == 0) {\n    return -1;\n  }\n  if (v[n - 1] == valor) {\n    return n - 1;\n  }\n  return posicionDesde(v, n - 1, valor);') + '\n\n' + FUNCION('int posicion(int v[], int n, int valor)', '  return posicionDesde(v, n, valor);'), ['APOYO_PARAMETROS']),
+  // ---- 6: es capicua ----
+  conApoyo(6, 'la recursiva y la que la usa', FUNCION('TBool capicuaAux(int n, int alReves, int original)', '  if (n == 0) {\n    if (alReves == original) {\n      return VERDADERO;\n    }\n    return FALSO;\n  }\n  return capicuaAux(n / 10, alReves * 10 + n % 10, original);') + '\n\n' + FUNCION('TBool esCapicua(int n)', '  return capicuaAux(n, 0, n);'), 'ok', { mejoras: [] }),
+  conApoyo(6, 'con un solo apoyo', FUNCION('TBool capicuaAux(int n, int alReves)', '  if (n == 0) {\n    return VERDADERO;\n  }\n  return capicuaAux(n / 10, alReves * 10 + n % 10);') + '\n\n' + FUNCION('TBool esCapicua(int n)', '  return capicuaAux(n, 0);'), ['APOYO_PARAMETROS']),
+  conApoyo(6, 'devolviendo numeros en lugar del enumerado', FUNCION('int capicuaAux(int n, int alReves, int original)', '  if (n == 0) {\n    return alReves == original;\n  }\n  return capicuaAux(n / 10, alReves * 10 + n % 10, original);') + '\n\n' + FUNCION('TBool esCapicua(int n)', '  if (capicuaAux(n, 0, n) == 1) {\n    return 1;\n  }\n  return 0;'), ['RETORNO_NUMERO_EN_ENUMERADO']),
+  conApoyo(6, 'con el original equivocado', FUNCION('TBool capicuaAux(int n, int alReves, int original)', '  if (n == 0) {\n    if (alReves == original) {\n      return VERDADERO;\n    }\n    return FALSO;\n  }\n  return capicuaAux(n / 10, alReves * 10 + n % 10, original);') + '\n\n' + FUNCION('TBool esCapicua(int n)', '  return capicuaAux(n, 0, 0);'), ['DEVUELVE_DISTINTO']),
 ];

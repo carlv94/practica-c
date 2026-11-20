@@ -1,0 +1,348 @@
+{
+  "id": "recursion-apoyo",
+  "titulo": "Recursión con un parámetro de apoyo",
+  "continua": false,
+  "dentroDeMain": true,
+  "descripcion": "Una función recursiva que necesita recordar algo de las llamadas anteriores (lo que ya sumó, el número que va armando, la posición por la que va) recibe un parámetro de apoyo. La función que se usa no lo lleva: llama a la recursiva y le da el valor inicial.",
+  "cabecera": "#include <stdio.h>",
+  "consignas": [
+    {
+      "id": "apoyo-q-base",
+      "titulo": "El caso base con un acumulador",
+      "archivo": "int sumaAux(int n, int suma) {\n  if (n == 0) {\n    return 0;\n  }\n  return sumaAux(n / 10, suma + n % 10);\n}\n\nint sumaDigitos(int n) {\n  return sumaAux(n, 0);\n}",
+      "codigo": "printf(\"%d\\n\", sumaDigitos(1234));",
+      "enunciado": "Hasta ahora el resultado se armaba al volver de las llamadas. Otra forma es llevar lo que ya se calculó en un parámetro de apoyo, que viaja hacia adelante en cada llamada. Acá, `sumaAux` lleva en `suma` la suma de los dígitos que ya sacó de `n`, y `sumaDigitos` la llama con el valor inicial de `suma`. ¿Qué muestra este programa?",
+      "opciones": [
+        {
+          "texto": "Muestra `10`, la suma de los dígitos de `1234`.",
+          "codigo": "OPCION_MUESTRA_DIEZ",
+          "explicacion": "En la llamada en que `n` llega a `0`, `suma` sí vale `10`. Pero fíjese qué devuelve el caso base: ¿devuelve `suma`? Y las llamadas anteriores, ¿qué hacen con lo que les devuelve la siguiente?"
+        },
+        {
+          "texto": "Muestra `0`.",
+          "correcta": true,
+          "explicacion": "El caso base devuelve `0` y no `suma`. La suma se fue armando en `suma`, que viaja hacia adelante, y se pierde si el caso base no la devuelve. Con un acumulador el resultado no se arma al volver: cuando `n` llega a `0`, el caso base tiene que devolver lo acumulado."
+        },
+        {
+          "texto": "No termina nunca: nunca llega al caso base.",
+          "codigo": "OPCION_NO_TERMINA",
+          "explicacion": "El caso base está: es `n == 0`, y se alcanza porque `n / 10` se acerca a `0` en cada llamada. La función termina; lo que hay que mirar es qué devuelve."
+        }
+      ],
+      "pasoAPaso": {
+        "guia": "Avance hasta la llamada en que `n` vale `0`: mire cuánto vale `suma` y qué devuelve. Después mire qué hacen con eso las llamadas anteriores.",
+        "codigo": "#include <stdio.h>\n\nint sumaAux(int n, int suma) {\n  if (n == 0) {\n    return 0;\n  }\n  return sumaAux(n / 10, suma + n % 10);\n}\n\nint sumaDigitos(int n) {\n  return sumaAux(n, 0);\n}\n\nint main() {\n  printf(\"%d\\n\", sumaDigitos(1234));\n  return 0;\n}"
+      }
+    },
+    {
+      "id": "apoyo-q-inicial",
+      "titulo": "El valor inicial del apoyo",
+      "archivo": "int sumaAux(int n, int suma) {\n  if (n == 0) {\n    return suma;\n  }\n  return sumaAux(n / 10, suma + n % 10);\n}\n\nint sumaDigitos(int n) {\n  return sumaAux(n, 0);\n}",
+      "codigo": "printf(\"%d\\n\", sumaAux(1234, 5));",
+      "enunciado": "Esta vez `sumaAux` devuelve `suma` en el caso base, como corresponde. Pero el programa no pasa por `sumaDigitos`: llama a `sumaAux` directamente, con `5` como valor inicial de `suma`. ¿Qué muestra?",
+      "opciones": [
+        {
+          "texto": "Muestra `10`, la suma de los dígitos de `1234`.",
+          "codigo": "OPCION_MUESTRA_DIEZ",
+          "explicacion": "Eso pasaría si `suma` empezara en `0`. Acá empieza en `5`: ¿qué le pasa a ese `5` a medida que se le suman los dígitos?"
+        },
+        {
+          "texto": "Muestra `15`.",
+          "correcta": true,
+          "explicacion": "`suma` arranca en `5` y va sumando los dígitos. El valor inicial del apoyo forma parte del resultado. Por eso quien quiere sumar los dígitos no llama a `sumaAux`: llama a una función que recibe solo `n` y es esta la que le da el valor inicial correcto, `0`. Así nadie tiene que saber con qué valor se empieza."
+        },
+        {
+          "texto": "Muestra `5`, el valor inicial.",
+          "codigo": "OPCION_MUESTRA_CINCO",
+          "explicacion": "`suma` no se queda en `5`: en cada llamada se le suma el último dígito de `n`, y el caso base devuelve lo que llegó a valer."
+        }
+      ],
+      "pasoAPaso": {
+        "guia": "Mire cómo cambia `suma` de una llamada a la otra, empezando por el `5`.",
+        "codigo": "#include <stdio.h>\n\nint sumaAux(int n, int suma) {\n  if (n == 0) {\n    return suma;\n  }\n  return sumaAux(n / 10, suma + n % 10);\n}\n\nint sumaDigitos(int n) {\n  return sumaAux(n, 0);\n}\n\nint main() {\n  printf(\"%d\\n\", sumaAux(1234, 5));\n  return 0;\n}"
+      }
+    },
+    {
+      "id": "apoyo-invertir",
+      "titulo": "Invertir un número",
+      "en": "archivo",
+      "enunciado": "Escriba dos funciones para invertir un entero `n`, mayor o igual que `0`, o sea escribir sus dígitos al revés:\n- Una función recursiva que recibe `n` y un parámetro de apoyo con el número que lleva armado.\n- Una función que recibe solo `n`, no es recursiva y devuelve el resultado: llama a la recursiva con el valor inicial del apoyo.\n\nPor ejemplo:\n- Con `123` devuelve `321`.\n- Con `1200` devuelve `21`: los ceros del final quedan al principio y no se escriben.\n\nEs el mismo patrón de los programas anteriores. Escriba primero la recursiva, así la otra ya la conoce y no hace falta un prototipo. Póngales el nombre que quiera.",
+      "requiere": [
+        {
+          "apoyo": {
+            "retorna": "entero",
+            "parametros": [
+              {
+                "tipo": "entero"
+              }
+            ],
+            "extra": 1,
+            "capturar": "I"
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "llama": "$I(123)",
+                "devuelve": 321,
+                "visible": true
+              },
+              {
+                "etiqueta": "termina en ceros",
+                "llama": "$I(1200)",
+                "devuelve": 21
+              },
+              {
+                "etiqueta": "un solo dígito",
+                "llama": "$I(5)",
+                "devuelve": 5
+              },
+              {
+                "etiqueta": "cero",
+                "llama": "$I(0)",
+                "devuelve": 0
+              },
+              {
+                "etiqueta": "un cero en el medio",
+                "llama": "$I(907)",
+                "devuelve": 709
+              },
+              {
+                "etiqueta": "queda igual",
+                "llama": "$I(1001)",
+                "devuelve": 1001
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "int invertirAux(int n, int invertido) {\n  if (n == 0) {\n    return invertido;\n  }\n  return invertirAux(n / 10, invertido * 10 + n % 10);\n}\n\nint invertir(int n) {\n  return invertirAux(n, 0);\n}"
+    },
+    {
+      "id": "apoyo-binario",
+      "titulo": "Un número en binario, como entero",
+      "en": "archivo",
+      "enunciado": "Escriba dos funciones que reciban un entero `n`, mayor o igual que `0` y menor que `1024`, y devuelvan su escritura en binario como un entero:\n- Una función recursiva que recibe `n` y un parámetro de apoyo con el valor del lugar que está escribiendo (`1`, después `10`, después `100`...).\n- Una función que recibe solo `n`, no es recursiva y devuelve el resultado: llama a la recursiva con el valor inicial del apoyo.\n\nPor ejemplo:\n- Con `13` devuelve `1101`.\n- Con `8` devuelve `1000`.\n\nPóngales el nombre que quiera.",
+      "requiere": [
+        {
+          "apoyo": {
+            "retorna": "entero",
+            "parametros": [
+              {
+                "tipo": "entero"
+              }
+            ],
+            "extra": 1,
+            "capturar": "B"
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "llama": "$B(13)",
+                "devuelve": 1101,
+                "visible": true
+              },
+              {
+                "etiqueta": "una potencia de dos",
+                "llama": "$B(8)",
+                "devuelve": 1000
+              },
+              {
+                "etiqueta": "cero",
+                "llama": "$B(0)",
+                "devuelve": 0
+              },
+              {
+                "etiqueta": "uno",
+                "llama": "$B(1)",
+                "devuelve": 1
+              },
+              {
+                "etiqueta": "todos unos",
+                "llama": "$B(255)",
+                "devuelve": 11111111
+              },
+              {
+                "etiqueta": "el mayor que entra",
+                "llama": "$B(1023)",
+                "devuelve": 1111111111
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "int binarioAux(int n, int lugar) {\n  if (n == 0) {\n    return 0;\n  }\n  return n % 2 * lugar + binarioAux(n / 2, lugar * 10);\n}\n\nint binario(int n) {\n  return binarioAux(n, 1);\n}"
+    },
+    {
+      "id": "apoyo-posicion",
+      "titulo": "La posición de un valor",
+      "en": "archivo",
+      "enunciado": "Escriba dos funciones que reciban un arreglo de enteros, su cantidad de elementos y un valor, y devuelvan la posición de la primera aparición del valor, o `-1` si no está:\n- Una función recursiva que recibe además la posición `i` que está mirando.\n- Una función que recibe solo el arreglo, la cantidad y el valor, no es recursiva y devuelve el resultado: llama a la recursiva con la posición inicial.\n\nPor ejemplo, con el arreglo `4, 7, 9, 7`:\n- Con el valor `7` devuelve `1`.\n- Con el valor `5` devuelve `-1`.\n\nPóngales el nombre que quiera.",
+      "requiere": [
+        {
+          "apoyo": {
+            "retorna": "entero",
+            "parametros": [
+              {
+                "tipo": "entero",
+                "arreglo": true
+              },
+              {
+                "tipo": "entero"
+              },
+              {
+                "tipo": "entero"
+              }
+            ],
+            "extra": 1,
+            "capturar": "P"
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "datos": {
+                  "v": [
+                    4,
+                    7,
+                    9,
+                    7
+                  ]
+                },
+                "llama": "$P(v, 4, 7)",
+                "devuelve": 1,
+                "visible": true
+              },
+              {
+                "etiqueta": "el valor no está",
+                "datos": {
+                  "v": [
+                    4,
+                    7,
+                    9,
+                    7
+                  ]
+                },
+                "llama": "$P(v, 4, 5)",
+                "devuelve": -1
+              },
+              {
+                "etiqueta": "está en la primera posición",
+                "datos": {
+                  "v": [
+                    4,
+                    7,
+                    9,
+                    7
+                  ]
+                },
+                "llama": "$P(v, 4, 4)",
+                "devuelve": 0
+              },
+              {
+                "etiqueta": "está en el medio",
+                "datos": {
+                  "v": [
+                    4,
+                    7,
+                    9,
+                    7
+                  ]
+                },
+                "llama": "$P(v, 4, 9)",
+                "devuelve": 2
+              },
+              {
+                "etiqueta": "ningún elemento",
+                "datos": {
+                  "v": [
+                    4,
+                    7,
+                    9,
+                    7
+                  ]
+                },
+                "llama": "$P(v, 0, 4)",
+                "devuelve": -1
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "int posicionDesde(int v[], int n, int valor, int i) {\n  if (i == n) {\n    return -1;\n  }\n  if (v[i] == valor) {\n    return i;\n  }\n  return posicionDesde(v, n, valor, i + 1);\n}\n\nint posicion(int v[], int n, int valor) {\n  return posicionDesde(v, n, valor, 0);\n}"
+    },
+    {
+      "id": "apoyo-capicua",
+      "titulo": "¿Es capicúa?",
+      "en": "archivo",
+      "archivoDado": "typedef enum {\n  FALSO,\n  VERDADERO\n} TBool;",
+      "enunciado": "El enumerado `TBool`, con los valores `FALSO` y `VERDADERO`, ya está declarado. Un número es capicúa si se lee igual de izquierda a derecha que de derecha a izquierda, como `12321`. Escriba dos funciones que reciban un entero `n`, mayor o igual que `0`, y devuelvan `VERDADERO` si es capicúa y `FALSO` si no:\n- Una función recursiva que recibe `n` y dos parámetros de apoyo: el número que lleva armado al revés y el número original. Cuando `n` llega a `0`, compara los dos.\n- Una función que recibe solo `n`, no es recursiva y devuelve el resultado: llama a la recursiva con los valores iniciales de los apoyos.\n\nPor ejemplo:\n- Con `12321` devuelve `VERDADERO`.\n- Con `1234` devuelve `FALSO`.\n- Con `120` devuelve `FALSO`: al revés es `21`.\n\nPóngales el nombre que quiera.",
+      "requiere": [
+        {
+          "apoyo": {
+            "retorna": "enumerado",
+            "parametros": [
+              {
+                "tipo": "entero"
+              }
+            ],
+            "extra": 2,
+            "capturar": "C",
+            "soloEnumeradores": true
+          }
+        },
+        {
+          "ejecuta": {
+            "casos": [
+              {
+                "llama": "$C(12321)",
+                "devuelve": "VERDADERO",
+                "visible": true
+              },
+              {
+                "etiqueta": "no es capicúa",
+                "llama": "$C(1234)",
+                "devuelve": "FALSO"
+              },
+              {
+                "etiqueta": "al revés tiene menos dígitos",
+                "llama": "$C(120)",
+                "devuelve": "FALSO"
+              },
+              {
+                "etiqueta": "un solo dígito",
+                "llama": "$C(5)",
+                "devuelve": "VERDADERO"
+              },
+              {
+                "etiqueta": "cero",
+                "llama": "$C(0)",
+                "devuelve": "VERDADERO"
+              },
+              {
+                "etiqueta": "dos dígitos iguales",
+                "llama": "$C(11)",
+                "devuelve": "VERDADERO"
+              },
+              {
+                "etiqueta": "termina en cero",
+                "llama": "$C(10)",
+                "devuelve": "FALSO"
+              },
+              {
+                "etiqueta": "con ceros en el medio",
+                "llama": "$C(1001)",
+                "devuelve": "VERDADERO"
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "TBool capicuaAux(int n, int alReves, int original) {\n  if (n == 0) {\n    if (alReves == original) {\n      return VERDADERO;\n    }\n    return FALSO;\n  }\n  return capicuaAux(n / 10, alReves * 10 + n % 10, original);\n}\n\nTBool esCapicua(int n) {\n  return capicuaAux(n, 0, n);\n}"
+    }
+  ]
+}

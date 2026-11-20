@@ -123,7 +123,11 @@
         "recursion-a-mano.json",
         "recursion-escribir.json",
         "recursion-arreglos.json",
-        "recursion-digitos.json"
+        "recursion-digitos.json",
+        "recursion-apoyo.json"
+      ],
+      "ocultas": [
+        "recursion-apoyo.json"
       ]
     },
     {
