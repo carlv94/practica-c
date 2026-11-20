@@ -1164,19 +1164,20 @@ export class Figura {
     // Una copia termina resaltando la casilla que recibe el valor (si no la resalto ya el recorrido hasta ella).
     let pendientePara = null;
     const resaltadas = new Set();
-    const pulso = (casilla, consulta = false) => {
+    // "dura": lo que dura el resalte (una condicion con brillo lo alarga hasta lo que dura el brillo, para que terminen juntos).
+    const pulso = (casilla, consulta = false, dura = dResalte) => {
       const marco = el('rect', { x: casilla.x - 3, y: casilla.y - 3, width: casilla.w + 6, height: casilla.h + 6, rx: 4, class: 'rep-acceso' + (consulta ? ' rep-consulta' : '') });
       marco.style.opacity = '0';
       capa.append(marco);
       if (marco.animate) {
         const animacion = marco.animate(
           [{ opacity: 0 }, { opacity: 1, offset: 0.25 }, { opacity: 1, offset: 0.75 }, { opacity: 0 }],
-          { duration: dResalte, delay: t, fill: 'both' }
+          { duration: dura, delay: t, fill: 'both' }
         );
-        ultimoResalte = { marco, animacion, delay: t, duracion: dResalte };
+        ultimoResalte = { marco, animacion, delay: t, duracion: dura };
       }
-      this.destello = { fin: t + dResalte, meseta: t + 0.75 * dResalte };
-      t += dResalte;
+      this.destello = { fin: t + dura, meseta: t + 0.75 * dura };
+      t += dura;
     };
     const resaltarDestino = () => {
       if (!pendientePara) return;
@@ -1292,8 +1293,7 @@ export class Figura {
       if (!flecha) this.anotar(t, `Se lee ${this.nombreCelda(previa, h.a.a, h.a.ruta)}`);
       // En una condicion, el valor de la casilla a la que se llego siguiendo un puntero (p->dato, *p) tambien resplandece.
       const brilla = condicion && h.de && this.ayudas.brilloCondiciones ? this.brillar({ svg: clon }, [clave(h.a.a, h.a.ruta)], t, 0.8 * u) : 0;
-      pulso(casilla, Boolean(h.cond));
-      if (brilla) t += 0.8 * u - dResalte;
+      pulso(casilla, Boolean(h.cond), brilla ? 0.8 * u : dResalte);
     }
     if (juntoDesde !== null) t = Math.max(juntoFin, t);
     resaltarDestino();
@@ -1338,7 +1338,7 @@ export class Figura {
         r.caja.querySelector('.rep-pregunta').classList.add(condicion.valor ? 'rep-pregunta-si' : 'rep-pregunta-no');
         this.llamarLaAtencion(r.caja, 0, false);
         if (r.respuesta.animate) r.respuesta.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 0.2 * u, fill: 'both' });
-      }, t);
+      }, t + 1);
       t += 0.8 * u;
     }
     if (!t) return 0;
