@@ -567,7 +567,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   const contraer = (el, retraso, duracion) => el.animate([{ transform: 'scale(1)', opacity: 1 }, { transform: 'scale(0)', opacity: 0 }], { duration: duracion, delay: retraso, easing: 'ease-in', fill: 'forwards' });
   const emerger = (el, retraso, duracion) =>
     el.animate(
-      [{ transform: 'scale(0)', opacity: 0 }, { transform: 'scale(1.2)', opacity: 1, offset: 0.6 }, { transform: 'scale(1)', opacity: 1 }],
+      [{ transform: 'scale(0)', opacity: 0 }, { transform: 'scale(1.1)', opacity: 1, offset: 0.6 }, { transform: 'scale(1)', opacity: 1 }],
       { duration: duracion, delay: retraso, easing: 'ease-out', fill: 'forwards' }
     );
   // La cuenta de una fila que cambia: la llamada brilla (y el valor de la fila de la que sale, a la vez), se contrae hasta
@@ -607,11 +607,11 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
         const ancho = c.a.offsetWidth;
         const nuevo = c.b.offsetWidth;
         c.w.style.width = ancho + 'px';
-        resplandor(c.a, 0, 0.6 * u);
+        resplandor(c.a, 0, 0.6 * u, 1.12);
         contraer(c.a, 0.6 * u, 0.4 * u); // la llamada se contrae sobre su centro...
         emerger(c.b, 1.0 * u, 0.5 * u); // ...y de ahi emerge el valor (centrado en el hueco)
         c.w.animate([{ width: ancho + 'px' }, { width: nuevo + 'px' }], { duration: 0.6 * u, delay: 1.3 * u, easing: 'ease-in-out', fill: 'forwards' });
-        resplandor(celdasDeValor.get(c.id), 0, 0.8 * u);
+        resplandor(celdasDeValor.get(c.id), 0, 0.8 * u, 1.12);
       }
       t = 1.9 * u;
     }
@@ -672,11 +672,11 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
       const ancho = c.a.offsetWidth;
       const nuevo = c.b.offsetWidth;
       c.w.style.width = ancho + 'px';
-      resplandor(c.a, d, 0.6 * u);
+      resplandor(c.a, d, 0.6 * u, 1.12);
       contraer(c.a, d + 0.6 * u, 0.4 * u);
       emerger(c.b, d + 1.0 * u, 0.5 * u);
       c.w.animate([{ width: ancho + 'px' }, { width: nuevo + 'px' }], { duration: 0.6 * u, delay: d + 1.3 * u, easing: 'ease-in-out', fill: 'forwards' });
-      resplandor(celdasDeValor.get(c.id), d, 0.8 * u);
+      resplandor(celdasDeValor.get(c.id), d, 0.8 * u, 1.12);
     }
     if (igual) emerger(igual, d + 1.9 * u + 0.3 * u, 0.5 * u);
     const total = duracionVuelta3(r, u, d, fase);
