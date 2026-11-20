@@ -1101,7 +1101,9 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   }
   // Une las marcas que caen casi juntas, las ordena y programa la pausa al comienzo de cada etapa (menos la primera). Con una sola
   // etapa no hay nada que separar.
-  function programarEtapas(marcas) {
+  // "inicio": la hora (del reloj) en que empezo el paso: las pausas se cuentan desde ahi y no desde ahora (dibujar la figura
+  // tarda unos milisegundos, y la pausa de una etapa tiene que ir antes que lo que la figura programo para el mismo momento).
+  function programarEtapas(marcas, inicio = tiempo.ahora()) {
     const ordenadas = [...marcas].sort((a, b) => a.t - b.t);
     const etapas = [];
     for (const m of ordenadas) {
@@ -1120,7 +1122,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
           pausaDeEtapa = true;
           tiempo.pausar();
           mostrarEtapa(i - 1, true);
-        }, e.pausa != null ? e.pausa : e.t)
+        }, Math.max(0, (e.pausa != null ? e.pausa : e.t) - (tiempo.ahora() - inicio)))
       );
     });
   }
@@ -1185,6 +1187,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     relojEditor = null;
     // Sin memoria dinamica el trazado reemplaza a la figura: no se la anima (nadie la ve) y las transiciones de la tabla empiezan ya.
     const sinFigura = trazadoActivo() && sinMonticulo;
+    const inicioPaso = tiempo.ahora();
     const dFigura = dibujo.mostrar(foto, antes, { animar: animar && !sinFigura, duracion: unidad, flujo: adelante });
     const dTrazado = adelante && animar ? duracionTrazado(paso, unidad) : 0;
     // Una llamada nueva (la pila crece): si se pide, se resalta toda su funcion antes de que aparezca el cursor.
@@ -1201,7 +1204,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
       if (dTrazado > 0) for (const m of etapasDelTrazado(paso, unidad)) marcas.push({ t: dFigura + m.t, nombre: m.nombre });
       if (entrando) marcas.push({ t: dFigura + dTrazado, nombre: 'Se resalta la función' });
       if (ultimaAnimacion > 0 && foto.linea != null) marcas.push({ t: ultimaAnimacion, nombre: 'Llega el cursor a la línea ' + foto.linea });
-      programarEtapas(marcas);
+      programarEtapas(marcas, inicioPaso);
     }
     if (entrando) relojEditor = tiempo.esperar(() => resaltarFuncion(entrando, fundidoDe(unidad)), dFigura + dTrazado);
     if (dTrazado > 0) {
