@@ -845,9 +845,126 @@ class Interprete {
     if (rv.t.k === 'struct') throw new ErrorDelMotor('ASIGNACION_INVALIDA', 'una estructura como condicion');
     const valor = rv.t.k === 'ptr' ? rv.v !== null : rv.v !== 0;
     // Para la traza: la condicion que se acaba de evaluar (la de mas afuera) y que dio.
-    if (afuera) this.condicionHecha = { texto: textoPregunta, valor, ...(preguntaHecha ? { celdas: preguntaHecha.celdas } : {}) };
+    const pasos = afuera ? this.pasosDeCondicion(n) : null;
+    if (afuera) this.condicionHecha = { texto: textoPregunta, valor, ...(preguntaHecha ? { celdas: preguntaHecha.celdas } : {}), ...(pasos ? { pasos: pasos.pasos, partes: pasos.partes } : {}) };
     if (afuera) this.anotarPregunta(n, textoPregunta, valor, pasoPregunta);
     return valor;
+  }
+
+  // La condicion de mas afuera paso a paso, para el detalle del rotulo de la figura: [escrita, con los valores puestos, con las
+  // cuentas hechas...], sin la respuesta. Cada paso resuelve un nivel mas del arbol, de abajo hacia arriba: primero las variables y
+  // lo que se lee (*p, p->x, a[i]) pasan a su valor (un puntero, a NULL o a su direccion) y despues cada operacion a su resultado.
+  // En a && b y a || b que se deciden con la izquierda, la derecha no se evalua (y se queda escrita). Devuelve null si no se sabe
+  // hacer sin efectos (llamadas, asignaciones, ++, ?:, conversiones) o si hay menos de dos pasos. Con los textos devuelve, de cada
+  // paso, sus partes ({ t } o, la que acaba de cambiar en ese paso, { t, antes, nuevo }) para animar solo lo que cambia.
+  pasosDeCondicion(expr) {
+    let raiz = expr;
+    while (raiz.type === 'parenthesized_expression') raiz = raiz.namedChildren[0];
+    if (!/^[\x00-\x7f]*$/.test(raiz.text)) return null;
+    const accesos = [...this.accesos];
+    const escrituras = this.escrituras.length;
+    const valorDe = (n) => {
+      const rv = this.evaluar(n);
+      if (rv.t.k === 'ptr') return rv.v === null ? 'NULL' : String(direccionDe(rv.v));
+      const t = textoEscalar(rv);
+      if (t === null) throw new Error('un valor sin texto');
+      return t;
+    };
+    const hay = (rv) => (rv.t.k === 'ptr' ? rv.v !== null : rv.v !== 0);
+    // "s": en que paso ya esta resuelto el nodo (0: un literal, que nunca cambia).
+    const analizar = (n) => {
+      switch (n.type) {
+        case 'number_literal':
+        case 'char_literal':
+        case 'string_literal':
+        case 'null':
+        case 'true':
+        case 'false':
+          return { n, s: 0, hijos: [] };
+        case 'identifier':
+        case 'subscript_expression':
+        case 'field_expression':
+        case 'pointer_expression':
+          return { n, s: 1, valor: valorDe(n), hijos: [] };
+        case 'parenthesized_expression': {
+          const h = analizar(n.namedChildren[0]);
+          return { n, s: h.s, ...(h.s > 0 ? { valor: valorDe(n) } : {}), hijos: [h] };
+        }
+        case 'unary_expression': {
+          const h = analizar(n.childForFieldName('argument'));
+          return { n, s: 1 + h.s, valor: valorDe(n), hijos: [h] };
+        }
+        case 'binary_expression': {
+          const op = n.childForFieldName('operator').text;
+          const izq = analizar(n.childForFieldName('left'));
+          if (op === '&&' || op === '||') {
+            const verdad = hay(this.evaluar(n.childForFieldName('left')));
+            if (op === '&&' ? !verdad : verdad) return { n, s: 1 + izq.s, valor: valorDe(n), hijos: [izq] };
+          }
+          const der = analizar(n.childForFieldName('right'));
+          return { n, s: 1 + Math.max(izq.s, der.s), valor: valorDe(n), hijos: [izq, der] };
+        }
+        default:
+          throw new Error('algo que no se sabe hacer sin efectos');
+      }
+    };
+    const dibujar = (a, k) => {
+      if (a.s > 0 && a.s <= k) return a.valor;
+      let t = a.n.text;
+      for (const h of [...a.hijos].sort((x, y) => y.n.startIndex - x.n.startIndex)) {
+        t = t.slice(0, h.n.startIndex - a.n.startIndex) + dibujar(h, k) + t.slice(h.n.endIndex - a.n.startIndex);
+      }
+      return t;
+    };
+    // Las partes del texto del paso k: las que se resolvieron justo en ese paso llevan lo que decian antes.
+    const partesDe = (a, k) => {
+      if (a.s > 0 && a.s <= k) return [a.s === k ? { t: a.valor, antes: dibujar(a, k - 1).replace(/\s+/g, ' '), nuevo: true } : { t: a.valor }];
+      const texto = a.n.text;
+      const base = a.n.startIndex;
+      const salida = [];
+      let cursor = 0;
+      for (const h of [...a.hijos].sort((x, y) => x.n.startIndex - y.n.startIndex)) {
+        const desde = h.n.startIndex - base;
+        if (desde > cursor) salida.push({ t: texto.slice(cursor, desde) });
+        salida.push(...partesDe(h, k));
+        cursor = h.n.endIndex - base;
+      }
+      if (cursor < texto.length) salida.push({ t: texto.slice(cursor) });
+      return salida;
+    };
+    // Junta las partes sin cambio que quedaron una al lado de otra y arregla los espacios.
+    const juntar = (partes) => {
+      const lista = [];
+      for (const p of partes) {
+        const q = { ...p, t: p.t.replace(/\s+/g, ' ') };
+        const ultima = lista[lista.length - 1];
+        if (ultima && !ultima.nuevo && !q.nuevo) ultima.t += q.t;
+        else lista.push(q);
+      }
+      if (lista.length && !lista[0].nuevo) lista[0].t = lista[0].t.replace(/^ /, '');
+      if (lista.length && !lista[lista.length - 1].nuevo) lista[lista.length - 1].t = lista[lista.length - 1].t.replace(/ $/, '');
+      return lista.filter((p) => p.t !== '' || p.nuevo);
+    };
+    try {
+      const arbol = analizar(raiz);
+      const pasos = [];
+      const partes = [];
+      for (let k = 0; k < arbol.s; k++) {
+        const lista = juntar(partesDe(arbol, k));
+        const t = lista.map((p) => p.t).join('');
+        if (t.length > 110) return null;
+        if (pasos[pasos.length - 1] !== t) {
+          pasos.push(t);
+          partes.push(lista);
+        }
+      }
+      return pasos.length >= 2 ? { pasos, partes } : null;
+    } catch (e) {
+      return null;
+    } finally {
+      this.accesos.splice(0, this.accesos.length, ...accesos);
+      this.escrituras.length = escrituras;
+    }
   }
 
   // El texto C de una cadena a la que apunta un puntero (hasta el 0 final).

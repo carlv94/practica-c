@@ -31,6 +31,13 @@ export const AYUDAS = [
     detalle: 'Cuando se evalúa una condición, resplandecen los valores de las variables que se leen.',
   },
   {
+    clave: 'detalleCondiciones',
+    almacen: 'ajuste-detalle-condiciones',
+    porDefecto: false,
+    titulo: 'Detallar las condiciones',
+    detalle: 'El rótulo de una condición la muestra escrita, con los valores puestos y resolviéndose parte por parte (127 % 10 == 5, 7 == 5) hasta la respuesta.',
+  },
+  {
     clave: 'resaltarFuncion',
     almacen: 'ajuste-resaltar-funcion',
     porDefecto: false,
@@ -85,8 +92,8 @@ export const AYUDAS = [
 ];
 
 export const PERFILES = [
-  { id: 'practica', nombre: 'Práctica', valores: { brilloCopias: true, brilloAsignaciones: false, brilloCondiciones: false, resaltarFuncion: false, trazado: false, trazadoUnaColumna: false, preguntasTabla: false, preguntasTexto: false, avanzarPorEtapas: false, nombresFlechas: false } },
-  { id: 'explicacion', nombre: 'Explicación', valores: { brilloCopias: true, brilloAsignaciones: true, brilloCondiciones: true, resaltarFuncion: true, trazado: true, trazadoUnaColumna: false, preguntasTabla: true, preguntasTexto: false, avanzarPorEtapas: false, nombresFlechas: true } },
+  { id: 'practica', nombre: 'Práctica', valores: { brilloCopias: true, brilloAsignaciones: false, brilloCondiciones: false, detalleCondiciones: false, resaltarFuncion: false, trazado: false, trazadoUnaColumna: false, preguntasTabla: false, preguntasTexto: false, avanzarPorEtapas: false, nombresFlechas: false } },
+  { id: 'explicacion', nombre: 'Explicación', valores: { brilloCopias: true, brilloAsignaciones: true, brilloCondiciones: true, detalleCondiciones: false, resaltarFuncion: true, trazado: true, trazadoUnaColumna: false, preguntasTabla: true, preguntasTexto: false, avanzarPorEtapas: false, nombresFlechas: true } },
 ];
 
 const estado = new Map();

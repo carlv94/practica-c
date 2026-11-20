@@ -440,7 +440,7 @@ export class Figura {
     this.animandoA = false; // las flechas que cambiaron se estan animando, cuadro por cuadro
     this.kA = 1; // cuanto de esa animacion (0 a 1)
     this.mostrarNombres = false;
-    this.ayudas = { brilloCopias: true, brilloAsignaciones: false, brilloCondiciones: false }; // ayudas visuales que se pueden apagar (ver js/ajustes.js)
+    this.ayudas = { brilloCopias: true, brilloAsignaciones: false, brilloCondiciones: false, detalleCondiciones: false }; // ayudas visuales que se pueden apagar (ver js/ajustes.js)
     this.enfoqueFlecha = null; // la flecha que se esta senalando
     this.fijada = null; // la flecha a la que se le hizo clic
     contenedor.classList.add('rep-figura-base');
@@ -1331,6 +1331,16 @@ export class Figura {
       // La respuesta no ocupa lugar hasta que le toca aparecer: el rotulo se ensancha recien entonces, no mientras corre el flujo.
       const r = this.crearRotulo(condicion.texto, condicion.valor, false);
       pregunta = r.caja;
+      // El detalle: el rotulo pasa por la condicion con los valores puestos y con las cuentas hechas (ver pasosDeCondicion), cada
+      // estado una etapa, y se queda con el ultimo (el que explica la respuesta; es tambien el texto del rotulo fijo, ver fijarEstado).
+      const detalle = this.ayudas.detalleCondiciones && condicion.pasos && condicion.partes && condicion.pasos.length > 1 ? condicion.pasos : null;
+      if (detalle) {
+        for (let i = 1; i < detalle.length; i++) {
+          this.anotar(t, i === 1 ? `Se ponen los valores en la condición: ${detalle[i]}` : `Se resuelve la condición: ${detalle[i]}`);
+          this.cambiarPartes(r.texto, condicion.partes[i], t, u);
+          t += 2 * u;
+        }
+      }
       this.anotar(t, `La condición da ${condicion.valor ? 'verdadero' : 'falso'}`);
       tiempo.cancelar(this.relojRespuesta);
       this.relojRespuesta = tiempo.esperar(() => {
@@ -1338,8 +1348,9 @@ export class Figura {
         r.caja.querySelector('.rep-pregunta').classList.add(condicion.valor ? 'rep-pregunta-si' : 'rep-pregunta-no');
         this.llamarLaAtencion(r.caja, 0, false);
         if (r.respuesta.animate) r.respuesta.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 0.2 * u, fill: 'both' });
-      }, t + 1);
-      t += 0.8 * u;
+      }, t + 30);
+      // (con el detalle, la respuesta se deja mas tiempo a la vista: el rotulo explica lo que se acaba de resolver)
+      t += detalle ? 1.5 * u : 0.8 * u;
     }
     if (!t) return 0;
     const total = t + 0.1 * u;
@@ -1368,7 +1379,10 @@ export class Figura {
     caja.setAttribute('aria-hidden', 'true');
     const rotulo = document.createElement('span');
     rotulo.className = 'rep-pregunta';
-    rotulo.append(document.createTextNode('¿ ' + texto + ' ?'));
+    const letras = document.createElement('span');
+    letras.className = 'rep-pregunta-texto';
+    letras.textContent = '¿ ' + texto + ' ?';
+    rotulo.append(letras);
     const respuesta = document.createElement('span');
     respuesta.className = 'rep-pregunta-resp ' + (valor ? 'rep-si' : 'rep-no');
     if (valor === undefined || valor === null) respuesta.hidden = true;
@@ -1380,7 +1394,55 @@ export class Figura {
     }
     rotulo.append(respuesta);
     caja.append(rotulo);
-    return { caja, respuesta };
+    return { caja, respuesta, texto: letras };
+  }
+
+  // El texto del rotulo de una condicion pasa a las "partes" de un paso a partir de "cuando" (ver pasosDeCondicion): solo lo que
+  // cambio se contrae hasta desaparecer y de ahi emerge lo nuevo, con un destello; el resto del texto no se mueve.
+  cambiarPartes(nodo, partes, cuando, u) {
+    const construir = (nuevo) => {
+      const cambiantes = [];
+      nodo.replaceChildren(document.createTextNode('¿ '));
+      for (const p of partes) {
+        if (!p.nuevo) {
+          nodo.append(document.createTextNode(p.t));
+          continue;
+        }
+        const parte = document.createElement('span');
+        parte.className = 'rep-pregunta-parte';
+        parte.textContent = nuevo ? p.t : p.antes;
+        nodo.append(parte);
+        cambiantes.push([parte, p]);
+      }
+      nodo.append(document.createTextNode(' ?'));
+      return cambiantes;
+    };
+    if (sinMovimiento() || !nodo.animate) {
+      tiempo.esperar(() => construir(true), cuando);
+      return;
+    }
+    const sale = 0.6 * u;
+    let cambiantes = [];
+    tiempo.esperar(() => {
+      cambiantes = construir(false);
+      for (const [parte] of cambiantes) parte.animate([{ opacity: 1, transform: 'scale(1)' }, { opacity: 0, transform: 'scale(0.2)' }], { duration: sale, easing: 'ease-in', fill: 'both' });
+    }, cuando);
+    tiempo.esperar(() => {
+      const halo = getComputedStyle(this.contenedor).getPropertyValue('--acento').trim() || '#3b82f6';
+      const destello = `color-mix(in srgb, ${halo} 45%, transparent)`;
+      for (const [parte, p] of cambiantes) {
+        for (const a of parte.getAnimations()) a.cancel();
+        parte.textContent = p.t;
+        parte.animate(
+          [
+            { opacity: 0, transform: 'scale(1.6)', backgroundColor: destello },
+            { opacity: 1, transform: 'scale(1)', backgroundColor: destello, offset: 0.4 },
+            { opacity: 1, transform: 'scale(1)', backgroundColor: 'transparent' },
+          ],
+          { duration: 0.8 * u, easing: 'ease-out' }
+        );
+      }
+    }, cuando + sale);
   }
 
   // Donde queda una casilla cuando termina el paso (ver absolutoDe).
@@ -1429,7 +1491,11 @@ export class Figura {
         escena.capaResalte.append(marco);
         aparecer(marco);
       }
-    } else nodo = this.crearRotulo(foto.condicion.texto, foto.condicion.valor).caja;
+    } else {
+      // Con el detalle de las condiciones, el rotulo de la respuesta dice la condicion ya resuelta (la que se vio al final de la animacion).
+      const pasos = this.ayudas.detalleCondiciones && foto.condicion.pasos && foto.condicion.pasos.length > 1 ? foto.condicion.pasos : null;
+      nodo = this.crearRotulo(pasos ? pasos[pasos.length - 1] : foto.condicion.texto, foto.condicion.valor).caja;
+    }
     this.nodoFijo = nodo;
     // Si el paso muestra todavia la figura anterior (el recorrido previo), el rotulo se pone cuando termina.
     if (!this.flujoActivo) this.ponerRotulo(nodo);

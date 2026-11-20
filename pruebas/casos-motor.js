@@ -968,6 +968,57 @@ int main() {
     },
   },
   {
+    nombre: 'el detalle de una condicion: escrita, con los valores y con las cuentas hechas (sin efectos, con cortocircuito)',
+    codigo: String.raw`typedef struct nodo { int dato; struct nodo *sig; } Nodo;
+int main() {
+  int n = 127;
+  int d = 5;
+  Nodo *lista = NULL;
+  Nodo b = { 7, NULL };
+  Nodo *p = &b;
+  if (n % 10 == d) {
+    n = 0;
+  }
+  if (lista == NULL) {
+    n = 1;
+  }
+  if (p != NULL && p->dato > 3) {
+    n = 2;
+  }
+  if (lista != NULL && lista->dato > 3) {
+    n = 3;
+  }
+  if (!(n > 100) || d) {
+    n = 4;
+  }
+  return 0;
+}`,
+    espera: {
+      traza: (traza) => {
+        const porTexto = new Map(traza.filter((x) => x.condicion).map((x) => [x.condicion.texto, x.condicion.pasos]));
+        const dice = (t) => (porTexto.get(t) || ['sin detalle']).join(' => ');
+        const casos = [
+          ['n % 10 == d', 'n % 10 == d => 127 % 10 == 5 => 7 == 5'],
+          ['lista == NULL', 'lista == NULL => NULL == NULL'],
+          ['p != NULL && p->dato > 3', 'p != NULL && p->dato > 3 => 1 && 7 > 3 => 1 && 1'],
+          ['lista != NULL && lista->dato > 3', 'lista != NULL && lista->dato > 3 => NULL != NULL && lista->dato > 3 => 0 && lista->dato > 3'],
+          ['!(n > 100) || d', '!(n > 100) || d => !(2 > 100) || d => !0 || d => 1 || d'],
+        ];
+        // lo que cambia en cada paso: n y d pasan a sus valores y despues 127 % 10 a 7
+        const partes = (traza.find((x) => x.condicion && x.condicion.texto === 'n % 10 == d').condicion.partes || []).map((l) => l.filter((p) => p.nuevo).map((p) => p.antes + '>' + p.t).join(','));
+        if (partes.join(' | ') !== ' | n>127,d>5 | 127 % 10>7') return 'las partes que cambian eran "' + partes.join(' | ') + '"';
+        for (const [t, esperado] of casos) {
+          let real = dice(t);
+          // (el valor de un puntero a una variable es su direccion: no se compara entero)
+          if (t.startsWith('p != NULL')) real = real.replace(/\d{3,} != NULL/, 'P != NULL');
+          const quiero = t.startsWith('p != NULL') ? 'p != NULL && p->dato > 3 => P != NULL && 7 > 3 => 1 && 1' : esperado;
+          if (real !== quiero) return 'el detalle de ' + t + ' era "' + real + '" y tenia que ser "' + quiero + '"';
+        }
+        return null;
+      },
+    },
+  },
+  {
     nombre: 'con "preguntas", cada condicion es un paso con la pregunta y el siguiente trae la respuesta',
     opciones: { preguntas: true },
     codigo: String.raw`int main() {

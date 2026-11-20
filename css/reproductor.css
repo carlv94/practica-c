@@ -1100,6 +1100,16 @@
 .rep-pregunta-resp {
   font-weight: 700;
 }
+/* el texto de la condicion (se contrae y vuelve a salir cuando se la detalla) */
+.rep-pregunta-texto {
+  display: inline-block;
+}
+/* la parte del texto que cambia en un paso del detalle: se contrae y de ahi emerge el valor nuevo */
+.rep-pregunta-parte {
+  display: inline-block;
+  transform-origin: center;
+  border-radius: 3px;
+}
 /* para llamar la atencion: llega desde la izquierda como un resorte (se pasa, vuelve, rebota dos veces y queda fijo) y despues
    destella una vez; --amp escala el recorrido (en el telefono es menor) */
 .rep-pregunta-g {
