@@ -276,6 +276,10 @@
 .rep-franja-pregunta:has(.rep-pregunta-no) {
   background: color-mix(in srgb, var(--falso) 16%, transparent);
 }
+/* Sin ninguna pregunta que la tabla del trazado no muestre, la franja no se reserva. */
+.rep-ancho:not(.rep-compacto).rep-sin-franja .rep-franja-pregunta {
+  display: none;
+}
 .rep-franja-pregunta .rep-pregunta-g {
   position: static;
   height: auto;

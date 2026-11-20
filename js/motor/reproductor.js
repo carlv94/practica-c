@@ -361,6 +361,18 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   trazado.hidden = true;
   const expandidas = new Set(); // las filas cuyas preguntas el alumno amplio (con el texto a la vista)
   const trazadoActivo = () => registros.length > 0 && ajustes.valor('trazado');
+  // La pregunta que la figura mostraria en el paso k (el cursor sobre el if y, despues, su respuesta) y que la tabla del trazado ya muestra:
+  // el rotulo de la franja se omite (no se ve dos veces, cada una con su animacion).
+  const preguntaEnLaTabla = (k) => trazadoActivo() && ajustes.valor('preguntasTabla') && filas.some((r) => (r.preguntas || []).some((q) => q.pregunta === k || q.respuesta === k));
+  // La franja de la pregunta solo hace falta si algun paso tiene una pregunta que la tabla no muestra (un if de main, de una funcion que
+  // no es recursiva, un bucle). Si no, no se reserva su espacio.
+  const franjasDeCache = new Map();
+  const franjaNecesaria = () => {
+    const clave = String(trazadoActivo() && ajustes.valor('preguntasTabla'));
+    if (!franjasDeCache.has(clave)) franjasDeCache.set(clave, traza.some((f, k) => Boolean(f.pregunta || f.condicion) && !preguntaEnLaTabla(k)));
+    return franjasDeCache.get(clave);
+  };
+  dibujo.omitirRotulo = (foto) => preguntaEnLaTabla(traza.indexOf(foto));
   const enUnaColumna = () => conValores && ajustes.valor('trazadoUnaColumna');
   const partesDe = (r) => (r.ida.partes && r.ida.partes.length ? r.ida.partes : [r.ida.texto]);
   const llamadasDe = (r) => partesDe(r).filter((p) => typeof p === 'object');
@@ -543,6 +555,8 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     return marcas;
   };
   raiz.marcasDelTrazado = (k, u = 400) => etapasDelTrazado(k, u); // (para las pruebas)
+  raiz.franjaNecesaria = () => franjaNecesaria(); // (para las pruebas)
+  raiz.preguntaEnLaTabla = (k) => preguntaEnLaTabla(k); // (para las pruebas)
   // Un texto que resplandece y crece un instante (como el valor que se copia en la figura).
   const resplandor = (el, retraso, duracion, escala = 1.4) => {
     if (!el || !el.animate || !duracion) return;
@@ -1322,6 +1336,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     }
     const foto = traza[paso];
     const antes = paso > 0 ? traza[paso - 1] : null;
+    raiz.classList.toggle('rep-sin-franja', !franjaNecesaria());
     cuenta.textContent = `Paso ${paso + 1} de ${traza.length}`;
     barraPasos.value = String(paso);
     anterior.disabled = inicio.disabled = paso === 0;

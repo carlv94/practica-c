@@ -535,6 +535,8 @@ export class Figura {
     this.etapas = [];
     this.destello = null;
     this.nodoFijo = null;
+    // "omitirRotulo": lo pide quien ya muestra la pregunta de este paso en otro lado (la tabla del trazado): no se arma el rotulo.
+    this.sinRotulo = Boolean(this.omitirRotulo && this.omitirRotulo(foto));
     if (this.franja) this.franja.replaceChildren();
     tiempo.cancelar(this.finEnfoque);
     tiempo.cancelar(this.relojRespuesta);
@@ -1378,7 +1380,7 @@ export class Figura {
     // La respuesta de una condicion: el rotulo con la pregunta (que ya se veia en el paso anterior) se completa con
     // "verdadero" o "falso" despues de los accesos que haya, y se deja un momento a la vista.
     let pregunta = null;
-    if (condicion) {
+    if (condicion && !this.sinRotulo) {
       // La respuesta no ocupa lugar hasta que le toca aparecer: el rotulo se ensancha recien entonces, no mientras corre el flujo.
       const r = this.crearRotulo(condicion.texto, condicion.valor, false);
       pregunta = r.caja;
@@ -1479,12 +1481,14 @@ export class Figura {
         e.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200, delay: retraso, fill: 'both' });
       }
     };
-    let nodo;
+    let nodo = null;
     if (foto.pregunta) {
-      nodo = this.crearRotulo(foto.pregunta.texto, null).caja;
-      // Al avanzar, el rotulo llama la atencion: baja desde arriba y destella (al terminar la animacion del paso).
-      if (adelante) this.llamarLaAtencion(nodo, retraso, true);
-      else aparecer(nodo);
+      if (!this.sinRotulo) {
+        nodo = this.crearRotulo(foto.pregunta.texto, null).caja;
+        // Al avanzar, el rotulo llama la atencion: baja desde arriba y destella (al terminar la animacion del paso).
+        if (adelante) this.llamarLaAtencion(nodo, retraso, true);
+        else aparecer(nodo);
+      }
       // Las flechas que no intervienen en la pregunta se atenuan cuando termina la animacion del paso.
       if (this.enfoquePregunta) {
         const svg = escena.svg;
@@ -1499,14 +1503,14 @@ export class Figura {
         escena.capaResalte.append(marco);
         aparecer(marco);
       }
-    } else {
+    } else if (!this.sinRotulo) {
       // Con el detalle de las condiciones, el rotulo de la respuesta dice la condicion ya resuelta (la que se vio al final de la animacion).
       const pasos = this.ayudas.detalleCondiciones && foto.condicion.pasos && foto.condicion.pasos.length > 1 ? foto.condicion.pasos : null;
       nodo = this.crearRotulo(pasos ? pasos[pasos.length - 1] : foto.condicion.texto, foto.condicion.valor).caja;
     }
     this.nodoFijo = nodo;
     // Si el paso muestra todavia la figura anterior (el recorrido previo), el rotulo se pone cuando termina.
-    if (!this.flujoActivo) this.ponerRotulo(nodo);
+    if (nodo && !this.flujoActivo) this.ponerRotulo(nodo);
   }
 
   // El rotulo de una condicion llama la atencion: llega desde la izquierda como un resorte (se pasa, vuelve, rebota dos veces y
