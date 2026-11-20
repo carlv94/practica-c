@@ -1468,6 +1468,17 @@ export class Figura {
 
   // El rotulo de una condicion va en la franja reservada arriba de la figura (pantallas grandes: ahi no tapa nada y queda
   // cerca del codigo) y, si no hay franja a la vista, flotando arriba de la figura.
+  // El rotulo con la respuesta de una condicion se retira (con un fundido) cuando el cursor pasa a la linea siguiente: el reproductor lo
+  // pide al terminar la animacion de ese paso.
+  retirarRotulo(ms = 250) {
+    const n = this.nodoFijo;
+    if (!n || !n.isConnected) return;
+    this.nodoFijo = null;
+    const quitar = () => n.remove();
+    if (!n.animate || sinMovimiento() || ms <= 0) quitar();
+    else n.animate([{ opacity: 1 }, { opacity: 0 }], { duration: ms, fill: 'both' }).onfinish = quitar;
+  }
+
   ponerRotulo(nodo) {
     this.empezarAtencion(nodo); // antes de ponerlo: la animacion empieza al entrar en la pagina
     if (this.franja && this.franja.offsetParent !== null) this.franja.replaceChildren(nodo);

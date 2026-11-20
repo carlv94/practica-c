@@ -1224,6 +1224,9 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
       }
       funcionAnterior = f;
       mostrarEstado(foto);
+      // La respuesta de una condicion se ve mientras se la anima y se retira cuando el cursor pasa a la linea siguiente (si se llega al
+      // paso sin animacion, queda a la vista: es lo unico que dice como se resolvio).
+      if (adelante && animar && foto.condicion) dibujo.retirarRotulo(fundidoDe(unidad));
       pintarTrazado(paso, { u: unidad, preguntaNueva: adelante && animar }); // al terminar, la tabla queda quieta en su estado final
       consola.textContent = foto.salida || ' ';
       pintarEntrada(paso);
