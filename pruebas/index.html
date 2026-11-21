@@ -419,6 +419,123 @@ import { corregir } from '../js/corrector.js';
           }
         }
 
+        // Que se contrae y que se desvanece: la flecha de un puntero que sigue ahi y deja de apuntar (a NULL) se contrae hasta su casilla; la
+        // de un puntero que desaparece (termina su funcion, o el bloque donde estaba declarado) se desvanece, junto con su casilla. Un puntero
+        // sin direccion que recibe una (o pasa de NULL a una) redirige su flecha; si pasa a NULL, la contrae.
+        {
+          const titulo = 'figura: las flechas se contraen o se desvanecen segun lo que pasa con el puntero';
+          try {
+            const { Figura } = await import('../js/motor/figura.js');
+            const { ajustes } = await import('../js/ajustes.js');
+            ajustes.fijarPerfil('explicacion');
+            const escenas = (fuente) => {
+              const m = ejecutarMotor(analizador, fuente, { traza: true });
+              const figura = new Figura(document.createElement('div'));
+              figura.fijarAyudas(ajustes.todos());
+              const salida = [];
+              m.traza.forEach((foto, i) => {
+                figura.mostrar(foto, i ? m.traza[i - 1] : null, { animar: Boolean(i), duracion: 1000, flujo: false });
+                if (figura.raf) cancelAnimationFrame(figura.raf);
+                salida.push({ retiradas: figura.escena.retiradas, flechas: figura.escena.flechas, desvanecen: figura.escena.desvanecen.length });
+              });
+              return salida;
+            };
+            const dice = (cond, mensaje) => {
+              if (!cond) throw new Error(mensaje);
+            };
+            let e = escenas('int main() {\n  int n = 1;\n  int *p = &n;\n  p = NULL;\n  return 0;\n}');
+            dice(e[3].retiradas.length === 1 && !e[3].retiradas[0].seVa && e[3].retiradas[0].haciaNulo, 'p = NULL: la flecha se tiene que contraer y dar paso a NULL');
+            e = escenas('#include <stdlib.h>\nint main() {\n  int *p = malloc(sizeof(int));\n  *p = 1;\n  free(p);\n  p = NULL;\n  return 0;\n}');
+            dice(e[4].retiradas.length === 1 && !e[4].retiradas[0].seVa && e[4].retiradas[0].haciaNulo, 'free(p); p = NULL: la flecha roja tambien se contrae');
+            e = escenas('void f(int *q) {\n  *q = 2;\n}\nint main() {\n  int n = 1;\n  int *p = &n;\n  f(p);\n  return 0;\n}');
+            dice(e.some((x) => x.retiradas.some((r) => r.seVa && !r.haciaNulo)), 'al terminar una funcion la flecha de su caja se desvanece');
+            e = escenas('int main() {\n  int n = 1;\n  {\n    int *p = &n;\n    *p = 2;\n  }\n  return 0;\n}');
+            dice(e[3].retiradas.length === 1 && e[3].retiradas[0].seVa, 'al terminar un bloque la flecha de su puntero se desvanece');
+            dice(e[3].desvanecen >= 1, 'al terminar un bloque la casilla del puntero tambien se desvanece');
+            e = escenas('int main() {\n  int n = 1;\n  int *p;\n  p = &n;\n  return 0;\n}');
+            dice(e[3].flechas.some((f) => f.desdeIncierto && f.viejo), 'un puntero sin direccion que recibe una: la flecha se redirige desde el "?"');
+            e = escenas('int main() {\n  int *p;\n  p = NULL;\n  return 0;\n}');
+            dice(e[2].retiradas.some((r) => r.incierta && r.haciaNulo && !r.seVa), 'un puntero sin direccion que pasa a NULL: la flecha al "?" se contrae');
+            e = escenas('int main() {\n  int n = 1;\n  int *p = NULL;\n  p = &n;\n  return 0;\n}');
+            dice(e[3].flechas.some((f) => f.desdeNulo), 'un puntero que pasa de NULL a una direccion: la palabra da paso al punto');
+            anotar(true, titulo);
+          } catch (err) {
+            anotar(false, titulo, err.stack || err.message);
+          }
+        }
+
+        // Lo que sale de su ambito va despues del efecto de la sentencia: en el paso en que una sentencia hace algo y a la vez termina un
+        // bloque o una funcion, la figura primero muestra el efecto con lo que va a salir todavia en su lugar (la variable del bloque, la caja
+        // de la funcion) y deja el desvanecimiento para el paso encadenado.
+        {
+          const titulo = 'figura: el desvanecimiento de lo que sale va despues del efecto de la sentencia';
+          try {
+            const { Figura } = await import('../js/motor/figura.js');
+            const { ajustes } = await import('../js/ajustes.js');
+            const { tiempo } = await import('../js/motor/tiempo.js');
+            ajustes.fijarPerfil('explicacion');
+            const encadenado = (fuente, buscar) => {
+              const m = ejecutarMotor(analizador, fuente, { traza: true });
+              const i = m.traza.findIndex((foto, k) => k > 0 && buscar(foto, m.traza[k - 1]));
+              if (i < 1) throw new Error('no se encontro el paso');
+              const figura = new Figura(document.createElement('div'));
+              figura.fijarAyudas(ajustes.todos());
+              for (let k = 0; k < i; k++) figura.mostrar(m.traza[k], k ? m.traza[k - 1] : null, { animar: false });
+              figura.mostrar(m.traza[i], m.traza[i - 1], { animar: true, duracion: 1000, flujo: true });
+              const pendiente = Boolean(figura.expansionPendiente);
+              const nombres = [...figura.escena.svg.querySelectorAll('.rep-nombre, .rep-funcion')].map((t) => t.textContent);
+              tiempo.cancelar(figura.expansionPendiente);
+              if (figura.raf) cancelAnimationFrame(figura.raf);
+              return { pendiente, nombres, foto: m.traza[i] };
+            };
+            let r = encadenado(
+              '#include <stdlib.h>\ntypedef struct nodo { int d; struct nodo *sig; } Nodo;\nint main() {\n  Nodo *lista = malloc(sizeof(Nodo));\n  lista->sig = NULL;\n  Nodo *nuevo = malloc(sizeof(Nodo));\n  nuevo->sig = NULL;\n  {\n    Nodo *p = lista;\n    p->sig = nuevo;\n  }\n  return 0;\n}',
+              (foto, antes) => foto.marcos[0] && antes.marcos[0] && foto.marcos[0].variables.length < antes.marcos[0].variables.length
+            );
+            if (!r.pendiente) throw new Error('el paso del bloque que termina deberia encadenar el efecto y el desvanecimiento');
+            if (!r.nombres.includes('p')) throw new Error('mientras se ve el efecto, la variable p todavia tiene que estar: ' + r.nombres.join(','));
+            r = encadenado(
+              '#include <stdlib.h>\nint *crear() {\n  int *q = malloc(sizeof(int));\n  return q;\n}\nint main() {\n  int *p = crear();\n  free(p);\n  return 0;\n}',
+              (foto, antes) => foto.marcos.length < antes.marcos.length
+            );
+            if (!r.pendiente) throw new Error('el paso en que termina una funcion deberia encadenar el efecto y el desvanecimiento');
+            if (!r.nombres.includes('crear()')) throw new Error('mientras se ve el efecto, la caja de la funcion todavia tiene que estar: ' + r.nombres.join(','));
+            anotar(true, titulo);
+          } catch (err) {
+            anotar(false, titulo, err.stack || err.message);
+          }
+        }
+
+        // La figura con animacion (ayudas de Explicacion) en todos los pasos de todos los programas del motor: la flecha que se contrae, la
+        // que se desvanece y la casilla que se va se dibujan en varios momentos del tiempo A sin fallar.
+        {
+          const titulo = 'figura animada: todos los pasos de los programas del motor';
+          try {
+            const { Figura } = await import('../js/motor/figura.js');
+            const { ajustes } = await import('../js/ajustes.js');
+            ajustes.fijarPerfil('explicacion');
+            for (const caso of CASOS_DEL_MOTOR) {
+              const r = ejecutarMotor(analizador, caso.codigo, { entrada: caso.entrada, traza: true, preguntas: true });
+              const figura = new Figura(document.createElement('div'));
+              figura.fijarAyudas(ajustes.todos());
+              r.traza.forEach((foto, i) => {
+                figura.mostrar(foto, i ? r.traza[i - 1] : null, { animar: Boolean(i), duracion: 1000, flujo: true });
+                if (figura.raf) cancelAnimationFrame(figura.raf);
+                for (const k of [0, 0.5, 1]) {
+                  figura.animandoA = true;
+                  figura.kA = k;
+                  figura.pintarFlechas();
+                }
+                figura.animandoA = false;
+                figura.pintarFlechas();
+              });
+            }
+            anotar(true, titulo);
+          } catch (err) {
+            anotar(false, titulo, err.stack || err.message);
+          }
+        }
+
         // Los dibujos de memoria de los cuestionarios (dibujo.motor): el programa corre sin error
         // y pasa por la linea en que se quiere ver la memoria.
         for (const s of todas) {

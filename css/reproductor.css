@@ -527,9 +527,12 @@
 .rep-celda.rep-vacia {
   stroke-dasharray: 3 2;
 }
-.rep-celda.rep-nulo + text {
-  fill: var(--suave);
-  font-size: 10px;
+/* NULL: un valor valido que dice "nada": en negrita y en el gris pizarra de lo falso, ni apagado ni de color de aviso */
+.rep-celda.rep-nulo + text,
+.rep-svg .rep-nulo-saliente {
+  fill: var(--falso);
+  font-size: 11px;
+  font-weight: 700;
 }
 .rep-celda.rep-cambio {
   fill: var(--aviso-fondo);
