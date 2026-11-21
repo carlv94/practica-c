@@ -29,6 +29,8 @@
 //   quien la hace (main) y su ida y su vuelta; ver abrirRegistro y anotarLlamador en interprete.js.)
 //   retorno:   (solo en una recursion) { texto }: la funcion en curso esta por devolver ese valor, calculado con una llamada a si
 //              misma; la fotografia se saca justo antes de cerrar su caja, asi las cajas se cierran de a una
+//   salieron:   (si desde la fotografia anterior salieron variables de su ambito: un bloque o una funcion que termina) las
+//               variables, con el ultimo valor que tuvieron (la figura lo muestra un momento antes de que se vayan)
 //   escrituras: (si la sentencia anterior guardo un valor que no sale de otra casilla) [{ a, ruta }]: las casillas escritas
 //
 // Cada variable o bloque es { id, nombre, tipo, dir, tam, vivo, valor }. Un valor es:
@@ -95,7 +97,7 @@ export function serializar(st) {
   return { k: 'num', v: st.v, t: tipo.nombre, ...(nombre ? { enum: nombre } : {}) };
 }
 
-const deLaReserva = (r) => ({
+export const deLaReserva = (r) => ({
   id: r.id,
   nombre: r.nombre,
   tipo: r.tipo ? textoDeTipo(r.tipo) : r.tipoElemento ? textoDeTipo(r.tipoElemento) : null,

@@ -197,6 +197,12 @@ int main() {
   p = &n;
   r = NULL;
   int *c = crear();
+  int *b = NULL;
+  {
+    int y = 3;
+    b = &y;
+    y = 4;
+  }
   return 0;
 }`,
       };

@@ -260,12 +260,23 @@ function fotoConBloque(foto, anterior) {
 function fotoConSalida(foto, anterior) {
   if (foto.pregunta || foto.condicion || foto.error) return null;
   let sale = false;
+  // Las variables a las que apunta algun puntero: si una de ellas sale (la local de un bloque o de una funcion), se ve
+  // primero que el puntero la alcanza y despues que ella se va.
+  const apuntados = new Set();
+  for (const r of [...foto.globales, ...foto.marcos.flatMap((m) => m.variables), ...foto.monticulo.filter((b) => b.vivo)]) for (const p of punterosDe(r.valor)) apuntados.add(p.a);
+  // Lo ultimo que valian las que salen (la sentencia pudo cambiarlas justo antes: y = 4;), y ahi siguen vivas.
+  const ultimos = new Map((foto.salieron || []).map((v) => [v.id, { ...v, vivo: true, muerte: null }]));
+  const vuelven = new Set();
+  const reponer = (v) => {
+    vuelven.add(v.id);
+    return ultimos.get(v.id) || v;
+  };
   const marcos = [];
   for (let i = 0; i < anterior.marcos.length; i++) {
     const viejo = anterior.marcos[i];
     const nuevo = foto.marcos[i];
     if (!nuevo) {
-      marcos.push(viejo); // la caja de una funcion que termina
+      marcos.push({ ...viejo, variables: viejo.variables.map((v) => (v.pendiente ? v : reponer(v))) }); // la caja de una funcion que termina
       sale = true;
       continue;
     }
@@ -276,7 +287,7 @@ function fotoConSalida(foto, anterior) {
       marcos.push(nuevo);
       continue;
     }
-    if (salen.some((v) => tienePuntero(v.valor))) sale = true;
+    if (salen.some((v) => tienePuntero(v.valor) || apuntados.has(v.id))) sale = true;
     const variables = nuevo.variables.slice();
     for (const v of salen) {
       // en su lugar: despues de la que la precedia en la caja de antes
@@ -288,11 +299,25 @@ function fotoConSalida(foto, anterior) {
           break;
         }
       }
-      variables.splice(lugar, 0, v);
+      variables.splice(lugar, 0, reponer(v));
     }
     marcos.push({ ...nuevo, variables });
   }
-  return sale ? { ...foto, marcos } : null;
+  if (!sale) return null;
+  // Un puntero a una de las que vuelven apunta a algo que, en este momento, todavia esta: no es "muerto" (rojo) hasta el segundo tiempo.
+  const reviva = (v) => {
+    if (v.k === 'ptr') return v.muerto && vuelven.has(v.a) ? { ...v, muerto: false } : v;
+    if (v.k === 'est') return { ...v, campos: v.campos.map((c) => ({ ...c, v: reviva(c.v) })) };
+    if (v.k === 'arr') return { ...v, elems: v.elems.map(reviva) };
+    return v;
+  };
+  const conValor = (r) => ({ ...r, valor: reviva(r.valor) });
+  return {
+    ...foto,
+    globales: foto.globales.map(conValor),
+    marcos: marcos.map((m) => ({ ...m, variables: m.variables.map(conValor) })),
+    monticulo: foto.monticulo.map(conValor),
+  };
 }
 
 // Los bloques que se ven: los reservados, el que se libera en este paso, los liberados que algun
@@ -736,6 +761,7 @@ export class Figura {
     if (salidaDespues && flujo && animar && previa && anterior && duracion > 0 && !sinMovimiento()) {
       const intermedia = fotoConSalida(foto, anterior);
       if (intermedia) {
+        this.intermediaFoto = intermedia; // (la fotografia de en medio del paso encadenado; la usan las pruebas)
         const siguiente = { animar, duracion, flujo: false, expandir: false, bloquePrimero: false, salidaDespues: false };
         const efecto = this.mostrar(intermedia, anterior, { animar: true, duracion, flujo: true, salidaDespues: false });
         // Si la sentencia no hizo nada que se vea, no hay nada que esperar: se desvanece de una vez.
@@ -847,6 +873,8 @@ export class Figura {
     // Las variables con punteros que se van de una caja que sigue (termina un bloque { } o el cuerpo de un for): su casilla y su
     // flecha se desvanecen en su lugar, y la caja conserva su alto hasta que todo se reubica.
     const variablesQueSalen = [];
+    // (tambien las que no tienen punteros pero a las que apunta una flecha que las sobrevive: se ven irse antes de que la flecha retroceda)
+    const objetivosQueSeVan = new Set(escena.flechas.filter((f) => f.destinoSeVa).map((f) => f.a));
     if (mueve && previa) {
       for (const [k, mp] of previa.marcosG) {
         const m = escena.marcosG.get(k);
@@ -855,7 +883,7 @@ export class Figura {
         for (const g of mp.g.querySelectorAll('.rep-var')) {
           const id = Number(g.getAttribute('data-id'));
           const d = previa.datos.get(id);
-          if (escena.datos.has(id) || g.classList.contains('rep-pendiente') || !d || !d.reserva || !tienePuntero(d.reserva.valor)) continue;
+          if (escena.datos.has(id) || g.classList.contains('rep-pendiente') || !d || !d.reserva || (!tienePuntero(d.reserva.valor) && !objetivosQueSeVan.has(id))) continue;
           variablesQueSalen.push({ g, y: mp.actual.y });
           salen++;
         }
@@ -886,7 +914,7 @@ export class Figura {
     // bloques todavia donde estaban; despues, una pausa. Tiempo B: los bloques se reubican. FIN: todo
     // en su lugar. Si nada se mueve, solo hay tiempo A.
     const hayRetiradas = escena.retiradas.some((r) => r.viejo);
-    const hayA = escena.flechas.some((f) => f.cambio && !f.tarde) || hayRetiradas || variablesQueSalen.length > 0 || cajasQueSalen.length > 0;
+    const hayA = escena.flechas.some((f) => f.cambio && !f.tarde) || hayRetiradas || variablesQueSalen.length > 0 || cajasQueSalen.length > 0 || escena.destinoSeVa;
     const conFlechaAntes = mueve && seMueven && hayA;
     this.fase = !mueve || !seMueven ? 'FIN' : conFlechaAntes ? 'A' : 'B';
     for (const b of escena.bloques.values()) if (b.nuevo && !seMueven) b.nuevo = false;
@@ -955,7 +983,12 @@ export class Figura {
         algo = true;
       }
       if (variablesQueSalen.length) {
-        this.anotar(tFlecha, 'Se desvanecen las variables con punteros del bloque que termina');
+        this.anotar(tFlecha, 'Se desvanecen las variables del bloque que termina');
+        algo = true;
+      }
+      for (const x of escena.flechas) {
+        if (!x.destinoSeVa) continue;
+        this.anotar(tFlecha + 0.8 * u, `La flecha de ${this.nombreCelda(escena, x.deId, x.rutaOrigen)} retrocede: lo que señalaba ya no existe`);
         algo = true;
       }
       if (seMueven) {
@@ -1006,7 +1039,8 @@ export class Figura {
     const retencion = animA && hayFlechaPrevia && !hayVieja ? u * 0.6 : 0;
     // Si en el tiempo A solo se desvanece lo que sale (no se dibuja, contrae ni redirige nada), es mas corto.
     const soloSalidas = animA && !hayFlechaPrevia && !escena.flechas.some((f) => f.cambio && !f.tarde);
-    const dA = soloSalidas ? 0.7 * u : u;
+    // La flecha cuyo destino se va: primero se desvanece lo que se va (hasta el 40 %) y despues la flecha retrocede (desde el 50 %).
+    const dA = animA && escena.destinoSeVa ? 1.6 * u : soloSalidas ? 0.7 * u : u;
     const duracionA = animA ? retencion + dA : 0;
     // La pausa entre la flecha y la reubicacion es tambien el lugar del parpadeo de lo que la flecha acaba de alcanzar.
     const pausa = conFlechaAntes ? (soloSalidas ? 0.2 * u : Math.max(u * 1.1, dLlegar + u * 0.2)) : 0;
@@ -2091,6 +2125,17 @@ export class Figura {
       });
     }
 
+    // Una flecha que seguia a una variable de un bloque o de una funcion que ya no esta: antes iba a esa variable (en la escena
+    // anterior) y ahora termina en una "×". Se ve la caja desvanecerse y, despues, la flecha retroceder hasta la cruz.
+    if (previa && anterior) {
+      for (const fl of flechas) {
+        if (fl.cambio || !fl.final || fl.final.tipo !== 'perdida' || fl.incierta) continue;
+        const fp = previa.flechas.find((x) => x.claveOrigen === fl.claveOrigen && x.a === fl.a && x.final && x.final.tipo !== 'perdida' && x.final.destino && x.final.destino.marco != null);
+        if (!fp) continue;
+        fl.destinoSeVa = true;
+        fl.destinoViejo = { f: fp, d: fp.final, escena: previa };
+      }
+    }
     const svg = el('svg', {
       viewBox: `0 0 ${ancho} ${alto + 10}`,
       width: ancho,
@@ -2160,6 +2205,7 @@ export class Figura {
       filas,
       retiradas,
       desvanecen: [],
+      destinoSeVa: flechas.some((f) => f.destinoSeVa),
       capaResalte,
       anclas: p.anclas,
       alto,
@@ -2363,11 +2409,40 @@ export class Figura {
     }
   }
 
+  // La flecha de un puntero que sigue ahi pero cuyo destino se va (la variable de un bloque o de una funcion que termina): quieta y
+  // roja mientras lo que se va se desvanece (primer 40 % del tiempo A) y, desde el 50 %, la punta retrocede hasta el muñon de la
+  // "×" mientras se vuelve punteada.
+  flechaQueRetrocede(f, filas, indice, hijos) {
+    const viejo = f.destinoViejo;
+    const completa = this.rutaPuntos(viejo.f, viejo.d, viejo.escena.filas, viejo.escena);
+    const corta = this.rutaPuntos(f, f.final, filas);
+    const retro = Math.max(0, (this.kA - 0.5) / 0.5);
+    const color = Math.min(1, retro * 2);
+    const puntos = unir(completa, corta, retro);
+    const sinNombre = { ...f, nombre: null, retirada: false };
+    // Desde que empieza este tiempo el cuerpo ya es rojo (continuo: sigue yendo a la variable que se desvanece); al retroceder
+    // se vuelve punteado.
+    const continua = this.grupoDeFlecha({ ...sinNombre, cambio: false, muerto: true }, viejo.d, puntos, indice);
+    continua.classList.add('rep-activa');
+    continua.style.opacity = String(1 - color);
+    hijos.push(continua);
+    if (color > 0) {
+      const roja = this.grupoDeFlecha({ ...sinNombre, cambio: false, marcaFija: true }, f.final, puntos, indice);
+      roja.classList.add('rep-activa');
+      const punta = puntos[puntos.length - 1];
+      roja.append(texto(punta.x + 6, punta.y + 4, '×', 'rep-perdida-texto'));
+      roja.style.opacity = String(color);
+      hijos.push(roja);
+    }
+  }
+
   pintarFlechas() {
     const { flechas, capaFlechas } = this.escena;
     // Los bloques que se van de la vista se desvanecen en el tiempo A, a la vez que la flecha que los senalaba.
+    // (si hay una flecha cuyo destino se va, lo que se va se desvanece en el primer 40 % del tiempo A y la flecha retrocede despues)
+    const velo = Math.max(0, 1 - this.kA / (this.escena.destinoSeVa ? 0.4 : 1));
     for (const d of this.escena.desvanecen) {
-      if (this.animandoA) d.g.style.opacity = String(Math.max(0, 1 - this.kA));
+      if (this.animandoA) d.g.style.opacity = String(velo);
       else d.g.remove();
     }
     if (!this.animandoA) this.escena.desvanecen = [];
@@ -2377,6 +2452,10 @@ export class Figura {
     flechas.forEach((f, indice) => {
       const d = antes ? f.previo : f.final;
       if (!d) return;
+      if (this.animandoA && f.destinoSeVa) {
+        this.flechaQueRetrocede(f, filas, indice, hijos);
+        return;
+      }
       let puntos = this.rutaPuntos(f, d, filas);
       if (this.animandoA && f.cambio) {
         // La flecha que cambio: si iba a otro lado, la punta se desliza del destino viejo al nuevo;
@@ -2408,7 +2487,7 @@ export class Figura {
         const completa = this.rutaPuntos(r, r.viejo, filas, r.escenaOrigen || this.escena);
         if (r.seVa) {
           const g = this.grupoDeFlecha(r, r.viejo, completa, -1);
-          g.style.opacity = String(Math.max(0, 1 - this.kA));
+          g.style.opacity = String(velo);
           hijos.push(g);
           continue;
         }

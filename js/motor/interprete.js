@@ -20,7 +20,7 @@ import {
   Memoria, almacen, ceros, copiar, punteroA, punteroEnArreglo, mismoDestino, direccionDe,
 } from './memoria.js';
 import { formatear, Entrada, piezasDeScanf } from './biblioteca.js';
-import { fotografia, rutaDe, serializarPuntero } from './traza.js';
+import { deLaReserva, fotografia, rutaDe, serializarPuntero } from './traza.js';
 
 const TAMANO_T = { k: 'int', nombre: 'unsigned long', bytes: 8, sinSigno: true };
 const MAX_PASOS = 200000;
@@ -138,6 +138,7 @@ class Interprete {
     this.enMacro = 0;
     this.traza = [];
     this.accesos = []; // los accesos por puntero desde la ultima fotografia
+    this.salidas = []; // las variables que salieron de su ambito desde la ultima fotografia, con el ultimo valor que tuvieron
     this.escrituras = []; // las casillas donde se guardo un valor que no sale de otra casilla (un literal, una cuenta), idem
     this.llamadasDe = new Map(); // cuantas veces se llamo a cada funcion (para saber si un return llamo a la suya)
     this.registroLlamadas = []; // las llamadas de las funciones recursivas, para el trazado (ver abrirRegistro)
@@ -194,6 +195,7 @@ class Interprete {
     if (this.traza.length >= MAX_TRAZA) {
       this.accesos = [];
       this.escrituras = [];
+      this.salidas = [];
       this.condicionHecha = null;
       this.muestraHecha = null;
       this.lecturaHecha = null;
@@ -204,6 +206,9 @@ class Interprete {
     this.accesos = [];
     if (this.escrituras.length) foto.escrituras = this.escrituras;
     this.escrituras = [];
+    // Lo ultimo que valian las variables que salieron de su ambito (la figura lo muestra antes de que se vayan).
+    if (this.salidas.length) foto.salieron = this.salidas;
+    this.salidas = [];
     if (this.condicionHecha) foto.condicion = this.condicionHecha;
     this.condicionHecha = null;
     if (pregunta) foto.pregunta = pregunta;
@@ -471,6 +476,7 @@ class Interprete {
   cerrarAmbito() {
     const a = this.marcos[this.marcos.length - 1].ambitos.pop();
     if (this.marcos.length === 1) for (const v of a.values()) this.finales.set(v.reserva.nombre, v.reserva);
+    if (this.opciones.traza) for (const v of a.values()) this.salidas.push(deLaReserva(v.reserva));
     for (const v of a.values()) this.memoria.matar(v.reserva, 'marco');
     this.memoria.soltarPila(a.marca);
   }

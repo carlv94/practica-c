@@ -551,6 +551,79 @@ import { corregir } from '../js/corrector.js';
           }
         }
 
+        // Una flecha cuyo destino se va (la variable de una funcion o de un bloque que termina): primero se ve que el puntero la alcanza,
+        // despues se desvanece lo que se va y al final la flecha retrocede hasta la "×".
+        {
+          const titulo = 'figura: la flecha cuyo destino se va llega a el, lo ve desvanecerse y retrocede hacia la "×"';
+          try {
+            const { Figura } = await import('../js/motor/figura.js');
+            const { ajustes } = await import('../js/ajustes.js');
+            const { tiempo } = await import('../js/motor/tiempo.js');
+            ajustes.fijarPerfil('explicacion');
+            const dosTiempos = (fuente, buscar) => {
+              const m = ejecutarMotor(analizador, fuente, { traza: true });
+              const i = m.traza.findIndex((foto, k) => k > 0 && buscar(foto, m.traza[k - 1]));
+              if (i < 1) throw new Error('no se encontro el paso');
+              const figura = new Figura(document.createElement('div'));
+              figura.fijarAyudas(ajustes.todos());
+              for (let k = 0; k < i; k++) figura.mostrar(m.traza[k], k ? m.traza[k - 1] : null, { animar: false });
+              figura.mostrar(m.traza[i], m.traza[i - 1], { animar: true, duracion: 1000, flujo: true });
+              const primero = { hay: Boolean(figura.expansionPendiente), flechas: figura.escena.flechas.filter((f) => f.cambio && f.final && f.final.tipo !== 'perdida').length, cruces: [...figura.escena.svg.querySelectorAll('text')].filter((t) => t.textContent === '×').length, rojos: figura.escena.svg.querySelectorAll('.rep-muerto, .rep-flecha-liberada, [marker-end="url(#rep-punta-mala)"]').length, textos: [...figura.escena.svg.querySelectorAll('text')].map((t) => t.textContent) };
+              // el segundo tiempo, a mano
+              tiempo.cancelar(figura.expansionPendiente);
+              if (figura.raf) cancelAnimationFrame(figura.raf);
+              figura.mostrar(m.traza[i], figura.intermediaFoto, { animar: true, duracion: 1000, flujo: false, expandir: false, bloquePrimero: false, salidaDespues: false });
+              if (figura.raf) cancelAnimationFrame(figura.raf);
+              const escena = figura.escena;
+              const muestras = [0, 0.2, 0.45, 0.6, 0.8, 1].map((k) => {
+                figura.animandoA = true;
+                figura.kA = k;
+                figura.fase = 'A';
+                figura.pintarFlechas();
+                const svg = escena.svg;
+                return {
+                  k,
+                  velo: escena.desvanecen.map((d) => Number(d.g.style.opacity)),
+                  ambar: svg.querySelectorAll('.rep-flecha-g.rep-nueva').length,
+                  continuas: svg.querySelectorAll('.rep-flecha-liberada').length,
+                  rojas: svg.querySelectorAll('.rep-flecha-mala').length,
+                  cruces: [...svg.querySelectorAll('text')].filter((t) => t.textContent === '×').length,
+                };
+              });
+              figura.animandoA = false;
+              return { primero, muestras, destinoSeVa: escena.destinoSeVa };
+            };
+            let r = dosTiempos(
+              'int *crear() {\n  int x = 7;\n  return &x;\n}\nint main() {\n  int *c = crear();\n  return 0;\n}',
+              (foto, antes) => foto.marcos.length < antes.marcos.length
+            );
+            if (!r.primero.hay) throw new Error('el paso en que la funcion termina y el puntero recibe &x deberia encadenarse');
+            if (r.primero.flechas < 1) throw new Error('primero la flecha tiene que llegar a x (todavia esta la caja de la funcion)');
+            if (r.primero.cruces) throw new Error('mientras la caja sigue ahi no puede haber una "×"');
+            if (r.primero.rojos) throw new Error('mientras x sigue ahi, la flecha, su punta y su punto no son rojos (son de lo que llega): ' + r.primero.rojos);
+            if (!r.destinoSeVa) throw new Error('en el segundo tiempo la flecha de c es la de un destino que se va');
+            const [m0, m1, m2, m3, m4, m5] = r.muestras;
+            if (!(m0.velo.every((v) => v === 1) && m0.ambar === 0 && m0.continuas >= 1 && m0.rojas === 0 && m0.cruces === 0)) throw new Error('al empezar: la caja entera, la flecha ya roja (continua, no ambar), sin cruz: ' + JSON.stringify(m0));
+            if (!m2.velo.every((v) => v < 0.1)) throw new Error('hacia el 45 %: la caja ya se desvanecio: ' + JSON.stringify(m2));
+            if (!(m3.rojas >= 1 && m3.continuas >= 1)) throw new Error('retrocediendo: la roja continua y la roja punteada se cruzan: ' + JSON.stringify(m3));
+            if (!(m5.rojas >= 1 && m5.cruces >= 1)) throw new Error('al terminar: roja punteada con su cruz: ' + JSON.stringify(m5));
+            // un bloque que termina con el puntero ya asignado (el paso es solo "y = 4;" mas el fin del bloque)
+            r = dosTiempos(
+              'int main() {\n  int *b = NULL;\n  {\n    int y = 3;\n    b = &y;\n    y = 4;\n  }\n  return 0;\n}',
+              (foto, antes) => foto.marcos[0] && antes.marcos[0] && foto.marcos[0].variables.length < antes.marcos[0].variables.length
+            );
+            if (!r.primero.hay) throw new Error('el paso en que termina el bloque deberia encadenarse');
+            if (!r.primero.textos.includes('4') || r.primero.textos.includes('3')) throw new Error('y = 4; se ve antes de que y se vaya (y vale 4, ya no 3): ' + r.primero.textos.join(','));
+            if (r.primero.rojos) throw new Error('mientras y sigue ahi, la flecha de b no es roja: ' + r.primero.rojos);
+            if (!r.destinoSeVa) throw new Error('al terminar el bloque la flecha de b es la de un destino que se va');
+            if (!r.muestras[2].velo.length || !r.muestras[2].velo.every((v) => v < 0.1)) throw new Error('la variable y tiene que desvanecerse: ' + JSON.stringify(r.muestras[2]));
+            if (!(r.muestras[5].rojas >= 1 && r.muestras[5].cruces >= 1)) throw new Error('al terminar: roja punteada con su cruz');
+            anotar(true, titulo);
+          } catch (err) {
+            anotar(false, titulo, err.stack || err.message);
+          }
+        }
+
         // La figura con animacion (ayudas de Explicacion) en todos los pasos de todos los programas del motor: la flecha que se contrae, la
         // que se desvanece y la casilla que se va se dibujan en varios momentos del tiempo A sin fallar.
         {
