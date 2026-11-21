@@ -1470,3 +1470,45 @@
   color: var(--suave);
   font-size: 0.92rem;
 }
+
+/* las referencias de la figura (ver js/motor/leyenda.js): la tarjeta de las ayudas, con filas de muestra y explicacion */
+.ajustes.leyenda {
+  max-width: 460px;
+}
+.leyenda-seccion {
+  margin: 14px 0 6px;
+  font-size: 0.9rem;
+  color: var(--suave);
+}
+.leyenda-fila {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0 0 10px;
+}
+.leyenda-muestra {
+  flex: 0 0 auto;
+  background: var(--fondo);
+  border: 1px solid var(--borde);
+  border-radius: 6px;
+}
+.leyenda-texto {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.85rem;
+}
+.leyenda-titulo {
+  font-size: 0.9rem;
+}
+.leyenda-detalle {
+  color: var(--suave);
+}
+.leyenda-requiere {
+  margin-top: 4px;
+  color: var(--texto);
+}
+.leyenda-interruptor {
+  font: inherit;
+  font-size: 0.8rem;
+  padding: 1px 8px;
+}

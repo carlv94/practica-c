@@ -17,6 +17,7 @@ import { Figura, textoPorPartes } from './figura.js';
 import { tiempo } from './tiempo.js';
 import { pintar } from '../editor.js';
 import { ajustes, montarAjustes } from '../ajustes.js';
+import { montarLeyenda } from './leyenda.js';
 
 const VELOCIDADES = [
   { nombre: 'Cámara lenta', ms: 4800 },
@@ -368,7 +369,14 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   const panelAjustes = nodo('section', 'ajustes');
   panelAjustes.hidden = true;
   montarAjustes(panelAjustes, abrirAjustes);
-  herramientas.append(nodo('span', '', 'Figura'), menos, mas, ajustar, etiquetaZoom, etiquetaExplicar, abrirAjustes, panelAjustes);
+  // El «ⓘ» abre las referencias de la figura (que significa cada flecha, casilla y bloque, y de que ayuda depende cada una).
+  const abrirLeyenda = boton('ⓘ', 'Referencias de la figura');
+  abrirLeyenda.classList.add('rep-leyenda-boton');
+  abrirLeyenda.setAttribute('aria-label', 'Referencias de la figura');
+  const panelLeyenda = nodo('section', 'ajustes leyenda');
+  panelLeyenda.hidden = true;
+  montarLeyenda(panelLeyenda, abrirLeyenda);
+  herramientas.append(nodo('span', '', 'Figura'), menos, mas, ajustar, etiquetaZoom, etiquetaExplicar, abrirAjustes, abrirLeyenda, panelAjustes, panelLeyenda);
   // Lo que ingresa el usuario: el texto de la entrada, con lo que ya se leyo atenuado (solo si el programa tiene entrada).
   const textoDeEntrada = entrada || '';
   const cajaDeEntrada = nodo('pre', 'rep-entrada');

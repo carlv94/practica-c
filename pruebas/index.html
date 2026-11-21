@@ -624,6 +624,55 @@ import { corregir } from '../js/corrector.js';
           }
         }
 
+        // Las referencias de la figura (el panel «ⓘ»): una entrada por cada tipo de flecha que dibuja la figura, cada una con su muestra, y las
+        // que dependen de una ayuda visual dicen cual es y tienen su interruptor.
+        {
+          const titulo = 'referencias de la figura: cubren todos los tipos de flecha y sus interruptores funcionan';
+          try {
+            const { FLECHAS, FIGURAS, montarLeyenda } = await import('../js/motor/leyenda.js');
+            const { ajustes, AYUDAS } = await import('../js/ajustes.js');
+            // cobertura: toda clase de flecha que escribe figura.js (rep-flecha-XXX y los grupos de estado) esta en alguna entrada
+            const fuente = await (await fetch('../js/motor/figura.js')).text();
+            const usadas = new Set([...fuente.matchAll(/rep-flecha-[a-z]+/g)].map((m) => m[0]));
+            for (const g of ['rep-nueva', 'rep-retirada', 'rep-de-liberado']) if (fuente.includes(g)) usadas.add(g);
+            for (const ignorada of ['rep-flecha-g', 'rep-flecha-zona']) usadas.delete(ignorada);
+            const cubiertas = new Set(FLECHAS.flatMap((e) => e.clases));
+            const faltan = [...usadas].filter((c) => !cubiertas.has(c));
+            if (faltan.length) throw new Error('la figura dibuja flechas que las referencias no explican (sumar una entrada en FLECHAS de js/motor/leyenda.js): ' + faltan.join(', '));
+            for (const e of FLECHAS) if (e.requiere && !AYUDAS.some((a) => a.clave === e.requiere)) throw new Error('la entrada ' + e.id + ' depende de una ayuda que no existe: ' + e.requiere);
+            // el panel
+            const panel = document.createElement('section');
+            const abrir = document.createElement('button');
+            panel.hidden = true;
+            document.body.append(abrir, panel);
+            montarLeyenda(panel, abrir);
+            const filas = panel.querySelectorAll('.leyenda-fila');
+            if (panel.querySelectorAll('[data-flecha]').length !== FLECHAS.length || panel.querySelectorAll('[data-figura]').length !== FIGURAS.length) throw new Error('el panel no tiene una fila por entrada');
+            if ([...filas].some((f) => !f.querySelector('.leyenda-titulo').textContent)) throw new Error('una fila sin titulo');
+            for (const e of FLECHAS) {
+              const f = panel.querySelector(`[data-flecha="${e.id}"]`);
+              if (!f.querySelector('svg path.rep-flecha')) throw new Error('la muestra de ' + e.id + ' no dibuja la flecha');
+              if (Boolean(f.querySelector('.leyenda-requiere')) !== Boolean(e.requiere)) throw new Error('el "Requiere" de ' + e.id);
+            }
+            abrir.click();
+            if (panel.hidden) throw new Error('el boton abre el panel');
+            // el interruptor de «Punteros sin inicializar»
+            const previo = ajustes.valor('punterosSinValor');
+            ajustes.fijar('punterosSinValor', false);
+            const boton = panel.querySelector('[data-flecha="incierta"] .leyenda-interruptor');
+            if (!/desactivada/.test(panel.querySelector('[data-flecha="incierta"] .leyenda-estado').textContent) || boton.textContent !== 'Activar') throw new Error('con la ayuda apagada el panel dice desactivada y ofrece Activar');
+            boton.click();
+            if (!ajustes.valor('punterosSinValor')) throw new Error('el interruptor del panel enciende la ayuda');
+            if (boton.textContent !== 'Desactivar') throw new Error('el panel se actualiza con la ayuda');
+            ajustes.fijar('punterosSinValor', previo);
+            panel.remove();
+            abrir.remove();
+            anotar(true, titulo);
+          } catch (err) {
+            anotar(false, titulo, err.stack || err.message);
+          }
+        }
+
         // Un bloque que se queda sin nadie que lo apunte (*lista = nuevo; deja solo al nodo viejo): su borde y su aviso "inalcanzable" aparecen
         // cuando la flecha termina de irse, no desde el primer cuadro del paso (cuando la flecha todavia lo apunta).
         {
