@@ -250,7 +250,8 @@ function fotoConBloque(foto, anterior) {
   const nuevos = foto.monticulo.filter((b) => b.vivo && !antes.has(b.id));
   if (!nuevos.length) return null;
   if (!(foto.accesos || []).some((h) => h.de)) return null;
-  return { ...anterior, monticulo: [...anterior.monticulo, ...nuevos], accesos: undefined, escrituras: undefined, condicion: undefined, pregunta: undefined, muestra: undefined, lectura: undefined, error: undefined };
+  // ("enCamino": los bloques recien reservados, que van a recibir su flecha en el paso de verdad: todavia no estan "inalcanzables")
+  return { ...anterior, monticulo: [...anterior.monticulo, ...nuevos], enCamino: nuevos.map((b) => b.id), accesos: undefined, escrituras: undefined, condicion: undefined, pregunta: undefined, muestra: undefined, lectura: undefined, error: undefined };
 }
 
 // Cuando en este paso algo sale de su ambito (termina una funcion, o un bloque { } con variables que tienen punteros) a la vez que la
@@ -810,6 +811,11 @@ export class Figura {
     // empieza cuando termina el flujo; cuenta como parte de lo que dura el paso.
     const fundidosDeBloque = [...escena.svg.querySelectorAll('.rep-fundido-bloque, .rep-aviso-nuevo')];
     const hayFundido = mueve && (fundidosDeBloque.length > 0 || escena.flechas.some((f) => f.recienLiberada));
+    // El borde y el aviso de un bloque que se queda sin nadie que lo apunte aparecen cuando la flecha termina de irse.
+    const huerfanosNuevos = mueve ? [...escena.svg.querySelectorAll('.rep-huerfano-nuevo')] : [];
+    const aparecerHuerfanos = (demora) => {
+      for (const e of huerfanosNuevos) if (e.animate) e.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 0.5 * u, delay: demora, easing: 'ease-in-out', fill: 'both' });
+    };
     // Primero cambia el bloque (el borde y su aviso, en el flujo que termino de recorrer la flecha de quien lo libera) y,
     // cuando va por la mitad, las flechas que lo apuntaban se expanden y pasan al rojo: se ve que quedaron colgando
     // como consecuencia.
@@ -1028,6 +1034,7 @@ export class Figura {
         }, retardo + aparte);
       }
       marcarCambio(retardo, retardo, retardo);
+      aparecerHuerfanos(retardo);
       const dura = Math.max(hayFundido ? u : 0, this.dDestello ? this.retrasoFlechas + this.dDestello : 0, dBrillo);
       this.dDestello = 0;
       return retardo + dura + aparte;
@@ -1042,6 +1049,7 @@ export class Figura {
     // La flecha cuyo destino se va: primero se desvanece lo que se va (hasta el 40 %) y despues la flecha retrocede (desde el 50 %).
     const dA = animA && escena.destinoSeVa ? 1.6 * u : soloSalidas ? 0.7 * u : u;
     const duracionA = animA ? retencion + dA : 0;
+    aparecerHuerfanos(retardo + duracionA);
     // La pausa entre la flecha y la reubicacion es tambien el lugar del parpadeo de lo que la flecha acaba de alcanzar.
     const pausa = conFlechaAntes ? (soloSalidas ? 0.2 * u : Math.max(u * 1.1, dLlegar + u * 0.2)) : 0;
     const espera = duracionA + pausa;
@@ -2017,6 +2025,7 @@ export class Figura {
     const enLista = new Set(lista.map((b) => b.id));
     const enSueltos = new Set(sueltos.map((b) => b.id));
     const vivosPrevios = new Set(anterior ? anterior.monticulo.filter((x) => x.vivo).map((x) => x.id) : []);
+    const huerfanos = new Set(); // los que ahora ya nadie apunta
     for (const b of visibles) {
       const lugar = lugares.get(b.id);
       if (!lugar) continue;
@@ -2026,9 +2035,14 @@ export class Figura {
       p.capa = g;
       p.bloque = b.id;
       p.dueno = { id: b.id, nombre: null, pila: false };
-      const huerfano = b.vivo && !enLista.has(b.id) && !enSueltos.has(b.id);
-      const clases = 'rep-bloque' + (b.vivo ? '' : ' rep-liberado') + (huerfano ? ' rep-huerfano' : '');
+      const huerfano = b.vivo && !enLista.has(b.id) && !enSueltos.has(b.id) && !(foto.enCamino && foto.enCamino.includes(b.id));
+      if (huerfano) huerfanos.add(b.id);
+      // Si hasta recien alguien lo apuntaba: se queda sin nadie cuando la flecha termina de irse, no antes (el borde de
+      // "inalcanzable" y su aviso aparecen despues de que la flecha se va; ver mostrar).
+      const recienHuerfano = huerfano && Boolean(previa && previa.bloques.has(b.id) && previa.huerfanos && !previa.huerfanos.has(b.id));
+      const clases = 'rep-bloque' + (b.vivo ? '' : ' rep-liberado') + (huerfano && !recienHuerfano ? ' rep-huerfano' : '');
       g.append(el('rect', { x: 0, y: ENCABEZADO, width: lugar.w, height: lugar.h, rx: 5, class: clases }));
+      if (recienHuerfano) g.append(el('rect', { x: 0, y: ENCABEZADO, width: lugar.w, height: lugar.h, rx: 5, class: 'rep-bloque rep-huerfano rep-huerfano-nuevo' }));
       // Recien liberado: encima va el borde de antes, que se desvanece (ver mostrar).
       const recienLiberado = !b.vivo && vivosPrevios.has(b.id);
       if (recienLiberado) g.append(el('rect', { x: 0, y: ENCABEZADO, width: lugar.w, height: lugar.h, rx: 5, class: 'rep-bloque rep-fundido-bloque' }));
@@ -2040,7 +2054,7 @@ export class Figura {
       // casilla del bloque sale una flecha que pasaria por el aviso, este se corre a la izquierda (junto a la direccion).
       const aviso = !b.vivo ? 'liberado' : huerfano ? 'inalcanzable' : '';
       if (aviso) {
-        const claseAviso = 'rep-aviso' + (recienLiberado ? ' rep-aviso-nuevo' : '');
+        const claseAviso = 'rep-aviso' + (recienLiberado ? ' rep-aviso-nuevo' : '') + (recienHuerfano ? ' rep-huerfano-nuevo' : '');
         const anchoDir = String(b.dir).length * 6;
         const anchoAviso = aviso.length * 5.6;
         const entra = lugar.w >= anchoDir + anchoAviso + 10;
@@ -2206,6 +2220,7 @@ export class Figura {
       retiradas,
       desvanecen: [],
       destinoSeVa: flechas.some((f) => f.destinoSeVa),
+      huerfanos,
       capaResalte,
       anclas: p.anclas,
       alto,

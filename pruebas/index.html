@@ -624,6 +624,67 @@ import { corregir } from '../js/corrector.js';
           }
         }
 
+        // Un bloque que se queda sin nadie que lo apunte (*lista = nuevo; deja solo al nodo viejo): su borde y su aviso "inalcanzable" aparecen
+        // cuando la flecha termina de irse, no desde el primer cuadro del paso (cuando la flecha todavia lo apunta).
+        {
+          const titulo = 'figura: "inalcanzable" aparece despues de que la flecha se va del bloque';
+          try {
+            const { Figura } = await import('../js/motor/figura.js');
+            const { ajustes } = await import('../js/ajustes.js');
+            const { tiempo } = await import('../js/motor/tiempo.js');
+            ajustes.fijarPerfil('explicacion');
+            const fuente = '#include <stdlib.h>\ntypedef struct nodo { int d; struct nodo *sig; } TNodo;\nint main() {\n  TNodo *lista = malloc(sizeof(TNodo));\n  lista->sig = NULL;\n  TNodo *nuevo = malloc(sizeof(TNodo));\n  nuevo->sig = NULL;\n  lista = nuevo;\n  nuevo->sig = lista;\n  return 0;\n}';
+            const m = ejecutarMotor(analizador, fuente, { traza: true });
+            const lugar = document.createElement('div'); // (en el documento: si no, el navegador no lista las animaciones)
+            document.body.append(lugar);
+            const figura = new Figura(lugar);
+            figura.fijarAyudas(ajustes.todos());
+            let visto = null;
+            m.traza.forEach((foto, i) => {
+              figura.mostrar(foto, i ? m.traza[i - 1] : null, { animar: Boolean(i), duracion: 1000, flujo: false });
+              if (figura.raf) cancelAnimationFrame(figura.raf);
+              tiempo.cancelar(figura.expansionPendiente);
+              const nuevos = figura.escena.svg.querySelectorAll('.rep-huerfano-nuevo');
+              if (nuevos.length && !visto) {
+                visto = {
+                  i,
+                  nuevos: nuevos.length,
+                  fijos: figura.escena.svg.querySelectorAll('.rep-bloque.rep-huerfano:not(.rep-huerfano-nuevo)').length,
+                  demoras: [...nuevos].flatMap((e) => (e.getAnimations ? e.getAnimations() : []).map((a) => a.effect.getTiming().delay)),
+                  texto: [...nuevos].some((e) => /inalcanzable/.test(e.textContent)),
+                };
+              }
+            });
+            lugar.remove();
+            if (!visto) throw new Error('el nodo viejo tendria que quedar inalcanzable en algun paso');
+            if (!visto.texto || visto.nuevos < 2) throw new Error('el borde y el aviso del bloque que se queda solo van marcados como nuevos: ' + JSON.stringify(visto));
+            if (visto.fijos) throw new Error('el borde de "inalcanzable" no tiene que estar desde el primer cuadro: ' + JSON.stringify(visto));
+            if (!visto.demoras.length || !visto.demoras.every((d) => d > 0)) throw new Error('el borde y el aviso aparecen despues de la flecha (con demora): ' + JSON.stringify(visto));
+            // sin animar (o al volver a dibujar el paso) se ve de una vez
+            const quieta = new Figura(document.createElement('div'));
+            quieta.fijarAyudas(ajustes.todos());
+            m.traza.forEach((foto, i) => quieta.mostrar(foto, i ? m.traza[i - 1] : null, { animar: false }));
+            if (!quieta.escena.svg.querySelector('.rep-bloque.rep-huerfano')) throw new Error('sin animar, el bloque inalcanzable se ve marcado');
+            // p = malloc(...) con p apuntando ya a otro bloque: el bloque recien reservado aparece primero (todavia sin flecha) y no
+            // tiene que decir "inalcanzable": va a recibir la flecha en el paso de verdad
+            const fuga = ejecutarMotor(analizador, '#include <stdlib.h>\nint main() {\n  int *p = malloc(sizeof(int));\n  *p = 3;\n  p = malloc(sizeof(int));\n  free(p);\n  return 0;\n}', { traza: true });
+            const nueva = new Figura(document.createElement('div'));
+            nueva.fijarAyudas(ajustes.todos());
+            let avisos = null;
+            fuga.traza.forEach((foto, i) => {
+              nueva.mostrar(foto, i ? fuga.traza[i - 1] : null, { animar: Boolean(i), duracion: 1000, flujo: true });
+              if (nueva.raf) cancelAnimationFrame(nueva.raf);
+              tiempo.cancelar(nueva.expansionPendiente);
+              if (i && foto.monticulo.length > fuga.traza[i - 1].monticulo.length && fuga.traza[i - 1].monticulo.length && avisos === null) avisos = [...nueva.escena.svg.querySelectorAll('text.rep-aviso')].map((t) => t.textContent);
+            });
+            if (avisos === null) throw new Error('no se encontro el paso de la segunda reserva');
+            if (avisos.includes('inalcanzable')) throw new Error('el bloque recien reservado todavia no esta inalcanzable: ' + avisos.join(','));
+            anotar(true, titulo);
+          } catch (err) {
+            anotar(false, titulo, err.stack || err.message);
+          }
+        }
+
         // La figura con animacion (ayudas de Explicacion) en todos los pasos de todos los programas del motor: la flecha que se contrae, la
         // que se desvanece y la casilla que se va se dibujan en varios momentos del tiempo A sin fallar.
         {
