@@ -562,6 +562,16 @@
 .rep-cabeza-incierta {
   fill: var(--incierto);
 }
+/* ni al aparecer: conserva su color (el ambar es de lo que llega con direccion) y solo se engrosa */
+.rep-flecha-g.rep-nueva .rep-flecha.rep-flecha-incierta {
+  stroke: var(--incierto);
+}
+/* "×": la flecha apunta a algo que ya no esta (el "?" magenta es lo que no se sabe) */
+.rep-svg .rep-perdida-texto {
+  fill: var(--error);
+  font-size: 14px;
+  font-weight: 700;
+}
 .rep-punto.rep-punto-incierto {
   fill: none;
   stroke: var(--incierto);

@@ -419,6 +419,51 @@ import { corregir } from '../js/corrector.js';
           }
         }
 
+        // El "?" es de lo que no se sabe (magenta, tambien cuando la flecha aparece o se retira); la "×" roja es de lo que ya no esta.
+        {
+          const titulo = 'figura: "?" magenta para lo que no se sabe y "×" roja para lo que ya no esta';
+          try {
+            const { Figura } = await import('../js/motor/figura.js');
+            const { ajustes } = await import('../js/ajustes.js');
+            ajustes.fijarPerfil('explicacion');
+            const pasos = (fuente, animar = true) => {
+              const m = ejecutarMotor(analizador, fuente, { traza: true });
+              const figura = new Figura(document.createElement('div'));
+              figura.fijarAyudas(ajustes.todos());
+              const salida = [];
+              m.traza.forEach((foto, i) => {
+                figura.mostrar(foto, i ? m.traza[i - 1] : null, { animar: animar && Boolean(i), duracion: 1000, flujo: false });
+                if (figura.raf) cancelAnimationFrame(figura.raf);
+                const textos = [...figura.svg.querySelectorAll('text')].map((t) => t.textContent);
+                const inciertas = [...figura.svg.querySelectorAll('.rep-flecha.rep-flecha-incierta')];
+                salida.push({
+                  cruces: textos.filter((t) => t === '×').length,
+                  signos: figura.svg.querySelectorAll('.rep-incierto-texto').length,
+                  cabezasMagenta: inciertas.every((p) => p.getAttribute('marker-end') === 'url(#rep-punta-incierta)'),
+                  inciertas: inciertas.length,
+                  grosor: figura.svg.querySelectorAll('.rep-flecha-g.rep-nueva .rep-flecha-incierta, .rep-flecha-g.rep-retirada .rep-flecha-incierta').length,
+                });
+              });
+              return salida;
+            };
+            const dice = (cond, mensaje) => {
+              if (!cond) throw new Error(mensaje);
+            };
+            let e = pasos('int main() {\n  int *p;\n  p = NULL;\n  return 0;\n}');
+            dice(e.some((x) => x.inciertas > 0), 'el puntero sin direccion debe llevar su flecha al "?"');
+            dice(e.every((x) => x.cabezasMagenta), 'la cabeza de la flecha del "?" (nueva o retirada) tiene que ser magenta');
+            dice(e.some((x) => x.grosor > 0), 'la flecha del "?" que aparece o se retira se engrosa, sin cambiar de color');
+            dice(e.every((x) => x.cruces === 0), 'sin punteros a algo que ya no esta no debe haber "×"');
+            // (ya dibujado, sin animar: mientras se anima la flecha que sale de un "?", este se desvanece a su lado)
+            e = pasos('int *f() {\n  int x = 1;\n  return &x;\n}\nint main() {\n  int *p = f();\n  return 0;\n}', false);
+            dice(e.some((x) => x.cruces > 0), 'un puntero a una variable que ya no existe termina en una "×"');
+            dice(e.filter((x) => x.cruces > 0).every((x) => x.signos === 0), 'la flecha roja punteada no lleva el "?" magenta');
+            anotar(true, titulo);
+          } catch (err) {
+            anotar(false, titulo, err.stack || err.message);
+          }
+        }
+
         // Que se contrae y que se desvanece: la flecha de un puntero que sigue ahi y deja de apuntar (a NULL) se contrae hasta su casilla; la
         // de un puntero que desaparece (termina su funcion, o el bloque donde estaba declarado) se desvanece, junto con su casilla. Un puntero
         // sin direccion que recibe una (o pasa de NULL a una) redirige su flecha; si pasa a NULL, la contrae.

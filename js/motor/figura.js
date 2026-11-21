@@ -2246,7 +2246,7 @@ export class Figura {
     const fin = puntos[puntos.length - 1];
     // Una flecha que se retira (el puntero pasa a NULL, el bloque se va de la vista o termina la funcion) conserva su
     // color, azul o rojo segun adonde apuntaba, y va mas gruesa para que se vea que cambia: el ambar es solo de lo que llega.
-    const retirada = f.retirada && d.tipo !== 'perdida';
+    const retirada = Boolean(f.retirada);
     // La que acaba de pasar a rojo porque se libero el bloque que apunta: queda mas gruesa mientras se ve este paso.
     const rojaNueva = f.recienLiberada && f.muerto && d.tipo !== 'perdida' && !retirada;
     const g = el('g', {
@@ -2280,14 +2280,16 @@ export class Figura {
       el('path', {
         d: trazado,
         class: 'rep-flecha' + (incierta ? ' rep-flecha-incierta' : punteada ? ' rep-flecha-mala' : liberada ? ' rep-flecha-liberada' : ''),
-        'marker-end': incierta && !(f.cambio && !retirada) ? 'url(#rep-punta-incierta)' : punteada || liberada ? 'url(#rep-punta-mala)' : marcaNormal,
+        'marker-end': incierta ? 'url(#rep-punta-incierta)' : punteada || liberada ? 'url(#rep-punta-mala)' : marcaNormal,
       })
     );
     // En el paso en que se libera el bloque, la flecha pasa de azul a rojo con un fundido.
     if (liberada && f.recienLiberada && this.fundir && this.fase === 'FIN') {
       g.append(el('path', { d: trazado, class: 'rep-flecha rep-fundido', 'marker-end': 'url(#rep-punta)' }));
     }
-    if (d.tipo === 'perdida' && !f.marcaFija) g.append(texto(fin.x + 6, fin.y + 4, '?', incierta ? 'rep-incierto-texto' : 'rep-aviso'));
+    // Al final de la que no sabe adonde va, un "?" (magenta); al final de la que apunta a algo que ya no esta, una "×" (roja):
+    // no se sabe frente a no hay nada. El "✗" queda para el falso de una condicion.
+    if (d.tipo === 'perdida' && !f.marcaFija) g.append(incierta ? texto(fin.x + 6, fin.y + 4, '?', 'rep-incierto-texto') : texto(fin.x + 6, fin.y + 4, '×', 'rep-perdida-texto'));
     // El nombre de la variable de la que sale, junto a la punta.
     if (f.nombre && d.tipo !== 'perdida') {
       const w = f.nombre.length * 6 + 8;
