@@ -184,6 +184,21 @@ int main() {
   free(r);
   return 0;
 }`,
+        'Punteros sin dirección («?») y a algo que ya no está («×»)': `int *crear() {
+  int x = 7;
+  return &x;
+}
+
+int main() {
+  int n = 5;
+  int *p;
+  int *q = p;
+  int *r;
+  p = &n;
+  r = NULL;
+  int *c = crear();
+  return 0;
+}`,
       };
 
       // Las variables que guardan el comienzo de la lista, para los programas que lo necesitan.
