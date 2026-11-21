@@ -14,6 +14,8 @@
   --error-fondo: #fdecea;
   --aviso: #8a5a00;
   --aviso-fondo: #fff4d6;
+  /* lo que no se sabe (un puntero que nunca recibio una direccion): ni el rojo del error ni el ambar de lo nuevo */
+  --incierto: #b4237f;
   --mejora: #0b5fd6;
   --mejora-fondo: #e7f0fd;
   --codigo: #eef1f4;
@@ -46,6 +48,7 @@
     --error-fondo: #3a1c1a;
     --aviso: #f0c35b;
     --aviso-fondo: #352a10;
+    --incierto: #f28bd0;
     --mejora: #6ea8ff;
     --mejora-fondo: #172a45;
     --codigo: #262c34;

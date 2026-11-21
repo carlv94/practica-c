@@ -252,12 +252,18 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     dibujo.fijarAyudas(ajustes.todos());
   };
   aplicarAyudas();
+  let sinValorVisto = ajustes.valor('punterosSinValor');
   const olvidarAyudas = ajustes.alCambiar(() => {
     if (!raiz.isConnected) {
       olvidarAyudas(); // este reproductor ya no esta en la pagina
       return;
     }
     aplicarAyudas();
+    // Las que cambian como se dibuja una casilla (no solo como se anima) se ven al instante: se vuelve a dibujar el paso de ahora.
+    if (ajustes.valor('punterosSinValor') !== sinValorVisto) {
+      sinValorVisto = ajustes.valor('punterosSinValor');
+      pintarPaso(false, false);
+    }
     aplicarPuntos();
     actualizarParadas();
     pintarTrazado(paso);

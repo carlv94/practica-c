@@ -78,6 +78,9 @@ export const CASOS_DEL_MOTOR = [
   { nombre: 'un puntero a una estructura', codigo: `typedef struct { int edad; } TA;\nint main() { TA a; TA *p = &a; p->edad = 20; (*p).edad += 1; printf("%d", a.edad); return 0; }`, espera: { salida: '21' } },
   { nombre: 'un puntero NULL', codigo: `int main() { int *p = NULL; printf("%d", *p); return 0; }`, espera: { error: 'DESREFERENCIA_NULA' } },
   { nombre: 'un puntero sin inicializar', codigo: `int main() { int *p; *p = 3; return 0; }`, espera: { error: 'VARIABLE_SIN_VALOR' } },
+  { nombre: 'copiar un puntero sin inicializar no es un error', codigo: `int main() { int *p; int *q = p; int *r; r = q; printf("ok"); return 0; }`, espera: { salida: 'ok' } },
+  { nombre: 'un puntero sin inicializar copiado falla al usarlo', codigo: `int main() { int *p; int *q = p;\n *q = 3; return 0; }`, espera: { error: 'VARIABLE_SIN_VALOR', fila: 2 } },
+  { nombre: 'comparar un puntero sin inicializar copiado falla', codigo: `int main() { int *p; int *q = p;\n printf("%d", q == NULL); return 0; }`, espera: { error: 'VARIABLE_SIN_VALOR', fila: 2 } },
   { nombre: 'una variable local que ya termino', codigo: `int *dame() { int x = 5; return &x; }\nint main() { int *p = dame(); printf("%d", *p); return 0; }`, espera: { error: 'VARIABLE_FUERA_DE_ALCANCE' } },
   { nombre: 'una variable de un bloque que ya termino', codigo: `int main() { int *p; { int x = 5; p = &x; } printf("%d", *p); return 0; }`, espera: { error: 'VARIABLE_FUERA_DE_ALCANCE' } },
 

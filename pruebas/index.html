@@ -382,6 +382,43 @@ import { corregir } from '../js/corrector.js';
           }
         }
 
+        // Con la ayuda "Punteros sin inicializar" la figura tambien se dibuja en todos los pasos (con las animaciones de un paso al otro), y un
+        // puntero que nunca recibio una direccion lleva una flecha hacia un "?"; sin la ayuda, su casilla dice "?".
+        {
+          const titulo = 'figura: punteros sin inicializar (con y sin la ayuda)';
+          try {
+            const { Figura } = await import('../js/motor/figura.js');
+            let flechas = 0;
+            for (const caso of CASOS_DEL_MOTOR) {
+              const r = ejecutarMotor(analizador, caso.codigo, { entrada: caso.entrada, traza: true });
+              const figura = new Figura(document.createElement('div'));
+              figura.fijarAyudas({ punterosSinValor: true });
+              r.traza.forEach((foto, i) => {
+                figura.mostrar(foto, i ? r.traza[i - 1] : null, { animar: false });
+                flechas += figura.svg.querySelectorAll('.rep-flecha-incierta').length;
+              });
+            }
+            if (flechas === 0) throw new Error('ningun puntero sin direccion se dibujo con su flecha');
+            const fuente = 'int main() {\n  int *p;\n  int *q = p;\n  return 0;\n}';
+            const m = ejecutarMotor(analizador, fuente, { traza: true });
+            // (la ultima fotografia ya no tiene la caja de main: se usa la anterior, con las dos variables declaradas)
+            const ultima = m.traza[m.traza.length - 2];
+            const contar = (ayuda) => {
+              const figura = new Figura(document.createElement('div'));
+              figura.fijarAyudas({ punterosSinValor: ayuda });
+              figura.mostrar(ultima, m.traza[m.traza.length - 3], { animar: false });
+              return { flechas: figura.svg.querySelectorAll('.rep-flecha-incierta').length, signos: [...figura.svg.querySelectorAll('text')].filter((t) => t.textContent === '?').length };
+            };
+            const con = contar(true);
+            const sin = contar(false);
+            if (con.flechas !== 2 || sin.flechas !== 0) throw new Error('flechas con la ayuda: ' + con.flechas + ', sin la ayuda: ' + sin.flechas + ' (se esperaban 2 y 0)');
+            if (sin.signos !== 2) throw new Error('sin la ayuda cada casilla debe decir "?": ' + sin.signos);
+            anotar(true, titulo);
+          } catch (e) {
+            anotar(false, titulo, e.stack || e.message);
+          }
+        }
+
         // Los dibujos de memoria de los cuestionarios (dibujo.motor): el programa corre sin error
         // y pasa por la linea en que se quiere ver la memoria.
         for (const s of todas) {

@@ -275,7 +275,8 @@ function repartir(foto, visibles, cabezas) {
 // ------------------------------------------------------------------ pintor
 
 class Pintor {
-  constructor(foto, anterior) {
+  constructor(foto, anterior, ayudas = {}) {
+    this.ayudas = ayudas; // las ayudas visuales (ver js/ajustes.js): aqui, las que cambian como se dibuja una casilla
     this.capa = el('g');
     this.anclas = new Map();
     this.flechas = [];
@@ -343,6 +344,30 @@ class Pintor {
         ruta: v.ruta,
         muerto: v.muerto,
         fuera: v.fuera,
+        cambio: this.cambios.has(k),
+      });
+      return m;
+    }
+    // Un puntero que nunca recibio una direccion (ayuda "Punteros sin inicializar"): casilla vacia, un punto hueco y una flecha
+    // punteada hacia un "?" (apunta a algun lado, pero no se sabe adonde). Sin la ayuda, la casilla dice "?".
+    if (v.k === 'sinvalor' && v.ptr && this.ayudas.punterosSinValor) {
+      this.casilla(x, y, m.w, CH, '', 'rep-puntero rep-vacia', k);
+      this.capa.append(el('circle', { cx: x + m.w / 2, cy: y + CH / 2, r: 4, class: 'rep-punto rep-punto-incierto', 'data-k': k }));
+      const nombre =
+        this.dueno && this.dueno.nombre
+          ? ruta.reduce((s, r) => (typeof r === 'number' ? `${s}[${r}]` : `${s}.${r}`), this.dueno.nombre)
+          : null;
+      this.flechas.push({
+        origen: { bloque: this.bloque, marco: this.marco, x, y, w: m.w, h: CH },
+        deId: this.dueno ? this.dueno.id : null,
+        nombre: this.dueno && this.dueno.pila ? nombre : null,
+        claveOrigen: k,
+        rutaOrigen: ruta,
+        a: null,
+        ruta: [],
+        muerto: false,
+        fuera: false,
+        incierta: true,
         cambio: this.cambios.has(k),
       });
       return m;
@@ -926,7 +951,7 @@ export class Figura {
   objetivosDeParpadeo(escena) {
     const salida = { alLlegar: [], alFinal: [] };
     for (const f of escena.flechas) {
-      if (!f.cambio || !f.final || f.muerto || f.fuera) continue;
+      if (!f.cambio || !f.final || f.muerto || f.fuera || f.incierta) continue;
       const k = this.claveDeResalte(escena, f.a, f.ruta);
       if (!escena.anclas.get(k)) continue;
       const lista = f.tarde ? salida.alFinal : salida.alLlegar;
@@ -1687,7 +1712,7 @@ export class Figura {
   // ---------------------------------------------------------- construccion
 
   construir(foto, anterior, previa = null) {
-    const p = new Pintor(foto, anterior);
+    const p = new Pintor(foto, anterior, this.ayudas);
     const raiz = p.capa;
     const datos = new Map();
     this.datos = datos;
@@ -1695,6 +1720,7 @@ export class Figura {
     defs.innerHTML =
       '<marker id="rep-punta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="rep-cabeza"/></marker>' +
       '<marker id="rep-punta-mala" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="rep-cabeza-mala"/></marker>' +
+      '<marker id="rep-punta-incierta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="rep-cabeza-incierta"/></marker>' +
       '<marker id="rep-punta-nueva" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="rep-cabeza-nueva"/></marker>' +
       '<marker id="rep-punta-vieja" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="rep-cabeza-vieja"/></marker>' +
       // El rayado de los bloques liberados: lineas diagonales, para que no dependa solo del color.
@@ -2077,7 +2103,9 @@ export class Figura {
     if (f.tarde && this.fase !== 'FIN') g.style.opacity = '0';
     // Punteada y roja: apunta a algo que no esta (una variable que ya no existe) o fuera del arreglo.
     // Continua y roja: apunta a un bloque liberado (el puntero sigue apuntando, pero la memoria ya no es suya).
-    const punteada = f.fuera || d.tipo === 'perdida';
+    // Punteada y de otro color: un puntero que nunca recibio una direccion (hacia un "?"): no es un error, es algo que no se sabe.
+    const incierta = Boolean(f.incierta);
+    const punteada = !incierta && (f.fuera || d.tipo === 'perdida');
     const liberada = f.muerto && d.tipo !== 'perdida';
     // La que sale de un bloque liberado (y no apunta a otro liberado ni a algo que no esta) se apaga en gris: el dato sigue
     // ahi, pero ya no es un enlace de la lista.
@@ -2090,15 +2118,15 @@ export class Figura {
     g.append(
       el('path', {
         d: trazado,
-        class: 'rep-flecha' + (punteada ? ' rep-flecha-mala' : liberada ? ' rep-flecha-liberada' : ''),
-        'marker-end': punteada || liberada ? 'url(#rep-punta-mala)' : marcaNormal,
+        class: 'rep-flecha' + (incierta ? ' rep-flecha-incierta' : punteada ? ' rep-flecha-mala' : liberada ? ' rep-flecha-liberada' : ''),
+        'marker-end': incierta && !(f.cambio && !retirada) ? 'url(#rep-punta-incierta)' : punteada || liberada ? 'url(#rep-punta-mala)' : marcaNormal,
       })
     );
     // En el paso en que se libera el bloque, la flecha pasa de azul a rojo con un fundido.
     if (liberada && f.recienLiberada && this.fundir && this.fase === 'FIN') {
       g.append(el('path', { d: trazado, class: 'rep-flecha rep-fundido', 'marker-end': 'url(#rep-punta)' }));
     }
-    if (d.tipo === 'perdida') g.append(texto(fin.x + 6, fin.y + 4, '?', 'rep-aviso'));
+    if (d.tipo === 'perdida') g.append(texto(fin.x + 6, fin.y + 4, '?', incierta ? 'rep-incierto-texto' : 'rep-aviso'));
     // El nombre de la variable de la que sale, junto a la punta.
     if (f.nombre && d.tipo !== 'perdida') {
       const w = f.nombre.length * 6 + 8;

@@ -60,7 +60,8 @@ export function rutaDe(st, objetivo) {
 }
 
 export function serializarPuntero(p) {
-  if (p === undefined) return { k: 'sinvalor', t: 'puntero' };
+  // (con "ptr": es un puntero que nunca recibio una direccion; la figura puede dibujarlo apuntando a un "?")
+  if (p === undefined) return { k: 'sinvalor', t: 'puntero', ptr: true };
   if (p === null) return { k: 'nulo' };
   const raiz = p.reserva.raiz;
   if (p.arr) {
@@ -115,6 +116,13 @@ function pendiente(d) {
   } catch (e) {
     valor = { k: 'sinvalor', t: textoDeTipo(d.tipo) };
   }
+  // Todavia no se declaro: no es un puntero sin direccion, es una variable que aun no existe.
+  const sinMarca = (v) => {
+    if (v.k === 'est') v.campos.forEach((c) => sinMarca(c.v));
+    else if (v.k === 'arr') v.elems.forEach(sinMarca);
+    else delete v.ptr;
+  };
+  sinMarca(valor);
   return { id: -(d.id + 1), nombre: d.nombre, tipo: textoDeTipo(d.tipo), dir: null, tam: null, vivo: true, muerte: null, pendiente: true, valor };
 }
 

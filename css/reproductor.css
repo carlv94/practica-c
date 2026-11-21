@@ -551,6 +551,24 @@
   stroke: var(--error);
   stroke-dasharray: 4 3;
 }
+/* un puntero que nunca recibio una direccion (ayuda "Punteros sin inicializar"): punteada, en su propio color, hacia un "?" */
+.rep-flecha.rep-flecha-incierta {
+  stroke: var(--incierto);
+  stroke-dasharray: 2 3;
+}
+.rep-cabeza-incierta {
+  fill: var(--incierto);
+}
+.rep-punto.rep-punto-incierto {
+  fill: none;
+  stroke: var(--incierto);
+  stroke-width: 1.5;
+}
+.rep-svg .rep-incierto-texto {
+  fill: var(--incierto);
+  font-size: 13px;
+  font-weight: 700;
+}
 .rep-cabeza {
   fill: var(--acento);
 }

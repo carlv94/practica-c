@@ -553,7 +553,7 @@ class Interprete {
       return;
     }
     if (tipo.k === 'ptr' || reserva) {
-      const { rv, origen, celda, devuelto } = this.evaluarConOrigen(init);
+      const { rv, origen, celda, devuelto } = this.evaluarConOrigen(init, true);
       this.asignarAlmacen(st, rv);
       if (devuelto) this.copiaDevuelta(st, reserva ? this.ubicar(reserva, st) : null);
       else this.registrarCopia(st, origen, celda, reserva ? this.ubicar(reserva, st) : null);
@@ -761,7 +761,9 @@ class Interprete {
 
   // Evalua una expresion y, si es una casilla que guarda un puntero (una variable, un campo, un elemento,
   // lo que apunta otro puntero), dice donde esta: es de donde sale el acceso que sigue.
-  evaluarConOrigen(n) {
+  // "copia": se lo va a guardar tal cual en otra casilla (int *q = p; q = p;): un puntero que nunca recibio una direccion se copia
+  // (en C la basura se copia; el problema aparece despues, cuando se la usa) y la otra casilla queda igual de sin valor.
+  evaluarConOrigen(n, copia = false) {
     if (!this.enMacro) this.fila = n.startPosition.row + 1;
     let lv = null;
     switch (n.type) {
@@ -771,7 +773,7 @@ class Interprete {
         break;
       }
       case 'parenthesized_expression':
-        return this.evaluarConOrigen(n.namedChildren[0]);
+        return this.evaluarConOrigen(n.namedChildren[0], copia);
       case 'pointer_expression':
         if (n.children[0].text === '*') lv = this.lvalor(n);
         break;
@@ -789,7 +791,8 @@ class Interprete {
       const devuelto = n.type === 'call_expression' && this.funciones.has(n.childForFieldName('function').text) && Boolean(rv) && Boolean(rv.t) && rv.t.k === 'ptr';
       return { rv, origen: null, celda: null, devuelto };
     }
-    const rv = this.valorDe(lv, n.text);
+    const sinDireccion = copia && lv.st.t && lv.st.t.k === 'ptr' && lv.st.v === undefined;
+    const rv = sinDireccion ? { t: lv.st.t, v: undefined } : this.valorDe(lv, n.text);
     const celda = this.ubicar(lv.reserva, lv.st);
     return { rv, origen: lv.st.t && lv.st.t.k === 'ptr' ? celda : null, celda };
   }
@@ -1229,7 +1232,7 @@ class Interprete {
     let origenCopiado = null;
     let celdaCopiada = null;
     let devuelto = false;
-    if (op === '=') ({ rv, origen: origenCopiado, celda: celdaCopiada, devuelto } = this.evaluarConOrigen(n.childForFieldName('right')));
+    if (op === '=') ({ rv, origen: origenCopiado, celda: celdaCopiada, devuelto } = this.evaluarConOrigen(n.childForFieldName('right'), true));
     else rv = this.evaluar(n.childForFieldName('right'));
     if (op !== '=') {
       const actual = this.valorDe(lv, n.childForFieldName('left').text);
