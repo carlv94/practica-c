@@ -1512,3 +1512,21 @@
   font-size: 0.8rem;
   padding: 1px 8px;
 }
+
+/* con el trazado, la tabla y la figura se turnan: la que aparece entra con un fundido */
+.rep-entra-modo {
+  animation: rep-entra-modo 0.4s ease-out;
+}
+@keyframes rep-entra-modo {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rep-entra-modo {
+    animation: none;
+  }
+}

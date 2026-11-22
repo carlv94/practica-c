@@ -416,7 +416,9 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   // Las filas de la tabla: la de quien hace la llamada de mas arriba (casi siempre main; ida: la llamada, o la cuenta que la rodea;
   // vuelta: lo que vale cuando la llamada devuelve) va antes de esa llamada.
   const filas = [];
+  const origenDe = new Map(); // de que llamada (registro) salio cada fila: la suya y las de quienes la llaman
   for (const r of registros) {
+    const desdeAqui = filas.length;
     if (r.llamador) {
       const L = r.llamador;
       // Las funciones que llamaron a la que prepara la recursion (main llama a sumaDigitos, que llama a sumaAux): una fila por cada
@@ -451,8 +453,28 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
       });
     }
     filas.push(r);
+    for (let i = desdeAqui; i < filas.length; i++) origenDe.set(filas[i], r);
   }
   const conValores = registros.some((r) => r.ida);
+  // Los tramos del trazado: cada recursion con valores (desde que se entra a la llamada de mas afuera hasta que vuelve; si una recursion
+  // llama a otra adentro, es un solo tramo). La tabla muestra solo las filas del tramo del paso, y la de la recursion anterior se limpia.
+  const tramos = [];
+  for (const r of registros.filter((x) => x.ida).sort((a, b) => a.desde - b.desde)) {
+    const hasta = r.hasta == null ? traza.length : r.hasta;
+    const ultimo = tramos[tramos.length - 1];
+    if (ultimo && r.desde < ultimo.hasta) ultimo.hasta = Math.max(ultimo.hasta, hasta);
+    else tramos.push({ desde: r.desde, hasta });
+  }
+  const filasPorTramo = tramos.map((t) => filas.filter((fila) => {
+    const r = origenDe.get(fila);
+    return Boolean(r) && r.desde >= t.desde && r.desde < t.hasta;
+  }));
+  // El tramo de la tabla en el paso k: el ultimo que ya empezo (entre dos recursiones, la ultima queda a la vista, ya terminada, hasta que
+  // empieza la siguiente: solo se nota con memoria dinamica, donde la tabla se ve siempre). Antes de la primera, ninguno.
+  const filasDelPaso = (k) => {
+    for (let i = tramos.length - 1; i >= 0; i--) if (tramos[i].desde <= k) return filasPorTramo[i];
+    return [];
+  };
   const sinMonticulo = traza.every((f) => !(f.monticulo && f.monticulo.length));
   const nivelBase = registros.length ? Math.min(...registros.map((r) => r.nivel)) : 0;
   // Con dos llamadas en el mismo return (un arbol) la sangria ayuda a ver que cuelga de que; si no, todo va a la izquierda.
@@ -460,10 +482,27 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   const trazado = nodo('div', 'rep-trazado');
   trazado.hidden = true;
   const expandidas = new Set(); // las filas cuyas preguntas el alumno amplio (con el texto a la vista)
-  const trazadoActivo = () => registros.length > 0 && ajustes.valor('trazado');
+  // (la tabla solo sirve para recursiones con valores, con ida y vuelta: una recursion que no devuelve nada, como una que cambia un
+  // arreglo, solo daria una lista de llamadas que la pila de la figura ya muestra)
+  const trazadoActivo = () => conValores && ajustes.valor('trazado');
+  // Con el trazado, la tabla de llamadas ocupa el lugar de la figura mientras se ejecuta una recursion (desde que se entra a la primera
+  // llamada hasta que vuelve la de mas afuera) y la figura se ve el resto del programa. Solo si el programa no usa memoria dinamica (con
+  // ella se ven las dos a la vez) y si su main tiene algo que mostrar (si solo hace la llamada, la figura estaria vacia: la tabla se ve
+  // siempre).
+  const principalConVariables = traza.some((f) => f.marcos.length > 0 && f.marcos[0].variables.length > 0);
+  const alternaConLaFigura = () => trazadoActivo() && sinMonticulo && principalConVariables;
+  const enRecursion = (k) => tramos.some((t) => t.desde <= k && k < t.hasta);
+  const tablaEnEstePaso = (k) => trazadoActivo() && (!alternaConLaFigura() || enRecursion(k));
+  const figuraEnEstePaso = (k) => !trazadoActivo() || !sinMonticulo || (alternaConLaFigura() && !enRecursion(k));
+  // Al terminar la recursion, la tabla se queda un momento (con su ultima vuelta) y despues vuelve la figura: mientras tanto se fuerza.
+  let tablaForzada = false;
+  const tablaVisible = (k) => tablaForzada || tablaEnEstePaso(k);
+  const figuraVisible = (k) => !tablaForzada && figuraEnEstePaso(k);
+  raiz.modoDelPaso = (k) => ({ tabla: tablaEnEstePaso(k), figura: figuraEnEstePaso(k) }); // (para las pruebas)
+  raiz.llamadasDeLaTabla = (k) => filasDelPaso(k).filter((r) => r.desde <= k).map((r) => r.llamada); // (para las pruebas)
   // La pregunta que la figura mostraria en el paso k (el cursor sobre el if y, despues, su respuesta) y que la tabla del trazado ya muestra:
   // el rotulo de la franja se omite (no se ve dos veces, cada una con su animacion).
-  const preguntaEnLaTabla = (k) => trazadoActivo() && ajustes.valor('preguntasTabla') && filas.some((r) => (r.preguntas || []).some((q) => q.pregunta === k || q.respuesta === k));
+  const preguntaEnLaTabla = (k) => tablaEnEstePaso(k) && ajustes.valor('preguntasTabla') && filas.some((r) => (r.preguntas || []).some((q) => q.pregunta === k || q.respuesta === k));
   // La franja de la pregunta solo hace falta si algun paso tiene una pregunta que la tabla no muestra (un if de main, de una funcion que
   // no es recursiva, un bucle). Si no, no se reserva su espacio.
   const franjasDeCache = new Map();
@@ -565,11 +604,11 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   // Lo que dura todo lo que se anima al llegar al paso k: llamadas que se abren, lo que aparece de golpe (1 fundido), el caso base
   // y las transiciones del modo de una columna.
   const duracionTrazado = (k, u) => {
-    if (!trazadoActivo() || sinMovimiento()) return 0;
+    if (!tablaVisible(k) || sinMovimiento()) return 0;
     const d = fundidoDe(u);
     const unaColumna = enUnaColumna();
     let total = 0;
-    for (const r of filas) {
+    for (const r of filasDelPaso(k)) {
       const apertura = r.desde === k ? duracionApertura(r, k, d, u) : 0;
       if (r.desde === k) total = Math.max(total, apertura);
       const atenuada = atenuacionDe(r, k, u, d);
@@ -592,12 +631,12 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   // estructura de los tiempos de pintarTrazado (duracionApertura, duracionBase, duracionVuelta3...): cada vez que algo de la animacion
   // empieza en otro momento, es una etapa.
   const etapasDelTrazado = (k, u) => {
-    if (!trazadoActivo() || sinMovimiento()) return [];
+    if (!tablaVisible(k) || sinMovimiento()) return [];
     const d = fundidoDe(u);
     const unaColumna = enUnaColumna();
     const marcas = [];
     const poner = (t, nombre) => marcas.push({ t, nombre });
-    for (const r of filas) {
+    for (const r of filasDelPaso(k)) {
       if (r.desde > k) continue;
       const apertura = r.desde === k ? duracionApertura(r, k, d, u) : 0;
       const atenuada = atenuacionDe(r, k, u, d);
@@ -945,13 +984,23 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   // "u" es la unidad de movimiento (ver pintarPaso).
   // "preguntaNueva": la pregunta que se ve en este paso (con el cursor sobre el if) entra con un fundido; se pide al poner el cursor, que
   // es cuando aparece (en la primera pasada de un paso animado no se dibuja todavia).
+  let modoPintado = null; // lo ultimo que se vio: 'tabla' o 'figura' (con el trazado)
   const pintarTrazado = (k, { animar = false, u = 0, preguntaNueva = false, sinDesplazar = false } = {}) => {
-    const activo = trazadoActivo();
+    const activo = tablaVisible(k);
     trazado.hidden = !activo;
-    raiz.classList.toggle('rep-sin-figura', activo && sinMonticulo);
+    raiz.classList.toggle('rep-sin-figura', !figuraVisible(k));
+    // Al pasar de la figura a la tabla (o al reves), lo que aparece entra con un fundido.
+    const modo = activo ? 'tabla' : 'figura';
+    if (modoPintado !== null && modoPintado !== modo && !sinMovimiento()) {
+      const entra = activo ? trazado : figura;
+      entra.classList.remove('rep-entra-modo');
+      void entra.offsetWidth; // (reinicia la animacion)
+      entra.classList.add('rep-entra-modo');
+    }
+    modoPintado = modo;
     if (!activo) return;
     const unaColumna = enUnaColumna();
-    const visibles = filas.filter((r) => r.desde <= k);
+    const visibles = filasDelPaso(k).filter((r) => r.desde <= k);
     const abiertas = visibles.filter((r) => r.hasta == null || k < r.hasta);
     const actual = abiertas.length ? abiertas[abiertas.length - 1] : null;
     const tabla = nodo('table', 'rep-tabla-trazado');
@@ -1260,6 +1309,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   let marcada = null;
   let reloj = null;
   let ultimaAnimacion = 0; // lo que dura la animacion del paso que se esta mostrando
+  let relojModo = null; // el cambio de la tabla a la figura al terminar una recursion
   let relojTrazado = null; // el trazado que espera a que termine la animacion de la figura
   let relojesEtapas = []; // las pausas entre etapa y etapa del paso (ver programarEtapas)
   let etapasDelPaso = []; // [{ t, nombre }] del paso en curso, si se avanza por etapas
@@ -1477,15 +1527,24 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     relojTrazado = null;
     tiempo.cancelar(relojEditor);
     relojEditor = null;
-    // Sin memoria dinamica el trazado reemplaza a la figura: no se la anima (nadie la ve) y las transiciones de la tabla empiezan ya.
-    const sinFigura = trazadoActivo() && sinMonticulo;
+    tiempo.cancelar(relojModo);
+    relojModo = null;
+    // Mientras la tabla ocupa el lugar de la figura (sin memoria dinamica) no se la anima (nadie la ve) y las transiciones de la tabla
+    // empiezan ya. El paso en que termina la recursion es distinto: primero la tabla (con la vuelta de la llamada de mas afuera) y,
+    // despues de una pausa, la figura, que se anima ahi (la caja se cierra y el valor llega a su variable).
+    const vuelve = adelante && animar && !sinMovimiento() && alternaConLaFigura() && !enRecursion(paso) && enRecursion(paso - 1);
+    tablaForzada = vuelve;
+    let figuraPendiente = vuelve;
+    const sinFigura = !figuraVisible(paso);
     const inicioPaso = tiempo.ahora();
-    const dFigura = dibujo.mostrar(foto, antes, { animar: animar && !sinFigura, duracion: unidad, flujo: adelante });
+    const dFigura = vuelve ? 0 : dibujo.mostrar(foto, antes, { animar: animar && !sinFigura, duracion: unidad, flujo: adelante });
     const dTrazado = adelante && animar ? duracionTrazado(paso, unidad) : 0;
+    const pausaVuelta = vuelve ? 0.5 * unidad : 0;
+    const dFiguraVuelta = vuelve ? 3.5 * unidad : 0; // (lo que se calcula de verdad cuando la figura aparece)
     // Una llamada nueva (la pila crece): si se pide, se resalta toda su funcion antes de que aparezca el cursor.
     const entrando = adelante && animar && !sinMovimiento() && antes && foto.marcos.length > antes.marcos.length && ajustes.valor('resaltarFuncion') ? funcionDe(foto) : null;
     const dEditor = entrando ? 3.5 * fundidoDe(unidad) : 0;
-    ultimaAnimacion = dFigura + dTrazado + dEditor;
+    ultimaAnimacion = dFigura + dTrazado + dEditor + pausaVuelta + dFiguraVuelta;
     // Las etapas (antes de programar lo demas: a la misma hora, la pausa va primero)
     if (porEtapas) {
       const marcas = [];
@@ -1495,10 +1554,29 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
       }
       if (dTrazado > 0) for (const m of etapasDelTrazado(paso, unidad)) marcas.push({ t: dFigura + m.t, nombre: m.nombre });
       if (entrando) marcas.push({ t: dFigura + dTrazado, nombre: 'Se resalta la función' });
+      if (vuelve) marcas.push({ t: dTrazado + pausaVuelta, nombre: 'Vuelve la figura: termina la recursión' });
       if (ultimaAnimacion > 0 && foto.linea != null) marcas.push({ t: ultimaAnimacion, nombre: marcada && marcada === lineas[foto.linea - 1] ? 'El cursor sigue en la línea ' + foto.linea + ': la línea pulsa' : 'Llega el cursor a la línea ' + foto.linea });
       programarEtapas(marcas, inicioPaso);
     }
     if (entrando) relojEditor = tiempo.esperar(() => resaltarFuncion(entrando, fundidoDe(unidad)), dFigura + dTrazado);
+    if (vuelve) {
+      relojModo = tiempo.esperar(() => {
+        tablaForzada = false;
+        figuraPendiente = false;
+        pintarTrazado(paso, { u: unidad }); // esconde la tabla y muestra la figura
+        const d = dibujo.mostrar(foto, antes, { animar: true, duracion: unidad, flujo: adelante });
+        etiquetaZoom.textContent = `${Math.round(dibujo.escalaActual * 100)} %`;
+        // El paso termina cuando termina de verdad la figura (antes se esperaba una estimacion).
+        if (marcaPendiente && marcaPendiente.aplicar === aplicar) {
+          tiempo.cancelar(marcaPendiente.reloj);
+          const reloj = tiempo.esperar(() => {
+            marcaPendiente = null;
+            aplicar();
+          }, d);
+          marcaPendiente = { reloj, aplicar };
+        }
+      }, dTrazado + pausaVuelta);
+    }
     if (dTrazado > 0) {
       const arrancar = () => pintarTrazado(paso, { animar: true, u: unidad });
       if (dFigura > 0) relojTrazado = tiempo.esperar(arrancar, dFigura);
@@ -1507,6 +1585,12 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     etiquetaZoom.textContent = `${Math.round(dibujo.escalaActual * 100)} %`;
 
     const aplicar = () => {
+      // Si el paso se interrumpio antes de que volviera la figura, se la deja al dia (sin animar).
+      tablaForzada = false;
+      if (figuraPendiente) {
+        figuraPendiente = false;
+        dibujo.mostrar(foto, antes, { animar: false });
+      }
       // El codigo de afuera de la funcion en curso se atenua.
       const f = funcionDe(foto);
       const cambioDeFuncion = Boolean(f) && (!funcionAnterior || funcionAnterior.nombre !== f.nombre);

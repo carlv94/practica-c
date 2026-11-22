@@ -49,7 +49,7 @@ export const AYUDAS = [
     almacen: 'ajuste-trazado',
     porDefecto: false,
     titulo: 'Trazado de las llamadas recursivas',
-    detalle: 'En una recursión, una tabla con cada llamada, su ida y su vuelta. Si el programa no usa memoria dinámica, reemplaza a la figura.',
+    detalle: 'En una recursión que devuelve valores, una tabla con cada llamada, su ida y su vuelta (una recursión que no devuelve nada, como la que cambia un arreglo, se ve en la figura). Cada recursión empieza con la tabla limpia. Si el programa no usa memoria dinámica, la tabla ocupa el lugar de la figura mientras se ejecuta la recursión (la figura se ve antes y después, en el resto del programa); si el main no declara nada, la tabla se ve siempre. Con memoria dinámica se ven las dos.',
   },
   {
     clave: 'trazadoUnaColumna',

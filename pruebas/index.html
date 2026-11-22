@@ -697,6 +697,71 @@ import { corregir } from '../js/corrector.js';
           }
         }
 
+        // El trazado de las llamadas recursivas y la figura se turnan: en un programa sin memoria dinamica cuyo main declara algo, la tabla se ve
+        // mientras se ejecuta la recursion (desde que se entra a la primera llamada hasta que vuelve la de mas afuera) y la figura el resto; si el
+        // main no declara nada, la tabla se ve siempre; con memoria dinamica, las dos a la vez; con la ayuda apagada, solo la figura.
+        {
+          const titulo = 'trazado: la tabla y la figura se turnan segun el paso';
+          try {
+            const { crearReproductor } = await import('../js/motor/reproductor.js');
+            const { ajustes } = await import('../js/ajustes.js');
+            ajustes.fijarPerfil('explicacion');
+            const recursiva = 'int factorial(int n) {\n  if (n <= 1) {\n    return 1;\n  }\n\n  return n * factorial(n - 1);\n}\n';
+            const modos = (fuente) => {
+              const m = ejecutarMotor(analizador, fuente, { traza: true, preguntas: true });
+              const rep = crearReproductor({ codigo: fuente, traza: m.traza, funciones: m.funciones, llamadas: m.llamadas });
+              return { m, rep, cadena: m.traza.map((f, k) => (rep.modoDelPaso(k).tabla ? 'T' : '') + (rep.modoDelPaso(k).figura ? 'F' : '')) };
+            };
+            // main con variables: figura, tabla durante la recursion, figura
+            let r = modos('#include <stdio.h>\n\n' + recursiva + '\nint main() {\n  int a = 3;\n  int r = factorial(a);\n\n  printf("%d\\n", r);\n\n  return 0;\n}');
+            const [primera] = r.m.llamadas;
+            const esperado = r.m.traza.map((f, k) => (k >= primera.desde && k < primera.hasta ? 'T' : 'F'));
+            if (r.cadena.join(',') !== esperado.join(',')) throw new Error('con variables en main: ' + r.cadena.join(',') + ' y se esperaba ' + esperado.join(','));
+            if (!r.cadena.includes('F') || !r.cadena.includes('T')) throw new Error('tienen que verse las dos');
+            // dos recursiones separadas: la figura vuelve entre ambas
+            r = modos('#include <stdio.h>\n\n' + recursiva + '\nint main() {\n  int a = factorial(2);\n  int b = factorial(3);\n\n  printf("%d %d\\n", a, b);\n\n  return 0;\n}');
+            const tramos = r.cadena.join('').replace(/F+/g, 'F').replace(/T+/g, 'T');
+            if (tramos !== 'FTFTF') throw new Error('dos recursiones: ' + tramos + ' (se esperaba FTFTF)');
+            // main sin nada que mostrar: la tabla siempre
+            r = modos('#include <stdio.h>\n\n' + recursiva + '\nint main() {\n  printf("%d\\n", factorial(3));\n\n  return 0;\n}');
+            if (!r.cadena.every((x) => x === 'T')) throw new Error('main sin variables: la tabla se ve siempre: ' + r.cadena.join(','));
+            // con memoria dinamica: las dos a la vez
+            r = modos(
+              '#include <stdio.h>\n#include <stdlib.h>\n\nint suma(int *v, int n) {\n  if (n == 0) {\n    return 0;\n  }\n\n  return v[n - 1] + suma(v, n - 1);\n}\n\nint main() {\n  int *v = malloc(2 * sizeof(int));\n  int s;\n\n  v[0] = 4;\n  v[1] = 5;\n  s = suma(v, 2);\n  printf("%d\\n", s);\n  free(v);\n\n  return 0;\n}'
+            );
+            const dosALaVez = r.cadena.slice(r.m.llamadas[0].desde, r.m.llamadas[0].hasta);
+            if (!dosALaVez.every((x) => x === 'TF')) throw new Error('con memoria dinamica se ven las dos: ' + dosALaVez.join(','));
+            // entre dos recursiones la tabla se limpia: solo las llamadas del tramo del paso
+            r = modos('#include <stdio.h>\n\n' + recursiva + '\nint main() {\n  int a = factorial(2);\n  int b = factorial(3);\n\n  printf("%d %d\\n", a, b);\n\n  return 0;\n}');
+            const [uno, dos] = r.m.llamadas.filter((x) => x.nivel === 1);
+            const delPrimero = r.rep.llamadasDeLaTabla(uno.hasta - 1);
+            const delSegundo = r.rep.llamadasDeLaTabla(dos.hasta - 1);
+            // (la primera: main y factorial(2), factorial(1); la segunda: main y factorial(3), factorial(2), factorial(1); si se acumularan, siete)
+            if (delPrimero.join(' | ') !== 'main | factorial(2) | factorial(1)') throw new Error('la primera recursion: ' + delPrimero.join(' | '));
+            if (delSegundo.join(' | ') !== 'main | factorial(3) | factorial(2) | factorial(1)') throw new Error('la segunda recursion no arrastra las filas de la primera: ' + delSegundo.join(' | '));
+            // una recursion que no devuelve nada (cambia un arreglo): no hay tabla, solo la figura; la que devuelve un valor, si
+            const mixta =
+              '#include <stdio.h>\n\nint contar(int n) {\n  if (n == 0) {\n    return 0;\n  }\n\n  return 1 + contar(n - 1);\n}\n\nvoid bajar(int v[], int n) {\n  if (n == 0) {\n    return;\n  }\n\n  v[n - 1] = 0;\n  bajar(v, n - 1);\n}\n\nint main() {\n  int v[3] = {7, 8, 9};\n  int c = contar(2);\n\n  bajar(v, 3);\n  printf("%d\\n", c);\n\n  return 0;\n}';
+            r = modos(mixta);
+            const conValor = r.m.llamadas.filter((x) => x.funcion === 'contar');
+            const sinValor = r.m.llamadas.filter((x) => x.funcion === 'bajar');
+            if (!conValor.length || !sinValor.length) throw new Error('el programa mixto tiene las dos recursiones');
+            for (let k = conValor[0].desde; k < conValor[0].hasta; k++) if (r.cadena[k] !== 'T') throw new Error('la recursion con valor usa la tabla (paso ' + k + '): ' + r.cadena[k]);
+            for (let k = sinValor[0].desde; k < sinValor[0].hasta; k++) if (r.cadena[k] !== 'F') throw new Error('la recursion que no devuelve nada usa la figura (paso ' + k + '): ' + r.cadena[k]);
+            r = modos('#include <stdio.h>\n\nvoid mostrar(int n) {\n  if (n == 0) {\n    return;\n  }\n\n  printf("%d ", n);\n  mostrar(n - 1);\n}\n\nint main() {\n  int a = 3;\n\n  mostrar(a);\n\n  return 0;\n}');
+            if (!r.cadena.every((x) => x === 'F')) throw new Error('una recursion sin valores nunca usa la tabla: ' + r.cadena.join(','));
+            // con la ayuda apagada: solo la figura
+            ajustes.fijarPerfil('practica');
+            r = modos('#include <stdio.h>\n\n' + recursiva + '\nint main() {\n  int a = 3;\n  int r = factorial(a);\n\n  printf("%d\\n", r);\n\n  return 0;\n}');
+            ajustes.fijarPerfil('explicacion');
+            if (!r.cadena.every((x) => x === 'F')) throw new Error('sin el trazado solo se ve la figura: ' + r.cadena.join(','));
+            anotar(true, titulo);
+          } catch (err) {
+            (await import('../js/ajustes.js')).ajustes.fijarPerfil('explicacion');
+            anotar(false, titulo, err.stack || err.message);
+          }
+        }
+
         // Las referencias de la figura (el panel «ⓘ»): una entrada por cada tipo de flecha que dibuja la figura, cada una con su muestra, y las
         // que dependen de una ayuda visual dicen cual es y tienen su interruptor.
         {
