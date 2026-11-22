@@ -370,13 +370,81 @@
 }
 .rep-consola {
   margin: 0;
-  min-height: 1.6em;
-  max-height: 140px;
-  overflow: auto;
+  min-height: 1.4em;
+  /* tres filas enteras, siempre la ultima a la vista; el boton de la esquina abre todo */
+  max-height: calc(3 * 1.4em);
+  line-height: 1.4;
+  overflow-x: hidden;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  padding: 0 30px 0 8px;
+  font-size: 0.85rem;
+}
+.rep-consola-caja {
+  position: relative;
+  padding: 6px 0;
   background: var(--codigo);
   border-radius: 6px;
-  padding: 6px 8px;
+}
+.rep-consola-ampliar {
+  position: absolute;
+  top: 3px;
+  right: 4px;
+  padding: 0 6px;
   font-size: 0.85rem;
+  line-height: 1.4;
+  opacity: 0.75;
+}
+.rep-consola-ampliar:hover {
+  opacity: 1;
+}
+/* lo que se tipeo (el eco de la entrada) se distingue de lo que muestra el programa */
+.rep-eco {
+  color: var(--acento);
+  font-style: italic;
+}
+/* la consola completa, en una ventana encima */
+.rep-consola-ventana {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.55);
+}
+.rep-consola-ventana[hidden] {
+  display: none;
+}
+.rep-consola-tarjeta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-sizing: border-box;
+  width: min(720px, 100%);
+  max-height: 80vh;
+  padding: 12px;
+  background: var(--fondo);
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+}
+.rep-consola-titulo {
+  margin: 0;
+  font-weight: 700;
+}
+.rep-consola-completa {
+  flex: 1 1 auto;
+  min-height: 4em;
+  margin: 0;
+  overflow: auto;
+  padding: 8px;
+  background: var(--codigo);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  white-space: pre-wrap;
 }
 /* en pantallas grandes (y no en toda la pantalla, que ya reparte el alto) la zona de la figura, lo que muestra el programa y
    el estado tienen una altura fija: los controles de reproduccion quedan siempre en el mismo lugar, sin importar cuanto
@@ -436,7 +504,7 @@
   box-sizing: border-box;
 }
 .rep-ancho:not(.rep-ampliado) .rep-consola {
-  height: 6.5em;
+  height: calc(3 * 1.4em);
   max-height: none;
   box-sizing: border-box;
 }
@@ -1043,7 +1111,7 @@
   min-height: 0;
 }
 .rep-ampliado .rep-consola {
-  max-height: 64px;
+  max-height: calc(3 * 1.4em);
 }
 .rep-ampliado .rep-columna-codigo {
   display: flex;
@@ -1142,8 +1210,12 @@
 .rep-ampliado.rep-compacto.rep-apaisado .rep-subtitulo {
   display: none;
 }
+/* en pantalla completa apaisada cada renglon vale: la consola muestra una sola fila y la cinta de la entrada no se ve */
 .rep-ampliado.rep-compacto.rep-apaisado .rep-consola {
-  max-height: 38px;
+  max-height: 1.4em;
+}
+.rep-ampliado.rep-compacto.rep-apaisado .rep-cinta {
+  display: none;
 }
 .rep-ampliado .rep-estado-texto {
   margin: 0 0 2px;
@@ -1259,19 +1331,72 @@
   filter: drop-shadow(0 0 4px var(--salida));
 }
 /* lo que ingresa el usuario: la entrada, con lo ya leido atenuado; el trozo que se acaba de leer, como el texto nuevo de la consola */
-.rep-entrada {
-  margin: 0;
-  min-height: 1.6em;
-  max-height: 6em;
-  overflow: auto;
+.rep-cinta {
+  display: flex;
+  align-items: stretch;
+  min-height: 2.2em;
+  overflow: hidden;
   background: var(--codigo);
   border-radius: 6px;
-  padding: 6px 8px;
   font-size: 0.85rem;
-  white-space: pre-wrap;
 }
-.rep-entrada-leida {
+/* la zona de lectura: lo que el scanf esta leyendo */
+.rep-cinta-ahora {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  min-width: 5.5em;
+  padding: 4px 10px;
+  background: color-mix(in srgb, var(--salida) 14%, transparent);
+  border-right: 2px solid var(--salida);
+}
+/* lo que falta leer: se desvanece hacia la derecha para no robarle el protagonismo a la zona de lectura */
+.rep-cinta-despues {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to right, #000 0, rgba(0, 0, 0, 0.55) 35%, transparent 100%);
+  mask-image: linear-gradient(to right, #000 0, rgba(0, 0, 0, 0.55) 35%, transparent 100%);
+}
+.rep-cinta-pista {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  width: max-content;
+  min-height: 100%;
+  padding: 4px 10px;
+}
+.rep-cinta-celda {
+  flex: 0 0 auto;
+  padding: 1px 8px;
+  background: var(--fondo);
+  border: 1px solid var(--borde);
+  border-radius: 4px;
+}
+.rep-cinta-salto {
+  font-size: 0.75rem;
+  border-style: dashed;
+  opacity: 0.6;
+}
+/* un blanco que la lectura salto (el Enter que un scanf dejo): viaja atenuado, no se lee */
+.rep-cinta-saltada {
   opacity: 0.5;
+  text-decoration: line-through;
+}
+/* el Enter que espera a la cabeza de lo que falta leer */
+.rep-cinta-pendiente {
+  opacity: 1;
+  color: var(--acento);
+  border-color: var(--acento);
+}
+.rep-cinta-leida {
+  color: #fff;
+  font-weight: 700;
+  background: var(--salida-intensa);
+  border-color: var(--salida-intensa);
 }
 /* y lo que acaba de mostrar, en la consola: letra blanca en negrita sobre violeta intenso mientras la casilla esta encendida */
 .rep-salida-nueva {

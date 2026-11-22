@@ -55,6 +55,48 @@ export const CASOS_DEL_MOTOR = [
   // --------------------------------------------------------------- lectura
   { nombre: 'scanf de enteros y decimales', codigo: `int main() { int a; float b; double c; scanf("%d %f %lf", &a, &b, &c); printf("%d %.1f %.2f", a, b, c); return 0; }`, entrada: '4 2.5 7.25', espera: { salida: '4 2.5 7.25' } },
   { nombre: 'scanf de una cadena', codigo: `int main() { char nombre[20]; scanf("%s", nombre); printf("Hola %s", nombre); return 0; }`, entrada: 'Ana', espera: { salida: 'Hola Ana' } },
+  {
+    nombre: 'la consola intercala lo que se tipeo: cada linea entera, cuando se lee su primer valor (la salida no cambia)',
+    codigo: `int main() { int n; int a; int b; printf("N: "); scanf("%d", &n); printf("Datos: "); scanf("%d", &a); scanf("%d", &b); printf("%d", n + a + b); return 0; }`,
+    entrada: '3\n10 20\n',
+    espera: {
+      salida: 'N: Datos: 33',
+      resultado: (r) => {
+        const esperada = 'N: 3\nDatos: 10 20\n33';
+        return r.consola === esperada ? null : 'la consola era ' + JSON.stringify(r.consola) + ' y tenia que ser ' + JSON.stringify(esperada);
+      },
+    },
+  },
+  {
+    nombre: 'getchar lee un caracter (el Enter tambien) y el ciclo que descarta lo que quedo termina en el Enter',
+    codigo: `int main() { int n; int c; int tirados = 0; scanf("%d", &n); while (getchar() != '\\n') { tirados++; } c = getchar(); printf("%d %d %d", n, tirados, c); return 0; }`,
+    entrada: '5 abc\nxy\n',
+    espera: {
+      salida: '5 4 120',
+      resultado: (r) => {
+        const esperada = '5 abc\nxy\n' + '5 4 120';
+        return r.consola === esperada ? null : 'la consola era ' + JSON.stringify(r.consola) + ' y tenia que ser ' + JSON.stringify(esperada);
+      },
+    },
+  },
+  {
+    nombre: 'con "preguntas", getchar anota el caracter que leyo (sin casillas) y scanf, los blancos que salto',
+    opciones: { preguntas: true },
+    codigo: `int main() { int a; int b; scanf("%d", &a); scanf("%d", &b); getchar(); return 0; }`,
+    entrada: '7\n8\n',
+    espera: {
+      traza: (traza) => {
+        const lecturas = traza.filter((f) => f.lectura).map((f) => f.lectura);
+        if (lecturas.length !== 3) return 'tenia que haber tres lecturas y hay ' + lecturas.length;
+        const [a, b, c] = lecturas;
+        if (a.inicio !== 0 || a.desde !== 0 || a.hasta !== 1) return 'el primer scanf leyo ' + JSON.stringify(a);
+        if (b.inicio !== 1 || b.desde !== 2 || b.hasta !== 3) return 'el segundo scanf salto el Enter y leyo ' + JSON.stringify(b);
+        if (c.desde !== 3 || c.hasta !== 4 || c.celdas.length) return 'getchar leyo el Enter sin casillas: ' + JSON.stringify(c);
+        return null;
+      },
+    },
+  },
+  { nombre: 'sin entrada no hay consola aparte (es la salida)', codigo: `int main() { printf("hola"); return 0; }`, espera: { salida: 'hola', resultado: (r) => (r.consola === undefined ? null : 'sin entrada no tiene que haber consola') } },
   { nombre: 'scanf sin el ampersand', codigo: `int main() { int n; scanf("%d", n); return 0; }`, entrada: '5', espera: { error: 'AMPERSAND_FALTA' } },
   { nombre: 'scanf con el formato de otro tipo', codigo: `int main() { double d; scanf("%f", &d); return 0; }`, entrada: '5', espera: { error: 'FORMATO_DISTINTO' } },
   { nombre: 'printf con el formato de otro tipo', codigo: `int main() { float f = 1.5; printf("%d", f); return 0; }`, espera: { error: 'FORMATO_DISTINTO' } },

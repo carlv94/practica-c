@@ -3,6 +3,8 @@
 // Una fotografia es un objeto simple (se puede guardar como JSON) con:
 //   linea:     la linea que esta por ejecutarse (1 es la primera), o null al terminar
 //   salida:    lo que el programa mostro hasta ahora
+//   consola:   (solo si el programa tiene entrada) lo que se veria en una consola de verdad: la salida con lo que se tipeo intercalado; cada linea
+//              de la entrada, con su salto, va entre ECO_ABRE y ECO_CIERRA, y aparece entera cuando se lee su primer valor
 //   globales:  las variables globales
 //   marcos:    las funciones en curso, de la primera llamada a la ultima, con sus variables
 //   monticulo: los bloques reservados con malloc (los liberados siguen, marcados)
@@ -152,10 +154,15 @@ function variablesDelMarco(m) {
   return lista;
 }
 
+// Los marcadores del eco de lo que se tipeo dentro del texto de la consola (caracteres de uso privado).
+export const ECO_ABRE = String.fromCharCode(0xe000);
+export const ECO_CIERRA = String.fromCharCode(0xe001);
+
 export function fotografia(motor, linea) {
   return {
     linea,
     salida: motor.salida,
+    ...(motor.entrada.texto ? { consola: motor.consola } : {}),
     globales: motor.memoria.globales.filter((r) => r.region === 'global' && r.nombre).map(deLaReserva),
     marcos: motor.marcos.map((m) => ({
       funcion: m.funcion,

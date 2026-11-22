@@ -15,6 +15,7 @@
 
 import { Figura, textoPorPartes } from './figura.js';
 import { tiempo } from './tiempo.js';
+import { ECO_ABRE, ECO_CIERRA } from './traza.js';
 import { pintar } from '../editor.js';
 import { ajustes, montarAjustes } from '../ajustes.js';
 import { montarLeyenda } from './leyenda.js';
@@ -240,8 +241,74 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   // En pantallas grandes la condicion que se evalua se muestra en esta franja, arriba de la figura (ver el CSS).
   const franjaPregunta = nodo('div', 'rep-franja-pregunta');
   dibujo.franja = franjaPregunta;
+  // La consola: lo que se veria en una de verdad (la salida del programa con lo que se tipeo intercalado, ver traza.js). Muestra pocas filas, siempre
+  // la ultima, y un boton abre una ventana con todo.
   const consola = nodo('pre', 'rep-consola');
-  const nota = nodo('p', 'rep-nota', 'La línea resaltada es la que está por ejecutarse. Lo que cambió con la línea anterior se marca en amarillo, también la flecha nueva.');
+  const cajaConsola = nodo('div', 'rep-consola-caja');
+  const ampliarConsola = boton('⤢', 'Ver toda la consola');
+  ampliarConsola.classList.add('rep-consola-ampliar');
+  const ventanaConsola = nodo('div', 'rep-consola-ventana');
+  ventanaConsola.hidden = true;
+  const consolaCompleta = nodo('pre', 'rep-consola-completa');
+  const cerrarConsola = boton('✕ Cerrar', 'Volver al paso a paso');
+  ventanaConsola.append(nodo('div', 'rep-consola-tarjeta'));
+  ventanaConsola.firstChild.append(nodo('p', 'rep-consola-titulo', 'Consola'), consolaCompleta, cerrarConsola);
+  cajaConsola.append(consola, ampliarConsola);
+  const textoDeConsola = (f) => (f && (f.consola ?? f.salida)) || '';
+  const sinMarcas = (t) => t.split(ECO_ABRE).join('').split(ECO_CIERRA).join('');
+  // El texto de la consola en trozos: lo que muestra el programa y, aparte, lo que se tipeo (el eco).
+  const trozosDeConsola = (texto) => {
+    const trozos = [];
+    let eco = false;
+    let actual = '';
+    for (const c of texto) {
+      if (c === ECO_ABRE || c === ECO_CIERRA) {
+        if (actual) trozos.push({ t: actual, eco });
+        actual = '';
+        eco = c === ECO_ABRE;
+      } else actual += c;
+    }
+    if (actual) trozos.push({ t: actual, eco });
+    return trozos;
+  };
+  // Pinta la consola; los ultimos "nuevas" caracteres (lo que acaba de llegar) en violeta.
+  const pintarConsola = (texto, nuevas = 0) => {
+    const trozos = trozosDeConsola(texto);
+    let faltan = trozos.reduce((n, x) => n + x.t.length, 0) - nuevas;
+    const pintados = [];
+    for (const x of trozos) {
+      const corte = Math.max(0, Math.min(faltan, x.t.length));
+      faltan -= x.t.length;
+      for (const [t, nuevo] of [[x.t.slice(0, corte), false], [x.t.slice(corte), true]]) {
+        if (!t) continue;
+        if (!x.eco && !nuevo) pintados.push(t);
+        else pintados.push(nodo('span', [x.eco ? 'rep-eco' : '', nuevo ? 'rep-salida-nueva' : ''].filter(Boolean).join(' '), t));
+      }
+    }
+    if (!pintados.length) pintados.push(' ');
+    consola.replaceChildren(...pintados);
+    consolaCompleta.replaceChildren(...pintados.map((p) => (typeof p === 'string' ? p : p.cloneNode(true))));
+    consola.scrollTop = consola.scrollHeight;
+    consolaCompleta.scrollTop = consolaCompleta.scrollHeight;
+  };
+  ampliarConsola.onclick = () => {
+    ventanaConsola.hidden = false;
+    consolaCompleta.scrollTop = consolaCompleta.scrollHeight;
+    cerrarConsola.focus();
+  };
+  cerrarConsola.onclick = () => {
+    ventanaConsola.hidden = true;
+    ampliarConsola.focus();
+  };
+  ventanaConsola.onclick = (e) => {
+    if (e.target === ventanaConsola) cerrarConsola.onclick();
+  };
+  ventanaConsola.onkeydown = (e) => {
+    if (e.key !== 'Escape') return;
+    e.stopPropagation();
+    cerrarConsola.onclick();
+  };
+  const nota =nodo('p', 'rep-nota', 'La línea resaltada es la que está por ejecutarse. Lo que cambió con la línea anterior se marca en amarillo, también la flecha nueva.');
   const herramientas = nodo('div', 'rep-herramientas');
   const menos = boton('−', 'Achicar la figura');
   const mas = boton('+', 'Agrandar la figura');
@@ -377,9 +444,18 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   panelLeyenda.hidden = true;
   montarLeyenda(panelLeyenda, abrirLeyenda);
   herramientas.append(nodo('span', '', 'Figura'), menos, mas, ajustar, etiquetaZoom, etiquetaExplicar, abrirAjustes, abrirLeyenda, panelAjustes, panelLeyenda);
-  // Lo que ingresa el usuario: el texto de la entrada, con lo que ya se leyo atenuado (solo si el programa tiene entrada).
+  // Lo que ingresa el usuario, como una cinta de una sola linea (solo si el programa tiene entrada): a la izquierda, la zona de lectura (lo que el
+  // scanf esta leyendo) y a la derecha, desvanecido, lo que falta leer. Al leer, los valores se desplazan hasta la zona de lectura, quedan un
+  // momento y desaparecen: pasan a la consola.
   const textoDeEntrada = entrada || '';
-  const cajaDeEntrada = nodo('pre', 'rep-entrada');
+  const cajaDeEntrada = nodo('div', 'rep-cinta');
+  const zonaAhora = nodo('div', 'rep-cinta-ahora');
+  zonaAhora.title = 'Lo que se está leyendo';
+  const zonaDespues = nodo('div', 'rep-cinta-despues');
+  zonaDespues.title = 'Lo que falta leer';
+  const pista = nodo('div', 'rep-cinta-pista');
+  zonaDespues.append(pista);
+  cajaDeEntrada.append(zonaAhora, zonaDespues);
   const conEntrada = textoDeEntrada.length > 0;
   // Hasta donde se leyo de la entrada y si se agoto, en cada paso.
   const leidoEn = [];
@@ -396,18 +472,67 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
       agotadaEn.push(agotada);
     }
   }
-  // "resaltar": { desde, hasta } es lo que se acaba de leer (blanco sobre violeta); lo anterior se ve atenuado.
-  const pintarEntrada = (indice, resaltar = null) => {
+  // Las celdas de la cinta: cada valor (o cada salto de linea, con un ⏎) del texto de la entrada entre dos posiciones.
+  const MAX_CELDAS = 14;
+  const celdasDe = (desde, hasta, conSaltos) =>
+    [...textoDeEntrada.slice(desde, hasta).matchAll(conSaltos ? /\S+|\n/g : /\S+/g)].map((m) => ({
+      ini: desde + m.index,
+      el: nodo('span', m[0] === '\n' ? 'rep-cinta-celda rep-cinta-salto' : 'rep-cinta-celda', m[0] === '\n' ? '⏎' : m[0]),
+    }));
+  const alFinal = (celdas) => {
+    const partes = celdas.slice(0, MAX_CELDAS).map((c) => c.el);
+    // El Enter que un scanf dejo sin leer espera a la cabeza de la cinta (resaltado): lo toma la lectura que sigue (un getchar, un %c) o lo salta (un %d).
+    if (partes.length && partes[0].classList.contains('rep-cinta-salto')) partes[0].classList.add('rep-cinta-pendiente');
+    return partes;
+  };
+  // La cinta en reposo: nada se lee ahora y lo que falta leer espera, desvanecido a la derecha.
+  const pintarEntrada = (indice) => {
     if (!conEntrada) return;
-    const hasta = resaltar ? resaltar.desde : leidoEn[indice];
-    const partes = [];
-    if (hasta > 0) partes.push(nodo('span', 'rep-entrada-leida', textoDeEntrada.slice(0, hasta)));
-    if (resaltar) {
-      partes.push(nodo('span', 'rep-salida-nueva', textoDeEntrada.slice(resaltar.desde, resaltar.hasta)));
-      partes.push(textoDeEntrada.slice(resaltar.hasta));
-    } else partes.push(textoDeEntrada.slice(hasta));
-    if (agotadaEn[indice]) partes.push(nodo('span', 'rep-entrada-leida', ' ⏎'));
-    cajaDeEntrada.replaceChildren(...partes);
+    for (const a of [...zonaAhora.getAnimations(), ...pista.getAnimations()]) a.cancel();
+    const faltan = celdasDe(leidoEn[indice], textoDeEntrada.length, true);
+    const partes = alFinal(faltan);
+    if (faltan.length > MAX_CELDAS) partes.push(nodo('span', 'rep-cinta-celda rep-cinta-salto', '…'));
+    if (agotadaEn[indice]) partes.push(nodo('span', 'rep-cinta-celda rep-cinta-salto', 'fin'));
+    zonaAhora.replaceChildren();
+    pista.replaceChildren(...partes);
+  };
+  // Una lectura (un scanf): los valores que lee se desplazan por la cinta hasta la zona de lectura (se funden ahi), quedan "dura" ms y desaparecen
+  // (a continuacion llegan a la consola). Devuelve los relojes para cancelarlos si el paso se interrumpe.
+  const leerEnLaCinta = (indice, lectura, dura, u) => {
+    const antes = leidoEn[indice - 1] || 0;
+    const delante = celdasDe(antes, textoDeEntrada.length, true);
+    const saltados = celdasDe(lectura.inicio ?? lectura.desde, lectura.desde, true).filter((c) => c.el.classList.contains('rep-cinta-salto'));
+    const leidos = celdasDe(lectura.desde, lectura.hasta, true);
+    const comoValor = !(lectura.celdas && lectura.celdas.length); // un getchar: el Enter que lee es el valor; un scanf lo salta
+    for (const a of [...zonaAhora.getAnimations(), ...pista.getAnimations()]) a.cancel();
+    zonaAhora.replaceChildren();
+    const partes = alFinal(delante);
+    if (delante.length > MAX_CELDAS) partes.push(nodo('span', 'rep-cinta-celda rep-cinta-salto', '…'));
+    pista.replaceChildren(...partes);
+    const resto = delante.slice(0, MAX_CELDAS).find((c) => c.ini >= lectura.hasta);
+    const desplazar = resto ? resto.el.offsetLeft - pista.firstChild.offsetLeft : pista.scrollWidth;
+    const ahora = [
+      ...saltados.map(() => nodo('span', 'rep-cinta-celda rep-cinta-salto rep-cinta-saltada', '⏎')),
+      ...leidos.map((c) => nodo('span', c.el.classList.contains('rep-cinta-salto') && !comoValor ? 'rep-cinta-celda rep-cinta-salto rep-cinta-saltada' : 'rep-cinta-celda rep-cinta-leida', c.el.textContent)),
+    ];
+    const sale = 0.7 * u;
+    const relojes = [];
+    if (sinMovimiento() || !pista.animate) {
+      zonaAhora.replaceChildren(...ahora);
+      pista.replaceChildren(...alFinal(delante.filter((c) => c.ini >= lectura.hasta)));
+    } else {
+      pista.animate([{ transform: 'translateX(0)' }, { transform: `translateX(-${desplazar}px)` }], { duration: sale, easing: 'ease-in-out', fill: 'forwards' });
+      for (const c of delante) if (c.ini < lectura.hasta) c.el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: sale, fill: 'forwards' });
+      zonaAhora.replaceChildren(...ahora);
+      zonaAhora.animate([{ opacity: 0, transform: 'translateX(30px)' }, { opacity: 1, transform: 'none' }], { duration: sale, easing: 'ease-out', fill: 'both' });
+      relojes.push(
+        tiempo.esperar(() => {
+          zonaAhora.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 0.3 * u, fill: 'forwards' });
+        }, Math.max(0, dura - 0.3 * u))
+      );
+    }
+    relojes.push(tiempo.esperar(() => pintarEntrada(indice), dura));
+    return relojes;
   };
   // El trazado de las llamadas recursivas (ver el registro de llamadas del motor): una tabla con cada llamada que se completa con
   // los pasos. Dos modos (panel de ajustes): la ida y la vuelta en dos columnas, o una sola donde la cuenta se va transformando
@@ -1295,14 +1420,14 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   const etiquetaEtapa = nodo('p', 'rep-estado-etapa'); // "Etapa 2 de 5: ..." (con la ayuda "Avanzar por etapas")
   etiquetaEtapa.hidden = true;
   etiquetaEtapa.setAttribute('aria-live', 'polite');
-  lado.append(estado, etiquetaEtapa, herramientas, franjaPregunta, trazado, figura, nodo('p', 'rep-subtitulo', 'Lo que muestra el programa'), consola);
+  lado.append(estado, etiquetaEtapa, herramientas, franjaPregunta, trazado, figura, nodo('p', 'rep-subtitulo', 'Consola'), cajaConsola);
   if (conEntrada) lado.append(nodo('p', 'rep-subtitulo', 'Lo que ingresa el usuario'), cajaDeEntrada);
   lado.append(nota);
   cuerpo.append(columnaCodigo, lado);
   const barraEtapas = nodo('div', 'rep-etapas'); // una barra fina dividida en las etapas del paso
   barraEtapas.hidden = true;
   barraEtapas.setAttribute('aria-hidden', 'true');
-  raiz.append(giro, cuerpo, barra, barraEtapas);
+  raiz.append(giro, cuerpo, barra, barraEtapas, ventanaConsola);
   panelCodigo.append(cerrarCodigo);
 
   let paso = 0;
@@ -1496,29 +1621,30 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     actualizarParadas();
 
     // El texto nuevo de la consola (un printf) aparece, en violeta y negrita, a la vez que se encienden las casillas de las que
-    // salio, y vuelve a ser normal cuando se apagan (la figura avisa cuando: alMuestra).
+    // salio, y vuelve a ser normal cuando se apagan (la figura avisa cuando: alMuestra). Lo que se tipeo (el eco de una lectura) llega
+    // despues de que los valores recorren la cinta.
     for (const r of relojesDeSalida) tiempo.cancelar(r);
     relojesDeSalida = [];
-    const antesDeSalida = antes && antes.salida ? antes.salida : '';
-    const nuevoEnSalida = adelante && animar && foto.salida && foto.salida.length > antesDeSalida.length && foto.salida.startsWith(antesDeSalida) ? foto.salida.slice(antesDeSalida.length) : '';
+    const textoAhora = textoDeConsola(foto);
+    const textoAntes = textoDeConsola(antes);
+    const nuevoEnSalida = adelante && animar && textoAhora.length > textoAntes.length && textoAhora.startsWith(textoAntes) ? textoAhora.slice(textoAntes.length) : '';
+    const nuevas = sinMarcas(nuevoEnSalida).length;
     const lectura = adelante && animar && foto.lectura && foto.lectura.hasta > foto.lectura.desde ? foto.lectura : null;
     let muestraDeLaFigura = false; // la figura enciende las casillas de lo que se imprimio (y avisa para resaltar el texto)
     dibujo.alMuestra =
       nuevoEnSalida || lectura
         ? (desde, hasta) => {
             muestraDeLaFigura = true;
-            relojesDeSalida.push(
-              tiempo.esperar(() => {
-                if (nuevoEnSalida) consola.replaceChildren(antesDeSalida, nodo('span', 'rep-salida-nueva', nuevoEnSalida));
-                if (lectura) pintarEntrada(paso, lectura);
-              }, desde)
-            );
-            relojesDeSalida.push(
-              tiempo.esperar(() => {
-                if (nuevoEnSalida) consola.textContent = foto.salida || ' ';
-                if (lectura) pintarEntrada(paso);
-              }, hasta)
-            );
+            if (lectura) {
+              relojesDeSalida.push(tiempo.esperar(() => relojesDeSalida.push(...leerEnLaCinta(paso, lectura, hasta - desde, unidad)), desde));
+              if (nuevoEnSalida) {
+                relojesDeSalida.push(tiempo.esperar(() => pintarConsola(textoAhora, nuevas), hasta));
+                relojesDeSalida.push(tiempo.esperar(() => pintarConsola(textoAhora), hasta + 1.5 * unidad));
+              }
+              return;
+            }
+            relojesDeSalida.push(tiempo.esperar(() => pintarConsola(textoAhora, nuevas), desde));
+            relojesDeSalida.push(tiempo.esperar(() => pintarConsola(textoAhora), hasta));
           }
         : null;
     // La unidad de movimiento sale de la velocidad: lo que dura dibujar una flecha o mover los nodos.
@@ -1544,7 +1670,18 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     // Una llamada nueva (la pila crece): si se pide, se resalta toda su funcion antes de que aparezca el cursor.
     const entrando = adelante && animar && !sinMovimiento() && antes && foto.marcos.length > antes.marcos.length && ajustes.valor('resaltarFuncion') ? funcionDe(foto) : null;
     const dEditor = entrando ? 3.5 * fundidoDe(unidad) : 0;
-    ultimaAnimacion = dFigura + dTrazado + dEditor + pausaVuelta + dFiguraVuelta;
+    // Una lectura que no guarda en ninguna casilla (getchar) no tiene recorrido por la figura: la cinta y la consola siguen su propio tiempo.
+    const soloCinta = Boolean(lectura && !(lectura.celdas && lectura.celdas.length));
+    const dLectura = soloCinta ? 2.4 * unidad : 0;
+    if (soloCinta) {
+      muestraDeLaFigura = true;
+      relojesDeSalida.push(tiempo.esperar(() => relojesDeSalida.push(...leerEnLaCinta(paso, lectura, 2 * unidad, unidad)), 0));
+      if (nuevoEnSalida) {
+        relojesDeSalida.push(tiempo.esperar(() => pintarConsola(textoAhora, nuevas), 2 * unidad));
+        relojesDeSalida.push(tiempo.esperar(() => pintarConsola(textoAhora), 3.5 * unidad));
+      }
+    }
+    ultimaAnimacion = Math.max(dFigura + dTrazado + dEditor + pausaVuelta + dFiguraVuelta, dLectura);
     // Las etapas (antes de programar lo demas: a la misma hora, la pausa va primero)
     if (porEtapas) {
       const marcas = [];
@@ -1552,6 +1689,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
         const deLaFigura = dibujo.etapas && dibujo.etapas.length ? dibujo.etapas : [{ t: 0, nombre: 'Cambia la figura' }];
         for (const m of deLaFigura) marcas.push({ t: m.t, nombre: m.nombre, ...(m.pausa != null ? { pausa: m.pausa } : {}) });
       }
+      if (dLectura > 0 && !(dFigura > 0)) marcas.push({ t: 0, nombre: 'El valor pasa por la cinta hasta la zona de lectura y llega a la consola' });
       if (dTrazado > 0) for (const m of etapasDelTrazado(paso, unidad)) marcas.push({ t: dFigura + m.t, nombre: m.nombre });
       if (entrando) marcas.push({ t: dFigura + dTrazado, nombre: 'Se resalta la función' });
       if (vuelve) marcas.push({ t: dTrazado + pausaVuelta, nombre: 'Vuelve la figura: termina la recursión' });
@@ -1611,11 +1749,11 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
       // (si el mismo paso trae ya la pregunta de la condicion que sigue -un if falso seguido de otro if-, lo que queda fijo es esa pregunta: no se retira)
       if (adelante && animar && foto.condicion && !foto.pregunta) dibujo.retirarRotulo(fundidoDe(unidad));
       pintarTrazado(paso, { u: unidad, preguntaNueva: adelante && animar }); // al terminar, la tabla queda quieta en su estado final
-      consola.textContent = foto.salida || ' ';
+      pintarConsola(textoAhora);
       // Un texto que no sale de ninguna casilla (un printf o un puts con solo texto) se resalta igual, cuando llega, y despues vuelve a ser normal.
       if (nuevoEnSalida && !muestraDeLaFigura) {
-        consola.replaceChildren(antesDeSalida, nodo('span', 'rep-salida-nueva', nuevoEnSalida));
-        relojesDeSalida.push(tiempo.esperar(() => (consola.textContent = foto.salida || ' '), 2 * unidad));
+        pintarConsola(textoAhora, nuevas);
+        relojesDeSalida.push(tiempo.esperar(() => pintarConsola(textoAhora), 2 * unidad));
       }
       pintarEntrada(paso);
       etiquetaEtapa.hidden = true; // (el paso terminado: ya no hay etapa en curso)

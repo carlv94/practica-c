@@ -1231,6 +1231,43 @@ import { corregir } from '../js/corrector.js';
 
         anotar(propiosProbados > 5, 'valores propios: hay consignas recursivas con parametros numericos', 'se probaron ' + propiosProbados);
 
+        // La consola del reproductor muestra tambien lo que se tipeo (el eco de cada linea, aparte de la salida) y la entrada es una cinta: en la zona
+        // de lectura no hay nada en reposo y lo que falta leer esta a la derecha. Un boton abre la consola completa.
+        {
+          const titulo = 'reproductor: la consola con el eco de la entrada, la cinta y la ventana de la consola';
+          try {
+            const { crearReproductor } = await import('../js/motor/reproductor.js');
+            const { ajustes } = await import('../js/ajustes.js');
+            const fuente = '#include <stdio.h>\nint main() {\n  int n;\n  int a;\n  int b;\n  printf("N: ");\n  scanf("%d", &n);\n  printf("Datos: ");\n  scanf("%d", &a);\n  scanf("%d", &b);\n  printf("%d\\n", n + a + b);\n  return 0;\n}';
+            ajustes.fijarPerfil('explicacion');
+            const m = ejecutarMotor(analizador, fuente, { traza: true, preguntas: true, entrada: '3\n10 20\n' });
+            const rep = crearReproductor({ codigo: fuente, traza: m.traza, funciones: m.funciones, entrada: m.entrada });
+            document.body.append(rep);
+            const botones = [...rep.querySelectorAll('button')];
+            const final = botones.find((b) => /Final/.test(b.textContent));
+            final.click();
+            const consola = rep.querySelector('.rep-consola');
+            if (consola.textContent !== 'N: 3\nDatos: 10 20\n33\n') throw new Error('la consola dice ' + JSON.stringify(consola.textContent));
+            const ecos = [...consola.querySelectorAll('.rep-eco')].map((x) => x.textContent);
+            if (ecos.join('|') !== '3\n|10 20\n') throw new Error('los ecos son ' + JSON.stringify(ecos));
+            if (rep.querySelector('.rep-cinta-ahora').children.length) throw new Error('en reposo la zona de lectura esta vacia');
+            const ventana = rep.querySelector('.rep-consola-ventana');
+            if (!ventana.hidden) throw new Error('la ventana de la consola empieza cerrada');
+            rep.querySelector('.rep-consola-ampliar').click();
+            if (ventana.hidden || ventana.querySelector('.rep-consola-completa').textContent !== consola.textContent) throw new Error('el boton abre la consola completa');
+            ventana.querySelector('button').click();
+            if (!ventana.hidden) throw new Error('la ventana se cierra');
+            // sin entrada, no hay cinta
+            const solo = ejecutarMotor(analizador, '#include <stdio.h>\nint main() {\n  printf("hola");\n  return 0;\n}', { traza: true, preguntas: true });
+            const sin = crearReproductor({ codigo: 'x', traza: solo.traza, funciones: solo.funciones, entrada: solo.entrada });
+            if (sin.querySelector('.rep-cinta')) throw new Error('un programa sin entrada no tiene cinta');
+            rep.remove();
+            anotar(true, titulo);
+          } catch (err) {
+            anotar(false, titulo, err.stack || err.message);
+          }
+        }
+
         // Las etapas del trazado (ayuda "Avanzar por etapas"): cada paso con animacion en la tabla entrega sus marcas, con nombre y en
         // un orden que no se pisa, y las de una llamada que se abre, un caso base y una respuesta existen.
         {

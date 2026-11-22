@@ -20,7 +20,7 @@ import {
   Memoria, almacen, ceros, copiar, punteroA, punteroEnArreglo, mismoDestino, direccionDe,
 } from './memoria.js';
 import { formatear, Entrada, piezasDeScanf } from './biblioteca.js';
-import { deLaReserva, fotografia, rutaDe, serializarPuntero } from './traza.js';
+import { deLaReserva, ECO_ABRE, ECO_CIERRA, fotografia, rutaDe, serializarPuntero } from './traza.js';
 
 const TAMANO_T = { k: 'int', nombre: 'unsigned long', bytes: 8, sinSigno: true };
 const MAX_PASOS = 200000;
@@ -131,6 +131,8 @@ class Interprete {
     this.textos = new Map();
     this.marcos = [];
     this.salida = '';
+    this.consola = ''; // lo que se ve en una consola de verdad: la salida con lo que se tipeo (cada linea leida, entre ECO_ABRE y ECO_CIERRA) intercalado
+    this.ecoHasta = 0; // hasta donde de la entrada ya se mostro el eco
     this.entrada = new Entrada(opciones.entrada);
     this.maxPasos = opciones.maxPasos ?? MAX_PASOS;
     this.pasos = 0;
@@ -181,6 +183,7 @@ class Interprete {
   resultado() {
     return {
       salida: this.salida,
+      ...(this.entrada.texto ? { consola: this.consola } : {}),
       error: this.error,
       retorno: this.retorno,
       fugas: this.error ? [] : this.memoria.fugas().map((r) => ({ id: r.id, dir: r.dir, tam: r.tam })),
@@ -2341,6 +2344,14 @@ class Interprete {
       }
       case 'scanf':
         return this.leer(nodos);
+      case 'getchar': {
+        // Un caracter de la entrada (el Enter tambien), o -1 (EOF) si no queda nada.
+        const inicio = this.entrada.pos;
+        const c = this.entrada.caracter();
+        if (this.opciones.traza && this.opciones.preguntas) this.lecturaHecha = { desde: inicio, hasta: this.entrada.pos, inicio, celdas: [], agotada: c === null };
+        this.ecoDeLaEntrada();
+        return entero(c === null ? -1 : c.charCodeAt(0));
+      }
       case 'malloc': {
         const bytes = this.bytesPedidos(this.entero(arg(0), 'malloc'));
         const r = this.memoria.reservar(bytes);
@@ -2409,6 +2420,7 @@ class Interprete {
 
   escribirSalida(texto) {
     this.salida += texto;
+    this.consola += texto;
     if (this.salida.length > MAX_SALIDA) throw new ErrorDelMotor('NO_TERMINA', 'el programa muestra demasiado texto');
   }
 
@@ -2529,9 +2541,25 @@ class Interprete {
       let desde = inicioDeLectura;
       while (desde < this.entrada.pos && /\s/.test(this.entrada.texto[desde])) desde++;
       const agotada = asignados === 0 && this.entrada.agotada;
-      if (celdasLeidas.length || agotada) this.lecturaHecha = { desde, hasta: this.entrada.pos, celdas: celdasLeidas, agotada };
+      // ("inicio": donde empezo, con los blancos que se saltaron antes del primer valor: la cinta los muestra descartados)
+      if (celdasLeidas.length || agotada) this.lecturaHecha = { desde, hasta: this.entrada.pos, inicio: inicioDeLectura, celdas: celdasLeidas, agotada };
     }
+    this.ecoDeLaEntrada();
     return { t: INT, v: asignados === 0 && this.entrada.agotada ? -1 : asignados };
+  }
+
+  // En una consola, lo que se tipea se ve entero cuando se aprieta Enter: la primera lectura de una linea muestra la linea completa (aunque
+  // despues varios scanf la consuman de a un valor). Se agrega a "consola" (no a "salida", que es solo lo que muestra el programa).
+  ecoDeLaEntrada() {
+    const { texto, pos } = this.entrada;
+    const ultimo = pos - 1; // el ultimo caracter que se consumio
+    if (ultimo < this.ecoHasta) return;
+    const fin = texto.indexOf('\n', ultimo);
+    const hasta = fin < 0 ? texto.length : fin + 1;
+    let eco = texto.slice(this.ecoHasta, hasta);
+    if (!eco.endsWith('\n')) eco += '\n';
+    this.consola += ECO_ABRE + eco + ECO_CIERRA;
+    this.ecoHasta = hasta;
   }
 }
 
