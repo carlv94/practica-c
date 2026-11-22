@@ -652,6 +652,38 @@ import { corregir } from '../js/corrector.js';
               });
               return faltas;
             };
+            // El estilo del codigo de los examenes (para no perder a los alumnos en el paso a paso): una estructura se inicializa campo por campo (no
+            // con llaves; los arreglos con llaves si) y como mucho una funcion PROPIA por linea, contando las anidadas (f(g(x))) y las repetidas
+            // (f(1) + f(2)): cada llamada que abre una caja tiene su paso. Las de la biblioteca (printf, scanf, strlen) no cuentan: no se
+            // ejecutan paso a paso. Una condicion con && entre dos funciones propias tambien se avisa: se decide caso por caso.
+            const faltasDeEstilo = (codigo) => {
+              const faltas = [];
+              const lineas = codigo.split('\n');
+              const estructuras = new Set([...codigo.matchAll(/typedef\s+struct\s*\w*\s*\{[^}]*\}\s*(\w+)\s*;/g)].map((m) => m[1]));
+              const propias = new Set();
+              for (const l of lineas) {
+                const m = /^[A-Za-z_][\w\s\*]*?\b(\w+)\s*\([^;]*\)\s*\{\s*$/.exec(l);
+                if (m) propias.add(m[1]);
+              }
+              lineas.forEach((l, i) => {
+                const t = l.trim();
+                if (!t || t.startsWith('#')) return;
+                const n = i + 1;
+                const tipo = /^(struct\s+\w+|\w+)\s+\**\w+\s*(\[\w*\])*\s*=\s*\{/.exec(t);
+                if (tipo && (estructuras.has(tipo[1]) || /^struct\s/.test(tipo[1]))) faltas.push('línea ' + n + ': una estructura se inicializa campo por campo, no con llaves');
+                if (!/^\s/.test(l) && /^[A-Za-z_][\w\s\*]*?\b\w+\s*\([^;]*\)\s*\{\s*$/.test(l)) return; // (la cabecera de una funcion)
+                const sinTextos = t.replace(/"(?:[^"\\]|\\.)*"/g, '""').replace(/'(?:[^'\\]|\\.)*'/g, "''");
+                let cuantas = 0;
+                for (const m of sinTextos.matchAll(/\b([A-Za-z_]\w*)\s*\(/g)) if (propias.has(m[1])) cuantas++;
+                if (cuantas > 1) faltas.push('línea ' + n + ': ' + cuantas + ' funciones propias en la misma línea (se asigna antes a una variable)');
+              });
+              return faltas;
+            };
+            // la propia prueba: lo que tiene que avisar y lo que no
+            const malo = '#include <stdio.h>\ntypedef struct { int a; } TP;\nint f(int x) {\n  return x;\n}\nint main() {\n  TP p = {1};\n  int v[2] = {1, 2};\n  int r = f(f(1));\n  printf("%d %d\\n", f(1), f(2));\n  return 0;\n}';
+            const avisos = faltasDeEstilo(malo);
+            if (avisos.length !== 3 || !/llaves/.test(avisos[0]) || !/2 funciones/.test(avisos[1]) || !/2 funciones/.test(avisos[2])) throw new Error('la prueba de estilo avisa lo que tiene que avisar: ' + JSON.stringify(avisos));
+            if (faltasDeEstilo('#include <stdio.h>\nint f(int x) {\n  return x;\n}\nint main() {\n  int r = f(1);\n  printf("%d\\n", f(r));\n  return 0;\n}').length !== 0) throw new Error('una funcion propia dentro de printf es una sola llamada propia');
             const indice = await (await fetch('../examenes/indice.json')).json();
             if (!Array.isArray(indice.examenes) || !indice.examenes.length) throw new Error('indice.json: falta la lista "examenes"');
             const ids = new Set();
@@ -680,6 +712,8 @@ import { corregir } from '../js/corrector.js';
                 }
                 const malPrograma = faltasDeFormato(x.programa);
                 if (malPrograma.length) throw new Error(en + 'el programa no sigue el formato: ' + malPrograma.slice(0, 3).join('; '));
+                const malEstilo = faltasDeEstilo(x.programa);
+                if (malEstilo.length) throw new Error(en + 'el programa no sigue el estilo: ' + malEstilo.slice(0, 3).join('; '));
                 const suma = x.modulos.reduce((s, mod) => s + (mod.puntos || 0), 0);
                 if (suma !== x.puntos) throw new Error(en + 'los puntos de los módulos suman ' + suma + ' y el ejercicio dice ' + x.puntos);
                 for (const d of x.dibujos || []) if (!Array.isArray(d.valores)) throw new Error(en + 'un dibujo sin valores');

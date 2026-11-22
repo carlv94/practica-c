@@ -167,7 +167,8 @@ int main() {
   int *p = malloc(sizeof(int));
   int r = sumar(x, y);
   poner(p, r);
-  poner(&x, sumar(x, 1));
+  int siguiente = sumar(x, 1);
+  poner(&x, siguiente);
   printf("%d %d", *p, x);
   free(p);
   return 0;
