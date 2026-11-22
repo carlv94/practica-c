@@ -6,7 +6,9 @@
 //   globales:  las variables globales
 //   marcos:    las funciones en curso, de la primera llamada a la ultima, con sus variables
 //   monticulo: los bloques reservados con malloc (los liberados siguen, marcados)
-//   accesos:   (si los hubo) los accesos por puntero que hizo la sentencia anterior, para animarlos:
+//   accesos:   (si los hubo) los accesos por puntero que hizo la sentencia anterior, para animarlos (y los de tipo "elemento":
+//              { de: null, a, tipo: 'elemento' }, el de un elemento de un arreglo, v[i], que la figura usa para marcar su indice, y los de
+//              tipo "campo", el de un campo que se lee en una condicion, alumno.nota):
 //              [{ de: { a, ruta } | null, a: { a, ruta }, tipo? }], de la casilla del puntero a la casilla a la que llega;
 //              tipo 'copia': se copio ese puntero a otro (se resalta su flecha y lo que senala);
 //              (una lectura de una condicion lleva cond: true);
@@ -31,6 +33,8 @@
 //              misma; la fotografia se saca justo antes de cerrar su caja, asi las cajas se cierran de a una
 //   salieron:   (si desde la fotografia anterior salieron variables de su ambito: un bloque o una funcion que termina) las
 //               variables, con el ultimo valor que tuvieron (la figura lo muestra un momento antes de que se vayan)
+//   indices:    (si la sentencia anterior accedio a elementos de un arreglo cuyo indice sale de variables) [{ a, ruta, de: [{ a, ruta }] }]:
+//               de cada elemento, las casillas de las variables del indice (v[i]: la de i)
 //   escrituras: (si la sentencia anterior guardo un valor que no sale de otra casilla) [{ a, ruta }]: las casillas escritas
 //
 // Cada variable o bloque es { id, nombre, tipo, dir, tam, vivo, valor }. Un valor es:

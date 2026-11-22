@@ -139,6 +139,7 @@ class Interprete {
     this.traza = [];
     this.accesos = []; // los accesos por puntero desde la ultima fotografia
     this.salidas = []; // las variables que salieron de su ambito desde la ultima fotografia, con el ultimo valor que tuvieron
+    this.indicesDe = new Map(); // de donde sale el indice de cada elemento al que se accedio (v[i]: la casilla de i), para la proxima fotografia
     this.escrituras = []; // las casillas donde se guardo un valor que no sale de otra casilla (un literal, una cuenta), idem
     this.llamadasDe = new Map(); // cuantas veces se llamo a cada funcion (para saber si un return llamo a la suya)
     this.registroLlamadas = []; // las llamadas de las funciones recursivas, para el trazado (ver abrirRegistro)
@@ -195,6 +196,7 @@ class Interprete {
     if (this.traza.length >= MAX_TRAZA) {
       this.accesos = [];
       this.escrituras = [];
+      this.indicesDe = new Map();
       this.salidas = [];
       this.condicionHecha = null;
       this.muestraHecha = null;
@@ -206,6 +208,9 @@ class Interprete {
     this.accesos = [];
     if (this.escrituras.length) foto.escrituras = this.escrituras;
     this.escrituras = [];
+    // De donde sale el indice de cada elemento al que se accedio (la figura expande ese valor antes de marcar el indice).
+    if (this.indicesDe.size) foto.indices = [...this.indicesDe.values()];
+    this.indicesDe = new Map();
     // Lo ultimo que valian las variables que salieron de su ambito (la figura lo muestra antes de que se vayan).
     if (this.salidas.length) foto.salieron = this.salidas;
     this.salidas = [];
@@ -661,11 +666,52 @@ class Interprete {
     if (!a) return;
     // Si ya se habia resaltado esa casilla como una lectura, ahora es el comienzo de la flecha: no se repite.
     const mismo = (x, y) => x.a === y.a && x.ruta.join('/') === y.ruta.join('/');
-    const lectura = this.accesos.findIndex((x) => !x.de && mismo(x.a, origen));
+    const lectura = this.accesos.findIndex((x) => !x.de && x.tipo !== 'elemento' && mismo(x.a, origen));
     if (lectura >= 0) this.accesos.splice(lectura, 1);
     const ultimo = this.accesos[this.accesos.length - 1];
     if (ultimo && ultimo.de && ultimo.de.a === origen.a && ultimo.a.a === a.a && ultimo.de.ruta.join('/') === origen.ruta.join('/') && ultimo.a.ruta.join('/') === a.ruta.join('/')) return;
     this.accesos.push({ de: origen, a });
+  }
+
+  // Un elemento de un arreglo al que se accede (v[i], se lea o se escriba): para la figura, que marca su indice y despues su casilla (ayuda
+  // "Resaltar el indice"). Si ya hay un acceso a esa casilla (el de un puntero, una copia, una lectura de una condicion) no se repite.
+  elementoAccedido(d) {
+    if (!this.opciones.traza || !d || this.accesos.length >= 8) return;
+    const a = this.ubicar(d.reserva, d.st);
+    if (!a || !a.ruta.length || typeof a.ruta[a.ruta.length - 1] !== 'number') return;
+    const igual = (x) => Boolean(x) && x.a === a.a && x.ruta.join('/') === a.ruta.join('/');
+    if (this.accesos.some((h) => igual(h.a) || igual(h.de) || igual(h.para))) return;
+    this.accesos.push({ de: null, a, tipo: 'elemento' });
+  }
+
+  // De donde sale el indice de un elemento (v[i], v[n - 1]): las casillas de las variables que lo forman. La figura expande su valor antes de
+  // marcar el indice. Solo si el indice no llama a nada ni cambia nada (v[i++] no se anota).
+  origenDelIndice(d, nodoIndice) {
+    if (!this.opciones.traza || !d || !nodoIndice || this.indicesDe.size >= 8) return;
+    const a = this.ubicar(d.reserva, d.st);
+    if (!a || !a.ruta.length || typeof a.ruta[a.ruta.length - 1] !== 'number' || !this.lecturaSinLlamadas(nodoIndice)) return;
+    const celdas = [];
+    const recorrer = (x) => {
+      if (x.type === 'identifier') {
+        const v = this.buscar(x.text);
+        const k = v && v.reserva.raiz && v.reserva.raiz.t ? v.reserva.raiz.t.k : null;
+        const c = k === 'int' || k === 'float' ? this.ubicar(v.reserva, v.reserva.raiz) : null;
+        if (c && !celdas.some((y) => y.a === c.a && y.ruta.join('/') === c.ruta.join('/'))) celdas.push(c);
+        return;
+      }
+      for (const h of x.namedChildren) recorrer(h);
+    };
+    recorrer(nodoIndice);
+    if (celdas.length) this.indicesDe.set(a.a + '|' + a.ruta.join('/'), { a: a.a, ruta: a.ruta, de: celdas });
+  }
+
+  // Un campo (alumno.nota) que se lee en una condicion: la figura expande su valor al ejecutar la sentencia, despues del resto.
+  campoAccedido(d) {
+    if (!this.opciones.traza || !d || this.accesos.length >= 8) return;
+    const a = this.ubicar(d.reserva, d.st);
+    if (!a || !a.ruta.length || !d.st.t || !(d.st.t.k === 'int' || d.st.t.k === 'float' || d.st.t.k === 'ptr')) return;
+    if (this.accesos.some((h) => h.a && h.a.a === a.a && h.a.ruta.join('/') === a.ruta.join('/'))) return;
+    this.accesos.push({ de: null, a, tipo: 'campo' });
   }
 
   // Se copio un puntero a otro (q = p, q = p->sig): se anota de que casilla salia la flecha y a donde iba.
@@ -697,6 +743,12 @@ class Interprete {
   // Se copio el valor de una casilla en otra (a = b, int c = a): se resalta el origen y despues el destino.
   copiaValor(celda, para) {
     if (!this.opciones.traza || !celda || this.accesos.length >= 8) return;
+    // Las casillas de la copia ya van en este acceso: los de "elemento" que habia de ellas se quitan.
+    const igual = (x, y) => Boolean(x) && Boolean(y) && x.a === y.a && x.ruta.join('/') === y.ruta.join('/');
+    for (let i = this.accesos.length - 1; i >= 0; i--) {
+      const h = this.accesos[i];
+      if (h.tipo === 'elemento' && (igual(h.a, celda) || igual(h.a, para))) this.accesos.splice(i, 1);
+    }
     this.accesos.push({ de: celda, a: celda, tipo: 'valor', para: para || null });
   }
 
@@ -710,13 +762,14 @@ class Interprete {
 
   // La lectura de una variable que no sigue ninguna flecha: la de un puntero que se libera, o (en una condicion, "cond")
   // la de cualquier variable que se pregunta (un puntero o un numero). Solo se resalta su casilla.
-  lectura(n, cond = false) {
+  // "entera": se admite tambien un arreglo o una estructura (la variable de la que se toma un elemento o un campo: vidas en vidas[i]).
+  lectura(n, cond = false, entera = false) {
     if (!this.opciones.traza || this.accesos.length >= 8) return;
     while (n.type === 'parenthesized_expression') n = n.namedChildren[0];
     if (n.type !== 'identifier') return;
     const v = this.buscar(n.text);
     const k = v && v.reserva.raiz && v.reserva.raiz.t ? v.reserva.raiz.t.k : null;
-    if (k !== 'ptr' && !(cond && (k === 'int' || k === 'float'))) return;
+    if (k !== 'ptr' && !(cond && (k === 'int' || k === 'float' || (entera && (k === 'arr' || k === 'struct'))))) return;
     const a = this.ubicar(v.reserva, v.reserva.raiz);
     if (!a) return;
     if (this.accesos.some((x) => (x.de ? x.de : x.a).a === a.a && (x.de ? x.de : x.a).ruta.join('/') === a.ruta.join('/'))) return;
@@ -738,6 +791,12 @@ class Interprete {
         break;
       default:
         break;
+    }
+    // De un elemento (vidas[i]) o de un campo (alumno.nota) la pregunta nombra la variable entera (vidas, alumno) y las que forman el indice
+    // (i), no la casilla que resulta: esa se ve al ejecutar la sentencia (el indice se marca y su valor se expande).
+    if (n.type === 'subscript_expression' || (n.type === 'field_expression' && !n.children.some((h) => h.type === '->'))) {
+      const base = n.childForFieldName('argument');
+      if (base && base.type === 'identifier') this.lectura(base, true, true);
     }
     for (const h of n.namedChildren) this.lecturasEnCondicion(h);
   }
@@ -1045,6 +1104,8 @@ class Interprete {
         if (indice.t.k !== 'int') throw new ErrorDelMotor('SIN_VERIFICAR', 'un indice que no es entero');
         const d = this.deref(this.mover(base.v, indice.v));
         this.acceso(origen, d);
+        this.elementoAccedido(d);
+        this.origenDelIndice(d, n.childForFieldName('index') || n.childForFieldName('indices'));
         return d;
       }
       case 'field_expression': {
@@ -1065,6 +1126,7 @@ class Interprete {
         if (!campo) throw new ErrorDelMotor('CAMPO_DESCONOCIDO', `la estructura no tiene un campo ${nombre}`, n.startPosition.row + 1, { campo: nombre });
         // Con la flecha el acceso llega hasta el campo, no a toda la estructura.
         if (flecha) this.acceso(origen, { st: campo, reserva: sobre.reserva });
+        else if (this.enCondicion > 0) this.campoAccedido({ st: campo, reserva: sobre.reserva });
         return { st: campo, reserva: sobre.reserva };
       }
       default:

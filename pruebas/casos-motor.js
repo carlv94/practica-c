@@ -358,6 +358,56 @@ int main() {
     },
   },
   {
+    nombre: 'cada acceso a un elemento de un arreglo se anota (v[i]): lo que se escribe, lo que se imprime, lo que se pregunta (tambien un campo)',
+    codigo: String.raw`#include <stdio.h>
+typedef struct { int nota; } TAl;
+int main() {
+  int a[3] = {1, 2, 3};
+  TAl al = {7};
+  int i = 2;
+  int x;
+
+  a[2] = 5;
+  x = a[1];
+  if (a[i] == 5) {
+    x = 0;
+  }
+  if (al.nota >= 6) {
+    x = 1;
+  }
+  printf("%d\n", a[0]);
+  return 0;
+}`,
+    espera: {
+      salida: '1\n',
+      traza: (traza) => {
+        const ruta = (h) => h.a.ruta.join('/');
+        const elementos = traza.flatMap((x) => (x.accesos || []).filter((h) => h.tipo === 'elemento' && !h.de).map(ruta));
+        if (!elementos.includes('2')) return 'a[2] = 5 anota el acceso al elemento 2: ' + elementos.join(',');
+        if (!elementos.includes('0')) return 'imprimir a[0] anota el acceso al elemento 0: ' + elementos.join(',');
+        // x = a[1]: la lectura es una copia de valor, y el elemento no se anota dos veces
+        const copia = traza.flatMap((x) => (x.accesos || []).filter((h) => h.tipo === 'valor').map(ruta));
+        if (!copia.includes('1')) return 'x = a[1] copia el valor del elemento 1: ' + copia.join(',');
+        if (elementos.includes('1')) return 'el elemento 1 ya va en la copia de valor: ' + elementos.join(',');
+        // las condiciones: la pregunta nombra las variables (el arreglo a entero, la estructura al entera, el indice i), no la casilla que resulta
+        const nombreDe = (foto, id) => {
+          const v = [...foto.globales, ...foto.marcos.flatMap((m) => m.variables)].find((x) => x.id === id);
+          return v ? v.nombre : '?';
+        };
+        const preguntadas = traza.flatMap((x) => [...(x.accesos || []).filter((h) => h.cond).map((h) => h.a), ...((x.pregunta && x.pregunta.celdas) || [])].map((c) => nombreDe(x, c.a) + (c.ruta.length ? '/' + c.ruta.join('/') : '')));
+        for (const esperada of ['a', 'i', 'al']) if (!preguntadas.includes(esperada)) return 'la pregunta nombra a ' + esperada + ': ' + preguntadas.join(',');
+        if (preguntadas.includes('a/2') || preguntadas.includes('al/nota')) return 'la pregunta no resalta la casilla que resulta: ' + preguntadas.join(',');
+        // de donde sale el indice de a[i]: la casilla de i (para expandir su valor antes de marcar el indice); con un literal (a[2]) no hay
+        const conOrigen = traza.flatMap((x) => x.indices || []).filter((e) => e.ruta.join('/') === '2');
+        if (conOrigen.length !== 1 || conOrigen[0].de.length !== 1) return 'el indice de a[i] sale de la casilla de i: ' + JSON.stringify(conOrigen);
+        // y al ejecutarla, el campo (que no tiene indice) se anota para expandir su valor
+        const campos = traza.flatMap((x) => (x.accesos || []).filter((h) => h.tipo === 'campo').map(ruta));
+        if (!campos.includes('nota')) return 'al ejecutar al.nota >= 6 se anota el campo nota: ' + campos.join(',');
+        return null;
+      },
+    },
+  },
+  {
     nombre: 'una recursion saca una fotografia "por devolver" por cada llamada que devuelve un valor (tambien la base); las funciones comunes no',
     codigo: String.raw`#include <stdio.h>
 int doble(int x) {
