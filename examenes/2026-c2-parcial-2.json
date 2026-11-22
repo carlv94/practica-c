@@ -1,0 +1,104 @@
+{
+  "id": "2026-c2-parcial-2",
+  "titulo": "Programación — 2.º parcial",
+  "detalle": "2.º cuatrimestre de 2026. Se aprueba con el 60 % del puntaje total.",
+  "fecha": "2026-11-21",
+  "visibleDesde": "2026-11-22",
+  "ejercicios": [
+    {
+      "id": "ej1",
+      "titulo": "La estación meteorológica",
+      "puntos": 30,
+      "resumen": "Estructuras y enumerados: tres módulos, con parámetros por valor y por referencia.",
+      "enunciado": "Una estación meteorológica regional procesa diariamente mediciones climáticas para elaborar un resumen mensual y emitir alertas tempranas ante condiciones extremas.\n\nConsidere las siguientes declaraciones de tipos de referencia:",
+      "codigoDado": "typedef enum { NORMAL, PRECAUCION, CRITICA } ALERTA;\ntypedef struct { float temp; float lluvia; } MEDICION;\ntypedef struct {\n  float sumaTemp;\n  float sumaLluvia;\n  int cantDias;\n  int cantLluviosos;\n  float tempMax;\n} RESUMEN;",
+      "continua": "Sin escribir la función `main()`, diseñe e implemente en lenguaje C los siguientes 3 módulos, eligiendo adecuadamente en cada caso entre procedimiento o función y entre parámetros por valor o por referencia:",
+      "modulos": [
+        {
+          "id": "a",
+          "titulo": "actualizarResumen",
+          "puntos": 12,
+          "enunciado": "`actualizarResumen(medicion, resumen)`: recibe una medición diaria y un resumen mensual. Acumula la temperatura y la lluvia en el resumen, incrementa `cantDias` en 1, incrementa `cantLluviosos` si `lluvia > 0`, y actualiza `tempMax` si la temperatura supera a la máxima registrada (o si es el primer día).",
+          "solucion": "void actualizarResumen(MEDICION medicion, RESUMEN *resumen) {\n  resumen->sumaTemp += medicion.temp;\n  resumen->sumaLluvia += medicion.lluvia;\n  resumen->cantDias++;\n  if (medicion.lluvia > 0) {\n    resumen->cantLluviosos++;\n  }\n  if (resumen->cantDias == 1 || medicion.temp > resumen->tempMax) {\n    resumen->tempMax = medicion.temp;\n  }\n}",
+          "explicacion": "Es un procedimiento (`void`): no calcula un valor para devolver, cambia el resumen. Por eso `resumen` va por referencia (un puntero): los cambios tienen que quedar en el resumen de quien llama. `medicion` va por valor, porque solo se lee. La condición `cantDias == 1` cubre el primer día, cuando todavía no hay una máxima con la que comparar (ya se sumó el día, por eso se pregunta por 1)."
+        },
+        {
+          "id": "b",
+          "titulo": "temperaturaMedia",
+          "puntos": 9,
+          "enunciado": "`temperaturaMedia(resumen)`: recibe un resumen mensual y devuelve la temperatura promedio registrada (0.0 si `cantDias` es 0).",
+          "solucion": "float temperaturaMedia(RESUMEN resumen) {\n  if (resumen.cantDias == 0) {\n    return 0.0;\n  }\n  return resumen.sumaTemp / resumen.cantDias;\n}",
+          "explicacion": "Es una función: devuelve un solo valor, el promedio. El resumen va por valor porque solo se lee (también valdría un puntero para no copiar la estructura, pero no hace falta). El caso `cantDias == 0` se atiende primero para no dividir por cero."
+        },
+        {
+          "id": "c",
+          "titulo": "clasificarAlerta",
+          "puntos": 9,
+          "enunciado": "`clasificarAlerta(medicion)`: recibe una medición diaria y devuelve el nivel de `ALERTA` correspondiente: `CRITICA` si `temp >= 40.0` o `lluvia >= 80.0`; `PRECAUCION` si no es crítica pero `temp >= 35.0` o `lluvia >= 40.0`; y `NORMAL` en cualquier otro caso.",
+          "solucion": "ALERTA clasificarAlerta(MEDICION medicion) {\n  if (medicion.temp >= 40.0 || medicion.lluvia >= 80.0) {\n    return CRITICA;\n  }\n  if (medicion.temp >= 35.0 || medicion.lluvia >= 40.0) {\n    return PRECAUCION;\n  }\n  return NORMAL;\n}",
+          "explicacion": "Es una función que devuelve una `ALERTA`, y la medición va por valor porque solo se lee. Se pregunta primero por lo crítico: así, cuando se llega al segundo `if`, ya se sabe que no es crítica, y el «si no es crítica pero» del enunciado se cumple sin escribirlo."
+        }
+      ],
+      "programa": "#include <stdio.h>\n\ntypedef enum { NORMAL, PRECAUCION, CRITICA } ALERTA;\ntypedef struct { float temp; float lluvia; } MEDICION;\ntypedef struct {\n  float sumaTemp;\n  float sumaLluvia;\n  int cantDias;\n  int cantLluviosos;\n  float tempMax;\n} RESUMEN;\n\nvoid actualizarResumen(MEDICION medicion, RESUMEN *resumen) {\n  resumen->sumaTemp += medicion.temp;\n  resumen->sumaLluvia += medicion.lluvia;\n  resumen->cantDias++;\n  if (medicion.lluvia > 0) {\n    resumen->cantLluviosos++;\n  }\n  if (resumen->cantDias == 1 || medicion.temp > resumen->tempMax) {\n    resumen->tempMax = medicion.temp;\n  }\n}\n\nfloat temperaturaMedia(RESUMEN resumen) {\n  if (resumen.cantDias == 0) {\n    return 0.0;\n  }\n  return resumen.sumaTemp / resumen.cantDias;\n}\n\nALERTA clasificarAlerta(MEDICION medicion) {\n  if (medicion.temp >= 40.0 || medicion.lluvia >= 80.0) {\n    return CRITICA;\n  }\n  if (medicion.temp >= 35.0 || medicion.lluvia >= 40.0) {\n    return PRECAUCION;\n  }\n  return NORMAL;\n}\n\nint main() {\n  RESUMEN r = {0, 0, 0, 0, 0};\n  MEDICION m1 = {30.5, 0};\n  MEDICION m2 = {36.0, 45.0};\n  actualizarResumen(m1, &r);\n  actualizarResumen(m2, &r);\n  printf(\"%.2f\\n\", temperaturaMedia(r));\n  printf(\"%d %d\\n\", clasificarAlerta(m1), clasificarAlerta(m2));\n  return 0;\n}",
+      "entrada": "",
+      "salida": "33.25\n0 1\n",
+      "nota": "Las tres funciones son la resolución. El `main()` es solo de demostración, para poder verlas en acción: el enunciado pide los módulos sin `main()`, así que no formaba parte de lo que se pedía."
+    },
+    {
+      "id": "ej2",
+      "titulo": "El ataque especial",
+      "puntos": 30,
+      "resumen": "Recursión con dígitos y con un arreglo, con lectura de datos.",
+      "enunciado": "En un videojuego de acción, el jugador lanza un ataque especial contra una oleada de N enemigos (1 <= N <= 50), cuyas vidas actuales se encuentran almacenadas en un vector de enteros.\n\nLa potencia del ataque especial se determina a partir de un número entero positivo `semilla` ingresado por el jugador: se parte con un daño base = 30 y cada dígito impar que contenga `semilla` representa un golpe crítico, que inflige 10 puntos de daño adicional a todos los enemigos de la oleada. Si la vida de un enemigo cae por debajo de 0, debe quedar exactamente en 0 (derrotado).\n\nPor ejemplo: si `semilla = 4732`, los dígitos impares son 7 y 3 (2 golpes críticos -> `danoTotal = 30 + 10 + 10`). Si las vidas eran [120, 40, 50], quedan [70, 0, 0] (2 enemigos derrotados).",
+      "continua": "Se pide escribir un programa completo en lenguaje C que resuelva el problema utilizando dos módulos recursivos e invocándolos desde `main()`:",
+      "dibujos": [
+        {
+          "titulo": "El vector `vidas` antes del ataque (ejemplo):",
+          "valores": [
+            120,
+            40,
+            50
+          ]
+        },
+        {
+          "titulo": "Y después, con `danoTotal = 50`:",
+          "valores": [
+            70,
+            0,
+            0
+          ]
+        }
+      ],
+      "modulos": [
+        {
+          "id": "a",
+          "titulo": "contarCriticos",
+          "puntos": 10,
+          "enunciado": "`int contarCriticos(int semilla);` función recursiva que reciba un entero positivo `semilla` y retorne la cantidad de dígitos impares que contiene.",
+          "solucion": "int contarCriticos(int semilla) {\n  if (semilla == 0) {\n    return 0;\n  }\n  if (semilla % 10 % 2 == 1) {\n    return 1 + contarCriticos(semilla / 10);\n  }\n  return contarCriticos(semilla / 10);\n}",
+          "explicacion": "El caso base es `semilla == 0`: ya no quedan dígitos, así que hay 0 impares. En el paso, `semilla % 10` es el último dígito; si es impar cuenta 1 y se suma lo que haya en el resto (`semilla / 10`), y si no, solo se sigue con el resto. La recursión se acerca al caso base porque cada llamada le quita un dígito."
+        },
+        {
+          "id": "b",
+          "titulo": "aplicarDano",
+          "puntos": 12,
+          "enunciado": "`void aplicarDano(int vidas[], int n, int danoTotal);` procedimiento recursivo que recibe el vector de vidas, su cantidad `n` y el daño total, y actualice recursivamente cada elemento del vector restándole `danoTotal` (dejándolo en 0 si el resultado es negativo).",
+          "solucion": "void aplicarDano(int vidas[], int n, int danoTotal) {\n  if (n == 0) {\n    return;\n  }\n  vidas[n - 1] = vidas[n - 1] - danoTotal;\n  if (vidas[n - 1] < 0) {\n    vidas[n - 1] = 0;\n  }\n  aplicarDano(vidas, n - 1, danoTotal);\n}",
+          "explicacion": "El caso base es `n == 0`: no queda ningún elemento por actualizar. En el paso se actualiza el último elemento considerado, `vidas[n - 1]`, y se sigue con los `n - 1` anteriores. Un arreglo siempre se pasa por referencia (se pasa su dirección), por eso los cambios se ven en `main` sin devolver nada. En la figura se ve: todas las llamadas apuntan al mismo arreglo de `main`."
+        },
+        {
+          "id": "c",
+          "titulo": "main",
+          "puntos": 8,
+          "enunciado": "En `main()`, solicitar N (validado entre 1 y 50), cargar el vector de vidas, solicitar `semilla` (> 0), invocar ambos módulos recursivos, informar el daño total aplicado, las vidas finales de la oleada y la cantidad de enemigos derrotados.",
+          "solucion": "int main() {\n  int vidas[50];\n  int n;\n  int semilla;\n  int i;\n  int derrotados = 0;\n  do {\n    printf(\"Enemigos (1 a 50): \");\n    scanf(\"%d\", &n);\n  } while (n < 1 || n > 50);\n  for (i = 0; i < n; i++) {\n    scanf(\"%d\", &vidas[i]);\n  }\n  do {\n    printf(\"Semilla: \");\n    scanf(\"%d\", &semilla);\n  } while (semilla <= 0);\n  int danoTotal = 30 + 10 * contarCriticos(semilla);\n  aplicarDano(vidas, n, danoTotal);\n  printf(\"Dano total: %d\\n\", danoTotal);\n  for (i = 0; i < n; i++) {\n    printf(\"%d \", vidas[i]);\n    if (vidas[i] == 0) {\n      derrotados++;\n    }\n  }\n  printf(\"\\nDerrotados: %d\\n\", derrotados);\n  return 0;\n}",
+          "explicacion": "Las dos validaciones usan `do ... while`: se pide el dato y se vuelve a pedir mientras no sea válido. El daño total se arma con el daño base más 10 por cada golpe crítico (`contarCriticos`). Los derrotados se cuentan al recorrer las vidas finales: los que quedaron en 0."
+        }
+      ],
+      "programa": "#include <stdio.h>\n\nint contarCriticos(int semilla) {\n  if (semilla == 0) {\n    return 0;\n  }\n  if (semilla % 10 % 2 == 1) {\n    return 1 + contarCriticos(semilla / 10);\n  }\n  return contarCriticos(semilla / 10);\n}\n\nvoid aplicarDano(int vidas[], int n, int danoTotal) {\n  if (n == 0) {\n    return;\n  }\n  vidas[n - 1] = vidas[n - 1] - danoTotal;\n  if (vidas[n - 1] < 0) {\n    vidas[n - 1] = 0;\n  }\n  aplicarDano(vidas, n - 1, danoTotal);\n}\n\nint main() {\n  int vidas[50];\n  int n;\n  int semilla;\n  int i;\n  int derrotados = 0;\n  do {\n    printf(\"Enemigos (1 a 50): \");\n    scanf(\"%d\", &n);\n  } while (n < 1 || n > 50);\n  for (i = 0; i < n; i++) {\n    scanf(\"%d\", &vidas[i]);\n  }\n  do {\n    printf(\"Semilla: \");\n    scanf(\"%d\", &semilla);\n  } while (semilla <= 0);\n  int danoTotal = 30 + 10 * contarCriticos(semilla);\n  aplicarDano(vidas, n, danoTotal);\n  printf(\"Dano total: %d\\n\", danoTotal);\n  for (i = 0; i < n; i++) {\n    printf(\"%d \", vidas[i]);\n    if (vidas[i] == 0) {\n      derrotados++;\n    }\n  }\n  printf(\"\\nDerrotados: %d\\n\", derrotados);\n  return 0;\n}",
+      "entrada": "3\n120 40 50\n4732\n",
+      "salida": "Enemigos (1 a 50): Semilla: Dano total: 50\n70 0 0 \nDerrotados: 2\n",
+      "nota": "La entrada de ejemplo es la del enunciado: 3 enemigos con vidas 120, 40 y 50, y semilla 4732."
+    }
+  ]
+}

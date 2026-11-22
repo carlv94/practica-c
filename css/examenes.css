@@ -1,0 +1,91 @@
+/* la página de exámenes resueltos (ver js/examenes.js); las tarjetas y el grupo son los de las series (estilo.css) */
+.ejercicio h2 {
+  margin: 0 0 8px;
+  font-size: 1.3rem;
+}
+.ejercicio .puntos {
+  color: var(--suave);
+  font-weight: 400;
+  font-size: 0.95rem;
+}
+.ejercicio h3 {
+  margin: 0 0 6px;
+  font-size: 1.02rem;
+}
+.ejercicio pre {
+  margin: 8px 0;
+  overflow-x: auto;
+}
+.enunciado-general {
+  margin: 0 0 20px;
+}
+.modulo-enunciado {
+  margin: 0 0 6px;
+}
+.modulo-explicacion {
+  margin: 8px 0 0;
+  padding: 8px 12px;
+  border-left: 3px solid var(--acento);
+  background: var(--panel);
+}
+.modulo-acciones {
+  margin: 12px 0 0;
+}
+.ejercicio-nota {
+  margin: 0 0 8px;
+  color: var(--suave);
+  font-size: 0.9rem;
+}
+.ejercicio-pasoapaso {
+  margin-top: 12px;
+}
+
+/* las solapas de un ejercicio: una por parte (a, b, c y el paso a paso) */
+.solapas {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  border-bottom: 1px solid var(--borde);
+}
+.solapa {
+  flex: 0 0 auto;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--borde);
+  border-bottom: 0;
+  border-radius: 6px 6px 0 0;
+  background: var(--panel);
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.solapa[aria-selected="true"] {
+  background: var(--fondo);
+  border-color: var(--acento);
+}
+.solapa-nombre {
+  font-family: Consolas, "Cascadia Mono", Menlo, monospace;
+  font-weight: 500;
+}
+.solapa-panel {
+  padding-top: 12px;
+}
+.rotulo {
+  margin: 14px 0 4px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--suave);
+}
+.modulo-titulo + .rotulo {
+  margin-top: 8px;
+}
+.ejercicio-paso {
+  margin-top: 28px;
+  padding-top: 8px;
+  border-top: 1px solid var(--borde);
+}

@@ -624,6 +624,53 @@ import { corregir } from '../js/corrector.js';
           }
         }
 
+        // Los exámenes resueltos (examenes/*.json, ver js/examenes.js): cada uno tiene la forma que espera la página, cada solución de un
+        // módulo está escrita igual dentro del programa que se ve paso a paso, y el programa corre en el motor con su entrada y muestra lo
+        // que dice "salida".
+        {
+          const titulo = 'exámenes resueltos: la forma de los archivos y que cada programa corra y muestre lo esperado';
+          try {
+            const indice = await (await fetch('../examenes/indice.json')).json();
+            if (!Array.isArray(indice.examenes) || !indice.examenes.length) throw new Error('indice.json: falta la lista "examenes"');
+            const ids = new Set();
+            for (const archivo of indice.examenes) {
+              const e = await (await fetch('../examenes/' + archivo)).json();
+              const donde = archivo + ': ';
+              for (const campo of ['id', 'titulo', 'fecha']) if (!e[campo]) throw new Error(donde + 'falta ' + campo);
+              if (ids.has(e.id)) throw new Error(donde + 'id repetido ' + e.id);
+              ids.add(e.id);
+              if (archivo !== e.id + '.json') throw new Error(donde + 'el archivo tiene que llamarse como su id (' + e.id + '.json)');
+              if (!/^\d{4}-\d{2}-\d{2}$/.test(e.fecha) || (e.visibleDesde && !/^\d{4}-\d{2}-\d{2}$/.test(e.visibleDesde))) throw new Error(donde + 'las fechas van como AAAA-MM-DD');
+              if (!Array.isArray(e.ejercicios) || !e.ejercicios.length) throw new Error(donde + 'sin ejercicios');
+              const idsDeEjercicio = new Set();
+              for (const x of e.ejercicios) {
+                const en = donde + (x.id || '?') + ': ';
+                for (const campo of ['id', 'titulo', 'enunciado', 'programa']) if (!x[campo]) throw new Error(en + 'falta ' + campo);
+                if (!Number.isInteger(x.puntos) || x.puntos <= 0) throw new Error(en + 'los puntos son un entero positivo');
+                if (idsDeEjercicio.has(x.id)) throw new Error(en + 'id de ejercicio repetido');
+                idsDeEjercicio.add(x.id);
+                if (!Array.isArray(x.modulos) || !x.modulos.length) throw new Error(en + 'sin módulos');
+                for (const mod of x.modulos) {
+                  for (const campo of ['id', 'titulo', 'enunciado', 'solucion']) if (!mod[campo]) throw new Error(en + 'un módulo sin ' + campo);
+                  if (!x.programa.includes(mod.solucion)) throw new Error(en + 'la solución del módulo ' + mod.id + ' no está escrita igual en el programa que se ejecuta');
+                }
+                const suma = x.modulos.reduce((s, mod) => s + (mod.puntos || 0), 0);
+                if (suma !== x.puntos) throw new Error(en + 'los puntos de los módulos suman ' + suma + ' y el ejercicio dice ' + x.puntos);
+                for (const d of x.dibujos || []) if (!Array.isArray(d.valores)) throw new Error(en + 'un dibujo sin valores');
+                if (x.resumen != null && typeof x.resumen !== 'string') throw new Error(en + 'el resumen es un texto');
+                const r = ejecutarMotor(analizador, x.programa, { entrada: x.entrada || '', traza: true });
+                if (r.error) throw new Error(en + 'el programa no corre: ' + (r.error.codigo || '') + ' ' + (r.error.mensaje || ''));
+                if (!r.traza.length) throw new Error(en + 'el programa no tiene nada que seguir');
+                const salida = r.traza[r.traza.length - 1].salida;
+                if (x.salida != null && salida !== x.salida) throw new Error(en + 'la salida es ' + JSON.stringify(salida) + ' y se esperaba ' + JSON.stringify(x.salida));
+              }
+            }
+            anotar(true, titulo);
+          } catch (err) {
+            anotar(false, titulo, err.stack || err.message);
+          }
+        }
+
         // Las referencias de la figura (el panel «ⓘ»): una entrada por cada tipo de flecha que dibuja la figura, cada una con su muestra, y las
         // que dependen de una ayuda visual dicen cual es y tienen su interruptor.
         {
