@@ -563,13 +563,11 @@ const suavizar = (k) => (k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2);
 
 // Lo que dice el rotulo de una condicion compuesta sobre el 0 y el 1 (mientras hay un numero suelto como operando de && o ||) y sobre un cortocircuito.
 const LEYENDA_LOGICA = '0 es falso; cualquier otro valor es verdadero';
-const ORDINALES = ['primera', 'segunda', 'tercera', 'cuarta', 'quinta', 'sexta'];
 const hayNumeroLogico = (partes) => partes.some((p) => p.logico && /^-?\d+(\.\d+)?$/.test(p.t));
 // "corto": { ordinal (la condicion simple que decidio), verdad, quedan (las que no se evaluan) }
 const notaDelCorto = (corto) => {
-  const ord = (k) => ORDINALES[k] || k + 1 + '.ª';
-  const resto = corto.quedan === 1 ? `la ${ord(corto.ordinal)} no se evalúa` : 'las que siguen no se evalúan';
-  return `como la ${ord(corto.ordinal - 1)} es ${corto.verdad ? 'verdadera' : 'falsa'}, ${resto}`;
+  const resto = corto.quedan === 1 ? `la ${corto.ordinal + 1}.ª no se evalúa` : 'las que siguen no se evalúan';
+  return `la ${corto.ordinal}.ª es ${corto.verdad ? 'verdadera' : 'falsa'}: ${resto}`;
 };
 
 // El texto de "nodo" pasa a las "partes" de un paso (ver pasosDeCondicion) a partir de "cuando" (ms): solo lo que cambio se contrae hasta
@@ -1541,7 +1539,7 @@ export class Figura {
     let detalle = null;
     if (condicion && !this.sinRotulo) {
       // La respuesta no ocupa lugar hasta que le toca aparecer: el rotulo se ensancha recien entonces, no mientras corre el flujo.
-      r = this.crearRotulo(condicion.texto, condicion.valor, false);
+      r = this.crearRotulo(condicion.completo || condicion.texto, condicion.valor, false);
       pregunta = r.caja;
       detalle = this.ayudas.detalleCondiciones && condicion.pasos && condicion.partes && condicion.pasos.length > 1 ? condicion.pasos : null;
     }
@@ -1567,16 +1565,17 @@ export class Figura {
     // Las etapas de la condicion simple "j" (todas, si la condicion no es compuesta) y, si ella decidio el resultado, la nota del cortocircuito.
     const etapasDe = (j, ultimo) => {
       const gruposDePaso = condicion.grupoDePaso;
-      let cuando = t;
       for (let i = 1; i < detalle.length; i++) {
         if ((gruposDePaso ? gruposDePaso[i] : ultimo) !== j) continue;
-        cuando = t + 0.6 * u;
         etapa(i, i === 1 ? `Se ponen los valores en la condición: ${detalle[i]}` : `Se resuelve la condición: ${detalle[i]}`);
       }
       const corto = (condicion.cortos || []).find((c) => c.ordinal === j + 1);
       if (corto) {
-        poner(r.nota, notaDelCorto(corto), cuando);
-        this.anotar(cuando, notaDelCorto(corto));
+        // La nota tiene una etapa propia: el rotulo se queda quieto el tiempo de leerla (segun lo que dice, no menos de 2 unidades).
+        const nota = notaDelCorto(corto);
+        poner(r.nota, nota, t);
+        this.anotar(t, `Se explica el cortocircuito: ${nota}`);
+        t += Math.max(2 * u, 0.07 * u * nota.length);
       }
     };
     // Los valores que se leen para responder una condicion resplandecen primero (los punteros a un bloque no tienen texto: no
@@ -1847,7 +1846,7 @@ export class Figura {
     let nodo = null;
     if (foto.pregunta) {
       if (!this.sinRotulo) {
-        nodo = this.crearRotulo(foto.pregunta.texto, null).caja;
+        nodo = this.crearRotulo(foto.pregunta.completo || foto.pregunta.texto, null).caja;
         // Al avanzar, el rotulo llama la atencion: baja desde arriba y destella (al terminar la animacion del paso).
         if (adelante) this.llamarLaAtencion(nodo, retraso, true);
         else aparecer(nodo);
@@ -1870,7 +1869,7 @@ export class Figura {
       // Con el detalle de las condiciones, el rotulo de la respuesta dice la condicion ya resuelta (la que se vio al final de la animacion).
       const pasos = this.ayudas.detalleCondiciones && foto.condicion.pasos && foto.condicion.pasos.length > 1 ? foto.condicion.pasos : null;
       const detalle = pasos && foto.condicion.partes ? { partes: foto.condicion.partes[pasos.length - 1], cortos: foto.condicion.cortos } : null;
-      nodo = this.crearRotulo(pasos ? pasos[pasos.length - 1] : foto.condicion.texto, foto.condicion.valor, true, detalle).caja;
+      nodo = this.crearRotulo(pasos ? pasos[pasos.length - 1] : foto.condicion.completo || foto.condicion.texto, foto.condicion.valor, true, detalle).caja;
     }
     this.nodoFijo = nodo;
     // Si el paso muestra todavia la figura anterior (el recorrido previo), el rotulo se pone cuando termina.

@@ -918,10 +918,12 @@ class Interprete {
   condicion(n, modo) {
     const afuera = Boolean(this.opciones.traza) && this.enCondicion === 0 && modo !== undefined;
     let textoPregunta = null;
+    let textoCompleto = null; // la condicion entera (el rotulo de la figura la muestra completa: si no entra, pasa a la linea de abajo)
     let preguntaHecha = null;
     let pasoPregunta = null; // la fotografia que lleva la pregunta (ver anotarPregunta)
     if (afuera) {
       textoPregunta = (n.type === 'parenthesized_expression' ? n.namedChildren[0] : n).text.replace(/\s+/g, ' ').trim();
+      textoCompleto = textoPregunta;
       if (textoPregunta.length > 42) textoPregunta = textoPregunta.slice(0, 41) + '…';
     }
     if (afuera && this.opciones.preguntas) {
@@ -933,7 +935,7 @@ class Interprete {
       this.accesos = previos;
       // "enfoque": las casillas de punteros de las que salen las flechas que importan para responder (las que se
       // leen, y despues las que la evaluacion recorre); las demas flechas se atenuan mientras se ve la pregunta.
-      const pregunta = { texto: textoPregunta, celdas, enfoque: lecturas.filter((h) => h.ptr).map((h) => h.a) };
+      const pregunta = { texto: textoPregunta, ...(textoCompleto !== textoPregunta ? { completo: textoCompleto } : {}), celdas, enfoque: lecturas.filter((h) => h.ptr).map((h) => h.a) };
       const ultima = this.traza[this.traza.length - 1];
       if (modo === 'paso' && ultima && ultima === this.fotoDePaso) ultima.pregunta = pregunta;
       else this.instantanea(n.startPosition.row + 1, null, pregunta);
@@ -980,6 +982,7 @@ class Interprete {
     if (afuera) {
       this.condicionHecha = {
         texto: textoPregunta,
+        ...(textoCompleto !== textoPregunta ? { completo: textoCompleto } : {}),
         valor,
         ...(preguntaHecha ? { celdas: preguntaHecha.celdas } : {}),
         ...(grupos && grupos.length > 1 ? { grupos: grupos.map((g) => ({ celdas: g.celdas })) } : {}),

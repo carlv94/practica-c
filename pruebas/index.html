@@ -975,7 +975,7 @@ import { corregir } from '../js/corrector.js';
           try {
             const { Figura } = await import('../js/motor/figura.js');
             const { ajustes } = await import('../js/ajustes.js');
-            const fuente = '#include <stdio.h>\ntypedef struct nodo { int dato; struct nodo *sig; } Nodo;\nint main() {\n  Nodo *lista = NULL;\n  int n = 1;\n  if (lista != NULL && lista->dato > 3) {\n    n = 3;\n  }\n  if (n > 0 || n < -5) {\n    n = 4;\n  }\n  return 0;\n}';
+            const fuente = '#include <stdio.h>\ntypedef struct nodo { int dato; struct nodo *sig; } Nodo;\nint main() {\n  Nodo *lista = NULL;\n  int n = 1;\n  if (lista != NULL && lista->dato > 3) {\n    n = 3;\n  }\n  if (n > 0 || n < -5) {\n    n = 4;\n  }\n  if (n > 100000 && n < 200000 || n == 12345 && lista != NULL) {\n    n = 5;\n  }\n  return 0;\n}';
             const m = ejecutarMotor(analizador, fuente, { traza: true });
             const lugar = document.createElement('div');
             document.body.append(lugar);
@@ -995,13 +995,26 @@ import { corregir } from '../js/corrector.js';
               return { texto: nodo.textContent, avisos: visible('.rep-pregunta-aviso'), colores: [...nodo.querySelectorAll('[class*="rep-logico-"]')].map((x) => x.textContent + ':' + x.className.match(/rep-logico-(\w+)/)[1]) };
             };
             const corto = rotuloDe('lista != NULL && lista->dato > 3', true);
-            if (corto.avisos.join('|') !== '0 es falso; cualquier otro valor es verdadero|como la primera es falsa, la segunda no se evalúa') throw new Error('avisos del cortocircuito: ' + JSON.stringify(corto));
+            if (corto.avisos.join('|') !== '0 es falso; cualquier otro valor es verdadero|la 1.ª es falsa: la 2.ª no se evalúa') throw new Error('avisos del cortocircuito: ' + JSON.stringify(corto));
             if (corto.colores.join(',') !== '0:falso') throw new Error('colores del cortocircuito: ' + JSON.stringify(corto.colores));
             const entero = rotuloDe('n > 0 || n < -5', true);
-            if (entero.avisos.join('|') !== '0 es falso; cualquier otro valor es verdadero|como la primera es verdadera, la segunda no se evalúa') throw new Error('avisos de ||: ' + JSON.stringify(entero.avisos));
+            if (entero.avisos.join('|') !== '0 es falso; cualquier otro valor es verdadero|la 1.ª es verdadera: la 2.ª no se evalúa') throw new Error('avisos de ||: ' + JSON.stringify(entero.avisos));
             if (entero.colores.join(',') !== '1:verdadero') throw new Error('colores de ||: ' + JSON.stringify(entero.colores));
             const sin = rotuloDe('lista != NULL && lista->dato > 3', false);
             if (sin.avisos.length || sin.colores.length) throw new Error('sin el detalle no hay avisos ni colores: ' + JSON.stringify(sin));
+            // una condicion larga (mas de 42 letras) se acorta en la traza, pero el rotulo de la figura la muestra entera
+            const kLarga = m.traza.findIndex((f) => f.condicion && f.condicion.completo);
+            if (kLarga < 1) throw new Error('la pregunta de la condicion larga trae la condicion completa');
+            {
+              ajustes.fijarPerfil('explicacion');
+              const figura = new Figura(lugar);
+              figura.fijarAyudas(ajustes.todos());
+              for (let j = 0; j <= kLarga; j++) figura.mostrar(m.traza[j], j ? m.traza[j - 1] : null, { animar: false });
+              figura.fijarEstado(m.traza[kLarga], 0, false);
+              const texto = figura.nodoFijo ? figura.nodoFijo.textContent : '';
+              if (figura.raf) cancelAnimationFrame(figura.raf);
+              if (!texto.startsWith('¿ ' + m.traza[kLarga].condicion.completo + ' ?') || texto.includes('…')) throw new Error('el rotulo de la condicion larga dice "' + texto + '"');
+            }
             // los accesos de la evaluacion llevan el grupo (la condicion simple) en que ocurrieron, en orden
             const dos = m.traza.find((f) => f.condicion && f.condicion.texto === 'n > 0 || n < -5');
             const gs = (dos.condicion.grupos || []).length;

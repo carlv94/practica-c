@@ -389,7 +389,8 @@
 .rep-ancho:not(.rep-compacto) .rep-franja-pregunta {
   display: block;
   flex: 0 0 auto;
-  height: 36px;
+  /* una linea; si la condicion no entra en el ancho, el rotulo pasa a dos y la franja crece lo que haga falta */
+  min-height: 36px;
   margin: 0 0 4px;
 }
 .rep-franja-pregunta {
@@ -416,6 +417,13 @@
 /* Sin ninguna pregunta que la tabla del trazado no muestre, la franja no se reserva. */
 .rep-ancho:not(.rep-compacto).rep-sin-franja .rep-franja-pregunta {
   display: none;
+}
+/* en la franja (hay ancho) la leyenda y la nota van a continuacion de la condicion, en la misma linea, y pasan a la de abajo solo si no entran */
+.rep-ancho:not(.rep-compacto) .rep-franja-pregunta .rep-pregunta-aviso:not([hidden]) {
+  display: inline;
+  margin: 0 0 0 0.9em;
+  padding-left: 0.9em;
+  border-left: 1px solid var(--borde);
 }
 .rep-franja-pregunta .rep-pregunta-g {
   position: static;
