@@ -95,3 +95,31 @@
   padding-top: 8px;
   border-top: 1px solid var(--borde);
 }
+
+/* Los dibujos de arreglos del enunciado: los mismos casilleros que el de las consignas (en estilo.css van bajo #figura) */
+.dibujo-arreglo {
+  overflow-x: auto;
+  padding: 1px 1px 4px;
+}
+
+.dibujo-arreglo .indice {
+  font-size: 0.75rem;
+  color: var(--suave);
+  line-height: 1.6;
+}
+
+.dibujo-arreglo .valor {
+  display: grid;
+  place-items: center;
+  min-width: 46px;
+  height: 46px;
+  padding: 0 8px;
+  border: 1px solid var(--suave);
+  margin-left: -1px;
+  background: var(--fondo);
+  font: 600 1rem Consolas, "Cascadia Mono", Menlo, monospace;
+}
+
+.dibujo-arreglo .casillero:first-child .valor {
+  margin-left: 0;
+}

@@ -72,7 +72,7 @@ function codigoA(contenedor, texto) {
 
 // Un arreglo como una fila de casilleros con su índice arriba (los mismos estilos que el de las consignas).
 function arregloA(contenedor, dibujo) {
-  const caja = nodo('div');
+  const caja = nodo('div', 'dibujo-arreglo');
   if (dibujo.titulo) caja.appendChild(conTexto('p', 'titulo-figura', dibujo.titulo));
   const fila = nodo('div', 'arreglo');
   dibujo.valores.forEach((valor, i) => {
