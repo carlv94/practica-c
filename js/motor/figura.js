@@ -561,6 +561,17 @@ function camino(puntos) {
 const sinMovimiento = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 const suavizar = (k) => (k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2);
 
+// Lo que dice el rotulo de una condicion compuesta sobre el 0 y el 1 (mientras hay un numero suelto como operando de && o ||) y sobre un cortocircuito.
+const LEYENDA_LOGICA = '0 es falso; cualquier otro valor es verdadero';
+const ORDINALES = ['primera', 'segunda', 'tercera', 'cuarta', 'quinta', 'sexta'];
+const hayNumeroLogico = (partes) => partes.some((p) => p.logico && /^-?\d+(\.\d+)?$/.test(p.t));
+// "corto": { ordinal (la condicion simple que decidio), verdad, quedan (las que no se evaluan) }
+const notaDelCorto = (corto) => {
+  const ord = (k) => ORDINALES[k] || k + 1 + '.ª';
+  const resto = corto.quedan === 1 ? `la ${ord(corto.ordinal)} no se evalúa` : 'las que siguen no se evalúan';
+  return `como la ${ord(corto.ordinal - 1)} es ${corto.verdad ? 'verdadera' : 'falsa'}, ${resto}`;
+};
+
 // El texto de "nodo" pasa a las "partes" de un paso (ver pasosDeCondicion) a partir de "cuando" (ms): solo lo que cambio se contrae hasta
 // desaparecer y de ahi emerge lo nuevo, con un destello; el resto del texto no se mueve. "antes" y "despues" rodean al texto (la
 // pregunta: "¿ " y " ?"). Una parte vieja sale en 0,6 u y la nueva emerge en 1,1 u, con un rebote suave.
@@ -569,15 +580,15 @@ export function textoPorPartes(nodo, partes, cuando, u, { antes = '¿ ', despues
     const cambiantes = [];
     nodo.replaceChildren(document.createTextNode(antes));
     for (const p of partes) {
-      if (!p.nuevo) {
+      if (!p.nuevo && !p.logico) {
         nodo.append(document.createTextNode(p.t));
         continue;
       }
       const parte = document.createElement('span');
-      parte.className = 'rep-pregunta-parte';
-      parte.textContent = nuevo ? p.t : p.antes;
+      parte.className = 'rep-pregunta-parte' + (p.logico && (nuevo || !p.nuevo) ? ' rep-logico-' + p.logico : '');
+      parte.textContent = nuevo || !p.nuevo ? p.t : p.antes;
       nodo.append(parte);
-      cambiantes.push([parte, p]);
+      if (p.nuevo) cambiantes.push([parte, p]);
     }
     nodo.append(document.createTextNode(despues));
     return cambiantes;
@@ -597,6 +608,7 @@ export function textoPorPartes(nodo, partes, cuando, u, { antes = '¿ ', despues
     for (const [parte, p] of cambiantes) {
       for (const a of parte.getAnimations()) a.cancel();
       parte.textContent = p.t;
+      if (p.logico) parte.classList.add('rep-logico-' + p.logico);
       parte.animate(
         [
           { opacity: 0, transform: 'scale(0.2)', backgroundColor: destello },
@@ -1523,115 +1535,176 @@ export class Figura {
         pulso(casilla);
       }
     };
+    // El rotulo de la condicion (si hay uno) y su detalle: las etapas en que pasa por la condicion con los valores puestos y las cuentas hechas.
+    let r = null;
+    let pregunta = null;
+    let detalle = null;
+    if (condicion && !this.sinRotulo) {
+      // La respuesta no ocupa lugar hasta que le toca aparecer: el rotulo se ensancha recien entonces, no mientras corre el flujo.
+      r = this.crearRotulo(condicion.texto, condicion.valor, false);
+      pregunta = r.caja;
+      detalle = this.ayudas.detalleCondiciones && condicion.pasos && condicion.partes && condicion.pasos.length > 1 ? condicion.pasos : null;
+    }
+    // La leyenda del 0 y el 1 (solo mientras se ve un numero suelto como operando de && o ||) y la nota del cortocircuito.
+    let leyendaVista = false;
+    const poner = (nodo, texto, cuando) => {
+      tiempo.esperar(() => {
+        nodo.textContent = texto || '';
+        nodo.hidden = !texto;
+      }, cuando);
+    };
+    // Una etapa del detalle: el rotulo cambia (lo que cambia emerge, ver textoPorPartes) y se queda dos unidades.
+    const etapa = (i, texto) => {
+      this.anotar(t, texto);
+      this.cambiarPartes(r.texto, condicion.partes[i], t, u);
+      const leyenda = hayNumeroLogico(condicion.partes[i]);
+      if (leyenda !== leyendaVista) {
+        poner(r.leyenda, leyenda ? LEYENDA_LOGICA : '', t + 0.6 * u);
+        leyendaVista = leyenda;
+      }
+      t += 2 * u;
+    };
+    // Las etapas de la condicion simple "j" (todas, si la condicion no es compuesta) y, si ella decidio el resultado, la nota del cortocircuito.
+    const etapasDe = (j, ultimo) => {
+      const gruposDePaso = condicion.grupoDePaso;
+      let cuando = t;
+      for (let i = 1; i < detalle.length; i++) {
+        if ((gruposDePaso ? gruposDePaso[i] : ultimo) !== j) continue;
+        cuando = t + 0.6 * u;
+        etapa(i, i === 1 ? `Se ponen los valores en la condición: ${detalle[i]}` : `Se resuelve la condición: ${detalle[i]}`);
+      }
+      const corto = (condicion.cortos || []).find((c) => c.ordinal === j + 1);
+      if (corto) {
+        poner(r.nota, notaDelCorto(corto), cuando);
+        this.anotar(cuando, notaDelCorto(corto));
+      }
+    };
     // Los valores que se leen para responder una condicion resplandecen primero (los punteros a un bloque no tienen texto: no
     // se ven); despues viene el recorrido por las flechas y, al final, el resultado.
-    if (condicion && condicion.celdas && condicion.celdas.length && this.ayudas.brilloCondiciones) {
-      const claves = condicion.celdas.map((c) => clave(c.a, c.ruta));
+    const brillarCeldas = (celdas) => {
+      if (!condicion || !celdas || !celdas.length || !this.ayudas.brilloCondiciones) return;
+      const claves = celdas.map((c) => clave(c.a, c.ruta));
       if (this.brillar({ svg: clon }, claves, t, 0.8 * u)) {
         this.anotar(t, 'Brillan los valores de la condición');
         this.destello = { fin: t + 0.8 * u, meseta: t + 0.6 * 0.8 * u };
         t += 0.8 * u;
       }
-    }
-    // Los argumentos de una llamada (mas de tres: todos a la vez): cada resalte empieza donde empezo el primero.
-    let juntoDesde = null;
-    let juntoFin = 0;
-    for (const h of accesos) {
-      if (h.junto) {
-        if (juntoDesde === null) juntoDesde = t;
-        else {
-          juntoFin = Math.max(juntoFin, t);
-          t = juntoDesde;
+    };
+    // Recorre una lista de accesos (los de un paso, o los de una condicion simple de una condicion compuesta).
+    const recorrer = (lista) => {
+      // Los argumentos de una llamada (mas de tres: todos a la vez): cada resalte empieza donde empezo el primero.
+      let juntoDesde = null;
+      let juntoFin = 0;
+      for (const h of lista) {
+        if (h.junto) {
+          if (juntoDesde === null) juntoDesde = t;
+          else {
+            juntoFin = Math.max(juntoFin, t);
+            t = juntoDesde;
+          }
+        } else if (juntoDesde !== null) {
+          t = Math.max(juntoFin, t);
+          juntoDesde = null;
         }
-      } else if (juntoDesde !== null) {
-        t = Math.max(juntoFin, t);
-        juntoDesde = null;
-      }
-      const copia = h.tipo === 'copia';
-      const destino = previa.anclas && previa.anclas.get(copia ? this.claveDeResalte(previa, h.a.a, h.a.ruta) : clave(h.a.a, h.a.ruta));
-      const casilla = destino ? this.absolutoDe(previa, destino) : null;
-      if (!casilla) continue;
-      const flecha = h.de ? previa.flechas.find((f) => f.claveOrigen === clave(h.de.a, h.de.ruta) && f.final) : null;
-      if (h.tipo === 'vieja') {
-        // La flecha que tenia el puntero que se sobrescribe destella antes de que cambie; la casilla de destino
-        // sigue encendida mientras tanto (no se resalta el bloque al que apuntaba: no interviene).
-        if (!flecha) continue;
-        resaltarDestino();
-        this.anotar(t, `Se ve la flecha que tenía ${this.nombreCelda(previa, h.de.a, h.de.ruta)} antes de cambiar`);
-        encender(h, t);
-        const dDestello = 0.8 * u;
-        const trazo = el('path', { d: camino(this.rutaPuntos(flecha, flecha.final, previa.filas, previa)), class: 'rep-flujo' });
-        trazo.style.opacity = '0';
-        capa.append(trazo);
-        if (trazo.animate) trazo.animate(PARPADEO, { duration: dDestello, delay: t, fill: 'both' });
-        if (ultimoResalte) {
-          extender(ultimoResalte, dDestello);
-          ultimoResalte = null;
-        }
-        t += dDestello;
-        continue;
-      }
-      if (copia) {
-        // Un puntero que se copia: parpadean su flecha y lo que senala.
-        ultimoResalte = null;
-        pendientePara = h.para;
-        const dParpadeo = 0.9 * u;
-        // El origen de la copia (la casilla del puntero) parpadea junto con su flecha y el bloque.
-        const origen = h.de && previa.anclas && previa.anclas.get(clave(h.de.a, h.de.ruta));
-        const cajaOrigen = origen ? this.absolutoDe(previa, origen) : null;
-        this.anotar(t, h.de ? `Se copia el puntero ${this.nombreCelda(previa, h.de.a, h.de.ruta)}: parpadean su flecha y lo que señala` : 'Se recibe el puntero que devolvió la función');
-        if (cajaOrigen) this.parpadeo(capa, cajaOrigen, dParpadeo, t);
-        if (flecha) {
+        const copia = h.tipo === 'copia';
+        const destino = previa.anclas && previa.anclas.get(copia ? this.claveDeResalte(previa, h.a.a, h.a.ruta) : clave(h.a.a, h.a.ruta));
+        const casilla = destino ? this.absolutoDe(previa, destino) : null;
+        if (!casilla) continue;
+        const flecha = h.de ? previa.flechas.find((f) => f.claveOrigen === clave(h.de.a, h.de.ruta) && f.final) : null;
+        if (h.tipo === 'vieja') {
+          // La flecha que tenia el puntero que se sobrescribe destella antes de que cambie; la casilla de destino
+          // sigue encendida mientras tanto (no se resalta el bloque al que apuntaba: no interviene).
+          if (!flecha) continue;
+          resaltarDestino();
+          this.anotar(t, `Se ve la flecha que tenía ${this.nombreCelda(previa, h.de.a, h.de.ruta)} antes de cambiar`);
           encender(h, t);
+          const dDestello = 0.8 * u;
           const trazo = el('path', { d: camino(this.rutaPuntos(flecha, flecha.final, previa.filas, previa)), class: 'rep-flujo' });
           trazo.style.opacity = '0';
           capa.append(trazo);
-          if (trazo.animate) trazo.animate(PARPADEO, { duration: dParpadeo, delay: t, fill: 'both' });
+          if (trazo.animate) trazo.animate(PARPADEO, { duration: dDestello, delay: t, fill: 'both' });
+          if (ultimoResalte) {
+            extender(ultimoResalte, dDestello);
+            ultimoResalte = null;
+          }
+          t += dDestello;
+          continue;
         }
-        this.parpadeo(capa, casilla, dParpadeo, t);
-        t += dParpadeo;
-        continue;
-      }
-      if (flecha) {
-        this.anotar(t, `Se recorre la flecha de ${this.nombreCelda(previa, h.de.a, h.de.ruta)} hasta ${this.nombreCelda(previa, h.a.a, h.a.ruta)}`);
-        encender(h, t);
-        const puntos = this.rutaPuntos(flecha, flecha.final, previa.filas, previa);
-        const largo = largoDe(puntos);
-        const trozo = Math.min(28, largo * 0.4);
-        const destello = el('path', { d: camino(puntos), class: 'rep-flujo' });
-        destello.setAttribute('stroke-dasharray', `${trozo} ${largo + trozo}`);
-        destello.style.opacity = '0';
-        capa.append(destello);
-        if (destello.animate) {
-          destello.animate(
-            [
-              { strokeDashoffset: trozo, opacity: 1 },
-              { strokeDashoffset: -largo, opacity: 1 },
-            ],
-            { duration: dFlecha, delay: t, easing: 'ease-in-out', fill: 'both' }
-          );
+        if (copia) {
+          // Un puntero que se copia: parpadean su flecha y lo que senala.
+          ultimoResalte = null;
+          pendientePara = h.para;
+          const dParpadeo = 0.9 * u;
+          // El origen de la copia (la casilla del puntero) parpadea junto con su flecha y el bloque.
+          const origen = h.de && previa.anclas && previa.anclas.get(clave(h.de.a, h.de.ruta));
+          const cajaOrigen = origen ? this.absolutoDe(previa, origen) : null;
+          this.anotar(t, h.de ? `Se copia el puntero ${this.nombreCelda(previa, h.de.a, h.de.ruta)}: parpadean su flecha y lo que señala` : 'Se recibe el puntero que devolvió la función');
+          if (cajaOrigen) this.parpadeo(capa, cajaOrigen, dParpadeo, t);
+          if (flecha) {
+            encender(h, t);
+            const trazo = el('path', { d: camino(this.rutaPuntos(flecha, flecha.final, previa.filas, previa)), class: 'rep-flujo' });
+            trazo.style.opacity = '0';
+            capa.append(trazo);
+            if (trazo.animate) trazo.animate(PARPADEO, { duration: dParpadeo, delay: t, fill: 'both' });
+          }
+          this.parpadeo(capa, casilla, dParpadeo, t);
+          t += dParpadeo;
+          continue;
         }
-        t += dFlecha;
+        if (flecha) {
+          this.anotar(t, `Se recorre la flecha de ${this.nombreCelda(previa, h.de.a, h.de.ruta)} hasta ${this.nombreCelda(previa, h.a.a, h.a.ruta)}`);
+          encender(h, t);
+          const puntos = this.rutaPuntos(flecha, flecha.final, previa.filas, previa);
+          const largo = largoDe(puntos);
+          const trozo = Math.min(28, largo * 0.4);
+          const destello = el('path', { d: camino(puntos), class: 'rep-flujo' });
+          destello.setAttribute('stroke-dasharray', `${trozo} ${largo + trozo}`);
+          destello.style.opacity = '0';
+          capa.append(destello);
+          if (destello.animate) {
+            destello.animate(
+              [
+                { strokeDashoffset: trozo, opacity: 1 },
+                { strokeDashoffset: -largo, opacity: 1 },
+              ],
+              { duration: dFlecha, delay: t, easing: 'ease-in-out', fill: 'both' }
+            );
+          }
+          t += dFlecha;
+        }
+        pulsoDeIndice(h.a);
+        if (h.tipo === 'valor') {
+          // Se copia el valor de una casilla en otra: primero se resalta el origen.
+          pendientePara = h.para;
+          if (!flecha) this.anotar(t, `Se lee el valor de ${this.nombreCelda(previa, h.a.a, h.a.ruta)}`);
+          pulso(casilla);
+          continue;
+        }
+        resaltadas.add(clave(h.a.a, h.a.ruta));
+        if (!flecha) this.anotar(t, `${h.tipo === 'elemento' || h.tipo === 'campo' ? 'Se accede a' : 'Se lee'} ${this.nombreCelda(previa, h.a.a, h.a.ruta)}`);
+        // En una condicion, el valor de la casilla a la que se llego siguiendo un puntero (p->dato, *p) tambien resplandece.
+        const brilla = condicion && (h.de || h.tipo === 'elemento' || h.tipo === 'campo') && this.ayudas.brilloCondiciones ? this.brillar({ svg: clon }, [clave(h.a.a, h.a.ruta)], t, 0.8 * u) : 0;
+        pulso(casilla, Boolean(h.cond), brilla ? 0.8 * u : dResalte);
       }
-      pulsoDeIndice(h.a);
-      if (h.tipo === 'valor') {
-        // Se copia el valor de una casilla en otra: primero se resalta el origen.
-        pendientePara = h.para;
-        if (!flecha) this.anotar(t, `Se lee el valor de ${this.nombreCelda(previa, h.a.a, h.a.ruta)}`);
-        pulso(casilla);
-        continue;
+      if (juntoDesde !== null) t = Math.max(juntoFin, t);
+      resaltarDestino();
+      if (hayCopia && ultimoResalte) {
+        extender(ultimoResalte, 0.3 * u);
+        t += 0.3 * u;
       }
-      resaltadas.add(clave(h.a.a, h.a.ruta));
-      if (!flecha) this.anotar(t, `${h.tipo === 'elemento' || h.tipo === 'campo' ? 'Se accede a' : 'Se lee'} ${this.nombreCelda(previa, h.a.a, h.a.ruta)}`);
-      // En una condicion, el valor de la casilla a la que se llego siguiendo un puntero (p->dato, *p) tambien resplandece.
-      const brilla = condicion && (h.de || h.tipo === 'elemento' || h.tipo === 'campo') && this.ayudas.brilloCondiciones ? this.brillar({ svg: clon }, [clave(h.a.a, h.a.ruta)], t, 0.8 * u) : 0;
-      pulso(casilla, Boolean(h.cond), brilla ? 0.8 * u : dResalte);
-    }
-    if (juntoDesde !== null) t = Math.max(juntoFin, t);
-    resaltarDestino();
-    if (hayCopia && ultimoResalte) {
-      extender(ultimoResalte, 0.3 * u);
-      t += 0.3 * u;
+    };
+    // Una condicion compuesta se recorre condicion simple por condicion simple, en el orden de C: las casillas que lee, sus accesos y sus
+    // etapas del detalle; una condicion simple, o cualquier otro paso, todo junto.
+    const porGrupos = Boolean(condicion && condicion.grupos && condicion.grupos.length > 1);
+    if (porGrupos) {
+      condicion.grupos.forEach((g, j) => {
+        brillarCeldas(g.celdas);
+        recorrer(accesos.filter((h) => (h.g === undefined ? 0 : h.g) === j));
+        if (r && detalle) etapasDe(j, condicion.grupos.length - 1);
+      });
+    } else {
+      brillarCeldas(condicion && condicion.celdas);
+      recorrer(accesos);
     }
     // Los valores que acaba de mostrar un printf: sus casillas se encienden en violeta, quedan un rato y se apagan (el texto de
     // la consola se resalta a la vez: ver alMuestra).
@@ -1658,21 +1731,8 @@ export class Figura {
     }
     // La respuesta de una condicion: el rotulo con la pregunta (que ya se veia en el paso anterior) se completa con
     // "verdadero" o "falso" despues de los accesos que haya, y se deja un momento a la vista.
-    let pregunta = null;
-    if (condicion && !this.sinRotulo) {
-      // La respuesta no ocupa lugar hasta que le toca aparecer: el rotulo se ensancha recien entonces, no mientras corre el flujo.
-      const r = this.crearRotulo(condicion.texto, condicion.valor, false);
-      pregunta = r.caja;
-      // El detalle: el rotulo pasa por la condicion con los valores puestos y con las cuentas hechas (ver pasosDeCondicion), cada
-      // estado una etapa, y se queda con el ultimo (el que explica la respuesta; es tambien el texto del rotulo fijo, ver fijarEstado).
-      const detalle = this.ayudas.detalleCondiciones && condicion.pasos && condicion.partes && condicion.pasos.length > 1 ? condicion.pasos : null;
-      if (detalle) {
-        for (let i = 1; i < detalle.length; i++) {
-          this.anotar(t, i === 1 ? `Se ponen los valores en la condición: ${detalle[i]}` : `Se resuelve la condición: ${detalle[i]}`);
-          this.cambiarPartes(r.texto, condicion.partes[i], t, u);
-          t += 2 * u;
-        }
-      }
+    if (r) {
+      if (detalle && !porGrupos) etapasDe(0, 0);
       this.anotar(t, `La condición da ${condicion.valor ? 'verdadero' : 'falso'}`);
       tiempo.cancelar(this.relojRespuesta);
       this.relojRespuesta = tiempo.esperar(() => {
@@ -1705,7 +1765,9 @@ export class Figura {
   }
 
   // El rotulo de una condicion: "¿ condicion ?" y, si ya se sabe, "→ verdadero" o "→ falso" (visible o por aparecer).
-  crearRotulo(texto, valor, visible = true) {
+  // Con "detalle" ({ partes, cortos }) el texto se arma con las partes de la ultima etapa (los operandos de && y || con su color) y se
+  // ven la leyenda del 0 y el 1 y la nota del cortocircuito que correspondan.
+  crearRotulo(texto, valor, visible = true, detalle = null) {
     const caja = document.createElement('div');
     caja.className = 'rep-pregunta-g';
     caja.setAttribute('aria-hidden', 'true');
@@ -1713,8 +1775,30 @@ export class Figura {
     rotulo.className = 'rep-pregunta';
     const letras = document.createElement('span');
     letras.className = 'rep-pregunta-texto';
-    letras.textContent = '¿ ' + texto + ' ?';
+    if (detalle) {
+      letras.append(document.createTextNode('¿ '));
+      for (const p of detalle.partes) {
+        if (!p.logico) letras.append(document.createTextNode(p.t));
+        else {
+          const parte = document.createElement('span');
+          parte.className = 'rep-pregunta-parte rep-logico-' + p.logico;
+          parte.textContent = p.t;
+          letras.append(parte);
+        }
+      }
+      letras.append(document.createTextNode(' ?'));
+    } else letras.textContent = '¿ ' + texto + ' ?';
     rotulo.append(letras);
+    // Dos avisos debajo de la condicion, escondidos hasta que corresponden.
+    const leyenda = document.createElement('span');
+    leyenda.className = 'rep-pregunta-aviso';
+    const nota = document.createElement('span');
+    nota.className = 'rep-pregunta-aviso';
+    leyenda.hidden = !(detalle && hayNumeroLogico(detalle.partes));
+    leyenda.textContent = leyenda.hidden ? '' : LEYENDA_LOGICA;
+    const corto = detalle && detalle.cortos && detalle.cortos.length ? detalle.cortos[detalle.cortos.length - 1] : null;
+    nota.hidden = !corto;
+    nota.textContent = corto ? notaDelCorto(corto) : '';
     const respuesta = document.createElement('span');
     respuesta.className = 'rep-pregunta-resp ' + (valor ? 'rep-si' : 'rep-no');
     if (valor === undefined || valor === null) respuesta.hidden = true;
@@ -1724,9 +1808,9 @@ export class Figura {
       // El borde (y el fondo de la franja) toman el color del resultado cuando se sabe.
       if (visible) rotulo.classList.add(valor ? 'rep-pregunta-si' : 'rep-pregunta-no');
     }
-    rotulo.append(respuesta);
+    rotulo.append(respuesta, leyenda, nota);
     caja.append(rotulo);
-    return { caja, respuesta, texto: letras };
+    return { caja, respuesta, texto: letras, leyenda, nota };
   }
 
   // El texto del rotulo de una condicion pasa a las "partes" de un paso (ver textoPorPartes).
@@ -1785,7 +1869,8 @@ export class Figura {
     } else if (!this.sinRotulo) {
       // Con el detalle de las condiciones, el rotulo de la respuesta dice la condicion ya resuelta (la que se vio al final de la animacion).
       const pasos = this.ayudas.detalleCondiciones && foto.condicion.pasos && foto.condicion.pasos.length > 1 ? foto.condicion.pasos : null;
-      nodo = this.crearRotulo(pasos ? pasos[pasos.length - 1] : foto.condicion.texto, foto.condicion.valor).caja;
+      const detalle = pasos && foto.condicion.partes ? { partes: foto.condicion.partes[pasos.length - 1], cortos: foto.condicion.cortos } : null;
+      nodo = this.crearRotulo(pasos ? pasos[pasos.length - 1] : foto.condicion.texto, foto.condicion.valor, true, detalle).caja;
     }
     this.nodoFijo = nodo;
     // Si el paso muestra todavia la figura anterior (el recorrido previo), el rotulo se pone cuando termina.

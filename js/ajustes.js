@@ -35,7 +35,7 @@ export const AYUDAS = [
     almacen: 'ajuste-detalle-condiciones',
     porDefecto: false,
     titulo: 'Detallar las condiciones',
-    detalle: 'El rótulo de una condición la muestra escrita, con los valores puestos y resolviéndose parte por parte (127 % 10 == 5, 7 == 5) hasta la respuesta.',
+    detalle: 'El rótulo de una condición la muestra escrita, con los valores puestos y resolviéndose parte por parte (127 % 10 == 5, 7 == 5) hasta la respuesta. Las condiciones con && y || van de a una condición simple, con el cortocircuito.',
   },
   {
     clave: 'resaltarFuncion',

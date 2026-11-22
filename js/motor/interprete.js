@@ -146,6 +146,7 @@ class Interprete {
     this.seguidas = new Map(); // expresion algebraica que rodea una llamada de mas arriba -> su registro (ver anotarLlamador)
     this.enCondicion = 0; // cuantas condiciones se estan evaluando (una dentro de otra: a && b)
     this.condicionHecha = null; // la ultima condicion que se evaluo, para la proxima fotografia
+    this.gruposDeCondicion = null; // mientras se evalua una condicion: [{ celdas, desde }], una por condicion simple (en el orden de C)
     this.fotoDePaso = null; // la fotografia con que empezo la ultima sentencia (la pregunta de una condicion se le suma)
     this.muestraHecha = null; // las casillas de los valores que acaba de mostrar un printf, para la proxima fotografia
     this.lecturaHecha = null; // lo que acaba de leer un scanf (el trozo de la entrada y las casillas), para la proxima fotografia
@@ -684,6 +685,37 @@ class Interprete {
     this.accesos.push({ de: null, a, tipo: 'elemento' });
   }
 
+  // Una variable (un numero o un puntero) que se lee al evaluar una condicion: se anota en el grupo de la condicion simple que se esta evaluando.
+  leidaEnCondicion(v) {
+    const k = v.reserva.raiz && v.reserva.raiz.t ? v.reserva.raiz.t.k : null;
+    if (k !== 'int' && k !== 'float' && k !== 'ptr') return;
+    const c = this.ubicar(v.reserva, v.reserva.raiz);
+    if (!c) return;
+    if (!this.gruposDeCondicion.length) this.gruposDeCondicion.push({ celdas: [], desde: this.accesos.length });
+    const grupo = this.gruposDeCondicion[this.gruposDeCondicion.length - 1];
+    if (!grupo.celdas.some((x) => x.a === c.a && x.ruta.join('/') === c.ruta.join('/'))) grupo.celdas.push(c);
+  }
+
+  // Cuantas condiciones simples tiene una expresion (a && b || c: tres).
+  contarSimples(n) {
+    if (n.type === 'parenthesized_expression') return this.contarSimples(n.namedChildren[0]);
+    if (n.type === 'binary_expression') {
+      const op = n.childForFieldName('operator').text;
+      if (op === '&&' || op === '||') return this.contarSimples(n.childForFieldName('left')) + this.contarSimples(n.childForFieldName('right'));
+    }
+    if (n.type === 'unary_expression' && n.childForFieldName('operator').text === '!' && this.contieneLogico(n)) return this.contarSimples(n.childForFieldName('argument'));
+    return 1;
+  }
+
+  // ¿Hay un && o un || en esta expresion?
+  contieneLogico(n) {
+    if (n.type === 'binary_expression') {
+      const op = n.childForFieldName('operator').text;
+      if (op === '&&' || op === '||') return true;
+    }
+    return n.namedChildren.some((h) => this.contieneLogico(h));
+  }
+
   // De donde sale el indice de un elemento (v[i], v[n - 1]): las casillas de las variables que lo forman. La figura expande su valor antes de
   // marcar el indice. Solo si el indice no llama a nada ni cambia nada (v[i++] no se anota).
   origenDelIndice(d, nodoIndice) {
@@ -908,13 +940,30 @@ class Interprete {
       preguntaHecha = pregunta;
       pasoPregunta = this.traza.length - 1;
     } else if (!(this.opciones.preguntas && this.enCondicion > 0)) this.lecturasEnCondicion(n); // (dentro de una condicion ya se leyeron)
+    // Una condicion compuesta se evalua condicion simple por condicion simple (a && b: primero a y, si hace falta, b): cada una con las
+    // casillas que lee y los accesos que hace, para que la figura los muestre en ese orden y no todos juntos.
+    const gruposPrevios = this.gruposDeCondicion;
+    if (afuera && this.opciones.traza) this.gruposDeCondicion = [];
+    if (this.gruposDeCondicion && !this.contieneLogico(n)) this.gruposDeCondicion.push({ celdas: [], desde: this.accesos.length });
     this.enCondicion++;
     const listaDeAccesos = this.accesos;
     let rv;
+    let grupos = null;
     try {
       rv = this.evaluar(n);
     } finally {
       this.enCondicion--;
+      if (afuera && this.opciones.traza) {
+        grupos = this.gruposDeCondicion;
+        this.gruposDeCondicion = gruposPrevios;
+      }
+    }
+    if (afuera && grupos && this.accesos === listaDeAccesos) {
+      // Cada acceso que hizo la evaluacion se anota con el grupo en que ocurrio.
+      grupos.forEach((g, i) => {
+        const hasta = i + 1 < grupos.length ? grupos[i + 1].desde : this.accesos.length;
+        for (let j = g.desde; j < hasta && j < this.accesos.length; j++) this.accesos[j].g = i;
+      });
     }
     if (preguntaHecha && this.accesos === listaDeAccesos) {
       // Las flechas que la evaluacion recorrio (p->sig, *lista): tambien quedan a la vista.
@@ -928,7 +977,15 @@ class Interprete {
     const valor = rv.t.k === 'ptr' ? rv.v !== null : rv.v !== 0;
     // Para la traza: la condicion que se acaba de evaluar (la de mas afuera) y que dio.
     const pasos = afuera ? this.pasosDeCondicion(n) : null;
-    if (afuera) this.condicionHecha = { texto: textoPregunta, valor, ...(preguntaHecha ? { celdas: preguntaHecha.celdas } : {}), ...(pasos ? { pasos: pasos.pasos, partes: pasos.partes } : {}) };
+    if (afuera) {
+      this.condicionHecha = {
+        texto: textoPregunta,
+        valor,
+        ...(preguntaHecha ? { celdas: preguntaHecha.celdas } : {}),
+        ...(grupos && grupos.length > 1 ? { grupos: grupos.map((g) => ({ celdas: g.celdas })) } : {}),
+        ...(pasos ? { pasos: pasos.pasos, partes: pasos.partes, ...(pasos.grupoDePaso ? { grupoDePaso: pasos.grupoDePaso } : {}), ...(pasos.cortos.length ? { cortos: pasos.cortos } : {}) } : {}),
+      };
+    }
     if (afuera) this.anotarPregunta(n, textoPregunta, valor, pasoPregunta, pasos);
     return valor;
   }
@@ -953,8 +1010,14 @@ class Interprete {
       return t;
     };
     const hay = (rv) => (rv.t.k === 'ptr' ? rv.v !== null : rv.v !== 0);
-    // "s": en que paso ya esta resuelto el nodo (0: un literal, que nunca cambia).
-    const analizar = (n) => {
+    // "s": en que paso ya esta resuelto el nodo (0: un literal, que nunca cambia). Una condicion compuesta se resuelve en el orden de C,
+    // condicion simple por condicion simple: "t0" es el paso desde el que empieza la que se analiza (las variables de la primera se reemplazan en
+    // el paso 1; las de la segunda, recien despues de resolver la primera, y solo si hay que evaluarla). "logico": el nodo es un operando de
+    // && || o de ! (su 0 o su 1 se muestra con el color de falso o de verdadero).
+    const limites = []; // el paso en que termina cada condicion simple (en el orden en que se evaluan)
+    const cortos = []; // los cortocircuitos: { op, ordinal (la condicion simple que decidio), verdad }
+    let hojas = 0;
+    const analizar = (n, t0, logico) => {
       switch (n.type) {
         case 'number_literal':
         case 'char_literal':
@@ -962,34 +1025,53 @@ class Interprete {
         case 'null':
         case 'true':
         case 'false':
-          return { n, s: 0, hijos: [] };
+          return { n, s: 0, hijos: [], logico };
         case 'identifier':
         case 'subscript_expression':
         case 'field_expression':
         case 'pointer_expression':
-          return { n, s: 1, valor: valorDe(n), hijos: [] };
+          return { n, s: t0 + 1, valor: valorDe(n), hijos: [], logico };
         case 'parenthesized_expression': {
-          const h = analizar(n.namedChildren[0]);
-          return { n, s: h.s, ...(h.s > 0 ? { valor: valorDe(n) } : {}), hijos: [h] };
+          const h = analizar(n.namedChildren[0], t0, logico);
+          return { n, s: h.s, ...(h.s > 0 ? { valor: valorDe(n) } : {}), hijos: [h], logico };
         }
         case 'unary_expression': {
-          const h = analizar(n.childForFieldName('argument'));
-          return { n, s: 1 + h.s, valor: valorDe(n), hijos: [h] };
+          const h = analizar(n.childForFieldName('argument'), t0, n.childForFieldName('operator').text === '!');
+          return { n, s: 1 + h.s, valor: valorDe(n), hijos: [h], logico };
         }
         case 'binary_expression': {
           const op = n.childForFieldName('operator').text;
-          const izq = analizar(n.childForFieldName('left'));
-          if (op === '&&' || op === '||') {
-            const verdad = hay(this.evaluar(n.childForFieldName('left')));
-            if (op === '&&' ? !verdad : verdad) return { n, s: 1 + izq.s, valor: valorDe(n), hijos: [izq] };
+          const izquierda = n.childForFieldName('left');
+          const derecha = n.childForFieldName('right');
+          const esLogico = op === '&&' || op === '||';
+          const izq = analizar(izquierda, t0, esLogico);
+          if (esLogico) {
+            if (!this.contieneLogico(izquierda)) {
+              limites.push(izq.s);
+              hojas++;
+            }
+            const verdad = hay(this.evaluar(izquierda));
+            if (op === '&&' ? !verdad : verdad) {
+              cortos.push({ op, ordinal: hojas, verdad, quedan: this.contarSimples(derecha) });
+              return { n, s: 1 + izq.s, valor: valorDe(n), hijos: [izq], logico };
+            }
+            const der = analizar(derecha, izq.s, true);
+            if (!this.contieneLogico(derecha)) {
+              limites.push(der.s);
+              hojas++;
+            }
+            return { n, s: 1 + der.s, valor: valorDe(n), hijos: [izq, der], logico };
           }
-          const der = analizar(n.childForFieldName('right'));
-          return { n, s: 1 + Math.max(izq.s, der.s), valor: valorDe(n), hijos: [izq, der] };
+          const der = analizar(derecha, t0, false);
+          return { n, s: 1 + Math.max(izq.s, der.s), valor: valorDe(n), hijos: [izq, der], logico };
         }
         default:
           throw new Error('algo que no se sabe hacer sin efectos');
       }
     };
+    // El 0 o el 1 de un operando logico (o un puntero: NULL es falso), con su color.
+    const sinValor = (v) => v === 'NULL' || (Number.isFinite(Number(v)) && Number(v) === 0);
+    const colorDe = (a) => (a.logico ? { logico: sinValor(a.valor) ? 'falso' : 'verdadero' } : {});
     const dibujar = (a, k) => {
       if (a.s > 0 && a.s <= k) return a.valor;
       let t = a.n.text;
@@ -1000,7 +1082,7 @@ class Interprete {
     };
     // Las partes del texto del paso k: las que se resolvieron justo en ese paso llevan lo que decian antes.
     const partesDe = (a, k) => {
-      if (a.s > 0 && a.s <= k) return [a.s === k ? { t: a.valor, antes: dibujar(a, k - 1).replace(/\s+/g, ' '), nuevo: true } : { t: a.valor }];
+      if (a.s > 0 && a.s <= k) return [a.s === k ? { t: a.valor, antes: dibujar(a, k - 1).replace(/\s+/g, ' '), nuevo: true, ...colorDe(a) } : { t: a.valor, ...colorDe(a) }];
       const texto = a.n.text;
       const base = a.n.startIndex;
       const salida = [];
@@ -1014,13 +1096,13 @@ class Interprete {
       if (cursor < texto.length) salida.push({ t: texto.slice(cursor) });
       return salida;
     };
-    // Junta las partes sin cambio que quedaron una al lado de otra y arregla los espacios.
+    // Junta las partes sin cambio que quedaron una al lado de otra y arregla los espacios (las de un operando logico, con su color, no se juntan).
     const juntar = (partes) => {
       const lista = [];
       for (const p of partes) {
         const q = { ...p, t: p.t.replace(/\s+/g, ' ') };
         const ultima = lista[lista.length - 1];
-        if (ultima && !ultima.nuevo && !q.nuevo) ultima.t += q.t;
+        if (ultima && !ultima.nuevo && !q.nuevo && !ultima.logico && !q.logico) ultima.t += q.t;
         else lista.push(q);
       }
       if (lista.length && !lista[0].nuevo) lista[0].t = lista[0].t.replace(/^ /, '');
@@ -1028,9 +1110,11 @@ class Interprete {
       return lista.filter((p) => p.t !== '' || p.nuevo);
     };
     try {
-      const arbol = analizar(raiz);
+      const arbol = analizar(raiz, 0, false);
+      if (!this.contieneLogico(raiz)) limites.push(arbol.s);
       const pasos = [];
       const partes = [];
+      const pasosK = [];
       for (let k = 0; k < arbol.s; k++) {
         const lista = juntar(partesDe(arbol, k));
         const t = lista.map((p) => p.t).join('');
@@ -1038,9 +1122,15 @@ class Interprete {
         if (pasos[pasos.length - 1] !== t) {
           pasos.push(t);
           partes.push(lista);
+          pasosK.push(k);
         }
       }
-      return pasos.length >= 2 ? { pasos, partes } : null;
+      // A que condicion simple pertenece cada paso (los que resuelven un && o un || al final, a la ultima).
+      const grupoDePaso = pasosK.map((k) => {
+        const j = limites.findIndex((l) => k <= l);
+        return j < 0 ? Math.max(0, limites.length - 1) : j;
+      });
+      return pasos.length >= 2 ? { pasos, partes, grupoDePaso: limites.length > 1 ? grupoDePaso : null, cortos } : null;
     } catch (e) {
       return null;
     } finally {
@@ -1225,6 +1315,7 @@ class Interprete {
 
   identificador(n) {
     const v = this.buscar(n.text);
+    if (this.gruposDeCondicion && this.enCondicion > 0 && this.opciones.traza && v) this.leidaEnCondicion(v);
     if (v) return this.valorDe({ st: v.reserva.raiz, reserva: v.reserva }, n.text);
     if (this.constantes.has(n.text)) return { t: INT, v: this.constantes.get(n.text) };
     if (n.text === 'NULL') return { t: puntero(VOID), v: null };

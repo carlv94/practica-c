@@ -35,6 +35,10 @@
 //               variables, con el ultimo valor que tuvieron (la figura lo muestra un momento antes de que se vayan)
 //   indices:    (si la sentencia anterior accedio a elementos de un arreglo cuyo indice sale de variables) [{ a, ruta, de: [{ a, ruta }] }]:
 //               de cada elemento, las casillas de las variables del indice (v[i]: la de i)
+//   condicion:  (en la fotografia que sigue a una condicion) { texto, valor, celdas, pasos, partes } y, si es compuesta (a && b), tambien
+//               "grupos" (de cada condicion simple que se evaluo, en orden: sus "celdas" leidas), "grupoDePaso" (a que condicion simple
+//               pertenece cada paso del detalle) y "cortos" (los cortocircuitos: { op, ordinal, verdad }); los accesos que hizo la evaluacion
+//               llevan "g", el grupo en que ocurrieron
 //   escrituras: (si la sentencia anterior guardo un valor que no sale de otra casilla) [{ a, ruta }]: las casillas escritas
 //
 // Cada variable o bloque es { id, nombre, tipo, dir, tam, vivo, valor }. Un valor es:

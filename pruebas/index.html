@@ -968,6 +968,52 @@ import { corregir } from '../js/corrector.js';
           }
         }
 
+        // Una condicion compuesta: el rotulo de la respuesta colorea el 0 y el 1 de los operandos, muestra la leyenda mientras hay un numero suelto y la
+        // nota del cortocircuito (solo con el detalle de las condiciones); los accesos van agrupados por condicion simple.
+        {
+          const titulo = 'figura: el rotulo de una condicion compuesta (colores del 0 y el 1, leyenda y nota del cortocircuito)';
+          try {
+            const { Figura } = await import('../js/motor/figura.js');
+            const { ajustes } = await import('../js/ajustes.js');
+            const fuente = '#include <stdio.h>\ntypedef struct nodo { int dato; struct nodo *sig; } Nodo;\nint main() {\n  Nodo *lista = NULL;\n  int n = 1;\n  if (lista != NULL && lista->dato > 3) {\n    n = 3;\n  }\n  if (n > 0 || n < -5) {\n    n = 4;\n  }\n  return 0;\n}';
+            const m = ejecutarMotor(analizador, fuente, { traza: true });
+            const lugar = document.createElement('div');
+            document.body.append(lugar);
+            const rotuloDe = (texto, conDetalle) => {
+              ajustes.fijarPerfil('explicacion');
+              ajustes.fijar('detalleCondiciones', conDetalle);
+              const figura = new Figura(lugar);
+              figura.fijarAyudas(ajustes.todos());
+              const k = m.traza.findIndex((f) => f.condicion && f.condicion.texto === texto);
+              if (k < 1) throw new Error('no se encontro la condicion ' + texto);
+              for (let j = 0; j <= k; j++) figura.mostrar(m.traza[j], j ? m.traza[j - 1] : null, { animar: false });
+              figura.fijarEstado(m.traza[k], 0, false);
+              const nodo = figura.nodoFijo;
+              if (figura.raf) cancelAnimationFrame(figura.raf);
+              if (!nodo) throw new Error('no hay rotulo para ' + texto);
+              const visible = (sel) => [...nodo.querySelectorAll(sel)].filter((x) => !x.hidden).map((x) => x.textContent);
+              return { texto: nodo.textContent, avisos: visible('.rep-pregunta-aviso'), colores: [...nodo.querySelectorAll('[class*="rep-logico-"]')].map((x) => x.textContent + ':' + x.className.match(/rep-logico-(\w+)/)[1]) };
+            };
+            const corto = rotuloDe('lista != NULL && lista->dato > 3', true);
+            if (corto.avisos.join('|') !== '0 es falso; cualquier otro valor es verdadero|como la primera es falsa, la segunda no se evalúa') throw new Error('avisos del cortocircuito: ' + JSON.stringify(corto));
+            if (corto.colores.join(',') !== '0:falso') throw new Error('colores del cortocircuito: ' + JSON.stringify(corto.colores));
+            const entero = rotuloDe('n > 0 || n < -5', true);
+            if (entero.avisos.join('|') !== '0 es falso; cualquier otro valor es verdadero|como la primera es verdadera, la segunda no se evalúa') throw new Error('avisos de ||: ' + JSON.stringify(entero.avisos));
+            if (entero.colores.join(',') !== '1:verdadero') throw new Error('colores de ||: ' + JSON.stringify(entero.colores));
+            const sin = rotuloDe('lista != NULL && lista->dato > 3', false);
+            if (sin.avisos.length || sin.colores.length) throw new Error('sin el detalle no hay avisos ni colores: ' + JSON.stringify(sin));
+            // los accesos de la evaluacion llevan el grupo (la condicion simple) en que ocurrieron, en orden
+            const dos = m.traza.find((f) => f.condicion && f.condicion.texto === 'n > 0 || n < -5');
+            const gs = (dos.condicion.grupos || []).length;
+            if (gs !== 1 && gs !== 0) throw new Error('un cortocircuito en la primera deja un solo grupo evaluado: ' + gs);
+            ajustes.fijarPerfil('explicacion');
+            lugar.remove();
+            anotar(true, titulo);
+          } catch (err) {
+            anotar(false, titulo, err.stack || err.message);
+          }
+        }
+
         // Un bloque que se queda sin nadie que lo apunte (*lista = nuevo; deja solo al nodo viejo): su borde y su aviso "inalcanzable" aparecen
         // cuando la flecha termina de irse, no desde el primer cuadro del paso (cuando la flecha todavia lo apunta).
         {

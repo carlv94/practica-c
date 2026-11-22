@@ -1145,7 +1145,8 @@ int main() {
         const casos = [
           ['n % 10 == d', 'n % 10 == d => 127 % 10 == 5 => 7 == 5'],
           ['lista == NULL', 'lista == NULL => NULL == NULL'],
-          ['p != NULL && p->dato > 3', 'p != NULL && p->dato > 3 => 1 && 7 > 3 => 1 && 1'],
+          // (sin cortocircuito, una condicion simple por vez: las variables de la segunda se reemplazan recien despues de resolver la primera)
+          ['p != NULL && p->dato > 3', 'p != NULL && p->dato > 3 => P != NULL && p->dato > 3 => 1 && p->dato > 3 => 1 && 7 > 3 => 1 && 1'],
           ['lista != NULL && lista->dato > 3', 'lista != NULL && lista->dato > 3 => NULL != NULL && lista->dato > 3 => 0 && lista->dato > 3'],
           ['!(n > 100) || d', '!(n > 100) || d => !(2 > 100) || d => !0 || d => 1 || d'],
         ];
@@ -1156,9 +1157,19 @@ int main() {
           let real = dice(t);
           // (el valor de un puntero a una variable es su direccion: no se compara entero)
           if (t.startsWith('p != NULL')) real = real.replace(/\d{3,} != NULL/, 'P != NULL');
-          const quiero = t.startsWith('p != NULL') ? 'p != NULL && p->dato > 3 => P != NULL && 7 > 3 => 1 && 1' : esperado;
-          if (real !== quiero) return 'el detalle de ' + t + ' era "' + real + '" y tenia que ser "' + quiero + '"';
+          if (real !== esperado) return 'el detalle de ' + t + ' era "' + real + '" y tenia que ser "' + esperado + '"';
         }
+        // Una condicion compuesta se evalua condicion simple por condicion simple: sus casillas leidas, a que condicion pertenece cada paso,
+        // el cortocircuito y los operandos con su color de verdadero o falso.
+        const de = (t) => traza.find((x) => x.condicion && x.condicion.texto === t).condicion;
+        const c1 = de('p != NULL && p->dato > 3');
+        if (!c1.grupos || c1.grupos.length !== 2) return 'p != NULL && p->dato > 3 tenia ' + (c1.grupos ? c1.grupos.length : 0) + ' grupos y tenia que tener 2';
+        if (c1.grupoDePaso.join() !== '0,0,0,1,1') return 'los grupos de los pasos de p != NULL && p->dato > 3 eran ' + c1.grupoDePaso.join() + ' y tenian que ser 0,0,0,1,1';
+        if (c1.cortos) return 'p != NULL && p->dato > 3 no tiene cortocircuito';
+        const c2 = de('lista != NULL && lista->dato > 3');
+        if (!c2.cortos || c2.cortos.length !== 1 || c2.cortos[0].ordinal !== 1 || c2.cortos[0].verdad !== false || c2.cortos[0].quedan !== 1) return 'el cortocircuito de lista != NULL && lista->dato > 3 era ' + JSON.stringify(c2.cortos);
+        const color = (c) => c.partes.map((l) => l.filter((p) => p.logico).map((p) => p.t + ':' + p.logico).join(',')).join(' | ');
+        if (color(c2) !== ' |  | 0:falso') return 'los colores de lista != NULL && lista->dato > 3 eran "' + color(c2) + '"';
         return null;
       },
     },

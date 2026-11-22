@@ -1316,6 +1316,27 @@
   transform-origin: center;
   border-radius: 3px;
 }
+/* el 0 y el 1 de un operando de && o ||: gris si es falso, verde si es verdadero (igual que el borde del rotulo y su respuesta) */
+.rep-logico-falso {
+  color: var(--falso);
+  font-weight: 700;
+}
+.rep-logico-verdadero {
+  color: var(--bien);
+  font-weight: 700;
+}
+/* debajo de la condicion: la leyenda del 0 y el 1 y la nota del cortocircuito */
+.rep-pregunta-aviso {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.75rem;
+  font-style: italic;
+  color: var(--suave);
+  opacity: 0.85;
+}
+.rep-pregunta-aviso[hidden] {
+  display: none;
+}
 /* para llamar la atencion: llega desde la izquierda como un resorte (se pasa, vuelve, rebota dos veces y queda fijo) y despues
    destella una vez; --amp escala el recorrido (en el telefono es menor) */
 .rep-pregunta-g {
