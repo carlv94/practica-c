@@ -630,6 +630,28 @@ import { corregir } from '../js/corrector.js';
         {
           const titulo = 'exámenes resueltos: la forma de los archivos y que cada programa corra y muestre lo esperado';
           try {
+            // El formato del codigo de los examenes (para que los alumnos identifiquen rapido cada parte): una linea en blanco entre
+            // las funciones y despues de cada bloque cerrado, antes de cada estructura de control (salvo la primera de su bloque) y antes
+            // del return; ninguna justo despues de abrir una llave ni justo antes de cerrarla; vacias de verdad (sin espacios).
+            const faltasDeFormato = (codigo) => {
+              const lineas = codigo.split('\n');
+              const faltas = [];
+              lineas.forEach((l, i) => {
+                const n = i + 1;
+                const t = l.trim();
+                const antes = i ? lineas[i - 1] : null;
+                const despues = i + 1 < lineas.length ? lineas[i + 1] : null;
+                if (l !== '' && t === '') faltas.push('línea ' + n + ': una línea en blanco va vacía, sin espacios');
+                if (t !== '' && l !== l.trimEnd()) faltas.push('línea ' + n + ': espacios al final');
+                if (l === '' && antes === '') faltas.push('línea ' + n + ': dos líneas en blanco seguidas');
+                if (l === '' && antes !== null && antes.trimEnd().endsWith('{')) faltas.push('línea ' + n + ': en blanco justo después de abrir una llave');
+                if (l === '' && despues !== null && despues.trim().startsWith('}')) faltas.push('línea ' + n + ': en blanco justo antes de cerrar una llave');
+                if (/^(if|for|while|do|switch)\b/.test(t) && antes !== null && antes !== '' && !antes.trimEnd().endsWith('{')) faltas.push('línea ' + n + ': la estructura de control va separada de lo anterior por una línea en blanco');
+                if (t === '}' && despues !== null && despues !== '' && !despues.trim().startsWith('}')) faltas.push('línea ' + n + ': después de cerrar un bloque va una línea en blanco');
+                if (/^return\b/.test(t) && antes !== null && antes !== '' && !antes.trimEnd().endsWith('{')) faltas.push('línea ' + n + ': el return va separado de lo anterior por una línea en blanco');
+              });
+              return faltas;
+            };
             const indice = await (await fetch('../examenes/indice.json')).json();
             if (!Array.isArray(indice.examenes) || !indice.examenes.length) throw new Error('indice.json: falta la lista "examenes"');
             const ids = new Set();
@@ -653,7 +675,11 @@ import { corregir } from '../js/corrector.js';
                 for (const mod of x.modulos) {
                   for (const campo of ['id', 'titulo', 'enunciado', 'solucion']) if (!mod[campo]) throw new Error(en + 'un módulo sin ' + campo);
                   if (!x.programa.includes(mod.solucion)) throw new Error(en + 'la solución del módulo ' + mod.id + ' no está escrita igual en el programa que se ejecuta');
+                  const mal = faltasDeFormato(mod.solucion);
+                  if (mal.length) throw new Error(en + 'el código del módulo ' + mod.id + ' no sigue el formato: ' + mal.slice(0, 3).join('; '));
                 }
+                const malPrograma = faltasDeFormato(x.programa);
+                if (malPrograma.length) throw new Error(en + 'el programa no sigue el formato: ' + malPrograma.slice(0, 3).join('; '));
                 const suma = x.modulos.reduce((s, mod) => s + (mod.puntos || 0), 0);
                 if (suma !== x.puntos) throw new Error(en + 'los puntos de los módulos suman ' + suma + ' y el ejercicio dice ' + x.puntos);
                 for (const d of x.dibujos || []) if (!Array.isArray(d.valores)) throw new Error(en + 'un dibujo sin valores');

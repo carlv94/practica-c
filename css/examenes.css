@@ -42,6 +42,7 @@
 
 /* las solapas de un ejercicio: una por parte (a, b, c y el paso a paso) */
 .solapas {
+  position: relative;
   display: flex;
   gap: 4px;
   overflow-x: auto;
@@ -81,8 +82,13 @@
   text-transform: uppercase;
   color: var(--suave);
 }
-.modulo-titulo + .rotulo {
-  margin-top: 8px;
+.rotulo-primero {
+  margin-top: 0;
+}
+.rotulo-puntos {
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
 }
 .ejercicio-paso {
   margin-top: 28px;

@@ -110,8 +110,27 @@ async function leerJson(ruta) {
 
 // ------------------------------------------------------------------ solapas
 
+// Desplaza la tira (solo la tira, nunca la página) hasta dejar el botón elegido entero a la vista, en el centro si se puede: en el
+// celular la tira se desliza hacia el costado y la solapa elegida podía quedar cortada.
+function centrar(boton, lista, animar, repetida = false) {
+  const centro = boton.offsetLeft - (lista.clientWidth - boton.offsetWidth) / 2;
+  const izquierda = Math.max(0, Math.min(centro, lista.scrollWidth - lista.clientWidth));
+  const quieto = !animar || (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  lista.scrollTo({ left: izquierda, behavior: quieto ? 'auto' : 'smooth' });
+  // Al abrir la página (enlace directo) los estilos y las tipografías pueden no haber llegado todavía y las medidas cambian: se
+  // vuelve a centrar cuando todo cargó, si la solapa sigue siendo la elegida.
+  if (!animar) {
+    const otraVez = () => {
+      if (boton.getAttribute('aria-selected') === 'true') centrar(boton, lista, false, true);
+    };
+    if (!repetida) requestAnimationFrame(otraVez);
+    if (!repetida && document.readyState !== 'complete') window.addEventListener('load', otraVez, { once: true });
+  }
+}
+
 // Una tira de solapas con sus paneles (de a uno por vez): items = [{ id, etiqueta (nodos), panel }]. Se maneja con el teclado
-// (izquierda, derecha, inicio y fin). "alElegir(id)" se llama cada vez que se elige una (también por el teclado o el clic).
+// (izquierda, derecha, inicio y fin). "alElegir(id)" se llama cada vez que se elige una (también por el teclado o el clic). Al elegir a
+// mano la tira se desliza con suavidad hasta mostrar entera la solapa; al abrir un enlace directo, de una vez.
 function solapas(descripcion, items, clase, alElegir) {
   const lista = nodo('div', 'solapas ' + clase);
   lista.setAttribute('role', 'tablist');
@@ -123,25 +142,28 @@ function solapas(descripcion, items, clase, alElegir) {
     b.id = it.panel.id + '-solapa';
     b.setAttribute('aria-controls', it.panel.id);
     b.append(...it.etiqueta);
-    b.addEventListener('click', () => elegir(it.id));
+    b.addEventListener('click', () => elegir(it.id, false, true));
     b.addEventListener('keydown', (e) => {
       const destino = { ArrowRight: (i + 1) % items.length, ArrowLeft: (i - 1 + items.length) % items.length, Home: 0, End: items.length - 1 }[e.key];
       if (destino == null) return;
       e.preventDefault();
-      elegir(items[destino].id, true);
+      elegir(items[destino].id, true, true);
     });
     it.panel.setAttribute('role', 'tabpanel');
     it.panel.setAttribute('aria-labelledby', b.id);
     return b;
   });
   lista.append(...botones);
-  const elegir = (id, enfocar = false) => {
+  const elegir = (id, enfocar = false, animar = false) => {
     items.forEach((it, i) => {
       const si = it.id === id;
       botones[i].setAttribute('aria-selected', String(si));
       botones[i].tabIndex = si ? 0 : -1;
       it.panel.hidden = !si;
-      if (si && enfocar) botones[i].focus();
+      if (si) {
+        if (enfocar) botones[i].focus({ preventScroll: true });
+        centrar(botones[i], lista, animar);
+      }
     });
     if (alElegir) alElegir(id);
   };
@@ -199,10 +221,9 @@ function ejercicioA(ejercicio, alCambiar) {
     const p = nodo('div', 'solapa-panel');
     p.id = `panel-${ejercicio.id}-${m.id}`;
     p.hidden = true;
-    const cabeza = nodo('h3', 'modulo-titulo');
-    cabeza.append(`${m.id}) `, nodo('code', null, m.titulo), ' ', nodo('span', 'puntos', `(${m.puntos} puntos)`));
-    p.appendChild(cabeza);
-    p.appendChild(nodo('h4', 'rotulo', 'Enunciado'));
+    const rotuloEnunciado = nodo('h4', 'rotulo rotulo-primero', 'Enunciado');
+    rotuloEnunciado.appendChild(nodo('span', 'rotulo-puntos', ` · ${m.puntos} puntos`));
+    p.appendChild(rotuloEnunciado);
     p.appendChild(conTexto('p', 'modulo-enunciado', m.enunciado));
     p.appendChild(nodo('h4', 'rotulo', 'Resolución'));
     codigoA(p, m.solucion);
