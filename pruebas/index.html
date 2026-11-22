@@ -811,6 +811,129 @@ import { corregir } from '../js/corrector.js';
           }
         }
 
+        // Una flecha de la pila a un elemento de un arreglo de otra caja llega desde arriba, por un carril encima de la fila, y no cruza las demas
+        // casillas; la casilla a la que llega queda marcada. Y con la ayuda "Resaltar el indice", antes de resaltar la casilla de un elemento se
+        // marca su indice (el numero de debajo).
+        {
+          const titulo = 'figura: la flecha a un elemento llega desde arriba y se marca el indice antes que la casilla';
+          try {
+            const { Figura } = await import('../js/motor/figura.js');
+            const { ajustes } = await import('../js/ajustes.js');
+            const { tiempo } = await import('../js/motor/tiempo.js');
+            ajustes.fijarPerfil('explicacion');
+            const fuente = '#include <stdio.h>\n\nvoid poner(int v[], int n) {\n  v[n - 1] = 9;\n}\n\nint main() {\n  int a[4] = {1, 2, 3, 4};\n\n  poner(a, 3);\n\n  return 0;\n}';
+            const m = ejecutarMotor(analizador, fuente, { traza: true });
+            const lugar = document.createElement('div'); // (en el documento: si no, el navegador no lista las animaciones)
+            document.body.append(lugar);
+            const figura = new Figura(lugar);
+            figura.fijarAyudas(ajustes.todos());
+            let sobre = 0;
+            let apuntadas = 0;
+            let conIndice = false;
+            m.traza.forEach((foto, i) => {
+              figura.mostrar(foto, i ? m.traza[i - 1] : null, { animar: false });
+              for (const f of figura.escena.flechas) {
+                if (!f.final || f.final.tipo !== 'pila-sobre') continue;
+                sobre++;
+                const puntos = figura.rutaPuntos(f, f.final, figura.escena.filas);
+                const a = puntos[puntos.length - 2];
+                const b = puntos[puntos.length - 1];
+                if (Math.abs(a.x - b.x) > 0.5 || !(a.y < b.y)) throw new Error('la flecha tiene que bajar en vertical sobre la casilla: ' + JSON.stringify([a, b]));
+                // la bajada es lo que mide la cabeza (menos medio trazo): la base de la cabeza queda a la altura del borde de arriba del carril
+                const gruesa = Boolean(f.cambio && !f.retirada) || Boolean(f.retirada) || Boolean(f.recienLiberada && f.muerto);
+                const grosor = gruesa ? 3 : 1.6;
+                const minima = ((f.cambio && !f.retirada ? 6 : 7) * grosor) - grosor / 2;
+                if (b.y - a.y < minima - 0.6) throw new Error('la bajada final (' + (b.y - a.y) + ') tiene que alcanzar a la cabeza (' + minima + ')');
+                // el carril horizontal queda encima de la fila (no a la altura de las casillas)
+                const antes = puntos[puntos.length - 3];
+                if (!(antes.y < b.y) || Math.abs(antes.y - a.y) > 0.5) throw new Error('el carril va encima de la fila: ' + JSON.stringify(puntos));
+              }
+              apuntadas += figura.escena.svg.querySelectorAll('.rep-celda.rep-apuntada').length;
+              if (figura.escena.svg.querySelector('text.rep-indice[data-i]')) conIndice = true;
+            });
+            if (!sobre) throw new Error('la flecha de v al arreglo de main tiene que llegar desde arriba (pila-sobre)');
+            if (!apuntadas) throw new Error('la casilla a la que llega la flecha queda marcada');
+            // el indice del elemento tiene su marca (para poder resaltarlo)
+            if (!conIndice) throw new Error('los indices llevan data-i');
+            // el paso en que se escribe v[2]: con la ayuda, el indice 2 se anima (despues de recorrer la flecha); sin ella, no
+            const paso = m.traza.findIndex((f) => (f.escrituras || []).some((e) => e.ruta.length && e.ruta[e.ruta.length - 1] === 2));
+            if (paso < 1) throw new Error('no se encontro el paso que escribe v[2]');
+            const indicesAnimados = (conAyuda) => {
+              ajustes.fijar('resaltarIndice', conAyuda);
+              const f = new Figura(lugar);
+              f.fijarAyudas(ajustes.todos());
+              for (let k = 0; k < paso; k++) f.mostrar(m.traza[k], k ? m.traza[k - 1] : null, { animar: false });
+              f.mostrar(m.traza[paso], m.traza[paso - 1], { animar: true, duracion: 1000, flujo: true });
+              const animados = [...lugar.querySelectorAll('text.rep-indice')].filter((x) => x.getAnimations && x.getAnimations().length && x.getAttribute('data-i').split('|')[1] === '2').length;
+              tiempo.cancelar(f.expansionPendiente);
+              if (f.raf) cancelAnimationFrame(f.raf);
+              return animados;
+            };
+            const con = indicesAnimados(true);
+            const sin = indicesAnimados(false);
+            if (!con) throw new Error('con la ayuda, el indice 2 se marca antes de resaltar la casilla');
+            if (sin) throw new Error('sin la ayuda no se marca el indice');
+            // un acceso directo (sin puntero) en main: tambien se marca el indice, y la pregunta de una condicion marca el indice y despues el borde
+            const directo = ejecutarMotor(
+              analizador,
+              '#include <stdio.h>\n\nint main() {\n  int a[4] = {1, 2, 3, 4};\n  int i = 2;\n\n  a[i] = 9;\n\n  if (a[i] == 9) {\n    i = 0;\n  }\n\n  return 0;\n}',
+              { traza: true, preguntas: true }
+            );
+            const deIndice2 = () => [...lugar.querySelectorAll('text.rep-indice')].filter((x) => x.getAnimations && x.getAnimations().length && x.getAttribute('data-i').split('|')[1] === '2');
+            const hasta = (k, conAyuda) => {
+              ajustes.fijar('resaltarIndice', conAyuda);
+              const f = new Figura(lugar);
+              f.fijarAyudas(ajustes.todos());
+              for (let j = 0; j < k; j++) f.mostrar(directo.traza[j], j ? directo.traza[j - 1] : null, { animar: false });
+              return f;
+            };
+            const escribe = directo.traza.findIndex((f) => (f.escrituras || []).some((e) => e.ruta.join('/') === '2'));
+            if (escribe < 1) throw new Error('no se encontro el paso que escribe a[i]');
+            for (const conAyuda of [true, false]) {
+              const f = hasta(escribe, conAyuda);
+              f.mostrar(directo.traza[escribe], directo.traza[escribe - 1], { animar: true, duracion: 1000, flujo: true });
+              const hay = deIndice2().length;
+              // el valor de i se expande antes de marcar el indice (y el indice, antes de la casilla)
+              const retrasoDe = (sel) => [...lugar.querySelectorAll(sel)].flatMap((x) => (x.getAnimations ? x.getAnimations() : []).map((a) => Math.round(a.effect.getTiming().delay)));
+              const deIndiceRetraso = deIndice2().flatMap((x) => x.getAnimations().map((a) => Math.round(a.effect.getTiming().delay)));
+              const deTextos = retrasoDe('text.rep-texto').sort((p, q) => p - q);
+              tiempo.cancelar(f.expansionPendiente);
+              if (f.raf) cancelAnimationFrame(f.raf);
+              if (conAyuda && !hay) throw new Error('a[i] = 9 en main marca el indice 2 antes de la casilla');
+              if (conAyuda && !(deTextos.length && deTextos[0] < deIndiceRetraso[0])) throw new Error('i se expande antes de marcar el indice: ' + JSON.stringify({ textos: deTextos, indice: deIndiceRetraso }));
+              if (!conAyuda && hay) throw new Error('sin la ayuda, a[i] = 9 no marca el indice');
+            }
+            // la pregunta de una condicion: bordes en el arreglo entero y en i, sin marcar el indice ni la casilla que resulta
+            const pregunta = directo.traza.findIndex((f) => f.pregunta && f.pregunta.texto.includes('a[i]'));
+            if (pregunta < 1) throw new Error('no se encontro la pregunta de a[i] == 9');
+            const nombres = directo.traza[pregunta].pregunta.celdas.map((c) => directo.traza[pregunta].marcos[0].variables.find((v) => v.id === c.a).nombre + (c.ruta.length ? '/' + c.ruta.join('/') : ''));
+            if (nombres.join(',') !== 'a,i') throw new Error('la pregunta resalta el arreglo entero y el indice: ' + nombres.join(','));
+            const fp = hasta(pregunta, true);
+            fp.mostrar(directo.traza[pregunta], directo.traza[pregunta - 1], { animar: true, duracion: 1000, flujo: false });
+            fp.fijarEstado(directo.traza[pregunta], 0, true);
+            if (deIndice2().length) throw new Error('la pregunta todavia no marca el indice');
+            if (fp.raf) cancelAnimationFrame(fp.raf);
+            // al ejecutarla: primero se expande i, despues se marca el indice 2 y despues se expande el valor del elemento
+            const respuesta = directo.traza.findIndex((f) => f.condicion && f.condicion.texto.includes('a[i]'));
+            if (respuesta < 1) throw new Error('no se encontro la respuesta de a[i] == 9');
+            const fr = hasta(respuesta, true);
+            fr.mostrar(directo.traza[respuesta], directo.traza[respuesta - 1], { animar: true, duracion: 1000, flujo: true });
+            const retrasos = (sel) => [...lugar.querySelectorAll(sel)].flatMap((x) => (x.getAnimations ? x.getAnimations() : []).map((a) => Math.round(a.effect.getTiming().delay)));
+            const deI = retrasos('text.rep-texto').sort((p, q) => p - q);
+            const indice2 = deIndice2().flatMap((x) => x.getAnimations().map((a) => Math.round(a.effect.getTiming().delay)));
+            tiempo.cancelar(fr.expansionPendiente);
+            if (fr.raf) cancelAnimationFrame(fr.raf);
+            if (!indice2.length) throw new Error('al ejecutar la condicion se marca el indice 2');
+            // los textos que se expanden: el de i (antes del indice) y el del elemento (despues)
+            if (!(deI.length >= 2 && deI[0] < indice2[0] && deI[deI.length - 1] > indice2[0])) throw new Error('i se expande antes del indice y el elemento despues: ' + JSON.stringify({ expandidos: deI, indice: indice2 }));
+            ajustes.fijarPerfil('explicacion');
+            lugar.remove();
+            anotar(true, titulo);
+          } catch (err) {
+            anotar(false, titulo, err.stack || err.message);
+          }
+        }
+
         // Un bloque que se queda sin nadie que lo apunte (*lista = nuevo; deja solo al nodo viejo): su borde y su aviso "inalcanzable" aparecen
         // cuando la flecha termina de irse, no desde el primer cuadro del paso (cuando la flecha todavia lo apunta).
         {

@@ -124,6 +124,13 @@ export const FIGURAS = [
     celda: { clase: 'rep-cambio', texto: '4' },
   },
   {
+    id: 'apuntada',
+    titulo: 'Casilla a la que apunta un puntero',
+    texto:
+      'Con borde de color: es la casilla (por ejemplo el primer elemento de un arreglo de otra función) a la que llega la flecha de un puntero. La flecha llega desde arriba, por un carril encima de la fila, para no cruzar las demás casillas.',
+    celda: { clase: 'rep-apuntada', texto: '70' },
+  },
+  {
     id: 'liberado',
     titulo: 'Bloque liberado',
     texto: 'Rayado y con el aviso «liberado»: su memoria ya no es del programa, aunque algún puntero siga guardando su dirección.',

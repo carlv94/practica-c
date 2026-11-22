@@ -113,6 +113,13 @@ export const AYUDAS = [
     detalle: 'Un puntero que todavía no recibió una dirección se dibuja con una flecha punteada de otro color que apunta a un «?»: apunta a algún lado, pero no se sabe adónde. Copiarlo (int *q = p;) copia esa incógnita.',
   },
   {
+    clave: 'resaltarIndice',
+    almacen: 'ajuste-resaltar-indice',
+    porDefecto: false,
+    titulo: 'Resaltar el índice al acceder a un arreglo',
+    detalle: 'Al leer o escribir un elemento (v[i]), después de recorrer la flecha hasta el arreglo se marca el índice del elemento, y recién entonces se resalta su casilla.',
+  },
+  {
     clave: 'nombresFlechas',
     almacen: 'reproductor-nombres', // la clave de antes, para no perder lo que cada uno ya tenia elegido
     porDefecto: false,
@@ -122,8 +129,8 @@ export const AYUDAS = [
 ];
 
 export const PERFILES = [
-  { id: 'practica', nombre: 'Práctica', valores: { brilloCopias: true, brilloAsignaciones: false, brilloCondiciones: false, detalleCondiciones: false, resaltarFuncion: false, trazado: false, trazadoUnaColumna: false, preguntasTabla: false, detalleCondicionesTabla: false, detalleIda: false, preguntasTexto: false, puntosDeParada: false, avanzarPorEtapas: false, punterosSinValor: false, nombresFlechas: false } },
-  { id: 'explicacion', nombre: 'Explicación', valores: { brilloCopias: true, brilloAsignaciones: true, brilloCondiciones: true, detalleCondiciones: false, resaltarFuncion: true, trazado: true, trazadoUnaColumna: false, preguntasTabla: true, detalleCondicionesTabla: false, detalleIda: false, preguntasTexto: false, puntosDeParada: true, avanzarPorEtapas: false, punterosSinValor: true, nombresFlechas: true } },
+  { id: 'practica', nombre: 'Práctica', valores: { brilloCopias: true, brilloAsignaciones: false, brilloCondiciones: false, detalleCondiciones: false, resaltarFuncion: false, trazado: false, trazadoUnaColumna: false, preguntasTabla: false, detalleCondicionesTabla: false, detalleIda: false, preguntasTexto: false, puntosDeParada: false, avanzarPorEtapas: false, punterosSinValor: false, resaltarIndice: false, nombresFlechas: false } },
+  { id: 'explicacion', nombre: 'Explicación', valores: { brilloCopias: true, brilloAsignaciones: true, brilloCondiciones: true, detalleCondiciones: false, resaltarFuncion: true, trazado: true, trazadoUnaColumna: false, preguntasTabla: true, detalleCondicionesTabla: false, detalleIda: false, preguntasTexto: false, puntosDeParada: true, avanzarPorEtapas: false, punterosSinValor: true, resaltarIndice: true, nombresFlechas: true } },
 ];
 
 const estado = new Map();

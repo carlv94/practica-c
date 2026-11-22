@@ -375,6 +375,7 @@ class Pintor {
     this.anclas = new Map();
     this.flechas = [];
     this.cambios = new Set();
+    this.rectas = new Map(); // el rectangulo de cada casilla, por su clave (para marcar a la que apunta una flecha de la pila)
     this.bloque = null; // el bloque que se esta dibujando (las coordenadas son locales)
     this.marco = null; // la caja de la pila que se esta dibujando (las coordenadas son locales a ella)
     this.dueno = null;
@@ -422,7 +423,7 @@ class Pintor {
       for (let i = 0; i < n; i++) {
         const mi = medir(v.elems[i]);
         this.valor(v.elems[i], cx, y, id, [...ruta, i]);
-        this.capa.append(texto(cx + mi.w / 2, y + m.h - 2, String(i), 'rep-indice', { 'text-anchor': 'middle' }));
+        this.capa.append(texto(cx + mi.w / 2, y + m.h - 2, String(i), 'rep-indice', { 'text-anchor': 'middle', 'data-i': clave(id, [...ruta, i]) }));
         cx += mi.w + 2;
       }
       if (v.elems.length > n) this.capa.append(texto(cx + 8, y + CH / 2 + 4, '…', 'rep-campo'));
@@ -481,9 +482,20 @@ class Pintor {
 
   casilla(x, y, w, h, contenido, clase, k) {
     const cambio = this.cambios.has(k) ? ' rep-cambio' : '';
-    this.capa.append(el('rect', { x, y, width: w, height: h, rx: 3, class: `rep-celda ${clase}${cambio}` }));
+    const rect = el('rect', { x, y, width: w, height: h, rx: 3, class: `rep-celda ${clase}${cambio}` });
+    this.capa.append(rect);
+    this.rectas.set(k, rect);
     if (contenido) this.capa.append(texto(x + w / 2, y + h / 2 + 4, contenido, 'rep-texto', { 'text-anchor': 'middle', 'data-k': k }));
   }
+}
+
+// Cuanto mide la cabeza de una flecha (y de que grosor es su trazo) segun como se dibuja (ver grupoDeFlecha): la que llega (ambar), la que se
+// retira y la que acaba de pasar a rojo son mas gruesas (3), y la cabeza escala con el grosor (6 o 7 veces).
+function medidasDeCabeza(f) {
+  const llega = Boolean(f.cambio) && !f.retirada;
+  const gruesa = llega || Boolean(f.retirada) || Boolean(f.recienLiberada && f.muerto);
+  const grosor = gruesa ? 3 : 1.6;
+  return { grosor, cabeza: (llega ? 6 : 7) * grosor };
 }
 
 const largoDe = (puntos) => puntos.slice(1).reduce((suma, p, i) => suma + Math.hypot(p.x - puntos[i].x, p.y - puntos[i].y), 0);
@@ -800,10 +812,15 @@ export class Figura {
     this.finAparte = null;
     // Antes de que cambie nada, se ve por donde se llega a lo que la sentencia toca.
     // (los accesos de una llamada, argumento y parametro, se animan al final, con la caja de la funcion ya abierta)
-    const accesosDelFlujo = (foto.accesos || []).filter((h) => !h.llamada);
+    // (los de un elemento de un arreglo solo se animan con la ayuda que marca su indice)
+    // (en una condicion tambien se animan, con el brillo de las condiciones: el valor del elemento o del campo que se lee se expande)
+    const conBrilloDeCondicion = Boolean(foto.condicion) && this.ayudas.brilloCondiciones;
+    const accesosDelFlujo = (foto.accesos || []).filter(
+      (h) => !h.llamada && (h.tipo === 'elemento' ? this.ayudas.resaltarIndice || conBrilloDeCondicion : h.tipo === 'campo' ? conBrilloDeCondicion : true)
+    );
     const retardo =
       flujo && animar && !sinMovimiento() && u > 0 && previa && (accesosDelFlujo.length || foto.condicion || foto.muestra || foto.lectura)
-        ? this.iniciarFlujo(previa, accesosDelFlujo, u, escena, foto.condicion, enciende(foto))
+        ? this.iniciarFlujo(previa, accesosDelFlujo, u, escena, foto.condicion, enciende(foto), foto.indices || [])
         : 0;
     const mueve = animar && !sinMovimiento() && u > 0 && Boolean(previa);
     this.fundir = mueve;
@@ -1172,6 +1189,28 @@ export class Figura {
     }
   }
 
+  // El indice (el numero de debajo) de un elemento de un arreglo, o de una matriz sus dos indices, pulsa un instante: crece y toma el color de
+  // acento. "raiz" es el dibujo donde estan los indices; devuelve cuantos animo.
+  pulsarIndice(raiz, objetivo, retraso, duracion) {
+    if (!raiz || !objetivo || !objetivo.ruta || !duracion || sinMovimiento()) return 0;
+    const halo = getComputedStyle(this.contenedor).getPropertyValue('--acento').trim() || '#3b82f6';
+    const sin = { transform: 'scale(1)', filter: 'drop-shadow(0 0 0 transparent)' };
+    const con = { transform: 'scale(1.9)', fill: halo, filter: `drop-shadow(0 0 4px ${halo})` };
+    let animados = 0;
+    for (let n = 1; n <= objetivo.ruta.length; n++) {
+      if (typeof objetivo.ruta[n - 1] !== 'number') continue;
+      const k = clave(objetivo.a, objetivo.ruta.slice(0, n));
+      for (const x of raiz.querySelectorAll('text.rep-indice')) {
+        if (x.getAttribute('data-i') !== k || !x.animate) continue;
+        animados++;
+        x.style.transformBox = 'fill-box';
+        x.style.transformOrigin = 'center';
+        x.animate([{ ...sin }, { ...con, offset: 0.3 }, { ...con, offset: 0.7 }, { ...sin }], { duration: duracion, delay: retraso, easing: 'ease-in-out' });
+      }
+    }
+    return animados;
+  }
+
   // El texto del valor de estas casillas (por su clave) resplandece y crece un instante: el valor que se acaba de copiar,
   // en el origen y en el destino a la vez. El resplandor se ve poco sobre el fondo ambar de lo que cambio; el cambio de
   // tamaño se nota igual (tambien con la figura chica o sin distinguir colores).
@@ -1367,7 +1406,7 @@ export class Figura {
   // Mientras tanto la figura nueva queda esperando: se la pone cuando termina.
   // Si el paso evaluo una condicion ("condicion": { texto, valor }), se ve la pregunta (un rotulo con la condicion), las
   // casillas que se leen (con borde discontinuo) y, despues de una pausa para leer, la respuesta.
-  iniciarFlujo(previa, accesos, u, escena, condicion = null, muestra = null) {
+  iniciarFlujo(previa, accesos, u, escena, condicion = null, muestra = null, indices = []) {
     const dFlecha = 0.8 * u;
     const dResalte = 0.5 * u;
     const clon = previa.svg.cloneNode(true);
@@ -1443,6 +1482,33 @@ export class Figura {
       this.destello = { fin: t + dura, meseta: t + 0.75 * dura };
       t += dura;
     };
+    // Antes de resaltar la casilla de un elemento de un arreglo (v[i]), su indice (el numero que esta debajo) se marca un instante: es lo que
+    // dice cual es dentro del arreglo, sobre todo cuando la flecha llega al primero y se toca otro. Con matrices se marcan los dos indices.
+    const dIndice = 0.5 * u;
+    const marcados = new Set(); // las casillas cuyo indice ya se marco en este recorrido
+    const origenes = new Map(indices.map((x) => [clave(x.a, x.ruta), x.de]));
+    const pulsoDeIndice = (objetivo) => {
+      if (!this.ayudas.resaltarIndice || !objetivo || !objetivo.ruta || sinMovimiento()) return;
+      if (marcados.has(clave(objetivo.a, objetivo.ruta))) return;
+      // Antes del indice, se expande el valor de las variables de las que sale (i en v[i], n en v[n - 1]); en una condicion ya se hizo al
+      // comienzo (con las demas variables que se leen).
+      if (!condicion) {
+        const celdasFuente = [];
+        for (let n = 1; n <= objetivo.ruta.length; n++) celdasFuente.push(...(origenes.get(clave(objetivo.a, objetivo.ruta.slice(0, n))) || []));
+        const fuentes = celdasFuente.map((c) => clave(c.a, c.ruta));
+        if (fuentes.length && this.brillar({ svg: clon }, fuentes, t, dIndice)) {
+          this.anotar(t, `Se expande el valor de ${celdasFuente.map((c) => this.nombreCelda(previa, c.a, c.ruta)).join(' y ')}, de donde sale el índice`);
+          this.destello = { fin: t + dIndice, meseta: t + 0.7 * dIndice };
+          t += dIndice;
+        }
+      }
+      if (!this.pulsarIndice(clon, objetivo, t, dIndice)) return;
+      marcados.add(clave(objetivo.a, objetivo.ruta));
+      const indice = objetivo.ruta[objetivo.ruta.length - 1];
+      this.anotar(t, `Se marca el índice ${indice}${typeof indice === 'number' ? ' de ' + this.nombreCelda(previa, objetivo.a, objetivo.ruta.slice(0, -1)).replace(/^el /, '') : ''}`);
+      this.destello = { fin: t + dIndice, meseta: t + 0.7 * dIndice };
+      t += dIndice;
+    };
     const resaltarDestino = () => {
       if (!pendientePara) return;
       const pendiente = pendientePara;
@@ -1452,6 +1518,7 @@ export class Figura {
       const ancla = previa.anclas && previa.anclas.get(k);
       const casilla = ancla ? this.absolutoDe(previa, ancla) : null;
       if (casilla) {
+        pulsoDeIndice(pendiente);
         this.anotar(t, `Se resalta ${this.nombreCelda(previa, pendiente.a, pendiente.ruta)}, que va a recibir el valor`);
         pulso(casilla);
       }
@@ -1546,6 +1613,7 @@ export class Figura {
         }
         t += dFlecha;
       }
+      pulsoDeIndice(h.a);
       if (h.tipo === 'valor') {
         // Se copia el valor de una casilla en otra: primero se resalta el origen.
         pendientePara = h.para;
@@ -1554,9 +1622,9 @@ export class Figura {
         continue;
       }
       resaltadas.add(clave(h.a.a, h.a.ruta));
-      if (!flecha) this.anotar(t, `Se lee ${this.nombreCelda(previa, h.a.a, h.a.ruta)}`);
+      if (!flecha) this.anotar(t, `${h.tipo === 'elemento' || h.tipo === 'campo' ? 'Se accede a' : 'Se lee'} ${this.nombreCelda(previa, h.a.a, h.a.ruta)}`);
       // En una condicion, el valor de la casilla a la que se llego siguiendo un puntero (p->dato, *p) tambien resplandece.
-      const brilla = condicion && h.de && this.ayudas.brilloCondiciones ? this.brillar({ svg: clon }, [clave(h.a.a, h.a.ruta)], t, 0.8 * u) : 0;
+      const brilla = condicion && (h.de || h.tipo === 'elemento' || h.tipo === 'campo') && this.ayudas.brilloCondiciones ? this.brillar({ svg: clon }, [clave(h.a.a, h.a.ruta)], t, 0.8 * u) : 0;
       pulso(casilla, Boolean(h.cond), brilla ? 0.8 * u : dResalte);
     }
     if (juntoDesde !== null) t = Math.max(juntoFin, t);
@@ -1923,11 +1991,18 @@ export class Figura {
       cajas.push({ clave: `${i}:${foto.marcos[i].funcion}`, titulo: `${foto.marcos[i].funcion}()`, variables: foto.marcos[i].variables, actual: i === foto.marcos.length - 1 });
     }
     const marcosG = new Map();
+    // Una flecha de la pila que apunta dentro de una variable de la pila (un elemento de un arreglo, un campo) llega desde arriba, por un
+    // carril encima de su fila, y no cruzando las demas casillas: la fila reserva un poco de lugar encima para ese carril.
+    const variablesDePila = [...foto.globales, ...foto.marcos.flatMap((m) => m.variables)];
+    const idsDePila = new Set(variablesDePila.map((v) => v.id));
+    const haciaFila = new Map();
+    for (const v of variablesDePila) for (const q of punterosDe(v.valor)) if (q.ruta.length && idsDePila.has(q.a)) haciaFila.set(q.a, (haciaFila.get(q.a) || 0) + 1);
+    const lugarDelCarril = (n) => (n ? 14 + 4 * Math.min(n - 1, 2) : 0);
     for (const caja of cajas) {
       const etiquetaAncho = Math.max(0, ...caja.variables.map((v) => v.nombre.length)) * LETRA + 12;
-      const filas = caja.variables.map((v) => ({ v, m: medir(v.valor) }));
+      const filas = caja.variables.map((v) => ({ v, m: medir(v.valor), extra: lugarDelCarril(haciaFila.get(v.id) || 0) }));
       const ancho = Math.max(120, etiquetaAncho + Math.max(0, ...filas.map((f) => f.m.w)) + 22, caja.titulo.length * LETRA + 22);
-      const alto = 22 + filas.reduce((s, f) => s + f.m.h + 8, 0) + (filas.length ? 2 : 6);
+      const alto = 22 + filas.reduce((s, f) => s + f.extra + f.m.h + 8, 0) + (filas.length ? 2 : 6);
       // Cada caja es un grupo con coordenadas propias: asi se la puede mover.
       const gm = el('g', { class: 'rep-marco-g' });
       raiz.append(gm);
@@ -1937,6 +2012,7 @@ export class Figura {
       p.marco = caja.clave;
       let fy = 22;
       for (const f of filas) {
+        fy += f.extra;
         const g = el('g', { class: 'rep-var' + (f.v.pendiente ? ' rep-pendiente' : ''), 'data-id': f.v.id });
         if (f.v.pendiente) g.append(el('title', {}, ['todavía no declarada']));
         gm.append(g);
@@ -2088,7 +2164,7 @@ export class Figura {
       if ((f.origen.marco != null && !marcosDe.has(f.origen.marco)) || (ancla && ancla.marco != null && !marcosDe.has(ancla.marco))) return null;
       let tipo;
       if (!ancla) tipo = 'perdida';
-      else if (!lo) tipo = ld ? (ld.columna === 0 ? 'pila-izquierda' : 'pila-arriba') : 'pila-pila';
+      else if (!lo) tipo = ld ? (ld.columna === 0 ? 'pila-izquierda' : 'pila-arriba') : ancla.marco != null && f.ruta.length ? 'pila-sobre' : 'pila-pila';
       else if (!ld) tipo = 'recta';
       else if (ld.fila === lo.fila && ld.columna === lo.columna + 1) tipo = 'recta';
       else if (ld.fila > lo.fila) tipo = 'bajo';
@@ -2110,6 +2186,10 @@ export class Figura {
         ct.llegadas.set(llave, { n: ya.n + 1, etiquetas: ya.etiquetas + (f.nombre ? f.nombre.length * 6 + 12 : 0) });
       }
       if (tipo === 'pila-izquierda' || tipo === 'pila-pila') d.canal = ct.canales++;
+      if (tipo === 'pila-sobre') {
+        d.canal = ct.canales++;
+        d.carril = carril('sobre', f.a);
+      }
       if (tipo === 'pila-arriba') {
         d.canal = ct.canales++;
         d.carril = carril('arriba', ld.fila);
@@ -2162,6 +2242,13 @@ export class Figura {
     const capaResalte = el('g', { 'pointer-events': 'none' }); // los parpadeos de lo que acaba de recibir una direccion
     svg.append(defs, raiz, capaFlechas, capaResalte);
     this.alAire(svg);
+    // La casilla a la que llega una flecha desde arriba (el primer elemento de un arreglo, por ejemplo) se marca con un borde de color.
+    for (const fl of flechas) {
+      if (fl.final && fl.final.tipo === 'pila-sobre') {
+        const rect = p.rectas.get(clave(fl.a, fl.ruta));
+        if (rect) rect.classList.add('rep-apuntada');
+      }
+    }
     // Un puntero que cambio de destino: como iba hacia el viejo (para deslizar la flecha). Un puntero
     // que dejo de apuntar (paso a NULL): una flecha que solo se ve retrayendose.
     const ctViejo = contador();
@@ -2275,6 +2362,15 @@ export class Figura {
         const cx = derechaPila + 10 + 6 * d.canal;
         const lane = filas[d.ld.fila].y - 6 - 6 * d.carril;
         const xx = tx + 8 * Math.min(d.ranura, 3);
+        return [{ x: S.x + S.w, y: sy }, { x: cx, y: sy }, { x: cx, y: lane }, { x: xx, y: lane }, { x: xx, y: T.y }];
+      }
+      case 'pila-sobre': {
+        // A un elemento (o un campo) de una variable de la pila: por un carril encima de su fila y hacia abajo, sobre la casilla.
+        // La bajada final es lo que mide la cabeza (menos medio trazo): asi la base de la cabeza queda a la altura del borde de arriba del carril.
+        const { grosor, cabeza } = medidasDeCabeza(f);
+        const cx = derechaPila + 8 + 6 * d.canal;
+        const lane = T.y - (cabeza - grosor / 2) - (grosor + 1.5) * Math.min(d.carril, 2);
+        const xx = tx + 6 * Math.min(d.ranura, 3);
         return [{ x: S.x + S.w, y: sy }, { x: cx, y: sy }, { x: cx, y: lane }, { x: xx, y: lane }, { x: xx, y: T.y }];
       }
       case 'pila-pila': {
