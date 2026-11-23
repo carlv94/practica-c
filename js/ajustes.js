@@ -1,5 +1,5 @@
 // Las ayudas visuales del reproductor paso a paso: cada una se puede activar o no, y se guardan en este navegador.
-// No cambian nada de lo que corrige el motor: solo lo que se dibuja. Hay dos perfiles ("Practica" y "Explicacion") que fijan
+// No cambian nada de lo que corrige el motor: solo lo que se dibuja. Hay tres perfiles ("Practica", "Explicacion" y "Detallado") que fijan
 // todas de una vez, y cada ayuda se puede cambiar por separado ("Personalizado").
 //
 //   import { ajustes, montarAjustes } from './ajustes.js';
@@ -130,7 +130,9 @@ export const AYUDAS = [
 
 export const PERFILES = [
   { id: 'practica', nombre: 'Práctica', valores: { brilloCopias: true, brilloAsignaciones: false, brilloCondiciones: false, detalleCondiciones: false, resaltarFuncion: false, trazado: false, trazadoUnaColumna: false, preguntasTabla: false, detalleCondicionesTabla: false, detalleIda: false, preguntasTexto: false, puntosDeParada: false, avanzarPorEtapas: false, punterosSinValor: false, resaltarIndice: false, nombresFlechas: false } },
-  { id: 'explicacion', nombre: 'Explicación', valores: { brilloCopias: true, brilloAsignaciones: true, brilloCondiciones: true, detalleCondiciones: false, resaltarFuncion: true, trazado: true, trazadoUnaColumna: false, preguntasTabla: true, detalleCondicionesTabla: false, detalleIda: false, preguntasTexto: false, puntosDeParada: true, avanzarPorEtapas: false, punterosSinValor: true, resaltarIndice: true, nombresFlechas: true } },
+  { id: 'explicacion', nombre: 'Explicación', valores: { brilloCopias: true, brilloAsignaciones: true, brilloCondiciones: true, detalleCondiciones: false, resaltarFuncion: true, trazado: true, trazadoUnaColumna: false, preguntasTabla: true, detalleCondicionesTabla: false, detalleIda: false, preguntasTexto: false, puntosDeParada: true, avanzarPorEtapas: false, punterosSinValor: true, resaltarIndice: true, nombresFlechas: false } },
+  // Lo de Explicación, más todo lo que muestra el detalle de las cuentas: las condiciones, las preguntas y la ida de las llamadas.
+  { id: 'detallado', nombre: 'Detallado', valores: { brilloCopias: true, brilloAsignaciones: true, brilloCondiciones: true, detalleCondiciones: true, resaltarFuncion: true, trazado: true, trazadoUnaColumna: false, preguntasTabla: true, detalleCondicionesTabla: true, detalleIda: true, preguntasTexto: false, puntosDeParada: true, avanzarPorEtapas: false, punterosSinValor: true, resaltarIndice: true, nombresFlechas: false } },
 ];
 
 const estado = new Map();
