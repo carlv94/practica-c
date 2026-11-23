@@ -142,6 +142,76 @@ function arregloA(contenedor, dibujo) {
   caja.appendChild(fila);
   if (dibujo.texto) caja.appendChild(conTexto('p', 'texto-figura', dibujo.texto));
   contenedor.appendChild(caja);
+  return caja;
+}
+
+// Los dibujos de un seguimiento, de a uno en las pantallas angostas (con ◀ ▶, "3 de 6", deslizar el dedo y las flechas del teclado) y un enlace
+// para verlos todos juntos; en las anchas se ven todos, uno debajo de otro. Todos ocupan la misma celda y solo se ve el de la página, así el
+// contenedor mide lo que el más alto y no se mueve nada al pasar de página.
+function paginarA(cuerpo, paginas) {
+  const angosta = typeof matchMedia === 'function' ? matchMedia('(max-width: 699px)') : { matches: false };
+  const contenedor = nodo('div', 'paginas');
+  paginas.forEach((p) => contenedor.appendChild(p));
+  let actual = 0;
+  let deAUno = true;
+  const barra = nodo('div', 'pager');
+  const boton = (texto, titulo) => {
+    const b = nodo('button', 'pager-boton', texto);
+    b.type = 'button';
+    b.setAttribute('aria-label', titulo);
+    return b;
+  };
+  const anterior = boton('◀', 'Dibujo anterior');
+  const siguiente = boton('▶', 'Dibujo siguiente');
+  const cuenta = nodo('span', 'pager-cuenta');
+  cuenta.setAttribute('aria-live', 'polite');
+  const todos = nodo('button', 'pager-todos');
+  todos.type = 'button';
+  barra.append(anterior, cuenta, siguiente, todos);
+  const aplicar = () => {
+    const solo = angosta.matches && deAUno;
+    contenedor.classList.toggle('paginado', deAUno);
+    paginas.forEach((p, i) => {
+      p.classList.toggle('pagina-activa', i === actual);
+      // los que no se ven no se leen ni se enfocan
+      p.toggleAttribute('inert', solo && i !== actual);
+      if (solo && i !== actual) p.setAttribute('aria-hidden', 'true');
+      else p.removeAttribute('aria-hidden');
+    });
+    // en la lista de todos no hay páginas: se esconden los botones y la cuenta (queda el botón para volver a verlos de a uno)
+    for (const x of [anterior, cuenta, siguiente]) x.hidden = !deAUno;
+    cuenta.textContent = `${actual + 1} de ${paginas.length}`;
+    anterior.disabled = actual === 0;
+    siguiente.disabled = actual === paginas.length - 1;
+    todos.textContent = deAUno ? 'Ver todos' : 'Ver de a uno';
+  };
+  const ir = (k) => {
+    actual = Math.max(0, Math.min(paginas.length - 1, k));
+    aplicar();
+  };
+  anterior.onclick = () => ir(actual - 1);
+  siguiente.onclick = () => ir(actual + 1);
+  todos.onclick = () => {
+    deAUno = !deAUno;
+    aplicar();
+  };
+  barra.addEventListener('keydown', (ev) => {
+    if (!deAUno) return;
+    if (ev.key === 'ArrowLeft') ir(actual - 1);
+    else if (ev.key === 'ArrowRight') ir(actual + 1);
+  });
+  // deslizar el dedo
+  let inicioX = null;
+  contenedor.addEventListener('touchstart', (ev) => (inicioX = ev.touches[0].clientX), { passive: true });
+  contenedor.addEventListener('touchend', (ev) => {
+    if (inicioX === null || !(angosta.matches && deAUno)) return;
+    const dx = ev.changedTouches[0].clientX - inicioX;
+    inicioX = null;
+    if (Math.abs(dx) > 50) ir(actual + (dx < 0 ? 1 : -1));
+  });
+  if (angosta.addEventListener) angosta.addEventListener('change', aplicar);
+  cuerpo.append(barra, contenedor);
+  aplicar();
 }
 
 const puntosDe = (e) => e.ejercicios.reduce((s, x) => s + x.puntos, 0);
@@ -299,7 +369,8 @@ function ejercicioA(ejercicio, alCambiar) {
       });
       seguimiento.caja.classList.add('seguimiento');
       if (m.introDibujos) seguimiento.cuerpo.appendChild(conTexto('p', 'seguimiento-intro', m.introDibujos));
-      for (const d of m.dibujos) arregloA(seguimiento.cuerpo, d);
+      const cajas = m.dibujos.map((d) => arregloA(seguimiento.cuerpo, d));
+      if (cajas.length > 1) paginarA(seguimiento.cuerpo, cajas);
       p.appendChild(seguimiento.caja);
     }
     return { id: m.id, etiqueta: [`${m.id}) `, nodo('span', 'solapa-nombre', m.titulo)], panel: p };

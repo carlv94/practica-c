@@ -310,3 +310,49 @@ summary.seccion-titulo:hover {
   background: var(--barra);
   border: 1px solid var(--borde);
 }
+
+/* el seguimiento de a un dibujo (solo en pantallas angostas; en las anchas se ven todos) */
+.pager {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  margin: 6px 0 4px;
+}
+
+.pager [hidden] {
+  display: none;
+}
+
+.pager-boton {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.pager-cuenta {
+  min-width: 4.5em;
+  text-align: center;
+  font-weight: 600;
+}
+
+.pager-todos {
+  margin-left: auto;
+  min-height: 44px;
+}
+
+@media (max-width: 699px) {
+  .pager {
+    display: flex;
+  }
+  .paginas.paginado {
+    display: grid;
+    touch-action: pan-y;
+  }
+  .paginas.paginado > .dibujo-arreglo {
+    grid-area: 1 / 1;
+    visibility: hidden;
+  }
+  .paginas.paginado > .pagina-activa {
+    visibility: visible;
+  }
+}
