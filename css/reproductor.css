@@ -1311,6 +1311,114 @@
   font-size: 0.8rem;
 }
 
+/* La caja de la figura no cambia la disposicion (sus hijos cuentan como hijos de la columna). */
+.rep-figura-caja {
+  display: contents;
+}
+.rep-sin-figura .rep-figura-caja {
+  display: none;
+}
+.rep-manija {
+  display: none;
+}
+/* Pantalla completa apaisada en una pantalla baja (ver colocarControles en reproductor.js): los botones del zoom y de ayuda flotan sobre la
+   figura, abajo a la derecha, y se esconden solos; la manija (una lupa) queda siempre a la vista. */
+.rep-flota .rep-figura-caja {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.rep-flota .rep-manija {
+  display: block;
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  z-index: 3;
+  min-height: 36px;
+  min-width: 36px;
+  padding: 4px 8px;
+  opacity: 0.7;
+  background: var(--panel);
+}
+.rep-flota.rep-controles-abiertos .rep-manija {
+  opacity: 0;
+  pointer-events: none;
+}
+.rep-flota .rep-herramientas {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  z-index: 4;
+  flex-wrap: nowrap;
+  margin: 0;
+  padding: 6px;
+  background: var(--panel);
+  border: 1px solid var(--borde);
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+}
+.rep-flota.rep-controles-abiertos .rep-herramientas,
+.rep-flota .rep-herramientas:has(:focus-visible) {
+  opacity: 1;
+  pointer-events: auto;
+}
+.rep-flota .rep-herramientas-rotulo {
+  display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .rep-flota .rep-herramientas {
+    transition: none;
+  }
+}
+/* las herramientas de reproduccion, en la fila de la barra: un solo boton */
+.rep-flota .rep-tool {
+  display: none;
+}
+.rep-flota .rep-tools-menu {
+  display: inline-block;
+  flex: none;
+  min-height: 34px;
+  padding: 2px 10px;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+.rep-flota .rep-barra .rep-tools {
+  flex: none;
+  margin: 0;
+}
+/* cerrar la pantalla completa: el ultimo de la fila, siempre a la vista aunque la fila se desplace, y lejos de una muesca */
+.rep-flota .rep-barra > .rep-ampliar {
+  position: sticky;
+  right: 0;
+  flex: none;
+}
+.rep-flota {
+  padding-right: max(8px, env(safe-area-inset-right));
+}
+/* si la fila se desplaza (queda algo por ver a la derecha), el contenido se difumina al pasar por debajo del boton de cerrar, que se queda quieto */
+.rep-flota .rep-barra.rep-desborda > .rep-ampliar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: calc(100% + 1px); /* (hasta el borde del boton, sin taparlo) */
+  width: 28px;
+  background: linear-gradient(to right, transparent, var(--panel));
+  pointer-events: none;
+}
+.rep-flota .rep-tools-panel:not([hidden]) {
+  display: block;
+}
+.rep-flota .rep-consola-ampliar {
+  min-height: 28px;
+  padding: 2px 8px;
+}
+
 /* la flecha que acaba de cambiar, y adonde apuntaba antes */
 .rep-flecha-g.rep-nueva .rep-flecha {
   stroke: var(--aviso);

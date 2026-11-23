@@ -218,6 +218,12 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   const lado = nodo('div', 'rep-lado');
   const estado = nodo('div', 'rep-estado');
   const figura = nodo('div', 'rep-figura');
+  // La caja de la figura no cambia nada de la disposicion (ver el CSS: "display: contents"); en pantalla completa apaisada en un telefono sostiene
+  // los controles que flotan sobre la figura, con su manija (ver colocarControles).
+  const cajaFigura = nodo('div', 'rep-figura-caja');
+  const manija = botonIcono('controles', 'Controles de la figura: zoom y ayudas');
+  manija.classList.add('rep-manija');
+  cajaFigura.append(figura, manija);
   const dibujo = new Figura(figura, { cabezas });
   // En pantallas grandes la condicion que se evalua se muestra en esta franja, arriba de la figura (ver el CSS).
   const franjaPregunta = nodo('div', 'rep-franja-pregunta');
@@ -310,6 +316,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     aplicarAyudas();
     if (ajustes.valor('explicar') && !raiz.classList.contains('rep-explicando')) parar(); // el avance solo no va con explicar
     mostrarExplicar();
+    requestAnimationFrame(medirDesborde); // (los botones de la fila pudieron cambiar)
     // Las que cambian como se dibuja una casilla (no solo como se anima) se ven al instante: se vuelve a dibujar el paso de ahora.
     if (ajustes.valor('punterosSinValor') !== sinValorVisto) {
       sinValorVisto = ajustes.valor('punterosSinValor');
@@ -1394,7 +1401,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   const etiquetaEtapa = nodo('p', 'rep-estado-etapa'); // "Etapa 2 de 5: ..." (con la ayuda "Avanzar por etapas")
   etiquetaEtapa.hidden = true;
   etiquetaEtapa.setAttribute('aria-live', 'polite');
-  lado.append(estado, etiquetaEtapa, herramientas, franjaPregunta, trazado, figura, nodo('p', 'rep-subtitulo', 'Consola'), cajaConsola);
+  lado.append(estado, etiquetaEtapa, herramientas, franjaPregunta, trazado, cajaFigura, nodo('p', 'rep-subtitulo', 'Consola'), cajaConsola);
   if (conEntrada) lado.append(nodo('p', 'rep-subtitulo', 'Lo que ingresa el usuario'), cajaDeEntrada);
   lado.append(nota);
   cuerpo.append(columnaCodigo, lado);
@@ -1403,7 +1410,8 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   barraEtapas.setAttribute('aria-hidden', 'true');
   const avisoZoom = nodo('div', 'rep-aviso-zoom');
   avisoZoom.setAttribute('role', 'status');
-  raiz.append(giro, cuerpo, montarHerramientas(), barra, barraEtapas, ventanaConsola, avisoZoom);
+  const franjaHerramientas = montarHerramientas();
+  raiz.append(giro, cuerpo, franjaHerramientas, barra, barraEtapas, ventanaConsola, avisoZoom);
   panelCodigo.append(cerrarCodigo);
 
   let paso = 0;
@@ -1837,9 +1845,51 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     raiz.classList.toggle('rep-chico', ancho < 560);
     raiz.classList.toggle('rep-compacto', ancho < 560 || bajo);
     raiz.classList.toggle('rep-apaisado', apaisado);
+    const flota = ampliado && apaisado && bajo;
+    if (flota !== raiz.classList.contains('rep-flota')) colocarControles(flota);
     giro.hidden = !(ampliado && !apaisado && window.innerWidth < 700 && !giroCerrado);
     dibujo.fijarEscala({ alto: ampliado });
     seguirLinea(true);
+    medirDesborde();
+  }
+
+  // ---- en pantalla completa apaisada en un telefono (la pantalla baja) cada renglon vale: los botones del zoom y de ayuda salen de su fila, flotan
+  // sobre la esquina de abajo a la derecha de la figura y se esconden solos. Una manija (una lupa) siempre a la vista los abre; se esconden a los
+  // 4 segundos sin tocarlos, salvo que haya un panel abierto. Las herramientas de reproduccion pasan a un solo boton, en la fila de la barra.
+  let relojControles = null;
+  function armarControles() {
+    clearTimeout(relojControles);
+    relojControles = setTimeout(() => {
+      if (!panelAjustes.hidden || !panelLeyenda.hidden) armarControles(); // (un panel abierto: se espera a que se cierre)
+      else raiz.classList.remove('rep-controles-abiertos');
+    }, 4000);
+  }
+  // La fila se desplaza si no entra: mientras quede algo por ver a la derecha, el contenido se difumina junto al boton de cerrar (que se queda quieto).
+  function medirDesborde() {
+    barra.classList.toggle('rep-desborda', barra.scrollLeft + barra.clientWidth < barra.scrollWidth - 2);
+  }
+  barra.addEventListener('scroll', medirDesborde, { passive: true });
+  function colocarControles(flota) {
+    raiz.classList.toggle('rep-flota', flota);
+    clearTimeout(relojControles);
+    raiz.classList.remove('rep-controles-abiertos');
+    if (flota) {
+      cajaFigura.append(herramientas);
+      barra.insertBefore(franjaHerramientas, ampliarBoton); // (cerrar, el ultimo de la fila)
+    } else {
+      lado.insertBefore(herramientas, franjaPregunta);
+      raiz.insertBefore(franjaHerramientas, barra);
+    }
+    requestAnimationFrame(medirDesborde);
+  }
+  manija.onclick = () => {
+    raiz.classList.add('rep-controles-abiertos');
+    armarControles();
+  };
+  for (const evento of ['pointerdown', 'keydown']) {
+    herramientas.addEventListener(evento, () => {
+      if (raiz.classList.contains('rep-controles-abiertos')) armarControles(); // (cada toque da otros 4 segundos)
+    });
   }
 
   function aplicarZoom() {

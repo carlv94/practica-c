@@ -18,6 +18,9 @@ export const ICONOS = {
   info: '<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="M12 11v6" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/><circle cx="12" cy="7.4" r="1.7"/>',
   menos: '<path d="M5 12h14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>',
   mas: '<path d="M5 12h14M12 5v14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>',
+  // tres rayas con una perilla cada una: los controles (opciones de visualizacion) de la figura
+  controles:
+    '<path d="M4 6h3.4M13 6h7M4 12h8.4M18 12h2M4 18h1.4M11 18h9" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><circle cx="10.2" cy="6" r="2.5"/><circle cx="15.2" cy="12" r="2.5"/><circle cx="8.2" cy="18" r="2.5"/>',
   // dos flechas en diagonal que se alejan: agrandar una ventana
   expandir: '<path d="M14 4h6v6M20 4l-7 7M10 20H4v-6M4 20l7-7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>',
 };
