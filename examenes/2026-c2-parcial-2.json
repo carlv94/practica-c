@@ -20,6 +20,178 @@
           "puntos": 12,
           "enunciado": "`actualizarResumen(medicion, resumen)`: recibe una medición diaria y un resumen mensual. Acumula la temperatura y la lluvia en el resumen, incrementa `cantDias` en 1, incrementa `cantLluviosos` si `lluvia > 0`, y actualiza `tempMax` si la temperatura supera a la máxima registrada (o si es el primer día).",
           "solucion": "void actualizarResumen(MEDICION medicion, RESUMEN *resumen) {\n  resumen->sumaTemp += medicion.temp;\n  resumen->sumaLluvia += medicion.lluvia;\n  resumen->cantDias++;\n\n  if (medicion.lluvia > 0) {\n    resumen->cantLluviosos++;\n  }\n\n  if (resumen->cantDias == 1 || medicion.temp > resumen->tempMax) {\n    resumen->tempMax = medicion.temp;\n  }\n}",
+          "tituloDibujos": "Seguimiento del resumen",
+          "introDibujos": "Ejemplo con dos días: uno caluroso (30.5 de temperatura y sin lluvia) y uno lluvioso (36 de temperatura y 45 de lluvia). En amarillo, lo que cambia en cada llamada. El paso a paso del final ejecuta este mismo ejemplo con un `main` de demostración.",
+          "dibujos": [
+            {
+              "titulo": "Las estructuras que recibe la función, sin datos:",
+              "fichas": [
+                {
+                  "titulo": "MEDICION",
+                  "campos": [
+                    {
+                      "nombre": "temp"
+                    },
+                    {
+                      "nombre": "lluvia"
+                    }
+                  ]
+                },
+                {
+                  "titulo": "RESUMEN",
+                  "campos": [
+                    {
+                      "nombre": "sumaTemp"
+                    },
+                    {
+                      "nombre": "sumaLluvia"
+                    },
+                    {
+                      "nombre": "cantDias"
+                    },
+                    {
+                      "nombre": "cantLluviosos"
+                    },
+                    {
+                      "nombre": "tempMax"
+                    }
+                  ]
+                }
+              ],
+              "texto": "Una variable recién declarada todavía no tiene valor: no es lo mismo que 0."
+            },
+            {
+              "titulo": "El resumen, inicializado:",
+              "fichas": [
+                {
+                  "titulo": "resumen",
+                  "campos": [
+                    {
+                      "nombre": "sumaTemp",
+                      "ejemplo": "0"
+                    },
+                    {
+                      "nombre": "sumaLluvia",
+                      "ejemplo": "0"
+                    },
+                    {
+                      "nombre": "cantDias",
+                      "ejemplo": "0"
+                    },
+                    {
+                      "nombre": "cantLluviosos",
+                      "ejemplo": "0"
+                    },
+                    {
+                      "nombre": "tempMax",
+                      "ejemplo": "0"
+                    }
+                  ]
+                }
+              ],
+              "texto": "Antes del primer día, todos sus campos valen 0."
+            },
+            {
+              "titulo": "Primer día, al llamar a `actualizarResumen`:",
+              "fichas": [
+                {
+                  "titulo": "medicion (copia)",
+                  "campos": [
+                    {
+                      "nombre": "temp",
+                      "ejemplo": "30.5"
+                    },
+                    {
+                      "nombre": "lluvia",
+                      "ejemplo": "0"
+                    }
+                  ]
+                },
+                {
+                  "titulo": "resumen (el de quien llama)",
+                  "campos": [
+                    {
+                      "nombre": "sumaTemp",
+                      "ejemplo": "30.5"
+                    },
+                    {
+                      "nombre": "sumaLluvia",
+                      "ejemplo": "0"
+                    },
+                    {
+                      "nombre": "cantDias",
+                      "ejemplo": "1"
+                    },
+                    {
+                      "nombre": "cantLluviosos",
+                      "ejemplo": "0"
+                    },
+                    {
+                      "nombre": "tempMax",
+                      "ejemplo": "30.5"
+                    }
+                  ],
+                  "resaltar": [
+                    "sumaTemp",
+                    "cantDias",
+                    "tempMax"
+                  ]
+                }
+              ],
+              "texto": "Suma 30.5 de temperatura y 0 de lluvia. Es el primer día (`cantDias == 1`), así que `tempMax` pasa a 30.5. Como no llovió, `cantLluviosos` no cambia."
+            },
+            {
+              "titulo": "Segundo día, al llamar a `actualizarResumen`:",
+              "fichas": [
+                {
+                  "titulo": "medicion (copia)",
+                  "campos": [
+                    {
+                      "nombre": "temp",
+                      "ejemplo": "36"
+                    },
+                    {
+                      "nombre": "lluvia",
+                      "ejemplo": "45"
+                    }
+                  ]
+                },
+                {
+                  "titulo": "resumen (el de quien llama)",
+                  "campos": [
+                    {
+                      "nombre": "sumaTemp",
+                      "ejemplo": "66.5"
+                    },
+                    {
+                      "nombre": "sumaLluvia",
+                      "ejemplo": "45"
+                    },
+                    {
+                      "nombre": "cantDias",
+                      "ejemplo": "2"
+                    },
+                    {
+                      "nombre": "cantLluviosos",
+                      "ejemplo": "1"
+                    },
+                    {
+                      "nombre": "tempMax",
+                      "ejemplo": "36"
+                    }
+                  ],
+                  "resaltar": [
+                    "sumaTemp",
+                    "sumaLluvia",
+                    "cantDias",
+                    "cantLluviosos",
+                    "tempMax"
+                  ]
+                }
+              ],
+              "texto": "Suma 36 de temperatura y 45 de lluvia. Llovió (`lluvia > 0`), así que `cantLluviosos` pasa a 1, y 36 supera a 30.5, así que `tempMax` pasa a 36."
+            }
+          ],
           "explicacion": "Es un procedimiento (`void`): no calcula un valor para devolver, cambia el resumen. Por eso `resumen` va por referencia (un puntero): los cambios tienen que quedar en el resumen de quien llama. `medicion` va por valor, porque solo se lee. La condición `cantDias == 1` cubre el primer día, cuando todavía no hay una máxima con la que comparar (ya se sumó el día, por eso se pregunta por 1)."
         },
         {
@@ -28,6 +200,44 @@
           "puntos": 9,
           "enunciado": "`temperaturaMedia(resumen)`: recibe un resumen mensual y devuelve la temperatura promedio registrada (0.0 si `cantDias` es 0).",
           "solucion": "float temperaturaMedia(RESUMEN resumen) {\n  if (resumen.cantDias == 0) {\n    return 0.0;\n  }\n\n  return resumen.sumaTemp / resumen.cantDias;\n}",
+          "tituloDibujos": "Seguimiento del resumen",
+          "dibujos": [
+            {
+              "titulo": "Con el resumen de los dos días:",
+              "fichas": [
+                {
+                  "titulo": "resumen (copia)",
+                  "campos": [
+                    {
+                      "nombre": "sumaTemp",
+                      "ejemplo": "66.5"
+                    },
+                    {
+                      "nombre": "sumaLluvia",
+                      "ejemplo": "45"
+                    },
+                    {
+                      "nombre": "cantDias",
+                      "ejemplo": "2"
+                    },
+                    {
+                      "nombre": "cantLluviosos",
+                      "ejemplo": "1"
+                    },
+                    {
+                      "nombre": "tempMax",
+                      "ejemplo": "36"
+                    }
+                  ],
+                  "resaltar": [
+                    "sumaTemp",
+                    "cantDias"
+                  ]
+                }
+              ],
+              "texto": "La función recibe una copia del resumen y solo lee `sumaTemp` y `cantDias` (resaltados): 66.5 / 2 = 33.25."
+            }
+          ],
           "explicacion": "Es una función: devuelve un solo valor, el promedio. El resumen va por valor porque solo se lee (también valdría un puntero para no copiar la estructura, pero no hace falta). El caso `cantDias == 0` se atiende primero para no dividir por cero."
         },
         {
@@ -36,6 +246,74 @@
           "puntos": 9,
           "enunciado": "`clasificarAlerta(medicion)`: recibe una medición diaria y devuelve el nivel de `ALERTA` correspondiente: `CRITICA` si `temp >= 40.0` o `lluvia >= 80.0`; `PRECAUCION` si no es crítica pero `temp >= 35.0` o `lluvia >= 40.0`; y `NORMAL` en cualquier otro caso.",
           "solucion": "ALERTA clasificarAlerta(MEDICION medicion) {\n  if (medicion.temp >= 40.0 || medicion.lluvia >= 80.0) {\n    return CRITICA;\n  }\n\n  if (medicion.temp >= 35.0 || medicion.lluvia >= 40.0) {\n    return PRECAUCION;\n  }\n\n  return NORMAL;\n}",
+          "tituloDibujos": "Seguimiento de las mediciones",
+          "introDibujos": "Se pregunta primero por lo crítico y después por la precaución. En amarillo, el valor que decide.",
+          "dibujos": [
+            {
+              "titulo": "El enumerado `ALERTA`, con el valor de cada nombre:",
+              "fichas": [
+                {
+                  "titulo": "ALERTA",
+                  "campos": [
+                    {
+                      "nombre": "NORMAL",
+                      "ejemplo": "0"
+                    },
+                    {
+                      "nombre": "PRECAUCION",
+                      "ejemplo": "1"
+                    },
+                    {
+                      "nombre": "CRITICA",
+                      "ejemplo": "2"
+                    }
+                  ]
+                }
+              ],
+              "texto": "La función devuelve uno de estos tres nombres."
+            },
+            {
+              "titulo": "Con el día caluroso:",
+              "fichas": [
+                {
+                  "titulo": "medicion (copia)",
+                  "campos": [
+                    {
+                      "nombre": "temp",
+                      "ejemplo": "30.5"
+                    },
+                    {
+                      "nombre": "lluvia",
+                      "ejemplo": "0"
+                    }
+                  ]
+                }
+              ],
+              "texto": "No es crítica (`temp < 40.0` y `lluvia < 80.0`) ni de precaución (`temp < 35.0` y `lluvia < 40.0`): devuelve `NORMAL`."
+            },
+            {
+              "titulo": "Con el día lluvioso:",
+              "fichas": [
+                {
+                  "titulo": "medicion (copia)",
+                  "campos": [
+                    {
+                      "nombre": "temp",
+                      "ejemplo": "36"
+                    },
+                    {
+                      "nombre": "lluvia",
+                      "ejemplo": "45"
+                    }
+                  ],
+                  "resaltar": [
+                    "temp"
+                  ]
+                }
+              ],
+              "texto": "No es crítica (`temp < 40.0` y `lluvia < 80.0`), pero `temp >= 35.0`: devuelve `PRECAUCION`."
+            }
+          ],
           "explicacion": "Es una función que devuelve una `ALERTA`, y la medición va por valor porque solo se lee. Se pregunta primero por lo crítico: así, cuando se llega al segundo `if`, ya se sabe que no es crítica, y el «si no es crítica pero» del enunciado se cumple sin escribirlo."
         }
       ],
@@ -51,24 +329,6 @@
       "resumen": "Recursión con dígitos y con un arreglo, con lectura de datos.",
       "enunciado": "En un videojuego de acción, el jugador lanza un ataque especial contra una oleada de N enemigos (1 <= N <= 50), cuyas vidas actuales se encuentran almacenadas en un vector de enteros.\n\nLa potencia del ataque especial se determina a partir de un número entero positivo `semilla` ingresado por el jugador: se parte con un daño base = 30 y cada dígito impar que contenga `semilla` representa un golpe crítico, que inflige 10 puntos de daño adicional a todos los enemigos de la oleada. Si la vida de un enemigo cae por debajo de 0, debe quedar exactamente en 0 (derrotado).\n\nPor ejemplo: si `semilla = 4732`, los dígitos impares son 7 y 3 (2 golpes críticos -> `danoTotal = 30 + 10 + 10`). Si las vidas eran [120, 40, 50], quedan [70, 0, 0] (2 enemigos derrotados).",
       "continua": "Se pide escribir un programa completo en lenguaje C que resuelva el problema utilizando dos módulos recursivos e invocándolos desde `main()`:",
-      "dibujos": [
-        {
-          "titulo": "El vector `vidas` antes del ataque (ejemplo):",
-          "valores": [
-            120,
-            40,
-            50
-          ]
-        },
-        {
-          "titulo": "Y después, con `danoTotal = 50`:",
-          "valores": [
-            70,
-            0,
-            0
-          ]
-        }
-      ],
       "modulos": [
         {
           "id": "a",

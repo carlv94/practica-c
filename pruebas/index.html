@@ -707,8 +707,15 @@ import { corregir } from '../js/corrector.js';
                 for (const mod of x.modulos) {
                   for (const campo of ['id', 'titulo', 'enunciado', 'solucion']) if (!mod[campo]) throw new Error(en + 'un módulo sin ' + campo);
                   for (const d of mod.dibujos || []) {
+                    if (d.fichas) {
+                      for (const f of d.fichas) {
+                        if (!Array.isArray(f.campos) || !f.campos.length) throw new Error(en + 'una ficha del módulo ' + mod.id + ' sin campos');
+                        for (const r of f.resaltar || []) if (!f.campos.some((k) => k.nombre === r)) throw new Error(en + 'una ficha del módulo ' + mod.id + ' resalta un campo que no tiene: ' + r);
+                      }
+                      continue;
+                    }
                     const largo = d.digitos != null ? String(d.digitos).length : Array.isArray(d.valores) ? d.valores.length : -1;
-                    if (largo < 0) throw new Error(en + 'un dibujo del módulo ' + mod.id + ' sin valores ni dígitos');
+                    if (largo < 0) throw new Error(en + 'un dibujo del módulo ' + mod.id + ' sin valores, dígitos ni fichas');
                     if (d.indices && d.indices.length !== largo) throw new Error(en + 'un dibujo del módulo ' + mod.id + ' con distinta cantidad de índices y de valores');
                     if (d.aportes && d.aportes.length !== largo) throw new Error(en + 'un dibujo del módulo ' + mod.id + ' con distinta cantidad de aportes y de dígitos');
                     for (const k of [].concat(d.marca ?? [])) if (!(k >= 0 && k < largo)) throw new Error(en + 'un dibujo del módulo ' + mod.id + ' con una marca fuera del dibujo');
@@ -723,7 +730,7 @@ import { corregir } from '../js/corrector.js';
                 if (malEstilo.length) throw new Error(en + 'el programa no sigue el estilo: ' + malEstilo.slice(0, 3).join('; '));
                 const suma = x.modulos.reduce((s, mod) => s + (mod.puntos || 0), 0);
                 if (suma !== x.puntos) throw new Error(en + 'los puntos de los módulos suman ' + suma + ' y el ejercicio dice ' + x.puntos);
-                for (const d of x.dibujos || []) if (!Array.isArray(d.valores)) throw new Error(en + 'un dibujo sin valores');
+                for (const d of x.dibujos || []) if (!Array.isArray(d.valores) && !Array.isArray(d.fichas)) throw new Error(en + 'un dibujo sin valores ni fichas');
                 if (x.resumen != null && typeof x.resumen !== 'string') throw new Error(en + 'el resumen es un texto');
                 const r = ejecutarMotor(analizador, x.programa, { entrada: x.entrada || '', traza: true });
                 if (r.error) throw new Error(en + 'el programa no corre: ' + (r.error.codigo || '') + ' ' + (r.error.mensaje || ''));

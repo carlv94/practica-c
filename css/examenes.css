@@ -162,6 +162,20 @@
   font-size: 0.95rem;
 }
 
+/* las fichas de datos (las clases de la ficha están en estilo.css): una sola ocupa lo que necesita */
+.dibujo-arreglo .fichas-solas .ficha {
+  width: fit-content;
+  min-width: 14rem;
+}
+
+.dibujo-arreglo .fichas-en-fila {
+  margin: 4px 0;
+}
+
+.dibujo-arreglo .ficha-linea {
+  min-width: 4rem;
+}
+
 /* una posición sin valor ("?") y el hueco de las que no se dibujan ("…") */
 .dibujo-arreglo .valor.sin-valor {
   border-style: dashed;

@@ -71,17 +71,38 @@ function codigoA(contenedor, texto) {
 }
 
 // Un arreglo como una fila de casilleros con su índice arriba (los mismos estilos que el de las consignas).
+// Una ficha de datos (una estructura): su título y, por cada campo, el nombre y el valor de ejemplo (o una línea, donde iría). "resaltar" son
+// los campos que se marcan. Usa las mismas clases que las fichas de las consignas.
+function fichaA(ficha) {
+  const tarjeta = nodo('div', 'ficha');
+  if (ficha.titulo) tarjeta.appendChild(nodo('p', 'ficha-titulo', ficha.titulo));
+  const cuerpo = nodo('dl', 'ficha-cuerpo');
+  for (const campo of ficha.campos) {
+    const nombre = nodo('dt');
+    nombre.appendChild(nodo('code', null, campo.nombre));
+    const sinValor = campo.ejemplo == null;
+    const marcado = (ficha.resaltar || []).includes(campo.nombre);
+    cuerpo.append(nombre, nodo('dd', sinValor ? 'ficha-linea' : marcado ? 'ficha-nuevo' : null, sinValor ? '' : String(campo.ejemplo)));
+  }
+  tarjeta.appendChild(cuerpo);
+  return tarjeta;
+}
+
 // Un dibujo del seguimiento de un módulo: el título, el dibujo y, si hay, el texto que lo explica. El dibujo es un arreglo ("valores", con
 // "indices" opcional que reemplaza a 0, 1, 2...; un valor "?" es una posición sin valor y "…" las posiciones que no se dibujan) o los dígitos
+// o fichas de datos ("fichas": [{ titulo, campos: [{ nombre, ejemplo? }], resaltar? }], una al lado de la otra si caben) o los dígitos
 // de un número ("digitos": '4732', sin casillas, con "aportes" opcional: lo que suma cada dígito, debajo de él). "marca" (un número o una lista)
 // son las casillas o los dígitos que se están tocando.
 function arregloA(contenedor, dibujo) {
   const caja = nodo('div', 'dibujo-arreglo');
   if (dibujo.titulo) caja.appendChild(conTexto('p', 'titulo-figura', dibujo.titulo));
   const marcadas = [].concat(dibujo.marca ?? []);
-  const fila = nodo('div', dibujo.digitos != null ? 'digitos' : 'arreglo');
-  const sinTildes = (dibujo.titulo || (dibujo.digitos != null ? 'Dígitos' : 'Arreglo')).replace(/`/g, '');
-  if (dibujo.digitos != null) {
+  const fila = nodo('div', dibujo.fichas ? (dibujo.fichas.length > 1 ? 'fichas-en-fila' : 'fichas-solas') : dibujo.digitos != null ? 'digitos' : 'arreglo');
+  const sinTildes = (dibujo.titulo || (dibujo.fichas ? 'Fichas' : dibujo.digitos != null ? 'Dígitos' : 'Arreglo')).replace(/`/g, '');
+  if (dibujo.fichas) {
+    for (const f of dibujo.fichas) fila.appendChild(fichaA(f));
+    fila.setAttribute('aria-label', `${sinTildes} ${dibujo.fichas.map((f) => `${f.titulo}: ${f.campos.map((c) => c.nombre + (c.ejemplo != null ? ' ' + c.ejemplo : '')).join(', ')}`).join('; ')}`);
+  } else if (dibujo.digitos != null) {
     const digitos = [...String(dibujo.digitos)];
     digitos.forEach((digito, i) => {
       const celda = nodo('span', marcadas.includes(i) ? 'digito digito-marcado' : 'digito', digito);
