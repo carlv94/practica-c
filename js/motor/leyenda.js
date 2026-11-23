@@ -6,6 +6,7 @@
 // compara esas clases con las que figura.js escribe, y avisa si falta una.
 
 import { ajustes, AYUDAS } from '../ajustes.js';
+import { iconoSvg } from './iconos.js';
 
 const SVG = 'http://www.w3.org/2000/svg';
 
@@ -291,7 +292,8 @@ function fila(muestra, titulo, texto) {
 export function montarLeyenda(panel, abrir) {
   panel.replaceChildren();
   const cabeza = nodo('div', 'ajustes-cabeza');
-  const cerrarBoton = nodo('button', 'ajustes-cerrar', '✕');
+  const cerrarBoton = nodo('button', 'ajustes-cerrar');
+  cerrarBoton.innerHTML = iconoSvg('cerrar');
   cerrarBoton.type = 'button';
   cerrarBoton.title = 'Cerrar';
   cerrarBoton.setAttribute('aria-label', 'Cerrar');

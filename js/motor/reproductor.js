@@ -18,6 +18,7 @@ import { tiempo } from './tiempo.js';
 import { ECO_ABRE, ECO_CIERRA } from './traza.js';
 import { pintar } from '../editor.js';
 import { ajustes, montarAjustes, montarHerramientas } from '../ajustes.js';
+import { ICONOS, iconoSvg } from './iconos.js';
 import { montarLeyenda } from './leyenda.js';
 
 const VELOCIDADES = [
@@ -128,21 +129,9 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   // El nombre del boton para quien no lo ve (lector de pantalla) es el de la ayuda.
   // Los iconos que dependen de la tipografia del aparato (el emoji de avanzar, la flecha fina de ampliar) se dibujan como
   // imagen: se ven igual en todos los celulares.
-  const ICONOS = {
-    avanzar: '<path d="M3 4l9 8-9 8zM12 4l9 8-9 8z"/>',
-    pausa: '<rect x="5" y="4" width="5" height="16" rx="1"/><rect x="14" y="4" width="5" height="16" rx="1"/>',
-    detener: '<rect x="6" y="6" width="12" height="12" rx="2"/>',
-    seguir: '<path d="M7 4l13 8-13 8z"/>',
-    repetir: '<path d="M20 12a8 8 0 1 1-2.6-5.9" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M20 3.5V9h-5.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>',
-    ampliar: '<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>',
-    cerrar: '<path d="M5 5l14 14M19 5L5 19" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>',
-    paradaAnterior: '<circle cx="17" cy="12" r="4.5"/><path d="M11 5l-8 7 8 7z"/>',
-    paradaSiguiente: '<circle cx="7" cy="12" r="4.5"/><path d="M13 5l8 7-8 7z"/>',
-    casoBase: '<path d="M12 3v11M6.5 9.5L12 15l5.5-5.5M5 20h14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>',
-  };
   const rotular = (b, simbolo, texto, simboloDespues = false) => {
     const s = nodo('span', 'rep-simbolo');
-    if (ICONOS[simbolo]) s.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false">${ICONOS[simbolo]}</svg>`;
+    if (ICONOS[simbolo]) s.innerHTML = iconoSvg(simbolo);
     else s.textContent = simbolo;
     s.setAttribute('aria-hidden', 'true');
     const t = nodo('span', 'rep-texto-boton', texto);
@@ -153,6 +142,14 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     const b = boton('', ayuda);
     b.setAttribute('aria-label', ayuda);
     rotular(b, simbolo, texto, despues);
+    return b;
+  };
+  // Un boton solo con su icono (el nombre para quien no lo ve es el de la ayuda).
+  const botonIcono = (nombre, ayuda) => {
+    const b = boton('', ayuda);
+    b.setAttribute('aria-label', ayuda);
+    b.classList.add('rep-boton-icono');
+    b.innerHTML = iconoSvg(nombre);
     return b;
   };
   const inicio = conSimbolo('⏮', 'Inicio', 'Volver al primer paso');
@@ -193,13 +190,13 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   const giro = nodo('div', 'rep-giro');
   giro.hidden = true;
   const giroTexto = nodo('span', '', 'Gire el teléfono para ver mejor la figura.');
-  const giroCerrar = boton('✕', 'Cerrar el aviso');
+  const giroCerrar = botonIcono('cerrar', 'Cerrar el aviso');
   giro.append(giroTexto, giroCerrar);
 
   const cuerpo = nodo('div', 'rep-cuerpo');
   const columnaCodigo = nodo('div', 'rep-columna-codigo');
   const panelCodigo = nodo('div', 'rep-codigo');
-  const cerrarCodigo = boton('✕ Cerrar', 'Volver al paso a paso');
+  const cerrarCodigo = conSimbolo('cerrar', 'Cerrar', 'Volver al paso a paso');
   cerrarCodigo.classList.add('rep-cerrar-codigo');
   const verCodigo = boton('Ver todo el código', 'Abrir el programa completo');
   verCodigo.classList.add('rep-ver-codigo');
@@ -229,12 +226,12 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   // la ultima, y un boton abre una ventana con todo.
   const consola = nodo('pre', 'rep-consola');
   const cajaConsola = nodo('div', 'rep-consola-caja');
-  const ampliarConsola = boton('⤢', 'Ver toda la consola');
+  const ampliarConsola = botonIcono('expandir', 'Ver toda la consola');
   ampliarConsola.classList.add('rep-consola-ampliar');
   const ventanaConsola = nodo('div', 'rep-consola-ventana');
   ventanaConsola.hidden = true;
   const consolaCompleta = nodo('pre', 'rep-consola-completa');
-  const cerrarConsola = boton('✕ Cerrar', 'Volver al paso a paso');
+  const cerrarConsola = conSimbolo('cerrar', 'Cerrar', 'Volver al paso a paso');
   ventanaConsola.append(nodo('div', 'rep-consola-tarjeta'));
   ventanaConsola.firstChild.append(nodo('p', 'rep-consola-titulo', 'Consola'), consolaCompleta, cerrarConsola);
   cajaConsola.append(consola, ampliarConsola);
@@ -294,8 +291,8 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   };
   const nota =nodo('p', 'rep-nota', 'La línea resaltada es la que está por ejecutarse. Lo que cambió con la línea anterior se marca en amarillo, también la flecha nueva.');
   const herramientas = nodo('div', 'rep-herramientas');
-  const menos = boton('−', 'Achicar la figura');
-  const mas = boton('+', 'Agrandar la figura');
+  const menos = botonIcono('menos', 'Achicar la figura');
+  const mas = botonIcono('mas', 'Agrandar la figura');
   const ajustar = boton('Ajustar', 'Que la figura entre en el espacio disponible');
   const etiquetaZoom = nodo('span', 'rep-zoom-valor');
   // Las ayudas visuales (nombres de las flechas, brillo de los valores) se eligen en el panel de ajustes (ver js/ajustes.js).
@@ -404,20 +401,23 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   };
   mostrarExplicar();
   // El engranaje abre el panel de ayudas visuales (perfiles y casillas), debajo de esta fila.
-  const abrirAjustes = boton('⚙', 'Ayudas visuales');
+  const abrirAjustes = botonIcono('engranaje', 'Ayudas visuales');
   abrirAjustes.classList.add('rep-ajustes-boton');
   abrirAjustes.setAttribute('aria-label', 'Ayudas visuales');
   const panelAjustes = nodo('section', 'ajustes');
   panelAjustes.hidden = true;
   montarAjustes(panelAjustes, abrirAjustes);
   // El «ⓘ» abre las referencias de la figura (que significa cada flecha, casilla y bloque, y de que ayuda depende cada una).
-  const abrirLeyenda = boton('ⓘ', 'Referencias de la figura');
+  const abrirLeyenda = botonIcono('info', 'Referencias de la figura');
   abrirLeyenda.classList.add('rep-leyenda-boton');
   abrirLeyenda.setAttribute('aria-label', 'Referencias de la figura');
   const panelLeyenda = nodo('section', 'ajustes leyenda');
   panelLeyenda.hidden = true;
   montarLeyenda(panelLeyenda, abrirLeyenda);
-  herramientas.append(nodo('span', '', 'Figura'), menos, mas, ajustar, etiquetaZoom, abrirAjustes, abrirLeyenda, panelAjustes, panelLeyenda);
+  // Los dos botones de ayuda van juntos y a la derecha; si no entran en la fila, bajan juntos.
+  const grupoAyuda = nodo('span', 'rep-herramientas-ayuda');
+  grupoAyuda.append(abrirAjustes, abrirLeyenda);
+  herramientas.append(nodo('span', 'rep-herramientas-rotulo', 'Figura'), menos, mas, ajustar, etiquetaZoom, grupoAyuda, panelAjustes, panelLeyenda);
   // Lo que ingresa el usuario, como una cinta de una sola linea (solo si el programa tiene entrada): a la izquierda, la zona de lectura (lo que el
   // scanf esta leyendo) y a la derecha, desvanecido, lo que falta leer. Al leer, los valores se desplazan hasta la zona de lectura, quedan un
   // momento y desaparecen: pasan a la consola.
@@ -1401,7 +1401,9 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   const barraEtapas = nodo('div', 'rep-etapas'); // una barra fina dividida en las etapas del paso
   barraEtapas.hidden = true;
   barraEtapas.setAttribute('aria-hidden', 'true');
-  raiz.append(giro, cuerpo, montarHerramientas(), barra, barraEtapas, ventanaConsola);
+  const avisoZoom = nodo('div', 'rep-aviso-zoom');
+  avisoZoom.setAttribute('role', 'status');
+  raiz.append(giro, cuerpo, montarHerramientas(), barra, barraEtapas, ventanaConsola, avisoZoom);
   panelCodigo.append(cerrarCodigo);
 
   let paso = 0;
@@ -1844,14 +1846,27 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     dibujo.fijarEscala({ modo: zoom === 'ajustar' ? 'ajustar' : 'fijo', zoom: typeof zoom === 'number' ? zoom : 1, alto: ampliado });
     etiquetaZoom.textContent = `${Math.round(dibujo.escalaActual * 100)} %`;
   }
+  // El porcentaje del zoom en un aviso al pie de la pantalla (solo en pantallas tactiles, donde la fila de la figura no lo muestra: ver el CSS).
+  let relojAvisoZoom = null;
+  function avisarZoom(limite = '') {
+    const escala = typeof zoom === 'number' ? zoom : dibujo.escalaActual; // (la elegida, aunque la figura todavia no la haya aplicado)
+    avisoZoom.textContent = `Zoom ${Math.round(escala * 100)} %${limite}`;
+    avisoZoom.classList.add('rep-aviso-zoom-visible');
+    clearTimeout(relojAvisoZoom);
+    relojAvisoZoom = setTimeout(() => avisoZoom.classList.remove('rep-aviso-zoom-visible'), 1400);
+  }
   function moverZoom(hacia) {
     const base = zoom === 'ajustar' ? dibujo.escalaActual : zoom;
     const siguienteNivel =
       hacia > 0 ? NIVELES_DE_ZOOM.find((n) => n > base + 0.01) : [...NIVELES_DE_ZOOM].reverse().find((n) => n < base - 0.01);
-    if (siguienteNivel == null) return;
+    if (siguienteNivel == null) {
+      avisarZoom(hacia > 0 ? ' (máximo)' : ' (mínimo)');
+      return;
+    }
     zoom = siguienteNivel;
     guardarZoom(zoom);
     aplicarZoom();
+    avisarZoom();
   }
   menos.onclick = () => moverZoom(-1);
   mas.onclick = () => moverZoom(1);
@@ -1859,6 +1874,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     zoom = 'ajustar';
     guardarZoom(zoom);
     aplicarZoom();
+    avisarZoom();
   };
 
   // ---- ver el codigo completo cuando la ventana es chica

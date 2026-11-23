@@ -8,6 +8,8 @@
 //
 // Para sumar una ayuda: una entrada en AYUDAS (con su valor en cada perfil) y listo; el panel la muestra solo.
 
+import { iconoSvg } from './motor/iconos.js';
+
 export const AYUDAS = [
   {
     clave: 'brilloCopias',
@@ -248,7 +250,8 @@ function nodo(etiqueta, clase, texto) {
 export function montarAjustes(panel, abrir) {
   panel.replaceChildren();
   const cabeza = nodo('div', 'ajustes-cabeza');
-  const cerrarBoton = nodo('button', 'ajustes-cerrar', '✕');
+  const cerrarBoton = nodo('button', 'ajustes-cerrar');
+  cerrarBoton.innerHTML = iconoSvg('cerrar');
   cerrarBoton.type = 'button';
   cerrarBoton.title = 'Cerrar';
   cerrarBoton.setAttribute('aria-label', 'Cerrar');
@@ -362,7 +365,8 @@ export function montarHerramientas() {
   panel.id = 'rep-tools-panel-' + ++contadorDeFranjas;
   panel.hidden = true;
   const cabeza = nodo('div', 'ajustes-cabeza');
-  const cerrarBoton = nodo('button', 'ajustes-cerrar', '✕');
+  const cerrarBoton = nodo('button', 'ajustes-cerrar');
+  cerrarBoton.innerHTML = iconoSvg('cerrar');
   cerrarBoton.type = 'button';
   cerrarBoton.title = 'Cerrar';
   cerrarBoton.setAttribute('aria-label', 'Cerrar');
