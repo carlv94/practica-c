@@ -37,21 +37,41 @@
   margin-top: 12px;
 }
 
-/* las solapas de un ejercicio: una por parte (a, b, c y el paso a paso) */
+/* el cuerpo de una solapa tiene su propio fondo (un tinte leve del color de acento): el módulo se distingue del resto de la página y la solapa
+   elegida, del mismo color, queda unida a él. Las barras de sección van un tono aparte para que sigan destacando. */
+:root {
+  --cuerpo: color-mix(in srgb, var(--acento) 6%, var(--fondo));
+  --barra: var(--panel);
+  /* el bloque de código de una solapa: blanco en tema claro (el gris se apagaba sobre el cuerpo azulado) y el del sitio en oscuro */
+  --bloque: var(--panel);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --cuerpo: color-mix(in srgb, var(--acento) 10%, var(--fondo));
+    --barra: color-mix(in srgb, var(--acento) 16%, var(--panel));
+    --bloque: var(--codigo);
+  }
+}
+
+/* las solapas de un ejercicio: una por parte (a, b, c y el paso a paso). La línea de abajo la pone cada solapa (salvo la elegida, que se une
+   al cuerpo) y un relleno al final, así no hay línea bajo la elegida. */
 .solapas {
   position: relative;
   display: flex;
-  gap: 4px;
   overflow-x: auto;
   scrollbar-width: thin;
+}
+.solapas::after {
+  content: "";
+  flex: 1 0 12px;
   border-bottom: 1px solid var(--borde);
 }
 .solapa {
+  position: relative;
   flex: 0 0 auto;
   min-height: 44px;
   padding: 0 14px;
   border: 1px solid var(--borde);
-  border-bottom: 0;
   border-radius: 6px 6px 0 0;
   background: var(--panel);
   color: inherit;
@@ -60,16 +80,38 @@
   white-space: nowrap;
   cursor: pointer;
 }
+.solapa + .solapa {
+  margin-left: 4px;
+}
 .solapa[aria-selected="true"] {
-  background: var(--fondo);
+  z-index: 1;
+  background: var(--cuerpo);
   border-color: var(--acento);
+  border-bottom-color: var(--cuerpo);
 }
 .solapa-nombre {
   font-family: Consolas, "Cascadia Mono", Menlo, monospace;
   font-weight: 500;
 }
 .solapa-panel {
-  padding-top: 12px;
+  padding: 14px;
+  background: var(--cuerpo);
+  border: 1px solid var(--borde);
+  border-top: 0;
+  border-radius: 0 0 8px 8px;
+}
+.solapa-panel pre {
+  background: var(--bloque);
+  border: 1px solid var(--borde);
+}
+/* en el teléfono el cuerpo llega hasta los bordes de la tarjeta y casi no tiene relleno: el texto no pierde ancho */
+@media (max-width: 600px) {
+  .solapa-panel {
+    margin-inline: -16px;
+    padding: 12px 8px;
+    border-inline: 0;
+    border-radius: 0;
+  }
 }
 .rotulo {
   margin: 14px 0 4px;
@@ -222,7 +264,7 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--texto);
-  background: var(--panel);
+  background: var(--barra);
   border: 1px solid var(--borde);
   border-left: 4px solid var(--acento);
   border-radius: 6px;
@@ -261,4 +303,10 @@ summary.seccion-titulo:hover {
   background: var(--mejora-fondo);
   border-color: var(--mejora);
   border-width: 2px;
+}
+
+/* el código en línea dentro de una solapa: una pastilla con el fondo de las barras y un borde fino, para que se recorte del cuerpo tintado */
+.solapa-panel :not(pre) > code {
+  background: var(--barra);
+  border: 1px solid var(--borde);
 }
