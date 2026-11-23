@@ -1289,10 +1289,63 @@
 .rep-flecha-g.rep-viva .rep-etiqueta-g {
   display: inline;
 }
-.rep-nombres {
-  margin-left: 6px;
+/* las herramientas de reproduccion (ver js/ajustes.js): una linea propia sobre la barra; en pantallas angostas, un solo boton que abre una tarjeta */
+.rep-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 8px 0 6px;
+  font-size: 0.85rem;
+}
+.rep-tool,
+.rep-tools-menu {
+  font: inherit;
+  padding: 3px 10px;
+  border: 1px solid var(--borde);
+  border-radius: 999px;
+  background: var(--fondo);
+  color: var(--texto);
   cursor: pointer;
-  white-space: nowrap;
+}
+.rep-tool:hover,
+.rep-tools-menu:hover {
+  border-color: var(--acento);
+}
+.rep-tool[aria-pressed='true'] {
+  border-color: var(--acento);
+  box-shadow: inset 0 0 0 1px var(--acento);
+  font-weight: 600;
+}
+.rep-tool[aria-pressed='true']::before {
+  content: '✓ ';
+}
+.rep-tools-menu {
+  display: none;
+}
+.rep-ampliado .rep-tools {
+  flex: none;
+  margin: 6px 0 0;
+}
+@media (max-width: 600px) {
+  .rep-tool {
+    display: none;
+  }
+  .rep-tools-menu {
+    display: inline-block;
+  }
+}
+@media (min-width: 601px) {
+  .rep-tools-panel {
+    display: none;
+  }
+}
+@media (pointer: coarse) {
+  .rep-tool,
+  .rep-tools-menu {
+    min-height: 42px;
+    padding: 6px 14px;
+  }
 }
 
 /* el flujo de un acceso por puntero: un destello que viaja por la flecha y la casilla que alcanza */

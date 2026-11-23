@@ -17,7 +17,7 @@ import { Figura, textoPorPartes } from './figura.js';
 import { tiempo } from './tiempo.js';
 import { ECO_ABRE, ECO_CIERRA } from './traza.js';
 import { pintar } from '../editor.js';
-import { ajustes, montarAjustes } from '../ajustes.js';
+import { ajustes, montarAjustes, montarHerramientas } from '../ajustes.js';
 import { montarLeyenda } from './leyenda.js';
 
 const VELOCIDADES = [
@@ -99,22 +99,6 @@ const leerZoom = () => {
 const guardarZoom = (z) => {
   try {
     localStorage.setItem(CLAVE_ZOOM, String(z));
-  } catch (e) {
-    // sin almacenamiento: no se recuerda
-  }
-};
-// Los botones para explicar un paso (detener y repetir) se ven solo si se pide.
-const CLAVE_EXPLICAR = 'reproductor-explicar';
-const leerExplicar = () => {
-  try {
-    return localStorage.getItem(CLAVE_EXPLICAR) === '1';
-  } catch (e) {
-    return false;
-  }
-};
-const guardarExplicar = (si) => {
-  try {
-    localStorage.setItem(CLAVE_EXPLICAR, si ? '1' : '0');
   } catch (e) {
     // sin almacenamiento: no se recuerda
   }
@@ -327,6 +311,8 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
       return;
     }
     aplicarAyudas();
+    if (ajustes.valor('explicar') && !raiz.classList.contains('rep-explicando')) parar(); // el avance solo no va con explicar
+    mostrarExplicar();
     // Las que cambian como se dibuja una casilla (no solo como se anima) se ven al instante: se vuelve a dibujar el paso de ahora.
     if (ajustes.valor('punterosSinValor') !== sinValorVisto) {
       sinValorVisto = ajustes.valor('punterosSinValor');
@@ -408,27 +394,15 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     });
   });
   aplicarPuntos();
-  // Explicar: detener y repetir (la barra espaciadora y la tecla R funcionan siempre) en lugar de inicio, reproducir y final
-  // (las teclas Inicio y Fin y la barra de pasos siguen). Asi la barra se queda con cuatro botones.
-  const etiquetaExplicar = nodo('label', 'rep-nombres');
-  etiquetaExplicar.title =
-    'Para explicar un paso con calma: muestra los botones Detener y Repetir y oculta Inicio, Reproducir y Final. La barra espaciadora, la tecla R y las teclas Inicio y Fin funcionan siempre.';
-  const casillaExplicar = document.createElement('input');
-  casillaExplicar.type = 'checkbox';
-  casillaExplicar.checked = leerExplicar();
-  etiquetaExplicar.append(casillaExplicar, ' Explicar');
+  // Detener y repetir (herramienta de reproduccion, ver js/ajustes.js): detener y repetir (la barra espaciadora y la tecla R funcionan siempre)
+  // en lugar de inicio, reproducir y final (las teclas Inicio y Fin y la barra de pasos siguen). Asi la barra se queda con cuatro botones.
   const mostrarExplicar = () => {
-    const si = casillaExplicar.checked;
+    const si = ajustes.valor('explicar');
     detener.hidden = repetir.hidden = !si;
     inicio.hidden = reproducir.hidden = final.hidden = si;
     raiz.classList.toggle('rep-explicando', si);
   };
   mostrarExplicar();
-  casillaExplicar.onchange = () => {
-    guardarExplicar(casillaExplicar.checked);
-    if (casillaExplicar.checked) parar(); // el avance solo no va con explicar
-    mostrarExplicar();
-  };
   // El engranaje abre el panel de ayudas visuales (perfiles y casillas), debajo de esta fila.
   const abrirAjustes = boton('⚙', 'Ayudas visuales');
   abrirAjustes.classList.add('rep-ajustes-boton');
@@ -443,7 +417,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   const panelLeyenda = nodo('section', 'ajustes leyenda');
   panelLeyenda.hidden = true;
   montarLeyenda(panelLeyenda, abrirLeyenda);
-  herramientas.append(nodo('span', '', 'Figura'), menos, mas, ajustar, etiquetaZoom, etiquetaExplicar, abrirAjustes, abrirLeyenda, panelAjustes, panelLeyenda);
+  herramientas.append(nodo('span', '', 'Figura'), menos, mas, ajustar, etiquetaZoom, abrirAjustes, abrirLeyenda, panelAjustes, panelLeyenda);
   // Lo que ingresa el usuario, como una cinta de una sola linea (solo si el programa tiene entrada): a la izquierda, la zona de lectura (lo que el
   // scanf esta leyendo) y a la derecha, desvanecido, lo que falta leer. Al leer, los valores se desplazan hasta la zona de lectura, quedan un
   // momento y desaparecen: pasan a la consola.
@@ -1427,7 +1401,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   const barraEtapas = nodo('div', 'rep-etapas'); // una barra fina dividida en las etapas del paso
   barraEtapas.hidden = true;
   barraEtapas.setAttribute('aria-hidden', 'true');
-  raiz.append(giro, cuerpo, barra, barraEtapas, ventanaConsola);
+  raiz.append(giro, cuerpo, montarHerramientas(), barra, barraEtapas, ventanaConsola);
   panelCodigo.append(cerrarCodigo);
 
   let paso = 0;

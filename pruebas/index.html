@@ -1348,7 +1348,7 @@ import { corregir } from '../js/corrector.js';
             const { crearReproductor } = await import('../js/motor/reproductor.js');
             const { ajustes } = await import('../js/ajustes.js');
             const fuente = '#include <stdio.h>\nint suma(int n) {\n  if (n == 0) {\n    return 0;\n  }\n  return suma(n - 1) + n;\n}\nint main() {\n  printf("%d\\n", suma(2));\n  return 0;\n}';
-            ajustes.fijarPerfil('explicacion');
+            ajustes.fijar('puntosDeParada', true); // (una herramienta de reproduccion: no la fija ningun perfil)
             const m = ejecutarMotor(analizador, fuente, { traza: true, preguntas: true });
             const pasosDe4 = m.traza.map((f, k) => (f.linea === 4 ? k : -1)).filter((k) => k >= 0);
             if (pasosDe4.length < 2) throw new Error('la linea 4 deberia ejecutarse mas de una vez');
@@ -1368,6 +1368,32 @@ import { corregir } from '../js/corrector.js';
             ajustes.fijar('puntosDeParada', false);
             if (rep.siguienteParada(-1) !== -1) throw new Error('con la ayuda apagada no hay paradas');
             ajustes.fijarPerfil('practica');
+            anotar(true, titulo);
+          } catch (e) {
+            ajustes.fijar('puntosDeParada', false);
+            anotar(false, titulo, e.stack || e.message);
+          }
+        }
+
+        // Las herramientas de reproduccion (Detener y repetir, puntos de parada, avanzar por etapas) no dependen del perfil: encenderlas no lo
+        // vuelve "personalizado" y elegir otro perfil no las toca.
+        {
+          const titulo = 'herramientas de reproduccion: independientes del perfil';
+          try {
+            const { ajustes, HERRAMIENTAS, montarHerramientas } = await import('../js/ajustes.js');
+            ajustes.fijarPerfil('detallado');
+            for (const h of HERRAMIENTAS) ajustes.fijar(h.clave, true);
+            if (ajustes.perfil() !== 'detallado') throw new Error('con las herramientas encendidas el perfil dejo de reconocerse: ' + ajustes.perfil());
+            ajustes.fijarPerfil('practica');
+            if (!HERRAMIENTAS.every((h) => ajustes.valor(h.clave))) throw new Error('cambiar de perfil toco una herramienta');
+            const franja = montarHerramientas();
+            document.body.append(franja);
+            const pulsados = [...franja.querySelectorAll('.rep-tool')].map((b) => b.getAttribute('aria-pressed'));
+            if (pulsados.length !== HERRAMIENTAS.length || pulsados.some((p) => p !== 'true')) throw new Error('los botones no muestran lo encendido: ' + pulsados.join());
+            franja.querySelector('.rep-tool').click();
+            if (ajustes.valor(HERRAMIENTAS[0].clave)) throw new Error('el boton no apago la herramienta');
+            franja.remove();
+            for (const h of HERRAMIENTAS) ajustes.fijar(h.clave, false);
             anotar(true, titulo);
           } catch (e) {
             anotar(false, titulo, e.stack || e.message);

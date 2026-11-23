@@ -92,20 +92,6 @@ export const AYUDAS = [
     detalle: 'La columna Ida (o Devuelve) muestra la línea tal cual está en el código cuando el cursor llega a ella y, al abrirse la llamada, se reemplazan las variables por sus valores y se resuelven las cuentas (resto = mayorDigito(n / 10), mayorDigito(2132 / 10), mayorDigito(213)).',
   },
   {
-    clave: 'puntosDeParada',
-    almacen: 'ajuste-puntos-de-parada',
-    porDefecto: false,
-    titulo: 'Puntos de parada',
-    detalle: 'Tocar el número de una línea del código le pone un punto de parada: Reproducir se detiene cuando el cursor llega a ella, y dos botones saltan al punto de parada anterior o al siguiente. Un punto vacío es una línea que no se ejecuta con estos valores.',
-  },
-  {
-    clave: 'avanzarPorEtapas',
-    almacen: 'ajuste-avanzar-por-etapas',
-    porDefecto: false,
-    titulo: 'Avanzar por etapas',
-    detalle: 'Siguiente (y la flecha derecha) avanza etapa por etapa dentro de cada paso, deteniéndose entre una y otra y diciendo cuál es. La reproducción automática las ignora.',
-  },
-  {
     clave: 'punterosSinValor',
     almacen: 'ajuste-punteros-sin-valor',
     porDefecto: false,
@@ -128,11 +114,43 @@ export const AYUDAS = [
   },
 ];
 
+// Las herramientas de reproducción: no cambian lo que se dibuja sino cómo se maneja el reproductor (los botones, las paradas, el avance). Se
+// encienden y apagan a mano, no dependen del perfil y se ven siempre a mano (ver montarHerramientas). "nombre" es el del botón; el
+// "detalle", su descripción.
+export const HERRAMIENTAS = [
+  {
+    clave: 'explicar',
+    almacen: 'reproductor-explicar', // la clave de antes, para no perder lo que cada uno ya tenia elegido
+    porDefecto: false,
+    nombre: 'Detener y repetir',
+    titulo: 'Detener y repetir',
+    detalle: 'Cambia Inicio, Reproducir y Final por Detener y Repetir, para frenar la animación de un paso y volver a verla las veces que haga falta mientras se explica. La barra espaciadora, la tecla R y las teclas Inicio y Fin funcionan siempre.',
+  },
+  {
+    clave: 'puntosDeParada',
+    almacen: 'ajuste-puntos-de-parada',
+    porDefecto: false,
+    nombre: 'Puntos de parada',
+    titulo: 'Puntos de parada',
+    detalle: 'Tocar el número de una línea del código le pone un punto de parada: Reproducir se detiene cuando el cursor llega a ella, y dos botones saltan al punto de parada anterior o al siguiente. Un punto vacío es una línea que no se ejecuta con estos valores.',
+  },
+  {
+    clave: 'avanzarPorEtapas',
+    almacen: 'ajuste-avanzar-por-etapas',
+    porDefecto: false,
+    nombre: 'Avanzar por etapas',
+    titulo: 'Avanzar por etapas',
+    detalle: 'Siguiente (y la flecha derecha) avanza etapa por etapa dentro de cada paso, deteniéndose entre una y otra y diciendo cuál es. La reproducción automática las ignora.',
+  },
+];
+
+const TODAS = [...AYUDAS, ...HERRAMIENTAS];
+
 export const PERFILES = [
-  { id: 'practica', nombre: 'Práctica', valores: { brilloCopias: true, brilloAsignaciones: false, brilloCondiciones: false, detalleCondiciones: false, resaltarFuncion: false, trazado: false, trazadoUnaColumna: false, preguntasTabla: false, detalleCondicionesTabla: false, detalleIda: false, preguntasTexto: false, puntosDeParada: false, avanzarPorEtapas: false, punterosSinValor: false, resaltarIndice: false, nombresFlechas: false } },
-  { id: 'explicacion', nombre: 'Explicación', valores: { brilloCopias: true, brilloAsignaciones: true, brilloCondiciones: true, detalleCondiciones: false, resaltarFuncion: true, trazado: true, trazadoUnaColumna: false, preguntasTabla: true, detalleCondicionesTabla: false, detalleIda: false, preguntasTexto: false, puntosDeParada: true, avanzarPorEtapas: false, punterosSinValor: true, resaltarIndice: true, nombresFlechas: false } },
+  { id: 'practica', nombre: 'Práctica', valores: { brilloCopias: true, brilloAsignaciones: false, brilloCondiciones: false, detalleCondiciones: false, resaltarFuncion: false, trazado: false, trazadoUnaColumna: false, preguntasTabla: false, detalleCondicionesTabla: false, detalleIda: false, preguntasTexto: false, punterosSinValor: false, resaltarIndice: false, nombresFlechas: false } },
+  { id: 'explicacion', nombre: 'Explicación', valores: { brilloCopias: true, brilloAsignaciones: true, brilloCondiciones: true, detalleCondiciones: false, resaltarFuncion: true, trazado: true, trazadoUnaColumna: false, preguntasTabla: true, detalleCondicionesTabla: false, detalleIda: false, preguntasTexto: false, punterosSinValor: true, resaltarIndice: true, nombresFlechas: false } },
   // Lo de Explicación, más todo lo que muestra el detalle de las cuentas: las condiciones, las preguntas y la ida de las llamadas.
-  { id: 'detallado', nombre: 'Detallado', valores: { brilloCopias: true, brilloAsignaciones: true, brilloCondiciones: true, detalleCondiciones: true, resaltarFuncion: true, trazado: true, trazadoUnaColumna: false, preguntasTabla: true, detalleCondicionesTabla: true, detalleIda: true, preguntasTexto: false, puntosDeParada: true, avanzarPorEtapas: false, punterosSinValor: true, resaltarIndice: true, nombresFlechas: false } },
+  { id: 'detallado', nombre: 'Detallado', valores: { brilloCopias: true, brilloAsignaciones: true, brilloCondiciones: true, detalleCondiciones: true, resaltarFuncion: true, trazado: true, trazadoUnaColumna: false, preguntasTabla: true, detalleCondicionesTabla: true, detalleIda: true, preguntasTexto: false, punterosSinValor: true, resaltarIndice: true, nombresFlechas: false } },
 ];
 
 const estado = new Map();
@@ -142,7 +160,7 @@ let cargado = false;
 function cargar() {
   if (cargado) return;
   cargado = true;
-  for (const a of AYUDAS) {
+  for (const a of TODAS) {
     let v = a.porDefecto;
     try {
       const guardado = localStorage.getItem(a.almacen);
@@ -179,7 +197,7 @@ export const ajustes = {
   },
   fijar(clave, valor) {
     cargar();
-    const a = AYUDAS.find((x) => x.clave === clave);
+    const a = TODAS.find((x) => x.clave === clave);
     if (!a || estado.get(clave) === Boolean(valor)) return;
     estado.set(clave, Boolean(valor));
     guardar(a);
@@ -315,4 +333,101 @@ export function montarAjustes(panel, abrir) {
     else if (!panel.hidden && !panel.contains(e.target) && !abrir.contains(e.target)) cerrar();
   };
   document.addEventListener('click', alHacerClic);
+}
+
+// Las herramientas de reproducción de un reproductor: una franja con un botón por herramienta (se enciende y se apaga; la descripción está en su
+// ayuda) y, en una pantalla angosta, un solo botón «Herramientas» que abre una tarjeta con cada una y su descripción (ver el CSS: qué se ve
+// en cada ancho). Devuelve la franja. Lo elegido es de todo el navegador: si hay varios reproductores, cambian a la vez.
+let contadorDeFranjas = 0;
+export function montarHerramientas() {
+  const franja = nodo('div', 'rep-tools');
+  franja.setAttribute('role', 'group');
+  franja.setAttribute('aria-label', 'Herramientas de reproducción');
+
+  const botones = new Map();
+  for (const h of HERRAMIENTAS) {
+    const b = nodo('button', 'rep-tool', h.nombre);
+    b.type = 'button';
+    b.title = h.detalle;
+    b.onclick = () => ajustes.fijar(h.clave, !ajustes.valor(h.clave));
+    botones.set(h.clave, b);
+    franja.append(b);
+  }
+
+  // en pantallas angostas: un solo botón (con la cuenta de las que están encendidas) y la tarjeta
+  const menu = nodo('button', 'rep-tools-menu');
+  menu.type = 'button';
+  const cuentaMenu = nodo('span', 'rep-tools-cuenta');
+  const panel = nodo('section', 'ajustes rep-tools-panel');
+  panel.id = 'rep-tools-panel-' + ++contadorDeFranjas;
+  panel.hidden = true;
+  const cabeza = nodo('div', 'ajustes-cabeza');
+  const cerrarBoton = nodo('button', 'ajustes-cerrar', '✕');
+  cerrarBoton.type = 'button';
+  cerrarBoton.title = 'Cerrar';
+  cerrarBoton.setAttribute('aria-label', 'Cerrar');
+  cabeza.append(nodo('h4', 'ajustes-titulo-panel', 'Herramientas de reproducción'), cerrarBoton);
+  panel.append(cabeza);
+  panel.append(nodo('p', 'ayuda', 'Cambian cómo se maneja el paso a paso, no lo que se dibuja. Se recuerdan en este navegador.'));
+  const casillas = new Map();
+  for (const h of HERRAMIENTAS) {
+    const fila = nodo('label', 'casilla');
+    const c = document.createElement('input');
+    c.type = 'checkbox';
+    c.onchange = () => ajustes.fijar(h.clave, c.checked);
+    casillas.set(h.clave, c);
+    const textos = nodo('span', 'ajustes-texto');
+    textos.append(nodo('span', 'ajustes-titulo', h.titulo), nodo('span', 'ajustes-ayuda', h.detalle));
+    fila.append(c, textos);
+    panel.append(fila);
+  }
+  menu.append('Herramientas', cuentaMenu);
+  menu.setAttribute('aria-expanded', 'false');
+  menu.setAttribute('aria-controls', panel.id);
+
+  const mostrar = () => {
+    let encendidas = 0;
+    for (const h of HERRAMIENTAS) {
+      const si = ajustes.valor(h.clave);
+      if (si) encendidas++;
+      botones.get(h.clave).setAttribute('aria-pressed', String(si));
+      casillas.get(h.clave).checked = si;
+    }
+    cuentaMenu.textContent = encendidas ? ` · ${encendidas}` : '';
+    menu.setAttribute('aria-label', 'Herramientas de reproducción' + (encendidas ? `, ${encendidas} encendidas` : ''));
+  };
+  mostrar();
+  const olvidar = ajustes.alCambiar(() => {
+    if (franja.isConnected) mostrar();
+    else olvidar(); // el reproductor ya no esta en la pagina
+  });
+
+  const cerrar = () => {
+    panel.hidden = true;
+    menu.setAttribute('aria-expanded', 'false');
+  };
+  cerrarBoton.onclick = () => {
+    cerrar();
+    menu.focus();
+  };
+  menu.onclick = () => {
+    panel.hidden = !panel.hidden;
+    menu.setAttribute('aria-expanded', String(!panel.hidden));
+    if (!panel.hidden) casillas.get(HERRAMIENTAS[0].clave).focus();
+  };
+  panel.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      e.stopPropagation();
+      cerrar();
+      menu.focus();
+    }
+  });
+  const alHacerClic = (e) => {
+    if (!franja.isConnected) document.removeEventListener('click', alHacerClic);
+    else if (!panel.hidden && !panel.contains(e.target) && !menu.contains(e.target)) cerrar();
+  };
+  document.addEventListener('click', alHacerClic);
+
+  franja.append(menu, panel);
+  return franja;
 }
