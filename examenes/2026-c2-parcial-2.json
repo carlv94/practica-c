@@ -133,9 +133,10 @@
           "enunciado": "`void aplicarDano(int vidas[], int n, int danoTotal);` procedimiento recursivo que recibe el vector de vidas, su cantidad `n` y el daño total, y actualice recursivamente cada elemento del vector restándole `danoTotal` (dejándolo en 0 si el resultado es negativo).",
           "solucion": "void aplicarDano(int vidas[], int n, int danoTotal) {\n  if (n == 0) {\n    return;\n  }\n\n  vidas[n - 1] = vidas[n - 1] - danoTotal;\n\n  if (vidas[n - 1] < 0) {\n    vidas[n - 1] = 0;\n  }\n\n  aplicarDano(vidas, n - 1, danoTotal);\n}",
           "tituloDibujos": "Seguimiento del vector",
+          "introDibujos": "Cada llamada actualiza un elemento del vector, el que está resaltado, y la siguiente recibe `n - 1`, hasta llegar al caso base. El vector tiene 50 posiciones: `?` es una posición sin valor y `…` las que no se dibujan.",
           "dibujos": [
             {
-              "titulo": "Al empezar, en `main` (`aplicarDano(vidas, 3, 50)`):",
+              "titulo": "En `main`, antes de la llamada a `aplicarDano`:",
               "valores": [
                 120,
                 40,
@@ -151,10 +152,11 @@
                 3,
                 "…",
                 49
-              ]
+              ],
+              "texto": "Se llama con `n = 3` y `danoTotal = 50`."
             },
             {
-              "titulo": "Llamada con `n = 3`: se actualiza `vidas[2]` (50 - 50 = 0):",
+              "titulo": "Llamada con `n = 3`:",
               "valores": [
                 120,
                 40,
@@ -171,10 +173,11 @@
                 "…",
                 49
               ],
-              "marca": 2
+              "marca": 2,
+              "texto": "Se actualiza `vidas[2]`: 50 - 50 = 0."
             },
             {
-              "titulo": "Llamada con `n = 2`: se actualiza `vidas[1]` (40 - 50 es negativo: queda en 0):",
+              "titulo": "Llamada con `n = 2`:",
               "valores": [
                 120,
                 0,
@@ -191,10 +194,11 @@
                 "…",
                 49
               ],
-              "marca": 1
+              "marca": 1,
+              "texto": "Se actualiza `vidas[1]`: 40 - 50 es negativo, así que queda en 0."
             },
             {
-              "titulo": "Llamada con `n = 1`: se actualiza `vidas[0]` (120 - 50 = 70):",
+              "titulo": "Llamada con `n = 1`:",
               "valores": [
                 70,
                 0,
@@ -211,10 +215,11 @@
                 "…",
                 49
               ],
-              "marca": 0
+              "marca": 0,
+              "texto": "Se actualiza `vidas[0]`: 120 - 50 = 70."
             },
             {
-              "titulo": "Llamada con `n = 0`: es el caso base, así que no se actualiza ningún elemento:",
+              "titulo": "Llamada con `n = 0`:",
               "valores": [
                 70,
                 0,
@@ -230,10 +235,11 @@
                 3,
                 "…",
                 49
-              ]
+              ],
+              "texto": "Es el caso base: no queda ningún elemento por actualizar, así que no cambia nada."
             }
           ],
-          "explicacion": "El caso base es `n == 0`: no queda ningún elemento por actualizar. En el paso se actualiza el último elemento considerado, `vidas[n - 1]`, y se sigue con los `n - 1` anteriores. Un arreglo siempre se pasa por referencia (se pasa su dirección), por eso los cambios se ven en `main` sin devolver nada. En la figura se ve: todas las llamadas apuntan al mismo arreglo de `main`."
+          "explicacion": "Se recorre el arreglo de atrás hacia adelante, decrementando `n` en cada llamada. El caso base es `n == 0`: no queda ningún elemento por actualizar. En el paso se actualiza el elemento de la posición `n - 1`, `vidas[n - 1]`, restándole `danoTotal` (y dejándolo en 0 si queda negativo). Un arreglo siempre se pasa por referencia (se pasa su dirección), por eso los cambios se ven en `main` sin devolver nada. En la ejecución paso a paso se ve cómo todas las llamadas apuntan al mismo arreglo de `main`."
         },
         {
           "id": "c",
@@ -242,9 +248,10 @@
           "enunciado": "En `main()`, solicitar N (validado entre 1 y 50), cargar el vector de vidas, solicitar `semilla` (> 0), invocar ambos módulos recursivos, informar el daño total aplicado, las vidas finales de la oleada y la cantidad de enemigos derrotados.",
           "solucion": "int main() {\n  int vidas[50];\n  int n;\n  int semilla;\n  int i;\n  int derrotados = 0;\n\n  do {\n    printf(\"Enemigos (1 a 50): \");\n    scanf(\"%d\", &n);\n  } while (n < 1 || n > 50);\n\n  for (i = 0; i < n; i++) {\n    printf(\"Vida Enemigo %d: \", i + 1);\n    scanf(\"%d\", &vidas[i]);\n  }\n\n  do {\n    printf(\"Semilla: \");\n    scanf(\"%d\", &semilla);\n  } while (semilla <= 0);\n\n  int danoTotal = 30 + 10 * contarCriticos(semilla);\n\n  aplicarDano(vidas, n, danoTotal);\n  printf(\"Dano total: %d\\n\", danoTotal);\n\n  printf(\"Vida restante enemigos:\\n\");\n\n  for (i = 0; i < n; i++) {\n    printf(\"Vida Enemigo %d: %d\\n\", i + 1, vidas[i]);\n\n    if (vidas[i] == 0) {\n      derrotados++;\n    }\n  }\n\n  printf(\"Derrotados: %d\\n\", derrotados);\n\n  return 0;\n}",
           "tituloDibujos": "Seguimiento del vector",
+          "introDibujos": "Los dibujos muestran el vector `vidas` en tres momentos de `main`. El vector tiene 50 posiciones: `?` es una posición sin valor y `…` las que no se dibujan.",
           "dibujos": [
             {
-              "titulo": "Después de leer `n = 3` y cargar las vidas (el vector tiene 50 posiciones y solo se usan las primeras `n`):",
+              "titulo": "En `main`, después de cargar las vidas:",
               "valores": [
                 120,
                 40,
@@ -260,10 +267,11 @@
                 3,
                 "…",
                 49
-              ]
+              ],
+              "texto": "Se leyó `n = 3`: solo se usan las primeras `n` posiciones del vector."
             },
             {
-              "titulo": "Después de `aplicarDano(vidas, n, danoTotal)`, con `danoTotal = 50`:",
+              "titulo": "En `main`, después de llamar a `aplicarDano`:",
               "valores": [
                 70,
                 0,
@@ -279,10 +287,11 @@
                 3,
                 "…",
                 49
-              ]
+              ],
+              "texto": "Con `danoTotal = 50`, cada vida baja 50 y ninguna queda por debajo de 0."
             },
             {
-              "titulo": "Al contar los derrotados (`derrotados = 2`): los resaltados son los que quedaron en 0:",
+              "titulo": "En `main`, al contar los derrotados:",
               "valores": [
                 70,
                 0,
@@ -302,10 +311,11 @@
               "marca": [
                 1,
                 2
-              ]
+              ],
+              "texto": "Se recorre el vector y se cuentan los que quedaron en 0 (los resaltados): `derrotados = 2`."
             }
           ],
-          "explicacion": "Las dos validaciones usan `do ... while`: se pide el dato y se vuelve a pedir mientras no sea válido. El daño total se arma con el daño base más 10 por cada golpe crítico (`contarCriticos`). Los derrotados se cuentan al recorrer las vidas finales: los que quedaron en 0."
+          "explicacion": "Las dos validaciones usan `do ... while`: se pide el dato y se vuelve a pedir mientras no sea válido. El daño total se arma con el daño base más 10 por cada golpe crítico (`contarCriticos`). Para calcular la cantidad de derrotados se recorre el arreglo de vidas y se cuentan los que quedaron en 0."
         }
       ],
       "programa": "#include <stdio.h>\n\nint contarCriticos(int semilla) {\n  if (semilla == 0) {\n    return 0;\n  }\n\n  if (semilla % 10 % 2 == 1) {\n    return 1 + contarCriticos(semilla / 10);\n  }\n\n  return contarCriticos(semilla / 10);\n}\n\nvoid aplicarDano(int vidas[], int n, int danoTotal) {\n  if (n == 0) {\n    return;\n  }\n\n  vidas[n - 1] = vidas[n - 1] - danoTotal;\n\n  if (vidas[n - 1] < 0) {\n    vidas[n - 1] = 0;\n  }\n\n  aplicarDano(vidas, n - 1, danoTotal);\n}\n\nint main() {\n  int vidas[50];\n  int n;\n  int semilla;\n  int i;\n  int derrotados = 0;\n\n  do {\n    printf(\"Enemigos (1 a 50): \");\n    scanf(\"%d\", &n);\n  } while (n < 1 || n > 50);\n\n  for (i = 0; i < n; i++) {\n    printf(\"Vida Enemigo %d: \", i + 1);\n    scanf(\"%d\", &vidas[i]);\n  }\n\n  do {\n    printf(\"Semilla: \");\n    scanf(\"%d\", &semilla);\n  } while (semilla <= 0);\n\n  int danoTotal = 30 + 10 * contarCriticos(semilla);\n\n  aplicarDano(vidas, n, danoTotal);\n  printf(\"Dano total: %d\\n\", danoTotal);\n\n  printf(\"Vida restante enemigos:\\n\");\n\n  for (i = 0; i < n; i++) {\n    printf(\"Vida Enemigo %d: %d\\n\", i + 1, vidas[i]);\n\n    if (vidas[i] == 0) {\n      derrotados++;\n    }\n  }\n\n  printf(\"Derrotados: %d\\n\", derrotados);\n\n  return 0;\n}",
