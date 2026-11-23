@@ -1,10 +1,8 @@
 /* El reproductor paso a paso (js/motor/reproductor.js y figura.js).
    Usa las variables de estilo.css, asi que sigue el modo oscuro. */
+/* el reproductor no lleva marco propio: el lugar donde se monta (la tarjeta de la serie, la página de un examen) ya lo encuadra, y dos marcos
+   seguidos le restan ancho. Solo en pantalla completa tiene fondo propio. */
 .rep {
-  background: var(--panel);
-  border: 1px solid var(--borde);
-  border-radius: 8px;
-  padding: 12px;
   margin: 12px 0;
 }
 .rep:focus-visible {
@@ -1086,6 +1084,7 @@
   flex-direction: column;
   margin: 0;
   padding: 8px;
+  background: var(--panel);
   border: none;
   border-radius: 0;
   overflow: hidden;

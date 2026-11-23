@@ -128,7 +128,7 @@ const guardarVelocidad = (v) => {
 };
 
 export function crearReproductor({ codigo, traza, error = null, titulo = '', funciones = [], cabezas = null, entrada = '', llamadas = [], puntos = null }) {
-  const raiz = nodo('section', 'rep');
+  const raiz = nodo('div', 'rep'); // (un div: un section tendría el marco y el relleno globales de estilo.css)
   raiz.tabIndex = 0;
   raiz.setAttribute('aria-label', titulo ? `Paso a paso: ${titulo}` : 'Paso a paso');
   if (titulo) raiz.append(nodo('h3', 'rep-titulo-general', titulo));
