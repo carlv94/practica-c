@@ -567,6 +567,16 @@ function mostrarLista(deGrupo) {
   if (!series.length) {
     $('lista').replaceChildren(mensaje('aviso', 'Todavía no hay ninguna serie cargada.'));
   }
+  // Los exámenes resueltos tienen su propia página (qué exámenes se ven lo decide ella).
+  if (!deGrupo) {
+    const caja = elemento('div', 'grupo');
+    const enlace = elemento('a', 'tarjeta');
+    enlace.href = 'examenes.html';
+    enlace.appendChild(elemento('h3', null, 'Exámenes resueltos'));
+    enlace.appendChild(elemento('p', null, 'Los ejercicios de los exámenes, resueltos y explicados paso a paso, con el código para copiar o descargar.'));
+    caja.appendChild(enlace);
+    $('lista').appendChild(caja);
+  }
 }
 
 // ---- una serie ----------------------------------------------------------------
