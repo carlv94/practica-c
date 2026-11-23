@@ -388,3 +388,23 @@ summary.seccion-titulo:hover {
     visibility: visible;
   }
 }
+
+/* copiar y descargar un código */
+.acciones-codigo {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  margin: 0 0 8px;
+}
+
+.accion-codigo {
+  min-height: 36px;
+  padding: 0 12px;
+  font-size: 0.85rem;
+}
+
+.ejercicio-paso > .acciones-codigo {
+  justify-content: flex-start;
+  margin: 4px 0 12px;
+}

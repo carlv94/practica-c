@@ -731,6 +731,19 @@ import { corregir } from '../js/corrector.js';
                 const suma = x.modulos.reduce((s, mod) => s + (mod.puntos || 0), 0);
                 if (suma !== x.puntos) throw new Error(en + 'los puntos de los módulos suman ' + suma + ' y el ejercicio dice ' + x.puntos);
                 for (const d of x.dibujos || []) if (!Array.isArray(d.valores) && !Array.isArray(d.fichas)) throw new Error(en + 'un dibujo sin valores ni fichas');
+                // Los archivos .c que se bajan: la cabecera es un comentario bien cerrado y, despues, el codigo tal cual.
+                {
+                  const { archivoDePrograma, archivoDeModulo, nombreDePrograma } = await import('../js/examenes-archivos.js');
+                  const cierres = (t) => t.split('*/').length - 1;
+                  const prog = archivoDePrograma(e, x);
+                  if (!prog.startsWith('/*') || cierres(prog) !== 1 + cierres(x.programa)) throw new Error(en + 'la cabecera del programa que se baja no es un comentario bien cerrado');
+                  if (!prog.endsWith(x.programa.replace(/\n*$/, '\n'))) throw new Error(en + 'el programa que se baja no termina con el programa que se ejecuta');
+                  if (!nombreDePrograma(e, x).endsWith('.c')) throw new Error(en + 'el archivo del programa es un .c');
+                  for (const mod of x.modulos) {
+                    const modulo = archivoDeModulo(e, x, mod);
+                    if (!modulo.startsWith('/*') || cierres(modulo) !== 1 + cierres(mod.solucion) || !modulo.includes(mod.solucion)) throw new Error(en + 'el archivo del módulo ' + mod.id + ' no es un comentario seguido de su código');
+                  }
+                }
                 if (x.resumen != null && typeof x.resumen !== 'string') throw new Error(en + 'el resumen es un texto');
                 const r = ejecutarMotor(analizador, x.programa, { entrada: x.entrada || '', traza: true });
                 if (r.error) throw new Error(en + 'el programa no corre: ' + (r.error.codigo || '') + ' ' + (r.error.mensaje || ''));

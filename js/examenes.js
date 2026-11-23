@@ -17,6 +17,8 @@ import { cargarAnalizador } from './analizador.js';
 import { pintar } from './editor.js';
 import { bloquesDeEnunciado } from './enunciado.js';
 import { esLocal, esDocente } from './estadisticas.js';
+import { descargar } from './descarga.js';
+import { archivoDeModulo, archivoDePrograma, nombreDeModulo, nombreDePrograma } from './examenes-archivos.js';
 
 const CARPETA = 'examenes/';
 const VE_TODO = esLocal() || esDocente();
@@ -62,6 +64,47 @@ function enunciadoA(contenedor, texto) {
       contenedor.appendChild(conTexto('p', 'mensaje aviso', b.advertencia));
     }
   }
+}
+
+// Copiar un texto al portapapeles (con el camino viejo si el navegador no deja usar el nuevo).
+async function copiarTexto(texto) {
+  try {
+    await navigator.clipboard.writeText(texto);
+    return true;
+  } catch (e) {
+    const area = document.createElement('textarea');
+    area.value = texto;
+    area.setAttribute('readonly', '');
+    area.style.position = 'fixed';
+    area.style.opacity = '0';
+    document.body.appendChild(area);
+    area.select();
+    let ok = false;
+    try {
+      ok = document.execCommand('copy');
+    } catch (e2) {
+      ok = false;
+    }
+    area.remove();
+    return ok;
+  }
+}
+
+// Los botones de un código: copiarlo y bajarlo como archivo .c (con su cabecera). "copia" es lo que se copia; "archivo", { nombre, texto }.
+function accionesA({ copia, archivo, textoDescarga }) {
+  const fila = nodo('div', 'acciones-codigo');
+  const copiar = nodo('button', 'accion-codigo', 'Copiar');
+  copiar.type = 'button';
+  copiar.onclick = async () => {
+    const ok = await copiarTexto(copia);
+    copiar.textContent = ok ? 'Copiado ✓' : 'No se pudo copiar';
+    setTimeout(() => (copiar.textContent = 'Copiar'), 1600);
+  };
+  const bajar = nodo('button', 'accion-codigo', textoDescarga || 'Descargar .c');
+  bajar.type = 'button';
+  bajar.onclick = () => descargar(archivo.nombre.replace(/\.c$/, ''), [archivo]);
+  fila.append(copiar, bajar);
+  return fila;
 }
 
 function codigoA(contenedor, texto) {
@@ -301,7 +344,7 @@ function solapas(descripcion, items, clase, alElegir) {
 // ----------------------------------------------------------------- un ejercicio
 
 // El paso a paso del programa completo, en su sección (fuera de las solapas): el reproductor con la figura y todas las ayudas.
-async function armarPaso(ejercicio, lugar) {
+async function armarPaso(examen, ejercicio, lugar) {
   lugar.replaceChildren(nodo('p', 'mensaje aviso', 'Preparando el paso a paso...'));
   try {
     const [analizador, { ejecutar }, { crearReproductor }, { mensajeDeError }] = await Promise.all([
@@ -330,7 +373,7 @@ async function armarPaso(ejercicio, lugar) {
 
 // El contenido de la página de un ejercicio: el título, el enunciado general, las solapas de los módulos (enunciado, resolución y
 // explicación de cada uno) y, debajo, el paso a paso del programa completo. "alCambiar(solapa)" se llama cada vez que se elige una solapa.
-function ejercicioA(ejercicio, alCambiar) {
+function ejercicioA(examen, ejercicio, alCambiar) {
   const pagina = nodo('section', 'ejercicio');
 
   const titulo = nodo('h2');
@@ -354,6 +397,9 @@ function ejercicioA(ejercicio, alCambiar) {
     enunciadoM.cuerpo.appendChild(conTexto('p', 'modulo-enunciado', m.enunciado));
     p.appendChild(enunciadoM.caja);
     const resolucion = seccionA('Resolución', { plegable: true, abierta: true });
+    resolucion.cuerpo.appendChild(
+      accionesA({ copia: m.solucion, archivo: { nombre: nombreDeModulo(examen, ejercicio, m), texto: archivoDeModulo(examen, ejercicio, m) } })
+    );
     codigoA(resolucion.cuerpo, m.solucion);
     p.appendChild(resolucion.caja);
     if (m.explicacion) {
@@ -383,10 +429,17 @@ function ejercicioA(ejercicio, alCambiar) {
   const paso = nodo('div', 'ejercicio-paso');
   paso.appendChild(nodo('h3', null, 'Ejecución paso a paso del programa completo'));
   if (ejercicio.nota) paso.appendChild(conTexto('p', 'ejercicio-nota', ejercicio.nota));
+  paso.appendChild(
+    accionesA({
+      copia: ejercicio.programa,
+      archivo: { nombre: nombreDePrograma(examen, ejercicio), texto: archivoDePrograma(examen, ejercicio) },
+      textoDescarga: 'Descargar programa (.c)',
+    })
+  );
   const lugar = nodo('div', 'ejercicio-pasoapaso');
   paso.appendChild(lugar);
   pagina.appendChild(paso);
-  armarPaso(ejercicio, lugar);
+  armarPaso(examen, ejercicio, lugar);
 
   const primera = ejercicio.modulos[0].id;
   return { pagina, ir: (solapa) => interior.elegir(interior.ids.includes(solapa) ? solapa : primera) };
@@ -468,7 +521,7 @@ function paginaDeEjercicio(contenedor, examen, ejercicio, solapa) {
     const hash = hashDe(examen.id, ejercicio.id, id);
     if (location.hash !== hash) history.replaceState(null, '', hash);
   };
-  const { pagina, ir } = ejercicioA(ejercicio, alCambiar);
+  const { pagina, ir } = ejercicioA(examen, ejercicio, alCambiar);
   contenedor.replaceChildren(pagina);
   ir(solapa);
   abierto = { examen: examen.id, ejercicio: ejercicio.id, ir };
