@@ -129,10 +129,42 @@
   letter-spacing: 0;
   text-transform: none;
 }
+/* el paso a paso del programa completo: fuera de las solapas y sin cajas (ni la de la sección ni la del reproductor), con un encabezado propio
+   que no se parece a las barras de sección */
 .ejercicio-paso {
-  margin-top: 28px;
-  padding-top: 8px;
+  margin-top: 44px;
+  padding-top: 28px;
   border-top: 1px solid var(--borde);
+}
+.ejercicio-paso > h3 {
+  margin: 0 0 14px;
+  font-size: 1.3rem;
+  line-height: 1.25;
+  color: var(--texto);
+}
+.ejercicio-paso > h3::after {
+  content: "";
+  display: block;
+  width: 48px;
+  height: 3px;
+  margin-top: 8px;
+  border-radius: 2px;
+  background: var(--acento);
+}
+.ejercicio-pasoapaso .rep:not(.rep-ampliado) {
+  margin: 0;
+  padding: 0;
+  background: none;
+  border: 0;
+}
+/* el título del reproductor repite el del ejercicio: se esconde a la vista (queda para los lectores de pantalla) */
+.ejercicio-pasoapaso .rep-titulo-general {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
 
 /* Los dibujos de arreglos del enunciado: los mismos casilleros que el de las consignas (en estilo.css van bajo #figura) */

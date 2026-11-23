@@ -380,7 +380,7 @@ function ejercicioA(ejercicio, alCambiar) {
   for (const it of items) pagina.appendChild(it.panel);
 
   // El programa completo, paso a paso, fuera de las solapas (lo arma ahora, sin trabar la página).
-  const paso = nodo('section', 'ejercicio-paso');
+  const paso = nodo('div', 'ejercicio-paso');
   paso.appendChild(nodo('h3', null, 'Ejecución paso a paso del programa completo'));
   if (ejercicio.nota) paso.appendChild(conTexto('p', 'ejercicio-nota', ejercicio.nota));
   const lugar = nodo('div', 'ejercicio-pasoapaso');
