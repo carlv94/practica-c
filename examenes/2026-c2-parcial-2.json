@@ -76,7 +76,55 @@
           "puntos": 10,
           "enunciado": "`int contarCriticos(int semilla);` función recursiva que reciba un entero positivo `semilla` y retorne la cantidad de dígitos impares que contiene.",
           "solucion": "int contarCriticos(int semilla) {\n  if (semilla == 0) {\n    return 0;\n  }\n\n  if (semilla % 10 % 2 == 1) {\n    return 1 + contarCriticos(semilla / 10);\n  }\n\n  return contarCriticos(semilla / 10);\n}",
-          "explicacion": "El caso base es `semilla == 0`: ya no quedan dígitos, así que hay 0 impares. En el paso, `semilla % 10` es el último dígito; si es impar cuenta 1 y se suma lo que haya en el resto (`semilla / 10`), y si no, solo se sigue con el resto. La recursión se acerca al caso base porque cada llamada le quita un dígito."
+          "tituloDibujos": "Seguimiento de los dígitos",
+          "introDibujos": "Cada llamada evalúa el último dígito (`semilla % 10`) y la siguiente recibe la semilla sin ese dígito (`semilla / 10`), hasta llegar al caso base.",
+          "dibujos": [
+            {
+              "titulo": "Llamada con `semilla = 4732`:",
+              "digitos": "4732",
+              "marca": 3,
+              "texto": "El último dígito es 2, par: no cuenta. Sigue con `contarCriticos(473)`."
+            },
+            {
+              "titulo": "Llamada con `semilla = 473`:",
+              "digitos": "473",
+              "marca": 2,
+              "texto": "El último dígito es 3, impar: cuenta 1 y se suma lo que dé `contarCriticos(47)`."
+            },
+            {
+              "titulo": "Llamada con `semilla = 47`:",
+              "digitos": "47",
+              "marca": 1,
+              "texto": "El último dígito es 7, impar: cuenta 1 y se suma lo que dé `contarCriticos(4)`."
+            },
+            {
+              "titulo": "Llamada con `semilla = 4`:",
+              "digitos": "4",
+              "marca": 0,
+              "texto": "El último dígito es 4, par: no cuenta. Sigue con `contarCriticos(0)`."
+            },
+            {
+              "titulo": "Llamada con `semilla = 0`:",
+              "digitos": "0",
+              "texto": "Es el caso base: ya no quedan dígitos y devuelve 0."
+            },
+            {
+              "titulo": "Vuelta de las llamadas:",
+              "digitos": "4732",
+              "marca": [
+                1,
+                2
+              ],
+              "aportes": [
+                0,
+                1,
+                1,
+                0
+              ],
+              "texto": "Al volver, cada llamada suma lo suyo (lo que está debajo de cada dígito) y el caso base suma 0: `0 + 1 + 1 + 0 + 0 = 2` golpes críticos, uno por cada dígito impar (los resaltados)."
+            }
+          ],
+          "explicacion": "El caso base es `semilla == 0`: ya no quedan dígitos, así que no hay dígitos impares que contar, por eso se retorna 0. En el paso, `semilla % 10` obtiene el último dígito; si es impar cuenta 1 y se suma lo que haya en el resto (`semilla / 10`), y si no, solo se sigue con el resto. La recursión se acerca al caso base porque cada llamada quita un dígito."
         },
         {
           "id": "b",
@@ -84,6 +132,107 @@
           "puntos": 12,
           "enunciado": "`void aplicarDano(int vidas[], int n, int danoTotal);` procedimiento recursivo que recibe el vector de vidas, su cantidad `n` y el daño total, y actualice recursivamente cada elemento del vector restándole `danoTotal` (dejándolo en 0 si el resultado es negativo).",
           "solucion": "void aplicarDano(int vidas[], int n, int danoTotal) {\n  if (n == 0) {\n    return;\n  }\n\n  vidas[n - 1] = vidas[n - 1] - danoTotal;\n\n  if (vidas[n - 1] < 0) {\n    vidas[n - 1] = 0;\n  }\n\n  aplicarDano(vidas, n - 1, danoTotal);\n}",
+          "tituloDibujos": "Seguimiento del vector",
+          "dibujos": [
+            {
+              "titulo": "Al empezar, en `main` (`aplicarDano(vidas, 3, 50)`):",
+              "valores": [
+                120,
+                40,
+                50,
+                "?",
+                "…",
+                "?"
+              ],
+              "indices": [
+                0,
+                1,
+                2,
+                3,
+                "…",
+                49
+              ]
+            },
+            {
+              "titulo": "Llamada con `n = 3`: se actualiza `vidas[2]` (50 - 50 = 0):",
+              "valores": [
+                120,
+                40,
+                0,
+                "?",
+                "…",
+                "?"
+              ],
+              "indices": [
+                0,
+                1,
+                2,
+                3,
+                "…",
+                49
+              ],
+              "marca": 2
+            },
+            {
+              "titulo": "Llamada con `n = 2`: se actualiza `vidas[1]` (40 - 50 es negativo: queda en 0):",
+              "valores": [
+                120,
+                0,
+                0,
+                "?",
+                "…",
+                "?"
+              ],
+              "indices": [
+                0,
+                1,
+                2,
+                3,
+                "…",
+                49
+              ],
+              "marca": 1
+            },
+            {
+              "titulo": "Llamada con `n = 1`: se actualiza `vidas[0]` (120 - 50 = 70):",
+              "valores": [
+                70,
+                0,
+                0,
+                "?",
+                "…",
+                "?"
+              ],
+              "indices": [
+                0,
+                1,
+                2,
+                3,
+                "…",
+                49
+              ],
+              "marca": 0
+            },
+            {
+              "titulo": "Llamada con `n = 0`: es el caso base, así que no se actualiza ningún elemento:",
+              "valores": [
+                70,
+                0,
+                0,
+                "?",
+                "…",
+                "?"
+              ],
+              "indices": [
+                0,
+                1,
+                2,
+                3,
+                "…",
+                49
+              ]
+            }
+          ],
           "explicacion": "El caso base es `n == 0`: no queda ningún elemento por actualizar. En el paso se actualiza el último elemento considerado, `vidas[n - 1]`, y se sigue con los `n - 1` anteriores. Un arreglo siempre se pasa por referencia (se pasa su dirección), por eso los cambios se ven en `main` sin devolver nada. En la figura se ve: todas las llamadas apuntan al mismo arreglo de `main`."
         },
         {
@@ -92,6 +241,70 @@
           "puntos": 8,
           "enunciado": "En `main()`, solicitar N (validado entre 1 y 50), cargar el vector de vidas, solicitar `semilla` (> 0), invocar ambos módulos recursivos, informar el daño total aplicado, las vidas finales de la oleada y la cantidad de enemigos derrotados.",
           "solucion": "int main() {\n  int vidas[50];\n  int n;\n  int semilla;\n  int i;\n  int derrotados = 0;\n\n  do {\n    printf(\"Enemigos (1 a 50): \");\n    scanf(\"%d\", &n);\n  } while (n < 1 || n > 50);\n\n  for (i = 0; i < n; i++) {\n    printf(\"Vida Enemigo %d: \", i + 1);\n    scanf(\"%d\", &vidas[i]);\n  }\n\n  do {\n    printf(\"Semilla: \");\n    scanf(\"%d\", &semilla);\n  } while (semilla <= 0);\n\n  int danoTotal = 30 + 10 * contarCriticos(semilla);\n\n  aplicarDano(vidas, n, danoTotal);\n  printf(\"Dano total: %d\\n\", danoTotal);\n\n  printf(\"Vida restante enemigos:\\n\");\n\n  for (i = 0; i < n; i++) {\n    printf(\"Vida Enemigo %d: %d\\n\", i + 1, vidas[i]);\n\n    if (vidas[i] == 0) {\n      derrotados++;\n    }\n  }\n\n  printf(\"Derrotados: %d\\n\", derrotados);\n\n  return 0;\n}",
+          "tituloDibujos": "Seguimiento del vector",
+          "dibujos": [
+            {
+              "titulo": "Después de leer `n = 3` y cargar las vidas (el vector tiene 50 posiciones y solo se usan las primeras `n`):",
+              "valores": [
+                120,
+                40,
+                50,
+                "?",
+                "…",
+                "?"
+              ],
+              "indices": [
+                0,
+                1,
+                2,
+                3,
+                "…",
+                49
+              ]
+            },
+            {
+              "titulo": "Después de `aplicarDano(vidas, n, danoTotal)`, con `danoTotal = 50`:",
+              "valores": [
+                70,
+                0,
+                0,
+                "?",
+                "…",
+                "?"
+              ],
+              "indices": [
+                0,
+                1,
+                2,
+                3,
+                "…",
+                49
+              ]
+            },
+            {
+              "titulo": "Al contar los derrotados (`derrotados = 2`): los resaltados son los que quedaron en 0:",
+              "valores": [
+                70,
+                0,
+                0,
+                "?",
+                "…",
+                "?"
+              ],
+              "indices": [
+                0,
+                1,
+                2,
+                3,
+                "…",
+                49
+              ],
+              "marca": [
+                1,
+                2
+              ]
+            }
+          ],
           "explicacion": "Las dos validaciones usan `do ... while`: se pide el dato y se vuelve a pedir mientras no sea válido. El daño total se arma con el daño base más 10 por cada golpe crítico (`contarCriticos`). Los derrotados se cuentan al recorrer las vidas finales: los que quedaron en 0."
         }
       ],

@@ -5,7 +5,7 @@
 // Qué exámenes hay lo dice examenes/indice.json; cada uno es un archivo (examenes/2026-c2-parcial-2.json) con esta forma:
 //   { id, titulo, detalle, fecha, visibleDesde,
 //     ejercicios: [{ id, titulo, puntos, resumen?, enunciado, codigoDado?, continua?, dibujos?: [{ titulo, valores }],
-//                    modulos: [{ id, titulo, puntos, enunciado, solucion, explicacion }],
+//                    modulos: [{ id, titulo, puntos, enunciado, solucion, explicacion, tituloDibujos?, introDibujos?, dibujos?: [{ titulo, valores | digitos, indices?, marca?, texto? }] }],
 //                    programa, entrada, salida?, nota? }] }
 // "programa" es el programa completo que se ejecuta paso a paso, y cada "solucion" tiene que estar escrita igual adentro (lo comprueba
 // pruebas/index.html). "visibleDesde" (AAAA-MM-DD) esconde el examen de la lista hasta esa fecha, salvo en el modo docente o en esta PC.
@@ -71,18 +71,43 @@ function codigoA(contenedor, texto) {
 }
 
 // Un arreglo como una fila de casilleros con su índice arriba (los mismos estilos que el de las consignas).
+// Un dibujo del seguimiento de un módulo: el título, el dibujo y, si hay, el texto que lo explica. El dibujo es un arreglo ("valores", con
+// "indices" opcional que reemplaza a 0, 1, 2...; un valor "?" es una posición sin valor y "…" las posiciones que no se dibujan) o los dígitos
+// de un número ("digitos": '4732', sin casillas, con "aportes" opcional: lo que suma cada dígito, debajo de él). "marca" (un número o una lista)
+// son las casillas o los dígitos que se están tocando.
 function arregloA(contenedor, dibujo) {
   const caja = nodo('div', 'dibujo-arreglo');
   if (dibujo.titulo) caja.appendChild(conTexto('p', 'titulo-figura', dibujo.titulo));
-  const fila = nodo('div', 'arreglo');
-  dibujo.valores.forEach((valor, i) => {
-    const casillero = nodo('div', 'casillero');
-    casillero.append(nodo('span', 'indice', i), nodo('span', 'valor', valor));
-    fila.appendChild(casillero);
-  });
+  const marcadas = [].concat(dibujo.marca ?? []);
+  const fila = nodo('div', dibujo.digitos != null ? 'digitos' : 'arreglo');
+  const sinTildes = (dibujo.titulo || (dibujo.digitos != null ? 'Dígitos' : 'Arreglo')).replace(/`/g, '');
+  if (dibujo.digitos != null) {
+    const digitos = [...String(dibujo.digitos)];
+    digitos.forEach((digito, i) => {
+      const celda = nodo('span', marcadas.includes(i) ? 'digito digito-marcado' : 'digito', digito);
+      if (!dibujo.aportes) return fila.appendChild(celda);
+      // "aportes" (opcional): lo que suma cada dígito, debajo de él
+      const columna = nodo('span', marcadas.includes(i) ? 'digito-columna digito-columna-marcada' : 'digito-columna');
+      columna.append(celda, nodo('span', 'aporte', '+' + dibujo.aportes[i]));
+      fila.appendChild(columna);
+    });
+    fila.setAttribute(
+      'aria-label',
+      `${sinTildes} ${digitos.join(' ')}${marcadas.length ? '; evaluados: ' + marcadas.map((i) => digitos[i]).join(', ') : ''}${dibujo.aportes ? '; aportes: ' + dibujo.aportes.join(', ') : ''}`
+    );
+  } else {
+    dibujo.valores.forEach((valor, i) => {
+      const salto = valor === '…';
+      const casillero = nodo('div', salto ? 'casillero casillero-salto' : 'casillero');
+      const clases = ['valor', marcadas.includes(i) ? 'resaltado' : '', valor === '?' ? 'sin-valor' : ''].filter(Boolean).join(' ');
+      casillero.append(nodo('span', 'indice', dibujo.indices ? dibujo.indices[i] : i), nodo('span', clases, valor));
+      fila.appendChild(casillero);
+    });
+    fila.setAttribute('aria-label', `${sinTildes} ${dibujo.valores.join(', ')}`);
+  }
+  fila.setAttribute('role', 'img');
   caja.appendChild(fila);
-  caja.setAttribute('role', 'img');
-  caja.setAttribute('aria-label', `${(dibujo.titulo || 'Arreglo').replace(/`/g, '')} ${dibujo.valores.join(', ')}`);
+  if (dibujo.texto) caja.appendChild(conTexto('p', 'texto-figura', dibujo.texto));
   contenedor.appendChild(caja);
 }
 
@@ -230,6 +255,15 @@ function ejercicioA(ejercicio, alCambiar) {
     if (m.explicacion) {
       p.appendChild(nodo('h4', 'rotulo', 'Explicación'));
       p.appendChild(conTexto('p', 'modulo-explicacion', m.explicacion));
+    }
+    // El seguimiento del módulo (cómo cambia el vector, los dígitos...): un desplegable, abierto en pantallas anchas y cerrado en el teléfono.
+    if (m.dibujos && m.dibujos.length) {
+      const seguimiento = nodo('details', 'seguimiento');
+      seguimiento.appendChild(nodo('summary', 'rotulo', `${m.tituloDibujos || 'Seguimiento'} (${m.dibujos.length})`));
+      if (m.introDibujos) seguimiento.appendChild(conTexto('p', 'seguimiento-intro', m.introDibujos));
+      for (const d of m.dibujos) arregloA(seguimiento, d);
+      seguimiento.open = typeof matchMedia === 'function' && matchMedia('(min-width: 700px)').matches;
+      p.appendChild(seguimiento);
     }
     return { id: m.id, etiqueta: [`${m.id}) `, nodo('span', 'solapa-nombre', m.titulo)], panel: p };
   });

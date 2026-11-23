@@ -123,3 +123,86 @@
 .dibujo-arreglo .casillero:first-child .valor {
   margin-left: 0;
 }
+
+/* los dígitos de un número (sin casillas ni índices): el que se evalúa, en negrita y de color */
+.dibujo-arreglo .digitos {
+  display: flex;
+  gap: 0.25em;
+  margin: 6px 0;
+  font: 400 1.7rem Consolas, "Cascadia Mono", Menlo, monospace;
+  letter-spacing: 0.08em;
+}
+
+.dibujo-arreglo .digito-marcado {
+  font-weight: 800;
+  color: var(--mejora);
+}
+
+/* lo que suma cada dígito, debajo de él */
+.dibujo-arreglo .digito-columna {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.dibujo-arreglo .aporte {
+  font: 400 0.85rem Consolas, "Cascadia Mono", Menlo, monospace;
+  letter-spacing: 0;
+  color: var(--suave);
+}
+
+.dibujo-arreglo .digito-columna-marcada .aporte {
+  font-weight: 800;
+  color: var(--mejora);
+}
+
+.seguimiento-intro,
+.texto-figura {
+  margin: 4px 0 0;
+  font-size: 0.95rem;
+}
+
+/* una posición sin valor ("?") y el hueco de las que no se dibujan ("…") */
+.dibujo-arreglo .valor.sin-valor {
+  border-style: dashed;
+  color: var(--suave);
+  font-weight: 400;
+}
+
+.dibujo-arreglo .casillero-salto .valor {
+  min-width: 30px;
+  padding: 0;
+  border: none;
+  margin-left: 0;
+  background: transparent;
+  color: var(--suave);
+}
+
+/* el desplegable del seguimiento: su título es como el de las demás secciones, con una flecha */
+.seguimiento > summary {
+  cursor: pointer;
+  list-style: none;
+  margin: 14px 0 4px;
+  user-select: none;
+}
+
+.seguimiento > summary::-webkit-details-marker {
+  display: none;
+}
+
+.seguimiento > summary::before {
+  content: "▸";
+  display: inline-block;
+  width: 1.1em;
+}
+
+.seguimiento[open] > summary::before {
+  content: "▾";
+}
+
+/* la casilla que se está tocando */
+.dibujo-arreglo .valor.resaltado {
+  background: var(--mejora-fondo);
+  border-color: var(--mejora);
+  border-width: 2px;
+}
