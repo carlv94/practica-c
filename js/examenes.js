@@ -71,6 +71,18 @@ function codigoA(contenedor, texto) {
 }
 
 // Un arreglo como una fila de casilleros con su índice arriba (los mismos estilos que el de las consignas).
+// Una sección de un módulo: un título en forma de barra y su cuerpo. Fija, o plegable (un <details>: la barra se toca para abrirla o cerrarla).
+// "puntos" se agrega al título (solo el enunciado).
+function seccionA(titulo, { plegable = false, abierta = true, puntos = null } = {}) {
+  const caja = nodo(plegable ? 'details' : 'div', 'seccion');
+  const barra = nodo(plegable ? 'summary' : 'h4', 'seccion-titulo', titulo);
+  if (puntos != null) barra.appendChild(nodo('span', 'rotulo-puntos', ` · ${puntos} puntos`));
+  const cuerpo = nodo('div', 'seccion-cuerpo');
+  caja.append(barra, cuerpo);
+  if (plegable) caja.open = abierta;
+  return { caja, cuerpo };
+}
+
 // Una ficha de datos (una estructura): su título y, por cada campo, el nombre y el valor de ejemplo (o una línea, donde iría). "resaltar" son
 // los campos que se marcan. Usa las mismas clases que las fichas de las consignas.
 function fichaA(ficha) {
@@ -267,24 +279,28 @@ function ejercicioA(ejercicio, alCambiar) {
     const p = nodo('div', 'solapa-panel');
     p.id = `panel-${ejercicio.id}-${m.id}`;
     p.hidden = true;
-    const rotuloEnunciado = nodo('h4', 'rotulo rotulo-primero', 'Enunciado');
-    rotuloEnunciado.appendChild(nodo('span', 'rotulo-puntos', ` · ${m.puntos} puntos`));
-    p.appendChild(rotuloEnunciado);
-    p.appendChild(conTexto('p', 'modulo-enunciado', m.enunciado));
-    p.appendChild(nodo('h4', 'rotulo', 'Resolución'));
-    codigoA(p, m.solucion);
+    // Las secciones del módulo, con el mismo título de barra: el enunciado (fijo) y, plegables, la resolución, la explicación y el seguimiento.
+    const enunciadoM = seccionA('Enunciado', { puntos: m.puntos });
+    enunciadoM.cuerpo.appendChild(conTexto('p', 'modulo-enunciado', m.enunciado));
+    p.appendChild(enunciadoM.caja);
+    const resolucion = seccionA('Resolución', { plegable: true, abierta: true });
+    codigoA(resolucion.cuerpo, m.solucion);
+    p.appendChild(resolucion.caja);
     if (m.explicacion) {
-      p.appendChild(nodo('h4', 'rotulo', 'Explicación'));
-      p.appendChild(conTexto('p', 'modulo-explicacion', m.explicacion));
+      const explicacion = seccionA('Explicación', { plegable: true, abierta: true });
+      explicacion.cuerpo.appendChild(conTexto('p', 'modulo-explicacion', m.explicacion));
+      p.appendChild(explicacion.caja);
     }
-    // El seguimiento del módulo (cómo cambia el vector, los dígitos...): un desplegable, abierto en pantallas anchas y cerrado en el teléfono.
+    // El seguimiento del módulo (cómo cambia el vector, los dígitos...): abierto en pantallas anchas y cerrado en el teléfono.
     if (m.dibujos && m.dibujos.length) {
-      const seguimiento = nodo('details', 'seguimiento');
-      seguimiento.appendChild(nodo('summary', 'rotulo', `${m.tituloDibujos || 'Seguimiento'} (${m.dibujos.length})`));
-      if (m.introDibujos) seguimiento.appendChild(conTexto('p', 'seguimiento-intro', m.introDibujos));
-      for (const d of m.dibujos) arregloA(seguimiento, d);
-      seguimiento.open = typeof matchMedia === 'function' && matchMedia('(min-width: 700px)').matches;
-      p.appendChild(seguimiento);
+      const seguimiento = seccionA(`${m.tituloDibujos || 'Seguimiento'} (${m.dibujos.length})`, {
+        plegable: true,
+        abierta: typeof matchMedia === 'function' && matchMedia('(min-width: 700px)').matches,
+      });
+      seguimiento.caja.classList.add('seguimiento');
+      if (m.introDibujos) seguimiento.cuerpo.appendChild(conTexto('p', 'seguimiento-intro', m.introDibujos));
+      for (const d of m.dibujos) arregloA(seguimiento.cuerpo, d);
+      p.appendChild(seguimiento.caja);
     }
     return { id: m.id, etiqueta: [`${m.id}) `, nodo('span', 'solapa-nombre', m.titulo)], panel: p };
   });

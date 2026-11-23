@@ -23,10 +23,7 @@
   margin: 0 0 6px;
 }
 .modulo-explicacion {
-  margin: 8px 0 0;
-  padding: 8px 12px;
-  border-left: 3px solid var(--acento);
-  background: var(--panel);
+  margin: 0;
 }
 .modulo-acciones {
   margin: 12px 0 0;
@@ -156,10 +153,21 @@
   color: var(--mejora);
 }
 
+/* el texto de las secciones: un mismo tamaño */
+.modulo-enunciado,
+.modulo-explicacion,
 .seguimiento-intro,
 .texto-figura {
-  margin: 4px 0 0;
   font-size: 0.95rem;
+  line-height: 1.55;
+}
+
+.seguimiento-intro {
+  margin: 0 0 4px;
+}
+
+.texto-figura {
+  margin: 4px 0 0;
 }
 
 /* las fichas de datos (las clases de la ficha están en estilo.css): una sola ocupa lo que necesita */
@@ -192,26 +200,60 @@
   color: var(--suave);
 }
 
-/* el desplegable del seguimiento: su título es como el de las demás secciones, con una flecha */
-.seguimiento > summary {
+/* Las secciones de un módulo (enunciado, resolución, explicación, seguimiento): cada una con una barra de título bien marcada y aire entre
+   ellas. Las plegables llevan una flecha a la derecha. */
+.seccion {
+  margin-top: 30px;
+}
+
+.seccion:first-child {
+  margin-top: 0;
+}
+
+.seccion-titulo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 9px 14px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--texto);
+  background: var(--panel);
+  border: 1px solid var(--borde);
+  border-left: 4px solid var(--acento);
+  border-radius: 6px;
+}
+
+summary.seccion-titulo {
   cursor: pointer;
   list-style: none;
-  margin: 14px 0 4px;
   user-select: none;
 }
 
-.seguimiento > summary::-webkit-details-marker {
+summary.seccion-titulo::-webkit-details-marker {
   display: none;
 }
 
-.seguimiento > summary::before {
+summary.seccion-titulo::after {
   content: "▸";
-  display: inline-block;
-  width: 1.1em;
+  margin-left: auto;
+  color: var(--suave);
 }
 
-.seguimiento[open] > summary::before {
+details[open] > summary.seccion-titulo::after {
   content: "▾";
+}
+
+summary.seccion-titulo:hover {
+  border-color: var(--acento);
+}
+
+.seccion-cuerpo {
+  padding-top: 12px;
 }
 
 /* la casilla que se está tocando */
