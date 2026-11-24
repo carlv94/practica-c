@@ -2092,18 +2092,27 @@ export class Figura {
     if (cont.scrollHeight <= cont.clientHeight + 1 && cont.scrollWidth <= cont.clientWidth + 1) return; // entra entera: no hay nada que seguir
     const rc = cont.getBoundingClientRect();
     const aContenido = (r) => ({ x: r.left - rc.left + cont.scrollLeft, y: r.top - rc.top + cont.scrollTop, w: r.width, h: r.height });
-    // las puntas de las flechas nuevas (en unidades del dibujo; el dibujo se escala con la figura) y las casillas que cambian
+    // Todo se mide donde QUEDA cuando termina el paso, no donde esta ahora: al empezar, las cajas todavia no se corrieron (la caja nueva esta cerrada y
+    // las de abajo, en su lugar de antes), y apuntar a esa disposicion se queda corto; asi la vista ya esta bien cuando empieza la animacion.
+    const escena = this.escena;
     const rs = svg.getBoundingClientRect();
     const k = this.escalaActual || 1;
+    const deDibujo = (a) => ({ x: rs.left - rc.left + cont.scrollLeft + a.x * k, y: rs.top - rc.top + cont.scrollTop + a.y * k, w: a.w * k, h: a.h * k });
+    // lo que falta para que el grupo (caja de la pila o bloque) de un elemento llegue a su lugar, en pixeles
+    const faltaPara = (e) => {
+      for (const m of escena.marcosG ? escena.marcosG.values() : []) if (m.actual && m.g.contains(e)) return { dx: 0, dy: (m.hasta.y - m.actual.y) * k };
+      for (const b of escena.bloques ? escena.bloques.values() : []) if (b.actual && b.g.contains(e)) return { dx: (b.hasta.x - b.actual.x) * k, dy: (b.hasta.y - b.actual.y) * k };
+      return { dx: 0, dy: 0 };
+    };
+    // las puntas de las flechas nuevas (de donde salen y adonde llegan)
     const puntas = [];
-    for (const g of svg.querySelectorAll('.rep-flecha-g.rep-nueva')) {
-      const pts = g.puntosCompletos;
-      if (!pts || !pts.length) continue;
-      for (const p of [pts[0], pts[pts.length - 1]]) puntas.push({ x: rs.left - rc.left + cont.scrollLeft + p.x * k - 4, y: rs.top - rc.top + cont.scrollTop + p.y * k - 4, w: 8, h: 8 });
+    for (const f of escena.flechas || []) {
+      if (!f.cambio || f.retirada || !f.final || !f.final.destino) continue;
+      const salida = this.absolutoFinal(escena, f.origen);
+      const llegada = this.absolutoFinal(escena, f.final.destino);
+      if (salida) puntas.push(deDibujo(salida));
+      if (llegada) puntas.push(deDibujo({ ...llegada, x: llegada.x + (f.final.corrido || 0) }));
     }
-    const celdas = [...svg.querySelectorAll('.rep-celda.rep-cambio')].map((e) => aContenido(e.getBoundingClientRect()));
-    const objetivos = [...puntas, ...celdas];
-    if (!objetivos.length) return;
     const margen = 14;
     const caja = (lista) => {
       const x0 = Math.min(...lista.map((o) => o.x));
@@ -2111,13 +2120,29 @@ export class Figura {
       return { x: x0, y: y0, w: Math.max(...lista.map((o) => o.x + o.w)) - x0, h: Math.max(...lista.map((o) => o.y + o.h)) - y0 };
     };
     const cabe = (c) => c.w <= cont.clientWidth - 2 * margen && c.h <= cont.clientHeight - 2 * margen;
-    let r = caja(objetivos);
-    // No entra todo junto: con flechas, las dos puntas (de donde sale y adonde llega) y, si tampoco, solo adonde llega; sin flechas (una funcion
-    // nueva, una fila entera que cambia), el comienzo de lo que cambia.
-    if (!cabe(r) && puntas.length) {
-      r = caja(puntas);
-      if (!cabe(r)) r = puntas[puntas.length - 1];
+    // las casillas que cambian
+    const elementos = [...svg.querySelectorAll('.rep-celda.rep-cambio')];
+    const celdas = elementos.map((e) => {
+      const r = aContenido(e.getBoundingClientRect());
+      const f = faltaPara(e);
+      return { ...r, x: r.x + f.dx, y: r.y + f.dy };
+    });
+    // Las cajas (de la pila o del monticulo) que aparecen en este paso, enteras; y, aunque no sean nuevas (el paso no se animo, o se llego por otro
+    // camino), la caja de la pila donde cambia algo si entra en la vista: asi se ve con su titulo y con el nombre de cada variable.
+    const cajas = [];
+    for (const m of escena.marcosG ? escena.marcosG.values() : []) {
+      const entera = deDibujo({ x: 8, y: m.hasta.y, w: m.ancho, h: m.alto });
+      if (m.nuevo || (elementos.some((e) => m.g.contains(e)) && cabe(entera))) cajas.push(entera);
     }
+    for (const b of escena.bloques ? escena.bloques.values() : []) if (b.nuevo) cajas.push(deDibujo({ x: b.hasta.x, y: b.hasta.y, w: b.w, h: b.h + ENCABEZADO }));
+    const objetivos = [...puntas, ...cajas, ...celdas];
+    if (!objetivos.length) return;
+    // Lo que se muestra, en orden de preferencia: todo junto; las cajas nuevas enteras con las puntas de las flechas; las cajas nuevas enteras (ahi
+    // empieza la flecha: un parametro puntero de una funcion que se abre); las dos puntas de las flechas; las casillas que cambian (donde empieza la
+    // flecha, si el paso no se anima y no hay cajas nuevas); solo adonde llega la ultima. Si nada entra, el comienzo de lo que cambia.
+    const preferencias = [objetivos, [...cajas, ...puntas], cajas, puntas, celdas, puntas.slice(-1)].filter((l) => l.length);
+    let r = preferencias.map(caja).find(cabe);
+    if (!r) r = puntas.length ? puntas[puntas.length - 1] : caja(objetivos);
     const ajustar = (desde, tam, vista, actual) => {
       if (tam > vista - 2 * margen) return desde - margen;
       if (desde < actual + margen) return desde - margen;

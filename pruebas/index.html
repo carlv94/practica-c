@@ -936,6 +936,51 @@ import { corregir } from '../js/corrector.js';
           }
         }
 
+        // "Seguir la acción" se calcula con las posiciones de DESPUES de la animacion: cuando una funcion nueva abre su caja (arriba de la pila, y las de abajo
+        // se corren), la vista ya tiene que mostrar la caja entera al empezar el paso (antes se calculaba con la disposicion de antes y se quedaba corta).
+        {
+          const titulo = 'figura: sigue la accion hacia donde queda todo al terminar el paso (la caja nueva entera)';
+          const lugar = document.createElement('div');
+          let figura = null;
+          try {
+            const { Figura } = await import('../js/motor/figura.js');
+            const fuente = '#include <stdio.h>\ntypedef struct { int n; float c; } O;\nvoid act(O *o, int v) {\n  o->n = v;\n}\nint main() {\n  O l[8];\n  int i;\n  l[0].n = 1;\n  l[1].n = 2;\n  l[2].n = 3;\n  act(&l[2], 9);\n  return 0;\n}';
+            const m = ejecutarMotor(analizador, fuente, { traza: true });
+            if (m.error) throw new Error('el programa no corre: ' + m.error.codigo);
+            document.body.append(lugar);
+            const k = m.traza.findIndex((f) => f.linea === 4);
+            if (k < 1) throw new Error('no se encontro el paso dentro de act');
+            // con una vista alta entra todo (la caja nueva y la fila a la que apunta la flecha); con una baja, solo la caja nueva (ahi empieza la flecha)
+            // (y tanto si el paso se anima como si no: al saltar a un paso, o con "reducir movimiento", no hay cajas "nuevas" pero la caja donde cambia algo entra)
+            for (const animar of [true, false]) {
+              for (const alto of [330, 200]) {
+                lugar.style.cssText = `width:420px;height:${alto}px;overflow:auto`;
+                lugar.replaceChildren();
+                figura = new Figura(lugar);
+                figura.fijarEscala({ modo: 'fijo', zoom: 1 });
+                for (let j = 0; j < k; j++) figura.mostrar(m.traza[j], j ? m.traza[j - 1] : null, { animar: false });
+                if (figura.raf) cancelAnimationFrame(figura.raf);
+                lugar.scrollTop = lugar.scrollHeight; // la vista esta abajo del todo
+                figura.mostrar(m.traza[k], m.traza[k - 1], { animar, duracion: 400, flujo: true });
+                figura.seguirAccion({ nuevoPaso: true, suave: false });
+                const caja = [...figura.escena.marcosG.values()].find((c) => c.clave.endsWith('act'));
+                if (!caja) throw new Error('la figura no tiene la caja de act');
+                const base = figura.svg.getBoundingClientRect().top - lugar.getBoundingClientRect().top + lugar.scrollTop;
+                const arriba = base + caja.hasta.y * figura.escalaActual;
+                const abajo = arriba + caja.alto * figura.escalaActual;
+                if (arriba < lugar.scrollTop - 1 || abajo > lugar.scrollTop + lugar.clientHeight + 1) throw new Error((animar ? 'animado' : 'sin animar') + ' y con la vista de ' + alto + ' la caja de act no queda entera a la vista: caja ' + Math.round(arriba) + ' a ' + Math.round(abajo) + ' y la vista ' + Math.round(lugar.scrollTop) + ' a ' + Math.round(lugar.scrollTop + lugar.clientHeight));
+                if (figura.raf) cancelAnimationFrame(figura.raf);
+              }
+            }
+            anotar(true, titulo);
+          } catch (e) {
+            anotar(false, titulo, e.stack || e.message);
+          } finally {
+            if (figura && figura.raf) cancelAnimationFrame(figura.raf);
+            lugar.remove();
+          }
+        }
+
         // Un programa de varios archivos (el ejercicio 3 del parcial: el .h, el .c y el main): se ejecuta unido en un solo texto y el reproductor lo muestra
         // por pestañas, con la numeración de cada archivo, y la pestaña sigue al cursor.
         {
@@ -1569,9 +1614,12 @@ import { corregir } from '../js/corrector.js';
         // Los puntos de parada (ayuda "Puntos de parada"): el reproductor sabe a que paso saltar desde cualquiera; con la ayuda apagada no hay.
         {
           const titulo = 'puntos de parada: la parada anterior y la siguiente';
+          let restaurar = () => {};
           try {
             const { crearReproductor } = await import('../js/motor/reproductor.js');
             const { ajustes } = await import('../js/ajustes.js');
+            const previo = ajustes.valor('puntosDeParada'); // (se le devuelve a quien abre esta pagina lo que tenia elegido)
+            restaurar = () => ajustes.fijar('puntosDeParada', previo);
             const fuente = '#include <stdio.h>\nint suma(int n) {\n  if (n == 0) {\n    return 0;\n  }\n  return suma(n - 1) + n;\n}\nint main() {\n  printf("%d\\n", suma(2));\n  return 0;\n}';
             ajustes.fijar('puntosDeParada', true); // (una herramienta de reproduccion: no la fija ningun perfil)
             const m = ejecutarMotor(analizador, fuente, { traza: true, preguntas: true });
@@ -1595,8 +1643,9 @@ import { corregir } from '../js/corrector.js';
             ajustes.fijarPerfil('practica');
             anotar(true, titulo);
           } catch (e) {
-            ajustes.fijar('puntosDeParada', false);
             anotar(false, titulo, e.stack || e.message);
+          } finally {
+            restaurar();
           }
         }
 
@@ -1604,8 +1653,12 @@ import { corregir } from '../js/corrector.js';
         // vuelve "personalizado" y elegir otro perfil no las toca.
         {
           const titulo = 'herramientas de reproduccion: independientes del perfil';
+          let restaurar = () => {};
           try {
             const { ajustes, HERRAMIENTAS, montarHerramientas } = await import('../js/ajustes.js');
+            // (lo que quien abre esta pagina tenia elegido se le devuelve al terminar: las herramientas se guardan en este navegador)
+            const previas = HERRAMIENTAS.map((h) => [h.clave, ajustes.valor(h.clave)]);
+            restaurar = () => previas.forEach(([clave, valor]) => ajustes.fijar(clave, valor));
             ajustes.fijarPerfil('detallado');
             for (const h of HERRAMIENTAS) ajustes.fijar(h.clave, true);
             if (ajustes.perfil() !== 'detallado') throw new Error('con las herramientas encendidas el perfil dejo de reconocerse: ' + ajustes.perfil());
@@ -1618,10 +1671,11 @@ import { corregir } from '../js/corrector.js';
             franja.querySelector('.rep-tool').click();
             if (ajustes.valor(HERRAMIENTAS[0].clave)) throw new Error('el boton no apago la herramienta');
             franja.remove();
-            for (const h of HERRAMIENTAS) ajustes.fijar(h.clave, false);
             anotar(true, titulo);
           } catch (e) {
             anotar(false, titulo, e.stack || e.message);
+          } finally {
+            restaurar();
           }
         }
 
