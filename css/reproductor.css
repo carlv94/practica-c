@@ -400,6 +400,16 @@
 .rep-consola-ampliar:hover {
   opacity: 1;
 }
+/* con el dedo, el boton de ampliar mide 42 px (ver "pointer: coarse"): la caja de la consola tiene que ser al menos tan alta para que el boton quede adentro */
+@media (pointer: coarse) {
+  .rep-consola-caja {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 52px;
+    box-sizing: border-box;
+  }
+}
 /* lo que se tipeo (el eco de la entrada) se distingue de lo que muestra el programa */
 .rep-eco {
   color: var(--acento);
@@ -553,6 +563,26 @@
 .rep-marco.rep-actual {
   stroke: var(--acento);
   stroke-width: 2;
+}
+/* una caja plegada de una recursion: un renglon con la llamada, mas liviano que las cajas completas */
+.rep-marco.rep-plegado {
+  stroke-dasharray: 4 3;
+}
+.rep-svg .rep-funcion-plegada {
+  font-weight: 400;
+  fill: var(--suave);
+  font-size: 11px;
+}
+.rep-svg .rep-funcion-plegada-titulo {
+  font-weight: 700;
+  fill: var(--suave);
+  font-size: 11px;
+}
+.rep-plegada-g {
+  cursor: help;
+}
+.rep-plegada-g.rep-foco .rep-marco {
+  stroke: var(--acento);
 }
 .rep-bloque {
   fill: var(--panel);
@@ -1470,9 +1500,28 @@
 .rep-flota .rep-tools-panel:not([hidden]) {
   display: block;
 }
+/* la consola de una sola linea: sin relleno de mas, el boton de ampliar chico (con la zona de toque de siempre, que no ocupa alto) y, mientras
+   no haya nada que mostrar, escondida: ese alto es de la figura */
+.rep-flota .rep-consola-caja {
+  display: block;
+  min-height: 0;
+  padding: 3px 0;
+}
 .rep-flota .rep-consola-ampliar {
-  min-height: 28px;
-  padding: 2px 8px;
+  top: 50%;
+  right: 4px;
+  min-height: 24px;
+  min-width: 28px;
+  padding: 1px 6px;
+  transform: translateY(-50%);
+}
+.rep-flota .rep-consola-ampliar::after {
+  content: '';
+  position: absolute;
+  inset: -9px -4px;
+}
+.rep-flota.rep-consola-vacia .rep-consola-caja {
+  display: none;
 }
 
 /* la flecha que acaba de cambiar, y adonde apuntaba antes */

@@ -166,6 +166,7 @@ export function fotografia(motor, linea) {
     globales: motor.memoria.globales.filter((r) => r.region === 'global' && r.nombre).map(deLaReserva),
     marcos: motor.marcos.map((m) => ({
       funcion: m.funcion,
+      parametros: m.parametros ?? 0, // (cuantas de sus primeras variables son parametros: la figura las nombra al plegar la caja)
       variables: variablesDelMarco(m),
     })),
     monticulo: motor.memoria.monticulo.map(deLaReserva),

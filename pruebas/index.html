@@ -849,6 +849,78 @@ import { corregir } from '../js/corrector.js';
           }
         }
 
+        // Plegar las cajas de una recursion: quedan completas la caja en curso y la que la llamo; las mas viejas son un renglon con la llamada y sus valores
+        // (sin variables ni flechas) que se puede senalar para ver sus variables. Con la ayuda apagada no se pliega nada.
+        {
+          const titulo = 'figura: las cajas viejas de una recursion se pliegan (ayuda "Plegar las cajas de una recursion")';
+          const lugar = document.createElement('div');
+          try {
+            const { Figura } = await import('../js/motor/figura.js');
+            const fuente = '#include <stdio.h>\nint suma(int n) {\n  if (n == 0) {\n    return 0;\n  }\n  return n + suma(n - 1);\n}\nint main() {\n  int r = suma(4);\n  printf("%d\\n", r);\n  return 0;\n}';
+            const m = ejecutarMotor(analizador, fuente, { traza: true });
+            if (m.error) throw new Error('el programa no corre: ' + m.error.codigo);
+            let k = 0;
+            m.traza.forEach((f, i) => {
+              if (f.marcos.length > m.traza[k].marcos.length) k = i;
+            });
+            if (m.traza[k].marcos.length !== 6) throw new Error('la pila mas honda tiene ' + m.traza[k].marcos.length + ' cajas y se esperaban 6');
+            if (m.traza[k].marcos[1].parametros !== 1) throw new Error('la caja no dice cuantos parametros tiene la funcion');
+            document.body.append(lugar);
+            const dibujar = (plegar) => {
+              lugar.replaceChildren();
+              const figura = new Figura(lugar);
+              figura.fijarAyudas({ plegarPila: plegar });
+              for (let j = 0; j <= k; j++) figura.mostrar(m.traza[j], j ? m.traza[j - 1] : null, { animar: false });
+              return figura;
+            };
+            let figura = dibujar(false);
+            if (lugar.querySelectorAll('.rep-plegada-g').length) throw new Error('con la ayuda apagada no se pliega nada');
+            const cajasDe = () => [...lugar.querySelectorAll('.rep-marco-g')].map((g) => (g.classList.contains('rep-plegada-g') ? 'plegada ' : '') + g.querySelector('.rep-funcion').textContent);
+            figura = dibujar(true);
+            // de arriba abajo: la caja en curso, UN bloque con las cuatro llamadas anteriores (suma(1) a suma(4)) y main
+            if (cajasDe().join('|') !== 'suma()|plegada suma: 4 llamadas anteriores|main()') throw new Error('las cajas son ' + cajasDe().join('|'));
+            const renglones = [...lugar.querySelectorAll('.rep-plegada-g .rep-funcion-plegada')].map((t) => t.textContent);
+            if (renglones.join('|') !== 'suma(1)|suma(2)|suma(3)|suma(4)') throw new Error('los renglones del bloque plegado son ' + renglones.join('|'));
+            if (lugar.querySelectorAll('.rep-plegada-g .rep-var').length) throw new Error('un bloque plegado no lleva variables');
+            const d = figura.escena.datos.get(-2); // (el bloque se numera por su caja mas vieja: main es la 0 y suma(4) la 1)
+            if (!d || !d.plegada) throw new Error('el bloque plegado no tiene su descripcion');
+            const lineas = figura.descripcionLarga(d).map((x) => x.textContent);
+            if (lineas[0] !== 'suma: 4 llamadas anteriores' || !lineas.includes('suma(4)') || !lineas.includes('  n: 4')) throw new Error('la descripcion del bloque plegado: ' + lineas.join(' / '));
+            // con solo dos llamadas ya se pliega la primera: la caja en curso, el bloque con una llamada y main
+            const k2 = m.traza.findIndex((f) => f.marcos.length === 3);
+            lugar.replaceChildren();
+            figura = new Figura(lugar);
+            figura.fijarAyudas({ plegarPila: true });
+            for (let j = 0; j <= k2; j++) figura.mostrar(m.traza[j], j ? m.traza[j - 1] : null, { animar: false });
+            if (cajasDe().join('|') !== 'suma()|plegada suma: 1 llamada anterior|main()') throw new Error('con dos llamadas, las cajas son ' + cajasDe().join('|'));
+            // cuando la caja en curso va a devolver un valor, la que la llamo tambien queda completa (ahi llega lo que devuelve)
+            const kd = m.traza.findIndex((f) => f.retorno && f.marcos.length === 4);
+            if (kd < 1) throw new Error('no hay un paso con una caja por devolver un valor');
+            lugar.replaceChildren();
+            figura = new Figura(lugar);
+            figura.fijarAyudas({ plegarPila: true });
+            for (let j = 0; j <= kd; j++) figura.mostrar(m.traza[j], j ? m.traza[j - 1] : null, { animar: false });
+            if (cajasDe().join('|') !== 'suma()|suma()|plegada suma: 1 llamada anterior|main()') throw new Error('al devolver, las cajas son ' + cajasDe().join('|'));
+            // con muchas llamadas la altura del bloque no crece: tres renglones y "... y N mas"
+            const profundo = ejecutarMotor(analizador, fuente.replace('suma(4)', 'suma(12)'), { traza: true });
+            let kp = 0;
+            profundo.traza.forEach((f, i) => {
+              if (f.marcos.length > profundo.traza[kp].marcos.length) kp = i;
+            });
+            lugar.replaceChildren();
+            figura = new Figura(lugar);
+            figura.fijarAyudas({ plegarPila: true });
+            for (let j = 0; j <= kp; j++) figura.mostrar(profundo.traza[j], j ? profundo.traza[j - 1] : null, { animar: false });
+            const renglonesProfundo = [...lugar.querySelectorAll('.rep-plegada-g .rep-funcion-plegada')].map((t) => t.textContent);
+            if (renglonesProfundo.length !== 4 || renglonesProfundo[3] !== '… y 9 más') throw new Error('el bloque plegado de una pila honda: ' + renglonesProfundo.join('|'));
+            anotar(true, titulo);
+          } catch (e) {
+            anotar(false, titulo, e.stack || e.message);
+          } finally {
+            lugar.remove();
+          }
+        }
+
         // El cuadro de informacion de la figura con el dedo: se abre al tocar (apoyar y soltar sin mover), no al apoyar para desplazar la pagina, y se cierra con
         // un toque fuera de la figura o al desplazar (si no, se quedaba pegado a la pantalla).
         {
@@ -1048,6 +1120,44 @@ import { corregir } from '../js/corrector.js';
                 if (figura.raf) cancelAnimationFrame(figura.raf);
               }
             }
+            anotar(true, titulo);
+          } catch (e) {
+            anotar(false, titulo, e.stack || e.message);
+          } finally {
+            if (figura && figura.raf) cancelAnimationFrame(figura.raf);
+            lugar.remove();
+          }
+        }
+
+        // "Seguir la acción" muestra, junto a lo que cambia (una casilla de main, con el nombre de su variable), la caja de la funcion en curso, aunque en ella
+        // no cambie nada: es la que se sigue con el codigo.
+        {
+          const titulo = 'figura: sigue la accion con la caja de la funcion en curso y el nombre de la variable que cambia';
+          const lugar = document.createElement('div');
+          let figura = null;
+          try {
+            const { Figura } = await import('../js/motor/figura.js');
+            const fuente = '#include <stdio.h>\nvoid act(int v[], int n) {\n  v[n - 1] = 7;\n}\nint main() {\n  int v[8];\n  int i;\n  i = 0;\n  act(v, 3);\n  return 0;\n}';
+            const m = ejecutarMotor(analizador, fuente, { traza: true });
+            if (m.error) throw new Error('el programa no corre: ' + m.error.codigo);
+            const k = m.traza.findIndex((f) => f.linea === 4 && f.marcos.length === 2); // (el cambio de v[2] ya se hizo; sigue el "}" de act)
+            if (k < 1) throw new Error('no se encontro el paso');
+            lugar.style.cssText = 'width:420px;height:300px;overflow:auto';
+            document.body.append(lugar);
+            figura = new Figura(lugar);
+            figura.fijarEscala({ modo: 'fijo', zoom: 1 });
+            for (let j = 0; j <= k; j++) figura.mostrar(m.traza[j], j ? m.traza[j - 1] : null, { animar: false });
+            lugar.scrollTop = lugar.scrollHeight;
+            figura.seguirAccion({ nuevoPaso: true, suave: false });
+            const c = lugar.getBoundingClientRect();
+            const dentro = (r) => r.top >= c.top - 1 && r.bottom <= c.bottom + 1 && r.left >= c.left - 1 && r.right <= c.right + 1;
+            const cambiada = lugar.querySelector('.rep-celda.rep-cambio');
+            if (!cambiada) throw new Error('no cambio ninguna casilla');
+            if (!dentro(cambiada.getBoundingClientRect())) throw new Error('la casilla que cambio no esta a la vista');
+            const caja = [...lugar.querySelectorAll('.rep-marco-g')].find((g) => g.querySelector('.rep-funcion').textContent === 'act()');
+            if (!caja || !dentro(caja.querySelector('.rep-marco').getBoundingClientRect())) throw new Error('la caja de act no esta entera a la vista');
+            const nombre = cambiada.closest('.rep-var').querySelector('.rep-nombre');
+            if (!dentro(nombre.getBoundingClientRect())) throw new Error('el nombre de la variable no esta a la vista');
             anotar(true, titulo);
           } catch (e) {
             anotar(false, titulo, e.stack || e.message);

@@ -12,7 +12,8 @@
   margin: 0 0 6px;
   font-size: 1.02rem;
 }
-.ejercicio pre {
+/* (los bloques de codigo de la pagina; no los del reproductor, que tienen su propio margen y desplazamiento: la consola, el renglon de la linea) */
+.ejercicio pre:not(.rep pre) {
   margin: 8px 0;
   overflow-x: auto;
 }

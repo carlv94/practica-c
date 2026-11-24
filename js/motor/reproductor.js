@@ -319,6 +319,8 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
         else pintados.push(nodo('span', [x.eco ? 'rep-eco' : '', nuevo ? 'rep-salida-nueva' : ''].filter(Boolean).join(' '), t));
       }
     }
+    // (en la pantalla completa apaisada baja, la consola no se ve mientras no haya nada que mostrar: ver el CSS)
+    raiz.classList.toggle('rep-consola-vacia', !pintados.length);
     if (!pintados.length) pintados.push(' ');
     consola.replaceChildren(...pintados);
     consolaCompleta.replaceChildren(...pintados.map((p) => (typeof p === 'string' ? p : p.cloneNode(true))));

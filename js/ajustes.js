@@ -40,6 +40,13 @@ export const AYUDAS = [
     detalle: 'El rótulo de una condición la muestra escrita, con los valores puestos y resolviéndose parte por parte (127 % 10 == 5, 7 == 5) hasta la respuesta. Las condiciones con && y || van de a una condición simple, con el cortocircuito.',
   },
   {
+    clave: 'plegarPila',
+    almacen: 'ajuste-plegar-pila',
+    porDefecto: false,
+    titulo: 'Plegar las cajas de una recursión',
+    detalle: 'En una recursión (la misma función llamándose a sí misma, con tres o más cajas), queda completa la caja en curso (y, cuando va a devolver un valor, la que la llamó) y las más viejas se juntan en un solo bloque con un renglón por llamada y sus valores (aplicarDano(vidas, 2, 50)), sin sus flechas. Así la pila no crece con la profundidad y main se sigue viendo. Toca el bloque para ver las variables de cada llamada.',
+  },
+  {
     clave: 'resaltarFuncion',
     almacen: 'ajuste-resaltar-funcion',
     porDefecto: false,
@@ -157,10 +164,10 @@ export const HERRAMIENTAS = [
 const TODAS = [...AYUDAS, ...HERRAMIENTAS];
 
 export const PERFILES = [
-  { id: 'practica', nombre: 'Práctica', valores: { brilloCopias: true, brilloAsignaciones: false, brilloCondiciones: false, detalleCondiciones: false, resaltarFuncion: false, trazado: false, trazadoUnaColumna: false, preguntasTabla: false, detalleCondicionesTabla: false, detalleIda: false, preguntasTexto: false, punterosSinValor: false, resaltarIndice: false, nombresFlechas: false } },
-  { id: 'explicacion', nombre: 'Explicación', valores: { brilloCopias: true, brilloAsignaciones: true, brilloCondiciones: true, detalleCondiciones: false, resaltarFuncion: true, trazado: true, trazadoUnaColumna: false, preguntasTabla: true, detalleCondicionesTabla: false, detalleIda: false, preguntasTexto: false, punterosSinValor: true, resaltarIndice: true, nombresFlechas: false } },
+  { id: 'practica', nombre: 'Práctica', valores: { plegarPila: false, brilloCopias: true, brilloAsignaciones: false, brilloCondiciones: false, detalleCondiciones: false, resaltarFuncion: false, trazado: false, trazadoUnaColumna: false, preguntasTabla: false, detalleCondicionesTabla: false, detalleIda: false, preguntasTexto: false, punterosSinValor: false, resaltarIndice: false, nombresFlechas: false } },
+  { id: 'explicacion', nombre: 'Explicación', valores: { plegarPila: true, brilloCopias: true, brilloAsignaciones: true, brilloCondiciones: true, detalleCondiciones: false, resaltarFuncion: true, trazado: true, trazadoUnaColumna: false, preguntasTabla: true, detalleCondicionesTabla: false, detalleIda: false, preguntasTexto: false, punterosSinValor: true, resaltarIndice: true, nombresFlechas: false } },
   // Lo de Explicación, más todo lo que muestra el detalle de las cuentas: las condiciones, las preguntas y la ida de las llamadas.
-  { id: 'detallado', nombre: 'Detallado', valores: { brilloCopias: true, brilloAsignaciones: true, brilloCondiciones: true, detalleCondiciones: true, resaltarFuncion: true, trazado: true, trazadoUnaColumna: false, preguntasTabla: true, detalleCondicionesTabla: true, detalleIda: true, preguntasTexto: false, punterosSinValor: true, resaltarIndice: true, nombresFlechas: false } },
+  { id: 'detallado', nombre: 'Detallado', valores: { plegarPila: true, brilloCopias: true, brilloAsignaciones: true, brilloCondiciones: true, detalleCondiciones: true, resaltarFuncion: true, trazado: true, trazadoUnaColumna: false, preguntasTabla: true, detalleCondicionesTabla: true, detalleIda: true, preguntasTexto: false, punterosSinValor: true, resaltarIndice: true, nombresFlechas: false } },
 ];
 
 const estado = new Map();

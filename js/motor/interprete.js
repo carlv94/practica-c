@@ -2099,7 +2099,7 @@ class Interprete {
     }
     this.llamadasDe.set(f.nombre, (this.llamadasDe.get(f.nombre) || 0) + 1);
     const marca = this.memoria.marcaDePila();
-    const marco = { funcion: f.nombre, ambitos: [new Map()], declaraciones: f.declaraciones, cuerpoId: f.cuerpo ? f.cuerpo.id : null, registro, llamadaTexto: texto, desde: this.traza.length };
+    const marco = { funcion: f.nombre, parametros: f.params.length, ambitos: [new Map()], declaraciones: f.declaraciones, cuerpoId: f.cuerpo ? f.cuerpo.id : null, registro, llamadaTexto: texto, desde: this.traza.length };
     marco.ambitos[0].marca = marca;
     this.marcos.push(marco);
     f.params.forEach((p, i) => {

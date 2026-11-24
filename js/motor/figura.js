@@ -174,7 +174,7 @@ function medir(v) {
   if (esCadena(v)) return { w: anchoDeCadena(v), h: CH };
   if (esTabla(v)) return medirTabla(v);
   if (v.k === 'arr') {
-    const n = Math.min(v.elems.length, MAX_ELEMENTOS);
+    const n = filasDeTabla(v); // (8 casillas, o hasta la ultima que ya recibio un valor: ver filasDeTabla)
     let w = 0;
     let h = CH;
     for (let i = 0; i < n; i++) {
@@ -265,6 +265,39 @@ function punterosDe(v, salida = []) {
   else if (v.k === 'est') v.campos.forEach((c) => punterosDe(c.v, salida));
   else if (v.k === 'arr') v.elems.forEach((e) => punterosDe(e, salida));
   return salida;
+}
+
+// Las cajas de una recursion que se pliegan (ayuda "Plegar las cajas de una recursion"): en un tramo de dos o mas cajas seguidas de la misma funcion
+// queda completa la ultima (la que esta en curso) y, solo cuando esa va a devolver un valor, tambien la que la llamo (a la que llega); las demas se
+// pliegan, todas juntas en un solo bloque (ver la pila en "construir"). Una caja a cuyas variables apunta alguna flecha no se pliega (la flecha
+// quedaria apuntando a la nada). Devuelve los indices de "foto.marcos".
+function marcosAPlegar(foto) {
+  const n = foto.marcos.length;
+  const plegar = new Set();
+  let i = 0;
+  while (i < n) {
+    let j = i;
+    while (j + 1 < n && foto.marcos[j + 1].funcion === foto.marcos[i].funcion) j++;
+    if (j - i + 1 >= 2) {
+      const completas = j === n - 1 && foto.retorno ? 2 : 1;
+      for (let k = i; k <= j - completas; k++) plegar.add(k);
+    }
+    i = j + 1;
+  }
+  if (!plegar.size) return plegar;
+  const apuntadas = new Set();
+  for (const v of [...foto.globales, ...foto.marcos.flatMap((m) => m.variables), ...foto.monticulo]) for (const q of punterosDe(v.valor)) apuntadas.add(q.a);
+  for (const k of [...plegar]) if (foto.marcos[k].variables.some((v) => apuntadas.has(v.id))) plegar.delete(k);
+  return plegar;
+}
+
+// El renglon de una caja plegada: la llamada con los valores de sus parametros (de un puntero, su nombre: no tiene un valor que se pueda escribir).
+function textoPlegado(marco) {
+  const args = marco.variables.slice(0, marco.parametros || 0).map((v) => {
+    const x = v.valor;
+    return x.k === 'num' ? etiqueta(x) : x.k === 'sinvalor' ? '?' : x.k === 'nulo' ? 'NULL' : v.nombre;
+  });
+  return `${marco.funcion}(${args.join(', ')})`;
 }
 
 // Un valor sin contenido (para una variable que todavia no se declaro): conserva la forma.
@@ -534,7 +567,7 @@ class Pintor {
     }
     if (v.k === 'arr') {
       let cx = x;
-      const n = Math.min(v.elems.length, MAX_ELEMENTOS);
+      const n = filasDeTabla(v); // (8 casillas, o hasta la ultima que ya recibio un valor: ver filasDeTabla)
       for (let i = 0; i < n; i++) {
         const mi = medir(v.elems[i]);
         this.valor(v.elems[i], cx, y, id, [...ruta, i]);
@@ -2130,10 +2163,17 @@ export class Figura {
     const cabe = (c) => c.w <= cont.clientWidth - 2 * margen && c.h <= cont.clientHeight - 2 * margen;
     // las casillas que cambian
     const elementos = [...svg.querySelectorAll('.rep-celda.rep-cambio')];
+    // (cada una con el nombre de su variable, a la izquierda: asi lo que se ve es "vidas" con la casilla que cambia, no solo la casilla)
     const celdas = elementos.map((e) => {
       const r = aContenido(e.getBoundingClientRect());
       const f = faltaPara(e);
-      return { ...r, x: r.x + f.dx, y: r.y + f.dy };
+      const celda = { ...r, x: r.x + f.dx, y: r.y + f.dy };
+      const grupo = e.closest('.rep-var');
+      const nombre = grupo ? grupo.querySelector('.rep-nombre') : null;
+      if (!nombre) return celda;
+      const n = aContenido(nombre.getBoundingClientRect());
+      const x0 = Math.min(celda.x, n.x + f.dx);
+      return { ...celda, x: x0, w: celda.x + celda.w - x0 };
     });
     // Las cajas (de la pila o del monticulo) que aparecen en este paso, enteras; y, aunque no sean nuevas (el paso no se animo, o se llego por otro
     // camino), la caja de la pila donde cambia algo si entra en la vista: asi se ve con su titulo y con el nombre de cada variable.
@@ -2145,10 +2185,18 @@ export class Figura {
     for (const b of escena.bloques ? escena.bloques.values() : []) if (b.nuevo) cajas.push(deDibujo({ x: b.hasta.x, y: b.hasta.y, w: b.w, h: b.h + ENCABEZADO }));
     const objetivos = [...puntas, ...cajas, ...celdas];
     if (!objetivos.length) return;
+    // La caja de la funcion en curso, de contexto (es la que se sigue con el codigo), si entra en la vista.
+    const enCurso = [...(escena.marcosG ? escena.marcosG.values() : [])].find((m) => m.rect && m.rect.classList.contains('rep-actual'));
+    const enteraEnCurso = enCurso ? deDibujo({ x: 8, y: enCurso.hasta.y, w: enCurso.ancho, h: enCurso.alto }) : null;
+    const contexto = enteraEnCurso && cabe(enteraEnCurso) ? [enteraEnCurso] : [];
     // Lo que se muestra, en orden de preferencia: todo junto; las cajas nuevas enteras con las puntas de las flechas; las cajas nuevas enteras (ahi
     // empieza la flecha: un parametro puntero de una funcion que se abre); las dos puntas de las flechas; las casillas que cambian (donde empieza la
-    // flecha, si el paso no se anima y no hay cajas nuevas); solo adonde llega la ultima. Si nada entra, el comienzo de lo que cambia.
-    const preferencias = [objetivos, [...cajas, ...puntas], cajas, puntas, celdas, puntas.slice(-1)].filter((l) => l.length);
+    // flecha, si el paso no se anima y no hay cajas nuevas); solo adonde llega la ultima. Cada una, si entra, con la caja en curso. Si nada entra,
+    // el comienzo de lo que cambia.
+    const candidatas = [objetivos, [...cajas, ...puntas], cajas, puntas, celdas, puntas.slice(-1)].filter((l) => l.length);
+    // (primero todas con la caja en curso, de la mas completa a la mas chica; recien despues sin ella: se prefiere la caja en curso con lo que cambia
+    // antes que la caja entera de main sin la funcion)
+    const preferencias = contexto.length ? [...candidatas.map((l) => [...l, ...contexto]), ...candidatas] : candidatas;
     let r = preferencias.map(caja).find(cabe);
     if (!r) r = puntas.length ? puntas[puntas.length - 1] : caja(objetivos);
     const ajustar = (desde, tam, vista, actual) => {
@@ -2273,13 +2321,36 @@ export class Figura {
     raiz.append(texto(8, 14, 'Pila', 'rep-titulo'));
     const cajas = [];
     if (foto.globales.length) cajas.push({ clave: 'globales', titulo: 'globales', variables: foto.globales });
+    // (con la ayuda "Plegar las cajas de una recursion", las mas viejas de una recursion son UN solo bloque con un renglon por llamada, sin variables ni
+    // flechas; con muchas llamadas, los renglones de las mas cercanas y "... y N mas": la altura no crece con la profundidad)
+    const plegadas = this.ayudas.plegarPila ? marcosAPlegar(foto) : new Set();
     for (let i = foto.marcos.length - 1; i >= 0; i--) {
-      cajas.push({ clave: `${i}:${foto.marcos[i].funcion}`, titulo: `${foto.marcos[i].funcion}()`, variables: foto.marcos[i].variables, actual: i === foto.marcos.length - 1 });
+      const m = foto.marcos[i];
+      if (plegadas.has(i)) {
+        let k = i;
+        while (k - 1 >= 0 && plegadas.has(k - 1)) k--;
+        const grupo = foto.marcos.slice(k, i + 1).reverse(); // (la mas reciente primero)
+        const textos = grupo.map(textoPlegado);
+        cajas.push({
+          // (la clave es la de la caja mas vieja del bloque: se mantiene mientras el bloque crece)
+          clave: `${k}:${m.funcion}`,
+          titulo: `${m.funcion}: ${grupo.length} ${grupo.length === 1 ? 'llamada anterior' : 'llamadas anteriores'}`,
+          variables: [],
+          actual: false,
+          plegada: true,
+          idPlegada: -(k + 1),
+          grupo,
+          lineas: textos.length <= 4 ? textos : [...textos.slice(0, 3), `… y ${textos.length - 3} más`],
+        });
+        i = k;
+        continue;
+      }
+      cajas.push({ clave: `${i}:${m.funcion}`, titulo: `${m.funcion}()`, variables: m.variables, actual: i === foto.marcos.length - 1 });
     }
     const marcosG = new Map();
     // Una flecha de la pila que apunta dentro de una variable de la pila (un elemento de un arreglo, un campo) llega desde arriba, por un
     // carril encima de su fila, y no cruzando las demas casillas: la fila reserva un poco de lugar encima para ese carril.
-    const variablesDePila = [...foto.globales, ...foto.marcos.flatMap((m) => m.variables)];
+    const variablesDePila = cajas.flatMap((c) => c.variables); // (las de una caja plegada no se dibujan)
     const idsDePila = new Set(variablesDePila.map((v) => v.id));
     const haciaFila = new Map();
     for (const v of variablesDePila) for (const q of punterosDe(v.valor)) if (q.ruta.length && idsDePila.has(q.a)) haciaFila.set(q.a, (haciaFila.get(q.a) || 0) + 1);
@@ -2288,14 +2359,21 @@ export class Figura {
       const etiquetaAncho = Math.max(0, ...caja.variables.map((v) => v.nombre.length)) * LETRA + 12;
       // (una tabla recibe las flechas por el costado: no necesita el carril de encima)
       const filas = caja.variables.map((v) => ({ v, m: medir(v.valor), extra: esTabla(v.valor) ? 0 : lugarDelCarril(haciaFila.get(v.id) || 0) }));
-      const ancho = Math.max(120, etiquetaAncho + Math.max(0, ...filas.map((f) => f.m.w)) + 22, caja.titulo.length * LETRA + 22);
-      const alto = 22 + filas.reduce((s, f) => s + f.extra + f.m.h + 8, 0) + (filas.length ? 2 : 6);
+      const ancho = Math.max(120, etiquetaAncho + Math.max(0, ...filas.map((f) => f.m.w)) + 22, caja.titulo.length * LETRA + 22, ...(caja.plegada ? caja.lineas.map((l) => l.length * 6.6 + 34) : []));
+      const alto = caja.plegada ? 22 + caja.lineas.length * 14 + 6 : 22 + filas.reduce((s, f) => s + f.extra + f.m.h + 8, 0) + (filas.length ? 2 : 6);
       // Cada caja es un grupo con coordenadas propias: asi se la puede mover.
-      const gm = el('g', { class: 'rep-marco-g' });
+      const gm = el('g', { class: 'rep-marco-g' + (caja.plegada ? ' rep-plegada-g' : '') });
       raiz.append(gm);
-      const bordeMarco = el('rect', { x: 8, y: 0, width: ancho, height: alto, rx: 6, class: 'rep-marco' + (caja.actual ? ' rep-actual' : '') });
+      const bordeMarco = el('rect', { x: 8, y: 0, width: ancho, height: alto, rx: 6, class: 'rep-marco' + (caja.actual ? ' rep-actual' : '') + (caja.plegada ? ' rep-plegado' : '') });
       gm.append(bordeMarco);
-      gm.append(texto(16, 15, caja.titulo, 'rep-funcion'));
+      gm.append(texto(16, 15, caja.titulo, 'rep-funcion' + (caja.plegada ? ' rep-funcion-plegada-titulo' : '')));
+      if (caja.plegada) {
+        caja.lineas.forEach((l, j) => gm.append(texto(22, 31 + 14 * j, l, 'rep-funcion-plegada')));
+        // El bloque plegado se puede senalar (o tocar) para ver las variables de cada llamada: tiene su propio numero (negativo, para no chocar con el de
+        // una variable).
+        gm.setAttribute('data-id', String(caja.idPlegada));
+        datos.set(caja.idPlegada, { plegada: true, titulo: caja.titulo, funcion: caja.grupo[0].funcion, marcos: caja.grupo });
+      }
       p.marco = caja.clave;
       let fy = 22;
       for (const f of filas) {
@@ -3122,13 +3200,27 @@ export class Figura {
 
   // Lo que se dice de una variable o un bloque: el nombre, el tipo, la direccion y el contenido.
   descripcionLarga(d) {
-    const r = d.reserva;
     const nodo = (clase, contenido) => {
       const e = document.createElement('div');
       e.className = clase;
       e.textContent = contenido;
       return e;
     };
+    // Las llamadas plegadas de una recursion: cada una con sus variables y lo que valen (las primeras, la mas reciente primero).
+    if (d.plegada) {
+      const lineas = [nodo('rep-tip-titulo', d.titulo), nodo('rep-tip-datos', `llamadas plegadas de ${d.funcion}`)];
+      for (const m of d.marcos.slice(0, 8)) {
+        lineas.push(nodo('rep-tip-valor', textoPlegado(m)));
+        for (const v of m.variables) {
+          const c = this.contenido(v.valor, '    ', v.id, []);
+          lineas.push(nodo('rep-tip-valor', c.length === 1 ? `  ${v.nombre}: ${c[0].trim()}` : `  ${v.nombre}:`));
+          if (c.length > 1) for (const l of c) lineas.push(nodo('rep-tip-valor', l));
+        }
+      }
+      if (d.marcos.length > 8) lineas.push(nodo('rep-tip-valor', `… y ${d.marcos.length - 8} llamadas más`));
+      return lineas;
+    }
+    const r = d.reserva;
     const titulo = d.bloque ? `Bloque reservado con malloc${r.vivo ? '' : ' (liberado)'}` : `${r.nombre}${r.pendiente ? ' (todavía no declarada)' : ''}`;
     const datosTexto = [];
     if (r.tipo) datosTexto.push(r.tipo);
