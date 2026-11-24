@@ -849,6 +849,82 @@ import { corregir } from '../js/corrector.js';
           }
         }
 
+        // El cuadro de informacion de la figura con el dedo: se abre al tocar (apoyar y soltar sin mover), no al apoyar para desplazar la pagina, y se cierra con
+        // un toque fuera de la figura o al desplazar (si no, se quedaba pegado a la pantalla).
+        {
+          const titulo = 'figura: el cuadro de informacion con el dedo (se abre al tocar, no al desplazar; se cierra al tocar fuera o desplazar)';
+          const lugar = document.createElement('div');
+          try {
+            const { Figura } = await import('../js/motor/figura.js');
+            const m = ejecutarMotor(analizador, '#include <stdio.h>\nint main() {\n  int a = 3;\n  int b = a;\n  return 0;\n}', { traza: true });
+            document.body.append(lugar);
+            const figura = new Figura(lugar);
+            const k = m.traza.findIndex((f) => f.linea === 5); // (antes de "return 0;": main todavia tiene sus variables)
+            if (k < 1) throw new Error('no se encontro el paso');
+            for (let j = 0; j <= k; j++) figura.mostrar(m.traza[j], j ? m.traza[j - 1] : null, { animar: false });
+            const variable = lugar.querySelector('svg [data-id]');
+            if (!variable) throw new Error('la figura no tiene variables');
+            const evento = (tipo, objetivo, x = 50, y = 50) => objetivo.dispatchEvent(new PointerEvent(tipo, { bubbles: true, pointerType: 'touch', clientX: x, clientY: y, pointerId: 7 }));
+            // apoyar y arrastrar (la pagina se desplaza: el navegador cancela el gesto) no abre nada
+            evento('pointerdown', variable);
+            evento('pointercancel', variable);
+            if (!figura.tip.hidden) throw new Error('se abrio el cuadro al apoyar el dedo para desplazar');
+            // un toque lo abre
+            evento('pointerdown', variable);
+            evento('pointerup', variable);
+            if (figura.tip.hidden) throw new Error('un toque no abrio el cuadro');
+            // un toque fuera de la figura lo cierra
+            evento('pointerdown', document.body);
+            if (!figura.tip.hidden) throw new Error('un toque fuera de la figura no cerro el cuadro');
+            // desplazar la pagina lo cierra
+            evento('pointerdown', variable);
+            evento('pointerup', variable);
+            if (figura.tip.hidden) throw new Error('el segundo toque no abrio el cuadro');
+            window.dispatchEvent(new Event('scroll'));
+            if (!figura.tip.hidden) throw new Error('desplazar no cerro el cuadro');
+            // apoyar y soltar lejos (moviendo el dedo mas de 10 px) no abre nada
+            evento('pointerdown', variable, 50, 50);
+            evento('pointerup', variable, 50, 90);
+            if (!figura.tip.hidden) throw new Error('un gesto con el dedo en movimiento abrio el cuadro');
+            anotar(true, titulo);
+          } catch (e) {
+            anotar(false, titulo, e.stack || e.message);
+          } finally {
+            lugar.remove();
+          }
+        }
+
+        // Cuando la cinta de la entrada no se ve, la lectura (scanf) dura menos: la figura acorta el paso con "factorLectura".
+        {
+          const titulo = 'figura: una lectura dura menos si la cinta de la entrada no se ve (factorLectura)';
+          const lugar = document.createElement('div');
+          try {
+            const { Figura } = await import('../js/motor/figura.js');
+            const m = ejecutarMotor(analizador, '#include <stdio.h>\nint main() {\n  int n;\n  scanf("%d", &n);\n  return 0;\n}', { entrada: '7\n', traza: true, preguntas: true });
+            const k = m.traza.findIndex((f) => f.lectura);
+            if (k < 1) throw new Error('no hay un paso con lectura');
+            document.body.append(lugar);
+            const duracion = (factor) => {
+              lugar.replaceChildren();
+              const figura = new Figura(lugar);
+              figura.factorLectura = factor;
+              for (let j = 0; j < k; j++) figura.mostrar(m.traza[j], j ? m.traza[j - 1] : null, { animar: false });
+              const d = figura.mostrar(m.traza[k], m.traza[k - 1], { animar: true, duracion: 400, flujo: true });
+              if (figura.raf) cancelAnimationFrame(figura.raf);
+              return d;
+            };
+            const normal = duracion(1);
+            const corta = duracion(0.45);
+            if (!(normal > 0)) throw new Error('el paso de la lectura no se anima');
+            if (!(corta < normal * 0.7)) throw new Error('con la cinta oculta el paso dura ' + corta + ' y con ella ' + normal);
+            anotar(true, titulo);
+          } catch (e) {
+            anotar(false, titulo, e.stack || e.message);
+          } finally {
+            lugar.remove();
+          }
+        }
+
         // La tabla de estructuras dibuja 8 filas (o hasta la ultima que recibio un valor) y, al declarar el arreglo, resalta tambien las cadenas sin valor
         // (que se dibujan como una sola casilla "?").
         {

@@ -1962,3 +1962,20 @@
     animation: none;
   }
 }
+
+/* lo que se tipeo viaja a la casilla que lo recibe cuando la cinta de la entrada no se ve (ver volarFichas en reproductor.js) */
+.rep-ficha {
+  position: fixed;
+  z-index: 1500;
+  padding: 2px 9px;
+  transform: translate(-50%, -50%);
+  background: var(--acento);
+  color: var(--sobre-acento, #fff);
+  border-radius: 999px;
+  font-family: Consolas, "Cascadia Mono", Menlo, monospace;
+  font-size: 0.85rem;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+  white-space: nowrap;
+}

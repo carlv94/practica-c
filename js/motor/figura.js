@@ -302,7 +302,7 @@ function fotoConLugar(foto, anterior) {
 // un scanf.
 function enciende(foto) {
   const celdas = [...(foto.muestra ? foto.muestra.celdas : []), ...(foto.lectura ? foto.lectura.celdas : [])];
-  return celdas.length ? { celdas } : null;
+  return celdas.length ? { celdas, lectura: Boolean(foto.lectura) } : null;
 }
 
 // Cuando en este paso se reserva un bloque (malloc) y ademas se recorre una flecha (*p = malloc(...), p->sig = malloc(...)):
@@ -749,6 +749,7 @@ export class Figura {
     this.escalaModo = { modo: 'ajustar', zoom: 1, alto: false };
     this.escalaActual = 1;
     this.fase = 'FIN';
+    this.factorLectura = 1; // cuanto dura el paso de un scanf, respecto de lo normal (menos si la cinta de la entrada no se ve)
     this.fundir = false; // se hacen los fundidos de color (cuando hay animacion)
     this.dDestello = 0; // lo que dura la expansion de las flechas que pasan a rojo
     this.nulosAnimados = new Set(); // los NULL que aparecen o se van durante el tiempo A (se les devuelve su estado al terminar)
@@ -1828,7 +1829,8 @@ export class Figura {
     // Los valores que acaba de mostrar un printf: sus casillas se encienden en violeta, quedan un rato y se apagan (el texto de
     // la consola se resalta a la vez: ver alMuestra).
     if (muestra && muestra.celdas.length) {
-      const dura = 2 * u;
+      // (una lectura que no pasa por la cinta de la entrada, porque no se ve, dura menos: ver factorLectura)
+      const dura = (muestra.lectura ? this.factorLectura : 1) * 2 * u;
       let hay = false;
       for (const celda of muestra.celdas) {
         const ancla = previa.anclas && previa.anclas.get(clave(celda.a, celda.ruta));
@@ -1844,7 +1846,7 @@ export class Figura {
       }
       if (hay) {
         this.anotar(t, 'Se muestran en la consola los valores impresos');
-        if (this.alMuestra) this.alMuestra(t, t + dura);
+        if (this.alMuestra) this.alMuestra(t, t + dura, muestra);
         t += dura;
       }
     }
@@ -2079,6 +2081,12 @@ export class Figura {
     svg.setAttribute('width', nw * k);
     svg.setAttribute('height', nh * k);
     this.escalaActual = k;
+  }
+
+  // El rectangulo (en la pantalla) de la casilla de una celda ({ a, ruta }) de la figura que se ve ahora, o null si no esta.
+  rectaDeCelda(celda) {
+    const t = this.contenedor.querySelector(`text[data-k="${clave(celda.a, celda.ruta)}"]`);
+    return t ? t.getBoundingClientRect() : null;
   }
 
   // La figura sigue la accion: se desplaza (con el scroll del contenedor) para que lo que pasa en este paso quede a la vista: las casillas que
@@ -2935,9 +2943,19 @@ export class Figura {
       const g = e.target.closest ? e.target.closest('.rep-flecha-g') : null;
       return g ? Number(g.getAttribute('data-i')) : null;
     };
-    // Con el dedo no hay cursor: un toque describe y otro toque (o fuera) cierra.
+    // Con el dedo no hay cursor: un toque describe y otro toque (o fuera) cierra. Un toque es apoyar y soltar sin mover el dedo: si el dedo se mueve
+    // es que se desplaza la pagina (el navegador cancela el gesto) y no se abre nada.
+    let apoyo = null;
     svg.addEventListener('pointerdown', (e) => {
-      if (e.pointerType !== 'touch') return;
+      if (e.pointerType === 'touch') apoyo = { x: e.clientX, y: e.clientY };
+    });
+    svg.addEventListener('pointercancel', () => (apoyo = null));
+    svg.addEventListener('pointerup', (e) => {
+      if (e.pointerType !== 'touch' || !apoyo) return;
+      const movio = Math.hypot(e.clientX - apoyo.x, e.clientY - apoyo.y) > 10;
+      apoyo = null;
+      if (movio) return;
+      this.tipTactil = true;
       const i = flechaDe(e);
       if (i != null) {
         this.enfocarFlecha(i === this.enfoqueFlecha ? null : i, e);
@@ -2976,6 +2994,32 @@ export class Figura {
     });
   }
 
+  // El cuadro que se abrio con un toque se cierra solo cuando deja de tener sentido: un toque fuera de la figura, desplazar la pagina o la figura, o que la
+  // figura salga de la pantalla (si no, se quedaba pegado a la pantalla, lejos de lo que describe).
+  vigilarTip() {
+    if (this.vigilando) return;
+    this.vigilando = true;
+    const cerrar = () => {
+      if (!this.tipTactil || this.tip.hidden) return;
+      this.tipTactil = false;
+      this.enfocar(null);
+      this.enfoqueFlecha = null;
+      this.aplicarEnfoque();
+    };
+    const fuera = (e) => {
+      if (!this.contenedor.isConnected) return;
+      if (e.target instanceof Node && this.svg && this.svg.contains(e.target)) return; // (un toque en el dibujo lo maneja el propio dibujo)
+      cerrar();
+    };
+    document.addEventListener('pointerdown', fuera, true);
+    window.addEventListener('scroll', cerrar, { capture: true, passive: true });
+    if (typeof IntersectionObserver === 'function') {
+      new IntersectionObserver((entradas) => {
+        if (entradas.some((x) => !x.isIntersecting)) cerrar();
+      }).observe(this.contenedor);
+    }
+  }
+
   enfocar(id, e = null) {
     this.enfoque = id;
     this.enfoqueFlecha = null;
@@ -2984,6 +3028,7 @@ export class Figura {
       this.tip.hidden = true;
       return;
     }
+    this.vigilarTip();
     const d = this.datos.get(id);
     if (!d) return;
     // El cuadro va sobre la pagina, no dentro del recuadro de la figura (que se desplaza).
@@ -3001,6 +3046,7 @@ export class Figura {
       this.tip.hidden = true;
       return;
     }
+    this.vigilarTip();
     if (!this.tip.isConnected) document.body.append(this.tip);
     this.tip.replaceChildren(...this.descripcionFlecha(this.escena.flechas[i]));
     this.tip.hidden = false;

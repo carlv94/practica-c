@@ -562,6 +562,53 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     relojes.push(tiempo.esperar(() => pintarEntrada(indice), dura));
     return relojes;
   };
+  // ¿Se ve la cinta de la entrada? (no, si el diseño la esconde, como en la pantalla completa apaisada, o si esta fuera de la pantalla)
+  const cintaVisible = () => {
+    if (!conEntrada || !cajaDeEntrada.isConnected || !cajaDeEntrada.getClientRects().length) return false;
+    const b = cajaDeEntrada.getBoundingClientRect();
+    return b.width > 0 && b.bottom > 0 && b.top < window.innerHeight && b.right > 0 && b.left < window.innerWidth;
+  };
+  // Sin la cinta, lo que se tipeo viaja como una ficha desde la linea de la consola (o, si no se ve, desde el borde de abajo de la figura) hasta la casilla que
+  // lo recibe: va por encima de todo, sin ocupar lugar, y desaparece al llegar. "dura" es lo que dura el paso de la lectura en la figura.
+  const fichasEnVuelo = new Set();
+  const quitarFichas = () => {
+    for (const f of fichasEnVuelo) f.remove();
+    fichasEnVuelo.clear();
+  };
+  const volarFichas = (lectura, muestra, dura) => {
+    if (sinMovimiento() || !muestra || !muestra.celdas || !(dura > 0)) return;
+    const valores = celdasDe(lectura.desde, lectura.hasta, false).map((c) => c.el.textContent);
+    const centro = (r) => ({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
+    const rc = consola.getBoundingClientRect();
+    const rf = figura.getBoundingClientRect();
+    const consolaVisible = rc.width > 0 && rc.bottom > 0 && rc.top < window.innerHeight;
+    const origen = consolaVisible ? centro(rc) : { x: rf.left + rf.width / 2, y: Math.min(rf.bottom, window.innerHeight) };
+    const vuelo = dura * 0.7;
+    muestra.celdas.forEach((celda, i) => {
+      if (valores[i] === undefined) return;
+      const ficha = nodo('span', 'rep-ficha', valores[i]);
+      ficha.style.opacity = '0';
+      document.body.append(ficha);
+      fichasEnVuelo.add(ficha);
+      const inicio = tiempo.ahora() + i * 0.12 * dura;
+      const volar = (ahora) => {
+        if (!ficha.isConnected) return;
+        const k = Math.min(1, Math.max(0, (tiempo.ahora(ahora) - inicio) / vuelo));
+        const r = dibujo.rectaDeCelda(celda);
+        const destino = r ? centro(r) : origen;
+        const e = 1 - (1 - k) * (1 - k);
+        ficha.style.left = `${origen.x + (destino.x - origen.x) * e}px`;
+        ficha.style.top = `${origen.y + (destino.y - origen.y) * e - Math.sin(Math.PI * e) * 24}px`;
+        ficha.style.opacity = String(k < 0.08 ? k / 0.08 : k > 0.92 ? (1 - k) / 0.08 : 1);
+        if (k < 1) requestAnimationFrame(volar);
+        else {
+          ficha.remove();
+          fichasEnVuelo.delete(ficha);
+        }
+      };
+      requestAnimationFrame(volar);
+    });
+  };
   // El trazado de las llamadas recursivas (ver el registro de llamadas del motor): una tabla con cada llamada que se completa con
   // los pasos. Dos modos (panel de ajustes): la ida y la vuelta en dos columnas, o una sola donde la cuenta se va transformando
   // (la llamada se reemplaza por su valor y despues se resuelve). Si el programa no usa memoria dinamica, reemplaza a la figura.
@@ -1469,6 +1516,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   let ultimaAnimacion = 0; // lo que dura la animacion del paso que se esta mostrando
   let relojModo = null; // el cambio de la tabla a la figura al terminar una recursion
   let relojSeguir = null; // la figura sigue la accion cuando termina de animarse (herramienta "Seguir la acción")
+  let soloTexto = false; // el paso de ahora solo anima un texto de la consola (un printf sin valores)
   let relojTrazado = null; // el trazado que espera a que termine la animacion de la figura
   let relojesEtapas = []; // las pausas entre etapa y etapa del paso (ver programarEtapas)
   let etapasDelPaso = []; // [{ t, nombre }] del paso en curso, si se avanza por etapas
@@ -1661,21 +1709,27 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     // despues de que los valores recorren la cinta.
     for (const r of relojesDeSalida) tiempo.cancelar(r);
     relojesDeSalida = [];
+    quitarFichas();
     const textoAhora = textoDeConsola(foto);
     const textoAntes = textoDeConsola(antes);
     const nuevoEnSalida = adelante && animar && textoAhora.length > textoAntes.length && textoAhora.startsWith(textoAntes) ? textoAhora.slice(textoAntes.length) : '';
     const nuevas = sinMarcas(nuevoEnSalida).length;
     const lectura = adelante && animar && foto.lectura && foto.lectura.hasta > foto.lectura.desde ? foto.lectura : null;
     let muestraDeLaFigura = false; // la figura enciende las casillas de lo que se imprimio (y avisa para resaltar el texto)
+    // Si la cinta de la entrada no se ve (esta escondida o fuera de la pantalla) no se la anima: la lectura dura menos y lo tipeado viaja a la casilla
+    // como una ficha (ver volarFichas).
+    const cintaViendose = cintaVisible();
+    dibujo.factorLectura = lectura && !cintaViendose ? 0.45 : 1;
     dibujo.alMuestra =
       nuevoEnSalida || lectura
-        ? (desde, hasta) => {
+        ? (desde, hasta, muestra) => {
             muestraDeLaFigura = true;
             if (lectura) {
-              relojesDeSalida.push(tiempo.esperar(() => relojesDeSalida.push(...leerEnLaCinta(paso, lectura, hasta - desde, unidad)), desde));
+              if (cintaViendose) relojesDeSalida.push(tiempo.esperar(() => relojesDeSalida.push(...leerEnLaCinta(paso, lectura, hasta - desde, unidad)), desde));
+              else relojesDeSalida.push(tiempo.esperar(() => volarFichas(lectura, muestra, hasta - desde), desde));
               if (nuevoEnSalida) {
                 relojesDeSalida.push(tiempo.esperar(() => pintarConsola(textoAhora, nuevas), hasta));
-                relojesDeSalida.push(tiempo.esperar(() => pintarConsola(textoAhora), hasta + 1.5 * unidad));
+                relojesDeSalida.push(tiempo.esperar(() => pintarConsola(textoAhora), hasta + (cintaViendose ? 1.5 : 0.8) * unidad));
               }
               return;
             }
@@ -1714,16 +1768,20 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     const dEditor = entrando ? 3.5 * fundidoDe(unidad) : 0;
     // Una lectura que no guarda en ninguna casilla (getchar) no tiene recorrido por la figura: la cinta y la consola siguen su propio tiempo.
     const soloCinta = Boolean(lectura && !(lectura.celdas && lectura.celdas.length));
-    const dLectura = soloCinta ? 2.4 * unidad : 0;
+    // (sin la cinta a la vista, lo tipeado llega a la consola enseguida)
+    const dLectura = soloCinta ? (cintaViendose ? 2.4 : 0.8) * unidad : 0;
     if (soloCinta) {
       muestraDeLaFigura = true;
-      relojesDeSalida.push(tiempo.esperar(() => relojesDeSalida.push(...leerEnLaCinta(paso, lectura, 2 * unidad, unidad)), 0));
+      if (cintaViendose) relojesDeSalida.push(tiempo.esperar(() => relojesDeSalida.push(...leerEnLaCinta(paso, lectura, 2 * unidad, unidad)), 0));
       if (nuevoEnSalida) {
-        relojesDeSalida.push(tiempo.esperar(() => pintarConsola(textoAhora, nuevas), 2 * unidad));
-        relojesDeSalida.push(tiempo.esperar(() => pintarConsola(textoAhora), 3.5 * unidad));
+        const llega = (cintaViendose ? 2 : 0.2) * unidad;
+        relojesDeSalida.push(tiempo.esperar(() => pintarConsola(textoAhora, nuevas), llega));
+        relojesDeSalida.push(tiempo.esperar(() => pintarConsola(textoAhora), llega + (cintaViendose ? 1.5 : 0.8) * unidad));
       }
     }
     ultimaAnimacion = Math.max(dFigura + dTrazado + dEditor + pausaVuelta + dFiguraVuelta, dLectura);
+    // Un paso en el que lo unico que se anima es un texto de la consola (un printf sin valores): "Reproducir" no espera tanto para pasar al que sigue.
+    soloTexto = Boolean(nuevoEnSalida && !muestraDeLaFigura && ultimaAnimacion === 0);
     // Las etapas (antes de programar lo demas: a la misma hora, la pausa va primero)
     if (porEtapas) {
       const marcas = [];
@@ -1796,7 +1854,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
       // Un texto que no sale de ninguna casilla (un printf o un puts con solo texto) se resalta igual, cuando llega, y despues vuelve a ser normal.
       if (nuevoEnSalida && !muestraDeLaFigura) {
         pintarConsola(textoAhora, nuevas);
-        relojesDeSalida.push(tiempo.esperar(() => pintarConsola(textoAhora), 2 * unidad));
+        relojesDeSalida.push(tiempo.esperar(() => pintarConsola(textoAhora), 0.8 * unidad));
       }
       pintarEntrada(paso);
       etiquetaEtapa.hidden = true; // (el paso terminado: ya no hay etapa en curso)
@@ -1886,7 +1944,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
         return;
       }
       programar();
-    }, Math.max(base, ultimaAnimacion + base * 0.45));
+    }, Math.max(soloTexto ? base * 0.5 : base, ultimaAnimacion + base * 0.45));
   }
 
   function arrancar() {
