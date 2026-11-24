@@ -791,6 +791,7 @@ export class Figura {
     this.animandoA = false; // las flechas que cambiaron se estan animando, cuadro por cuadro
     this.kA = 1; // cuanto de esa animacion (0 a 1)
     this.mostrarNombres = false;
+    this.sinMonticulo = false; // el programa nunca pide memoria: la figura no reserva la columna del monticulo (lo decide quien conoce la traza entera)
     this.ayudas = { brilloCopias: true, brilloAsignaciones: false, brilloCondiciones: false, detalleCondiciones: false }; // ayudas visuales que se pueden apagar (ver js/ajustes.js)
     this.enfoqueFlecha = null; // la flecha que se esta senalando
     this.fijada = null; // la flecha a la que se le hizo clic
@@ -2486,7 +2487,9 @@ export class Figura {
       cerrar();
       if (fila) by = fila.fondo + HUECO_FILAS;
     };
-    raiz.append(texto(x0, 14, 'Montículo', 'rep-titulo'));
+    // (un programa que nunca pide memoria no reserva la columna del monticulo: ni su titulo ni su ancho; ver sinMonticulo)
+    const sinMont = this.sinMonticulo && visibles.length === 0;
+    if (!sinMont) raiz.append(texto(x0, 14, 'Montículo', 'rep-titulo'));
     if (fijo) {
       for (const f of previa.filas) filas.push({ ...f });
       for (const b of visibles) {
@@ -2501,7 +2504,7 @@ export class Figura {
       colocar(sinPuntero);
     }
     alto = Math.max(alto, by);
-    const ancho = Math.max(limite + 20, ...[...lugares.values()].map((l) => l.x + l.w + 20));
+    const ancho = sinMont ? derechaPila + 30 : Math.max(limite + 20, ...[...lugares.values()].map((l) => l.x + l.w + 20));
 
     // ---- dibujar cada bloque con su origen en (0, 0): despues se lo mueve
     const bloques = new Map();

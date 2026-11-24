@@ -678,6 +678,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     return [];
   };
   const sinMonticulo = traza.every((f) => !(f.monticulo && f.monticulo.length));
+  dibujo.sinMonticulo = sinMonticulo; // (sin memoria dinamica la figura no reserva la columna del monticulo)
   const nivelBase = registros.length ? Math.min(...registros.map((r) => r.nivel)) : 0;
   // Con dos llamadas en el mismo return (un arbol) la sangria ayuda a ver que cuelga de que; si no, todo va a la izquierda.
   const ramifica = registros.some((r) => r.ida && r.ida.texto.split(r.funcion + '(').length > 2);

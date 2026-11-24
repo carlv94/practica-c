@@ -379,11 +379,39 @@
   padding: 0 30px 0 8px;
   font-size: 0.85rem;
 }
+/* la consola es casi negra en los dos temas (asi se la imagina uno, y en la pantalla apaisada se separa de la figura): con colores propios, que no
+   dependen del tema */
+.rep,
+.rep-consola-ventana {
+  --consola-fondo: #101319;
+  --consola-borde: #3b4351;
+  --consola-texto: #e3e7ee;
+  --consola-eco: #8fd0ff;
+}
 .rep-consola-caja {
   position: relative;
   padding: 6px 0;
-  background: var(--codigo);
+  background: var(--consola-fondo);
+  color: var(--consola-texto);
+  border: 1px solid var(--consola-borde);
   border-radius: 6px;
+}
+.rep-consola-caja .rep-consola {
+  background: transparent;
+  color: inherit;
+  border: 0;
+}
+.rep-consola-caja .rep-consola-ampliar {
+  color: var(--consola-texto);
+  background: transparent;
+  border-color: var(--consola-borde);
+}
+.rep-consola-caja .rep-consola-ampliar:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+.rep-consola .rep-eco,
+.rep-consola-completa .rep-eco {
+  color: var(--consola-eco);
 }
 .rep-consola-ampliar {
   position: absolute;
@@ -451,7 +479,9 @@
   margin: 0;
   overflow: auto;
   padding: 8px;
-  background: var(--codigo);
+  background: var(--consola-fondo);
+  color: var(--consola-texto);
+  border: 1px solid var(--consola-borde);
   border-radius: 6px;
   font-size: 0.85rem;
   line-height: 1.4;
@@ -1757,6 +1787,8 @@
 .rep-pregunta-g {
   position: sticky;
   top: 0;
+  /* tambien fijo a los costados: al desplazar la figura de lado el rotulo se queda en su esquina */
+  left: 0;
   height: 0;
   z-index: 4;
   text-align: right;

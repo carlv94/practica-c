@@ -937,6 +937,34 @@ import { corregir } from '../js/corrector.js';
           }
         }
 
+        // Un programa que nunca pide memoria no reserva la columna del monticulo (la decide quien conoce la traza: ver sinMonticulo en reproductor.js).
+        {
+          const titulo = 'figura: sin memoria dinamica no hay columna del monticulo (sinMonticulo)';
+          const lugar = document.createElement('div');
+          try {
+            const { Figura } = await import('../js/motor/figura.js');
+            const m = ejecutarMotor(analizador, '#include <stdio.h>\nint main() {\n  int a = 3;\n  return 0;\n}', { traza: true });
+            document.body.append(lugar);
+            const ancho = (sin) => {
+              lugar.replaceChildren();
+              const figura = new Figura(lugar);
+              figura.sinMonticulo = sin;
+              m.traza.forEach((f, j) => figura.mostrar(f, j ? m.traza[j - 1] : null, { animar: false }));
+              return { ancho: Number(lugar.querySelector('svg').getAttribute('viewBox').split(' ')[2]), titulos: [...lugar.querySelectorAll('svg .rep-titulo')].map((t) => t.textContent).join(',') };
+            };
+            const con = ancho(false);
+            const sin = ancho(true);
+            if (con.titulos !== 'Pila,Montículo') throw new Error('por defecto se reserva: ' + con.titulos);
+            if (sin.titulos !== 'Pila') throw new Error('sin memoria dinamica no hay titulo del monticulo: ' + sin.titulos);
+            if (sin.ancho >= con.ancho - 300) throw new Error('el ancho no se achico: ' + sin.ancho + ' contra ' + con.ancho);
+            anotar(true, titulo);
+          } catch (e) {
+            anotar(false, titulo, e.stack || e.message);
+          } finally {
+            lugar.remove();
+          }
+        }
+
         // El cuadro de informacion de la figura con el dedo: se abre al tocar (apoyar y soltar sin mover), no al apoyar para desplazar la pagina, y se cierra con
         // un toque fuera de la figura o al desplazar (si no, se quedaba pegado a la pantalla).
         {
