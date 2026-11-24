@@ -136,6 +136,7 @@ function planoDe(foto) {
   const plano = new Map();
   const recorrer = (v, id, ruta) => {
     if (v.k === 'est') v.campos.forEach((c) => recorrer(c.v, id, [...ruta, c.n]));
+    else if (esCadena(v)) plano.set(clave(id, ruta), `c${v.texto}`); // (una cadena es una sola casilla: cambia cuando cambia su texto)
     else if (v.k === 'arr') v.elems.forEach((e, i) => recorrer(e, id, [...ruta, i]));
     else plano.set(clave(id, ruta), v.k === 'num' ? `n${v.v}` : v.k === 'ptr' ? `p${v.a}:${v.ruta.join('/')}` : v.k);
   };

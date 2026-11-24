@@ -786,6 +786,33 @@ import { corregir } from '../js/corrector.js';
           }
         }
 
+        // Una cadena (char[] con texto) es una sola casilla en la figura: cuando cambia su texto se resalta como cualquier valor que cambia (antes no se
+        // resaltaba: solo se comparaban sus letras una por una, que no se dibujan), tambien dentro de una estructura (el campo cliente de una orden).
+        {
+          const titulo = 'figura: una cadena que cambia se resalta (tambien un campo de una estructura)';
+          const lugar = document.createElement('div');
+          try {
+            const { Figura } = await import('../js/motor/figura.js');
+            const fuente = '#include <stdio.h>\ntypedef struct { int n; char nombre[10]; } T;\nint main() {\n  char palabra[10];\n  T t;\n  t.n = 1;\n  scanf("%s", palabra);\n  scanf("%s", t.nombre);\n  return 0;\n}';
+            const m = ejecutarMotor(analizador, fuente, { entrada: 'Ana\nLopez\n', traza: true });
+            if (m.error) throw new Error('el programa no corre: ' + m.error.codigo);
+            document.body.append(lugar);
+            const figura = new Figura(lugar);
+            const cambiadas = [];
+            for (let j = 0; j < m.traza.length; j++) {
+              figura.mostrar(m.traza[j], j ? m.traza[j - 1] : null, { animar: false });
+              cambiadas.push([...lugar.querySelectorAll('.rep-cadena.rep-cambio')].map((r) => r.nextSibling && r.nextSibling.textContent).join('|'));
+            }
+            const textos = cambiadas.filter(Boolean);
+            if (textos.join(',') !== '"Ana","Lopez"') throw new Error('las cadenas resaltadas, paso a paso, fueron: ' + JSON.stringify(cambiadas));
+            anotar(true, titulo);
+          } catch (e) {
+            anotar(false, titulo, e.stack || e.message);
+          } finally {
+            lugar.remove();
+          }
+        }
+
         // Un programa de varios archivos (el ejercicio 3 del parcial: el .h, el .c y el main): se ejecuta unido en un solo texto y el reproductor lo muestra
         // por pestañas, con la numeración de cada archivo, y la pestaña sigue al cursor.
         {
