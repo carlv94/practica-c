@@ -55,8 +55,15 @@ function enunciadoA(contenedor, texto) {
     if (b.texto != null) {
       for (const parrafo of b.texto.split(/\n\s*\n/)) if (parrafo.trim()) contenedor.appendChild(conTexto('p', null, parrafo.trim()));
     } else if (b.items) {
-      const lista = nodo('ul');
-      for (const item of b.items) lista.appendChild(conTexto('li', null, item));
+      // Una lista de campos (todos los puntos son "`nombre`: descripción"): el nombre en color y la descripción debajo; el texto es el mismo.
+      const campos = b.items.map((item) => /^`([^`]+)`:\s*([\s\S]+)$/.exec(item));
+      const lista = nodo('ul', campos.every(Boolean) ? 'lista-campos' : null);
+      b.items.forEach((item, i) => {
+        if (!campos[i] || !campos.every(Boolean)) return lista.appendChild(conTexto('li', null, item));
+        const li = nodo('li');
+        li.append(nodo('code', 'campo-nombre', campos[i][1]), conTexto('span', 'campo-descripcion', campos[i][2]));
+        lista.appendChild(li);
+      });
       contenedor.appendChild(lista);
     } else if (b.formula != null) {
       contenedor.appendChild(nodo('pre', null, b.formula));

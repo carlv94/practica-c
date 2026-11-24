@@ -415,3 +415,40 @@ summary.seccion-titulo:hover {
   color: var(--suave);
   font-size: 0.9rem;
 }
+
+/* una lista de campos (nombre y descripcion): el nombre en color y la descripcion debajo; con ancho, en dos columnas */
+.lista-campos {
+  list-style: none;
+  margin: 12px 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+.lista-campos li {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 2px 0 2px 12px;
+  border-left: 3px solid color-mix(in srgb, var(--acento) 45%, transparent);
+}
+.lista-campos .campo-nombre {
+  padding: 0;
+  background: none;
+  color: var(--acento);
+  font-weight: 700;
+}
+.lista-campos .campo-descripcion code {
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+@media (min-width: 700px) {
+  .lista-campos li {
+    grid-template-columns: 11rem 1fr;
+    column-gap: 12px;
+  }
+}
+
+/* el titulo de un ejercicio no parte sus puntos en dos renglones */
+.ejercicio h2 .puntos {
+  white-space: nowrap;
+}
