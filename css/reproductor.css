@@ -390,6 +390,7 @@
 }
 .rep-consola-caja {
   position: relative;
+  flex: 0 0 auto; /* (en una columna con alto fijo no se achica: es la figura la que cede) */
   padding: 6px 0;
   background: var(--consola-fondo);
   color: var(--consola-texto);
@@ -1620,6 +1621,8 @@
    no haya nada que mostrar, escondida: ese alto es de la figura */
 .rep-flota .rep-consola-caja {
   display: block;
+  /* (no se achica: con min-height 0 la figura, que es alta, se la comia en la columna y dejaba la fila cortada) */
+  flex: 0 0 auto;
   min-height: 0;
   padding: 3px 0;
 }
