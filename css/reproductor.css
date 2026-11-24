@@ -1405,6 +1405,8 @@
 /* Un programa de varios archivos: una pestana por archivo sobre el codigo (en la ventana del codigo abierto, arriba a la izquierda) */
 .rep-pestanas {
   display: flex;
+  /* (en una columna con alto fijo, como el codigo apaisado, no se achica: con "overflow" su alto minimo es 0 y quedaba una rendija) */
+  flex: 0 0 auto;
   gap: 2px;
   margin: 0;
   overflow-x: auto;
@@ -1447,6 +1449,11 @@
   .rep-pestana {
     min-height: 36px;
   }
+}
+/* apaisado (la altura vale): pestanas mas bajas */
+.rep-apaisado .rep-pestana {
+  min-height: 30px;
+  padding: 2px 8px;
 }
 
 /* La caja de la figura no cambia la disposicion (sus hijos cuentan como hijos de la columna). */
