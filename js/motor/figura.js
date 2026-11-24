@@ -1097,6 +1097,22 @@ export class Figura {
         else if (m.crece != null) this.abrirCaja(m, m.crece, escena);
       }
     }
+    // La llamada que sale de un bloque plegado: su renglon (en color) se desvanece a la vez que se abre su caja, que brilla del mismo color.
+    const conFantasmas = [...escena.marcosG.values()].filter((m) => m.fantasmas);
+    const hayEco = mueve && seMueven && conFantasmas.length > 0;
+    for (const m of conFantasmas) {
+      if (!hayEco) {
+        for (const f of m.fantasmas.fantasmas) f.el.remove();
+        m.fantasmas = null;
+        continue;
+      }
+      for (const c of m.fantasmas.corridos) c.el.setAttribute('transform', `translate(0,${c.desp})`);
+      if (m.alto < m.fantasmas.altoAntes - 0.5) {
+        m.encoge = m.fantasmas.altoAntes;
+        m.rect.setAttribute('height', m.encoge);
+      }
+    }
+    if (hayEco) for (const m of escena.marcosG.values()) if (m.nuevo) m.g.classList.add('rep-resplandor');
     // Tiempo A: las flechas que cambiaron se animan (se dibujan, se redirigen o se retraen o se desvanecen) con los
     // bloques todavia donde estaban; despues, una pausa. Tiempo B: los bloques se reubican. FIN: todo
     // en su lugar. Si nada se mueve, solo hay tiempo A.
@@ -2292,6 +2308,10 @@ export class Figura {
       if (m.nuevo) this.abrirCaja(m, e);
       else if (m.crece != null) this.abrirCaja(m, m.crece + (1 - m.crece) * e);
       else if (m.encoge != null) m.rect.setAttribute('height', m.encoge + (m.alto - m.encoge) * e);
+      if (m.fantasmas) {
+        for (const f of m.fantasmas.fantasmas) f.el.style.opacity = String(1 - e);
+        for (const c of m.fantasmas.corridos) c.el.setAttribute('transform', `translate(0,${c.desp * (1 - e)})`);
+      }
     }
     // La caja que se va se cierra, de abajo hacia arriba, a la vez que la de abajo sube a su lugar.
     for (const sa of this.escena.salientes) this.abrirCaja(sa, 1 - e);
@@ -2368,7 +2388,29 @@ export class Figura {
       gm.append(bordeMarco);
       gm.append(texto(16, 15, caja.titulo, 'rep-funcion' + (caja.plegada ? ' rep-funcion-plegada-titulo' : '')));
       if (caja.plegada) {
-        caja.lineas.forEach((l, j) => gm.append(texto(22, 31 + 14 * j, l, 'rep-funcion-plegada')));
+        const nuevas = caja.lineas.map((l, j) => ({ l, j, el: texto(22, 31 + 14 * j, l, 'rep-funcion-plegada') }));
+        for (const n of nuevas) gm.append(n.el);
+        // Si el bloque ya estaba y perdio una llamada (salio de el: ahora tiene su caja), su renglon sigue un momento, en color, y se desvanece mientras se abre
+        // la caja; los renglones que quedan suben a su lugar. (fotograma() lo anima; si no hay movimiento, se quitan.)
+        const antes = previa && previa.marcosG.get(caja.clave);
+        if (antes && antes.lineas) {
+          const libres = antes.lineas.map((l, jo) => ({ l, jo, usada: false })).filter((o) => !o.l.startsWith('…'));
+          const corridos = [];
+          for (const n of nuevas) {
+            const o = libres.find((x) => !x.usada && x.l === n.l);
+            if (!o) continue;
+            o.usada = true;
+            if (o.jo !== n.j) corridos.push({ el: n.el, desp: 14 * (o.jo - n.j) });
+          }
+          const fantasmas = libres
+            .filter((o) => !o.usada)
+            .map((o) => {
+              const t = texto(22, 31 + 14 * o.jo, o.l, 'rep-funcion-plegada rep-fantasma');
+              gm.append(t);
+              return { el: t };
+            });
+          if (fantasmas.length) caja.fantasmas = { fantasmas, corridos, altoAntes: antes.alto };
+        }
         // El bloque plegado se puede senalar (o tocar) para ver las variables de cada llamada: tiene su propio numero (negativo, para no chocar con el de
         // una variable).
         gm.setAttribute('data-id', String(caja.idPlegada));
@@ -2394,7 +2436,7 @@ export class Figura {
       }
       p.marco = null;
       gm.setAttribute('transform', `translate(0,${y})`);
-      marcosG.set(caja.clave, { clave: caja.clave, g: gm, rect: bordeMarco, alto, ancho, hasta: { y } });
+      marcosG.set(caja.clave, { clave: caja.clave, g: gm, rect: bordeMarco, alto, ancho, hasta: { y }, lineas: caja.plegada ? caja.lineas : null, fantasmas: caja.fantasmas || null });
       anchoPila = Math.max(anchoPila, ancho + 8);
       y += alto + 10;
     }

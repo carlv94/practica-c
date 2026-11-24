@@ -581,6 +581,28 @@
 .rep-plegada-g {
   cursor: help;
 }
+/* la llamada que sale de un bloque plegado: su renglon se desvanece (en color) mientras se abre su caja, que lleva un resplandor del mismo color */
+.rep-svg .rep-funcion-plegada.rep-fantasma {
+  fill: var(--acento);
+  font-weight: 700;
+  pointer-events: none;
+}
+.rep-marco-g.rep-resplandor {
+  animation: rep-resplandor 1.4s ease-out;
+}
+@keyframes rep-resplandor {
+  from {
+    filter: drop-shadow(0 0 5px var(--acento));
+  }
+  to {
+    filter: drop-shadow(0 0 0 transparent);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rep-marco-g.rep-resplandor {
+    animation: none;
+  }
+}
 .rep-plegada-g.rep-foco .rep-marco {
   stroke: var(--acento);
 }

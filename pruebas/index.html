@@ -913,6 +913,22 @@ import { corregir } from '../js/corrector.js';
             for (let j = 0; j <= kp; j++) figura.mostrar(profundo.traza[j], j ? profundo.traza[j - 1] : null, { animar: false });
             const renglonesProfundo = [...lugar.querySelectorAll('.rep-plegada-g .rep-funcion-plegada')].map((t) => t.textContent);
             if (renglonesProfundo.length !== 4 || renglonesProfundo[3] !== '… y 9 más') throw new Error('el bloque plegado de una pila honda: ' + renglonesProfundo.join('|'));
+            // cuando una llamada sale del bloque plegado (ahora tiene su caja), su renglon sigue en color y se desvanece mientras la caja se abre
+            lugar.replaceChildren();
+            figura = new Figura(lugar);
+            figura.fijarAyudas({ plegarPila: true });
+            let fantasma = null;
+            for (let j = 0; j < m.traza.length && !fantasma; j++) {
+              figura.mostrar(m.traza[j], j ? m.traza[j - 1] : null, { animar: true });
+              const f = lugar.querySelector('.rep-plegada-g .rep-fantasma');
+              if (f) fantasma = { texto: f.textContent, caja: lugar.querySelectorAll('.rep-resplandor').length };
+            }
+            if (!fantasma) throw new Error('al salir una llamada del bloque plegado no queda su renglon desvaneciendose');
+            if (fantasma.caja !== 1) throw new Error('la caja que se abre no lleva el resplandor (' + fantasma.caja + ')');
+            figura.fotograma(1);
+            const sobra = [...lugar.querySelectorAll('.rep-fantasma')].filter((t) => t.style.opacity !== '0');
+            if (sobra.length) throw new Error('al terminar el renglon sigue visible');
+            if ([...lugar.querySelectorAll('.rep-plegada-g .rep-funcion-plegada:not(.rep-fantasma)')].some((t) => t.getAttribute('transform') && t.getAttribute('transform') !== 'translate(0,0)')) throw new Error('los renglones no volvieron a su lugar');
             anotar(true, titulo);
           } catch (e) {
             anotar(false, titulo, e.stack || e.message);
