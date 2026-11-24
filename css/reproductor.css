@@ -617,6 +617,15 @@
   stroke-width: 2;
   filter: drop-shadow(0 0 3px var(--acento));
 }
+/* el recuadro de una fila de una tabla (un arreglo de estructuras): invisible hasta que una flecha llega a la fila */
+.rep-celda.rep-fila-tabla {
+  fill: none;
+  stroke: none;
+  pointer-events: none;
+}
+.rep-celda.rep-fila-tabla.rep-apuntada {
+  stroke: var(--acento);
+}
 .rep-celda.rep-cambio {
   fill: var(--aviso-fondo);
   stroke: var(--aviso);

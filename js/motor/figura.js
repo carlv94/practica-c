@@ -102,6 +102,64 @@ function sinEnvoltura(valor) {
   return valor.k === 'arr' && valor.elems.length === 1 && !esCadena(valor) ? { v: valor.elems[0], ruta: [0] } : { v: valor, ruta: [] };
 }
 
+// ---- un arreglo de estructuras se dibuja como una tabla: una fila por elemento, con su indice a la izquierda, y los nombres de los campos una sola
+// vez, arriba (una estructura dentro de otra es un grupo de columnas con su nombre encima). Asi ocupa el ancho de UNA estructura y crece hacia abajo.
+const ANCHO_INDICE = 22;
+const FILAS_MINIMAS = 8; // las filas que se dibujan aunque no tengan valor (si hay mas elementos, un "…")
+const LINEA_ROTULO = 13; // lo que ocupa una linea de nombres de campos
+const esTabla = (v) => v.k === 'arr' && !esCadena(v) && v.elems.length > 0 && v.elems.every((e) => e.k === 'est');
+// Una cadena sin valor (todas sus letras sin valor) se dibuja en la tabla como una sola casilla "?": si no, ensancharia la columna entera.
+const esCadenaSinValor = (v) => v.k === 'arr' && !esCadena(v) && v.elems.length > 0 && v.elems.every((e) => e.k === 'sinvalor' && e.t === 'char');
+const hojaDeTabla = (v) => (esCadenaSinValor(v) ? { k: 'sinvalor', t: 'char' } : v);
+// ¿Alguna parte de este valor ya recibio un valor?
+const tieneValor = (v) => (v.k === 'sinvalor' ? false : v.k === 'est' ? v.campos.some((c) => tieneValor(c.v)) : v.k === 'arr' ? v.elems.some(tieneValor) : true);
+// Cuantas filas se dibujan: 8 (casi nunca se usan mas) o hasta la ultima que ya recibio algun valor, con un tope.
+const filasDeTabla = (v) => {
+  let ultima = -1;
+  v.elems.forEach((e, i) => {
+    if (tieneValor(e)) ultima = i;
+  });
+  return Math.min(v.elems.length, MAX_ELEMENTOS, Math.max(FILAS_MINIMAS, ultima + 1));
+};
+
+// Las columnas de las estructuras de una tabla: [{ n, j, hoja, w }] o, si el campo es una estructura, [{ n, j, hijos }]. "elems" son los valores de ese nivel.
+function columnasDe(elems) {
+  return elems[0].campos.map((c, j) => {
+    if (c.v.k === 'est') return { n: c.n, j, hijos: columnasDe(elems.map((e) => e.campos[j].v)) };
+    const medidas = elems.map((e) => medir(hojaDeTabla(e.campos[j].v)));
+    return { n: c.n, j, hoja: true, w: Math.max(c.n.length * 6 + 8, ...medidas.map((m) => m.w)), h: Math.max(...medidas.map((m) => m.h)) };
+  });
+}
+const altoDeColumna = (c) => (c.hoja ? 1 : 1 + Math.max(...c.hijos.map(altoDeColumna)));
+function anchoDeColumna(c) {
+  if (c.hoja) return c.w;
+  const suma = c.hijos.reduce((s, h) => s + anchoDeColumna(h), 0) + (c.hijos.length - 1) * (PAD / 2);
+  const falta = c.n.length * 6 + 8 - suma;
+  if (falta > 0) {
+    // el nombre del grupo es mas ancho que sus columnas: la ultima columna se ensancha
+    let u = c.hijos[c.hijos.length - 1];
+    while (!u.hoja) u = u.hijos[u.hijos.length - 1];
+    u.w += falta;
+    return suma + falta;
+  }
+  return suma;
+}
+const alturaDeFila = (columnas) => Math.max(CH, ...columnas.map((c) => (c.hoja ? c.h : alturaDeFila(c.hijos))));
+
+function disenoDeTabla(v) {
+  const n = filasDeTabla(v);
+  const columnas = columnasDe(v.elems.slice(0, n));
+  const lineas = Math.max(...columnas.map(altoDeColumna));
+  const ancho = columnas.reduce((s, c) => s + anchoDeColumna(c), 0) + (columnas.length - 1) * (PAD / 2);
+  const fila = alturaDeFila(columnas) + 4;
+  return { n, columnas, lineas, ancho, fila };
+}
+
+function medirTabla(v) {
+  const t = disenoDeTabla(v);
+  return { w: Math.max(ANCHO_INDICE + t.ancho, CW), h: t.lineas * LINEA_ROTULO + t.n * t.fila - 4 + (v.elems.length > t.n ? 16 : 0) };
+}
+
 function medir(v) {
   if (v.k === 'est') {
     let w = 0;
@@ -114,6 +172,7 @@ function medir(v) {
     return { w: Math.max(w - PAD / 2, CW), h: h + 13 };
   }
   if (esCadena(v)) return { w: anchoDeCadena(v), h: CH };
+  if (esTabla(v)) return medirTabla(v);
   if (v.k === 'arr') {
     const n = Math.min(v.elems.length, MAX_ELEMENTOS);
     let w = 0;
@@ -137,7 +196,11 @@ function planoDe(foto) {
   const recorrer = (v, id, ruta) => {
     if (v.k === 'est') v.campos.forEach((c) => recorrer(c.v, id, [...ruta, c.n]));
     else if (esCadena(v)) plano.set(clave(id, ruta), `c${v.texto}`); // (una cadena es una sola casilla: cambia cuando cambia su texto)
-    else if (v.k === 'arr') v.elems.forEach((e, i) => recorrer(e, id, [...ruta, i]));
+    else if (v.k === 'arr') {
+      // (una cadena sin valor, dentro de una tabla, tambien es una sola casilla)
+      if (esCadenaSinValor(v)) plano.set(clave(id, ruta), 'cs');
+      v.elems.forEach((e, i) => recorrer(e, id, [...ruta, i]));
+    }
     else plano.set(clave(id, ruta), v.k === 'num' ? `n${v.v}` : v.k === 'ptr' ? `p${v.a}:${v.ruta.join('/')}` : v.k);
   };
   const todas = [...foto.globales, ...foto.marcos.flatMap((m) => m.variables), ...foto.monticulo];
@@ -376,6 +439,7 @@ class Pintor {
     this.anclas = new Map();
     this.flechas = [];
     this.cambios = new Set();
+    this.enTabla = 0; // cuantas tablas (arreglos de estructuras) se estan dibujando
     this.rectas = new Map(); // el rectangulo de cada casilla, por su clave (para marcar a la que apunta una flecha de la pila)
     this.bloque = null; // el bloque que se esta dibujando (las coordenadas son locales)
     this.marco = null; // la caja de la pila que se esta dibujando (las coordenadas son locales a ella)
@@ -396,13 +460,63 @@ class Pintor {
   }
 
   ancla(id, ruta, x, y, w, h) {
-    this.anclas.set(clave(id, ruta), { bloque: this.bloque, marco: this.marco, x, y, w, h });
+    // "lateral": una parte de una tabla; una flecha de la pila llega a ella por el costado, no desde arriba (cruzaria las filas de arriba)
+    this.anclas.set(clave(id, ruta), { bloque: this.bloque, marco: this.marco, x, y, w, h, lateral: this.enTabla > 0 });
+  }
+
+  // Un arreglo de estructuras: una fila por elemento (ver disenoDeTabla).
+  tabla(v, x, y, id, ruta) {
+    const t = disenoDeTabla(v);
+    const xc = x + ANCHO_INDICE;
+    this.enTabla++;
+    // los nombres de los campos, una sola vez, alineados abajo (los de un grupo, una linea mas arriba que los de sus columnas)
+    const rotular = (columnas, cx) => {
+      for (const c of columnas) {
+        const w = anchoDeColumna(c);
+        this.capa.append(texto(cx + w / 2, y + 9 + LINEA_ROTULO * (t.lineas - altoDeColumna(c)), c.n, 'rep-campo', { 'text-anchor': 'middle' }));
+        if (!c.hoja) rotular(c.hijos, cx);
+        cx += w + PAD / 2;
+      }
+    };
+    rotular(t.columnas, xc);
+    const y0 = y + t.lineas * LINEA_ROTULO;
+    const celdas = (columnas, campos, cx, ry, rr) => {
+      for (const c of columnas) {
+        const w = anchoDeColumna(c);
+        const campo = campos[c.j].v;
+        if (c.hoja) {
+          const valor = hojaDeTabla(campo);
+          const mc = medir(valor);
+          this.valor(valor, cx + (w - mc.w) / 2, ry, id, [...rr, c.n]);
+        } else {
+          this.ancla(id, [...rr, c.n], cx, ry, w, CH);
+          celdas(c.hijos, campo.campos, cx, ry, [...rr, c.n]);
+        }
+        cx += w + PAD / 2;
+      }
+    };
+    for (let i = 0; i < t.n; i++) {
+      const ry = y0 + i * t.fila;
+      this.ancla(id, [...ruta, i], xc, ry, t.ancho, CH);
+      // el recuadro de la fila: solo se ve cuando una flecha llega a ella (rep-apuntada)
+      const recuadro = el('rect', { x: xc - 3, y: ry - 3, width: t.ancho + 6, height: CH + 6, rx: 5, class: 'rep-celda rep-fila-tabla' });
+      this.capa.append(recuadro);
+      this.rectas.set(clave(id, [...ruta, i]), recuadro);
+      this.capa.append(texto(xc - 5, ry + CH / 2 + 4, String(i), 'rep-indice', { 'text-anchor': 'end', 'data-i': clave(id, [...ruta, i]) }));
+      celdas(t.columnas, v.elems[i].campos, xc, ry, [...ruta, i]);
+    }
+    if (v.elems.length > t.n) this.capa.append(texto(xc, y0 + t.n * t.fila + 8, '…', 'rep-campo'));
+    this.enTabla--;
   }
 
   // Dibuja un valor con su esquina en (x, y) y registra donde quedo cada parte.
   valor(v, x, y, id, ruta) {
     const m = medir(v);
     this.ancla(id, ruta, x, y, m.w, m.h);
+    if (esTabla(v)) {
+      this.tabla(v, x, y, id, ruta);
+      return m;
+    }
     if (v.k === 'est') {
       let cx = x;
       for (const c of v.campos) {
@@ -647,6 +761,11 @@ export class Figura {
     this.enfoqueFlecha = null; // la flecha que se esta senalando
     this.fijada = null; // la flecha a la que se le hizo clic
     contenedor.classList.add('rep-figura-base');
+    // Si se la desplaza a mano, la figura deja de seguir la accion hasta el paso siguiente (ver seguirAccion).
+    this.tocada = false;
+    const alTocar = () => (this.tocada = true);
+    contenedor.addEventListener('wheel', alTocar, { passive: true });
+    contenedor.addEventListener('touchmove', alTocar, { passive: true });
     this.tip = document.createElement('div');
     this.tip.className = 'rep-tip';
     this.tip.hidden = true;
@@ -1962,6 +2081,55 @@ export class Figura {
     this.escalaActual = k;
   }
 
+  // La figura sigue la accion: se desplaza (con el scroll del contenedor) para que lo que pasa en este paso quede a la vista: las casillas que
+  // cambian, la fila o el bloque al que llega una flecha y los extremos de las flechas nuevas. Si todo junto entra, se muestra todo; si no, lo
+  // ultimo (el destino). "nuevoPaso" vuelve a empezar (una figura que se desplazo a mano se deja en paz hasta el paso siguiente).
+  seguirAccion({ nuevoPaso = false, suave = true } = {}) {
+    if (nuevoPaso) this.tocada = false;
+    const cont = this.contenedor;
+    const svg = this.svg;
+    if (this.tocada || !svg || !cont.clientHeight || !cont.clientWidth) return;
+    if (cont.scrollHeight <= cont.clientHeight + 1 && cont.scrollWidth <= cont.clientWidth + 1) return; // entra entera: no hay nada que seguir
+    const rc = cont.getBoundingClientRect();
+    const aContenido = (r) => ({ x: r.left - rc.left + cont.scrollLeft, y: r.top - rc.top + cont.scrollTop, w: r.width, h: r.height });
+    // las puntas de las flechas nuevas (en unidades del dibujo; el dibujo se escala con la figura) y las casillas que cambian
+    const rs = svg.getBoundingClientRect();
+    const k = this.escalaActual || 1;
+    const puntas = [];
+    for (const g of svg.querySelectorAll('.rep-flecha-g.rep-nueva')) {
+      const pts = g.puntosCompletos;
+      if (!pts || !pts.length) continue;
+      for (const p of [pts[0], pts[pts.length - 1]]) puntas.push({ x: rs.left - rc.left + cont.scrollLeft + p.x * k - 4, y: rs.top - rc.top + cont.scrollTop + p.y * k - 4, w: 8, h: 8 });
+    }
+    const celdas = [...svg.querySelectorAll('.rep-celda.rep-cambio')].map((e) => aContenido(e.getBoundingClientRect()));
+    const objetivos = [...puntas, ...celdas];
+    if (!objetivos.length) return;
+    const margen = 14;
+    const caja = (lista) => {
+      const x0 = Math.min(...lista.map((o) => o.x));
+      const y0 = Math.min(...lista.map((o) => o.y));
+      return { x: x0, y: y0, w: Math.max(...lista.map((o) => o.x + o.w)) - x0, h: Math.max(...lista.map((o) => o.y + o.h)) - y0 };
+    };
+    const cabe = (c) => c.w <= cont.clientWidth - 2 * margen && c.h <= cont.clientHeight - 2 * margen;
+    let r = caja(objetivos);
+    // No entra todo junto: con flechas, las dos puntas (de donde sale y adonde llega) y, si tampoco, solo adonde llega; sin flechas (una funcion
+    // nueva, una fila entera que cambia), el comienzo de lo que cambia.
+    if (!cabe(r) && puntas.length) {
+      r = caja(puntas);
+      if (!cabe(r)) r = puntas[puntas.length - 1];
+    }
+    const ajustar = (desde, tam, vista, actual) => {
+      if (tam > vista - 2 * margen) return desde - margen;
+      if (desde < actual + margen) return desde - margen;
+      if (desde + tam > actual + vista - margen) return desde + tam - vista + margen;
+      return actual;
+    };
+    const left = Math.max(0, Math.min(ajustar(r.x, r.w, cont.clientWidth, cont.scrollLeft), cont.scrollWidth - cont.clientWidth));
+    const top = Math.max(0, Math.min(ajustar(r.y, r.h, cont.clientHeight, cont.scrollTop), cont.scrollHeight - cont.clientHeight));
+    if (Math.abs(left - cont.scrollLeft) < 1 && Math.abs(top - cont.scrollTop) < 1) return;
+    cont.scrollTo({ left, top, behavior: suave && !sinMovimiento() ? 'smooth' : 'auto' });
+  }
+
   // Las flechas (sus grupos) que cumplen el selector se van dibujando desde su origen hasta su destino. La punta
   // viaja con el extremo del trazo: un trazo punteado que avanza dejaria la punta ya puesta en el destino.
   // "excluir": las claves (data-k) de las flechas que se dibujan aparte.
@@ -2085,7 +2253,8 @@ export class Figura {
     const lugarDelCarril = (n) => (n ? 14 + 4 * Math.min(n - 1, 2) : 0);
     for (const caja of cajas) {
       const etiquetaAncho = Math.max(0, ...caja.variables.map((v) => v.nombre.length)) * LETRA + 12;
-      const filas = caja.variables.map((v) => ({ v, m: medir(v.valor), extra: lugarDelCarril(haciaFila.get(v.id) || 0) }));
+      // (una tabla recibe las flechas por el costado: no necesita el carril de encima)
+      const filas = caja.variables.map((v) => ({ v, m: medir(v.valor), extra: esTabla(v.valor) ? 0 : lugarDelCarril(haciaFila.get(v.id) || 0) }));
       const ancho = Math.max(120, etiquetaAncho + Math.max(0, ...filas.map((f) => f.m.w)) + 22, caja.titulo.length * LETRA + 22);
       const alto = 22 + filas.reduce((s, f) => s + f.extra + f.m.h + 8, 0) + (filas.length ? 2 : 6);
       // Cada caja es un grupo con coordenadas propias: asi se la puede mover.
@@ -2249,7 +2418,7 @@ export class Figura {
       if ((f.origen.marco != null && !marcosDe.has(f.origen.marco)) || (ancla && ancla.marco != null && !marcosDe.has(ancla.marco))) return null;
       let tipo;
       if (!ancla) tipo = 'perdida';
-      else if (!lo) tipo = ld ? (ld.columna === 0 ? 'pila-izquierda' : 'pila-arriba') : ancla.marco != null && f.ruta.length ? 'pila-sobre' : 'pila-pila';
+      else if (!lo) tipo = ld ? (ld.columna === 0 ? 'pila-izquierda' : 'pila-arriba') : ancla.marco != null && f.ruta.length && !ancla.lateral ? 'pila-sobre' : 'pila-pila';
       else if (!ld) tipo = 'recta';
       else if (ld.fila === lo.fila && ld.columna === lo.columna + 1) tipo = 'recta';
       else if (ld.fila > lo.fila) tipo = 'bajo';
@@ -2329,7 +2498,7 @@ export class Figura {
     this.alAire(svg);
     // La casilla a la que llega una flecha desde arriba (el primer elemento de un arreglo, por ejemplo) se marca con un borde de color.
     for (const fl of flechas) {
-      if (fl.final && fl.final.tipo === 'pila-sobre') {
+      if (fl.final && (fl.final.tipo === 'pila-sobre' || (fl.final.tipo === 'pila-pila' && fl.final.destino && fl.final.destino.lateral))) {
         const rect = p.rectas.get(clave(fl.a, fl.ruta));
         if (rect) rect.classList.add('rep-apuntada');
       }

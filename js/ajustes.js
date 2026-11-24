@@ -144,6 +144,14 @@ export const HERRAMIENTAS = [
     titulo: 'Avanzar por etapas',
     detalle: 'Siguiente (y la flecha derecha) avanza etapa por etapa dentro de cada paso, deteniéndose entre una y otra y diciendo cuál es. La reproducción automática las ignora.',
   },
+  {
+    clave: 'seguirAccion',
+    almacen: 'reproductor-seguir-accion',
+    porDefecto: true,
+    nombre: 'Seguir la acción',
+    titulo: 'Seguir la acción',
+    detalle: 'La figura se desplaza sola hacia lo que pasa en cada paso (la casilla que cambia, la fila o el bloque al que llega una flecha), para que no quede fuera de la vista cuando es grande. Si la desplazás a mano, deja de seguir hasta el paso siguiente.',
+  },
 ];
 
 const TODAS = [...AYUDAS, ...HERRAMIENTAS];

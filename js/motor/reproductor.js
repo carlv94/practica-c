@@ -651,6 +651,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   let tablaForzada = false;
   const tablaVisible = (k) => tablaForzada || tablaEnEstePaso(k);
   const figuraVisible = (k) => !tablaForzada && figuraEnEstePaso(k);
+  raiz.figuraDelReproductor = () => dibujo; // (para las pruebas)
   raiz.pestanaActiva = () => (multi ? archivos[archivoActivo].nombre : null); // (para las pruebas)
   raiz.modoDelPaso =(k) => ({ tabla: tablaEnEstePaso(k), figura: figuraEnEstePaso(k) }); // (para las pruebas)
   raiz.llamadasDeLaTabla = (k) => filasDelPaso(k).filter((r) => r.desde <= k).map((r) => r.llamada); // (para las pruebas)
@@ -1467,6 +1468,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   let reloj = null;
   let ultimaAnimacion = 0; // lo que dura la animacion del paso que se esta mostrando
   let relojModo = null; // el cambio de la tabla a la figura al terminar una recursion
+  let relojSeguir = null; // la figura sigue la accion cuando termina de animarse (herramienta "Seguir la acción")
   let relojTrazado = null; // el trazado que espera a que termine la animacion de la figura
   let relojesEtapas = []; // las pausas entre etapa y etapa del paso (ver programarEtapas)
   let etapasDelPaso = []; // [{ t, nombre }] del paso en curso, si se avanza por etapas
@@ -1698,6 +1700,12 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     const sinFigura = !figuraVisible(paso);
     const inicioPaso = tiempo.ahora();
     const dFigura = vuelve ? 0 : dibujo.mostrar(foto, antes, { animar: animar && !sinFigura, duracion: unidad, flujo: adelante });
+    // La figura sigue la accion: ya, hacia donde estan las cosas, y de nuevo cuando termina de moverse (las cajas se corren mientras se anima).
+    clearTimeout(relojSeguir);
+    if (!sinFigura && ajustes.valor('seguirAccion')) {
+      dibujo.seguirAccion({ nuevoPaso: true, suave: animar });
+      if (animar && dFigura > 0) relojSeguir = setTimeout(() => dibujo.seguirAccion({ suave: true }), dFigura + 60);
+    }
     const dTrazado = adelante && animar ? duracionTrazado(paso, unidad) : 0;
     const pausaVuelta = vuelve ? 0.5 * unidad : 0;
     const dFiguraVuelta = vuelve ? 3.5 * unidad : 0; // (lo que se calcula de verdad cuando la figura aparece)

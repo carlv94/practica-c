@@ -813,6 +813,129 @@ import { corregir } from '../js/corrector.js';
           }
         }
 
+        // Un arreglo de estructuras se dibuja como una tabla: una fila por elemento, los nombres de los campos una sola vez y una flecha de la pila que
+        // apunta a un elemento llega por el costado y marca la fila (no desde arriba, cruzando las filas de arriba).
+        {
+          const titulo = 'figura: un arreglo de estructuras es una tabla (nombres una vez, una fila por elemento, la flecha marca la fila)';
+          const lugar = document.createElement('div');
+          try {
+            const { Figura } = await import('../js/motor/figura.js');
+            const fuente = '#include <stdio.h>\ntypedef struct { int dia; int mes; } F;\ntypedef struct { int nro; F f; float c; } O;\nvoid act(O *o) {\n  o->c = 2;\n}\nint main() {\n  O l[5];\n  l[0].nro = 7;\n  l[1].nro = 8;\n  act(&l[1]);\n  return 0;\n}';
+            const m = ejecutarMotor(analizador, fuente, { traza: true });
+            if (m.error) throw new Error('el programa no corre: ' + m.error.codigo);
+            document.body.append(lugar);
+            const figura = new Figura(lugar);
+            const k = m.traza.findIndex((f) => f.linea === 5);
+            if (k < 1) throw new Error('no se encontro el paso dentro de act');
+            for (let j = 0; j <= k; j++) figura.mostrar(m.traza[j], j ? m.traza[j - 1] : null, { animar: false });
+            const svg = lugar.querySelector('svg');
+            const filas = [...svg.querySelectorAll('.rep-fila-tabla')];
+            if (filas.length !== 5) throw new Error('hay ' + filas.length + ' filas y el arreglo tiene 5 elementos');
+            // las filas van una debajo de la otra: misma x, y cada vez mas abajo
+            const xs = new Set(filas.map((f) => f.getAttribute('x')));
+            const ys = filas.map((f) => Number(f.getAttribute('y')));
+            if (xs.size !== 1 || ys.some((y, i) => i && y <= ys[i - 1])) throw new Error('las filas no estan una debajo de la otra: x ' + [...xs].join() + ', y ' + ys.join());
+            const nombres = [...svg.querySelectorAll('text.rep-campo')].map((t) => t.textContent);
+            if (nombres.filter((n) => n === 'nro').length !== 1 || nombres.filter((n) => n === 'dia').length !== 1) throw new Error('los nombres de los campos van una sola vez: ' + nombres.join(','));
+            const apuntadas = filas.map((f, i) => (f.classList.contains('rep-apuntada') ? i : -1)).filter((i) => i >= 0);
+            if (apuntadas.join() !== '1') throw new Error('la fila apuntada tiene que ser la 1 y fue: ' + apuntadas.join());
+            const indices = [...svg.querySelectorAll('text.rep-indice')].map((t) => t.textContent);
+            if (indices.join() !== '0,1,2,3,4') throw new Error('los indices de las filas: ' + indices.join());
+            anotar(true, titulo);
+          } catch (e) {
+            anotar(false, titulo, e.stack || e.message);
+          } finally {
+            lugar.remove();
+          }
+        }
+
+        // La tabla de estructuras dibuja 8 filas (o hasta la ultima que recibio un valor) y, al declarar el arreglo, resalta tambien las cadenas sin valor
+        // (que se dibujan como una sola casilla "?").
+        {
+          const titulo = 'figura: la tabla dibuja 8 filas (o hasta la ultima escrita) y resalta las cadenas sin valor al declararse';
+          const lugar = document.createElement('div');
+          try {
+            const { Figura } = await import('../js/motor/figura.js');
+            const filasDe = async (fuente, linea) => {
+              const m = ejecutarMotor(analizador, fuente, { traza: true });
+              if (m.error) throw new Error('el programa no corre: ' + m.error.codigo);
+              lugar.replaceChildren();
+              const figura = new Figura(lugar);
+              const k = m.traza.findIndex((f) => f.linea === linea);
+              if (k < 1) throw new Error('no se encontro la linea ' + linea);
+              for (let j = 0; j <= k; j++) figura.mostrar(m.traza[j], j ? m.traza[j - 1] : null, { animar: false });
+              return { svg: lugar.querySelector('svg'), figura };
+            };
+            document.body.append(lugar);
+            const cabecera = '#include <stdio.h>\ntypedef struct { int n; char nombre[10]; } T;\nint main() {\n  T l[12];\n';
+            // sin nada escrito: 8 filas, y como recien se declaro, todas las casillas (tambien la cadena) estan resaltadas
+            let r = await filasDe(cabecera + '  l[1].n = 5;\n  return 0;\n}', 6);
+            // (en la linea 6, "return 0;", ya se ejecuto l[1].n = 5)
+            let filas = r.svg.querySelectorAll('.rep-fila-tabla').length;
+            if (filas !== 8) throw new Error('con una fila escrita se esperaban 8 filas y hay ' + filas);
+            r = await filasDe(cabecera + '  return 0;\n}', 5);
+            const celdas = [...r.svg.querySelectorAll('.rep-celda:not(.rep-fila-tabla)')];
+            const sinResaltar = celdas.filter((c) => !c.classList.contains('rep-cambio'));
+            if (!celdas.length || sinResaltar.length) throw new Error('al declarar el arreglo quedaron ' + sinResaltar.length + ' de ' + celdas.length + ' casillas sin resaltar (la cadena)');
+            // una fila mas alla de la 8 que recibio un valor se dibuja (si no, su flecha apuntaria a la nada)
+            r = await filasDe(cabecera + '  l[10].n = 5;\n  return 0;\n}', 6);
+            filas = r.svg.querySelectorAll('.rep-fila-tabla').length;
+            if (filas !== 11) throw new Error('con la fila 10 escrita se esperaban 11 filas y hay ' + filas);
+            anotar(true, titulo);
+          } catch (e) {
+            anotar(false, titulo, e.stack || e.message);
+          } finally {
+            lugar.remove();
+          }
+        }
+
+        // "Seguir la acción": una figura grande (con scroll) se desplaza a lo que cambia en el paso; si se la desplazó a mano, no se mueve hasta el paso siguiente.
+        {
+          const titulo = 'figura: sigue la accion (se desplaza a lo que cambia y respeta el scroll a mano)';
+          const lugar = document.createElement('div');
+          try {
+            const { Figura } = await import('../js/motor/figura.js');
+            const fuente = '#include <stdio.h>\ntypedef struct { int dia; int mes; } F;\ntypedef struct { int nro; F f; float c; } O;\nint main() {\n  O l[14];\n  l[0].nro = 7;\n  l[13].nro = 8;\n  l[0].nro = 9;\n  return 0;\n}';
+            const m = ejecutarMotor(analizador, fuente, { traza: true });
+            if (m.error) throw new Error('el programa no corre: ' + m.error.codigo);
+            lugar.style.cssText = 'width:260px;height:110px;overflow:auto';
+            document.body.append(lugar);
+            const figura = new Figura(lugar);
+            figura.fijarEscala({ modo: 'fijo', zoom: 1 });
+            const visible = (e) => {
+              const a = e.getBoundingClientRect();
+              const c = lugar.getBoundingClientRect();
+              return a.bottom > c.top && a.top < c.bottom && a.right > c.left && a.left < c.right;
+            };
+            const hasta = (linea) => {
+              const k = m.traza.findIndex((f) => f.linea === linea);
+              if (k < 1) throw new Error('no se encontro la linea ' + linea);
+              for (let j = 0; j <= k; j++) figura.mostrar(m.traza[j], j ? m.traza[j - 1] : null, { animar: false });
+              return k;
+            };
+            // despues de l[13].nro = 8 (la fila 13, abajo del todo), la casilla que cambio queda a la vista
+            hasta(8);
+            lugar.scrollTop = 0;
+            lugar.scrollLeft = 0;
+            figura.seguirAccion({ nuevoPaso: true, suave: false });
+            const cambiadas = [...lugar.querySelectorAll('.rep-celda.rep-cambio')];
+            if (!cambiadas.length) throw new Error('no cambio ninguna casilla en el paso');
+            if (!cambiadas.every(visible)) throw new Error('la casilla que cambio no quedo a la vista (scrollTop ' + lugar.scrollTop + ')');
+            // si se la desplaza a mano, no la mueve hasta el paso siguiente
+            lugar.dispatchEvent(new Event('wheel'));
+            lugar.scrollTop = 0;
+            figura.seguirAccion({ suave: false });
+            if (lugar.scrollTop !== 0) throw new Error('se movio una figura que se desplazo a mano');
+            figura.seguirAccion({ nuevoPaso: true, suave: false });
+            if (lugar.scrollTop === 0) throw new Error('en el paso siguiente tiene que volver a seguir');
+            anotar(true, titulo);
+          } catch (e) {
+            anotar(false, titulo, e.stack || e.message);
+          } finally {
+            lugar.remove();
+          }
+        }
+
         // Un programa de varios archivos (el ejercicio 3 del parcial: el .h, el .c y el main): se ejecuta unido en un solo texto y el reproductor lo muestra
         // por pestañas, con la numeración de cada archivo, y la pestaña sigue al cursor.
         {
