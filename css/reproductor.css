@@ -1311,6 +1311,53 @@
   font-size: 0.8rem;
 }
 
+/* Un programa de varios archivos: una pestana por archivo sobre el codigo (en la ventana del codigo abierto, arriba a la izquierda) */
+.rep-pestanas {
+  display: flex;
+  gap: 2px;
+  margin: 0;
+  overflow-x: auto;
+}
+.rep-pestanas:empty {
+  display: none;
+}
+.rep-pestana {
+  flex: 0 0 auto;
+  font: inherit;
+  font-size: 0.8rem;
+  padding: 3px 10px;
+  border: 1px solid var(--borde);
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+  background: var(--fondo);
+  color: var(--suave);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.rep-pestana[aria-selected='true'] {
+  background: var(--codigo);
+  color: var(--texto);
+  font-weight: 600;
+}
+.rep-con-pestanas .rep-codigo {
+  border-top-left-radius: 0;
+}
+.rep-sin-archivo {
+  display: none;
+}
+.rep-codigo-abierto .rep-pestanas {
+  position: fixed;
+  top: 14px;
+  left: 18px;
+  right: 130px;
+  z-index: 1300;
+}
+@media (pointer: coarse) {
+  .rep-pestana {
+    min-height: 36px;
+  }
+}
+
 /* La caja de la figura no cambia la disposicion (sus hijos cuentan como hijos de la columna). */
 .rep-figura-caja {
   display: contents;

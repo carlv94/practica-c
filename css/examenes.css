@@ -408,3 +408,10 @@ summary.seccion-titulo:hover {
   justify-content: flex-start;
   margin: 4px 0 12px;
 }
+
+/* en un ejercicio de varios archivos: a cual pertenece el codigo de la resolucion */
+.modulo-archivo {
+  margin: 0 0 8px;
+  color: var(--suave);
+  font-size: 0.9rem;
+}

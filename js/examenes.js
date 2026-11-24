@@ -18,7 +18,7 @@ import { pintar } from './editor.js';
 import { bloquesDeEnunciado } from './enunciado.js';
 import { esLocal, esDocente } from './estadisticas.js';
 import { descargar } from './descarga.js';
-import { archivoDeModulo, archivoDePrograma, nombreDeModulo, nombreDePrograma } from './examenes-archivos.js';
+import { archivoDeModulo, archivosDePrograma, completarEjercicio, esMultiple, nombreDeModulo } from './examenes-archivos.js';
 
 const CARPETA = 'examenes/';
 const VE_TODO = esLocal() || esDocente();
@@ -90,20 +90,24 @@ async function copiarTexto(texto) {
   }
 }
 
-// Los botones de un código: copiarlo y bajarlo como archivo .c (con su cabecera). "copia" es lo que se copia; "archivo", { nombre, texto }.
-function accionesA({ copia, archivo, textoDescarga }) {
+// Los botones de un código: copiarlo y bajarlo como archivo (con su cabecera) o, si son varios, como un .zip. "copia" es lo que se copia (sin él, no
+// hay botón de copiar); "archivos", [{ nombre, texto }]; "nombreBase", el del .zip.
+function accionesA({ copia, archivos, nombreBase, textoDescarga }) {
   const fila = nodo('div', 'acciones-codigo');
-  const copiar = nodo('button', 'accion-codigo', 'Copiar');
-  copiar.type = 'button';
-  copiar.onclick = async () => {
-    const ok = await copiarTexto(copia);
-    copiar.textContent = ok ? 'Copiado ✓' : 'No se pudo copiar';
-    setTimeout(() => (copiar.textContent = 'Copiar'), 1600);
-  };
+  if (copia != null) {
+    const copiar = nodo('button', 'accion-codigo', 'Copiar');
+    copiar.type = 'button';
+    copiar.onclick = async () => {
+      const ok = await copiarTexto(copia);
+      copiar.textContent = ok ? 'Copiado ✓' : 'No se pudo copiar';
+      setTimeout(() => (copiar.textContent = 'Copiar'), 1600);
+    };
+    fila.append(copiar);
+  }
   const bajar = nodo('button', 'accion-codigo', textoDescarga || 'Descargar .c');
   bajar.type = 'button';
-  bajar.onclick = () => descargar(archivo.nombre.replace(/\.c$/, ''), [archivo]);
-  fila.append(copiar, bajar);
+  bajar.onclick = () => descargar(nombreBase || archivos[0].nombre.replace(/\.c$/, ''), archivos);
+  fila.append(bajar);
   return fila;
 }
 
@@ -364,6 +368,7 @@ async function armarPaso(examen, ejercicio, lugar) {
         funciones: res.funciones,
         entrada: res.entrada,
         llamadas: res.llamadas,
+        archivos: ejercicio.tramos || null, // (un ejercicio de varios archivos: una pestaña por archivo)
       })
     );
   } catch (e) {
@@ -397,8 +402,11 @@ function ejercicioA(examen, ejercicio, alCambiar) {
     enunciadoM.cuerpo.appendChild(conTexto('p', 'modulo-enunciado', m.enunciado));
     p.appendChild(enunciadoM.caja);
     const resolucion = seccionA('Resolución', { plegable: true, abierta: true });
+    const archivoM = { nombre: nombreDeModulo(examen, ejercicio, m), texto: archivoDeModulo(examen, ejercicio, m) };
+    // (en un ejercicio de varios archivos, el módulo es un pedazo de uno de ellos: se dice cuál y se baja entero)
+    if (esMultiple(ejercicio)) resolucion.cuerpo.appendChild(conTexto('p', 'modulo-archivo', `Va en \`${archivoM.nombre}\`.`));
     resolucion.cuerpo.appendChild(
-      accionesA({ copia: m.solucion, archivo: { nombre: nombreDeModulo(examen, ejercicio, m), texto: archivoDeModulo(examen, ejercicio, m) } })
+      accionesA({ copia: m.solucion, archivos: [archivoM], textoDescarga: esMultiple(ejercicio) ? `Descargar ${archivoM.nombre}` : null })
     );
     codigoA(resolucion.cuerpo, m.solucion);
     p.appendChild(resolucion.caja);
@@ -431,9 +439,10 @@ function ejercicioA(examen, ejercicio, alCambiar) {
   if (ejercicio.nota) paso.appendChild(conTexto('p', 'ejercicio-nota', ejercicio.nota));
   paso.appendChild(
     accionesA({
-      copia: ejercicio.programa,
-      archivo: { nombre: nombreDePrograma(examen, ejercicio), texto: archivoDePrograma(examen, ejercicio) },
-      textoDescarga: 'Descargar programa (.c)',
+      copia: esMultiple(ejercicio) ? null : ejercicio.programa,
+      archivos: archivosDePrograma(examen, ejercicio),
+      nombreBase: `${examen.id}-${ejercicio.id}`,
+      textoDescarga: esMultiple(ejercicio) ? `Descargar los ${ejercicio.archivos.length} archivos (.zip)` : 'Descargar programa (.c)',
     })
   );
   const lugar = nodo('div', 'ejercicio-pasoapaso');
@@ -569,6 +578,7 @@ async function iniciar() {
   try {
     const indice = await leerJson(CARPETA + 'indice.json');
     const todos = await Promise.all(indice.examenes.map((archivo) => leerJson(CARPETA + archivo)));
+    for (const e of todos) e.ejercicios.forEach(completarEjercicio); // (el texto unido de los ejercicios de varios archivos)
     const visibles = todos.filter((e) => publicado(e)).sort((a, b) => b.fecha.localeCompare(a.fecha));
     window.addEventListener('hashchange', () => mostrar(visibles));
     mostrar(visibles);

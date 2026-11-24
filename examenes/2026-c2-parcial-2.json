@@ -582,6 +582,104 @@
       "entrada": "3\n120\n40\n50\n4732\n",
       "salida": "Enemigos (1 a 50): Vida Enemigo 1: Vida Enemigo 2: Vida Enemigo 3: Semilla: Dano total: 50\nVida restante enemigos:\nVida Enemigo 1: 70\nVida Enemigo 2: 0\nVida Enemigo 3: 0\nDerrotados: 2\n",
       "nota": "La entrada de ejemplo es la del enunciado: 3 enemigos con vidas 120, 40 y 50, y semilla 4732."
+    },
+    {
+      "id": "ej3",
+      "titulo": "Las órdenes de reparación",
+      "puntos": 40,
+      "resumen": "Un TAD en tres archivos: tipos y operaciones sobre una orden, y un main con una lista de órdenes.",
+      "enunciado": "Un negocio de servicio técnico de computación administra las órdenes de reparación ingresadas en el taller. La lista de órdenes (arreglo estático de hasta `TAM = 50` elementos y su contador `n`) reside en `main()`, mientras que las operaciones de un Tipo Abstracto de Dato (TAD) se aplican sobre un único elemento `ORDEN`. De cada orden de reparación se registra la siguiente información:\n\n- `nroOrden`: número entero identificador.\n- `cliente`: cadena de caracteres (`CADENA` de hasta 50 caracteres).\n- `fechaIngreso`: registro `FECHA` con campos enteros `dia`, `mes`, `anio`.\n- `servicio`: enumerado `SERVICIO { HARDWARE, SOFTWARE, MANTENIMIENTO }`.\n- `estado`: enumerado `ESTADO { INGRESADO, EN_REPARACION, LISTO, ENTREGADO }`.\n- `costo`: número real (`float`).",
+      "modulos": [
+        {
+          "id": "a",
+          "titulo": "libTADOrden.h",
+          "puntos": 6,
+          "archivo": "libTADOrden.h",
+          "enunciado": "En `libTADOrden.h`: los tipos de datos (`CADENA`, `BOOLEANO`, `FECHA`, `SERVICIO`, `ESTADO`, `ORDEN`) y la interfaz del TAD con las operaciones sobre una `ORDEN`.",
+          "solucion": "#ifndef LIBTADORDEN_H\n#define LIBTADORDEN_H\n\ntypedef char CADENA[51];\n\ntypedef enum {\n  FALSO,\n  VERDADERO\n} BOOLEANO;\n\ntypedef struct {\n  int dia;\n  int mes;\n  int anio;\n} FECHA;\n\ntypedef enum {\n  HARDWARE,\n  SOFTWARE,\n  MANTENIMIENTO\n} SERVICIO;\n\ntypedef enum {\n  INGRESADO,\n  EN_REPARACION,\n  LISTO,\n  ENTREGADO\n} ESTADO;\n\ntypedef struct {\n  int nroOrden;\n  CADENA cliente;\n  FECHA fechaIngreso;\n  SERVICIO servicio;\n  ESTADO estado;\n  float costo;\n} ORDEN;\n\nORDEN cargarOrden();\nvoid mostrarOrden(ORDEN orden);\nvoid actualizarOrden(ORDEN *orden, ESTADO nuevoEstado, float nuevoCosto);\n\n#endif",
+          "explicacion": "Un TAD separa la interfaz de la implementación: este archivo declara los tipos y las operaciones, y `libTADOrden.c` dice cómo se hacen. Las guardas (`#ifndef`, `#define`, `#endif`) evitan que el archivo se incluya dos veces. `CADENA` es un arreglo de 51 caracteres (50 letras y el `\\0` final). `ORDEN` junta los seis datos de una orden; la lista de órdenes no se declara acá, vive en `main`. `BOOLEANO` forma parte de lo que pide el enunciado, aunque ninguna de estas operaciones lo use."
+        },
+        {
+          "id": "b",
+          "titulo": "cargarOrden",
+          "puntos": 6,
+          "archivo": "libTADOrden.c",
+          "enunciado": "En `libTADOrden.c`, `cargarOrden`: pide el ingreso de datos para todos los campos y retorna la orden.",
+          "solucion": "ORDEN cargarOrden() {\n  ORDEN orden;\n  int servicio;\n  int estado;\n\n  printf(\"Numero de orden: \");\n  scanf(\"%d\", &orden.nroOrden);\n\n  printf(\"Cliente: \");\n  scanf(\"%s\", orden.cliente);\n\n  printf(\"Fecha de ingreso (dia mes anio): \");\n  scanf(\"%d %d %d\", &orden.fechaIngreso.dia, &orden.fechaIngreso.mes, &orden.fechaIngreso.anio);\n\n  printf(\"Servicio (0 HARDWARE, 1 SOFTWARE, 2 MANTENIMIENTO): \");\n  scanf(\"%d\", &servicio);\n  orden.servicio = servicio;\n\n  printf(\"Estado (0 INGRESADO, 1 EN_REPARACION, 2 LISTO, 3 ENTREGADO): \");\n  scanf(\"%d\", &estado);\n  orden.estado = estado;\n\n  printf(\"Costo: \");\n  scanf(\"%f\", &orden.costo);\n\n  return orden;\n}",
+          "explicacion": "Es una función: arma una variable local `orden`, pide cada dato y la retorna. Los enumerados se leen como número (0, 1, 2...) en una variable `int` auxiliar y después se asignan al campo. La cadena se lee con `%s`, sin `&` porque el nombre de un arreglo ya es su dirección (y no admite espacios). Los campos de la fecha se alcanzan con dos puntos: `orden.fechaIngreso.dia`."
+        },
+        {
+          "id": "c",
+          "titulo": "mostrarOrden",
+          "puntos": 6,
+          "archivo": "libTADOrden.c",
+          "enunciado": "En `libTADOrden.c`, `mostrarOrden`: muestra todos los campos, imprimiendo los enumerados como corresponde.",
+          "solucion": "void mostrarOrden(ORDEN orden) {\n  printf(\"Orden %d\\n\", orden.nroOrden);\n  printf(\"Cliente: %s\\n\", orden.cliente);\n  printf(\"Fecha de ingreso: %d/%d/%d\\n\", orden.fechaIngreso.dia, orden.fechaIngreso.mes, orden.fechaIngreso.anio);\n\n  switch (orden.servicio) {\n    case HARDWARE:\n      printf(\"Servicio: Hardware\\n\");\n      break;\n    case SOFTWARE:\n      printf(\"Servicio: Software\\n\");\n      break;\n    case MANTENIMIENTO:\n      printf(\"Servicio: Mantenimiento\\n\");\n      break;\n  }\n\n  switch (orden.estado) {\n    case INGRESADO:\n      printf(\"Estado: Ingresado\\n\");\n      break;\n    case EN_REPARACION:\n      printf(\"Estado: En reparacion\\n\");\n      break;\n    case LISTO:\n      printf(\"Estado: Listo\\n\");\n      break;\n    case ENTREGADO:\n      printf(\"Estado: Entregado\\n\");\n      break;\n  }\n\n  printf(\"Costo: %.2f\\n\", orden.costo);\n}",
+          "explicacion": "Es un procedimiento que recibe la orden por valor, porque solo la lee. Un enumerado guarda un número, así que un `switch` por cada uno (`servicio` y `estado`) imprime el nombre que corresponde en lugar del número."
+        },
+        {
+          "id": "d",
+          "titulo": "actualizarOrden",
+          "puntos": 3,
+          "archivo": "libTADOrden.c",
+          "enunciado": "En `libTADOrden.c`, `actualizarOrden`: recibe una orden por referencia, un nuevo `ESTADO` y un nuevo costo, y actualiza ambos campos.",
+          "solucion": "void actualizarOrden(ORDEN *orden, ESTADO nuevoEstado, float nuevoCosto) {\n  orden->estado = nuevoEstado;\n  orden->costo = nuevoCosto;\n}",
+          "explicacion": "Es un procedimiento: modifica la orden y no devuelve nada. La orden llega por referencia (un puntero) para cambiar la original y no una copia; con `->` se accede a los campos de lo que apunta el puntero. El estado y el costo nuevos llegan por valor."
+        },
+        {
+          "id": "e",
+          "titulo": "main: cargar la lista",
+          "puntos": 4,
+          "archivo": "main.c",
+          "enunciado": "En `main()`: declarar un vector (una lista) de `ORDEN` y cargar `N` órdenes.",
+          "solucion": "  ORDEN lista[TAM];\n  int n;\n  int i;\n\n  do {\n    printf(\"Cantidad de ordenes (1 a %d): \", TAM);\n    scanf(\"%d\", &n);\n  } while (n < 1 || n > TAM);\n\n  for (i = 0; i < n; i++) {\n    lista[i] = cargarOrden();\n  }",
+          "explicacion": "La lista es un arreglo de `TAM` órdenes y `n` dice cuántas se usan. Se valida `n` entre 1 y `TAM` para no pasarse del arreglo (el enunciado no lo dice, pero es lo que hace falta). `cargarOrden` devuelve una orden completa, que se guarda en `lista[i]`."
+        },
+        {
+          "id": "f",
+          "titulo": "main: actualizar una orden",
+          "puntos": 6,
+          "archivo": "main.c",
+          "enunciado": "En `main()`: solicitar un `nroOrden`, buscarlo, si se encuentra pedir el ingreso de los datos necesarios al usuario e invocar `actualizarOrden` para actualizar su estado y costo, caso contrario informar que no se encuentra.",
+          "solucion": "  int numero;\n  int pos = -1;\n  int estado;\n  ESTADO nuevoEstado;\n  float nuevoCosto;\n\n  printf(\"Numero de orden a actualizar: \");\n  scanf(\"%d\", &numero);\n\n  for (i = 0; i < n; i++) {\n    if (lista[i].nroOrden == numero) {\n      pos = i;\n    }\n  }\n\n  if (pos == -1) {\n    printf(\"La orden %d no se encuentra\\n\", numero);\n  } else {\n    printf(\"Nuevo estado (0 INGRESADO, 1 EN_REPARACION, 2 LISTO, 3 ENTREGADO): \");\n    scanf(\"%d\", &estado);\n    nuevoEstado = estado;\n\n    printf(\"Nuevo costo: \");\n    scanf(\"%f\", &nuevoCosto);\n    actualizarOrden(&lista[pos], nuevoEstado, nuevoCosto);\n  }",
+          "explicacion": "Se recorre la lista y `pos` guarda la posición de la orden buscada (-1 si no apareció). Si se encontró, se piden el estado (como número, que se asigna a una variable `ESTADO`) y el costo, y se pasa `&lista[pos]` para que `actualizarOrden` cambie la orden de la lista y no una copia. Sigue usando `i` y `n` de la parte anterior."
+        },
+        {
+          "id": "g",
+          "titulo": "main: órdenes LISTO",
+          "puntos": 5,
+          "archivo": "main.c",
+          "enunciado": "En `main()`: solicitar el ingreso de un mes y un año, y mostrar las órdenes en estado `LISTO` ingresadas en ese mes y año, así como la cantidad de órdenes que cumplen las condiciones.",
+          "solucion": "  int mes;\n  int anio;\n  int cantidad = 0;\n\n  printf(\"Mes: \");\n  scanf(\"%d\", &mes);\n  printf(\"Anio: \");\n  scanf(\"%d\", &anio);\n  printf(\"Ordenes LISTO de %d/%d:\\n\", mes, anio);\n\n  for (i = 0; i < n; i++) {\n    if (lista[i].estado == LISTO && lista[i].fechaIngreso.mes == mes && lista[i].fechaIngreso.anio == anio) {\n      mostrarOrden(lista[i]);\n      cantidad++;\n    }\n  }\n\n  printf(\"Cantidad: %d\\n\", cantidad);",
+          "explicacion": "Para cada orden se comprueban tres condiciones juntas con `&&`: el estado es `LISTO` y el mes y el año de `fechaIngreso` son los pedidos. Las que las cumplen se muestran con `mostrarOrden` y se cuentan en `cantidad`, que se informa al final."
+        },
+        {
+          "id": "h",
+          "titulo": "main: recaudación",
+          "puntos": 4,
+          "archivo": "main.c",
+          "enunciado": "En `main()`: calcular e informar la recaudación total de las órdenes en estado `ENTREGADO`.",
+          "solucion": "  float recaudacion = 0;\n\n  for (i = 0; i < n; i++) {\n    if (lista[i].estado == ENTREGADO) {\n      recaudacion += lista[i].costo;\n    }\n  }\n\n  printf(\"Recaudacion total: %.2f\\n\", recaudacion);",
+          "explicacion": "Un acumulador, `recaudacion`, empieza en 0 y suma el costo de cada orden que está `ENTREGADO`. Al terminar el recorrido se informa el total."
+        }
+      ],
+      "archivos": [
+        {
+          "nombre": "libTADOrden.h",
+          "codigo": "#ifndef LIBTADORDEN_H\n#define LIBTADORDEN_H\n\ntypedef char CADENA[51];\n\ntypedef enum {\n  FALSO,\n  VERDADERO\n} BOOLEANO;\n\ntypedef struct {\n  int dia;\n  int mes;\n  int anio;\n} FECHA;\n\ntypedef enum {\n  HARDWARE,\n  SOFTWARE,\n  MANTENIMIENTO\n} SERVICIO;\n\ntypedef enum {\n  INGRESADO,\n  EN_REPARACION,\n  LISTO,\n  ENTREGADO\n} ESTADO;\n\ntypedef struct {\n  int nroOrden;\n  CADENA cliente;\n  FECHA fechaIngreso;\n  SERVICIO servicio;\n  ESTADO estado;\n  float costo;\n} ORDEN;\n\nORDEN cargarOrden();\nvoid mostrarOrden(ORDEN orden);\nvoid actualizarOrden(ORDEN *orden, ESTADO nuevoEstado, float nuevoCosto);\n\n#endif"
+        },
+        {
+          "nombre": "libTADOrden.c",
+          "codigo": "#include <stdio.h>\n#include \"libTADOrden.h\"\n\nORDEN cargarOrden() {\n  ORDEN orden;\n  int servicio;\n  int estado;\n\n  printf(\"Numero de orden: \");\n  scanf(\"%d\", &orden.nroOrden);\n\n  printf(\"Cliente: \");\n  scanf(\"%s\", orden.cliente);\n\n  printf(\"Fecha de ingreso (dia mes anio): \");\n  scanf(\"%d %d %d\", &orden.fechaIngreso.dia, &orden.fechaIngreso.mes, &orden.fechaIngreso.anio);\n\n  printf(\"Servicio (0 HARDWARE, 1 SOFTWARE, 2 MANTENIMIENTO): \");\n  scanf(\"%d\", &servicio);\n  orden.servicio = servicio;\n\n  printf(\"Estado (0 INGRESADO, 1 EN_REPARACION, 2 LISTO, 3 ENTREGADO): \");\n  scanf(\"%d\", &estado);\n  orden.estado = estado;\n\n  printf(\"Costo: \");\n  scanf(\"%f\", &orden.costo);\n\n  return orden;\n}\n\nvoid mostrarOrden(ORDEN orden) {\n  printf(\"Orden %d\\n\", orden.nroOrden);\n  printf(\"Cliente: %s\\n\", orden.cliente);\n  printf(\"Fecha de ingreso: %d/%d/%d\\n\", orden.fechaIngreso.dia, orden.fechaIngreso.mes, orden.fechaIngreso.anio);\n\n  switch (orden.servicio) {\n    case HARDWARE:\n      printf(\"Servicio: Hardware\\n\");\n      break;\n    case SOFTWARE:\n      printf(\"Servicio: Software\\n\");\n      break;\n    case MANTENIMIENTO:\n      printf(\"Servicio: Mantenimiento\\n\");\n      break;\n  }\n\n  switch (orden.estado) {\n    case INGRESADO:\n      printf(\"Estado: Ingresado\\n\");\n      break;\n    case EN_REPARACION:\n      printf(\"Estado: En reparacion\\n\");\n      break;\n    case LISTO:\n      printf(\"Estado: Listo\\n\");\n      break;\n    case ENTREGADO:\n      printf(\"Estado: Entregado\\n\");\n      break;\n  }\n\n  printf(\"Costo: %.2f\\n\", orden.costo);\n}\n\nvoid actualizarOrden(ORDEN *orden, ESTADO nuevoEstado, float nuevoCosto) {\n  orden->estado = nuevoEstado;\n  orden->costo = nuevoCosto;\n}"
+        },
+        {
+          "nombre": "main.c",
+          "codigo": "#include <stdio.h>\n#include \"libTADOrden.h\"\n\n#define TAM 50\n\nint main() {\n  ORDEN lista[TAM];\n  int n;\n  int i;\n\n  do {\n    printf(\"Cantidad de ordenes (1 a %d): \", TAM);\n    scanf(\"%d\", &n);\n  } while (n < 1 || n > TAM);\n\n  for (i = 0; i < n; i++) {\n    lista[i] = cargarOrden();\n  }\n\n  int numero;\n  int pos = -1;\n  int estado;\n  ESTADO nuevoEstado;\n  float nuevoCosto;\n\n  printf(\"Numero de orden a actualizar: \");\n  scanf(\"%d\", &numero);\n\n  for (i = 0; i < n; i++) {\n    if (lista[i].nroOrden == numero) {\n      pos = i;\n    }\n  }\n\n  if (pos == -1) {\n    printf(\"La orden %d no se encuentra\\n\", numero);\n  } else {\n    printf(\"Nuevo estado (0 INGRESADO, 1 EN_REPARACION, 2 LISTO, 3 ENTREGADO): \");\n    scanf(\"%d\", &estado);\n    nuevoEstado = estado;\n\n    printf(\"Nuevo costo: \");\n    scanf(\"%f\", &nuevoCosto);\n    actualizarOrden(&lista[pos], nuevoEstado, nuevoCosto);\n  }\n\n  int mes;\n  int anio;\n  int cantidad = 0;\n\n  printf(\"Mes: \");\n  scanf(\"%d\", &mes);\n  printf(\"Anio: \");\n  scanf(\"%d\", &anio);\n  printf(\"Ordenes LISTO de %d/%d:\\n\", mes, anio);\n\n  for (i = 0; i < n; i++) {\n    if (lista[i].estado == LISTO && lista[i].fechaIngreso.mes == mes && lista[i].fechaIngreso.anio == anio) {\n      mostrarOrden(lista[i]);\n      cantidad++;\n    }\n  }\n\n  printf(\"Cantidad: %d\\n\", cantidad);\n\n  float recaudacion = 0;\n\n  for (i = 0; i < n; i++) {\n    if (lista[i].estado == ENTREGADO) {\n      recaudacion += lista[i].costo;\n    }\n  }\n\n  printf(\"Recaudacion total: %.2f\\n\", recaudacion);\n\n  return 0;\n}"
+        }
+      ],
+      "entrada": "4\n101\nLopez\n12 10 2026\n0\n2\n8500.5\n102\nDiaz\n3 11 2026\n1\n3\n4200\n103\nPerez\n20 10 2026\n2\n2\n3000\n104\nGomez\n25 9 2026\n0\n0\n1500\n104\n3\n7000\n10\n2026\n",
+      "salida": "Cantidad de ordenes (1 a 50): Numero de orden: Cliente: Fecha de ingreso (dia mes anio): Servicio (0 HARDWARE, 1 SOFTWARE, 2 MANTENIMIENTO): Estado (0 INGRESADO, 1 EN_REPARACION, 2 LISTO, 3 ENTREGADO): Costo: Numero de orden: Cliente: Fecha de ingreso (dia mes anio): Servicio (0 HARDWARE, 1 SOFTWARE, 2 MANTENIMIENTO): Estado (0 INGRESADO, 1 EN_REPARACION, 2 LISTO, 3 ENTREGADO): Costo: Numero de orden: Cliente: Fecha de ingreso (dia mes anio): Servicio (0 HARDWARE, 1 SOFTWARE, 2 MANTENIMIENTO): Estado (0 INGRESADO, 1 EN_REPARACION, 2 LISTO, 3 ENTREGADO): Costo: Numero de orden: Cliente: Fecha de ingreso (dia mes anio): Servicio (0 HARDWARE, 1 SOFTWARE, 2 MANTENIMIENTO): Estado (0 INGRESADO, 1 EN_REPARACION, 2 LISTO, 3 ENTREGADO): Costo: Numero de orden a actualizar: Nuevo estado (0 INGRESADO, 1 EN_REPARACION, 2 LISTO, 3 ENTREGADO): Nuevo costo: Mes: Anio: Ordenes LISTO de 10/2026:\nOrden 101\nCliente: Lopez\nFecha de ingreso: 12/10/2026\nServicio: Hardware\nEstado: Listo\nCosto: 8500.50\nOrden 103\nCliente: Perez\nFecha de ingreso: 20/10/2026\nServicio: Mantenimiento\nEstado: Listo\nCosto: 3000.00\nCantidad: 2\nRecaudacion total: 11200.00\n",
+      "nota": "Los tres archivos son la resolución. La entrada de ejemplo carga 4 órdenes, actualiza la 104, muestra las órdenes LISTO de octubre de 2026 y calcula la recaudación."
     }
   ]
 }

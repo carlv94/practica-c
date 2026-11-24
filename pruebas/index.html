@@ -689,6 +689,8 @@ import { corregir } from '../js/corrector.js';
             const ids = new Set();
             for (const archivo of indice.examenes) {
               const e = await (await fetch('../examenes/' + archivo)).json();
+              const { completarEjercicio, esMultiple, archivosDePrograma, archivoDelModulo } = await import('../js/examenes-archivos.js');
+              (e.ejercicios || []).forEach(completarEjercicio); // (un ejercicio de varios archivos trae "archivos" y el texto unido sale de ahi)
               const donde = archivo + ': ';
               for (const campo of ['id', 'titulo', 'fecha']) if (!e[campo]) throw new Error(donde + 'falta ' + campo);
               if (ids.has(e.id)) throw new Error(donde + 'id repetido ' + e.id);
@@ -726,6 +728,18 @@ import { corregir } from '../js/corrector.js';
                 }
                 const malPrograma = faltasDeFormato(x.programa);
                 if (malPrograma.length) throw new Error(en + 'el programa no sigue el formato: ' + malPrograma.slice(0, 3).join('; '));
+                if (esMultiple(x)) {
+                  // un ejercicio de varios archivos: cada archivo sigue el formato, cada solucion esta entera en uno de ellos y los tramos del texto unido son los de cada archivo
+                  const lineasUnidas = x.programa.split('\n');
+                  for (const a of x.archivos) {
+                    if (!a.nombre || !a.codigo) throw new Error(en + 'un archivo sin nombre o sin código');
+                    const malArchivo = faltasDeFormato(a.codigo);
+                    if (malArchivo.length) throw new Error(en + a.nombre + ' no sigue el formato: ' + malArchivo.slice(0, 3).join('; '));
+                    const t = x.tramos.find((tr) => tr.nombre === a.nombre);
+                    if (!t || lineasUnidas.slice(t.desde - 1, t.hasta).join('\n') !== a.codigo.replace(/\n+$/, '')) throw new Error(en + 'el tramo de ' + a.nombre + ' no coincide con su código en el programa unido');
+                  }
+                  for (const mod of x.modulos) if (!archivoDelModulo(x, mod)) throw new Error(en + 'el módulo ' + mod.id + ' no está escrito en ninguno de los archivos');
+                }
                 const malEstilo = faltasDeEstilo(x.programa);
                 if (malEstilo.length) throw new Error(en + 'el programa no sigue el estilo: ' + malEstilo.slice(0, 3).join('; '));
                 const suma = x.modulos.reduce((s, mod) => s + (mod.puntos || 0), 0);
@@ -735,13 +749,27 @@ import { corregir } from '../js/corrector.js';
                 {
                   const { archivoDePrograma, archivoDeModulo, nombreDePrograma } = await import('../js/examenes-archivos.js');
                   const cierres = (t) => t.split('*/').length - 1;
-                  const prog = archivoDePrograma(e, x);
-                  if (!prog.startsWith('/*') || cierres(prog) !== 1 + cierres(x.programa)) throw new Error(en + 'la cabecera del programa que se baja no es un comentario bien cerrado');
-                  if (!prog.endsWith(x.programa.replace(/\n*$/, '\n'))) throw new Error(en + 'el programa que se baja no termina con el programa que se ejecuta');
-                  if (!nombreDePrograma(e, x).endsWith('.c')) throw new Error(en + 'el archivo del programa es un .c');
-                  for (const mod of x.modulos) {
-                    const modulo = archivoDeModulo(e, x, mod);
-                    if (!modulo.startsWith('/*') || cierres(modulo) !== 1 + cierres(mod.solucion) || !modulo.includes(mod.solucion)) throw new Error(en + 'el archivo del módulo ' + mod.id + ' no es un comentario seguido de su código');
+                  if (esMultiple(x)) {
+                    // varios archivos: cada uno baja con su nombre y su cabecera, y termina con su código tal cual
+                    for (const a of archivosDePrograma(e, x)) {
+                      const origen = x.archivos.find((o) => o.nombre === a.nombre);
+                      if (!origen) throw new Error(en + 'se baja un archivo que no es del ejercicio: ' + a.nombre);
+                      if (!a.texto.startsWith('/*') || cierres(a.texto) !== 1 + cierres(origen.codigo)) throw new Error(en + 'la cabecera de ' + a.nombre + ' no es un comentario bien cerrado');
+                      if (!a.texto.endsWith(origen.codigo.replace(/\n*$/, '\n'))) throw new Error(en + a.nombre + ' no termina con su código');
+                    }
+                    for (const mod of x.modulos) {
+                      const modulo = archivoDeModulo(e, x, mod);
+                      if (!modulo.includes(mod.solucion)) throw new Error(en + 'el archivo del módulo ' + mod.id + ' no incluye su código');
+                    }
+                  } else {
+                    const prog = archivoDePrograma(e, x);
+                    if (!prog.startsWith('/*') || cierres(prog) !== 1 + cierres(x.programa)) throw new Error(en + 'la cabecera del programa que se baja no es un comentario bien cerrado');
+                    if (!prog.endsWith(x.programa.replace(/\n*$/, '\n'))) throw new Error(en + 'el programa que se baja no termina con el programa que se ejecuta');
+                    if (!nombreDePrograma(e, x).endsWith('.c')) throw new Error(en + 'el archivo del programa es un .c');
+                    for (const mod of x.modulos) {
+                      const modulo = archivoDeModulo(e, x, mod);
+                      if (!modulo.startsWith('/*') || cierres(modulo) !== 1 + cierres(mod.solucion) || !modulo.includes(mod.solucion)) throw new Error(en + 'el archivo del módulo ' + mod.id + ' no es un comentario seguido de su código');
+                    }
                   }
                 }
                 if (x.resumen != null && typeof x.resumen !== 'string') throw new Error(en + 'el resumen es un texto');
@@ -755,6 +783,53 @@ import { corregir } from '../js/corrector.js';
             anotar(true, titulo);
           } catch (err) {
             anotar(false, titulo, err.stack || err.message);
+          }
+        }
+
+        // Un programa de varios archivos (el ejercicio 3 del parcial: el .h, el .c y el main): se ejecuta unido en un solo texto y el reproductor lo muestra
+        // por pestañas, con la numeración de cada archivo, y la pestaña sigue al cursor.
+        {
+          const titulo = 'varios archivos: una pestaña por archivo, con su numeración, que sigue al cursor';
+          let rep = null;
+          try {
+            const { crearReproductor } = await import('../js/motor/reproductor.js');
+            const { completarEjercicio } = await import('../js/examenes-archivos.js');
+            const examen = await (await fetch('../examenes/2026-c2-parcial-2.json')).json();
+            const x = completarEjercicio(examen.ejercicios.find((o) => o.archivos));
+            if (!x) throw new Error('el examen no trae ningún ejercicio de varios archivos');
+            const m = ejecutarMotor(analizador, x.programa, { entrada: x.entrada, traza: true, preguntas: true });
+            if (m.error) throw new Error('el programa unido no corre: ' + m.error.codigo);
+            rep = crearReproductor({ codigo: x.programa, traza: m.traza, funciones: m.funciones, llamadas: m.llamadas, entrada: m.entrada, archivos: x.tramos });
+            document.body.append(rep);
+            const nombres = [...rep.querySelectorAll('.rep-pestana')].map((b) => b.textContent);
+            if (nombres.join() !== x.archivos.map((a) => a.nombre).join()) throw new Error('las pestañas son ' + nombres.join() + ' y los archivos ' + x.archivos.map((a) => a.nombre).join());
+            // la pestaña activa muestra solo sus lineas, desde la 1
+            const visibles = () => [...rep.querySelectorAll('.rep-linea:not(.rep-sin-archivo)')];
+            const comprobarPestana = () => {
+              const t = x.tramos.find((tr) => tr.nombre === rep.pestanaActiva());
+              if (visibles().length !== t.hasta - t.desde + 1) throw new Error('en ' + t.nombre + ' se ven ' + visibles().length + ' líneas y tiene ' + (t.hasta - t.desde + 1));
+              const numeros = visibles().map((f) => f.querySelector('.rep-numero').textContent).join();
+              if (numeros !== Array.from({ length: t.hasta - t.desde + 1 }, (_, i) => i + 1).join()) throw new Error('la numeración de ' + t.nombre + ' no empieza en 1');
+            };
+            comprobarPestana();
+            // al avanzar, el cursor entra en el .c (cargarOrden) y la pestaña lo sigue; despues vuelve al main
+            const siguiente = [...rep.querySelectorAll('.rep-boton')].find((b) => b.getAttribute('aria-label') === 'Paso siguiente (flecha derecha)');
+            const vistas = new Set([rep.pestanaActiva()]);
+            for (let i = 0; i < 40; i++) {
+              siguiente.click();
+              vistas.add(rep.pestanaActiva());
+              comprobarPestana();
+            }
+            if (!vistas.has('libTADOrden.c') || !vistas.has('main.c')) throw new Error('la pestaña no siguió al cursor: ' + [...vistas].join());
+            // tocar otra pestaña la muestra; el estado dice la línea del archivo
+            rep.querySelectorAll('.rep-pestana')[0].click();
+            if (rep.pestanaActiva() !== 'libTADOrden.h') throw new Error('al tocar la pestaña no se mostró ese archivo');
+            comprobarPestana();
+            anotar(true, titulo);
+          } catch (e) {
+            anotar(false, titulo, e.stack || e.message);
+          } finally {
+            if (rep) rep.remove();
           }
         }
 

@@ -112,7 +112,9 @@ const guardarVelocidad = (v) => {
   }
 };
 
-export function crearReproductor({ codigo, traza, error = null, titulo = '', funciones = [], cabezas = null, entrada = '', llamadas = [], puntos = null }) {
+// "archivos" (opcional): un programa de varios archivos que se ejecuta unido en un solo texto, [{ nombre, desde, hasta }] con las líneas de cada
+// uno. El código se ve por pestañas, uno por archivo, con la numeración propia de cada uno; la pestaña sigue al cursor.
+export function crearReproductor({ codigo, traza, error = null, titulo = '', funciones = [], cabezas = null, entrada = '', llamadas = [], puntos = null, archivos = null }) {
   const raiz = nodo('div', 'rep'); // (un div: un section tendría el marco y el relleno globales de estilo.css)
   raiz.tabIndex = 0;
   raiz.setAttribute('aria-label', titulo ? `Paso a paso: ${titulo}` : 'Paso a paso');
@@ -215,6 +217,51 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     bloqueCodigo.append(fila);
     return fila;
   });
+  // ---- varios archivos: una pestaña por archivo (solo se ven las lineas del activo, numeradas desde 1) y una linea en blanco entre ellos que no se ve.
+  const multi = Array.isArray(archivos) && archivos.length > 1;
+  let archivoActivo = 0;
+  const tramoDe = (n) => (multi ? archivos.findIndex((t) => n >= t.desde && n <= t.hasta) : -1);
+  const numeroLocal = (n) => (multi && tramoDe(n) >= 0 ? n - archivos[tramoDe(n)].desde + 1 : n);
+  const pestanas = nodo('div', 'rep-pestanas');
+  const botonesDePestana = [];
+  function mostrarArchivo(k, alPrincipio = true) {
+    archivoActivo = k;
+    lineas.forEach((fila, i) => fila.classList.toggle('rep-sin-archivo', tramoDe(i + 1) !== k));
+    botonesDePestana.forEach((b, j) => {
+      b.setAttribute('aria-selected', String(j === k));
+      b.tabIndex = j === k ? 0 : -1;
+    });
+    if (alPrincipio) panelCodigo.scrollTop = 0;
+  }
+  if (multi) {
+    pestanas.setAttribute('role', 'tablist');
+    pestanas.setAttribute('aria-label', 'Archivos del programa');
+    archivos.forEach((t, k) => {
+      const b = nodo('button', 'rep-pestana', t.nombre);
+      b.type = 'button';
+      b.setAttribute('role', 'tab');
+      b.onclick = () => mostrarArchivo(k);
+      b.addEventListener('keydown', (e) => {
+        if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+        e.preventDefault();
+        e.stopPropagation(); // (las flechas del reproductor avanzan y retroceden el paso)
+        const j = (k + (e.key === 'ArrowRight' ? 1 : archivos.length - 1)) % archivos.length;
+        mostrarArchivo(j);
+        botonesDePestana[j].focus();
+      });
+      botonesDePestana.push(b);
+      pestanas.append(b);
+    });
+    columnaCodigo.insertBefore(pestanas, panelCodigo);
+    raiz.classList.add('rep-con-pestanas');
+    numeros.forEach((numero, i) => (numero.textContent = String(numeroLocal(i + 1))));
+    mostrarArchivo(0, false);
+  }
+  // Pasa a la pestaña del archivo al que pertenece una linea (el cursor entro en otro archivo).
+  const verLinea = (n) => {
+    const k = tramoDe(n);
+    if (multi && k >= 0 && k !== archivoActivo) mostrarArchivo(k);
+  };
   const lado = nodo('div', 'rep-lado');
   const estado = nodo('div', 'rep-estado');
   const figura = nodo('div', 'rep-figura');
@@ -356,7 +403,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     lineas[i].classList.toggle('rep-parada-puesta', conParadas() && puesta);
     lineas[i].classList.toggle('rep-parada-sin-uso', conParadas() && puesta && !ejecutadas.has(n));
     numeros[i].setAttribute('aria-pressed', String(puesta));
-    numeros[i].setAttribute('aria-label', 'Punto de parada en la línea ' + n);
+    numeros[i].setAttribute('aria-label', 'Punto de parada en la línea ' + numeroLocal(n));
     numeros[i].title = !puesta ? 'Poner un punto de parada' : ejecutadas.has(n) ? 'Quitar el punto de parada' : 'Punto de parada: esta línea no se ejecuta con estos valores';
   };
   const aplicarPuntos = () => {
@@ -604,7 +651,8 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   let tablaForzada = false;
   const tablaVisible = (k) => tablaForzada || tablaEnEstePaso(k);
   const figuraVisible = (k) => !tablaForzada && figuraEnEstePaso(k);
-  raiz.modoDelPaso = (k) => ({ tabla: tablaEnEstePaso(k), figura: figuraEnEstePaso(k) }); // (para las pruebas)
+  raiz.pestanaActiva = () => (multi ? archivos[archivoActivo].nombre : null); // (para las pruebas)
+  raiz.modoDelPaso =(k) => ({ tabla: tablaEnEstePaso(k), figura: figuraEnEstePaso(k) }); // (para las pruebas)
   raiz.llamadasDeLaTabla = (k) => filasDelPaso(k).filter((r) => r.desde <= k).map((r) => r.llamada); // (para las pruebas)
   // La pregunta que la figura mostraria en el paso k (el cursor sobre el if y, despues, su respuesta) y que la tabla del trazado ya muestra:
   // el rotulo de la franja se omite (no se ve dos veces, cada una con su animacion).
@@ -1456,7 +1504,8 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     if (f) cabecera.append(nodo('code', '', `${f.nombre}()`), foto.retorno ? ', por devolver ' : ', por ejecutar ');
     else if (foto.retorno) cabecera.append('por devolver ');
     if (foto.retorno) cabecera.append(nodo('code', '', foto.retorno.texto), ', ');
-    cabecera.append(`línea ${foto.linea}:`);
+    if (multi) cabecera.append(`línea ${numeroLocal(foto.linea)} de `, nodo('code', '', archivos[tramoDe(foto.linea)] ? archivos[tramoDe(foto.linea)].nombre : ''), ':');
+    else cabecera.append(`línea ${foto.linea}:`);
     const linea = nodo('pre', 'rep-estado-linea');
     const trozos = lineasPintadas((codigo.split('\n')[foto.linea - 1] || '').trim());
     const vacia = [];
@@ -1498,6 +1547,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   // Al entrar en una funcion (tambien en cada llamada de una recursion) se lleva la vista a su comienzo y se resalta todo su
   // codigo (el fondo sube, se queda y se apaga) antes de que aparezca el cursor en su primera linea. "d" es un fundido.
   function resaltarFuncion(f, d) {
+    verLinea(f.desde); // (varios archivos: la funcion puede estar en otro)
     lineas.forEach((fila, i) => fila.classList.toggle('rep-fuera', i + 1 < f.desde || i + 1 > f.hasta));
     if (marcada) marcada.classList.remove('rep-ahora', 'rep-error'); // el cursor vuelve cuando termina el resalte
     const cabecera = lineas[f.desde - 1];
@@ -1677,7 +1727,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
       if (dTrazado > 0) for (const m of etapasDelTrazado(paso, unidad)) marcas.push({ t: dFigura + m.t, nombre: m.nombre });
       if (entrando) marcas.push({ t: dFigura + dTrazado, nombre: 'Se resalta la función' });
       if (vuelve) marcas.push({ t: dTrazado + pausaVuelta, nombre: 'Vuelve la figura: termina la recursión' });
-      if (ultimaAnimacion > 0 && foto.linea != null) marcas.push({ t: ultimaAnimacion, nombre: marcada && marcada === lineas[foto.linea - 1] ? 'El cursor sigue en la línea ' + foto.linea + ': la línea pulsa' : 'Llega el cursor a la línea ' + foto.linea });
+      if (ultimaAnimacion > 0 && foto.linea != null) marcas.push({ t: ultimaAnimacion, nombre: marcada && marcada === lineas[foto.linea - 1] ? 'El cursor sigue en la línea ' + numeroLocal(foto.linea) + ': la línea pulsa' : 'Llega el cursor a la línea ' + numeroLocal(foto.linea) });
       programarEtapas(marcas, inicioPaso);
     }
     if (entrando) relojEditor = tiempo.esperar(() => resaltarFuncion(entrando, fundidoDe(unidad)), dFigura + dTrazado);
@@ -1720,6 +1770,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
       const anterior = marcada;
       if (marcada) marcada.classList.remove('rep-ahora', 'rep-error');
       marcada = foto.linea != null ? lineas[foto.linea - 1] : null;
+      if (foto.linea != null) verLinea(foto.linea); // (varios archivos: la pestaña del cursor)
       if (marcada) {
         marcada.classList.add(foto.error ? 'rep-error' : 'rep-ahora');
         seguirLinea(cambioDeFuncion, animar, foto);

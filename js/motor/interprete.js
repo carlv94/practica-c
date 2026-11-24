@@ -253,6 +253,14 @@ class Interprete {
         case 'enum_specifier':
           this.tipoDeEspecificador(n);
           break;
+        case 'preproc_ifdef': {
+          // Las guardas de un encabezado (#ifndef X ... #endif): lo de adentro se carga igual que lo de afuera (el programa de varios
+          // archivos se une en un solo texto, y cada encabezado aparece una sola vez).
+          const nombre = n.childForFieldName('name');
+          const definida = nombre ? this.macros.has(nombre.text) : false;
+          if (/^#\s*ifndef\b/.test(n.text) ? !definida : definida) this.cargar(n);
+          break;
+        }
         default:
           break; // include, comentarios y demas
       }
