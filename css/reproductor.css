@@ -1435,6 +1435,63 @@
 .rep-con-pestanas .rep-codigo {
   border-top-left-radius: 0;
 }
+/* el aviso de que el cursor paso a otro archivo: con el dedo, una pildora al pie de la pantalla (como la del zoom); con el cursor, mas discreta, sobre el
+   pie del codigo. La pestana activa destella. */
+.rep-columna-codigo {
+  position: relative;
+}
+.rep-aviso-archivo {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  z-index: 5;
+  max-width: calc(100% - 20px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba(50, 50, 50, 0.92);
+  color: #fff;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.rep-aviso-archivo-visible {
+  opacity: 1;
+}
+@media (pointer: coarse) {
+  .rep-aviso-archivo {
+    position: fixed;
+    left: 50%;
+    bottom: max(24px, env(safe-area-inset-bottom));
+    transform: translateX(-50%);
+    z-index: 1400;
+    max-width: 90vw;
+    padding: 10px 18px;
+    font-size: 1rem;
+  }
+}
+.rep-pestana-destello {
+  animation: rep-pestana-destello 1.4s ease-out;
+}
+@keyframes rep-pestana-destello {
+  from {
+    box-shadow: inset 0 0 0 3px var(--acento);
+  }
+  to {
+    box-shadow: inset 0 0 0 3px transparent;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rep-aviso-archivo {
+    transition: none;
+  }
+  .rep-pestana-destello {
+    animation: none;
+  }
+}
 .rep-sin-archivo {
   display: none;
 }

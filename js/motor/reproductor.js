@@ -224,7 +224,22 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   const numeroLocal = (n) => (multi && tramoDe(n) >= 0 ? n - archivos[tramoDe(n)].desde + 1 : n);
   const pestanas = nodo('div', 'rep-pestanas');
   const botonesDePestana = [];
-  function mostrarArchivo(k, alPrincipio = true) {
+  // El aviso de que el cursor paso a otro archivo (por una llamada o un retorno): un mensaje al pie, como el del zoom, y un destello en la pestana.
+  const avisoArchivo = nodo('div', 'rep-aviso-archivo');
+  avisoArchivo.setAttribute('role', 'status');
+  let relojAvisoArchivo = null;
+  function avisarArchivo(k) {
+    avisoZoom.classList.remove('rep-aviso-zoom-visible');
+    avisoArchivo.textContent = `→ ${archivos[k].nombre}`;
+    avisoArchivo.classList.add('rep-aviso-archivo-visible');
+    clearTimeout(relojAvisoArchivo);
+    relojAvisoArchivo = setTimeout(() => avisoArchivo.classList.remove('rep-aviso-archivo-visible'), 2000);
+    const b = botonesDePestana[k];
+    b.classList.remove('rep-pestana-destello');
+    void b.offsetWidth; // (para que el destello vuelva a empezar)
+    b.classList.add('rep-pestana-destello');
+  }
+  function mostrarArchivo(k, alPrincipio = true, avisar = false) {
     archivoActivo = k;
     lineas.forEach((fila, i) => fila.classList.toggle('rep-sin-archivo', tramoDe(i + 1) !== k));
     botonesDePestana.forEach((b, j) => {
@@ -232,6 +247,14 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
       b.tabIndex = j === k ? 0 : -1;
     });
     if (alPrincipio) panelCodigo.scrollTop = 0;
+    // La pestana activa queda a la vista aunque la fila se desplace (en una pantalla angosta no entran todas).
+    const b = botonesDePestana[k];
+    if (b && pestanas.scrollWidth > pestanas.clientWidth) {
+      const r = b.getBoundingClientRect();
+      const f = pestanas.getBoundingClientRect();
+      pestanas.scrollLeft += r.left - f.left - (f.width - r.width) / 2;
+    }
+    if (avisar && b) avisarArchivo(k);
   }
   if (multi) {
     pestanas.setAttribute('role', 'tablist');
@@ -253,14 +276,16 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
       pestanas.append(b);
     });
     columnaCodigo.insertBefore(pestanas, panelCodigo);
+    columnaCodigo.append(avisoArchivo);
     raiz.classList.add('rep-con-pestanas');
     numeros.forEach((numero, i) => (numero.textContent = String(numeroLocal(i + 1))));
     mostrarArchivo(0, false);
   }
   // Pasa a la pestaña del archivo al que pertenece una linea (el cursor entro en otro archivo).
+  let avisarCambios = false; // (el primer paso que se muestra, al entrar, no avisa: no es un cambio de archivo que se vea pasar)
   const verLinea = (n) => {
     const k = tramoDe(n);
-    if (multi && k >= 0 && k !== archivoActivo) mostrarArchivo(k);
+    if (multi && k >= 0 && k !== archivoActivo) mostrarArchivo(k, true, avisarCambios);
   };
   const lado = nodo('div', 'rep-lado');
   const estado = nodo('div', 'rep-estado');
@@ -1839,7 +1864,10 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
       const anterior = marcada;
       if (marcada) marcada.classList.remove('rep-ahora', 'rep-error');
       marcada = foto.linea != null ? lineas[foto.linea - 1] : null;
-      if (foto.linea != null) verLinea(foto.linea); // (varios archivos: la pestaña del cursor)
+      if (foto.linea != null) {
+        verLinea(foto.linea); // (varios archivos: la pestaña del cursor)
+        avisarCambios = true;
+      }
       if (marcada) {
         marcada.classList.add(foto.error ? 'rep-error' : 'rep-ahora');
         seguirLinea(cambioDeFuncion, animar, foto);
@@ -2020,6 +2048,7 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   let relojAvisoZoom = null;
   function avisarZoom(limite = '') {
     const escala = typeof zoom === 'number' ? zoom : dibujo.escalaActual; // (la elegida, aunque la figura todavia no la haya aplicado)
+    avisoArchivo.classList.remove('rep-aviso-archivo-visible'); // (un aviso a la vez al pie)
     avisoZoom.textContent = `Zoom ${Math.round(escala * 100)} %${limite}`;
     avisoZoom.classList.add('rep-aviso-zoom-visible');
     clearTimeout(relojAvisoZoom);
