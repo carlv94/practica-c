@@ -117,35 +117,35 @@ const casosLista = [
   lista(2, 'sin avanzar', L_MOSTRAR('  TNodo *aux = lista;\n\n  while (aux != NULL) {\n    printf("%d ", aux->dato);\n  }\n'), ['NO_TERMINA']),
   lista(2, 'sin el espacio', L_MOSTRAR('  TNodo *aux = lista;\n\n  while (aux != NULL) {\n    printf("%d", aux->dato);\n    aux = aux->sig;\n  }\n'), ['MUESTRA_DISTINTA']),
 
-  // ===== 3. insertar con una copia del puntero
-  lista(3, 'solo 7', '0'),
-  lista(3, 'cuatro y siete', '1', ['OPCION_INSERTA_ADELANTE']),
-  lista(3, 'siete y cuatro', '2', ['OPCION_INSERTA_ATRAS']),
+  // ===== 4. insertar con una copia del puntero
+  lista(4, 'solo 7', '0'),
+  lista(4, 'cuatro y siete', '1', ['OPCION_INSERTA_ADELANTE']),
+  lista(4, 'siete y cuatro', '2', ['OPCION_INSERTA_ATRAS']),
 
-  // ===== 4. insertar al inicio
-  lista(4, 'la referencia', L_INICIO('  nuevo->sig = *lista;\n  *lista = nuevo;\n')),
-  lista(4, 'con malloc directo', 'void insertarInicio(TNodo **lista, int dato) {\n  TNodo *nuevo = malloc(sizeof(TNodo));\n\n  if (nuevo == NULL) {\n    return;\n  }\n  nuevo->dato = dato;\n  nuevo->sig = *lista;\n  *lista = nuevo;\n}'),
-  lista(4, 'las dos lineas al reves', L_INICIO('  *lista = nuevo;\n  nuevo->sig = *lista;\n'), ['NO_TERMINA']),
-  lista(4, 'sin enlazar con lo que habia', L_INICIO('  *lista = nuevo;\n'), ['MUESTRA_DISTINTA']),
-  lista(4, 'lo deja al final', L_INICIO('  if (*lista == NULL) {\n    *lista = nuevo;\n    return;\n  }\n  TNodo *aux = *lista;\n\n  while (aux->sig != NULL) {\n    aux = aux->sig;\n  }\n  aux->sig = nuevo;\n'), ['MUESTRA_DISTINTA']),
+  // ===== 3. insertar al inicio
+  lista(3, 'la referencia', L_INICIO('  nuevo->sig = *lista;\n  *lista = nuevo;\n')),
+  lista(3, 'con malloc directo', 'void insertarInicio(TNodo **lista, int dato) {\n  TNodo *nuevo = malloc(sizeof(TNodo));\n\n  if (nuevo == NULL) {\n    return;\n  }\n  nuevo->dato = dato;\n  nuevo->sig = *lista;\n  *lista = nuevo;\n}'),
+  lista(3, 'las dos lineas al reves', L_INICIO('  *lista = nuevo;\n  nuevo->sig = *lista;\n'), ['NO_TERMINA']),
+  lista(3, 'sin enlazar con lo que habia', L_INICIO('  *lista = nuevo;\n'), ['MUESTRA_DISTINTA']),
+  lista(3, 'lo deja al final', L_INICIO('  if (*lista == NULL) {\n    *lista = nuevo;\n    return;\n  }\n  TNodo *aux = *lista;\n\n  while (aux->sig != NULL) {\n    aux = aux->sig;\n  }\n  aux->sig = nuevo;\n'), ['MUESTRA_DISTINTA']),
 
   // ===== 5. el orden de las dos lineas
   lista(5, 'da igual', '0', ['OPCION_DA_IGUAL']),
   lista(5, 'al final', '1', ['OPCION_QUEDA_AL_FINAL']),
   lista(5, 'se apunta a si mismo', '2'),
 
-  // ===== 6. recorrer hasta el ultimo
-  lista(6, 'queda en el ultimo', '0', ['OPCION_QUEDA_EN_EL_ULTIMO']),
-  lista(6, 'queda en NULL', '1'),
-  lista(6, 'queda en el nuevo', '2', ['OPCION_QUEDA_EN_EL_NUEVO']),
+  // ===== 7. recorrer hasta el ultimo
+  lista(7, 'queda en el ultimo', '0', ['OPCION_QUEDA_EN_EL_ULTIMO']),
+  lista(7, 'queda en NULL', '1'),
+  lista(7, 'queda en el nuevo', '2', ['OPCION_QUEDA_EN_EL_NUEVO']),
 
-  // ===== 7. insertar al final
-  lista(7, 'la referencia', L_FINAL(FINAL_REF)),
-  lista(7, 'con un for', L_FINAL('  if (*lista == NULL) {\n    *lista = nuevo;\n    return;\n  }\n  for (aux = *lista; aux->sig != NULL; aux = aux->sig) {\n  }\n  aux->sig = nuevo;\n')),
-  lista(7, 'recorriendo hasta NULL', L_FINAL('  if (*lista == NULL) {\n    *lista = nuevo;\n    return;\n  }\n  aux = *lista;\n  while (aux != NULL) {\n    aux = aux->sig;\n  }\n  aux->sig = nuevo;\n'), ['DESREFERENCIA_NULA']),
-  lista(7, 'sin el caso de la lista vacia', L_FINAL('  aux = *lista;\n  while (aux->sig != NULL) {\n    aux = aux->sig;\n  }\n  aux->sig = nuevo;\n'), ['DESREFERENCIA_NULA']),
-  lista(7, 'lo inserta al principio', L_FINAL('  nuevo->sig = *lista;\n  *lista = nuevo;\n'), ['MUESTRA_DISTINTA']),
-  lista(7, 'sin enlazar el nodo nuevo', L_FINAL('  if (*lista == NULL) {\n    *lista = nuevo;\n    return;\n  }\n  aux = *lista;\n  while (aux->sig != NULL) {\n    aux = aux->sig;\n  }\n'), ['MUESTRA_DISTINTA']),
+  // ===== 6. insertar al final
+  lista(6, 'la referencia', L_FINAL(FINAL_REF)),
+  lista(6, 'con un for', L_FINAL('  if (*lista == NULL) {\n    *lista = nuevo;\n    return;\n  }\n  for (aux = *lista; aux->sig != NULL; aux = aux->sig) {\n  }\n  aux->sig = nuevo;\n')),
+  lista(6, 'recorriendo hasta NULL', L_FINAL('  if (*lista == NULL) {\n    *lista = nuevo;\n    return;\n  }\n  aux = *lista;\n  while (aux != NULL) {\n    aux = aux->sig;\n  }\n  aux->sig = nuevo;\n'), ['DESREFERENCIA_NULA']),
+  lista(6, 'sin el caso de la lista vacia', L_FINAL('  aux = *lista;\n  while (aux->sig != NULL) {\n    aux = aux->sig;\n  }\n  aux->sig = nuevo;\n'), ['DESREFERENCIA_NULA']),
+  lista(6, 'lo inserta al principio', L_FINAL('  nuevo->sig = *lista;\n  *lista = nuevo;\n'), ['MUESTRA_DISTINTA']),
+  lista(6, 'sin enlazar el nodo nuevo', L_FINAL('  if (*lista == NULL) {\n    *lista = nuevo;\n    return;\n  }\n  aux = *lista;\n  while (aux->sig != NULL) {\n    aux = aux->sig;\n  }\n'), ['MUESTRA_DISTINTA']),
 ];
 
 // Serie 6: buscar, eliminar y liberar.

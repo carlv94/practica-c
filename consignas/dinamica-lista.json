@@ -54,9 +54,43 @@
       "referencia": "void mostrar(TNodo *lista) {\n  TNodo *aux = lista;\n\n  while (aux != NULL) {\n    printf(\"%d \", aux->dato);\n    aux = aux->sig;\n  }\n}"
     },
     {
+      "id": "lista-insertar-inicio",
+      "titulo": "Insertar al principio",
+      "en": "archivo",
+      "dado": "typedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\nTNodo *crearNodo(int dato) {\n  TNodo *nuevo = malloc(sizeof(TNodo));\n\n  if (nuevo == NULL) {\n    return NULL;\n  }\n  nuevo->dato = dato;\n  nuevo->sig = NULL;\n  return nuevo;\n}\n\nvoid mostrar(TNodo *lista) {\n  TNodo *aux = lista;\n\n  while (aux != NULL) {\n    printf(\"%d \", aux->dato);\n    aux = aux->sig;\n  }\n}",
+      "despues": "int main() {\n  TNodo *lista = NULL;\n  int n;\n  int dato;\n\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%d\", &dato);\n    insertarInicio(&lista, dato);\n  }\n  mostrar(lista);\n  return 0;\n}",
+      "enunciado": "El tipo `TNodo` y las funciones `crearNodo` y `mostrar` ya están escritas. Escriba la función `insertarInicio`, que recibe la dirección del puntero al primer nodo de la lista y un dato, crea un nodo con ese dato y lo deja como primero, delante de los que ya había. Si no se pudo crear el nodo, no hace nada. El `main` ya está escrito: lee una cantidad `n` y después `n` números, los inserta uno por uno al principio y muestra la lista. Como cada número se agrega adelante, la lista queda en orden inverso al ingresado: con `3` y después `4`, `9` y `6`, el programa muestra `6 9 4`.",
+      "requiere": [
+        {
+          "memoria": {
+            "casos": [
+              {
+                "entrada": "3\n4\n9\n6",
+                "salida": "6 9 4",
+                "contexto": ""
+              },
+              {
+                "entrada": "1\n7",
+                "salida": "7"
+              },
+              {
+                "entrada": "4\n5\n2\n8\n1",
+                "salida": "1 8 2 5"
+              },
+              {
+                "entrada": "2\n6\n9",
+                "salida": "9 6"
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "void insertarInicio(TNodo **lista, int dato) {\n  TNodo *nuevo = crearNodo(dato);\n\n  if (nuevo == NULL) {\n    return;\n  }\n  nuevo->sig = *lista;\n  *lista = nuevo;\n}"
+    },
+    {
       "id": "lista-q-por-valor",
       "titulo": "Insertar sin cambiar el puntero de afuera",
-      "enunciado": "Se quiere insertar un nodo al principio de una lista. `main` tiene una lista con un solo nodo, de dato `7`, y la función `insertarInicio` debe agregar adelante un nodo de dato `4`. Las funciones `crearNodo` y `mostrar` ya están escritas. La figura muestra la memoria justo antes de la llamada. ¿Qué muestra el programa?",
+      "enunciado": "Un compañero escribió `insertarInicio` con un `TNodo *` como primer parámetro, en lugar de la dirección del puntero. `main` tiene una lista con un solo nodo, de dato `7`, y se inserta adelante un nodo de dato `4`. Las funciones `crearNodo` y `mostrar` ya están escritas. La figura muestra la memoria justo antes de la llamada. ¿Qué muestra el programa?",
       "programa": "void insertarInicio(TNodo *lista, int dato) {\n  TNodo *nuevo = crearNodo(dato);\n\n  nuevo->sig = lista;\n  lista = nuevo;\n}\n\nint main() {\n  TNodo *lista = crearNodo(7);\n\n  insertarInicio(lista, 4);\n  mostrar(lista);\n  return 0;\n}",
       "dibujo": {
         "titulo": "La memoria justo antes de llamar a `insertarInicio`:",
@@ -86,40 +120,6 @@
           "explicacion": "El nodo nuevo se enlaza delante del `7`, no detrás: `nuevo->sig = lista;` hace que el `4` apunte al `7`. Pero como el `lista` de `main` no cambia, el `4` nunca se alcanza desde ahí y `mostrar` no lo muestra."
         }
       ]
-    },
-    {
-      "id": "lista-insertar-inicio",
-      "titulo": "Insertar al principio",
-      "en": "archivo",
-      "dado": "typedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\nTNodo *crearNodo(int dato) {\n  TNodo *nuevo = malloc(sizeof(TNodo));\n\n  if (nuevo == NULL) {\n    return NULL;\n  }\n  nuevo->dato = dato;\n  nuevo->sig = NULL;\n  return nuevo;\n}\n\nvoid mostrar(TNodo *lista) {\n  TNodo *aux = lista;\n\n  while (aux != NULL) {\n    printf(\"%d \", aux->dato);\n    aux = aux->sig;\n  }\n}",
-      "despues": "int main() {\n  TNodo *lista = NULL;\n  int n;\n  int dato;\n\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%d\", &dato);\n    insertarInicio(&lista, dato);\n  }\n  mostrar(lista);\n  return 0;\n}",
-      "enunciado": "El tipo `TNodo` y las funciones `crearNodo` y `mostrar` ya están escritas. Escriba la función `insertarInicio`, que recibe la dirección del puntero al primer nodo de la lista y un dato, crea un nodo con ese dato y lo deja como primero, delante de los que ya había. La función cambia cuál es el primer nodo, que guarda un puntero de `main`: por eso recibe un `TNodo **`. Si no se pudo crear el nodo, no hace nada. El `main` ya está escrito: lee una cantidad `n` y después `n` números, los inserta uno por uno al principio y muestra la lista. Como cada número se agrega adelante, la lista queda en orden inverso al ingresado: con `3` y después `4`, `9` y `6`, el programa muestra `6 9 4`.",
-      "requiere": [
-        {
-          "memoria": {
-            "casos": [
-              {
-                "entrada": "3\n4\n9\n6",
-                "salida": "6 9 4",
-                "contexto": ""
-              },
-              {
-                "entrada": "1\n7",
-                "salida": "7"
-              },
-              {
-                "entrada": "4\n5\n2\n8\n1",
-                "salida": "1 8 2 5"
-              },
-              {
-                "entrada": "2\n6\n9",
-                "salida": "9 6"
-              }
-            ]
-          }
-        }
-      ],
-      "referencia": "void insertarInicio(TNodo **lista, int dato) {\n  TNodo *nuevo = crearNodo(dato);\n\n  if (nuevo == NULL) {\n    return;\n  }\n  nuevo->sig = *lista;\n  *lista = nuevo;\n}"
     },
     {
       "id": "lista-q-orden",
@@ -156,40 +156,6 @@
       ]
     },
     {
-      "id": "lista-q-pasado",
-      "titulo": "Recorrer hasta el último nodo",
-      "enunciado": "Esta función quiere insertar un nodo al final de la lista: recorre la lista con `aux` hasta llegar al último nodo y enlaza ahí el nodo nuevo. La lista de `main` tiene un solo nodo, de dato `7`, y se inserta el `4`. Las funciones `crearNodo` y `mostrar` ya están escritas. Cuando el ciclo `while` termina, ¿cuánto vale `aux`?",
-      "programa": "void insertarFinal(TNodo **lista, int dato) {\n  TNodo *nuevo = crearNodo(dato);\n  TNodo *aux = *lista;\n\n  while (aux != NULL) {\n    aux = aux->sig;\n  }\n  aux->sig = nuevo;\n}\n\nint main() {\n  TNodo *lista = crearNodo(7);\n\n  insertarFinal(&lista, 4);\n  mostrar(lista);\n  return 0;\n}",
-      "dibujo": {
-        "titulo": "La memoria justo antes del ciclo:",
-        "motor": {
-          "codigo": "#include <stdio.h>\n#include <stdlib.h>\n\ntypedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\nTNodo *crearNodo(int dato) {\n  TNodo *nuevo = malloc(sizeof(TNodo));\n\n  if (nuevo == NULL) {\n    return NULL;\n  }\n  nuevo->dato = dato;\n  nuevo->sig = NULL;\n  return nuevo;\n}\n\nvoid mostrar(TNodo *lista) {\n  TNodo *aux = lista;\n\n  while (aux != NULL) {\n    printf(\"%d \", aux->dato);\n    aux = aux->sig;\n  }\n}\n\nvoid insertarFinal(TNodo **lista, int dato) {\n  TNodo *nuevo = crearNodo(dato);\n  TNodo *aux = *lista;\n\n  while (aux->sig != NULL) {\n    aux = aux->sig;\n  }\n  aux->sig = nuevo;\n}\n\nint main() {\n  TNodo *lista = crearNodo(7);\n\n  insertarFinal(&lista, 4);\n  mostrar(lista);\n  return 0;\n}",
-          "linea": 33
-        }
-      },
-      "pasoAPaso": {
-        "codigo": "#include <stdio.h>\n#include <stdlib.h>\n\ntypedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\nTNodo *crearNodo(int dato) {\n  TNodo *nuevo = malloc(sizeof(TNodo));\n\n  if (nuevo == NULL) {\n    return NULL;\n  }\n  nuevo->dato = dato;\n  nuevo->sig = NULL;\n  return nuevo;\n}\n\nvoid mostrar(TNodo *lista) {\n  TNodo *aux = lista;\n\n  while (aux != NULL) {\n    printf(\"%d \", aux->dato);\n    aux = aux->sig;\n  }\n}\n\nvoid insertarFinal(TNodo **lista, int dato) {\n  TNodo *nuevo = crearNodo(dato);\n  TNodo *aux = *lista;\n\n  while (aux != NULL) {\n    aux = aux->sig;\n  }\n  aux->sig = nuevo;\n}\n\nint main() {\n  TNodo *lista = crearNodo(7);\n\n  insertarFinal(&lista, 4);\n  mostrar(lista);\n  return 0;\n}",
-        "guia": "Avance por el ciclo hasta que `aux` se sale de la lista: el programa se detiene con un error en `aux->sig = nuevo;`."
-      },
-      "opciones": [
-        {
-          "texto": "La dirección del nodo `7`, el último, que es justo donde hay que enlazar",
-          "codigo": "OPCION_QUEDA_EN_EL_ULTIMO",
-          "explicacion": "Eso pasaría si el ciclo se detuviera al llegar al último nodo, pero la condición `aux != NULL` sigue mientras `aux` apunte a un nodo: avanza una vez más y se detiene recién cuando ya no hay ninguno."
-        },
-        {
-          "texto": "`NULL`: ya no hay nodo, y `aux->sig` es un error",
-          "correcta": true,
-          "explicacion": "El ciclo avanza mientras `aux` no sea `NULL`, así que termina únicamente cuando `aux` ya se pasó del último nodo y vale `NULL`. Entonces `aux->sig` es leer un campo de un nodo que no existe: el programa se detiene. Para quedar parado en el último nodo, la pregunta del ciclo tiene que ser por el siguiente: `while (aux->sig != NULL)`. El ciclo termina cuando `aux` ya es el último nodo, el que tiene `sig` en `NULL`, y ahí se enlaza el nodo nuevo."
-        },
-        {
-          "texto": "La dirección del nodo nuevo, que quedó enlazado al terminar",
-          "codigo": "OPCION_QUEDA_EN_EL_NUEVO",
-          "explicacion": "El ciclo recorre la lista de `main` y no conoce el nodo nuevo, que todavía no está enlazado a nada: el enlace se hace en la línea siguiente al ciclo."
-        }
-      ]
-    },
-    {
       "id": "lista-insertar-final",
       "titulo": "Insertar al final",
       "en": "archivo",
@@ -222,6 +188,40 @@
         }
       ],
       "referencia": "void insertarFinal(TNodo **lista, int dato) {\n  TNodo *nuevo = crearNodo(dato);\n  TNodo *aux;\n\n  if (nuevo == NULL) {\n    return;\n  }\n  if (*lista == NULL) {\n    *lista = nuevo;\n    return;\n  }\n  aux = *lista;\n  while (aux->sig != NULL) {\n    aux = aux->sig;\n  }\n  aux->sig = nuevo;\n}"
+    },
+    {
+      "id": "lista-q-pasado",
+      "titulo": "Recorrer hasta el último nodo",
+      "enunciado": "Un compañero escribió `insertarFinal` para recorrer la lista con `aux` hasta llegar al último nodo y enlazar ahí el nodo nuevo. La lista de `main` tiene un solo nodo, de dato `7`, y se inserta el `4`. Las funciones `crearNodo` y `mostrar` ya están escritas. Cuando el ciclo `while` termina, ¿cuánto vale `aux`?",
+      "programa": "void insertarFinal(TNodo **lista, int dato) {\n  TNodo *nuevo = crearNodo(dato);\n  TNodo *aux = *lista;\n\n  while (aux != NULL) {\n    aux = aux->sig;\n  }\n  aux->sig = nuevo;\n}\n\nint main() {\n  TNodo *lista = crearNodo(7);\n\n  insertarFinal(&lista, 4);\n  mostrar(lista);\n  return 0;\n}",
+      "dibujo": {
+        "titulo": "La memoria justo antes del ciclo:",
+        "motor": {
+          "codigo": "#include <stdio.h>\n#include <stdlib.h>\n\ntypedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\nTNodo *crearNodo(int dato) {\n  TNodo *nuevo = malloc(sizeof(TNodo));\n\n  if (nuevo == NULL) {\n    return NULL;\n  }\n  nuevo->dato = dato;\n  nuevo->sig = NULL;\n  return nuevo;\n}\n\nvoid mostrar(TNodo *lista) {\n  TNodo *aux = lista;\n\n  while (aux != NULL) {\n    printf(\"%d \", aux->dato);\n    aux = aux->sig;\n  }\n}\n\nvoid insertarFinal(TNodo **lista, int dato) {\n  TNodo *nuevo = crearNodo(dato);\n  TNodo *aux = *lista;\n\n  while (aux->sig != NULL) {\n    aux = aux->sig;\n  }\n  aux->sig = nuevo;\n}\n\nint main() {\n  TNodo *lista = crearNodo(7);\n\n  insertarFinal(&lista, 4);\n  mostrar(lista);\n  return 0;\n}",
+          "linea": 33
+        }
+      },
+      "pasoAPaso": {
+        "codigo": "#include <stdio.h>\n#include <stdlib.h>\n\ntypedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\nTNodo *crearNodo(int dato) {\n  TNodo *nuevo = malloc(sizeof(TNodo));\n\n  if (nuevo == NULL) {\n    return NULL;\n  }\n  nuevo->dato = dato;\n  nuevo->sig = NULL;\n  return nuevo;\n}\n\nvoid mostrar(TNodo *lista) {\n  TNodo *aux = lista;\n\n  while (aux != NULL) {\n    printf(\"%d \", aux->dato);\n    aux = aux->sig;\n  }\n}\n\nvoid insertarFinal(TNodo **lista, int dato) {\n  TNodo *nuevo = crearNodo(dato);\n  TNodo *aux = *lista;\n\n  while (aux != NULL) {\n    aux = aux->sig;\n  }\n  aux->sig = nuevo;\n}\n\nint main() {\n  TNodo *lista = crearNodo(7);\n\n  insertarFinal(&lista, 4);\n  mostrar(lista);\n  return 0;\n}",
+        "guia": "Avance por el ciclo hasta que `aux` se sale de la lista: el programa se detiene con un error en `aux->sig = nuevo;`."
+      },
+      "opciones": [
+        {
+          "texto": "La dirección del nodo `7`, el último, que es justo donde hay que enlazar",
+          "codigo": "OPCION_QUEDA_EN_EL_ULTIMO",
+          "explicacion": "Eso pasaría si el ciclo se detuviera al llegar al último nodo, pero la condición `aux != NULL` sigue mientras `aux` apunte a un nodo: avanza una vez más y se detiene recién cuando ya no hay ninguno."
+        },
+        {
+          "texto": "`NULL`: ya no hay nodo, y `aux->sig` es un error",
+          "correcta": true,
+          "explicacion": "El ciclo avanza mientras `aux` no sea `NULL`, así que termina únicamente cuando `aux` ya se pasó del último nodo y vale `NULL`. Entonces `aux->sig` es leer un campo de un nodo que no existe: el programa se detiene. Para quedar parado en el último nodo, la pregunta del ciclo tiene que ser por el siguiente: `while (aux->sig != NULL)`. El ciclo termina cuando `aux` ya es el último nodo, el que tiene `sig` en `NULL`, y ahí se enlaza el nodo nuevo."
+        },
+        {
+          "texto": "La dirección del nodo nuevo, que quedó enlazado al terminar",
+          "codigo": "OPCION_QUEDA_EN_EL_NUEVO",
+          "explicacion": "El ciclo recorre la lista de `main` y no conoce el nodo nuevo, que todavía no está enlazado a nada: el enlace se hace en la línea siguiente al ciclo."
+        }
+      ]
     }
   ]
 }
