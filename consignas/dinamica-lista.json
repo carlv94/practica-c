@@ -2,7 +2,7 @@
   "id": "dinamica-lista",
   "titulo": "Armar la lista",
   "continua": false,
-  "descripcion": "Con el nodo ya declarado, se arma una lista enlazada con memoria dinámica: crear un nodo, mostrar la lista, insertar al principio y al final, y los cuidados que pide cada una.",
+  "descripcion": "Con el nodo ya declarado, se arma una lista enlazada con memoria dinámica: crear un nodo, mostrar la lista, saber si está vacía, insertar al principio y al final, y los cuidados que pide cada una.",
   "cabecera": "#include <stdio.h>\n#include <stdlib.h>",
   "consignas": [
     {
@@ -52,6 +52,28 @@
         }
       ],
       "referencia": "void mostrar(TNodo *lista) {\n  TNodo *aux = lista;\n\n  while (aux != NULL) {\n    printf(\"%d \", aux->dato);\n    aux = aux->sig;\n  }\n}"
+    },
+    {
+      "id": "lista-esvacia",
+      "titulo": "Saber si la lista está vacía",
+      "en": "archivo",
+      "dado": "typedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\nTNodo *crearNodo(int dato) {\n  TNodo *nuevo = malloc(sizeof(TNodo));\n\n  if (nuevo == NULL) {\n    return NULL;\n  }\n  nuevo->dato = dato;\n  nuevo->sig = NULL;\n  return nuevo;\n}",
+      "despues": "int main() {\n  TNodo *lista = NULL;\n\n  if (esVacia(lista)) {\n    printf(\"Vacia \");\n  } else {\n    printf(\"Con nodos \");\n  }\n  lista = crearNodo(7);\n  if (esVacia(lista)) {\n    printf(\"Vacia\");\n  } else {\n    printf(\"Con nodos\");\n  }\n  free(lista);\n  return 0;\n}",
+      "enunciado": "El tipo `TNodo` y la función `crearNodo` ya están escritos en el editor. Escriba la función `esVacia`, que recibe la dirección del primer nodo de una lista y devuelve `1` si la lista está vacía, y `0` si tiene al menos un nodo. El `main` ya está escrito: pregunta por una lista vacía y después por una lista de un solo nodo, y escribe `Vacia` o `Con nodos` según la respuesta. El programa tiene que mostrar `Vacia Con nodos`.",
+      "requiere": [
+        {
+          "memoria": {
+            "casos": [
+              {
+                "salida": "Vacia Con nodos",
+                "contexto": ""
+              }
+            ],
+            "sinFugas": true
+          }
+        }
+      ],
+      "referencia": "int esVacia(TNodo *lista) {\n  return lista == NULL;\n}"
     },
     {
       "id": "lista-insertar-inicio",
