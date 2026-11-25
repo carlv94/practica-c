@@ -92,14 +92,14 @@
       "titulo": "Insertar al principio",
       "en": "archivo",
       "dado": "typedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\nTNodo *crearNodo(int dato) {\n  TNodo *nuevo = malloc(sizeof(TNodo));\n\n  if (nuevo == NULL) {\n    return NULL;\n  }\n  nuevo->dato = dato;\n  nuevo->sig = NULL;\n  return nuevo;\n}\n\nvoid mostrar(TNodo *lista) {\n  TNodo *aux = lista;\n\n  while (aux != NULL) {\n    printf(\"%d \", aux->dato);\n    aux = aux->sig;\n  }\n}",
-      "despues": "int main() {\n  TNodo *lista = NULL;\n  int n;\n  int dato;\n\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%d\", &dato);\n    insertarInicio(&lista, dato);\n  }\n  mostrar(lista);\n  while (lista != NULL) {\n    TNodo *aux = lista;\n\n    lista = lista->sig;\n    free(aux);\n  }\n  return 0;\n}",
-      "enunciado": "El tipo `TNodo` y las funciones `crearNodo` y `mostrar` ya están escritas. Escriba la función `insertarInicio`, que recibe la dirección del puntero al primer nodo de la lista y un dato, crea un nodo con ese dato y lo deja como primero, delante de los que ya había. La función cambia cuál es el primer nodo, que guarda un puntero de `main`: por eso recibe un `TNodo **`. Si no se pudo crear el nodo, no hace nada. El `main` ya está escrito: lee una cantidad `n` y después `n` números, los inserta uno por uno al principio y muestra la lista; al final libera los nodos con un ciclo, tema de la serie que sigue. Como cada número se agrega adelante, la lista queda en orden inverso al ingresado: con `3` y `4 9 6` el programa muestra `6 9 4`.",
+      "despues": "int main() {\n  TNodo *lista = NULL;\n  int n;\n  int dato;\n\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%d\", &dato);\n    insertarInicio(&lista, dato);\n  }\n  mostrar(lista);\n  return 0;\n}",
+      "enunciado": "El tipo `TNodo` y las funciones `crearNodo` y `mostrar` ya están escritas. Escriba la función `insertarInicio`, que recibe la dirección del puntero al primer nodo de la lista y un dato, crea un nodo con ese dato y lo deja como primero, delante de los que ya había. La función cambia cuál es el primer nodo, que guarda un puntero de `main`: por eso recibe un `TNodo **`. Si no se pudo crear el nodo, no hace nada. El `main` ya está escrito: lee una cantidad `n` y después `n` números, los inserta uno por uno al principio y muestra la lista. Como cada número se agrega adelante, la lista queda en orden inverso al ingresado: con `3` y después `4`, `9` y `6`, el programa muestra `6 9 4`.",
       "requiere": [
         {
           "memoria": {
             "casos": [
               {
-                "entrada": "3\n4 9 6",
+                "entrada": "3\n4\n9\n6",
                 "salida": "6 9 4",
                 "contexto": ""
               },
@@ -108,15 +108,14 @@
                 "salida": "7"
               },
               {
-                "entrada": "4\n5 2 8 1",
+                "entrada": "4\n5\n2\n8\n1",
                 "salida": "1 8 2 5"
               },
               {
-                "entrada": "2\n6 9",
+                "entrada": "2\n6\n9",
                 "salida": "9 6"
               }
-            ],
-            "sinFugas": true
+            ]
           }
         }
       ],
@@ -195,14 +194,14 @@
       "titulo": "Insertar al final",
       "en": "archivo",
       "dado": "typedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\nTNodo *crearNodo(int dato) {\n  TNodo *nuevo = malloc(sizeof(TNodo));\n\n  if (nuevo == NULL) {\n    return NULL;\n  }\n  nuevo->dato = dato;\n  nuevo->sig = NULL;\n  return nuevo;\n}\n\nvoid mostrar(TNodo *lista) {\n  TNodo *aux = lista;\n\n  while (aux != NULL) {\n    printf(\"%d \", aux->dato);\n    aux = aux->sig;\n  }\n}",
-      "despues": "int main() {\n  TNodo *lista = NULL;\n  int n;\n  int dato;\n\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%d\", &dato);\n    insertarFinal(&lista, dato);\n  }\n  mostrar(lista);\n  while (lista != NULL) {\n    TNodo *aux = lista;\n\n    lista = lista->sig;\n    free(aux);\n  }\n  return 0;\n}",
-      "enunciado": "El tipo `TNodo` y las funciones `crearNodo` y `mostrar` ya están escritas. Escriba la función `insertarFinal`, que recibe la dirección del puntero al primer nodo de la lista y un dato, crea un nodo con ese dato y lo deja como último de la lista, después de los que ya había. Hay dos casos: si la lista está vacía, el nodo nuevo pasa a ser el primero y hay que cambiar el puntero de `main`; si no, hay que recorrerla hasta el último nodo y enlazar ahí el nodo nuevo. Si no se pudo crear el nodo, no hace nada. El `main` ya está escrito: lee una cantidad `n` y después `n` números, los inserta uno por uno al final y muestra la lista, que ahora queda en el mismo orden en que se ingresó: con `3` y `4 9 6` el programa muestra `4 9 6`.",
+      "despues": "int main() {\n  TNodo *lista = NULL;\n  int n;\n  int dato;\n\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%d\", &dato);\n    insertarFinal(&lista, dato);\n  }\n  mostrar(lista);\n  return 0;\n}",
+      "enunciado": "El tipo `TNodo` y las funciones `crearNodo` y `mostrar` ya están escritas. Escriba la función `insertarFinal`, que recibe la dirección del puntero al primer nodo de la lista y un dato, crea un nodo con ese dato y lo deja como último de la lista, después de los que ya había. Hay dos casos: si la lista está vacía, el nodo nuevo pasa a ser el primero y hay que cambiar el puntero de `main`; si no, hay que recorrerla hasta el último nodo y enlazar ahí el nodo nuevo. Si no se pudo crear el nodo, no hace nada. El `main` ya está escrito: lee una cantidad `n` y después `n` números, los inserta uno por uno al final y muestra la lista, que ahora queda en el mismo orden en que se ingresó: con `3` y después `4`, `9` y `6`, el programa muestra `4 9 6`.",
       "requiere": [
         {
           "memoria": {
             "casos": [
               {
-                "entrada": "3\n4 9 6",
+                "entrada": "3\n4\n9\n6",
                 "salida": "4 9 6",
                 "contexto": ""
               },
@@ -211,15 +210,14 @@
                 "salida": "7"
               },
               {
-                "entrada": "4\n5 2 8 1",
+                "entrada": "4\n5\n2\n8\n1",
                 "salida": "5 2 8 1"
               },
               {
-                "entrada": "2\n6 9",
+                "entrada": "2\n6\n9",
                 "salida": "6 9"
               }
-            ],
-            "sinFugas": true
+            ]
           }
         }
       ],

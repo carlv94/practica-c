@@ -45,13 +45,13 @@
       "en": "archivo",
       "dado": "typedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\nTNodo *crearNodo(int dato) {\n  TNodo *nuevo = malloc(sizeof(TNodo));\n\n  if (nuevo == NULL) {\n    return NULL;\n  }\n  nuevo->dato = dato;\n  nuevo->sig = NULL;\n  return nuevo;\n}\n\nvoid insertarFinal(TNodo **lista, int dato) {\n  TNodo *nuevo = crearNodo(dato);\n  TNodo *aux;\n\n  if (nuevo == NULL) {\n    return;\n  }\n  if (*lista == NULL) {\n    *lista = nuevo;\n    return;\n  }\n  aux = *lista;\n  while (aux->sig != NULL) {\n    aux = aux->sig;\n  }\n  aux->sig = nuevo;\n}\n\nvoid mostrar(TNodo *lista) {\n  TNodo *aux = lista;\n\n  while (aux != NULL) {\n    printf(\"%d \", aux->dato);\n    aux = aux->sig;\n  }\n}",
       "despues": "int main() {\n  TNodo *lista = NULL;\n  int n;\n  int dato;\n\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%d\", &dato);\n    insertarFinal(&lista, dato);\n  }\n  mostrar(lista);\n  liberarLista(&lista);\n  if (lista == NULL) {\n    printf(\"Vacia\");\n  }\n  return 0;\n}",
-      "enunciado": "El tipo `TNodo` y las funciones `crearNodo`, `insertarFinal` y `mostrar` ya están escritas. Escriba la función `liberarLista`, que recibe la dirección del puntero al primer nodo, libera todos los nodos de la lista uno por uno, y deja el puntero de `main` en `NULL`, para que quede como una lista vacía. Con una lista vacía no hace nada. El `main` ya está escrito: lee una cantidad `n` y después `n` números, los inserta al final, muestra la lista, la libera y avisa si quedó vacía. Con `3` y `4 9 6` el programa muestra `4 9 6 Vacia`.",
+      "enunciado": "El tipo `TNodo` y las funciones `crearNodo`, `insertarFinal` y `mostrar` ya están escritas. Escriba la función `liberarLista`, que recibe la dirección del puntero al primer nodo, libera todos los nodos de la lista uno por uno, y deja el puntero de `main` en `NULL`, para que quede como una lista vacía. Con una lista vacía no hace nada. El `main` ya está escrito: lee una cantidad `n` y después `n` números, los inserta al final, muestra la lista, la libera y avisa si quedó vacía. Con `3` y después `4`, `9` y `6`, el programa muestra `4 9 6 Vacia`.",
       "requiere": [
         {
           "memoria": {
             "casos": [
               {
-                "entrada": "3\n4 9 6",
+                "entrada": "3\n4\n9\n6",
                 "salida": "4 9 6 Vacia",
                 "contexto": ""
               },
@@ -60,7 +60,7 @@
                 "salida": "7 Vacia"
               },
               {
-                "entrada": "4\n5 2 8 1",
+                "entrada": "4\n5\n2\n8\n1",
                 "salida": "5 2 8 1 Vacia"
               },
               {
@@ -83,22 +83,22 @@
       "en": "archivo",
       "dado": "typedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\nTNodo *crearNodo(int dato) {\n  TNodo *nuevo = malloc(sizeof(TNodo));\n\n  if (nuevo == NULL) {\n    return NULL;\n  }\n  nuevo->dato = dato;\n  nuevo->sig = NULL;\n  return nuevo;\n}\n\nvoid insertarFinal(TNodo **lista, int dato) {\n  TNodo *nuevo = crearNodo(dato);\n  TNodo *aux;\n\n  if (nuevo == NULL) {\n    return;\n  }\n  if (*lista == NULL) {\n    *lista = nuevo;\n    return;\n  }\n  aux = *lista;\n  while (aux->sig != NULL) {\n    aux = aux->sig;\n  }\n  aux->sig = nuevo;\n}\n\nvoid mostrar(TNodo *lista) {\n  TNodo *aux = lista;\n\n  while (aux != NULL) {\n    printf(\"%d \", aux->dato);\n    aux = aux->sig;\n  }\n}\n\nvoid liberarLista(TNodo **lista) {\n  TNodo *aux;\n\n  while (*lista != NULL) {\n    aux = *lista;\n    *lista = aux->sig;\n    free(aux);\n  }\n}",
       "despues": "int main() {\n  TNodo *lista = NULL;\n  TNodo *p;\n  int n;\n  int dato;\n  int buscado;\n\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%d\", &dato);\n    insertarFinal(&lista, dato);\n  }\n  scanf(\"%d\", &buscado);\n  p = buscar(lista, buscado);\n  if (p != NULL) {\n    p->dato = p->dato * 2;\n  }\n  mostrar(lista);\n  liberarLista(&lista);\n  return 0;\n}",
-      "enunciado": "El tipo `TNodo` y las funciones `crearNodo`, `insertarFinal`, `mostrar` y `liberarLista` ya están escritas. Escriba la función `buscar`, que recibe la dirección del primer nodo de una lista y un valor, y devuelve la dirección del primer nodo cuyo dato sea ese valor, o `NULL` si ningún nodo lo tiene. Devolver la dirección del nodo, y no solo avisar si está, le permite a quien llama usarlo e incluso modificarlo. La lista no cambia, así que la función recibe un `TNodo *` y no hace falta pasarle la dirección del puntero. El `main` ya está escrito: lee `n` números y los inserta al final, lee el valor buscado y, si lo encuentra, duplica el dato de ese nodo. Después muestra la lista. Con `3`, `4 9 6` y el valor buscado `9`, el programa muestra `4 18 6`.",
+      "enunciado": "El tipo `TNodo` y las funciones `crearNodo`, `insertarFinal`, `mostrar` y `liberarLista` ya están escritas. Escriba la función `buscar`, que recibe la dirección del primer nodo de una lista y un valor, y devuelve la dirección del primer nodo cuyo dato sea ese valor, o `NULL` si ningún nodo lo tiene. Devolver la dirección del nodo, y no solo avisar si está, le permite a quien llama usarlo e incluso modificarlo. La lista no cambia, así que la función recibe un `TNodo *` y no hace falta pasarle la dirección del puntero. El `main` ya está escrito: lee `n` números y los inserta al final, lee el valor buscado y, si lo encuentra, duplica el dato de ese nodo. Después muestra la lista. Con `3`, después `4`, `9` y `6`, y el valor buscado `9`, el programa muestra `4 18 6`.",
       "requiere": [
         {
           "memoria": {
             "casos": [
               {
-                "entrada": "3\n4 9 6\n9",
+                "entrada": "3\n4\n9\n6\n9",
                 "salida": "4 18 6",
                 "contexto": ""
               },
               {
-                "entrada": "4\n5 2 8 1\n8",
+                "entrada": "4\n5\n2\n8\n1\n8",
                 "salida": "5 2 16 1"
               },
               {
-                "entrada": "2\n6 9\n7",
+                "entrada": "2\n6\n9\n7",
                 "salida": "6 9"
               },
               {
@@ -140,13 +140,13 @@
       "en": "archivo",
       "dado": "typedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\nTNodo *crearNodo(int dato) {\n  TNodo *nuevo = malloc(sizeof(TNodo));\n\n  if (nuevo == NULL) {\n    return NULL;\n  }\n  nuevo->dato = dato;\n  nuevo->sig = NULL;\n  return nuevo;\n}\n\nvoid insertarFinal(TNodo **lista, int dato) {\n  TNodo *nuevo = crearNodo(dato);\n  TNodo *aux;\n\n  if (nuevo == NULL) {\n    return;\n  }\n  if (*lista == NULL) {\n    *lista = nuevo;\n    return;\n  }\n  aux = *lista;\n  while (aux->sig != NULL) {\n    aux = aux->sig;\n  }\n  aux->sig = nuevo;\n}\n\nvoid mostrar(TNodo *lista) {\n  TNodo *aux = lista;\n\n  while (aux != NULL) {\n    printf(\"%d \", aux->dato);\n    aux = aux->sig;\n  }\n}\n\nvoid liberarLista(TNodo **lista) {\n  TNodo *aux;\n\n  while (*lista != NULL) {\n    aux = *lista;\n    *lista = aux->sig;\n    free(aux);\n  }\n}",
       "despues": "int main() {\n  TNodo *lista = NULL;\n  int n;\n  int dato;\n\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%d\", &dato);\n    insertarFinal(&lista, dato);\n  }\n  eliminarPrimero(&lista);\n  if (lista == NULL) {\n    printf(\"Vacia\");\n  } else {\n    mostrar(lista);\n  }\n  liberarLista(&lista);\n  return 0;\n}",
-      "enunciado": "El tipo `TNodo` y las funciones `crearNodo`, `insertarFinal`, `mostrar` y `liberarLista` ya están escritas. Escriba la función `eliminarPrimero`, que recibe la dirección del puntero al primer nodo, hace que el segundo nodo pase a ser el primero y libera el primero. Con una lista vacía no hace nada.\n! Después de `free` el nodo ya no se puede leer: guarde antes lo que va a necesitar.\nEl `main` ya está escrito: lee `n` números, los inserta al final, elimina el primer nodo y muestra lo que queda, o `Vacia` si no queda ninguno. Con `3` y `4 9 6` el programa muestra `9 6`.",
+      "enunciado": "El tipo `TNodo` y las funciones `crearNodo`, `insertarFinal`, `mostrar` y `liberarLista` ya están escritas. Escriba la función `eliminarPrimero`, que recibe la dirección del puntero al primer nodo, hace que el segundo nodo pase a ser el primero y libera el primero. Con una lista vacía no hace nada.\n! Después de `free` el nodo ya no se puede leer: guarde antes lo que va a necesitar.\nEl `main` ya está escrito: lee `n` números, los inserta al final, elimina el primer nodo y muestra lo que queda, o `Vacia` si no queda ninguno. Con `3` y después `4`, `9` y `6`, el programa muestra `9 6`.",
       "requiere": [
         {
           "memoria": {
             "casos": [
               {
-                "entrada": "3\n4 9 6",
+                "entrada": "3\n4\n9\n6",
                 "salida": "9 6",
                 "contexto": ""
               },
@@ -155,7 +155,7 @@
                 "salida": "Vacia"
               },
               {
-                "entrada": "4\n5 2 8 1",
+                "entrada": "4\n5\n2\n8\n1",
                 "salida": "2 8 1"
               },
               {
@@ -212,26 +212,26 @@
       "en": "archivo",
       "dado": "typedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\nTNodo *crearNodo(int dato) {\n  TNodo *nuevo = malloc(sizeof(TNodo));\n\n  if (nuevo == NULL) {\n    return NULL;\n  }\n  nuevo->dato = dato;\n  nuevo->sig = NULL;\n  return nuevo;\n}\n\nvoid insertarFinal(TNodo **lista, int dato) {\n  TNodo *nuevo = crearNodo(dato);\n  TNodo *aux;\n\n  if (nuevo == NULL) {\n    return;\n  }\n  if (*lista == NULL) {\n    *lista = nuevo;\n    return;\n  }\n  aux = *lista;\n  while (aux->sig != NULL) {\n    aux = aux->sig;\n  }\n  aux->sig = nuevo;\n}\n\nvoid mostrar(TNodo *lista) {\n  TNodo *aux = lista;\n\n  while (aux != NULL) {\n    printf(\"%d \", aux->dato);\n    aux = aux->sig;\n  }\n}\n\nvoid liberarLista(TNodo **lista) {\n  TNodo *aux;\n\n  while (*lista != NULL) {\n    aux = *lista;\n    *lista = aux->sig;\n    free(aux);\n  }\n}",
       "despues": "int main() {\n  TNodo *lista = NULL;\n  int n;\n  int dato;\n  int valor;\n\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%d\", &dato);\n    insertarFinal(&lista, dato);\n  }\n  scanf(\"%d\", &valor);\n  eliminarValor(&lista, valor);\n  if (lista == NULL) {\n    printf(\"Vacia\");\n  } else {\n    mostrar(lista);\n  }\n  liberarLista(&lista);\n  return 0;\n}",
-      "enunciado": "El tipo `TNodo` y las funciones `crearNodo`, `insertarFinal`, `mostrar` y `liberarLista` ya están escritas. Escriba la función `eliminarValor`, que recibe la dirección del puntero al primer nodo y un valor, y elimina de la lista el primer nodo que tenga ese dato, liberándolo. Si ningún nodo lo tiene, no hace nada. Mientras busca el nodo hay que recordar cuál fue el anterior, porque al eliminarlo es el anterior el que tiene que saltear ese nodo y enlazarse con el que sigue. Hay un caso especial: si el nodo que se elimina es el primero, no tiene anterior, y lo que hay que cambiar es el puntero de `main`. El `main` ya está escrito: lee `n` números y los inserta al final, lee el valor a eliminar y muestra lo que queda, o `Vacia` si no queda ningún nodo. Con `3`, `4 9 6` y el valor `9`, el programa muestra `4 6`.",
+      "enunciado": "El tipo `TNodo` y las funciones `crearNodo`, `insertarFinal`, `mostrar` y `liberarLista` ya están escritas. Escriba la función `eliminarValor`, que recibe la dirección del puntero al primer nodo y un valor, y elimina de la lista el primer nodo que tenga ese dato, liberándolo. Si ningún nodo lo tiene, no hace nada. Mientras busca el nodo hay que recordar cuál fue el anterior, porque al eliminarlo es el anterior el que tiene que saltear ese nodo y enlazarse con el que sigue. Hay un caso especial: si el nodo que se elimina es el primero, no tiene anterior, y lo que hay que cambiar es el puntero de `main`. El `main` ya está escrito: lee `n` números y los inserta al final, lee el valor a eliminar y muestra lo que queda, o `Vacia` si no queda ningún nodo. Con `3`, después `4`, `9` y `6`, y el valor `9`, el programa muestra `4 6`.",
       "requiere": [
         {
           "memoria": {
             "casos": [
               {
-                "entrada": "3\n4 9 6\n9",
+                "entrada": "3\n4\n9\n6\n9",
                 "salida": "4 6",
                 "contexto": ""
               },
               {
-                "entrada": "3\n4 9 6\n4",
+                "entrada": "3\n4\n9\n6\n4",
                 "salida": "9 6"
               },
               {
-                "entrada": "3\n4 9 6\n6",
+                "entrada": "3\n4\n9\n6\n6",
                 "salida": "4 9"
               },
               {
-                "entrada": "2\n6 9\n7",
+                "entrada": "2\n6\n9\n7",
                 "salida": "6 9"
               },
               {

@@ -49,7 +49,7 @@
           "memoria": {
             "casos": [
               {
-                "entrada": "3\n4 7 1",
+                "entrada": "3\n4\n7\n1",
                 "salida": "8 14 2",
                 "contexto": ""
               },
@@ -58,7 +58,7 @@
                 "salida": "10"
               },
               {
-                "entrada": "2\n6 9",
+                "entrada": "2\n6\n9",
                 "salida": "12 18"
               },
               {
@@ -180,7 +180,7 @@
           "memoria": {
             "casos": [
               {
-                "entrada": "3\n5 2 8",
+                "entrada": "3\n5\n2\n8",
                 "salida": "Suma: 15",
                 "contexto": ""
               },
@@ -189,7 +189,7 @@
                 "salida": "Suma: 9"
               },
               {
-                "entrada": "2\n7 4",
+                "entrada": "2\n7\n4",
                 "salida": "Suma: 11"
               }
             ],

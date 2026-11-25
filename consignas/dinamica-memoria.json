@@ -226,12 +226,12 @@
           "memoria": {
             "casos": [
               {
-                "entrada": "4\n8 6 9 5",
+                "entrada": "4\n8\n6\n9\n5",
                 "salida": "Promedio: 7.0",
                 "contexto": ""
               },
               {
-                "entrada": "3\n9 2 6",
+                "entrada": "3\n9\n2\n6",
                 "salida": "Promedio: 5.7"
               },
               {
@@ -239,7 +239,7 @@
                 "salida": "Promedio: 6.0"
               },
               {
-                "entrada": "2\n7 8",
+                "entrada": "2\n7\n8",
                 "salida": "Promedio: 7.5"
               }
             ],
