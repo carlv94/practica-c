@@ -176,10 +176,6 @@
         "dinamica-nodo.json",
         "dinamica-lista.json",
         "dinamica-lista-quitar.json"
-      ],
-      "ocultas": [
-        "dinamica-lista.json",
-        "dinamica-lista-quitar.json"
       ]
     }
   ]
