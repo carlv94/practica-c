@@ -965,6 +965,36 @@ import { corregir } from '../js/corrector.js';
           }
         }
 
+        // El bloque que devuelve una funcion no cambia de lugar mientras se ve irse la caja de esa funcion (el puntero de quien lo recibe es una local
+        // de la funcion que sigue, no algo "de afuera": si no, saltaba a la fila de la lista y, al irse la caja, volvia a la de los sin enlazar).
+        {
+          const titulo = 'figura: el bloque que devuelve una funcion se queda en su lugar mientras la caja de esa funcion se va';
+          const lugar = document.createElement('div');
+          try {
+            const { Figura } = await import('../js/motor/figura.js');
+            const fuente = '#include <stdio.h>\n#include <stdlib.h>\ntypedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\nTNodo *crearNodo(int dato) {\n  TNodo *nuevo = malloc(sizeof(TNodo));\n  nuevo->dato = dato;\n  nuevo->sig = NULL;\n  return nuevo;\n}\n\nvoid insertarInicio(TNodo *lista, int dato) {\n  TNodo *nuevo = crearNodo(dato);\n  nuevo->sig = lista;\n  lista = nuevo;\n}\n\nint main() {\n  TNodo *lista = crearNodo(7);\n  insertarInicio(lista, 4);\n  return 0;\n}';
+            const m = ejecutarMotor(analizador, fuente, { traza: true });
+            document.body.append(lugar);
+            // el paso en que crearNodo termina dentro de insertarInicio (tres cajas antes, dos despues)
+            const i = m.traza.findIndex((f, k) => k > 0 && f.marcos.length === 2 && m.traza[k - 1].marcos.length === 3 && m.traza[k - 1].marcos[2].funcion === 'crearNodo' && f.marcos[1].funcion === 'insertarInicio');
+            if (i < 1) throw new Error('no se encontro el paso');
+            const id = m.traza[i].monticulo[1].id;
+            const figura = new Figura(lugar);
+            for (let k = 0; k < i; k++) figura.mostrar(m.traza[k], k ? m.traza[k - 1] : null, { animar: false });
+            const antes = figura.escena.bloques.get(id).hasta;
+            figura.mostrar(m.traza[i], m.traza[i - 1], { animar: true, duracion: 1000, flujo: true });
+            if (!figura.intermediaFoto) throw new Error('el paso no tiene la fotografia con la caja todavia en su lugar');
+            const durante = figura.escena.bloques.get(id).hasta;
+            if (figura.raf) cancelAnimationFrame(figura.raf);
+            if (durante.y !== antes.y || durante.x !== antes.x) throw new Error('el bloque se movio mientras la caja se va: de (' + antes.x + ', ' + antes.y + ') a (' + durante.x + ', ' + durante.y + ')');
+            anotar(true, titulo);
+          } catch (e) {
+            anotar(false, titulo, e.stack || e.message);
+          } finally {
+            lugar.remove();
+          }
+        }
+
         // El cuadro de informacion de la figura con el dedo: se abre al tocar (apoyar y soltar sin mover), no al apoyar para desplazar la pagina, y se cierra con
         // un toque fuera de la figura o al desplazar (si no, se quedaba pegado a la pantalla).
         {

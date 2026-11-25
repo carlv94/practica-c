@@ -415,6 +415,8 @@ function fotoConSalida(foto, anterior) {
     globales: foto.globales.map(conValor),
     marcos: marcos.map((m) => ({ ...m, variables: m.variables.map(conValor) })),
     monticulo: foto.monticulo.map(conValor),
+    // Las cajas del final que ya terminaron (y estan solo para verse irse): para repartir los bloques no cuentan como la funcion en curso.
+    saliendo: Math.max(0, anterior.marcos.length - foto.marcos.length),
   };
 }
 
@@ -449,10 +451,13 @@ function repartir(foto, visibles, cabezas) {
     if (n.bloque) orden.push(n.bloque);
     for (const p of punterosDe(n.valor)) visitar(p.a);
   };
+  // La funcion en curso es la ultima caja que no esta por irse: asi un bloque no cambia de grupo mientras la caja de la funcion que
+  // devuelve el bloque todavia se ve (el puntero de quien lo recibe ya es una local de la funcion en curso, no algo "de afuera").
+  const activas = foto.marcos.length - (foto.saliendo || 0);
   let raices;
   if (cabezas && cabezas.length) raices = todas.filter((x) => cabezas.includes(x.v.nombre));
-  else if (foto.marcos.length > 1) raices = todas.filter((x) => x.marco < foto.marcos.length - 1);
-  else raices = todas;
+  else if (activas > 1) raices = todas.filter((x) => x.marco < activas - 1);
+  else raices = todas.filter((x) => x.marco < Math.max(activas, 1));
   for (const x of raices) visitar(x.v.id);
   const lista = orden.slice();
   for (const x of todas) visitar(x.v.id);
