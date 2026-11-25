@@ -150,10 +150,15 @@ const casosLista = [
 
 // Serie 6: buscar, eliminar y liberar.
 const casosQuitar = [
-  // ===== 1. liberar y leer despues
-  quitar(1, 'solo el primero', '0', ['OPCION_SOLO_EL_PRIMERO']),
-  quitar(1, 'liberar aux', '1', ['OPCION_LIBERAR_AUX']),
-  quitar(1, 'lee sig despues de liberar', '2'),
+  // ===== 1. que pasa con los nodos al terminar el programa
+  quitar(1, 'se libera solo el primero', '0', ['OPCION_SE_LIBERA_SOLO_EL_PRIMERO']),
+  quitar(1, 'se liberan todos', '1', ['OPCION_SE_LIBERAN_TODOS']),
+  quitar(1, 'no se libera ninguno', '2'),
+
+  // ===== 3. liberar y leer despues
+  quitar(3, 'solo el primero', '0', ['OPCION_SOLO_EL_PRIMERO']),
+  quitar(3, 'liberar aux', '1', ['OPCION_LIBERAR_AUX']),
+  quitar(3, 'lee sig despues de liberar', '2'),
 
   // ===== 2. liberar toda la lista
   quitar(2, 'la referencia', L_LIBERAR(LIBERAR_REF)),
@@ -162,16 +167,11 @@ const casosQuitar = [
   quitar(2, 'sin dejar la lista en NULL', L_LIBERAR('  TNodo *aux = *lista;\n  TNodo *siguiente;\n\n  while (aux != NULL) {\n    siguiente = aux->sig;\n    free(aux);\n    aux = siguiente;\n  }\n'), ['MUESTRA_DISTINTA']),
   quitar(2, 'solo el primero', L_LIBERAR('  if (*lista != NULL) {\n    free(*lista);\n  }\n  *lista = NULL;\n'), ['FUGA_DE_MEMORIA']),
 
-  // ===== 3. buscar
-  quitar(3, 'la referencia', L_BUSCAR('  while (aux != NULL && aux->dato != valor) {\n    aux = aux->sig;\n  }\n  return aux;\n')),
-  quitar(3, 'con un for', 'TNodo *buscar(TNodo *lista, int valor) {\n  for (TNodo *aux = lista; aux != NULL; aux = aux->sig) {\n    if (aux->dato == valor) {\n      return aux;\n    }\n  }\n  return NULL;\n}'),
-  quitar(3, 'sin comprobar el final', L_BUSCAR('  while (aux->dato != valor) {\n    aux = aux->sig;\n  }\n  return aux;\n'), ['DESREFERENCIA_NULA']),
-  quitar(3, 'devuelve siempre el primero', L_BUSCAR('  return lista;\n'), ['MUESTRA_DISTINTA']),
-
-  // ===== 4. cual recibe la direccion del puntero
-  quitar(4, 'quitarPrimero', '0'),
-  quitar(4, 'contar', '1', ['OPCION_CONTAR']),
-  quitar(4, 'buscar', '2', ['OPCION_BUSCAR']),
+  // ===== 4. buscar
+  quitar(4, 'la referencia', L_BUSCAR('  while (aux != NULL && aux->dato != valor) {\n    aux = aux->sig;\n  }\n  return aux;\n')),
+  quitar(4, 'con un for', 'TNodo *buscar(TNodo *lista, int valor) {\n  for (TNodo *aux = lista; aux != NULL; aux = aux->sig) {\n    if (aux->dato == valor) {\n      return aux;\n    }\n  }\n  return NULL;\n}'),
+  quitar(4, 'sin comprobar el final', L_BUSCAR('  while (aux->dato != valor) {\n    aux = aux->sig;\n  }\n  return aux;\n'), ['DESREFERENCIA_NULA']),
+  quitar(4, 'devuelve siempre el primero', L_BUSCAR('  return lista;\n'), ['MUESTRA_DISTINTA']),
 
   // ===== 5. eliminar el primero
   quitar(5, 'la referencia', L_PRIMERO('  if (*lista == NULL) {\n    return;\n  }\n  aux = *lista;\n  *lista = aux->sig;\n  free(aux);\n')),
@@ -180,10 +180,15 @@ const casosQuitar = [
   quitar(5, 'sin liberar', L_PRIMERO('  if (*lista == NULL) {\n    return;\n  }\n  aux = *lista;\n  *lista = aux->sig;\n'), ['FREE_FALTA']),
   quitar(5, 'libera sin mover la lista', L_PRIMERO('  if (*lista == NULL) {\n    return;\n  }\n  free(*lista);\n'), ['USO_DE_MEMORIA_LIBERADA']),
 
-  // ===== 6. eliminar uno del medio
-  quitar(6, 'free enlaza', '0', ['OPCION_FREE_ENLAZA']),
-  quitar(6, 'sig de a guarda un liberado', '1'),
-  quitar(6, 'se liberan todos', '2', ['OPCION_SE_LIBERAN_TODOS']),
+  // ===== 6. eliminar el primero con una copia del puntero
+  quitar(6, 'sin el primero', '0', ['OPCION_MUESTRA_SIN_EL_PRIMERO']),
+  quitar(6, 'free sigue los enlaces', '1', ['OPCION_FREE_SIGUE_ENLACES']),
+  quitar(6, 'lista apunta a un nodo liberado', '2'),
+
+  // ===== 8. eliminar uno del medio
+  quitar(8, 'free enlaza', '0', ['OPCION_FREE_ENLAZA']),
+  quitar(8, 'sig de a guarda un liberado', '1'),
+  quitar(8, 'se liberan todos', '2', ['OPCION_SE_LIBERAN_TODOS']),
 
   // ===== 7. eliminar un valor
   quitar(7, 'la referencia', L_VALOR(VALOR_REF)),

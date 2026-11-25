@@ -6,36 +6,36 @@
   "cabecera": "#include <stdio.h>\n#include <stdlib.h>",
   "consignas": [
     {
-      "id": "quitar-q-liberar",
-      "titulo": "Liberar la lista completa",
-      "enunciado": "Para no dejar fugas, antes de terminar hay que liberar todos los nodos de la lista: cada uno se reservó por separado con `malloc`, y cada uno se libera por separado con `free`. Un compañero escribió esta función, que recorre la lista liberando nodo por nodo. `main` tiene una lista de tres nodos, de datos `7`, `1` y `9`, y la función `crearNodo` ya está escrita. ¿Qué problema tiene el ciclo?",
-      "programa": "void liberarLista(TNodo **lista) {\n  TNodo *aux = *lista;\n\n  while (aux != NULL) {\n    free(aux);\n    aux = aux->sig;\n  }\n  *lista = NULL;\n}\n\nint main() {\n  TNodo *lista = crearNodo(7);\n\n  lista->sig = crearNodo(1);\n  lista->sig->sig = crearNodo(9);\n  liberarLista(&lista);\n  return 0;\n}",
+      "id": "quitar-q-fin-de-main",
+      "titulo": "Los nodos de la lista al terminar el programa",
+      "enunciado": "Este programa arma una lista de tres nodos, de datos `7`, `1` y `9`, la muestra y termina. Las funciones `crearNodo` y `mostrar` ya están escritas. La figura muestra la memoria justo antes de que `main` termine. Cuando `main` termina, ¿qué pasa con los nodos de la lista?",
+      "programa": "int main() {\n  TNodo *lista = crearNodo(7);\n\n  lista->sig = crearNodo(1);\n  lista->sig->sig = crearNodo(9);\n  mostrar(lista);\n  return 0;\n}",
       "dibujo": {
-        "titulo": "La memoria justo antes de llamar a `liberarLista`:",
+        "titulo": "La memoria justo antes de que `main` termine:",
         "motor": {
-          "codigo": "#include <stdio.h>\n#include <stdlib.h>\n\ntypedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\nTNodo *crearNodo(int dato) {\n  TNodo *nuevo = malloc(sizeof(TNodo));\n\n  if (nuevo == NULL) {\n    return NULL;\n  }\n  nuevo->dato = dato;\n  nuevo->sig = NULL;\n  return nuevo;\n}\n\nvoid liberarLista(TNodo **lista) {\n  TNodo *aux;\n\n  while (*lista != NULL) {\n    aux = *lista;\n    *lista = aux->sig;\n    free(aux);\n  }\n}\n\nint main() {\n  TNodo *lista = crearNodo(7);\n\n  lista->sig = crearNodo(1);\n  lista->sig->sig = crearNodo(9);\n  liberarLista(&lista);\n  return 0;\n}",
+          "codigo": "#include <stdio.h>\n#include <stdlib.h>\n\ntypedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\nTNodo *crearNodo(int dato) {\n  TNodo *nuevo = malloc(sizeof(TNodo));\n\n  if (nuevo == NULL) {\n    return NULL;\n  }\n  nuevo->dato = dato;\n  nuevo->sig = NULL;\n  return nuevo;\n}\n\nvoid mostrar(TNodo *lista) {\n  TNodo *aux = lista;\n\n  while (aux != NULL) {\n    printf(\"%d \", aux->dato);\n    aux = aux->sig;\n  }\n}\n\nint main() {\n  TNodo *lista = crearNodo(7);\n\n  lista->sig = crearNodo(1);\n  lista->sig->sig = crearNodo(9);\n  mostrar(lista);\n  return 0;\n}",
           "linea": 35
         }
       },
       "pasoAPaso": {
-        "codigo": "#include <stdio.h>\n#include <stdlib.h>\n\ntypedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\nTNodo *crearNodo(int dato) {\n  TNodo *nuevo = malloc(sizeof(TNodo));\n\n  if (nuevo == NULL) {\n    return NULL;\n  }\n  nuevo->dato = dato;\n  nuevo->sig = NULL;\n  return nuevo;\n}\n\nvoid liberarLista(TNodo **lista) {\n  TNodo *aux = *lista;\n\n  while (aux != NULL) {\n    free(aux);\n    aux = aux->sig;\n  }\n  *lista = NULL;\n}\n\nint main() {\n  TNodo *lista = crearNodo(7);\n\n  lista->sig = crearNodo(1);\n  lista->sig->sig = crearNodo(9);\n  liberarLista(&lista);\n  return 0;\n}",
-        "guia": "Avance hasta que el ciclo ejecuta `free(aux);` por primera vez: el bloque aparece liberado, y la línea siguiente lee `aux->sig` en él. El programa se detiene con un error."
+        "codigo": "#include <stdio.h>\n#include <stdlib.h>\n\ntypedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\nTNodo *crearNodo(int dato) {\n  TNodo *nuevo = malloc(sizeof(TNodo));\n\n  if (nuevo == NULL) {\n    return NULL;\n  }\n  nuevo->dato = dato;\n  nuevo->sig = NULL;\n  return nuevo;\n}\n\nvoid mostrar(TNodo *lista) {\n  TNodo *aux = lista;\n\n  while (aux != NULL) {\n    printf(\"%d \", aux->dato);\n    aux = aux->sig;\n  }\n}\n\nint main() {\n  TNodo *lista = crearNodo(7);\n\n  lista->sig = crearNodo(1);\n  lista->sig->sig = crearNodo(9);\n  mostrar(lista);\n  return 0;\n}",
+        "guia": "Avance hasta que `main` termina: la variable `lista` desaparece y los tres nodos quedan en el montículo, marcados como inalcanzables: siguen reservados y nadie guarda sus direcciones."
       },
       "opciones": [
         {
-          "texto": "Solo libera el primer nodo, porque `free` no sigue los enlaces",
-          "codigo": "OPCION_SOLO_EL_PRIMERO",
-          "explicacion": "Es cierto que `free` libera un único bloque y no mira adentro, pero el ciclo vuelve a llamarlo con cada nodo. El problema es lo que pasa entre una vuelta y la siguiente."
+          "texto": "Se libera solo el primer nodo",
+          "codigo": "OPCION_SE_LIBERA_SOLO_EL_PRIMERO",
+          "explicacion": "Que `lista` desaparezca no libera el nodo al que apuntaba: `lista` es una variable común, y los nodos no son variables, se reservaron con `malloc`. Un bloque se libera únicamente con `free`, y este programa no lo llama ni siquiera para el primero. Lo que sí pasa es que sin `lista` ya no queda ninguna dirección que lleve al primer nodo, ni por él a los otros dos."
         },
         {
-          "texto": "Falta liberar también la variable `aux`",
-          "codigo": "OPCION_LIBERAR_AUX",
-          "explicacion": "`aux` es una variable común de la función, no un bloque de `malloc`, y desaparece sola cuando la función termina. `free` solo se usa con direcciones que dio `malloc`."
+          "texto": "Se liberan todos los nodos",
+          "codigo": "OPCION_SE_LIBERAN_TODOS",
+          "explicacion": "Nada libera los nodos por sí solo: se reservaron con `malloc`, y un bloque se libera únicamente con `free`, que además libera solo el bloque cuya dirección recibe. Este programa no llama a `free`, así que los tres nodos siguen reservados."
         },
         {
-          "texto": "Lee `aux->sig` después de liberar `aux`",
+          "texto": "No se libera ningún nodo",
           "correcta": true,
-          "explicacion": "Cuando `free(aux)` termina, el nodo ya no es del programa, y la línea siguiente, `aux = aux->sig;`, lee su campo `sig` para avanzar: es un uso de memoria liberada, que a veces parece andar y a veces detiene el programa. La dirección del nodo siguiente hay que guardarla antes de liberar: se avanza con una variable aparte, o se hace que la lista apunte al siguiente antes del `free`. Primero se guarda lo que se va a necesitar, y recién después se libera."
+          "explicacion": "Un bloque reservado con `malloc` se libera únicamente con `free`, y este programa no lo llama. Al terminar `main`, `lista` desaparece y con ella la única dirección que llevaba al primer nodo, y por él a los demás. Los tres bloques siguen reservados y ya no se pueden usar ni liberar: es una fuga de memoria, y en la figura se ven como «inalcanzables». Cuando el programa termina, el sistema operativo recupera esa memoria, pero el programa no la devolvió: si siguiera ejecutándose, o si repitiera esto muchas veces, se quedaría sin memoria. Por eso hay que liberar los nodos antes de perder la dirección del primero."
         }
       ]
     },
@@ -45,7 +45,7 @@
       "en": "archivo",
       "dado": "typedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\nTNodo *crearNodo(int dato) {\n  TNodo *nuevo = malloc(sizeof(TNodo));\n\n  if (nuevo == NULL) {\n    return NULL;\n  }\n  nuevo->dato = dato;\n  nuevo->sig = NULL;\n  return nuevo;\n}\n\nvoid insertarFinal(TNodo **lista, int dato) {\n  TNodo *nuevo = crearNodo(dato);\n  TNodo *aux;\n\n  if (nuevo == NULL) {\n    return;\n  }\n  if (*lista == NULL) {\n    *lista = nuevo;\n    return;\n  }\n  aux = *lista;\n  while (aux->sig != NULL) {\n    aux = aux->sig;\n  }\n  aux->sig = nuevo;\n}\n\nvoid mostrar(TNodo *lista) {\n  TNodo *aux = lista;\n\n  while (aux != NULL) {\n    printf(\"%d \", aux->dato);\n    aux = aux->sig;\n  }\n}",
       "despues": "int main() {\n  TNodo *lista = NULL;\n  int n;\n  int dato;\n\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%d\", &dato);\n    insertarFinal(&lista, dato);\n  }\n  mostrar(lista);\n  liberarLista(&lista);\n  if (lista == NULL) {\n    printf(\"Vacia\");\n  }\n  return 0;\n}",
-      "enunciado": "El tipo `TNodo` y las funciones `crearNodo`, `insertarFinal` y `mostrar` ya están escritas. Escriba la función `liberarLista`, que recibe la dirección del puntero al primer nodo, libera todos los nodos de la lista uno por uno, y deja el puntero de `main` en `NULL`, para que quede como una lista vacía. Con una lista vacía no hace nada. El `main` ya está escrito: lee una cantidad `n` y después `n` números, los inserta al final, muestra la lista, la libera y avisa si quedó vacía. Con `3` y después `4`, `9` y `6`, el programa muestra `4 9 6 Vacia`.",
+      "enunciado": "El tipo `TNodo` y las siguientes funciones ya están escritos:\n- `crearNodo`\n- `insertarFinal`\n- `mostrar`\nEscriba la función `liberarLista`, que recibe la dirección del puntero al primer nodo, libera todos los nodos de la lista uno por uno, y deja el puntero de `main` en `NULL`, para que quede como una lista vacía. Con una lista vacía no hace nada. El `main` ya está escrito: lee una cantidad `n` y después `n` números, los inserta al final, muestra la lista, la libera y avisa si quedó vacía. Con `3` y después `4`, `9` y `6`, el programa muestra `4 9 6 Vacia`.",
       "requiere": [
         {
           "memoria": {
@@ -78,12 +78,46 @@
       "referencia": "void liberarLista(TNodo **lista) {\n  TNodo *aux;\n\n  while (*lista != NULL) {\n    aux = *lista;\n    *lista = aux->sig;\n    free(aux);\n  }\n}"
     },
     {
+      "id": "quitar-q-liberar",
+      "titulo": "Liberar la lista completa",
+      "enunciado": "Un compañero escribió esta función, que recorre la lista liberando nodo por nodo. `main` tiene una lista de tres nodos, de datos `7`, `1` y `9`, y la función `crearNodo` ya está escrita. ¿Qué problema tiene el ciclo?",
+      "programa": "void liberarLista(TNodo **lista) {\n  TNodo *aux = *lista;\n\n  while (aux != NULL) {\n    free(aux);\n    aux = aux->sig;\n  }\n  *lista = NULL;\n}\n\nint main() {\n  TNodo *lista = crearNodo(7);\n\n  lista->sig = crearNodo(1);\n  lista->sig->sig = crearNodo(9);\n  liberarLista(&lista);\n  return 0;\n}",
+      "dibujo": {
+        "titulo": "La memoria justo antes de llamar a `liberarLista`:",
+        "motor": {
+          "codigo": "#include <stdio.h>\n#include <stdlib.h>\n\ntypedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\nTNodo *crearNodo(int dato) {\n  TNodo *nuevo = malloc(sizeof(TNodo));\n\n  if (nuevo == NULL) {\n    return NULL;\n  }\n  nuevo->dato = dato;\n  nuevo->sig = NULL;\n  return nuevo;\n}\n\nvoid liberarLista(TNodo **lista) {\n  TNodo *aux;\n\n  while (*lista != NULL) {\n    aux = *lista;\n    *lista = aux->sig;\n    free(aux);\n  }\n}\n\nint main() {\n  TNodo *lista = crearNodo(7);\n\n  lista->sig = crearNodo(1);\n  lista->sig->sig = crearNodo(9);\n  liberarLista(&lista);\n  return 0;\n}",
+          "linea": 35
+        }
+      },
+      "pasoAPaso": {
+        "codigo": "#include <stdio.h>\n#include <stdlib.h>\n\ntypedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\nTNodo *crearNodo(int dato) {\n  TNodo *nuevo = malloc(sizeof(TNodo));\n\n  if (nuevo == NULL) {\n    return NULL;\n  }\n  nuevo->dato = dato;\n  nuevo->sig = NULL;\n  return nuevo;\n}\n\nvoid liberarLista(TNodo **lista) {\n  TNodo *aux = *lista;\n\n  while (aux != NULL) {\n    free(aux);\n    aux = aux->sig;\n  }\n  *lista = NULL;\n}\n\nint main() {\n  TNodo *lista = crearNodo(7);\n\n  lista->sig = crearNodo(1);\n  lista->sig->sig = crearNodo(9);\n  liberarLista(&lista);\n  return 0;\n}",
+        "guia": "Avance hasta que el ciclo ejecuta `free(aux);` por primera vez: el bloque aparece liberado, y la línea siguiente lee `aux->sig` en él. El programa se detiene con un error."
+      },
+      "opciones": [
+        {
+          "texto": "Solo libera el primer nodo, porque `free` no sigue los enlaces",
+          "codigo": "OPCION_SOLO_EL_PRIMERO",
+          "explicacion": "Es cierto que `free` libera un único bloque y no mira adentro, pero el ciclo vuelve a llamarlo con cada nodo. El problema es lo que pasa entre una vuelta y la siguiente."
+        },
+        {
+          "texto": "Falta liberar también la variable `aux`",
+          "codigo": "OPCION_LIBERAR_AUX",
+          "explicacion": "`aux` es una variable común de la función, no un bloque de `malloc`, y desaparece sola cuando la función termina. `free` solo se usa con direcciones que dio `malloc`."
+        },
+        {
+          "texto": "Lee `aux->sig` después de liberar `aux`",
+          "correcta": true,
+          "explicacion": "Cuando `free(aux)` termina, el nodo ya no es del programa, y la línea siguiente, `aux = aux->sig;`, lee su campo `sig` para avanzar: es un uso de memoria liberada, que a veces parece andar y a veces detiene el programa. La dirección del nodo siguiente hay que guardarla antes de liberar: se avanza con una variable aparte, o se hace que la lista apunte al siguiente antes del `free`. Primero se guarda lo que se va a necesitar, y recién después se libera."
+        }
+      ]
+    },
+    {
       "id": "quitar-buscar",
       "titulo": "Buscar un valor en la lista",
       "en": "archivo",
       "dado": "typedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\nTNodo *crearNodo(int dato) {\n  TNodo *nuevo = malloc(sizeof(TNodo));\n\n  if (nuevo == NULL) {\n    return NULL;\n  }\n  nuevo->dato = dato;\n  nuevo->sig = NULL;\n  return nuevo;\n}\n\nvoid insertarFinal(TNodo **lista, int dato) {\n  TNodo *nuevo = crearNodo(dato);\n  TNodo *aux;\n\n  if (nuevo == NULL) {\n    return;\n  }\n  if (*lista == NULL) {\n    *lista = nuevo;\n    return;\n  }\n  aux = *lista;\n  while (aux->sig != NULL) {\n    aux = aux->sig;\n  }\n  aux->sig = nuevo;\n}\n\nvoid mostrar(TNodo *lista) {\n  TNodo *aux = lista;\n\n  while (aux != NULL) {\n    printf(\"%d \", aux->dato);\n    aux = aux->sig;\n  }\n}\n\nvoid liberarLista(TNodo **lista) {\n  TNodo *aux;\n\n  while (*lista != NULL) {\n    aux = *lista;\n    *lista = aux->sig;\n    free(aux);\n  }\n}",
       "despues": "int main() {\n  TNodo *lista = NULL;\n  TNodo *p;\n  int n;\n  int dato;\n  int buscado;\n\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%d\", &dato);\n    insertarFinal(&lista, dato);\n  }\n  scanf(\"%d\", &buscado);\n  p = buscar(lista, buscado);\n  if (p != NULL) {\n    p->dato = p->dato * 2;\n  }\n  mostrar(lista);\n  liberarLista(&lista);\n  return 0;\n}",
-      "enunciado": "El tipo `TNodo` y las funciones `crearNodo`, `insertarFinal`, `mostrar` y `liberarLista` ya están escritas. Escriba la función `buscar`, que recibe la dirección del primer nodo de una lista y un valor, y devuelve la dirección del primer nodo cuyo dato sea ese valor, o `NULL` si ningún nodo lo tiene. Devolver la dirección del nodo, y no solo avisar si está, le permite a quien llama usarlo e incluso modificarlo. La lista no cambia, así que la función recibe un `TNodo *` y no hace falta pasarle la dirección del puntero. El `main` ya está escrito: lee `n` números y los inserta al final, lee el valor buscado y, si lo encuentra, duplica el dato de ese nodo. Después muestra la lista. Con `3`, después `4`, `9` y `6`, y el valor buscado `9`, el programa muestra `4 18 6`.",
+      "enunciado": "El tipo `TNodo` y las siguientes funciones ya están escritos:\n- `crearNodo`\n- `insertarFinal`\n- `mostrar`\n- `liberarLista`\nEscriba la función `buscar`, que recibe la dirección del primer nodo de una lista y un valor, y devuelve la dirección del primer nodo cuyo dato sea ese valor, o `NULL` si ningún nodo lo tiene. Devolver la dirección del nodo, y no solo avisar si está, le permite a quien llama usarlo e incluso modificarlo. La lista no se modifica. El `main` ya está escrito: lee `n` números y los inserta al final, lee el valor buscado y, si lo encuentra, duplica el dato de ese nodo. Después muestra la lista. Con `3`, después `4`, `9` y `6`, y el valor buscado `9`, el programa muestra `4 18 6`.",
       "requiere": [
         {
           "memoria": {
@@ -113,34 +147,12 @@
       "referencia": "TNodo *buscar(TNodo *lista, int valor) {\n  TNodo *aux = lista;\n\n  while (aux != NULL && aux->dato != valor) {\n    aux = aux->sig;\n  }\n  return aux;\n}"
     },
     {
-      "id": "quitar-q-doble",
-      "titulo": "Cuándo se recibe la dirección del puntero",
-      "enunciado": "Tres funciones trabajan con una lista cuyo primer nodo guarda el puntero `lista` de `main`. ¿Cuál de ellas necesita recibir la dirección de ese puntero, es decir, un `TNodo **`?",
-      "opciones": [
-        {
-          "texto": "`quitarPrimero`, que elimina el primer nodo",
-          "correcta": true,
-          "explicacion": "Al eliminar el primer nodo, el primero de la lista pasa a ser otro: hay que cambiar lo que guarda `lista` en `main`, y para cambiar una variable de afuera una función necesita su dirección, un `TNodo **`. Lo mismo pasa con `insertarInicio` o con `liberarLista`, que deja el puntero en `NULL`. La regla: una función que solo mira la lista recibe el puntero al primer nodo, un `TNodo *`; una que puede cambiar cuál es el primer nodo recibe su dirección, un `TNodo **`."
-        },
-        {
-          "texto": "`contar`, que recorre la lista y devuelve cuántos nodos tiene",
-          "codigo": "OPCION_CONTAR",
-          "explicacion": "`contar` recorre la lista sin cambiarla: le alcanza con una copia de la dirección del primer nodo, un `TNodo *`, y avanza con ella sin afectar a `main`, igual que `mostrar`."
-        },
-        {
-          "texto": "`buscar`, que recorre la lista y devuelve la dirección del nodo que tiene un valor",
-          "codigo": "OPCION_BUSCAR",
-          "explicacion": "`buscar` solo mira: recorre la lista y devuelve la dirección de un nodo, sin cambiar cuál es el primero. Con un `TNodo *` alcanza, como ya lo hizo al escribirla."
-        }
-      ]
-    },
-    {
       "id": "quitar-eliminar-primero",
       "titulo": "Eliminar el primer nodo",
       "en": "archivo",
       "dado": "typedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\nTNodo *crearNodo(int dato) {\n  TNodo *nuevo = malloc(sizeof(TNodo));\n\n  if (nuevo == NULL) {\n    return NULL;\n  }\n  nuevo->dato = dato;\n  nuevo->sig = NULL;\n  return nuevo;\n}\n\nvoid insertarFinal(TNodo **lista, int dato) {\n  TNodo *nuevo = crearNodo(dato);\n  TNodo *aux;\n\n  if (nuevo == NULL) {\n    return;\n  }\n  if (*lista == NULL) {\n    *lista = nuevo;\n    return;\n  }\n  aux = *lista;\n  while (aux->sig != NULL) {\n    aux = aux->sig;\n  }\n  aux->sig = nuevo;\n}\n\nvoid mostrar(TNodo *lista) {\n  TNodo *aux = lista;\n\n  while (aux != NULL) {\n    printf(\"%d \", aux->dato);\n    aux = aux->sig;\n  }\n}\n\nvoid liberarLista(TNodo **lista) {\n  TNodo *aux;\n\n  while (*lista != NULL) {\n    aux = *lista;\n    *lista = aux->sig;\n    free(aux);\n  }\n}",
       "despues": "int main() {\n  TNodo *lista = NULL;\n  int n;\n  int dato;\n\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%d\", &dato);\n    insertarFinal(&lista, dato);\n  }\n  eliminarPrimero(&lista);\n  if (lista == NULL) {\n    printf(\"Vacia\");\n  } else {\n    mostrar(lista);\n  }\n  liberarLista(&lista);\n  return 0;\n}",
-      "enunciado": "El tipo `TNodo` y las funciones `crearNodo`, `insertarFinal`, `mostrar` y `liberarLista` ya están escritas. Escriba la función `eliminarPrimero`, que recibe la dirección del puntero al primer nodo, hace que el segundo nodo pase a ser el primero y libera el primero. Con una lista vacía no hace nada.\n! Después de `free` el nodo ya no se puede leer: guarde antes lo que va a necesitar.\nEl `main` ya está escrito: lee `n` números, los inserta al final, elimina el primer nodo y muestra lo que queda, o `Vacia` si no queda ninguno. Con `3` y después `4`, `9` y `6`, el programa muestra `9 6`.",
+      "enunciado": "El tipo `TNodo` y las siguientes funciones ya están escritos:\n- `crearNodo`\n- `insertarFinal`\n- `mostrar`\n- `liberarLista`\nEscriba la función `eliminarPrimero`, que recibe la dirección del puntero al primer nodo, hace que el segundo nodo pase a ser el primero y libera el primero. Con una lista vacía no hace nada. El `main` ya está escrito: lee `n` números, los inserta al final, elimina el primer nodo y muestra lo que queda, o `Vacia` si no queda ninguno. Con `3` y después `4`, `9` y `6`, el programa muestra `9 6`.",
       "requiere": [
         {
           "memoria": {
@@ -173,36 +185,36 @@
       "referencia": "void eliminarPrimero(TNodo **lista) {\n  TNodo *aux;\n\n  if (*lista == NULL) {\n    return;\n  }\n  aux = *lista;\n  *lista = aux->sig;\n  free(aux);\n}"
     },
     {
-      "id": "quitar-q-medio",
-      "titulo": "Eliminar un nodo del medio",
-      "enunciado": "En esta lista de tres nodos, `a`, `b` y `c`, de datos `7`, `1` y `9`, se quiere eliminar el nodo del medio, `b`. Un compañero escribe solo `free(b);` y después muestra la lista desde `a`. Las funciones `crearNodo` y `mostrar` ya están escritas. La figura muestra la memoria justo antes del `free`. ¿Qué problema queda?",
-      "programa": "int main() {\n  TNodo *a = crearNodo(7);\n  TNodo *b = crearNodo(1);\n  TNodo *c = crearNodo(9);\n\n  a->sig = b;\n  b->sig = c;\n  free(b);\n  mostrar(a);\n  return 0;\n}",
+      "id": "quitar-q-primero-copia",
+      "titulo": "Eliminar el primero con una copia del puntero",
+      "enunciado": "Un compañero escribió `eliminarPrimero` con un `TNodo *` como primer parámetro, como el de `buscar`, en lugar de la dirección del puntero. `main` tiene una lista de tres nodos, de datos `4`, `9` y `6`, llama a la función y después muestra la lista. Las funciones `crearNodo` y `mostrar` ya están escritas. La figura muestra la memoria justo antes de la llamada. ¿Qué pasa cuando `main` muestra la lista?",
+      "programa": "void eliminarPrimero(TNodo *lista) {\n  TNodo *aux = lista;\n\n  lista = aux->sig;\n  free(aux);\n}\n\nint main() {\n  TNodo *lista = crearNodo(4);\n\n  lista->sig = crearNodo(9);\n  lista->sig->sig = crearNodo(6);\n  eliminarPrimero(lista);\n  mostrar(lista);\n  return 0;\n}",
       "dibujo": {
-        "titulo": "La memoria justo antes de `free(b);`:",
+        "titulo": "La memoria justo antes de llamar a `eliminarPrimero`:",
         "motor": {
-          "codigo": "#include <stdio.h>\n#include <stdlib.h>\n\ntypedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\nTNodo *crearNodo(int dato) {\n  TNodo *nuevo = malloc(sizeof(TNodo));\n\n  if (nuevo == NULL) {\n    return NULL;\n  }\n  nuevo->dato = dato;\n  nuevo->sig = NULL;\n  return nuevo;\n}\n\nvoid mostrar(TNodo *lista) {\n  TNodo *aux = lista;\n\n  while (aux != NULL) {\n    printf(\"%d \", aux->dato);\n    aux = aux->sig;\n  }\n}\n\nint main() {\n  TNodo *a = crearNodo(7);\n  TNodo *b = crearNodo(1);\n  TNodo *c = crearNodo(9);\n\n  a->sig = b;\n  b->sig = c;\n  free(b);\n  return 0;\n}",
-          "linea": 36
+          "codigo": "#include <stdio.h>\n#include <stdlib.h>\n\ntypedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\nTNodo *crearNodo(int dato) {\n  TNodo *nuevo = malloc(sizeof(TNodo));\n\n  if (nuevo == NULL) {\n    return NULL;\n  }\n  nuevo->dato = dato;\n  nuevo->sig = NULL;\n  return nuevo;\n}\n\nvoid mostrar(TNodo *lista) {\n  TNodo *aux = lista;\n\n  while (aux != NULL) {\n    printf(\"%d \", aux->dato);\n    aux = aux->sig;\n  }\n}\n\nvoid eliminarPrimero(TNodo *lista) {\n  TNodo *aux = lista;\n\n  lista = aux->sig;\n  free(aux);\n}\n\nint main() {\n  TNodo *lista = crearNodo(4);\n\n  lista->sig = crearNodo(9);\n  lista->sig->sig = crearNodo(6);\n  eliminarPrimero(lista);\n  return 0;\n}",
+          "linea": 41
         }
       },
       "pasoAPaso": {
-        "codigo": "#include <stdio.h>\n#include <stdlib.h>\n\ntypedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\nTNodo *crearNodo(int dato) {\n  TNodo *nuevo = malloc(sizeof(TNodo));\n\n  if (nuevo == NULL) {\n    return NULL;\n  }\n  nuevo->dato = dato;\n  nuevo->sig = NULL;\n  return nuevo;\n}\n\nvoid mostrar(TNodo *lista) {\n  TNodo *aux = lista;\n\n  while (aux != NULL) {\n    printf(\"%d \", aux->dato);\n    aux = aux->sig;\n  }\n}\n\nint main() {\n  TNodo *a = crearNodo(7);\n  TNodo *b = crearNodo(1);\n  TNodo *c = crearNodo(9);\n\n  a->sig = b;\n  b->sig = c;\n  free(b);\n  mostrar(a);\n  return 0;\n}",
-        "guia": "Avance hasta que `mostrar` llega al nodo `b`: el `sig` de `a` sigue apuntando a un nodo que ya está liberado, y el programa se detiene con un error."
+        "codigo": "#include <stdio.h>\n#include <stdlib.h>\n\ntypedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\nTNodo *crearNodo(int dato) {\n  TNodo *nuevo = malloc(sizeof(TNodo));\n\n  if (nuevo == NULL) {\n    return NULL;\n  }\n  nuevo->dato = dato;\n  nuevo->sig = NULL;\n  return nuevo;\n}\n\nvoid mostrar(TNodo *lista) {\n  TNodo *aux = lista;\n\n  while (aux != NULL) {\n    printf(\"%d \", aux->dato);\n    aux = aux->sig;\n  }\n}\n\nvoid eliminarPrimero(TNodo *lista) {\n  TNodo *aux = lista;\n\n  lista = aux->sig;\n  free(aux);\n}\n\nint main() {\n  TNodo *lista = crearNodo(4);\n\n  lista->sig = crearNodo(9);\n  lista->sig->sig = crearNodo(6);\n  eliminarPrimero(lista);\n  mostrar(lista);\n  return 0;\n}",
+        "guia": "Avance hasta que `eliminarPrimero` termina: la flecha de `lista` en la función apunta al segundo nodo, pero la de `lista` en `main` sigue apuntando al primero, que está liberado. Después `mostrar` lo lee y el programa se detiene con un error."
       },
       "opciones": [
         {
-          "texto": "Ninguno: `free` enlaza `a` con `c` para que la lista no se corte",
-          "codigo": "OPCION_FREE_ENLAZA",
-          "explicacion": "`free` solo devuelve el bloque al sistema: no mira qué nodos lo apuntan ni cambia ningún campo. Ningún enlace se modifica solo."
+          "texto": "Muestra `9 6`: la función dejó al segundo nodo como primero",
+          "codigo": "OPCION_MUESTRA_SIN_EL_PRIMERO",
+          "explicacion": "La función movió su propia copia de `lista` al segundo nodo, pero esa copia desaparece cuando la función termina. El `lista` de `main` no cambió: sigue guardando la dirección del primer nodo, el que se liberó."
         },
         {
-          "texto": "El `sig` de `a` guarda la dirección de un nodo liberado",
+          "texto": "Se liberan los tres nodos, porque `free` sigue los enlaces",
+          "codigo": "OPCION_FREE_SIGUE_ENLACES",
+          "explicacion": "`free` libera únicamente el bloque cuya dirección recibe: no mira adentro ni sigue los enlaces. Por eso `liberarLista` tiene que recorrer la lista y llamarlo con cada nodo."
+        },
+        {
+          "texto": "`lista` sigue apuntando al nodo liberado, y `mostrar` lo lee",
           "correcta": true,
-          "explicacion": "`free(b)` libera el bloque, pero el campo `sig` de `a` conserva su dirección: la lista pasa por un nodo que ya no existe, y `mostrar` lo lee y se detiene. Para eliminar un nodo del medio, antes de liberarlo hay que hacer que su anterior salte al siguiente: `a->sig = b->sig;`. Recién entonces se hace `free(b)`. Por eso, al buscar el nodo que se va a eliminar, hay que recordar también cuál es el anterior, porque desde un nodo no se puede volver al que lo apunta."
-        },
-        {
-          "texto": "Se liberan también `a` y `c`, porque están enlazados con `b`",
-          "codigo": "OPCION_SE_LIBERAN_TODOS",
-          "explicacion": "`free` libera únicamente el bloque cuya dirección recibe. `a` y `c` siguen reservados: el problema es lo que guardan, no que se hayan liberado."
+          "explicacion": "La función recibe una copia de `lista`. Con ella libera el primer nodo y hace que la copia apunte al segundo, pero el `lista` de `main` sigue guardando la dirección del primero, que ya no es del programa. `mostrar` empieza por ahí: es un uso de memoria liberada, que a veces parece andar y a veces detiene el programa. Para que `main` quede apuntando al nodo que sigue, la función tiene que recibir la dirección de `lista`: un `TNodo **`, como `liberarLista`."
         }
       ]
     },
@@ -212,7 +224,7 @@
       "en": "archivo",
       "dado": "typedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\nTNodo *crearNodo(int dato) {\n  TNodo *nuevo = malloc(sizeof(TNodo));\n\n  if (nuevo == NULL) {\n    return NULL;\n  }\n  nuevo->dato = dato;\n  nuevo->sig = NULL;\n  return nuevo;\n}\n\nvoid insertarFinal(TNodo **lista, int dato) {\n  TNodo *nuevo = crearNodo(dato);\n  TNodo *aux;\n\n  if (nuevo == NULL) {\n    return;\n  }\n  if (*lista == NULL) {\n    *lista = nuevo;\n    return;\n  }\n  aux = *lista;\n  while (aux->sig != NULL) {\n    aux = aux->sig;\n  }\n  aux->sig = nuevo;\n}\n\nvoid mostrar(TNodo *lista) {\n  TNodo *aux = lista;\n\n  while (aux != NULL) {\n    printf(\"%d \", aux->dato);\n    aux = aux->sig;\n  }\n}\n\nvoid liberarLista(TNodo **lista) {\n  TNodo *aux;\n\n  while (*lista != NULL) {\n    aux = *lista;\n    *lista = aux->sig;\n    free(aux);\n  }\n}",
       "despues": "int main() {\n  TNodo *lista = NULL;\n  int n;\n  int dato;\n  int valor;\n\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%d\", &dato);\n    insertarFinal(&lista, dato);\n  }\n  scanf(\"%d\", &valor);\n  eliminarValor(&lista, valor);\n  if (lista == NULL) {\n    printf(\"Vacia\");\n  } else {\n    mostrar(lista);\n  }\n  liberarLista(&lista);\n  return 0;\n}",
-      "enunciado": "El tipo `TNodo` y las funciones `crearNodo`, `insertarFinal`, `mostrar` y `liberarLista` ya están escritas. Escriba la función `eliminarValor`, que recibe la dirección del puntero al primer nodo y un valor, y elimina de la lista el primer nodo que tenga ese dato, liberándolo. Si ningún nodo lo tiene, no hace nada. Mientras busca el nodo hay que recordar cuál fue el anterior, porque al eliminarlo es el anterior el que tiene que saltear ese nodo y enlazarse con el que sigue. Hay un caso especial: si el nodo que se elimina es el primero, no tiene anterior, y lo que hay que cambiar es el puntero de `main`. El `main` ya está escrito: lee `n` números y los inserta al final, lee el valor a eliminar y muestra lo que queda, o `Vacia` si no queda ningún nodo. Con `3`, después `4`, `9` y `6`, y el valor `9`, el programa muestra `4 6`.",
+      "enunciado": "El tipo `TNodo` y las siguientes funciones ya están escritos:\n- `crearNodo`\n- `insertarFinal`\n- `mostrar`\n- `liberarLista`\nEscriba la función `eliminarValor`, que recibe la dirección del puntero al primer nodo y un valor, y elimina de la lista el primer nodo que tenga ese dato, liberándolo. Si ningún nodo lo tiene, no hace nada. El `main` ya está escrito: lee `n` números y los inserta al final, lee el valor a eliminar y muestra lo que queda, o `Vacia` si no queda ningún nodo. Con `3`, después `4`, `9` y `6`, y el valor `9`, el programa muestra `4 6`.",
       "requiere": [
         {
           "memoria": {
@@ -247,6 +259,40 @@
         }
       ],
       "referencia": "void eliminarValor(TNodo **lista, int valor) {\n  TNodo *aux = *lista;\n  TNodo *anterior = NULL;\n\n  while (aux != NULL && aux->dato != valor) {\n    anterior = aux;\n    aux = aux->sig;\n  }\n  if (aux == NULL) {\n    return;\n  }\n  if (anterior == NULL) {\n    *lista = aux->sig;\n  } else {\n    anterior->sig = aux->sig;\n  }\n  free(aux);\n}"
+    },
+    {
+      "id": "quitar-q-medio",
+      "titulo": "Eliminar un nodo del medio",
+      "enunciado": "En esta lista de tres nodos, `a`, `b` y `c`, de datos `7`, `1` y `9`, se quiere eliminar el nodo del medio, `b`. Un compañero escribe solo `free(b);` y después muestra la lista desde `a`. Las funciones `crearNodo` y `mostrar` ya están escritas. La figura muestra la memoria justo antes del `free`. ¿Qué problema queda?",
+      "programa": "int main() {\n  TNodo *a = crearNodo(7);\n  TNodo *b = crearNodo(1);\n  TNodo *c = crearNodo(9);\n\n  a->sig = b;\n  b->sig = c;\n  free(b);\n  mostrar(a);\n  return 0;\n}",
+      "dibujo": {
+        "titulo": "La memoria justo antes de `free(b);`:",
+        "motor": {
+          "codigo": "#include <stdio.h>\n#include <stdlib.h>\n\ntypedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\nTNodo *crearNodo(int dato) {\n  TNodo *nuevo = malloc(sizeof(TNodo));\n\n  if (nuevo == NULL) {\n    return NULL;\n  }\n  nuevo->dato = dato;\n  nuevo->sig = NULL;\n  return nuevo;\n}\n\nvoid mostrar(TNodo *lista) {\n  TNodo *aux = lista;\n\n  while (aux != NULL) {\n    printf(\"%d \", aux->dato);\n    aux = aux->sig;\n  }\n}\n\nint main() {\n  TNodo *a = crearNodo(7);\n  TNodo *b = crearNodo(1);\n  TNodo *c = crearNodo(9);\n\n  a->sig = b;\n  b->sig = c;\n  free(b);\n  return 0;\n}",
+          "linea": 36
+        }
+      },
+      "pasoAPaso": {
+        "codigo": "#include <stdio.h>\n#include <stdlib.h>\n\ntypedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\nTNodo *crearNodo(int dato) {\n  TNodo *nuevo = malloc(sizeof(TNodo));\n\n  if (nuevo == NULL) {\n    return NULL;\n  }\n  nuevo->dato = dato;\n  nuevo->sig = NULL;\n  return nuevo;\n}\n\nvoid mostrar(TNodo *lista) {\n  TNodo *aux = lista;\n\n  while (aux != NULL) {\n    printf(\"%d \", aux->dato);\n    aux = aux->sig;\n  }\n}\n\nint main() {\n  TNodo *a = crearNodo(7);\n  TNodo *b = crearNodo(1);\n  TNodo *c = crearNodo(9);\n\n  a->sig = b;\n  b->sig = c;\n  free(b);\n  mostrar(a);\n  return 0;\n}",
+        "guia": "Avance hasta que `mostrar` llega al nodo `b`: el `sig` de `a` sigue apuntando a un nodo que ya está liberado, y el programa se detiene con un error."
+      },
+      "opciones": [
+        {
+          "texto": "Ninguno: `free` enlaza `a` con `c` para que la lista no se corte",
+          "codigo": "OPCION_FREE_ENLAZA",
+          "explicacion": "`free` solo devuelve el bloque al sistema: no mira qué nodos lo apuntan ni cambia ningún campo. Ningún enlace se modifica solo."
+        },
+        {
+          "texto": "El `sig` de `a` guarda la dirección de un nodo liberado",
+          "correcta": true,
+          "explicacion": "`free(b)` libera el bloque, pero el campo `sig` de `a` conserva su dirección: la lista pasa por un nodo que ya no existe, y `mostrar` lo lee y se detiene. Para eliminar un nodo del medio, antes de liberarlo hay que hacer que su anterior salte al siguiente: `a->sig = b->sig;`. Recién entonces se hace `free(b)`. Por eso, al buscar el nodo que se va a eliminar, hay que recordar también cuál es el anterior, porque desde un nodo no se puede volver al que lo apunta."
+        },
+        {
+          "texto": "Se liberan también `a` y `c`, porque están enlazados con `b`",
+          "codigo": "OPCION_SE_LIBERAN_TODOS",
+          "explicacion": "`free` libera únicamente el bloque cuya dirección recibe. `a` y `c` siguen reservados: el problema es lo que guardan, no que se hayan liberado."
+        }
+      ]
     }
   ]
 }
