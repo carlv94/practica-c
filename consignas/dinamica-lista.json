@@ -57,9 +57,9 @@
       "id": "lista-esvacia",
       "titulo": "Saber si la lista está vacía",
       "en": "archivo",
-      "dado": "typedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\nTNodo *crearNodo(int dato) {\n  TNodo *nuevo = malloc(sizeof(TNodo));\n\n  if (nuevo == NULL) {\n    return NULL;\n  }\n  nuevo->dato = dato;\n  nuevo->sig = NULL;\n  return nuevo;\n}",
-      "despues": "int main() {\n  TNodo *lista = NULL;\n\n  if (esVacia(lista)) {\n    printf(\"Vacia \");\n  } else {\n    printf(\"Con nodos \");\n  }\n  lista = crearNodo(7);\n  if (esVacia(lista)) {\n    printf(\"Vacia\");\n  } else {\n    printf(\"Con nodos\");\n  }\n  free(lista);\n  return 0;\n}",
-      "enunciado": "El tipo `TNodo` y la función `crearNodo` ya están escritos en el editor. Escriba la función `esVacia`, que recibe la dirección del primer nodo de una lista y devuelve `1` si la lista está vacía, y `0` si tiene al menos un nodo. El `main` ya está escrito: pregunta por una lista vacía y después por una lista de un solo nodo, y escribe `Vacia` o `Con nodos` según la respuesta. El programa tiene que mostrar `Vacia Con nodos`.",
+      "dado": "typedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\ntypedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\nTNodo *crearNodo(int dato) {\n  TNodo *nuevo = malloc(sizeof(TNodo));\n\n  if (nuevo == NULL) {\n    return NULL;\n  }\n  nuevo->dato = dato;\n  nuevo->sig = NULL;\n  return nuevo;\n}",
+      "despues": "int main() {\n  TNodo *lista = NULL;\n\n  if (esVacia(lista) == VERDADERO) {\n    printf(\"Vacia \");\n  } else {\n    printf(\"Con nodos \");\n  }\n  lista = crearNodo(7);\n  if (esVacia(lista) == VERDADERO) {\n    printf(\"Vacia\");\n  } else {\n    printf(\"Con nodos\");\n  }\n  free(lista);\n  return 0;\n}",
+      "enunciado": "Los tipos `TNodo` y `TBool` y la función `crearNodo` ya están escritos en el editor. Escriba la función `esVacia`, que recibe la dirección del primer nodo de una lista y devuelve un `TBool`: `VERDADERO` si la lista está vacía, y `FALSO` si tiene al menos un nodo. El `main` ya está escrito: pregunta por una lista vacía y después por una lista de un solo nodo, y escribe `Vacia` o `Con nodos` según la respuesta. El programa tiene que mostrar `Vacia Con nodos`.",
       "requiere": [
         {
           "memoria": {
@@ -73,7 +73,7 @@
           }
         }
       ],
-      "referencia": "int esVacia(TNodo *lista) {\n  return lista == NULL;\n}"
+      "referencia": "TBool esVacia(TNodo *lista) {\n  if (lista == NULL) {\n    return VERDADERO;\n  }\n  return FALSO;\n}"
     },
     {
       "id": "lista-insertar-inicio",

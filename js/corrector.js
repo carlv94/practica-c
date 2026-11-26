@@ -7955,6 +7955,26 @@ function revisarEnumerados(modelo, error, mejora, nota, avisados) {
     const def = m && definicion(m[1]);
     if (def) sugerir(def, { clase: 'numero', valor: Number(m[2]) }, x.fila);
   }
+  // Una funcion que devuelve un enumerado y devuelve un numero (return 1;) o una
+  // condicion (return lista == NULL;): compila y anda, porque los valores coinciden,
+  // pero con el nombre se ve que el resultado es uno de los del enumerado.
+  for (const f of modelo.funciones.filter((x) => x.nuevo && !x.prototipo && !x.punteros)) {
+    const real = resolver(f.tipo, modelo);
+    if (!real || real.clase !== 'enum') continue;
+    for (const r of f.retornos) {
+      if (r.valor != null) sugerir(real.def, { clase: 'numero', valor: r.valor }, r.fila);
+    }
+    const conCondicion = f.retornos.find((r) => r.condicion);
+    const si = conNombre(real.def, 1);
+    const no = conNombre(real.def, 0);
+    if (conCondicion && si && no) {
+      mejora(
+        'ENUM_CON_CONDICION',
+        `Está bien, porque una condición vale \`1\` o \`0\`, los valores de \`${si.nombre}\` y \`${no.nombre}\`. Pero la función devuelve un \`${nombreDeTipo(real.def)}\`: con un \`if\` que devuelva \`${si.nombre}\` o \`${no.nombre}\`, el código dice lo que devuelve sin tener que recordar los números.`,
+        conCondicion.fila
+      );
+    }
+  }
   // Leer con scanf directo en una variable de enumerado: compila, pero el tipo
   // no controla el rango.
   if (!avisados.includes('SCANF_EN_ENUM')) {

@@ -430,10 +430,21 @@ export function construirModelo(arbol, desde) {
     const retornos = [];
     (function buscar(x) {
       if (x.type === 'return_statement') {
+        let e = x.namedChildren.find((h) => h.type !== 'comment');
+        while (e && e.type === 'parenthesized_expression') e = e.namedChildren.find((h) => h.type !== 'comment');
+        const operador = e ? e.childForFieldName('operator')?.text : null;
         retornos.push({
           conValor: x.namedChildren.some((h) => h.type !== 'comment'),
           // Devuelve un numero escrito tal cual (return 1;).
           numero: x.namedChildren.some((h) => h.type === 'number_literal'),
+          // Ese numero, si es entero (para nombrar el enumerador que vale lo mismo).
+          valor: e && e.type === 'number_literal' && /^\d+$/.test(e.text) ? Number(e.text) : null,
+          // Devuelve una condicion, que vale 1 o 0 (return lista == NULL;, return !x;).
+          condicion: Boolean(
+            e &&
+              ((e.type === 'binary_expression' && ['==', '!=', '<', '<=', '>', '>=', '&&', '||'].includes(operador)) ||
+                (e.type === 'unary_expression' && operador === '!'))
+          ),
           fila: x.startPosition.row,
         });
       }

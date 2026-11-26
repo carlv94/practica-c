@@ -87,7 +87,7 @@ const quitar = serie('dinamica-lista-quitar');
 // Series 5 y 6: la lista enlazada. Las funciones que cada consigna da hechas y las que escribe el alumno.
 const L_CREAR = (cuerpo) => `TNodo *crearNodo(int dato) {\n${cuerpo}}`;
 const CREAR_REF = '  TNodo *nuevo = malloc(sizeof(TNodo));\n\n  if (nuevo == NULL) {\n    return NULL;\n  }\n  nuevo->dato = dato;\n  nuevo->sig = NULL;\n  return nuevo;\n';
-const L_ESVACIA = (cuerpo) => `int esVacia(TNodo *lista) {\n${cuerpo}}`;
+const L_ESVACIA = (cuerpo) => `TBool esVacia(TNodo *lista) {\n${cuerpo}}`;
 const L_MOSTRAR = (cuerpo) => `void mostrar(TNodo *lista) {\n${cuerpo}}`;
 const MOSTRAR_REF = '  TNodo *aux = lista;\n\n  while (aux != NULL) {\n    printf("%d ", aux->dato);\n    aux = aux->sig;\n  }\n';
 const L_INICIO = (cuerpo, parametro = 'TNodo **lista') => `void insertarInicio(${parametro}, int dato) {\n  TNodo *nuevo = crearNodo(dato);\n\n  if (nuevo == NULL) {\n    return;\n  }\n${cuerpo}}`;
@@ -119,12 +119,16 @@ const casosLista = [
   lista(2, 'sin el espacio', L_MOSTRAR('  TNodo *aux = lista;\n\n  while (aux != NULL) {\n    printf("%d", aux->dato);\n    aux = aux->sig;\n  }\n'), ['MUESTRA_DISTINTA']),
 
   // ===== 3. saber si la lista esta vacia
-  lista(3, 'la referencia', L_ESVACIA('  return lista == NULL;\n')),
-  lista(3, 'con un if', L_ESVACIA('  if (lista == NULL) {\n    return 1;\n  }\n  return 0;\n')),
-  lista(3, 'con la negacion', L_ESVACIA('  return !lista;\n')),
-  lista(3, 'al reves', L_ESVACIA('  return lista != NULL;\n'), ['MUESTRA_DISTINTA']),
-  lista(3, 'mira el siguiente', L_ESVACIA('  return lista->sig == NULL;\n'), ['DESREFERENCIA_NULA']),
-  lista(3, 'asigna en lugar de comparar', L_ESVACIA('  return lista = NULL;\n'), ['TIPOS_INCOMPATIBLES']),
+  lista(3, 'la referencia', L_ESVACIA('  if (lista == NULL) {\n    return VERDADERO;\n  }\n  return FALSO;\n'), 'ok', { mejoras: [] }),
+  lista(3, 'con else', L_ESVACIA('  if (lista == NULL) {\n    return VERDADERO;\n  } else {\n    return FALSO;\n  }\n'), 'ok', { mejoras: [] }),
+  lista(3, 'devuelve la comparacion', L_ESVACIA('  return lista == NULL;\n'), 'ok', { mejoras: ['ENUM_CON_CONDICION'] }),
+  lista(3, 'devuelve la comparacion entre parentesis', L_ESVACIA('  return (lista == NULL);\n'), 'ok', { mejoras: ['ENUM_CON_CONDICION'] }),
+  lista(3, 'con la negacion', L_ESVACIA('  return !lista;\n'), 'ok', { mejoras: ['ENUM_CON_CONDICION'] }),
+  lista(3, 'con 1 y 0', L_ESVACIA('  if (lista == NULL) {\n    return 1;\n  }\n  return 0;\n'), 'ok', { mejoras: ['ENUM_CON_NUMERO'] }),
+  lista(3, 'al reves', L_ESVACIA('  if (lista != NULL) {\n    return VERDADERO;\n  }\n  return FALSO;\n'), ['MUESTRA_DISTINTA']),
+  lista(3, 'mira el siguiente', L_ESVACIA('  if (lista->sig == NULL) {\n    return VERDADERO;\n  }\n  return FALSO;\n'), ['DESREFERENCIA_NULA']),
+  lista(3, 'asigna en lugar de comparar', L_ESVACIA('  if (lista = NULL) {\n    return VERDADERO;\n  }\n  return FALSO;\n'), ['ASIGNACION_EN_CONDICION']),
+
   // ===== 5. insertar con una copia del puntero
   lista(5, 'solo 7', '0'),
   lista(5, 'cuatro y siete', '1', ['OPCION_INSERTA_ADELANTE']),
