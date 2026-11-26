@@ -1,0 +1,205 @@
+{
+  "id": "dinamica-lista-mas",
+  "titulo": "Contar, insertar en orden y eliminar todos",
+  "continua": false,
+  "descripcion": "Tres operaciones más sobre la lista: contar los nodos, insertar un dato sin que la lista pierda el orden y eliminar todos los nodos que tienen un valor, con los casos especiales de cada una.",
+  "cabecera": "#include <stdio.h>\n#include <stdlib.h>",
+  "consignas": [
+    {
+      "id": "mas-contar",
+      "titulo": "Contar los nodos",
+      "en": "archivo",
+      "dado": "typedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\nTNodo *crearNodo(int dato) {\n  TNodo *nuevo = malloc(sizeof(TNodo));\n\n  if (nuevo == NULL) {\n    return NULL;\n  }\n  nuevo->dato = dato;\n  nuevo->sig = NULL;\n  return nuevo;\n}\n\nvoid insertarFinal(TNodo **lista, int dato) {\n  TNodo *nuevo = crearNodo(dato);\n  TNodo *aux;\n\n  if (nuevo == NULL) {\n    return;\n  }\n  if (*lista == NULL) {\n    *lista = nuevo;\n    return;\n  }\n  aux = *lista;\n  while (aux->sig != NULL) {\n    aux = aux->sig;\n  }\n  aux->sig = nuevo;\n}\n\nvoid liberarLista(TNodo **lista) {\n  TNodo *aux;\n\n  while (*lista != NULL) {\n    aux = *lista;\n    *lista = aux->sig;\n    free(aux);\n  }\n}",
+      "despues": "int main() {\n  TNodo *lista = NULL;\n  int n;\n  int dato;\n  int cantidad;\n\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%d\", &dato);\n    insertarFinal(&lista, dato);\n  }\n  cantidad = contar(lista);\n  printf(\"%d\", cantidad);\n  liberarLista(&lista);\n  return 0;\n}",
+      "enunciado": "El tipo `TNodo` y las siguientes funciones ya están escritos:\n- `crearNodo`\n- `insertarFinal`\n- `liberarLista`\nEscriba la función `contar`, que recibe el puntero al primer nodo y devuelve cuántos nodos tiene la lista. Con una lista vacía devuelve `0`. El `main` ya está escrito: lee una cantidad `n` y después `n` números, los inserta al final, muestra cuántos nodos tiene la lista y la libera. Con `4` y después `7`, `2`, `9` y `5`, el programa muestra `4`.",
+      "requiere": [
+        {
+          "memoria": {
+            "casos": [
+              {
+                "entrada": "4\n7\n2\n9\n5",
+                "salida": "4",
+                "contexto": ""
+              },
+              {
+                "entrada": "1\n8",
+                "salida": "1"
+              },
+              {
+                "entrada": "6\n3\n3\n1\n0\n5\n2",
+                "salida": "6"
+              },
+              {
+                "entrada": "0",
+                "salida": "0"
+              }
+            ],
+            "sinFugas": true
+          }
+        }
+      ],
+      "referencia": "int contar(TNodo *lista) {\n  TNodo *aux = lista;\n  int cantidad = 0;\n\n  while (aux != NULL) {\n    cantidad++;\n    aux = aux->sig;\n  }\n  return cantidad;\n}"
+    },
+    {
+      "id": "mas-orden",
+      "titulo": "Insertar en orden",
+      "en": "archivo",
+      "dado": "typedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\ntypedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\nTNodo *crearNodo(int dato) {\n  TNodo *nuevo = malloc(sizeof(TNodo));\n\n  if (nuevo == NULL) {\n    return NULL;\n  }\n  nuevo->dato = dato;\n  nuevo->sig = NULL;\n  return nuevo;\n}\n\nvoid mostrar(TNodo *lista) {\n  TNodo *aux = lista;\n\n  while (aux != NULL) {\n    printf(\"%d \", aux->dato);\n    aux = aux->sig;\n  }\n}\n\nTBool esVacia(TNodo *lista) {\n  if (lista == NULL) {\n    return VERDADERO;\n  }\n  return FALSO;\n}\n\nvoid liberarLista(TNodo **lista) {\n  TNodo *aux;\n\n  while (*lista != NULL) {\n    aux = *lista;\n    *lista = aux->sig;\n    free(aux);\n  }\n}",
+      "despues": "int main() {\n  TNodo *lista = NULL;\n  int n;\n  int dato;\n\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%d\", &dato);\n    insertarOrdenado(&lista, dato);\n  }\n  if (esVacia(lista) == VERDADERO) {\n    printf(\"Vacia\");\n  } else {\n    mostrar(lista);\n  }\n  liberarLista(&lista);\n  return 0;\n}",
+      "enunciado": "Los tipos `TNodo` y `TBool` y las siguientes funciones ya están escritos:\n- `crearNodo`\n- `mostrar`\n- `esVacia`\n- `liberarLista`\nEscriba la función `insertarOrdenado`, que recibe la dirección del puntero al primer nodo y un dato, y agrega un nodo nuevo con ese dato en el lugar que le corresponde para que la lista quede ordenada de menor a mayor. Se supone que la lista ya está ordenada. Use `crearNodo` para crear el nodo: si no hay memoria, no hace nada. El `main` ya está escrito: lee una cantidad `n` y después `n` números, los va insertando en orden y muestra la lista, o `Vacia` si no tiene ningún nodo. Con `4` y después `7`, `2`, `9` y `5`, el programa muestra `2 5 7 9`.",
+      "requiere": [
+        {
+          "memoria": {
+            "casos": [
+              {
+                "entrada": "4\n7\n2\n9\n5",
+                "salida": "2 5 7 9",
+                "contexto": ""
+              },
+              {
+                "entrada": "3\n1\n4\n6",
+                "salida": "1 4 6"
+              },
+              {
+                "entrada": "3\n6\n4\n1",
+                "salida": "1 4 6"
+              },
+              {
+                "entrada": "4\n5\n2\n5\n2",
+                "salida": "2 2 5 5"
+              },
+              {
+                "entrada": "1\n8",
+                "salida": "8"
+              },
+              {
+                "entrada": "0",
+                "salida": "Vacia"
+              }
+            ],
+            "sinFugas": true
+          }
+        }
+      ],
+      "referencia": "void insertarOrdenado(TNodo **lista, int dato) {\n  TNodo *nuevo = crearNodo(dato);\n  TNodo *aux;\n\n  if (nuevo == NULL) {\n    return;\n  }\n  if (*lista == NULL || dato < (*lista)->dato) {\n    nuevo->sig = *lista;\n    *lista = nuevo;\n    return;\n  }\n  aux = *lista;\n  while (aux->sig != NULL && aux->sig->dato < dato) {\n    aux = aux->sig;\n  }\n  nuevo->sig = aux->sig;\n  aux->sig = nuevo;\n}"
+    },
+    {
+      "id": "mas-q-orden",
+      "titulo": "Insertar un número mayor que todos",
+      "enunciado": "Un compañero escribió esta versión de `insertarOrdenado`. `main` tiene una lista ordenada de tres nodos, de datos `2`, `5` y `8`, y le inserta el `9`. Las funciones `crearNodo` y `mostrar` ya están escritas. La figura muestra la memoria justo antes de llamar a `insertarOrdenado`. ¿Qué pasa al insertar el `9`?",
+      "programa": "void insertarOrdenado(TNodo **lista, int dato) {\n  TNodo *nuevo = crearNodo(dato);\n  TNodo *aux;\n\n  if (nuevo == NULL) {\n    return;\n  }\n  if (*lista == NULL || dato < (*lista)->dato) {\n    nuevo->sig = *lista;\n    *lista = nuevo;\n    return;\n  }\n  aux = *lista;\n  while (aux->sig->dato < dato) {\n    aux = aux->sig;\n  }\n  nuevo->sig = aux->sig;\n  aux->sig = nuevo;\n}\n\nint main() {\n  TNodo *lista = crearNodo(2);\n\n  lista->sig = crearNodo(5);\n  lista->sig->sig = crearNodo(8);\n  insertarOrdenado(&lista, 9);\n  mostrar(lista);\n  return 0;\n}",
+      "dibujo": {
+        "titulo": "La memoria justo antes de llamar a `insertarOrdenado`:",
+        "motor": {
+          "codigo": "#include <stdio.h>\n#include <stdlib.h>\n\ntypedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\nTNodo *crearNodo(int dato) {\n  TNodo *nuevo = malloc(sizeof(TNodo));\n\n  if (nuevo == NULL) {\n    return NULL;\n  }\n  nuevo->dato = dato;\n  nuevo->sig = NULL;\n  return nuevo;\n}\n\nvoid mostrar(TNodo *lista) {\n  TNodo *aux = lista;\n\n  while (aux != NULL) {\n    printf(\"%d \", aux->dato);\n    aux = aux->sig;\n  }\n}\n\nvoid insertarOrdenado(TNodo **lista, int dato) {\n  TNodo *nuevo = crearNodo(dato);\n  TNodo *aux;\n\n  if (nuevo == NULL) {\n    return;\n  }\n  if (*lista == NULL || dato < (*lista)->dato) {\n    nuevo->sig = *lista;\n    *lista = nuevo;\n    return;\n  }\n  aux = *lista;\n  while (aux->sig != NULL && aux->sig->dato < dato) {\n    aux = aux->sig;\n  }\n  nuevo->sig = aux->sig;\n  aux->sig = nuevo;\n}\n\nint main() {\n  TNodo *lista = crearNodo(2);\n\n  lista->sig = crearNodo(5);\n  lista->sig->sig = crearNodo(8);\n  insertarOrdenado(&lista, 9);\n  mostrar(lista);\n  return 0;\n}",
+          "linea": 54
+        }
+      },
+      "pasoAPaso": {
+        "codigo": "#include <stdio.h>\n#include <stdlib.h>\n\ntypedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\nTNodo *crearNodo(int dato) {\n  TNodo *nuevo = malloc(sizeof(TNodo));\n\n  if (nuevo == NULL) {\n    return NULL;\n  }\n  nuevo->dato = dato;\n  nuevo->sig = NULL;\n  return nuevo;\n}\n\nvoid mostrar(TNodo *lista) {\n  TNodo *aux = lista;\n\n  while (aux != NULL) {\n    printf(\"%d \", aux->dato);\n    aux = aux->sig;\n  }\n}\n\nvoid insertarOrdenado(TNodo **lista, int dato) {\n  TNodo *nuevo = crearNodo(dato);\n  TNodo *aux;\n\n  if (nuevo == NULL) {\n    return;\n  }\n  if (*lista == NULL || dato < (*lista)->dato) {\n    nuevo->sig = *lista;\n    *lista = nuevo;\n    return;\n  }\n  aux = *lista;\n  while (aux->sig->dato < dato) {\n    aux = aux->sig;\n  }\n  nuevo->sig = aux->sig;\n  aux->sig = nuevo;\n}\n\nint main() {\n  TNodo *lista = crearNodo(2);\n\n  lista->sig = crearNodo(5);\n  lista->sig->sig = crearNodo(8);\n  insertarOrdenado(&lista, 9);\n  mostrar(lista);\n  return 0;\n}",
+        "guia": "Avance hasta que `aux` llega al nodo del `8`: su `sig` es `NULL`, y al leer `aux->sig->dato` el programa se detiene con un error."
+      },
+      "opciones": [
+        {
+          "texto": "Se inserta al final, y la lista queda `2 5 8 9`",
+          "codigo": "OPCION_SE_INSERTA_AL_FINAL",
+          "explicacion": "El ciclo no se detiene en el último nodo: con `aux` en el `8`, la condición vuelve a leer `aux->sig->dato`, y `aux->sig` es `NULL`. No llega a insertar nada."
+        },
+        {
+          "texto": "Se inserta antes del `8`, y la lista queda `2 5 9 8`",
+          "codigo": "OPCION_ANTES_DEL_ULTIMO",
+          "explicacion": "El ciclo avanza mientras el dato del siguiente sea menor que `9`, y `8` lo es: `aux` pasa del `5` al `8`, no se queda en el `5`. El problema aparece justo después, al mirar el siguiente del `8`."
+        },
+        {
+          "texto": "El programa se detiene con un error",
+          "correcta": true,
+          "explicacion": "Cuando `aux` llega al `8`, el último nodo, `aux->sig` es `NULL`, y la condición lee `aux->sig->dato`: el dato de un nodo que no existe. Antes de mirar el dato del siguiente hay que preguntar si hay un siguiente: `while (aux->sig != NULL && aux->sig->dato < dato)`. El orden importa: si `aux->sig` es `NULL`, la primera parte ya es falsa y `&&` no evalúa la segunda."
+        }
+      ]
+    },
+    {
+      "id": "mas-todos",
+      "titulo": "Eliminar todos los nodos con un valor",
+      "en": "archivo",
+      "dado": "typedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\ntypedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\nTNodo *crearNodo(int dato) {\n  TNodo *nuevo = malloc(sizeof(TNodo));\n\n  if (nuevo == NULL) {\n    return NULL;\n  }\n  nuevo->dato = dato;\n  nuevo->sig = NULL;\n  return nuevo;\n}\n\nvoid insertarFinal(TNodo **lista, int dato) {\n  TNodo *nuevo = crearNodo(dato);\n  TNodo *aux;\n\n  if (nuevo == NULL) {\n    return;\n  }\n  if (*lista == NULL) {\n    *lista = nuevo;\n    return;\n  }\n  aux = *lista;\n  while (aux->sig != NULL) {\n    aux = aux->sig;\n  }\n  aux->sig = nuevo;\n}\n\nvoid mostrar(TNodo *lista) {\n  TNodo *aux = lista;\n\n  while (aux != NULL) {\n    printf(\"%d \", aux->dato);\n    aux = aux->sig;\n  }\n}\n\nTBool esVacia(TNodo *lista) {\n  if (lista == NULL) {\n    return VERDADERO;\n  }\n  return FALSO;\n}\n\nvoid liberarLista(TNodo **lista) {\n  TNodo *aux;\n\n  while (*lista != NULL) {\n    aux = *lista;\n    *lista = aux->sig;\n    free(aux);\n  }\n}",
+      "despues": "int main() {\n  TNodo *lista = NULL;\n  int n;\n  int dato;\n  int valor;\n\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%d\", &dato);\n    insertarFinal(&lista, dato);\n  }\n  scanf(\"%d\", &valor);\n  eliminarTodos(&lista, valor);\n  if (esVacia(lista) == VERDADERO) {\n    printf(\"Vacia\");\n  } else {\n    mostrar(lista);\n  }\n  liberarLista(&lista);\n  return 0;\n}",
+      "enunciado": "Los tipos `TNodo` y `TBool` y las siguientes funciones ya están escritos:\n- `crearNodo`\n- `insertarFinal`\n- `mostrar`\n- `esVacia`\n- `liberarLista`\nEscriba la función `eliminarTodos`, que recibe la dirección del puntero al primer nodo y un valor, y elimina de la lista todos los nodos que tengan ese dato, liberándolos. Si ningún nodo lo tiene, no hace nada. El `main` ya está escrito: lee `n` números y los inserta al final, lee el valor a eliminar y muestra lo que queda, o `Vacia` si no queda ningún nodo. Con `5`, después `4`, `9`, `6`, `9` y `2`, y el valor `9`, el programa muestra `4 6 2`.",
+      "requiere": [
+        {
+          "memoria": {
+            "casos": [
+              {
+                "entrada": "5\n4\n9\n6\n9\n2\n9",
+                "salida": "4 6 2",
+                "contexto": ""
+              },
+              {
+                "entrada": "4\n4\n9\n9\n6\n9",
+                "salida": "4 6"
+              },
+              {
+                "entrada": "4\n9\n9\n4\n6\n9",
+                "salida": "4 6"
+              },
+              {
+                "entrada": "4\n4\n6\n9\n9\n9",
+                "salida": "4 6"
+              },
+              {
+                "entrada": "3\n4\n6\n2\n9",
+                "salida": "4 6 2"
+              },
+              {
+                "entrada": "3\n9\n9\n9\n9",
+                "salida": "Vacia"
+              },
+              {
+                "entrada": "0\n9",
+                "salida": "Vacia"
+              }
+            ],
+            "sinFugas": true,
+            "usa": [
+              "free"
+            ]
+          }
+        }
+      ],
+      "referencia": "void eliminarTodos(TNodo **lista, int valor) {\n  TNodo *aux = *lista;\n  TNodo *anterior = NULL;\n  TNodo *siguiente;\n\n  while (aux != NULL) {\n    siguiente = aux->sig;\n    if (aux->dato == valor) {\n      if (anterior == NULL) {\n        *lista = siguiente;\n      } else {\n        anterior->sig = siguiente;\n      }\n      free(aux);\n    } else {\n      anterior = aux;\n    }\n    aux = siguiente;\n  }\n}"
+    },
+    {
+      "id": "mas-q-seguidos",
+      "titulo": "Dos nodos seguidos con el mismo valor",
+      "enunciado": "Un compañero escribió esta versión de `eliminarTodos`. `main` tiene una lista de cuatro nodos, de datos `4`, `9`, `9` y `6`, y elimina los nodos con el valor `9`. Las funciones `crearNodo` y `mostrar` ya están escritas. La figura muestra la memoria justo antes de llamar a `eliminarTodos`. ¿Qué muestra el programa?",
+      "programa": "void eliminarTodos(TNodo **lista, int valor) {\n  TNodo *aux = *lista;\n  TNodo *anterior = NULL;\n  TNodo *siguiente;\n\n  while (aux != NULL) {\n    if (aux->dato == valor) {\n      siguiente = aux->sig;\n      if (anterior == NULL) {\n        *lista = siguiente;\n      } else {\n        anterior->sig = siguiente;\n      }\n      free(aux);\n      aux = siguiente;\n    }\n    if (aux != NULL) {\n      anterior = aux;\n      aux = aux->sig;\n    }\n  }\n}\n\nint main() {\n  TNodo *lista = crearNodo(4);\n\n  lista->sig = crearNodo(9);\n  lista->sig->sig = crearNodo(9);\n  lista->sig->sig->sig = crearNodo(6);\n  eliminarTodos(&lista, 9);\n  mostrar(lista);\n  return 0;\n}",
+      "dibujo": {
+        "titulo": "La memoria justo antes de llamar a `eliminarTodos`:",
+        "motor": {
+          "codigo": "#include <stdio.h>\n#include <stdlib.h>\n\ntypedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\nTNodo *crearNodo(int dato) {\n  TNodo *nuevo = malloc(sizeof(TNodo));\n\n  if (nuevo == NULL) {\n    return NULL;\n  }\n  nuevo->dato = dato;\n  nuevo->sig = NULL;\n  return nuevo;\n}\n\nvoid mostrar(TNodo *lista) {\n  TNodo *aux = lista;\n\n  while (aux != NULL) {\n    printf(\"%d \", aux->dato);\n    aux = aux->sig;\n  }\n}\n\nvoid eliminarTodos(TNodo **lista, int valor) {\n  TNodo *aux = *lista;\n  TNodo *anterior = NULL;\n  TNodo *siguiente;\n\n  while (aux != NULL) {\n    siguiente = aux->sig;\n    if (aux->dato == valor) {\n      if (anterior == NULL) {\n        *lista = siguiente;\n      } else {\n        anterior->sig = siguiente;\n      }\n      free(aux);\n    } else {\n      anterior = aux;\n    }\n    aux = siguiente;\n  }\n}\n\nint main() {\n  TNodo *lista = crearNodo(4);\n\n  lista->sig = crearNodo(9);\n  lista->sig->sig = crearNodo(9);\n  lista->sig->sig->sig = crearNodo(6);\n  eliminarTodos(&lista, 9);\n  mostrar(lista);\n  return 0;\n}",
+          "linea": 56
+        }
+      },
+      "pasoAPaso": {
+        "codigo": "#include <stdio.h>\n#include <stdlib.h>\n\ntypedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\nTNodo *crearNodo(int dato) {\n  TNodo *nuevo = malloc(sizeof(TNodo));\n\n  if (nuevo == NULL) {\n    return NULL;\n  }\n  nuevo->dato = dato;\n  nuevo->sig = NULL;\n  return nuevo;\n}\n\nvoid mostrar(TNodo *lista) {\n  TNodo *aux = lista;\n\n  while (aux != NULL) {\n    printf(\"%d \", aux->dato);\n    aux = aux->sig;\n  }\n}\n\nvoid eliminarTodos(TNodo **lista, int valor) {\n  TNodo *aux = *lista;\n  TNodo *anterior = NULL;\n  TNodo *siguiente;\n\n  while (aux != NULL) {\n    if (aux->dato == valor) {\n      siguiente = aux->sig;\n      if (anterior == NULL) {\n        *lista = siguiente;\n      } else {\n        anterior->sig = siguiente;\n      }\n      free(aux);\n      aux = siguiente;\n    }\n    if (aux != NULL) {\n      anterior = aux;\n      aux = aux->sig;\n    }\n  }\n}\n\nint main() {\n  TNodo *lista = crearNodo(4);\n\n  lista->sig = crearNodo(9);\n  lista->sig->sig = crearNodo(9);\n  lista->sig->sig->sig = crearNodo(6);\n  eliminarTodos(&lista, 9);\n  mostrar(lista);\n  return 0;\n}",
+        "guia": "Avance hasta que se libera el primer `9`: `aux` pasa al segundo `9`, y enseguida el ciclo avanza otra vez sin compararlo."
+      },
+      "opciones": [
+        {
+          "texto": "`4 6`",
+          "codigo": "OPCION_ELIMINA_LOS_DOS",
+          "explicacion": "Solo se elimina el primer `9`. Después de liberarlo, `aux` pasa al segundo `9`, pero en la misma vuelta el ciclo avanza otra vez y lo saltea sin compararlo."
+        },
+        {
+          "texto": "`4 9 6`",
+          "correcta": true,
+          "explicacion": "Al eliminar el primer `9`, `aux` pasa a `siguiente`, el segundo `9`, que todavía no se comparó. Pero en la misma vuelta el ciclo avanza otra vez, con `aux = aux->sig`, y lo saltea. Después de eliminar un nodo, `aux` ya está en el que hay que mirar: se avanza solo cuando el nodo se queda, y en ese caso él pasa a ser el anterior. Por eso las dos cosas van en un `if` y su `else`."
+        },
+        {
+          "texto": "El programa se detiene: lee un nodo que ya se liberó",
+          "codigo": "OPCION_LEE_LIBERADO",
+          "explicacion": "Antes de liberar el nodo se guarda su siguiente en `siguiente`, y después `aux` pasa a ese: ningún nodo liberado se vuelve a leer. El problema es otro: un nodo que no se compara."
+        }
+      ]
+    }
+  ]
+}

@@ -211,6 +211,209 @@ const casosQuitar = [
   quitar(7, 'libera antes de enlazar', L_VALOR(VALOR_SIN_LIBERAR.replace('  if (anterior == NULL) {', '  free(aux);\n  if (anterior == NULL) {')), ['USO_DE_MEMORIA_LIBERADA']),
 ];
 
+const mas = serie('dinamica-lista-mas');
+
+// Serie 7: contar, insertar en orden y eliminar todos.
+const M_CONTAR = (cuerpo) => `int contar(TNodo *lista) {\n  TNodo *aux = lista;\n  int cantidad = 0;\n\n${cuerpo}  return cantidad;\n}`;
+const CONTAR_REF = '  while (aux != NULL) {\n    cantidad++;\n    aux = aux->sig;\n  }\n';
+const M_ORDEN = (cuerpo) => `void insertarOrdenado(TNodo **lista, int dato) {\n  TNodo *nuevo = crearNodo(dato);\n  TNodo *aux;\n\n  if (nuevo == NULL) {\n    return;\n  }\n${cuerpo}}`;
+const ORDEN_PRIMERO = '  if (*lista == NULL || dato < (*lista)->dato) {\n    nuevo->sig = *lista;\n    *lista = nuevo;\n    return;\n  }\n';
+const ORDEN_RESTO = '  aux = *lista;\n  while (aux->sig != NULL && aux->sig->dato < dato) {\n    aux = aux->sig;\n  }\n  nuevo->sig = aux->sig;\n  aux->sig = nuevo;\n';
+const M_TODOS = (cuerpo) => `void eliminarTodos(TNodo **lista, int valor) {\n  TNodo *aux = *lista;\n  TNodo *anterior = NULL;\n  TNodo *siguiente;\n\n${cuerpo}}`;
+const TODOS_REF = '  while (aux != NULL) {\n    siguiente = aux->sig;\n    if (aux->dato == valor) {\n      if (anterior == NULL) {\n        *lista = siguiente;\n      } else {\n        anterior->sig = siguiente;\n      }\n      free(aux);\n    } else {\n      anterior = aux;\n    }\n    aux = siguiente;\n  }\n';
+const TODOS_SALTEA = '  while (aux != NULL) {\n    if (aux->dato == valor) {\n      siguiente = aux->sig;\n      if (anterior == NULL) {\n        *lista = siguiente;\n      } else {\n        anterior->sig = siguiente;\n      }\n      free(aux);\n      aux = siguiente;\n    }\n    if (aux != NULL) {\n      anterior = aux;\n      aux = aux->sig;\n    }\n  }\n';
+
+const casosMas = [
+  // ===== 1. contar los nodos
+  mas(1, 'la referencia', M_CONTAR(CONTAR_REF)),
+  mas(1, 'con un for', 'int contar(TNodo *lista) {\n  int cantidad = 0;\n\n  for (TNodo *aux = lista; aux != NULL; aux = aux->sig) {\n    cantidad++;\n  }\n  return cantidad;\n}'),
+  mas(1, 'recorriendo con el parametro', 'int contar(TNodo *lista) {\n  int cantidad = 0;\n\n  while (lista != NULL) {\n    cantidad++;\n    lista = lista->sig;\n  }\n  return cantidad;\n}'),
+  mas(1, 'empieza en 1', M_CONTAR(CONTAR_REF).replace('int cantidad = 0;', 'int cantidad = 1;'), ['MUESTRA_DISTINTA']),
+  mas(1, 'se detiene en el ultimo', M_CONTAR(CONTAR_REF.replace('aux != NULL', 'aux->sig != NULL')), ['MUESTRA_DISTINTA']),
+  mas(1, 'sin avanzar', M_CONTAR(CONTAR_REF.replace('    aux = aux->sig;\n', '')), ['NO_TERMINA']),
+
+  // ===== 2. insertar en orden
+  mas(2, 'la referencia', M_ORDEN(ORDEN_PRIMERO + ORDEN_RESTO)),
+  mas(2, 'con <= en el ciclo', M_ORDEN(ORDEN_PRIMERO + ORDEN_RESTO.replace('aux->sig->dato < dato', 'aux->sig->dato <= dato'))),
+  mas(2, 'sin comprobar el final', M_ORDEN(ORDEN_PRIMERO + ORDEN_RESTO.replace('aux->sig != NULL && ', '')), ['DESREFERENCIA_NULA']),
+  mas(2, 'sin el caso del menor', M_ORDEN(ORDEN_PRIMERO.replace(' || dato < (*lista)->dato', '') + ORDEN_RESTO), ['MUESTRA_DISTINTA']),
+  mas(2, 'sin la lista vacia', M_ORDEN(ORDEN_PRIMERO.replace('*lista == NULL || ', '') + ORDEN_RESTO), ['DESREFERENCIA_NULA']),
+  mas(2, 'siempre al final', M_ORDEN('  if (*lista == NULL) {\n    *lista = nuevo;\n    return;\n  }\n  aux = *lista;\n  while (aux->sig != NULL) {\n    aux = aux->sig;\n  }\n  aux->sig = nuevo;\n'), ['MUESTRA_DISTINTA']),
+
+  // ===== 3. insertar un numero mayor que todos
+  mas(3, 'se inserta al final', '0', ['OPCION_SE_INSERTA_AL_FINAL']),
+  mas(3, 'antes del ultimo', '1', ['OPCION_ANTES_DEL_ULTIMO']),
+  mas(3, 'se detiene', '2'),
+
+  // ===== 4. eliminar todos
+  mas(4, 'la referencia', M_TODOS(TODOS_REF)),
+  mas(4, 'saltea el que sigue a uno eliminado', M_TODOS(TODOS_SALTEA), ['MUESTRA_DISTINTA']),
+  mas(4, 'solo el primero', M_TODOS(TODOS_REF.replace('      free(aux);\n', '      free(aux);\n      return;\n')), ['MUESTRA_DISTINTA']),
+  mas(4, 'sin liberar', M_TODOS(TODOS_REF.replace('      free(aux);\n', '')), ['FREE_FALTA']),
+  mas(4, 'sin el caso del primero', M_TODOS(TODOS_REF.replace('      if (anterior == NULL) {\n        *lista = siguiente;\n      } else {\n        anterior->sig = siguiente;\n      }\n', '      anterior->sig = siguiente;\n')), ['DESREFERENCIA_NULA']),
+  mas(4, 'avanza con el liberado', M_TODOS('  while (aux != NULL) {\n    if (aux->dato == valor) {\n      if (anterior == NULL) {\n        *lista = aux->sig;\n      } else {\n        anterior->sig = aux->sig;\n      }\n      free(aux);\n    } else {\n      anterior = aux;\n    }\n    aux = aux->sig;\n  }\n'), ['USO_DE_MEMORIA_LIBERADA']),
+
+  // ===== 5. dos nodos seguidos con el mismo valor
+  mas(5, 'los elimina a los dos', '0', ['OPCION_ELIMINA_LOS_DOS']),
+  mas(5, 'saltea el segundo', '1'),
+  mas(5, 'lee un liberado', '2', ['OPCION_LEE_LIBERADO']),
+];
+
+const ltad = serie('dinamica-lista-tad');
+
+// Serie 8: la lista del TAD con posiciones, con nodos.
+const LTAD_H = `#ifndef LISTA_H
+#define LISTA_H
+
+typedef enum {
+  OK,
+  LISTA_LLENA,
+  POSICION_INVALIDA
+} TResultado;
+
+typedef struct nodo {
+  int dato;
+  struct nodo *sig;
+} TNodo;
+
+typedef struct {
+  TNodo *primero;
+} TLista;
+
+void inicializar(TLista *l);
+int longitud(TLista l);
+int obtener(TLista l, int pos);
+TResultado insertar(TLista *l, int pos, int x);
+void destruir(TLista *l);
+
+#endif`;
+const LTAD_INICIO = `#include <stdlib.h>
+#include "lista.h"
+
+void inicializar(TLista *l) {
+  l->primero = NULL;
+}
+
+int longitud(TLista l) {
+  TNodo *aux = l.primero;
+  int cantidad = 0;
+
+  while (aux != NULL) {
+    cantidad++;
+    aux = aux->sig;
+  }
+  return cantidad;
+}
+
+int obtener(TLista l, int pos) {
+  TNodo *aux = l.primero;
+
+  for (int i = 0; i < pos; i++) {
+    aux = aux->sig;
+  }
+  return aux->dato;
+}
+
+`;
+const LTAD_INSERTAR = `TResultado insertar(TLista *l, int pos, int x) {
+  TNodo *nuevo;
+  TNodo *aux;
+
+  if (pos < 0 || pos > longitud(*l)) {
+    return POSICION_INVALIDA;
+  }
+  nuevo = malloc(sizeof(TNodo));
+  if (nuevo == NULL) {
+    return LISTA_LLENA;
+  }
+  nuevo->dato = x;
+  if (pos == 0) {
+    nuevo->sig = l->primero;
+    l->primero = nuevo;
+    return OK;
+  }
+  aux = l->primero;
+  for (int i = 0; i < pos - 1; i++) {
+    aux = aux->sig;
+  }
+  nuevo->sig = aux->sig;
+  aux->sig = nuevo;
+  return OK;
+}
+
+`;
+const LTAD_DESTRUIR = `void destruir(TLista *l) {
+  TNodo *aux;
+
+  while (l->primero != NULL) {
+    aux = l->primero;
+    l->primero = aux->sig;
+    free(aux);
+  }
+}`;
+const LTAD_C = LTAD_INICIO + LTAD_INSERTAR + LTAD_DESTRUIR;
+const LTAD_MAIN = `#include <stdio.h>
+#include "lista.h"
+
+int main() {
+  TLista l;
+  int n;
+  int x;
+  int pos;
+
+  inicializar(&l);
+  scanf("%d", &n);
+  for (int i = 0; i < n; i++) {
+    scanf("%d", &x);
+    pos = 0;
+    while (pos < longitud(l) && obtener(l, pos) <= x) {
+      pos = pos + 1;
+    }
+    insertar(&l, pos, x);
+  }
+  for (int i = 0; i < longitud(l); i++) {
+    x = obtener(l, i);
+    printf("%d ", x);
+  }
+  destruir(&l);
+  return 0;
+}`;
+
+const casosLtad = [
+  // ===== 1. que archivos cambian
+  ltad(1, 'solo lista.c', '0', ['OPCION_LTAD_SOLO_C']),
+  ltad(1, 'lista.h y lista.c', '1'),
+  ltad(1, 'los tres', '2', ['OPCION_LTAD_LOS_TRES']),
+
+  // ===== 2. el archivo de la lista con nodos
+  ltad(2, 'la referencia', LTAD_H),
+  ltad(2, 'el nodo con el typedef adelantado', LTAD_H.replace('typedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;', 'typedef struct nodo TNodo;\n\nstruct nodo {\n  int dato;\n  TNodo *sig;\n};')),
+  ltad(2, 'sin destruir', LTAD_H.replace('void destruir(TLista *l);\n', ''), ['PROTOTIPO_FALTA']),
+  ltad(2, 'primero sin el asterisco', LTAD_H.replace('TNodo *primero;', 'TNodo primero;'), ['CAMPO_NO_ES_PUNTERO']),
+  ltad(2, 'la lista con el arreglo de antes', LTAD_H.replace('typedef struct {\n  TNodo *primero;\n} TLista;', '#define MAX 10\n\ntypedef struct {\n  int elementos[MAX];\n  int cantidad;\n} TLista;'), ['CAMPO_FALTA']),
+
+  // ===== 3. la implementacion con nodos
+  ltad(3, 'la referencia', LTAD_C),
+  ltad(3, 'destruir sin dejar la lista vacia', LTAD_INICIO + LTAD_INSERTAR + 'void destruir(TLista *l) {\n  TNodo *aux = l->primero;\n  TNodo *siguiente;\n\n  while (aux != NULL) {\n    siguiente = aux->sig;\n    free(aux);\n    aux = siguiente;\n  }\n}', ['USO_DE_MEMORIA_LIBERADA']),
+  ltad(3, 'destruir solo el primero', LTAD_INICIO + LTAD_INSERTAR + 'void destruir(TLista *l) {\n  if (l->primero != NULL) {\n    free(l->primero);\n  }\n  l->primero = NULL;\n}', ['FUGA_DE_MEMORIA']),
+  ltad(3, 'reserva antes de ver la posicion', LTAD_INICIO + LTAD_INSERTAR.replace('  if (pos < 0 || pos > longitud(*l)) {\n    return POSICION_INVALIDA;\n  }\n  nuevo = malloc(sizeof(TNodo));\n  if (nuevo == NULL) {\n    return LISTA_LLENA;\n  }\n', '  nuevo = malloc(sizeof(TNodo));\n  if (nuevo == NULL) {\n    return LISTA_LLENA;\n  }\n  if (pos < 0 || pos > longitud(*l)) {\n    return POSICION_INVALIDA;\n  }\n') + LTAD_DESTRUIR, ['FUGA_DE_MEMORIA']),
+  ltad(3, 'sin el caso de la posicion 0', LTAD_INICIO + LTAD_INSERTAR.replace('  if (pos == 0) {\n    nuevo->sig = l->primero;\n    l->primero = nuevo;\n    return OK;\n  }\n', '') + LTAD_DESTRUIR, ['DESREFERENCIA_NULA']),
+  ltad(3, 'un nodo de mas en el recorrido', LTAD_INICIO + LTAD_INSERTAR.replace('i < pos - 1', 'i < pos') + LTAD_DESTRUIR, ['DESREFERENCIA_NULA']),
+  ltad(3, 'sin incluir stdlib', LTAD_C.replace('#include <stdlib.h>\n', ''), ['INCLUDE_FALTA_PARA_FUNCION']),
+
+  // ===== 4. el programa de antes, con nodos
+  ltad(4, 'no compila', '0', ['OPCION_LTAD_NO_COMPILA']),
+  ltad(4, 'los nodos quedan reservados', '1'),
+  ltad(4, 'se liberan al terminar', '2', ['OPCION_LTAD_SE_LIBERAN']),
+
+  // ===== 5. insertar en orden, sin maximo
+  ltad(5, 'la referencia', LTAD_MAIN),
+  ltad(5, 'sin destruir', LTAD_MAIN.replace('  destruir(&l);\n', ''), ['TAD_OPERACION_SIN_USAR']),
+  ltad(5, 'recorriendo los nodos desde main', LTAD_MAIN.replace('  for (int i = 0; i < longitud(l); i++) {\n    x = obtener(l, i);\n    printf("%d ", x);\n  }\n', '  for (TNodo *aux = l.primero; aux != NULL; aux = aux->sig) {\n    printf("%d ", aux->dato);\n  }\n'), ['TAD_ACCESO_DIRECTO']),
+  ltad(5, 'con < en la busqueda', LTAD_MAIN.replace('obtener(l, pos) <= x', 'obtener(l, pos) < x')),
+  ltad(5, 'siempre al final', LTAD_MAIN.replace('    pos = 0;\n    while (pos < longitud(l) && obtener(l, pos) <= x) {\n      pos = pos + 1;\n    }\n    insertar(&l, pos, x);\n', '    insertar(&l, longitud(l), x);\n'), ['MUESTRA_DISTINTA']),
+];
+
 export const CASOS_DE_DINAMICA = [
   // ===== 1. un arreglo de tamano fijo
   memoria(1, 'ninguno sirve: se pide al ejecutar', '1'),
@@ -444,4 +647,6 @@ export const CASOS_DE_DINAMICA = [
 
   ...casosLista,
   ...casosQuitar,
+  ...casosMas,
+  ...casosLtad,
 ];

@@ -1,0 +1,391 @@
+{
+  "id": "dinamica-lista-tad",
+  "titulo": "La lista como TAD, con nodos",
+  "continua": false,
+  "descripcion": "La lista del TAD con posiciones, ahora guardada en nodos enlazados: cambian el tipo y la implementación, las operaciones quedan iguales, y aparece una nueva para liberar los nodos.",
+  "consignas": [
+    {
+      "id": "ltad-q-archivos",
+      "titulo": "Qué archivos cambian",
+      "archivos": [
+        {
+          "nombre": "lista.h",
+          "codigo": "#ifndef LISTA_H\n#define LISTA_H\n\n#define MAX 10\n\ntypedef enum {\n  OK,\n  LISTA_LLENA,\n  POSICION_INVALIDA\n} TResultado;\n\ntypedef struct {\n  int elementos[MAX];\n  int cantidad;\n} TLista;\n\nvoid inicializar(TLista *l);\nint longitud(TLista l);\nint obtener(TLista l, int pos);\nTResultado insertar(TLista *l, int pos, int x);\n\n#endif"
+        },
+        {
+          "nombre": "lista.c",
+          "codigo": "#include \"lista.h\"\n\nvoid inicializar(TLista *l) {\n  l->cantidad = 0;\n}\n\nint longitud(TLista l) {\n  return l.cantidad;\n}\n\nint obtener(TLista l, int pos) {\n  return l.elementos[pos];\n}\n\nTResultado insertar(TLista *l, int pos, int x) {\n  if (l->cantidad == MAX) {\n    return LISTA_LLENA;\n  }\n  if (pos < 0 || pos > l->cantidad) {\n    return POSICION_INVALIDA;\n  }\n  for (int i = l->cantidad; i > pos; i--) {\n    l->elementos[i] = l->elementos[i - 1];\n  }\n  l->elementos[pos] = x;\n  l->cantidad = l->cantidad + 1;\n  return OK;\n}"
+        },
+        {
+          "nombre": "main.c",
+          "codigo": "#include <stdio.h>\n#include \"lista.h\"\n\nint main() {\n  TLista l;\n  int n;\n  int x;\n  int pos;\n\n  inicializar(&l);\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%d\", &x);\n    insertar(&l, longitud(l), x);\n  }\n  scanf(\"%d\", &pos);\n  scanf(\"%d\", &x);\n  if (insertar(&l, pos, x) == OK) {\n    for (int i = 0; i < longitud(l); i++) {\n      printf(\"%d \", obtener(l, i));\n    }\n  } else {\n    printf(\"No se pudo insertar\");\n  }\n  return 0;\n}"
+        }
+      ],
+      "enunciado": "Estos son los archivos de la lista de la serie «Un TAD con posiciones»: guarda los números en un arreglo. Se decide guardarlos en nodos enlazados, con las mismas cuatro operaciones, que conservan sus nombres, sus parámetros y lo que hacen. ¿Qué archivos hay que cambiar?",
+      "opciones": [
+        {
+          "texto": "Solo `lista.c`",
+          "codigo": "OPCION_LTAD_SOLO_C",
+          "explicacion": "Las operaciones se reescriben en `lista.c`, pero no alcanza: el tipo `TLista` está declarado en `lista.h`, con un arreglo `elementos` y un contador `cantidad`. Con nodos, `TLista` tiene que guardar otra cosa: el puntero al primer nodo. En la pila con el tope en -1 cambiaba solo `pila.c` porque los campos seguían siendo los mismos y cambiaba solo lo que significaban."
+        },
+        {
+          "texto": "`lista.h` y `lista.c`",
+          "correcta": true,
+          "explicacion": "`lista.h` cambia en la representación: `TLista` ya no guarda un arreglo y una cantidad, sino el puntero al primer nodo, y hace falta declarar `TNodo`. Los prototipos de las operaciones quedan iguales. `lista.c` se reescribe entero, porque cada operación recorre nodos en vez de posiciones de un arreglo. `main.c` sigue compilando y mostrando lo mismo sin tocarlo: no nombra ningún campo de `TLista`, usa la lista solo a través de las operaciones. Para eso sirve un TAD. Con los nodos aparece, eso sí, algo nuevo que cuidar: liberarlos. Se ve más adelante en esta serie."
+        },
+        {
+          "texto": "Los tres archivos",
+          "codigo": "OPCION_LTAD_LOS_TRES",
+          "explicacion": "`main.c` no nombra `elementos` ni `cantidad`: usa la lista solo a través de `inicializar`, `longitud`, `obtener` e `insertar`, y esas operaciones conservan sus nombres y sus parámetros. Lo que cambia queda dentro de `lista.h` y `lista.c`."
+        }
+      ]
+    },
+    {
+      "id": "ltad-h",
+      "titulo": "El archivo de la lista con nodos",
+      "escribe": "lista.h",
+      "enunciado": "Escriba el nuevo `lista.h`, con la lista de números enteros guardada en nodos enlazados. Declare tres tipos, en este orden:\n- `TResultado`: el enumerado de antes, con los valores `OK`, `LISTA_LLENA` y `POSICION_INVALIDA` (en ese orden). Ahora la lista está llena solo cuando no hay memoria para un nodo nuevo.\n- `TNodo`: el nodo, con los campos `dato` y `sig`, como en las series anteriores.\n- `TLista`: una estructura con un solo campo, `primero`, el puntero al primer nodo.\n\nYa no hay un máximo, así que `MAX` no hace falta. Las posiciones siguen empezando en 0. Las cuatro operaciones de antes quedan iguales:\n- `inicializar`: la deja vacía. Recibe la lista por referencia y no devuelve nada.\n- `longitud`: devuelve cuántos elementos tiene. Recibe la lista por valor.\n- `obtener`: devuelve el elemento que está en una posición. Recibe la lista por valor y la posición.\n- `insertar`: mete un número en una posición. Recibe la lista por referencia, la posición y el número, y devuelve un `TResultado`.\n\nY hace falta una operación más, porque ahora los nodos se reservan con `malloc`:\n- `destruir`: libera todos los nodos y deja la lista vacía. Recibe la lista por referencia y no devuelve nada.\n\nUse las guardas de inclusión `LISTA_H`.",
+      "requiere": [
+        {
+          "encabezado": {
+            "guarda": "LISTA_H"
+          }
+        },
+        {
+          "enum": {
+            "enumeradores": [
+              "OK",
+              "LISTA_LLENA",
+              "POSICION_INVALIDA"
+            ],
+            "capturar": "E"
+          }
+        },
+        {
+          "alias": {
+            "de": "$E",
+            "nombre": "TResultado",
+            "capturar": "R"
+          }
+        },
+        {
+          "struct": {
+            "capturar": "N",
+            "campos": [
+              {
+                "nombre": "dato",
+                "tipo": "entero"
+              },
+              {
+                "nombre": "sig",
+                "tipo": "puntero",
+                "de": "misma"
+              }
+            ]
+          }
+        },
+        {
+          "alias": {
+            "de": "$N",
+            "nombre": "TNodo"
+          }
+        },
+        {
+          "struct": {
+            "capturar": "S",
+            "campos": [
+              {
+                "nombre": "primero",
+                "tipo": "puntero",
+                "de": "TNodo"
+              }
+            ]
+          }
+        },
+        {
+          "alias": {
+            "de": "$S",
+            "nombre": "TLista",
+            "capturar": "T"
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "inicializar",
+            "retorna": "void",
+            "parametros": [
+              {
+                "tipo": "estructura",
+                "referencia": true
+              }
+            ]
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "longitud",
+            "retorna": "entero",
+            "parametros": [
+              {
+                "tipo": "estructura"
+              }
+            ]
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "obtener",
+            "retorna": "entero",
+            "parametros": [
+              {
+                "tipo": "estructura"
+              },
+              {
+                "tipo": "entero"
+              }
+            ]
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "insertar",
+            "retorna": "enumerado",
+            "parametros": [
+              {
+                "tipo": "estructura",
+                "referencia": true
+              },
+              {
+                "tipo": "entero"
+              },
+              {
+                "tipo": "entero"
+              }
+            ]
+          }
+        },
+        {
+          "funcion": {
+            "prototipo": true,
+            "nombre": "destruir",
+            "retorna": "void",
+            "parametros": [
+              {
+                "tipo": "estructura",
+                "referencia": true
+              }
+            ]
+          }
+        }
+      ],
+      "referencia": "#ifndef LISTA_H\n#define LISTA_H\n\ntypedef enum {\n  OK,\n  LISTA_LLENA,\n  POSICION_INVALIDA\n} TResultado;\n\ntypedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\ntypedef struct {\n  TNodo *primero;\n} TLista;\n\nvoid inicializar(TLista *l);\nint longitud(TLista l);\nint obtener(TLista l, int pos);\nTResultado insertar(TLista *l, int pos, int x);\nvoid destruir(TLista *l);\n\n#endif"
+    },
+    {
+      "id": "ltad-c",
+      "titulo": "La implementación con nodos",
+      "escribe": "lista.c",
+      "archivos": [
+        {
+          "nombre": "lista.h",
+          "codigo": "#ifndef LISTA_H\n#define LISTA_H\n\ntypedef enum {\n  OK,\n  LISTA_LLENA,\n  POSICION_INVALIDA\n} TResultado;\n\ntypedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\ntypedef struct {\n  TNodo *primero;\n} TLista;\n\nvoid inicializar(TLista *l);\nint longitud(TLista l);\nint obtener(TLista l, int pos);\nTResultado insertar(TLista *l, int pos, int x);\nvoid destruir(TLista *l);\n\n#endif"
+        },
+        {
+          "nombre": "main.c",
+          "codigo": "#include <stdio.h>\n#include \"lista.h\"\n\nint main() {\n  TLista l;\n  int n;\n  int pos;\n  int x;\n  int cantidad;\n  TResultado r;\n\n  inicializar(&l);\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%d\", &pos);\n    scanf(\"%d\", &x);\n    r = insertar(&l, pos, x);\n    if (r == POSICION_INVALIDA) {\n      printf(\"Posicion invalida \");\n    }\n  }\n  cantidad = longitud(l);\n  printf(\"%d: \", cantidad);\n  for (int i = 0; i < cantidad; i++) {\n    x = obtener(l, i);\n    printf(\"%d \", x);\n  }\n  destruir(&l);\n  cantidad = longitud(l);\n  printf(\"| %d\", cantidad);\n  return 0;\n}"
+        }
+      ],
+      "enunciado": "El `lista.h` con nodos ya está escrito, y también un `main.c` que prueba las operaciones (los ve en sus pestañas). Escriba `lista.c`, que define sus cinco operaciones. `primero` es el puntero al primer nodo, y vale `NULL` cuando la lista está vacía. Las operaciones hacen lo siguiente:\n- `inicializar`: deja la lista vacía.\n- `longitud`: devuelve cuántos nodos tiene.\n- `obtener`: devuelve el dato del nodo que está en la posición que recibe. El primer nodo está en la posición 0.\n- `insertar`: si la posición no está entre 0 y la longitud (la posición igual a la longitud es al final), devuelve `POSICION_INVALIDA`. Si no, reserva un nodo nuevo con `malloc`: si no hay memoria, devuelve `LISTA_LLENA`; si hay, lo enlaza en esa posición, con el número como dato, y devuelve `OK`. Si devuelve `POSICION_INVALIDA` o `LISTA_LLENA`, la lista no cambia.\n- `destruir`: libera todos los nodos y deja la lista vacía.\n\nSe supone que `obtener` se usa siempre con una posición que existe. No olvide incluir el `.h`, y también `stdlib.h`, que declara `malloc` y `free`.\n\nEl `main.c` lee una cantidad `n` y después `n` pares de posición y número, e inserta cada número en su posición. Después muestra la longitud y los elementos, destruye la lista y muestra la longitud otra vez. Con `4` y después los pares `0` y `15`, `1` y `8`, `2` y `22`, y `1` y `9`, el programa muestra `4: 15 9 8 22 | 0`.",
+      "requiere": [
+        {
+          "incluyeLocal": "lista.h"
+        },
+        {
+          "sinTipos": true
+        },
+        {
+          "defineTodo": true
+        },
+        {
+          "funcion": {
+            "nombre": "insertar",
+            "retorna": "enumerado",
+            "soloEnumeradores": true,
+            "parametros": [
+              {
+                "tipo": "estructura",
+                "referencia": true
+              },
+              {
+                "tipo": "entero"
+              },
+              {
+                "tipo": "entero"
+              }
+            ]
+          }
+        },
+        {
+          "memoria": {
+            "casos": [
+              {
+                "entrada": "4\n0\n15\n1\n8\n2\n22\n1\n9",
+                "salida": "4: 15 9 8 22 | 0",
+                "contexto": ""
+              },
+              {
+                "entrada": "3\n0\n1\n1\n2\n2\n3",
+                "salida": "3: 1 2 3 | 0"
+              },
+              {
+                "entrada": "3\n0\n1\n0\n2\n0\n3",
+                "salida": "3: 3 2 1 | 0"
+              },
+              {
+                "entrada": "3\n0\n5\n3\n7\n1\n6",
+                "salida": "Posicion invalida 2: 5 6 | 0"
+              },
+              {
+                "entrada": "2\n-1\n4\n0\n4",
+                "salida": "Posicion invalida 1: 4 | 0"
+              },
+              {
+                "entrada": "1\n0\n8",
+                "salida": "1: 8 | 0"
+              },
+              {
+                "entrada": "0",
+                "salida": "0: | 0"
+              }
+            ],
+            "sinFugas": true,
+            "usa": [
+              "malloc",
+              "free"
+            ]
+          }
+        }
+      ],
+      "referencia": "#include <stdlib.h>\n#include \"lista.h\"\n\nvoid inicializar(TLista *l) {\n  l->primero = NULL;\n}\n\nint longitud(TLista l) {\n  TNodo *aux = l.primero;\n  int cantidad = 0;\n\n  while (aux != NULL) {\n    cantidad++;\n    aux = aux->sig;\n  }\n  return cantidad;\n}\n\nint obtener(TLista l, int pos) {\n  TNodo *aux = l.primero;\n\n  for (int i = 0; i < pos; i++) {\n    aux = aux->sig;\n  }\n  return aux->dato;\n}\n\nTResultado insertar(TLista *l, int pos, int x) {\n  TNodo *nuevo;\n  TNodo *aux;\n\n  if (pos < 0 || pos > longitud(*l)) {\n    return POSICION_INVALIDA;\n  }\n  nuevo = malloc(sizeof(TNodo));\n  if (nuevo == NULL) {\n    return LISTA_LLENA;\n  }\n  nuevo->dato = x;\n  if (pos == 0) {\n    nuevo->sig = l->primero;\n    l->primero = nuevo;\n    return OK;\n  }\n  aux = l->primero;\n  for (int i = 0; i < pos - 1; i++) {\n    aux = aux->sig;\n  }\n  nuevo->sig = aux->sig;\n  aux->sig = nuevo;\n  return OK;\n}\n\nvoid destruir(TLista *l) {\n  TNodo *aux;\n\n  while (l->primero != NULL) {\n    aux = l->primero;\n    l->primero = aux->sig;\n    free(aux);\n  }\n}"
+    },
+    {
+      "id": "ltad-q-main",
+      "titulo": "El programa de antes, con nodos",
+      "archivos": [
+        {
+          "nombre": "lista.h",
+          "codigo": "#ifndef LISTA_H\n#define LISTA_H\n\ntypedef enum {\n  OK,\n  LISTA_LLENA,\n  POSICION_INVALIDA\n} TResultado;\n\ntypedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\ntypedef struct {\n  TNodo *primero;\n} TLista;\n\nvoid inicializar(TLista *l);\nint longitud(TLista l);\nint obtener(TLista l, int pos);\nTResultado insertar(TLista *l, int pos, int x);\nvoid destruir(TLista *l);\n\n#endif"
+        },
+        {
+          "nombre": "lista.c",
+          "codigo": "#include <stdlib.h>\n#include \"lista.h\"\n\nvoid inicializar(TLista *l) {\n  l->primero = NULL;\n}\n\nint longitud(TLista l) {\n  TNodo *aux = l.primero;\n  int cantidad = 0;\n\n  while (aux != NULL) {\n    cantidad++;\n    aux = aux->sig;\n  }\n  return cantidad;\n}\n\nint obtener(TLista l, int pos) {\n  TNodo *aux = l.primero;\n\n  for (int i = 0; i < pos; i++) {\n    aux = aux->sig;\n  }\n  return aux->dato;\n}\n\nTResultado insertar(TLista *l, int pos, int x) {\n  TNodo *nuevo;\n  TNodo *aux;\n\n  if (pos < 0 || pos > longitud(*l)) {\n    return POSICION_INVALIDA;\n  }\n  nuevo = malloc(sizeof(TNodo));\n  if (nuevo == NULL) {\n    return LISTA_LLENA;\n  }\n  nuevo->dato = x;\n  if (pos == 0) {\n    nuevo->sig = l->primero;\n    l->primero = nuevo;\n    return OK;\n  }\n  aux = l->primero;\n  for (int i = 0; i < pos - 1; i++) {\n    aux = aux->sig;\n  }\n  nuevo->sig = aux->sig;\n  aux->sig = nuevo;\n  return OK;\n}\n\nvoid destruir(TLista *l) {\n  TNodo *aux;\n\n  while (l->primero != NULL) {\n    aux = l->primero;\n    l->primero = aux->sig;\n    free(aux);\n  }\n}"
+        },
+        {
+          "nombre": "main.c",
+          "codigo": "#include <stdio.h>\n#include \"lista.h\"\n\nint main() {\n  TLista l;\n  int n;\n  int x;\n  int pos;\n\n  inicializar(&l);\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%d\", &x);\n    insertar(&l, longitud(l), x);\n  }\n  scanf(\"%d\", &pos);\n  scanf(\"%d\", &x);\n  if (insertar(&l, pos, x) == OK) {\n    for (int i = 0; i < longitud(l); i++) {\n      printf(\"%d \", obtener(l, i));\n    }\n  } else {\n    printf(\"No se pudo insertar\");\n  }\n  return 0;\n}"
+        }
+      ],
+      "enunciado": "Este `main.c` es el de «Insertar en una posición», escrito para la lista con arreglo. Ahora se compila con el `lista.h` y el `lista.c` con nodos. Se ingresan `3`, después `15`, `8` y `22`, la posición `1` y el número `9`. ¿Qué pasa?",
+      "pasoAPaso": {
+        "codigo": "#ifndef LISTA_H\n#define LISTA_H\n\ntypedef enum {\n  OK,\n  LISTA_LLENA,\n  POSICION_INVALIDA\n} TResultado;\n\ntypedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\ntypedef struct {\n  TNodo *primero;\n} TLista;\n\nvoid inicializar(TLista *l);\nint longitud(TLista l);\nint obtener(TLista l, int pos);\nTResultado insertar(TLista *l, int pos, int x);\nvoid destruir(TLista *l);\n\n#endif\n\n#include <stdlib.h>\n#include \"lista.h\"\n\nvoid inicializar(TLista *l) {\n  l->primero = NULL;\n}\n\nint longitud(TLista l) {\n  TNodo *aux = l.primero;\n  int cantidad = 0;\n\n  while (aux != NULL) {\n    cantidad++;\n    aux = aux->sig;\n  }\n  return cantidad;\n}\n\nint obtener(TLista l, int pos) {\n  TNodo *aux = l.primero;\n\n  for (int i = 0; i < pos; i++) {\n    aux = aux->sig;\n  }\n  return aux->dato;\n}\n\nTResultado insertar(TLista *l, int pos, int x) {\n  TNodo *nuevo;\n  TNodo *aux;\n\n  if (pos < 0 || pos > longitud(*l)) {\n    return POSICION_INVALIDA;\n  }\n  nuevo = malloc(sizeof(TNodo));\n  if (nuevo == NULL) {\n    return LISTA_LLENA;\n  }\n  nuevo->dato = x;\n  if (pos == 0) {\n    nuevo->sig = l->primero;\n    l->primero = nuevo;\n    return OK;\n  }\n  aux = l->primero;\n  for (int i = 0; i < pos - 1; i++) {\n    aux = aux->sig;\n  }\n  nuevo->sig = aux->sig;\n  aux->sig = nuevo;\n  return OK;\n}\n\nvoid destruir(TLista *l) {\n  TNodo *aux;\n\n  while (l->primero != NULL) {\n    aux = l->primero;\n    l->primero = aux->sig;\n    free(aux);\n  }\n}\n\n#include <stdio.h>\n#include \"lista.h\"\n\nint main() {\n  TLista l;\n  int n;\n  int x;\n  int pos;\n\n  inicializar(&l);\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%d\", &x);\n    insertar(&l, longitud(l), x);\n  }\n  scanf(\"%d\", &pos);\n  scanf(\"%d\", &x);\n  if (insertar(&l, pos, x) == OK) {\n    for (int i = 0; i < longitud(l); i++) {\n      printf(\"%d \", obtener(l, i));\n    }\n  } else {\n    printf(\"No se pudo insertar\");\n  }\n  return 0;\n}",
+        "entrada": "3\n15\n8\n22\n1\n9",
+        "guia": "Avance hasta que `main` termina: la variable `l` desaparece y los cuatro nodos quedan en el montículo, marcados como inalcanzables."
+      },
+      "opciones": [
+        {
+          "texto": "No compila: `TLista` ya no tiene `elementos` ni `cantidad`",
+          "codigo": "OPCION_LTAD_NO_COMPILA",
+          "explicacion": "`main.c` no nombra ningún campo de `TLista`: usa la lista solo a través de las operaciones, y esas conservan sus nombres y sus parámetros. Compila sin cambios."
+        },
+        {
+          "texto": "Muestra `15 9 8 22`, pero los nodos quedan reservados al terminar",
+          "correcta": true,
+          "explicacion": "Como `main.c` usa solo las operaciones, compila y muestra lo mismo que con el arreglo. Pero nunca llama a `destruir`: con el arreglo no hacía falta, porque los números estaban dentro de la variable `l`, que desaparece al terminar `main`. Con nodos, los números están en bloques reservados con `malloc`, y `l` guarda solo la dirección del primero: al desaparecer `l`, los nodos siguen reservados y nadie puede liberarlos. Es una fuga de memoria. El arreglo no necesitaba `destruir`; los nodos, sí, y por eso hay que agregar `destruir(&l);` al final de `main`."
+        },
+        {
+          "texto": "Muestra `15 9 8 22`, y al terminar `main` se liberan los nodos",
+          "codigo": "OPCION_LTAD_SE_LIBERAN",
+          "explicacion": "Un bloque reservado con `malloc` se libera solo con `free`, y este `main` no llama a `destruir`, la operación que lo hace. Cuando `main` termina desaparece la variable `l`, pero no los nodos: quedan reservados y sin ninguna dirección que lleve a ellos."
+        }
+      ]
+    },
+    {
+      "id": "ltad-main",
+      "titulo": "Insertar en orden, sin máximo",
+      "escribe": "main.c",
+      "archivos": [
+        {
+          "nombre": "lista.h",
+          "codigo": "#ifndef LISTA_H\n#define LISTA_H\n\ntypedef enum {\n  OK,\n  LISTA_LLENA,\n  POSICION_INVALIDA\n} TResultado;\n\ntypedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\ntypedef struct {\n  TNodo *primero;\n} TLista;\n\nvoid inicializar(TLista *l);\nint longitud(TLista l);\nint obtener(TLista l, int pos);\nTResultado insertar(TLista *l, int pos, int x);\nvoid destruir(TLista *l);\n\n#endif"
+        },
+        {
+          "nombre": "lista.c",
+          "codigo": "#include <stdlib.h>\n#include \"lista.h\"\n\nvoid inicializar(TLista *l) {\n  l->primero = NULL;\n}\n\nint longitud(TLista l) {\n  TNodo *aux = l.primero;\n  int cantidad = 0;\n\n  while (aux != NULL) {\n    cantidad++;\n    aux = aux->sig;\n  }\n  return cantidad;\n}\n\nint obtener(TLista l, int pos) {\n  TNodo *aux = l.primero;\n\n  for (int i = 0; i < pos; i++) {\n    aux = aux->sig;\n  }\n  return aux->dato;\n}\n\nTResultado insertar(TLista *l, int pos, int x) {\n  TNodo *nuevo;\n  TNodo *aux;\n\n  if (pos < 0 || pos > longitud(*l)) {\n    return POSICION_INVALIDA;\n  }\n  nuevo = malloc(sizeof(TNodo));\n  if (nuevo == NULL) {\n    return LISTA_LLENA;\n  }\n  nuevo->dato = x;\n  if (pos == 0) {\n    nuevo->sig = l->primero;\n    l->primero = nuevo;\n    return OK;\n  }\n  aux = l->primero;\n  for (int i = 0; i < pos - 1; i++) {\n    aux = aux->sig;\n  }\n  nuevo->sig = aux->sig;\n  aux->sig = nuevo;\n  return OK;\n}\n\nvoid destruir(TLista *l) {\n  TNodo *aux;\n\n  while (l->primero != NULL) {\n    aux = l->primero;\n    l->primero = aux->sig;\n    free(aux);\n  }\n}",
+          "oculto": true
+        }
+      ],
+      "enunciado": "Con el `lista.h` con nodos, escriba `main.c`. Lea con `scanf`, en este orden:\n- la cantidad de números `n`\n- los `n` números\n\nVaya metiendo cada número en una lista, en la posición que corresponda para que la lista quede siempre ordenada de menor a mayor. Muestre con `printf`, separados por un espacio, los elementos de la lista, y antes de terminar libere los nodos. Ahora la lista no tiene un máximo: `n` puede ser mayor que 10. Por ejemplo, si se ingresan:\n- `5` (cantidad de números)\n- `12`, `4`, `9`, `20` y `7` (los números)\n\nel programa muestra `4 7 9 12 20`.\nUse solo las operaciones del `.h`.\n! No use `printf` para mostrar mensajes que pidan los datos: léalos directamente con `scanf`.",
+      "requiere": [
+        {
+          "incluyeLocal": "lista.h"
+        },
+        {
+          "soloOperaciones": "TLista"
+        },
+        {
+          "usaOperaciones": [
+            "inicializar",
+            "insertar",
+            "longitud",
+            "obtener",
+            "destruir"
+          ]
+        },
+        {
+          "memoria": {
+            "casos": [
+              {
+                "entrada": "5\n12\n4\n9\n20\n7",
+                "salida": "4 7 9 12 20",
+                "contexto": ""
+              },
+              {
+                "entrada": "1\n3",
+                "salida": "3"
+              },
+              {
+                "entrada": "4\n1\n2\n3\n4",
+                "salida": "1 2 3 4"
+              },
+              {
+                "entrada": "4\n9\n8\n7\n6",
+                "salida": "6 7 8 9"
+              },
+              {
+                "entrada": "5\n5\n3\n5\n3\n5",
+                "salida": "3 3 5 5 5"
+              },
+              {
+                "entrada": "3\n-2\n10\n0",
+                "salida": "-2 0 10"
+              },
+              {
+                "entrada": "12\n12\n11\n10\n9\n8\n7\n6\n5\n4\n3\n2\n1",
+                "salida": "1 2 3 4 5 6 7 8 9 10 11 12"
+              },
+              {
+                "entrada": "0",
+                "salida": ""
+              }
+            ],
+            "sinFugas": true
+          }
+        }
+      ],
+      "referencia": "#include <stdio.h>\n#include \"lista.h\"\n\nint main() {\n  TLista l;\n  int n;\n  int x;\n  int pos;\n\n  inicializar(&l);\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%d\", &x);\n    pos = 0;\n    while (pos < longitud(l) && obtener(l, pos) <= x) {\n      pos = pos + 1;\n    }\n    insertar(&l, pos, x);\n  }\n  for (int i = 0; i < longitud(l); i++) {\n    x = obtener(l, i);\n    printf(\"%d \", x);\n  }\n  destruir(&l);\n  return 0;\n}"
+    }
+  ]
+}

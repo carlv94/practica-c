@@ -341,6 +341,8 @@ export function corregir(
   let ultimaLlamada = [];
   // El programa que ejecuto la regla "memoria" (para el paso a paso): { fuente, entrada, cabezas }.
   let ejecucionMemoria = null;
+  // Las estructuras que ya reviso una regla "struct" (sus id): con varias reglas, cada una toma otra.
+  const structsRevisados = new Set();
   // Los casos con los que se puede seguir la funcion recursiva paso a paso: [{ etiqueta, llamada, fuente, visible }].
   let banco = null;
   // Lo que hace falta para probar esa funcion con valores que escribe el alumno (ver propiosDeLaFuncion), o null.
@@ -1296,10 +1298,13 @@ export function corregir(
       return;
     }
 
-    // Si hay mas de una, la que mas se parece a lo pedido.
+    // Si hay mas de una, la que mas se parece a lo pedido, entre las que no reviso otra regla (el nodo y la lista en
+    // un mismo archivo: la de la lista no se compara con el nodo).
     const pedidos = regla.campos.map((c) => c.nombre);
     const aciertos = (s) => s.campos.filter((c) => pedidos.includes(c.nombre)).length;
-    const def = candidatos.reduce((mejor, s) => (aciertos(s) > aciertos(mejor) ? s : mejor));
+    const libres = candidatos.filter((s) => !structsRevisados.has(s.id));
+    const def = (libres.length ? libres : candidatos).reduce((mejor, s) => (aciertos(s) > aciertos(mejor) ? s : mejor));
+    structsRevisados.add(def.id);
 
     const sinUsar = new Set(def.campos);
     for (const esperado of regla.campos) {
@@ -1541,10 +1546,17 @@ export function corregir(
       if (campo.arreglo.length) {
         error('CAMPO_ES_ARREGLO', `\`${n}\` tiene que ser un solo puntero que apunte ${apunta}, no un arreglo. ${declarado}`, campo.fila);
       } else if (!campo.punteros) {
-        if (esDestino) {
+        if (esDestino && pideMisma) {
           error(
             'CAMPO_NO_ES_PUNTERO',
             `\`${n}\` es ${enPalabras(campo)}: así cada estructura guardaría adentro otra igual, que guardaría otra, y así sin terminar: no tendría un tamaño finito. Para enlazar una estructura con otra se guarda la dirección de la otra: falta el \`*\`.`,
+            campo.fila
+          );
+        } else if (esDestino) {
+          // Otra estructura entera adentro (la lista con un nodo, en vez de su direccion).
+          error(
+            'CAMPO_NO_ES_PUNTERO',
+            `\`${n}\` es ${enPalabras(campo)}: así guardaría adentro una copia de la estructura entera, y la consigna pide que guarde solo su dirección, para enlazarse con ella: falta el \`*\`.`,
             campo.fila
           );
         } else {

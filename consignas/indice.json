@@ -175,7 +175,13 @@
         "dinamica-puntero.json",
         "dinamica-nodo.json",
         "dinamica-lista.json",
-        "dinamica-lista-quitar.json"
+        "dinamica-lista-quitar.json",
+        "dinamica-lista-mas.json",
+        "dinamica-lista-tad.json"
+      ],
+      "ocultas": [
+        "dinamica-lista-mas.json",
+        "dinamica-lista-tad.json"
       ]
     }
   ]
