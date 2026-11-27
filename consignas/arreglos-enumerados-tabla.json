@@ -16,6 +16,7 @@
     },
     {
       "id": "tabla-enum-guardar",
+      "tituloDibujo": "Cómo tiene que quedar",
       "titulo": "Guardar en la celda de un día y un turno",
       "dado": "int ventas[DIAS][TURNOS] = {0};",
       "enunciado": "La tabla `ventas` ya tiene todas sus celdas en cero. El miércoles por la tarde se hicieron `120` ventas: guárdelas en la celda de ese día y ese turno.",
@@ -82,6 +83,7 @@
     },
     {
       "id": "tabla-enum-total-dia",
+      "tituloDibujo": "Los datos",
       "titulo": "El total de un día",
       "dado": "int ventas[DIAS][TURNOS];\nTTurno turno;\nint total = 0;",
       "enunciado": "La tabla `ventas` ya tiene lo vendido en cada turno de cada día. Con un ciclo, calcule en `total` lo que se vendió el martes: la suma de sus tres turnos. Use la variable `turno`, de tipo `TTurno`, como índice.",
@@ -132,6 +134,7 @@
     },
     {
       "id": "tabla-enum-total-turno",
+      "tituloDibujo": "Los datos",
       "titulo": "El total de un turno",
       "dado": "int ventas[DIAS][TURNOS];\nTDia dia;\nint total = 0;",
       "enunciado": "La tabla `ventas` ya tiene lo vendido en cada turno de cada día. Con un ciclo, calcule en `total` lo que se vendió en el turno tarde durante toda la semana: la suma de sus cinco días. Use la variable `dia`, de tipo `TDia`, como índice.",
@@ -182,6 +185,7 @@
     },
     {
       "id": "tabla-enum-total-por-dia",
+      "tituloDibujo": "Los datos",
       "titulo": "El total de cada día",
       "dado": "int ventas[DIAS][TURNOS];\nint totalDia[DIAS];\nTDia dia;\nTTurno turno;",
       "enunciado": "La tabla `ventas` ya tiene lo vendido en cada turno de cada día. Con dos ciclos, deje en `totalDia` lo que se vendió en total cada día: en el lugar de cada día va la suma de sus turnos. Use las variables `dia` y `turno`.",

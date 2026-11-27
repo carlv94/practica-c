@@ -166,6 +166,7 @@
     },
     {
       "id": "perr-declarar-dos",
+      "tituloDibujo": "Los datos",
       "titulo": "Declarar dos punteros",
       "dado": "int n = 3;\nint m = 4;",
       "enunciado": "Declare dos punteros a entero, `a` y `b`, en una sola línea, y haga que `a` apunte a `n` y `b` apunte a `m`.",

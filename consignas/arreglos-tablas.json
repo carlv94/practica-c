@@ -106,6 +106,7 @@
     },
     {
       "id": "tablas-cambiar",
+      "tituloDibujo": "Los datos",
       "titulo": "Corregir un elemento",
       "dado": "int notas[3][4] = {\n  {5, 8, 1, 4},\n  {0, 2, 9, 6},\n  {3, 7, 4, 8}\n};",
       "enunciado": "Un docente cargó las notas de 3 alumnos en 4 parciales en la tabla `notas`: cada fila es un alumno y cada columna, un parcial. Al revisar, se dio cuenta de que la nota del tercer alumno en el segundo parcial no es un 7, sino un 9.\n\nCorrija ese valor en `notas`.",
@@ -130,6 +131,7 @@
     },
     {
       "id": "tablas-sumar",
+      "tituloDibujo": "Los datos",
       "titulo": "Sumar dos elementos de una fila",
       "dado": "int notas[3][4] = {\n  {5, 8, 1, 4},\n  {0, 2, 9, 6},\n  {3, 7, 4, 8}\n};\nint suma;",
       "enunciado": "La tabla `notas` guarda las notas de 3 alumnos en 4 parciales: cada fila es un alumno y cada columna, un parcial.\n\nDeje en `suma` la suma de las notas del tercer alumno en el primer y en el tercer parcial.",

@@ -31,7 +31,7 @@ import {
 import { descargar } from './descarga.js';
 import { crearEditor, pintar } from './editor.js';
 import { enviarIntento, enviarInforme, numeroDeInforme, enviaEstadisticas, esLocal, esDocente } from './estadisticas.js';
-import { bloquesDeEnunciado, partesDeEnunciado, enunciadoEnDos, fichasDe, figuraDe, sustituir, REGIONES_DE_VENN, REFERENCIA_A_CONSIGNA, lugarDeConsigna } from './enunciado.js';
+import { bloquesDeEnunciado, partesDeEnunciado, enunciadoEnDos, fichasDe, figuraDe, encabezadoDeDibujo, sustituir, REGIONES_DE_VENN, REFERENCIA_A_CONSIGNA, lugarDeConsigna } from './enunciado.js';
 import { analizar, evaluar, mostrar, pilaComoTexto } from './pila.js';
 
 // La vista del docente: lista tambien las series y los grupos ocultos (en el
@@ -667,6 +667,7 @@ function mostrarConsigna() {
   const previo = termino || sinEditor || yaEscritos.length ? '' : codigoPrevio(serie, actual, avanceVisto);
   const programa = !termino && sinEditor ? programaDeOpciones(serie, actual, avanceVisto) : '';
   $('consigna').hidden = termino;
+  $('bloque-dibujo').hidden = true;
   $('bloque-contexto').hidden = !previo;
   // Los archivos que trae la consigna, cada uno con su nombre; y cual escribe el alumno.
   // Los que escribio el alumno en las consignas anteriores van primero.
@@ -745,7 +746,19 @@ function mostrarConsigna() {
     $('ejemplo-texto').replaceChildren(conCodigo(ejemplo.texto));
     pintar($('ejemplo-codigo'), ejemplo.codigo);
   }
-  dibujar(figuraDe(consigna));
+  const figura = figuraDe(consigna);
+  dibujar(figura);
+  // En una consigna de codigo, el dibujo va en su propia tarjeta, con un encabezado que dice que es (un
+  // ejemplo, los datos, como tiene que quedar). En un cuestionario es parte de la pregunta: queda en ella.
+  const bloqueDibujo = $('bloque-dibujo');
+  if (figura && !esCuestionario) {
+    $('titulo-dibujo').textContent = encabezadoDeDibujo(consigna, figura);
+    bloqueDibujo.appendChild($('figura'));
+    bloqueDibujo.hidden = false;
+  } else {
+    $('consigna').appendChild($('figura'));
+    bloqueDibujo.hidden = true;
+  }
   pintar($('contexto'), previo);
   // En una serie que mezcla definiciones y sentencias, se dice donde va lo que se escribe.
   const ambito = $('ambito');
@@ -869,7 +882,7 @@ function dibujar(figura) {
 
   if (figura.titulo) caja.appendChild(elementoConCodigo('p', 'titulo-figura', figura.titulo));
   if (figura.clase === 'salida') {
-    dibujarSalida(caja, figura.salida);
+    dibujarSalida(caja, figura.salida, false);
     return;
   }
   if (figura.clase === 'union') {
@@ -1828,9 +1841,10 @@ function dibujarMemoria(caja, celdas) {
 }
 
 // Lo que tiene que mostrar el programa, en un recuadro de consola.
-function dibujarSalida(caja, salida) {
+// Sola, va en la tarjeta "Lo que muestra el programa": el encabezado ya dice que es, sin rotulo.
+function dibujarSalida(caja, salida, conRotulo = true) {
   if (!salida) return;
-  caja.appendChild(elemento('p', 'titulo-figura', 'Así tiene que verse la salida:'));
+  if (conRotulo) caja.appendChild(elemento('p', 'titulo-figura', 'Así tiene que verse la salida:'));
   caja.appendChild(elemento('pre', 'salida', salida));
 }
 

@@ -9,6 +9,7 @@
   "consignas": [
     {
       "id": "tabla-de-enum-definir",
+      "tituloDibujo": "Cómo tiene que quedar",
       "titulo": "Una tabla de turnos con sus valores",
       "enunciado": "Una empresa guarda el turno en que trabaja cada uno de sus 3 empleados (una fila cada uno) en cada día de la semana laboral (una columna cada uno). Los tipos `TDia` y `TTurno` ya están declarados. Declare la tabla `agenda`, de tipo `TTurno`, y deles en la misma sentencia los valores del dibujo, escritos con los nombres de los turnos.",
       "dibujo": {
@@ -39,6 +40,7 @@
     },
     {
       "id": "tabla-de-enum-cambiar",
+      "tituloDibujo": "Cómo tiene que quedar",
       "titulo": "Cambiar el turno de un empleado un día",
       "dado": "TTurno agenda[EMPLEADOS][DIAS] = {\n  {MANANA, MANANA, TARDE, NOCHE, NOCHE},\n  {TARDE, TARDE, TARDE, MANANA, MANANA},\n  {NOCHE, MANANA, NOCHE, NOCHE, TARDE}\n};",
       "enunciado": "La tabla `agenda` ya tiene los turnos. El empleado de la fila `1` pasa a trabajar de noche el miércoles: cambie esa celda.",

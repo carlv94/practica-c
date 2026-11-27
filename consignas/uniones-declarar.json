@@ -72,6 +72,7 @@
     },
     {
       "id": "union-guardar",
+      "tituloDibujo": "Cómo tiene que quedar",
       "titulo": "Guardar un valor",
       "sigueDe": "union-alias",
       "dado": "TMedida lectura;",

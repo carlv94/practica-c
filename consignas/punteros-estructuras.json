@@ -8,6 +8,7 @@
   "consignas": [
     {
       "id": "pestr-apuntar",
+      "tituloDibujo": "Los datos",
       "titulo": "Un puntero a una estructura",
       "archivoDado": "typedef struct {\n  int legajo;\n  int edad;\n  float promedio;\n} TAlumno;",
       "dado": "TAlumno alumno;",

@@ -453,6 +453,11 @@ section[hidden] {
 
 /* El arreglo del enunciado: una fila de casilleros con el indice arriba. Si no
    entra a lo ancho se desplaza la fila, no la pagina. */
+/* En su propia tarjeta (consignas de codigo), el dibujo va justo bajo el encabezado. */
+#bloque-dibujo #figura {
+  margin-top: 8px;
+}
+
 #figura {
   margin-top: 14px;
   overflow-x: auto;

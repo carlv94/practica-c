@@ -25,7 +25,7 @@
         programaDeOpciones,
         partesPrevias,
       } from '../js/serie.js';
-      import { marcasDe, partesDeEnunciado, fichasDe, bloquesDeEnunciado, planoDe, vennDe, figuraDe, problemasDeReferencias } from '../js/enunciado.js';
+      import { marcasDe, partesDeEnunciado, fichasDe, bloquesDeEnunciado, planoDe, vennDe, figuraDe, problemasDeReferencias, ENCABEZADOS_DE_DIBUJO } from '../js/enunciado.js';
       import { CASOS_DE_ENUNCIADO, resultadoDelEnunciado, CASOS_DE_PLANO, resultadoDelPlano, CASOS_DE_VENN, resultadoDelVenn } from './casos-enunciado.js';
       import { CASOS } from './casos.js';
       import { ejecutar } from '../js/simulador.js';
@@ -359,6 +359,12 @@ import { corregir } from '../js/corrector.js';
             } catch (e) {
               anotar(false, `dibujo de ${c.id}`, e.message);
             }
+          }
+          // El encabezado de la tarjeta del dibujo, si la consigna lo elige, es uno de los conocidos, y solo va
+          // en una consigna de codigo con dibujo.
+          for (const c of s.consignas.filter((c) => c.tituloDibujo)) {
+            const bien = ENCABEZADOS_DE_DIBUJO.includes(c.tituloDibujo) && !c.opciones && Boolean(figuraDe(c));
+            anotar(bien, `encabezado del dibujo de ${c.id}`, bien ? '' : `"${c.tituloDibujo}" no es un encabezado conocido o la consigna no lleva dibujo`);
           }
         }
 

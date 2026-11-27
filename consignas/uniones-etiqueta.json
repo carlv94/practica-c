@@ -45,6 +45,7 @@
     },
     {
       "id": "etiqueta-guardar",
+      "tituloDibujo": "Cómo tiene que quedar",
       "titulo": "Guardar el valor",
       "sigueDe": "etiqueta-declarar",
       "dado": "TLectura lectura;",

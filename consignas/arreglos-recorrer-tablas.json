@@ -8,6 +8,7 @@
   "consignas": [
     {
       "id": "recorrer-tablas-llenar",
+      "tituloDibujo": "Cómo tiene que quedar",
       "titulo": "Una tabla de multiplicar",
       "dado": "#define MULTIPLICANDOS 4\n#define MULTIPLICADORES 5\n\nint tabla[MULTIPLICANDOS][MULTIPLICADORES];\nint i;\nint j;",
       "enunciado": "Una escuela quiere armar una tabla de multiplicar. La fila `i` corresponde al número `i + 1` y la columna `j`, al número `j + 1`, y cada posición guarda el producto de los dos: por ejemplo, `tabla[1][2]` guarda 6, porque 2 por 3 es 6.\n\nCon dos ciclos, guarde en cada posición de `tabla` el producto que le corresponde. Use los índices `i` y `j`.",
@@ -73,6 +74,7 @@
     },
     {
       "id": "recorrer-tablas-mostrar",
+      "tituloDibujo": "Los datos",
       "titulo": "Mostrar la tabla fila por fila",
       "dado": "#define SUCURSALES 3\n#define DIAS 4\n\nint ventas[SUCURSALES][DIAS] = {\n  {120, 85, 240, 60},\n  {175, 90, 310, 45},\n  {50, 130, 95, 200}\n};\nint i;\nint j;",
       "enunciado": "Una cadena de comercios guarda en la tabla `ventas` lo que vendió cada una de sus 3 sucursales (una fila cada una) en cada uno de 4 días (una columna cada uno).\n\nCon dos ciclos, muestre con `printf` la tabla `ventas`, con cada sucursal en su propio renglón y los valores de una misma sucursal separados por un espacio. Use los índices `i` y `j`.",
@@ -115,6 +117,7 @@
     },
     {
       "id": "recorrer-tablas-total",
+      "tituloDibujo": "Los datos",
       "titulo": "El total de la cadena",
       "dado": "#define SUCURSALES 3\n#define DIAS 4\n\nint ventas[SUCURSALES][DIAS] = {\n  {120, 85, 240, 60},\n  {175, 90, 310, 45},\n  {50, 130, 95, 200}\n};\nint total;\nint i;\nint j;",
       "enunciado": "La tabla `ventas` guarda lo que vendió cada sucursal de una cadena de comercios (una fila cada una) en cada día (una columna cada uno).\n\nCon dos ciclos, deje en `total` la suma de todo lo que vendió la cadena. Use los índices `i` y `j`.",
@@ -173,6 +176,7 @@
     },
     {
       "id": "recorrer-tablas-total-fila",
+      "tituloDibujo": "Los datos",
       "titulo": "El total de cada sucursal",
       "dado": "#define SUCURSALES 3\n#define DIAS 4\n\nint ventas[SUCURSALES][DIAS] = {\n  {120, 85, 240, 60},\n  {175, 90, 310, 45},\n  {50, 130, 95, 200}\n};\nint totales[SUCURSALES];\nint i;\nint j;",
       "enunciado": "La tabla `ventas` guarda lo que vendió cada sucursal de una cadena de comercios (una fila cada una) en cada día (una columna cada uno).\n\nCon dos ciclos, deje en cada posición de `totales` lo que vendió en total esa sucursal: `totales[0]` tiene la suma de la fila 0, y así. Use los índices `i` y `j`.",
@@ -219,6 +223,7 @@
     },
     {
       "id": "recorrer-tablas-total-columna",
+      "tituloDibujo": "Los datos",
       "titulo": "El total de cada día",
       "dado": "#define SUCURSALES 3\n#define DIAS 4\n\nint ventas[SUCURSALES][DIAS] = {\n  {120, 85, 240, 60},\n  {175, 90, 310, 45},\n  {50, 130, 95, 200}\n};\nint totales[DIAS];\nint i;\nint j;",
       "enunciado": "La tabla `ventas` guarda lo que vendió cada sucursal de una cadena de comercios (una fila cada una) en cada día (una columna cada uno).\n\nCon dos ciclos, deje en cada posición de `totales` lo que vendió la cadena en total ese día: `totales[0]` tiene la suma de la columna 0, y así. Use los índices `i` y `j`.",
@@ -265,6 +270,7 @@
     },
     {
       "id": "recorrer-tablas-diagonal",
+      "tituloDibujo": "Los datos",
       "titulo": "La diagonal del tablero",
       "dado": "#define LADO 4\n\nint puntos[LADO][LADO] = {\n  {5, 1, 2, 3},\n  {4, 6, 1, 2},\n  {3, 2, 7, 1},\n  {2, 3, 4, 8}\n};\nint suma;\nint i;",
       "enunciado": "Un juego de mesa tiene un tablero de 4 casilleros por 4, y la tabla `puntos` guarda los puntos de cada casillero. La diagonal principal está formada por los casilleros que tienen la misma fila y la misma columna: el `[0][0]`, el `[1][1]`, y así.\n\nCon un ciclo, deje en `suma` los puntos de los casilleros de la diagonal principal. Use el índice `i`.",
@@ -297,6 +303,7 @@
     },
     {
       "id": "recorrer-tablas-mayor",
+      "tituloDibujo": "Los datos",
       "titulo": "La temperatura más alta y dónde fue",
       "dado": "#define CIUDADES 3\n#define DIAS 4\n\nint temperaturas[CIUDADES][DIAS] = {\n  {14, 22, 17, 25},\n  {19, 21, 16, 18},\n  {12, 15, 20, 23}\n};\nint mayor;\nint fila;\nint columna;\nint i;\nint j;",
       "enunciado": "La tabla `temperaturas` guarda la temperatura de 3 ciudades (una fila cada una) en cada uno de 4 días (una columna cada uno).\n\nCon dos ciclos, deje en `mayor` la temperatura más alta, y en `fila` y `columna` el lugar de la tabla donde está. Use los índices `i` y `j`.",
@@ -332,6 +339,7 @@
     },
     {
       "id": "recorrer-tablas-sizeof",
+      "tituloDibujo": "Los datos",
       "titulo": "Cuántas filas y cuántas columnas",
       "dado": "int temperaturas[][3] = {\n  {14, 22, 17},\n  {19, 21, 16},\n  {12, 15, 20},\n  {13, 18, 11}\n};\nint filas;\nint columnas;",
       "enunciado": "La tabla `temperaturas` guarda la temperatura de varias ciudades (una fila cada una) en 3 días (una columna cada uno). Se definió sin escribir cuántas filas tiene.\n\nDeje en `filas` cuántas filas tiene `temperaturas` y en `columnas` cuántas columnas, sin escribir esos números.",

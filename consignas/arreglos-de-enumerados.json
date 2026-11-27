@@ -9,6 +9,7 @@
   "consignas": [
     {
       "id": "arr-de-enum-definir",
+      "tituloDibujo": "Cómo tiene que quedar",
       "titulo": "Un arreglo de turnos con sus valores",
       "enunciado": "Una empresa guarda el turno en que trabaja un empleado cada día de la semana laboral. Los tipos `TDia` y `TTurno` ya están declarados. Declare el arreglo `turnoDelDia`, de tipo `TTurno`, y deles en la misma sentencia los valores del dibujo, escritos con los nombres de los turnos.",
       "dibujo": {
@@ -58,6 +59,7 @@
     },
     {
       "id": "arr-de-enum-cambiar",
+      "tituloDibujo": "Cómo tiene que quedar",
       "titulo": "Cambiar el turno de un día",
       "dado": "TTurno turnoDelDia[DIAS] = {MANANA, MANANA, TARDE, NOCHE, NOCHE};",
       "enunciado": "El arreglo `turnoDelDia` ya tiene los turnos de la semana. El jueves el empleado pasa a trabajar a la tarde: cambie el turno de ese día.",

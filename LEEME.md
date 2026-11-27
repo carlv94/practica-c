@@ -1587,6 +1587,22 @@ región, así que el dibujo no puede contradecir al ejemplo del enunciado:
 - Con una **lista** de dibujos (`"dibujo": [ {...}, {...} ]`) se muestran uno debajo del otro,
   cada uno con su título; sirve para dos diagramas en la misma consigna.
 
+### La tarjeta del dibujo
+
+En una consigna de código, el dibujo (y la consola con la salida) va en su propia tarjeta,
+entre la consigna y "El código hasta acá", con un encabezado que dice qué es:
+
+- **Ejemplo**: por defecto, para un `dibujo` propio (un caso, un antes y después).
+- **Los datos**: el arreglo o la tabla que ya está en el código dado, con esos valores, o la
+  memoria de la que parte el ejercicio.
+- **Cómo tiene que quedar**: lo que la consigna pide dejar; por defecto, para el arreglo que
+  se dibuja solo a partir de los valores que se piden definir.
+- **Lo que muestra el programa**: por defecto, cuando solo hay consola.
+
+Una consigna elige el encabezado con `"tituloDibujo": "Los datos"` (o cualquiera de los
+cuatro; `ENCABEZADOS_DE_DIBUJO` en `js/enunciado.js`, y las pruebas lo comprueban). En un
+cuestionario la figura es parte de la pregunta: queda dentro de su tarjeta, sin encabezado.
+
 ### Una lista enlazada en el dibujo
 
 El `dibujo` de una consigna puede ser una lista enlazada dibujada en abstracto, como el

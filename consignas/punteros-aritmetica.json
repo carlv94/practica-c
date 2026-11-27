@@ -203,6 +203,7 @@
     },
     {
       "id": "aritmetica-cuarto",
+      "tituloDibujo": "Los datos",
       "titulo": "Llegar a un elemento sumando",
       "dado": "int v[4] = {10, 20, 30, 40};",
       "enunciado": "Muestre con `printf` el cuarto elemento de `v`, sin usar corchetes: sumándole a `v` la cantidad de elementos que hay que avanzar y llegando a esa posición con `*`.",
@@ -254,6 +255,7 @@
     },
     {
       "id": "aritmetica-indice",
+      "tituloDibujo": "Los datos",
       "titulo": "Recorrer sumando el índice",
       "dado": "int v[3] = {10, 20, 30};\nint suma = 0;\nint i;",
       "enunciado": "Sume los elementos de `v` en `suma`, sin usar corchetes: en cada vuelta se suma el elemento que está `i` posiciones después del comienzo de `v`, al que se llega con `*(v + i)`.",
@@ -383,6 +385,7 @@
     },
     {
       "id": "aritmetica-recorrer",
+      "tituloDibujo": "Los datos",
       "titulo": "Recorrer con un puntero que avanza",
       "dado": "int v[3] = {10, 20, 30};\nint *p;\nint suma = 0;\nint i;\n\np = v;",
       "enunciado": "Recorra el arreglo y sume sus elementos en `suma`, pero sin elegir cada elemento con un índice, como `v[i]` o `*(v + i)`: avance, en cambio, incrementando la dirección. Como `v` no se puede modificar, use `p`, que está declarado como un puntero a entero y apunta a `v`. En cada vuelta debe sumar el elemento al que apunta `p` y después avanzar al siguiente con `p++`.",

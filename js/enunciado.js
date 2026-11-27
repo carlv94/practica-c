@@ -276,6 +276,19 @@ export function listaDe(l) {
   return { datos, resaltar, cabeza };
 }
 
+// En las consignas de codigo, el dibujo va en una tarjeta propia, con un encabezado que dice que es:
+// un dibujo propio es un ejemplo, salvo que la consigna diga otra cosa ("tituloDibujo": "Los datos" o
+// "Cómo tiene que quedar"); el arreglo que se dibuja solo es el que la consigna pide definir; y la
+// consola sola es lo que muestra el programa.
+export const ENCABEZADOS_DE_DIBUJO = ['Ejemplo', 'Los datos', 'Cómo tiene que quedar', 'Lo que muestra el programa'];
+
+export function encabezadoDeDibujo(consigna, figura) {
+  if (consigna.tituloDibujo) return consigna.tituloDibujo;
+  if (figura.clase === 'salida') return 'Lo que muestra el programa';
+  if (consigna.dibujo && typeof consigna.dibujo === 'object') return 'Ejemplo';
+  return 'Cómo tiene que quedar';
+}
+
 export function figuraDe(consigna) {
   // Una letra se dibuja entre comillas simples, como se escribe en el codigo.
   const comoSeEscribeLetras = (v) =>

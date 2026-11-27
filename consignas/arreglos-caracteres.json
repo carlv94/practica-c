@@ -15,6 +15,7 @@
     },
     {
       "id": "caracteres-mostrar",
+      "tituloDibujo": "Los datos",
       "titulo": "Mostrar las letras",
       "dado": "#define CANTIDAD 6\n\nchar calificaciones[CANTIDAD] = {'B', 'A', 'C', 'A', 'E', 'B'};\nint i;",
       "enunciado": "En el arreglo `calificaciones` están las calificaciones de 6 alumnos, cada una con una letra de la A a la E.\n\nCon un ciclo, muestre con `printf` cada calificación, de la primera a la última y separadas por un espacio. El formato para mostrar una letra es `%c`. Use el índice `i`.",
@@ -52,6 +53,7 @@
     },
     {
       "id": "caracteres-contar",
+      "tituloDibujo": "Los datos",
       "titulo": "Cuántas veces aparece una letra",
       "dado": "#define CANTIDAD 8\n\nchar calificaciones[CANTIDAD] = {'B', 'A', 'C', 'A', 'E', 'B', 'A', 'D'};\nint cantidad;\nint i;",
       "enunciado": "En el arreglo `calificaciones` están las calificaciones de 8 alumnos, cada una con una letra de la A a la E. Se quiere saber cuántos alumnos sacaron una `'A'`.\n\nCon un ciclo, deje en `cantidad` cuántas veces aparece la letra `'A'` en `calificaciones`. Use el índice `i`.",
@@ -79,6 +81,7 @@
     },
     {
       "id": "caracteres-buscar",
+      "tituloDibujo": "Los datos",
       "titulo": "La primera posición de una letra",
       "dado": "#define CANTIDAD 8\n\nchar calificaciones[CANTIDAD] = {'B', 'A', 'C', 'E', 'D', 'E', 'A', 'B'};\nint posicion;\nint i;",
       "enunciado": "En el arreglo `calificaciones` están las calificaciones de 8 alumnos, cada una con una letra de la A a la E. Se quiere saber en qué lugar de la lista está el primer alumno que sacó una `'E'`.\n\nCon un ciclo, deje en `posicion` la posición de la primera `'E'` de `calificaciones`, o `-1` si no hay ninguna. Use el índice `i`.",
@@ -184,6 +187,7 @@
     },
     {
       "id": "caracteres-mostrar-cargadas",
+      "tituloDibujo": "Los datos",
       "titulo": "Mostrar solo las letras cargadas",
       "continua": true,
       "dado": "int i;",
