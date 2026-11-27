@@ -617,6 +617,8 @@ Estructuras, serie "Usar los campos"):
 
 **Más operaciones y la lista como TAD** (series ocultas "Contar, insertar en orden y eliminar todos", `dinamica-lista-mas.json`, y "La lista como TAD, con nodos", `dinamica-lista-tad.json`). La primera sigue el formato de las dos anteriores, con 5 consignas: contar los nodos, insertar en orden (casos: lista vacía, al principio, en el medio, al final y repetidos), un cuestionario sobre mirar `aux->sig->dato` sin preguntar antes si hay un siguiente, eliminar todos los nodos con un valor (casos: seguidos, al principio, al final, todos y ninguno) y un cuestionario sobre saltear el nodo que sigue a uno eliminado. La segunda reescribe con nodos la lista de "Un TAD con posiciones" (`tad-lista.json`), con 5 consignas independientes (`continua: false`; cada una trae en `archivos` lo que necesita): qué archivos cambian (`lista.h` en la representación y `lista.c`; `main.c` no), el nuevo `lista.h` (`TNodo`, `TLista` con el campo `primero` y la operación nueva `destruir`), el `lista.c` con un `main.c` de prueba ya escrito, un cuestionario sobre el `main.c` de la lista con arreglo (compila y muestra lo mismo, pero deja los nodos reservados) y un `main.c` que inserta en orden sin máximo y llama a `destruir`. A diferencia de las series del grupo TAD, se corrigen con la regla `memoria` (el simulador no sigue `malloc`): el motor ejecuta los archivos unidos en un solo texto. `LISTA_LLENA` pasa a significar que `malloc` devolvió `NULL`.
 
+Las series 5, 6 y 7 terminan con una consigna que pide escribir el `main` ("Pares adelante, impares atrás", "Buscar antes de eliminar" y "Ordenar y eliminar un valor"): las funciones de la serie vienen en `dado`, sin `despues`, y la regla `memoria` exige con `usa` que el `main` las llame. En las demás consignas de código el `main` viene hecho; así el alumno también practica usar las funciones que escribió. Las consignas de código que modifican la lista (insertar, eliminar, liberar; también el `lista.c` de la serie 8) llevan el dibujo de la lista antes y después (ver "Una lista enlazada en el dibujo").
+
 **Estructuras dentro de estructuras** (serie "Estructuras dentro de estructuras"):
 
 - `{ "struct": { "campos": [{ "nombre": "nacimiento", "tipo": "estructura", "de":
@@ -1584,6 +1586,37 @@ región, así que el dibujo no puede contradecir al ejemplo del enunciado:
   descripción en palabras para los lectores de pantalla.
 - Con una **lista** de dibujos (`"dibujo": [ {...}, {...} ]`) se muestran uno debajo del otro,
   cada uno con su título; sirve para dos diagramas en la misma consigna.
+
+### Una lista enlazada en el dibujo
+
+El `dibujo` de una consigna puede ser una lista enlazada dibujada en abstracto, como el
+arreglo: la variable que apunta al primer nodo, cada nodo con su dato y su `sig` unidos por
+flechas, y `NULL` al final. No muestra direcciones ni la pila: para eso está el dibujo del
+motor (`motor`), que se usa en los cuestionarios, donde la pregunta es justamente sobre la
+memoria (un nodo liberado, un `NULL` que se desreferencia). La lista abstracta va en las
+consignas de código que modifican la lista, con un dibujo de antes y otro de después:
+
+```
+"dibujo": [
+  { "titulo": "Antes: ...; los que se eliminan, marcados.", "lista": { "datos": [4, 9, 6, 9, 2], "resaltar": [1, 3] } },
+  { "titulo": "Después de `eliminarTodos(&lista, 9)`: ...", "lista": { "datos": [4, 6, 2] } }
+]
+```
+
+- `datos`: los datos de los nodos, en orden; sin datos, la variable apunta a `NULL`.
+- `resaltar` (opcional): las posiciones (desde 0) de los nodos que se marcan: el que se agrega
+  o los que se van a eliminar.
+- `cabeza` (opcional): el nombre de la variable que apunta al primer nodo; por defecto `lista`
+  (en un TAD, `l.primero`).
+- Cada nodo es una caja de esquinas redondeadas, y la flecha nace del punto del `sig`. En el
+  celular los nodos son más chicos.
+- Si no entra en el ancho, sigue en la fila de abajo, y la flecha la sigue: sale del último
+  nodo de la fila, pasa por debajo y entra por la izquierda al primer nodo de la fila nueva.
+  Las piezas van en unidades que no se cortan (`lista` siempre junto al primer nodo y el
+  último nodo junto a su `NULL`), y la vuelta la traza `dibujarLista` (en `js/app.js`)
+  midiendo dónde quedó cada unidad; la vuelve a trazar si cambia el ancho. Lleva una descripción en palabras para
+  los lectores de pantalla. `listaDe` (en `js/enunciado.js`) valida el formato y las pruebas
+  lo comprueban en todas las consignas.
 
 ### Un plano en el dibujo
 

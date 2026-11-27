@@ -414,6 +414,37 @@ const casosLtad = [
   ltad(5, 'siempre al final', LTAD_MAIN.replace('    pos = 0;\n    while (pos < longitud(l) && obtener(l, pos) <= x) {\n      pos = pos + 1;\n    }\n    insertar(&l, pos, x);\n', '    insertar(&l, longitud(l), x);\n'), ['MUESTRA_DISTINTA']),
 ];
 
+// Las consignas finales de las series 5, 6 y 7: el main con las funciones de la serie.
+const MAIN_PARES = (cuerpo) => `int main() {\n  TNodo *lista = NULL;\n  int dato;\n\n  scanf("%d", &dato);\n  while (dato != 0) {\n${cuerpo}    scanf("%d", &dato);\n  }\n  if (esVacia(lista) == VERDADERO) {\n    printf("Vacia");\n  } else {\n    mostrar(lista);\n  }\n  return 0;\n}`;
+const PARES_REF = '    if (dato % 2 == 0) {\n      insertarInicio(&lista, dato);\n    } else {\n      insertarFinal(&lista, dato);\n    }\n';
+const MAIN_BUSCAR = (cuerpo, final = '  liberarLista(&lista);\n') =>
+  `int main() {\n  TNodo *lista = NULL;\n  TNodo *encontrado;\n  int n;\n  int dato;\n  int valor;\n\n  scanf("%d", &n);\n  for (int i = 0; i < n; i++) {\n    scanf("%d", &dato);\n    insertarFinal(&lista, dato);\n  }\n  scanf("%d", &valor);\n${cuerpo}${final}  return 0;\n}`;
+const BUSCAR_REF = '  encontrado = buscar(lista, valor);\n  if (encontrado == NULL) {\n    printf("No esta");\n  } else {\n    eliminarValor(&lista, valor);\n    if (esVacia(lista) == VERDADERO) {\n      printf("Vacia");\n    } else {\n      mostrar(lista);\n    }\n  }\n';
+const MAIN_ORDENAR = (cuerpo, final = '  liberarLista(&lista);\n') =>
+  `int main() {\n  TNodo *lista = NULL;\n  int n;\n  int dato;\n  int valor;\n  int antes;\n  int despues;\n\n  scanf("%d", &n);\n  for (int i = 0; i < n; i++) {\n    scanf("%d", &dato);\n    insertarOrdenado(&lista, dato);\n  }\n  scanf("%d", &valor);\n${cuerpo}${final}  return 0;\n}`;
+const ORDENAR_REF = '  antes = contar(lista);\n  eliminarTodos(&lista, valor);\n  despues = contar(lista);\n  printf("Se eliminaron %d: ", antes - despues);\n  if (esVacia(lista) == VERDADERO) {\n    printf("Vacia");\n  } else {\n    mostrar(lista);\n  }\n';
+
+const casosMains = [
+  // ===== serie 5, 9. pares adelante, impares atras
+  lista(9, 'la referencia', MAIN_PARES(PARES_REF)),
+  lista(9, 'preguntando por el impar', MAIN_PARES('    if (dato % 2 != 0) {\n      insertarFinal(&lista, dato);\n    } else {\n      insertarInicio(&lista, dato);\n    }\n')),
+  lista(9, 'al reves', MAIN_PARES(PARES_REF.replace('dato % 2 == 0', 'dato % 2 == 1')), ['MUESTRA_DISTINTA']),
+  lista(9, 'todos al final', MAIN_PARES('    insertarFinal(&lista, dato);\n').replace('mostrar(lista);', 'mostrar(lista);'), ['INSERTARINICIO_FALTA']),
+  lista(9, 'guarda el 0', 'int main() {\n  TNodo *lista = NULL;\n  int dato;\n\n  do {\n    scanf("%d", &dato);\n' + PARES_REF + '  } while (dato != 0);\n  if (esVacia(lista) == VERDADERO) {\n    printf("Vacia");\n  } else {\n    mostrar(lista);\n  }\n  return 0;\n}', ['MUESTRA_DISTINTA']),
+
+  // ===== serie 6, 9. buscar antes de eliminar
+  quitar(9, 'la referencia', MAIN_BUSCAR(BUSCAR_REF)),
+  quitar(9, 'sin liberar la lista', MAIN_BUSCAR(BUSCAR_REF, ''), ['LIBERARLISTA_FALTA']),
+  quitar(9, 'sin buscar', MAIN_BUSCAR('  eliminarValor(&lista, valor);\n  if (esVacia(lista) == VERDADERO) {\n    printf("Vacia");\n  } else {\n    mostrar(lista);\n  }\n'), ['BUSCAR_FALTA']),
+  quitar(9, 'muestra la lista aunque no este', MAIN_BUSCAR(BUSCAR_REF.replace('    printf("No esta");\n', '    printf("No esta ");\n    mostrar(lista);\n')), ['MUESTRA_DISTINTA']),
+
+  // ===== serie 7, 6. ordenar y eliminar un valor
+  mas(6, 'la referencia', MAIN_ORDENAR(ORDENAR_REF)),
+  mas(6, 'sin liberar la lista', MAIN_ORDENAR(ORDENAR_REF, ''), ['LIBERARLISTA_FALTA']),
+  mas(6, 'cuenta despues de eliminar', MAIN_ORDENAR(ORDENAR_REF.replace('  antes = contar(lista);\n  eliminarTodos(&lista, valor);\n', '  eliminarTodos(&lista, valor);\n  antes = contar(lista);\n')), ['MUESTRA_DISTINTA']),
+  mas(6, 'muestra los que quedan', MAIN_ORDENAR(ORDENAR_REF.replace('antes - despues', 'despues')), ['MUESTRA_DISTINTA']),
+];
+
 export const CASOS_DE_DINAMICA = [
   // ===== 1. un arreglo de tamano fijo
   memoria(1, 'ninguno sirve: se pide al ejecutar', '1'),
@@ -649,4 +680,5 @@ export const CASOS_DE_DINAMICA = [
   ...casosQuitar,
   ...casosMas,
   ...casosLtad,
+  ...casosMains,
 ];

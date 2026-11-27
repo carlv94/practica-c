@@ -261,6 +261,21 @@ export function vennDe(v) {
   return { a, b, nombres, soloA, ambos, soloB, resaltar, resultado: [...resultado].sort((x, y) => x - y) };
 }
 
+// Una lista enlazada en abstracto: la variable que apunta al primer nodo ("cabeza", por omision `lista`), los nodos
+// con su dato en orden y `NULL` al final. "resaltar" son las posiciones (desde 0) de los nodos que se marcan: el que
+// se agrega, o los que se van a eliminar. Sin datos, la variable apunta a `NULL`.
+export function listaDe(l) {
+  const datos = l.datos;
+  if (!Array.isArray(datos) || !datos.every(Number.isFinite)) throw new Error('El dibujo de una lista: "datos" tiene que ser una lista de numeros.');
+  const resaltar = l.resaltar || [];
+  if (!Array.isArray(resaltar) || !resaltar.every((i) => Number.isInteger(i) && i >= 0 && i < datos.length)) {
+    throw new Error('El dibujo de una lista: "resaltar" tiene posiciones que la lista no tiene.');
+  }
+  const cabeza = l.cabeza ?? 'lista';
+  if (typeof cabeza !== 'string' || !/^[A-Za-z_][\w.]*$/.test(cabeza)) throw new Error('El dibujo de una lista: "cabeza" es el nombre de una variable o un campo (l.primero).');
+  return { datos, resaltar, cabeza };
+}
+
 export function figuraDe(consigna) {
   // Una letra se dibuja entre comillas simples, como se escribe en el codigo.
   const comoSeEscribeLetras = (v) =>
@@ -277,6 +292,8 @@ export function figuraDe(consigna) {
     // La memoria de un programa en un momento: se ejecuta con el motor (js/motor/) y se muestra la figura
     // de la pila y el monticulo justo antes de ejecutar la linea "linea": { codigo, linea, entrada, cabezas }.
     if (d.motor) return { clase: 'motor', titulo: d.titulo, motor: d.motor, salida: consigna.salida };
+    // Una lista enlazada dibujada en abstracto (sin direcciones ni pila): { datos, resaltar?, cabeza? }.
+    if (d.lista) return { clase: 'lista', titulo: d.titulo, lista: listaDe(d.lista), salida: consigna.salida };
     // Un dibujo de nombres de un enumerado ("enumerados": true) no lleva comillas.
     const comoSeEscribe = d.enumerados ? (v) => v : comoSeEscribeLetras;
     const tresDimensiones = Array.isArray(d.valores[0]) && Array.isArray(d.valores[0][0]);

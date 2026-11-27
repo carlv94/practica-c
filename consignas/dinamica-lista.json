@@ -107,7 +107,31 @@
           }
         }
       ],
-      "referencia": "void insertarInicio(TNodo **lista, int dato) {\n  TNodo *nuevo = crearNodo(dato);\n\n  if (nuevo == NULL) {\n    return;\n  }\n  nuevo->sig = *lista;\n  *lista = nuevo;\n}"
+      "referencia": "void insertarInicio(TNodo **lista, int dato) {\n  TNodo *nuevo = crearNodo(dato);\n\n  if (nuevo == NULL) {\n    return;\n  }\n  nuevo->sig = *lista;\n  *lista = nuevo;\n}",
+      "dibujo": [
+        {
+          "titulo": "Antes de insertar el `6`: la lista tiene los nodos `9` y `4`.",
+          "lista": {
+            "datos": [
+              9,
+              4
+            ]
+          }
+        },
+        {
+          "titulo": "Después de `insertarInicio(&lista, 6)`: el nodo nuevo (marcado) queda primero, y `lista` apunta a él.",
+          "lista": {
+            "datos": [
+              6,
+              9,
+              4
+            ],
+            "resaltar": [
+              0
+            ]
+          }
+        }
+      ]
     },
     {
       "id": "lista-q-por-valor",
@@ -209,7 +233,31 @@
           }
         }
       ],
-      "referencia": "void insertarFinal(TNodo **lista, int dato) {\n  TNodo *nuevo = crearNodo(dato);\n  TNodo *aux;\n\n  if (nuevo == NULL) {\n    return;\n  }\n  if (*lista == NULL) {\n    *lista = nuevo;\n    return;\n  }\n  aux = *lista;\n  while (aux->sig != NULL) {\n    aux = aux->sig;\n  }\n  aux->sig = nuevo;\n}"
+      "referencia": "void insertarFinal(TNodo **lista, int dato) {\n  TNodo *nuevo = crearNodo(dato);\n  TNodo *aux;\n\n  if (nuevo == NULL) {\n    return;\n  }\n  if (*lista == NULL) {\n    *lista = nuevo;\n    return;\n  }\n  aux = *lista;\n  while (aux->sig != NULL) {\n    aux = aux->sig;\n  }\n  aux->sig = nuevo;\n}",
+      "dibujo": [
+        {
+          "titulo": "Antes de insertar el `6`: la lista tiene los nodos `4` y `9`.",
+          "lista": {
+            "datos": [
+              4,
+              9
+            ]
+          }
+        },
+        {
+          "titulo": "Después de `insertarFinal(&lista, 6)`: el nodo nuevo (marcado) queda último, y el `sig` del `9` apunta a él.",
+          "lista": {
+            "datos": [
+              4,
+              9,
+              6
+            ],
+            "resaltar": [
+              2
+            ]
+          }
+        }
+      ]
     },
     {
       "id": "lista-q-pasado",
@@ -244,6 +292,49 @@
           "explicacion": "El ciclo recorre la lista de `main` y no conoce el nodo nuevo, que todavía no está enlazado a nada: el enlace se hace en la línea siguiente al ciclo."
         }
       ]
+    },
+    {
+      "id": "lista-main-pares",
+      "titulo": "Pares adelante, impares atrás",
+      "en": "archivo",
+      "dado": "typedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\ntypedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\nTNodo *crearNodo(int dato) {\n  TNodo *nuevo = malloc(sizeof(TNodo));\n\n  if (nuevo == NULL) {\n    return NULL;\n  }\n  nuevo->dato = dato;\n  nuevo->sig = NULL;\n  return nuevo;\n}\n\nvoid mostrar(TNodo *lista) {\n  TNodo *aux = lista;\n\n  while (aux != NULL) {\n    printf(\"%d \", aux->dato);\n    aux = aux->sig;\n  }\n}\n\nTBool esVacia(TNodo *lista) {\n  if (lista == NULL) {\n    return VERDADERO;\n  }\n  return FALSO;\n}\n\nvoid insertarInicio(TNodo **lista, int dato) {\n  TNodo *nuevo = crearNodo(dato);\n\n  if (nuevo == NULL) {\n    return;\n  }\n  nuevo->sig = *lista;\n  *lista = nuevo;\n}\n\nvoid insertarFinal(TNodo **lista, int dato) {\n  TNodo *nuevo = crearNodo(dato);\n  TNodo *aux;\n\n  if (nuevo == NULL) {\n    return;\n  }\n  if (*lista == NULL) {\n    *lista = nuevo;\n    return;\n  }\n  aux = *lista;\n  while (aux->sig != NULL) {\n    aux = aux->sig;\n  }\n  aux->sig = nuevo;\n}",
+      "enunciado": "Los tipos `TNodo` y `TBool` y las siguientes funciones ya están escritos:\n- `crearNodo`\n- `mostrar`\n- `esVacia`\n- `insertarInicio`\n- `insertarFinal`\nEscriba el `main`. Lea números con `scanf` hasta que se ingrese un `0`, que no se guarda. Cada número par va al principio de la lista y cada impar, al final. Después muestre la lista, o `Vacia` si no se ingresó ningún número. Use las funciones ya escritas. Con `3`, `8`, `5`, `2` y `0`, el programa muestra `2 8 3 5`.",
+      "requiere": [
+        {
+          "memoria": {
+            "casos": [
+              {
+                "entrada": "3\n8\n5\n2\n0",
+                "salida": "2 8 3 5",
+                "contexto": ""
+              },
+              {
+                "entrada": "1\n3\n5\n0",
+                "salida": "1 3 5"
+              },
+              {
+                "entrada": "2\n4\n6\n0",
+                "salida": "6 4 2"
+              },
+              {
+                "entrada": "7\n0",
+                "salida": "7"
+              },
+              {
+                "entrada": "0",
+                "salida": "Vacia"
+              }
+            ],
+            "usa": [
+              "insertarInicio",
+              "insertarFinal",
+              "esVacia",
+              "mostrar"
+            ]
+          }
+        }
+      ],
+      "referencia": "int main() {\n  TNodo *lista = NULL;\n  int dato;\n\n  scanf(\"%d\", &dato);\n  while (dato != 0) {\n    if (dato % 2 == 0) {\n      insertarInicio(&lista, dato);\n    } else {\n      insertarFinal(&lista, dato);\n    }\n    scanf(\"%d\", &dato);\n  }\n  if (esVacia(lista) == VERDADERO) {\n    printf(\"Vacia\");\n  } else {\n    mostrar(lista);\n  }\n  return 0;\n}"
     }
   ]
 }

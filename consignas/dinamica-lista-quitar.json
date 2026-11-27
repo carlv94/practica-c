@@ -75,7 +75,25 @@
           }
         }
       ],
-      "referencia": "void liberarLista(TNodo **lista) {\n  TNodo *aux;\n\n  while (*lista != NULL) {\n    aux = *lista;\n    *lista = aux->sig;\n    free(aux);\n  }\n}"
+      "referencia": "void liberarLista(TNodo **lista) {\n  TNodo *aux;\n\n  while (*lista != NULL) {\n    aux = *lista;\n    *lista = aux->sig;\n    free(aux);\n  }\n}",
+      "dibujo": [
+        {
+          "titulo": "Antes de liberar: la lista tiene los nodos `4`, `9` y `6`.",
+          "lista": {
+            "datos": [
+              4,
+              9,
+              6
+            ]
+          }
+        },
+        {
+          "titulo": "Después de `liberarLista(&lista)`: los tres nodos se liberaron y `lista` quedó en `NULL`.",
+          "lista": {
+            "datos": []
+          }
+        }
+      ]
     },
     {
       "id": "quitar-q-liberar",
@@ -182,7 +200,31 @@
           }
         }
       ],
-      "referencia": "void eliminarPrimero(TNodo **lista) {\n  TNodo *aux;\n\n  if (esVacia(*lista) == VERDADERO) {\n    return;\n  }\n  aux = *lista;\n  *lista = aux->sig;\n  free(aux);\n}"
+      "referencia": "void eliminarPrimero(TNodo **lista) {\n  TNodo *aux;\n\n  if (esVacia(*lista) == VERDADERO) {\n    return;\n  }\n  aux = *lista;\n  *lista = aux->sig;\n  free(aux);\n}",
+      "dibujo": [
+        {
+          "titulo": "Antes: la lista tiene los nodos `4`, `9` y `6`; el que se elimina, marcado.",
+          "lista": {
+            "datos": [
+              4,
+              9,
+              6
+            ],
+            "resaltar": [
+              0
+            ]
+          }
+        },
+        {
+          "titulo": "Después de `eliminarPrimero(&lista)`: `lista` apunta al `9`, que era el segundo.",
+          "lista": {
+            "datos": [
+              9,
+              6
+            ]
+          }
+        }
+      ]
     },
     {
       "id": "quitar-q-primero-copia",
@@ -258,7 +300,31 @@
           }
         }
       ],
-      "referencia": "void eliminarValor(TNodo **lista, int valor) {\n  TNodo *aux = *lista;\n  TNodo *anterior = NULL;\n\n  while (aux != NULL && aux->dato != valor) {\n    anterior = aux;\n    aux = aux->sig;\n  }\n  if (aux == NULL) {\n    return;\n  }\n  if (anterior == NULL) {\n    *lista = aux->sig;\n  } else {\n    anterior->sig = aux->sig;\n  }\n  free(aux);\n}"
+      "referencia": "void eliminarValor(TNodo **lista, int valor) {\n  TNodo *aux = *lista;\n  TNodo *anterior = NULL;\n\n  while (aux != NULL && aux->dato != valor) {\n    anterior = aux;\n    aux = aux->sig;\n  }\n  if (aux == NULL) {\n    return;\n  }\n  if (anterior == NULL) {\n    *lista = aux->sig;\n  } else {\n    anterior->sig = aux->sig;\n  }\n  free(aux);\n}",
+      "dibujo": [
+        {
+          "titulo": "Antes: la lista tiene los nodos `4`, `9` y `6`; el que se elimina, marcado.",
+          "lista": {
+            "datos": [
+              4,
+              9,
+              6
+            ],
+            "resaltar": [
+              1
+            ]
+          }
+        },
+        {
+          "titulo": "Después de `eliminarValor(&lista, 9)`: el `sig` del `4` apunta al `6`.",
+          "lista": {
+            "datos": [
+              4,
+              6
+            ]
+          }
+        }
+      ]
     },
     {
       "id": "quitar-q-medio",
@@ -293,6 +359,50 @@
           "explicacion": "`free` libera únicamente el bloque cuya dirección recibe. `a` y `c` siguen reservados: el problema es lo que guardan, no que se hayan liberado."
         }
       ]
+    },
+    {
+      "id": "quitar-main-buscar",
+      "titulo": "Buscar antes de eliminar",
+      "en": "archivo",
+      "dado": "typedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\ntypedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\nTNodo *crearNodo(int dato) {\n  TNodo *nuevo = malloc(sizeof(TNodo));\n\n  if (nuevo == NULL) {\n    return NULL;\n  }\n  nuevo->dato = dato;\n  nuevo->sig = NULL;\n  return nuevo;\n}\n\nvoid insertarFinal(TNodo **lista, int dato) {\n  TNodo *nuevo = crearNodo(dato);\n  TNodo *aux;\n\n  if (nuevo == NULL) {\n    return;\n  }\n  if (*lista == NULL) {\n    *lista = nuevo;\n    return;\n  }\n  aux = *lista;\n  while (aux->sig != NULL) {\n    aux = aux->sig;\n  }\n  aux->sig = nuevo;\n}\n\nvoid mostrar(TNodo *lista) {\n  TNodo *aux = lista;\n\n  while (aux != NULL) {\n    printf(\"%d \", aux->dato);\n    aux = aux->sig;\n  }\n}\n\nTBool esVacia(TNodo *lista) {\n  if (lista == NULL) {\n    return VERDADERO;\n  }\n  return FALSO;\n}\n\nvoid liberarLista(TNodo **lista) {\n  TNodo *aux;\n\n  while (*lista != NULL) {\n    aux = *lista;\n    *lista = aux->sig;\n    free(aux);\n  }\n}\n\nTNodo *buscar(TNodo *lista, int valor) {\n  TNodo *aux = lista;\n\n  while (aux != NULL && aux->dato != valor) {\n    aux = aux->sig;\n  }\n  return aux;\n}\n\nvoid eliminarValor(TNodo **lista, int valor) {\n  TNodo *aux = *lista;\n  TNodo *anterior = NULL;\n\n  while (aux != NULL && aux->dato != valor) {\n    anterior = aux;\n    aux = aux->sig;\n  }\n  if (aux == NULL) {\n    return;\n  }\n  if (anterior == NULL) {\n    *lista = aux->sig;\n  } else {\n    anterior->sig = aux->sig;\n  }\n  free(aux);\n}",
+      "enunciado": "Los tipos `TNodo` y `TBool` y las siguientes funciones ya están escritos:\n- `crearNodo`\n- `insertarFinal`\n- `mostrar`\n- `esVacia`\n- `liberarLista`\n- `buscar`\n- `eliminarValor`\nEscriba el `main`. Lea una cantidad `n`, después `n` números, que se insertan al final de una lista, y después un valor. Si el valor no está en la lista, muestre `No esta`. Si está, elimine el primer nodo que lo tiene y muestre la lista que queda, o `Vacia` si no queda ningún nodo. Antes de terminar, libere la lista. Use las funciones ya escritas. Con `3`, después `4`, `9` y `6`, y el valor `9`, el programa muestra `4 6`; con el valor `7`, muestra `No esta`.",
+      "requiere": [
+        {
+          "memoria": {
+            "casos": [
+              {
+                "entrada": "3\n4\n9\n6\n9",
+                "salida": "4 6",
+                "contexto": ""
+              },
+              {
+                "entrada": "3\n4\n9\n6\n7",
+                "salida": "No esta"
+              },
+              {
+                "entrada": "4\n2\n7\n2\n1\n2",
+                "salida": "7 2 1"
+              },
+              {
+                "entrada": "1\n5\n5",
+                "salida": "Vacia"
+              },
+              {
+                "entrada": "0\n3",
+                "salida": "No esta"
+              }
+            ],
+            "sinFugas": true,
+            "usa": [
+              "insertarFinal",
+              "buscar",
+              "eliminarValor",
+              "liberarLista"
+            ]
+          }
+        }
+      ],
+      "referencia": "int main() {\n  TNodo *lista = NULL;\n  TNodo *encontrado;\n  int n;\n  int dato;\n  int valor;\n\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%d\", &dato);\n    insertarFinal(&lista, dato);\n  }\n  scanf(\"%d\", &valor);\n  encontrado = buscar(lista, valor);\n  if (encontrado == NULL) {\n    printf(\"No esta\");\n  } else {\n    eliminarValor(&lista, valor);\n    if (esVacia(lista) == VERDADERO) {\n      printf(\"Vacia\");\n    } else {\n      mostrar(lista);\n    }\n  }\n  liberarLista(&lista);\n  return 0;\n}"
     }
   ]
 }

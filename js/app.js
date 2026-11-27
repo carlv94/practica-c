@@ -902,17 +902,28 @@ function dibujar(figura) {
     dibujarSalida(caja, figura.salida);
     return;
   }
+  if (figura.clase === 'lista') {
+    dibujarLista(caja, figura.lista);
+    caja.setAttribute('aria-label', descripcionDeLista(figura));
+    dibujarSalida(caja, figura.salida);
+    return;
+  }
   if (figura.clase === 'varias') {
     figura.figuras.forEach((f) => {
       if (f.titulo) caja.appendChild(elementoConCodigo('p', 'titulo-figura', f.titulo));
       if (f.clase === 'venn') dibujarVenn(caja, f.venn);
       else if (f.clase === 'plano') dibujarPlano(caja, f.plano);
+      else if (f.clase === 'lista') dibujarLista(caja, f.lista);
       else dibujarArreglo(caja, f);
     });
     // Un solo texto para todos (los dibujos de a uno ya se describieron cada uno).
     caja.setAttribute(
       'aria-label',
-      figura.figuras.map((f) => (f.clase === 'venn' ? descripcionDeVenn(f.venn) : f.clase === 'plano' ? descripcionDePlano(f.plano) : descripcionDe(f))).join(' ')
+      figura.figuras
+        .map((f) =>
+          f.clase === 'venn' ? descripcionDeVenn(f.venn) : f.clase === 'plano' ? descripcionDePlano(f.plano) : f.clase === 'lista' ? descripcionDeLista(f) : descripcionDe(f)
+        )
+        .join(' ')
     );
     dibujarSalida(caja, figura.salida);
     return;
@@ -970,6 +981,102 @@ function dibujarArreglo(caja, figura) {
     fila.appendChild(casillero);
   });
   caja.appendChild(fila);
+}
+
+// Una lista enlazada, en abstracto: la variable con una flecha al primer nodo, cada nodo con su dato y su `sig`, y
+// `NULL` al final. Sin direcciones ni pila: para eso esta la figura del motor.
+function descripcionDeLista(figura) {
+  const { datos, resaltar, cabeza } = figura.lista;
+  return (
+    (figura.titulo ? figura.titulo.replace(/`/g, '') + ' ' : '') +
+    (datos.length
+      ? `Lista enlazada: ${cabeza} apunta al primer nodo; los datos son ${datos.join(', ')}, y el último apunta a NULL.`
+      : `Lista vacía: ${cabeza} apunta a NULL.`) +
+    (resaltar.length ? ` Marcados los nodos de las posiciones ${resaltar.join(', ')}.` : '')
+  );
+}
+
+// Las piezas van en unidades que no se cortan: la variable con su flecha y el primer nodo; despues, cada flecha
+// con el nodo al que apunta; y el ultimo nodo con su flecha a NULL. Si una unidad baja a la fila siguiente, su
+// flecha se oculta y en su lugar se traza la vuelta: sale del ultimo nodo de la fila, pasa por debajo y entra
+// por la izquierda al primer nodo de la fila nueva.
+function dibujarLista(caja, l) {
+  const fila = elemento('div', 'lista-dibujo');
+  const flecha = () => elemento('span', 'lista-flecha');
+  const puntero = (resaltado) => {
+    const celda = elemento('span', 'valor lista-puntero' + (resaltado ? ' resaltado' : ''));
+    celda.appendChild(elemento('span', 'lista-punto'));
+    return celda;
+  };
+  const cabeza = elemento('span', 'lista-cabeza');
+  cabeza.append(elemento('code', 'lista-nombre', l.cabeza), puntero(false));
+  const unidades = [];
+  let unidad = elemento('span', 'lista-unidad');
+  unidad.append(cabeza, flecha());
+  l.datos.forEach((dato, i) => {
+    if (i > 0) {
+      unidad = elemento('span', 'lista-unidad');
+      unidad.appendChild(flecha());
+    }
+    const marcado = l.resaltar.includes(i);
+    const nodo = elemento('span', 'lista-nodo');
+    nodo.append(elemento('span', 'valor lista-dato' + (marcado ? ' resaltado' : ''), String(dato)), puntero(marcado));
+    unidad.appendChild(nodo);
+    if (i < l.datos.length - 1) unidades.push(unidad);
+  });
+  // Con la lista vacia, la flecha de la variable ya es la que apunta a NULL.
+  if (l.datos.length) unidad.appendChild(flecha());
+  unidad.appendChild(elemento('code', 'lista-null', 'NULL'));
+  unidades.push(unidad);
+  fila.append(...unidades);
+  caja.appendChild(fila);
+
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('class', 'lista-vueltas');
+  svg.setAttribute('aria-hidden', 'true');
+  fila.appendChild(svg);
+  const trazar = () => {
+    svg.replaceChildren();
+    const origen = fila.getBoundingClientRect();
+    if (!origen.width) return;
+    svg.setAttribute('width', origen.width);
+    svg.setAttribute('height', origen.height);
+    // Las filas: una unidad empieza fila nueva si queda a la izquierda de la anterior.
+    const filas = [];
+    for (const u of unidades) {
+      const r = u.getBoundingClientRect();
+      if (!filas.length || r.left < filas.at(-1).at(-1).r.left) filas.push([]);
+      filas.at(-1).push({ u, r });
+    }
+    unidades.forEach((u) => u.classList.remove('tras-corte'));
+    for (let k = 1; k < filas.length; k++) {
+      const anterior = filas[k - 1];
+      const primera = filas[k][0].u;
+      primera.classList.add('tras-corte');
+      const desde = [...anterior.at(-1).u.querySelectorAll('.lista-puntero')].at(-1).getBoundingClientRect();
+      const hacia = primera.querySelector('.lista-nodo').getBoundingClientRect();
+      const lugar = primera.querySelector('.lista-flecha').getBoundingClientRect();
+      const fondo = Math.max(...anterior.map((x) => x.r.bottom));
+      const techo = Math.min(...filas[k].map((x) => x.r.top));
+      const x0 = desde.left + desde.width / 2 - origen.left;
+      const y0 = desde.top + desde.height / 2 - origen.top;
+      const xDerecha = desde.right - origen.left + 8;
+      const yMedio = (fondo + techo) / 2 - origen.top;
+      const xIzquierda = lugar.left - origen.left + 2;
+      const y1 = hacia.top + hacia.height / 2 - origen.top;
+      const x1 = hacia.left - origen.left;
+      const camino = document.createElementNS(ns, 'path');
+      camino.setAttribute('d', `M${x0},${y0} H${xDerecha} V${yMedio} H${xIzquierda} V${y1} H${x1 - 6}`);
+      camino.setAttribute('class', 'lista-vuelta');
+      const punta = document.createElementNS(ns, 'path');
+      punta.setAttribute('d', `M${x1 - 8},${y1 - 5} L${x1},${y1} L${x1 - 8},${y1 + 5} z`);
+      punta.setAttribute('class', 'lista-vuelta-punta');
+      svg.append(camino, punta);
+    }
+  };
+  requestAnimationFrame(trazar);
+  if (typeof ResizeObserver !== 'undefined') new ResizeObserver(trazar).observe(fila);
 }
 
 // Una union: un solo lugar que comparten sus miembros. Arriba, los nombres de

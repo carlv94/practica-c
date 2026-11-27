@@ -81,7 +81,33 @@
           }
         }
       ],
-      "referencia": "void insertarOrdenado(TNodo **lista, int dato) {\n  TNodo *nuevo = crearNodo(dato);\n  TNodo *aux;\n\n  if (nuevo == NULL) {\n    return;\n  }\n  if (*lista == NULL || dato < (*lista)->dato) {\n    nuevo->sig = *lista;\n    *lista = nuevo;\n    return;\n  }\n  aux = *lista;\n  while (aux->sig != NULL && aux->sig->dato < dato) {\n    aux = aux->sig;\n  }\n  nuevo->sig = aux->sig;\n  aux->sig = nuevo;\n}"
+      "referencia": "void insertarOrdenado(TNodo **lista, int dato) {\n  TNodo *nuevo = crearNodo(dato);\n  TNodo *aux;\n\n  if (nuevo == NULL) {\n    return;\n  }\n  if (*lista == NULL || dato < (*lista)->dato) {\n    nuevo->sig = *lista;\n    *lista = nuevo;\n    return;\n  }\n  aux = *lista;\n  while (aux->sig != NULL && aux->sig->dato < dato) {\n    aux = aux->sig;\n  }\n  nuevo->sig = aux->sig;\n  aux->sig = nuevo;\n}",
+      "dibujo": [
+        {
+          "titulo": "Antes de insertar el `5`: la lista ordenada tiene los nodos `2`, `7` y `9`.",
+          "lista": {
+            "datos": [
+              2,
+              7,
+              9
+            ]
+          }
+        },
+        {
+          "titulo": "Después de `insertarOrdenado(&lista, 5)`: el nodo nuevo (marcado) queda entre el `2` y el `7`.",
+          "lista": {
+            "datos": [
+              2,
+              5,
+              7,
+              9
+            ],
+            "resaltar": [
+              1
+            ]
+          }
+        }
+      ]
     },
     {
       "id": "mas-q-orden",
@@ -165,7 +191,35 @@
           }
         }
       ],
-      "referencia": "void eliminarTodos(TNodo **lista, int valor) {\n  TNodo *aux = *lista;\n  TNodo *anterior = NULL;\n  TNodo *siguiente;\n\n  while (aux != NULL) {\n    siguiente = aux->sig;\n    if (aux->dato == valor) {\n      if (anterior == NULL) {\n        *lista = siguiente;\n      } else {\n        anterior->sig = siguiente;\n      }\n      free(aux);\n    } else {\n      anterior = aux;\n    }\n    aux = siguiente;\n  }\n}"
+      "referencia": "void eliminarTodos(TNodo **lista, int valor) {\n  TNodo *aux = *lista;\n  TNodo *anterior = NULL;\n  TNodo *siguiente;\n\n  while (aux != NULL) {\n    siguiente = aux->sig;\n    if (aux->dato == valor) {\n      if (anterior == NULL) {\n        *lista = siguiente;\n      } else {\n        anterior->sig = siguiente;\n      }\n      free(aux);\n    } else {\n      anterior = aux;\n    }\n    aux = siguiente;\n  }\n}",
+      "dibujo": [
+        {
+          "titulo": "Antes: la lista tiene los nodos `4`, `9`, `6`, `9` y `2`; los que se eliminan, marcados.",
+          "lista": {
+            "datos": [
+              4,
+              9,
+              6,
+              9,
+              2
+            ],
+            "resaltar": [
+              1,
+              3
+            ]
+          }
+        },
+        {
+          "titulo": "Después de `eliminarTodos(&lista, 9)`: quedan el `4`, el `6` y el `2`, enlazados.",
+          "lista": {
+            "datos": [
+              4,
+              6,
+              2
+            ]
+          }
+        }
+      ]
     },
     {
       "id": "mas-q-seguidos",
@@ -200,6 +254,50 @@
           "explicacion": "Antes de liberar el nodo se guarda su siguiente en `siguiente`, y después `aux` pasa a ese: ningún nodo liberado se vuelve a leer. El problema es otro: un nodo que no se compara."
         }
       ]
+    },
+    {
+      "id": "mas-main",
+      "titulo": "Ordenar y eliminar un valor",
+      "en": "archivo",
+      "dado": "typedef enum {\n  FALSO,\n  VERDADERO\n} TBool;\n\ntypedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n\nTNodo *crearNodo(int dato) {\n  TNodo *nuevo = malloc(sizeof(TNodo));\n\n  if (nuevo == NULL) {\n    return NULL;\n  }\n  nuevo->dato = dato;\n  nuevo->sig = NULL;\n  return nuevo;\n}\n\nvoid mostrar(TNodo *lista) {\n  TNodo *aux = lista;\n\n  while (aux != NULL) {\n    printf(\"%d \", aux->dato);\n    aux = aux->sig;\n  }\n}\n\nTBool esVacia(TNodo *lista) {\n  if (lista == NULL) {\n    return VERDADERO;\n  }\n  return FALSO;\n}\n\nvoid liberarLista(TNodo **lista) {\n  TNodo *aux;\n\n  while (*lista != NULL) {\n    aux = *lista;\n    *lista = aux->sig;\n    free(aux);\n  }\n}\n\nint contar(TNodo *lista) {\n  TNodo *aux = lista;\n  int cantidad = 0;\n\n  while (aux != NULL) {\n    cantidad++;\n    aux = aux->sig;\n  }\n  return cantidad;\n}\n\nvoid insertarOrdenado(TNodo **lista, int dato) {\n  TNodo *nuevo = crearNodo(dato);\n  TNodo *aux;\n\n  if (nuevo == NULL) {\n    return;\n  }\n  if (*lista == NULL || dato < (*lista)->dato) {\n    nuevo->sig = *lista;\n    *lista = nuevo;\n    return;\n  }\n  aux = *lista;\n  while (aux->sig != NULL && aux->sig->dato < dato) {\n    aux = aux->sig;\n  }\n  nuevo->sig = aux->sig;\n  aux->sig = nuevo;\n}\n\nvoid eliminarTodos(TNodo **lista, int valor) {\n  TNodo *aux = *lista;\n  TNodo *anterior = NULL;\n  TNodo *siguiente;\n\n  while (aux != NULL) {\n    siguiente = aux->sig;\n    if (aux->dato == valor) {\n      if (anterior == NULL) {\n        *lista = siguiente;\n      } else {\n        anterior->sig = siguiente;\n      }\n      free(aux);\n    } else {\n      anterior = aux;\n    }\n    aux = siguiente;\n  }\n}",
+      "enunciado": "Los tipos `TNodo` y `TBool` y las siguientes funciones ya están escritos:\n- `crearNodo`\n- `mostrar`\n- `esVacia`\n- `liberarLista`\n- `contar`\n- `insertarOrdenado`\n- `eliminarTodos`\nEscriba el `main`. Lea una cantidad `n`, después `n` números, que se van insertando en orden en una lista, y después un valor. Elimine de la lista todos los nodos con ese valor, muestre cuántos se eliminaron con el formato `Se eliminaron 2: ` y, a continuación, la lista que queda, o `Vacia` si no queda ningún nodo. Antes de terminar, libere la lista. Use las funciones ya escritas. Con `5`, después `6`, `9`, `2`, `9` y `4`, y el valor `9`, el programa muestra `Se eliminaron 2: 2 4 6`.",
+      "requiere": [
+        {
+          "memoria": {
+            "casos": [
+              {
+                "entrada": "5\n6\n9\n2\n9\n4\n9",
+                "salida": "Se eliminaron 2: 2 4 6",
+                "contexto": ""
+              },
+              {
+                "entrada": "3\n5\n1\n3\n7",
+                "salida": "Se eliminaron 0: 1 3 5"
+              },
+              {
+                "entrada": "4\n8\n3\n8\n1\n3",
+                "salida": "Se eliminaron 1: 1 8 8"
+              },
+              {
+                "entrada": "3\n7\n7\n7\n7",
+                "salida": "Se eliminaron 3: Vacia"
+              },
+              {
+                "entrada": "0\n4",
+                "salida": "Se eliminaron 0: Vacia"
+              }
+            ],
+            "sinFugas": true,
+            "usa": [
+              "insertarOrdenado",
+              "contar",
+              "eliminarTodos",
+              "liberarLista"
+            ]
+          }
+        }
+      ],
+      "referencia": "int main() {\n  TNodo *lista = NULL;\n  int n;\n  int dato;\n  int valor;\n  int antes;\n  int despues;\n\n  scanf(\"%d\", &n);\n  for (int i = 0; i < n; i++) {\n    scanf(\"%d\", &dato);\n    insertarOrdenado(&lista, dato);\n  }\n  scanf(\"%d\", &valor);\n  antes = contar(lista);\n  eliminarTodos(&lista, valor);\n  despues = contar(lista);\n  printf(\"Se eliminaron %d: \", antes - despues);\n  if (esVacia(lista) == VERDADERO) {\n    printf(\"Vacia\");\n  } else {\n    mostrar(lista);\n  }\n  liberarLista(&lista);\n  return 0;\n}"
     }
   ]
 }
