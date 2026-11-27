@@ -272,7 +272,7 @@
       "referencia": "#include <stdlib.h>\n#include \"lista.h\"\n\nvoid inicializar(TLista *l) {\n  l->primero = NULL;\n}\n\nint longitud(TLista l) {\n  TNodo *aux = l.primero;\n  int cantidad = 0;\n\n  while (aux != NULL) {\n    cantidad++;\n    aux = aux->sig;\n  }\n  return cantidad;\n}\n\nint obtener(TLista l, int pos) {\n  TNodo *aux = l.primero;\n\n  for (int i = 0; i < pos; i++) {\n    aux = aux->sig;\n  }\n  return aux->dato;\n}\n\nTResultado insertar(TLista *l, int pos, int x) {\n  TNodo *nuevo;\n  TNodo *aux;\n\n  if (pos < 0 || pos > longitud(*l)) {\n    return POSICION_INVALIDA;\n  }\n  nuevo = malloc(sizeof(TNodo));\n  if (nuevo == NULL) {\n    return LISTA_LLENA;\n  }\n  nuevo->dato = x;\n  if (pos == 0) {\n    nuevo->sig = l->primero;\n    l->primero = nuevo;\n    return OK;\n  }\n  aux = l->primero;\n  for (int i = 0; i < pos - 1; i++) {\n    aux = aux->sig;\n  }\n  nuevo->sig = aux->sig;\n  aux->sig = nuevo;\n  return OK;\n}\n\nvoid destruir(TLista *l) {\n  TNodo *aux;\n\n  while (l->primero != NULL) {\n    aux = l->primero;\n    l->primero = aux->sig;\n    free(aux);\n  }\n}",
       "dibujo": [
         {
-          "titulo": "Antes: la lista tiene los nodos `15`, `8` y `22`.",
+          "titulo": "Antes:",
           "lista": {
             "datos": [
               15,
@@ -283,7 +283,8 @@
           }
         },
         {
-          "titulo": "Después de `insertar(&l, 1, 9)`: el nodo nuevo (marcado) queda en la posición 1, entre el `15` y el `8`.",
+          "titulo": "Después de `insertar(&l, 1, 9)`:",
+          "pie": "el nodo nuevo (marcado) queda en la posición 1, entre el `15` y el `8`.",
           "lista": {
             "datos": [
               15,

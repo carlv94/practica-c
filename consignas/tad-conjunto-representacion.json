@@ -318,7 +318,7 @@
       "comienza": "#include \"conjunto.h\"\n\nTConjunto unir(TConjunto a, TConjunto b) {\n  TConjunto r;\n\n  inicializar(&r);\n  return r;\n}\n\nTConjunto intersectar(TConjunto a, TConjunto b) {\n  TConjunto r;\n\n  inicializar(&r);\n  return r;\n}\n\nTConjunto restar(TConjunto a, TConjunto b) {\n  TConjunto r;\n\n  inicializar(&r);\n  return r;\n}",
       "dibujo": [
         {
-          "titulo": "Antes: el conjunto {3, 7}, con `cantidad` en 2:",
+          "titulo": "Antes, con `cantidad` en 2:",
           "valores": [
             "F",
             "F",
@@ -349,7 +349,8 @@
           ]
         },
         {
-          "titulo": "Después de `agregar(&c, 12)`: solo cambia la casilla 12 y `cantidad` pasa a 3. Si el número ya estaba, no cambia nada:",
+          "titulo": "Después de `agregar(&c, 12)`:",
+          "pie": "solo cambia la casilla 12 y `cantidad` pasa a 3. Si el número ya estaba, no cambia nada.",
           "valores": [
             "F",
             "F",
@@ -724,7 +725,8 @@
           ]
         },
         {
-          "titulo": "`unir(a, b)`: una casilla está en `V` si lo está en `a` o en `b` (lo resaltado):",
+          "titulo": "`unir(a, b)`:",
+          "pie": "una casilla está en `V` si lo está en `a` o en `b` (lo resaltado).",
           "valores": [
             "F",
             "F",

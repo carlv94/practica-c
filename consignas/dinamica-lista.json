@@ -110,7 +110,7 @@
       "referencia": "void insertarInicio(TNodo **lista, int dato) {\n  TNodo *nuevo = crearNodo(dato);\n\n  if (nuevo == NULL) {\n    return;\n  }\n  nuevo->sig = *lista;\n  *lista = nuevo;\n}",
       "dibujo": [
         {
-          "titulo": "Antes de insertar el `6`: la lista tiene los nodos `9` y `4`.",
+          "titulo": "Antes de insertar el `6`:",
           "lista": {
             "datos": [
               9,
@@ -119,7 +119,8 @@
           }
         },
         {
-          "titulo": "Después de `insertarInicio(&lista, 6)`: el nodo nuevo (marcado) queda primero, y `lista` apunta a él.",
+          "titulo": "Después de `insertarInicio(&lista, 6)`:",
+          "pie": "el nodo nuevo (marcado) queda primero, y `lista` apunta a él.",
           "lista": {
             "datos": [
               6,
@@ -236,7 +237,7 @@
       "referencia": "void insertarFinal(TNodo **lista, int dato) {\n  TNodo *nuevo = crearNodo(dato);\n  TNodo *aux;\n\n  if (nuevo == NULL) {\n    return;\n  }\n  if (*lista == NULL) {\n    *lista = nuevo;\n    return;\n  }\n  aux = *lista;\n  while (aux->sig != NULL) {\n    aux = aux->sig;\n  }\n  aux->sig = nuevo;\n}",
       "dibujo": [
         {
-          "titulo": "Antes de insertar el `6`: la lista tiene los nodos `4` y `9`.",
+          "titulo": "Antes de insertar el `6`:",
           "lista": {
             "datos": [
               4,
@@ -245,7 +246,8 @@
           }
         },
         {
-          "titulo": "Después de `insertarFinal(&lista, 6)`: el nodo nuevo (marcado) queda último, y el `sig` del `9` apunta a él.",
+          "titulo": "Después de `insertarFinal(&lista, 6)`:",
+          "pie": "el nodo nuevo (marcado) queda último, y el `sig` del `9` apunta a él.",
           "lista": {
             "datos": [
               4,

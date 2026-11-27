@@ -530,6 +530,17 @@ section[hidden] {
   color: var(--suave);
 }
 
+/* El pie: la explicacion de lo que se ve, pegada al dibujo de arriba y lejos del rotulo que sigue. */
+.pie-figura {
+  margin: 6px 0 22px;
+  font-size: 0.9rem;
+  color: var(--suave);
+}
+
+#figura > .pie-figura:last-child {
+  margin-bottom: 0;
+}
+
 /* Una union: un solo lugar, con los nombres de los miembros que lo comparten. */
 .union {
   display: inline-flex;

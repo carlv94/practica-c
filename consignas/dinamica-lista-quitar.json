@@ -78,7 +78,7 @@
       "referencia": "void liberarLista(TNodo **lista) {\n  TNodo *aux;\n\n  while (*lista != NULL) {\n    aux = *lista;\n    *lista = aux->sig;\n    free(aux);\n  }\n}",
       "dibujo": [
         {
-          "titulo": "Antes de liberar: la lista tiene los nodos `4`, `9` y `6`.",
+          "titulo": "Antes de liberar:",
           "lista": {
             "datos": [
               4,
@@ -88,7 +88,8 @@
           }
         },
         {
-          "titulo": "Después de `liberarLista(&lista)`: los tres nodos se liberaron y `lista` quedó en `NULL`.",
+          "titulo": "Después de `liberarLista(&lista)`:",
+          "pie": "los tres nodos se liberaron y `lista` quedó en `NULL`.",
           "lista": {
             "datos": []
           }
@@ -203,7 +204,8 @@
       "referencia": "void eliminarPrimero(TNodo **lista) {\n  TNodo *aux;\n\n  if (esVacia(*lista) == VERDADERO) {\n    return;\n  }\n  aux = *lista;\n  *lista = aux->sig;\n  free(aux);\n}",
       "dibujo": [
         {
-          "titulo": "Antes: la lista tiene los nodos `4`, `9` y `6`; el que se elimina, marcado.",
+          "titulo": "Antes:",
+          "pie": "el que se elimina, marcado.",
           "lista": {
             "datos": [
               4,
@@ -216,7 +218,8 @@
           }
         },
         {
-          "titulo": "Después de `eliminarPrimero(&lista)`: `lista` apunta al `9`, que era el segundo.",
+          "titulo": "Después de `eliminarPrimero(&lista)`:",
+          "pie": "`lista` apunta al `9`, que era el segundo.",
           "lista": {
             "datos": [
               9,
@@ -303,7 +306,8 @@
       "referencia": "void eliminarValor(TNodo **lista, int valor) {\n  TNodo *aux = *lista;\n  TNodo *anterior = NULL;\n\n  while (aux != NULL && aux->dato != valor) {\n    anterior = aux;\n    aux = aux->sig;\n  }\n  if (aux == NULL) {\n    return;\n  }\n  if (anterior == NULL) {\n    *lista = aux->sig;\n  } else {\n    anterior->sig = aux->sig;\n  }\n  free(aux);\n}",
       "dibujo": [
         {
-          "titulo": "Antes: la lista tiene los nodos `4`, `9` y `6`; el que se elimina, marcado.",
+          "titulo": "Antes:",
+          "pie": "el que se elimina, marcado.",
           "lista": {
             "datos": [
               4,
@@ -316,7 +320,8 @@
           }
         },
         {
-          "titulo": "Después de `eliminarValor(&lista, 9)`: el `sig` del `4` apunta al `6`.",
+          "titulo": "Después de `eliminarValor(&lista, 9)`:",
+          "pie": "el `sig` del `4` apunta al `6`.",
           "lista": {
             "datos": [
               4,

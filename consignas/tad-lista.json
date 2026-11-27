@@ -124,7 +124,7 @@
       "escribe": "lista.c",
       "dibujo": [
         {
-          "titulo": "Antes: la lista [20, 5, 30], con `cantidad` en 3:",
+          "titulo": "Antes, con `cantidad` en 3:",
           "valores": [
             20,
             5,
@@ -139,7 +139,8 @@
           ]
         },
         {
-          "titulo": "Después de `insertar(&l, 1, 12)`: el 12 entra en la posición 1 y los que estaban desde ahí se corren una posición hacia el final (lo resaltado). `cantidad` pasa a 4:",
+          "titulo": "Después de `insertar(&l, 1, 12)`:",
+          "pie": "el 12 entra en la posición 1 y los que estaban desde ahí se corren una posición hacia el final (lo resaltado). `cantidad` pasa a 4.",
           "valores": [
             20,
             12,

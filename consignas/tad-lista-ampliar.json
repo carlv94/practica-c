@@ -142,7 +142,7 @@
       "comienza": "#include \"lista.h\"\n\nvoid inicializar(TLista *l) {\n  l->cantidad = 0;\n}\n\nint longitud(TLista l) {\n  return l.cantidad;\n}\n\nint obtener(TLista l, int pos) {\n  return l.elementos[pos];\n}\n\nTResultado insertar(TLista *l, int pos, int x) {\n  if (l->cantidad == MAX) {\n    return LISTA_LLENA;\n  }\n  if (pos < 0 || pos > l->cantidad) {\n    return POSICION_INVALIDA;\n  }\n  for (int i = l->cantidad; i > pos; i--) {\n    l->elementos[i] = l->elementos[i - 1];\n  }\n  l->elementos[pos] = x;\n  l->cantidad = l->cantidad + 1;\n  return OK;\n}",
       "dibujo": [
         {
-          "titulo": "Antes: la lista [20, 12, 5, 30], con `cantidad` en 4:",
+          "titulo": "Antes, con `cantidad` en 4:",
           "valores": [
             20,
             12,
@@ -157,7 +157,8 @@
           ]
         },
         {
-          "titulo": "Después de `eliminar(&l, 1)`: el 12 sale y los que le seguían se corren una posición hacia el comienzo (lo resaltado). `cantidad` pasa a 3:",
+          "titulo": "Después de `eliminar(&l, 1)`:",
+          "pie": "el 12 sale y los que le seguían se corren una posición hacia el comienzo (lo resaltado). `cantidad` pasa a 3.",
           "valores": [
             20,
             5,

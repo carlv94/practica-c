@@ -873,6 +873,18 @@ function dibujarFicha(fichas) {
   }
 }
 
+// El pie de un dibujo: la explicacion de lo que se ve, debajo de el (arriba va solo el rotulo, que dice que
+// momento muestra).
+function dibujarPie(caja, f) {
+  if (f.pie) caja.appendChild(elementoConCodigo('p', 'pie-figura', f.pie));
+}
+
+// Lo que cierra un dibujo de uno: su pie y la consola con la salida.
+function cerrarFigura(caja, figura) {
+  dibujarPie(caja, figura);
+  dibujarSalida(caja, figura.salida);
+}
+
 // El arreglo del enunciado, como una fila de casilleros con su indice arriba.
 function dibujar(figura) {
   const caja = $('figura');
@@ -887,38 +899,38 @@ function dibujar(figura) {
   }
   if (figura.clase === 'union') {
     dibujarUnion(caja, figura.union);
-    dibujarSalida(caja, figura.salida);
+    cerrarFigura(caja, figura);
     return;
   }
   if (figura.clase === 'plano') {
     dibujarPlano(caja, figura.plano);
-    dibujarSalida(caja, figura.salida);
+    cerrarFigura(caja, figura);
     return;
   }
   if (figura.clase === 'escalera') {
     dibujarEscalera(caja, figura.escalones);
-    dibujarSalida(caja, figura.salida);
+    cerrarFigura(caja, figura);
     return;
   }
   if (figura.clase === 'memoria') {
     dibujarMemoria(caja, figura.celdas);
-    dibujarSalida(caja, figura.salida);
+    cerrarFigura(caja, figura);
     return;
   }
   if (figura.clase === 'motor') {
     dibujarMotor(caja, figura.motor);
-    dibujarSalida(caja, figura.salida);
+    cerrarFigura(caja, figura);
     return;
   }
   if (figura.clase === 'venn') {
     dibujarVenn(caja, figura.venn);
-    dibujarSalida(caja, figura.salida);
+    cerrarFigura(caja, figura);
     return;
   }
   if (figura.clase === 'lista') {
     dibujarLista(caja, figura.lista);
     caja.setAttribute('aria-label', descripcionDeLista(figura));
-    dibujarSalida(caja, figura.salida);
+    cerrarFigura(caja, figura);
     return;
   }
   if (figura.clase === 'varias') {
@@ -928,6 +940,7 @@ function dibujar(figura) {
       else if (f.clase === 'plano') dibujarPlano(caja, f.plano);
       else if (f.clase === 'lista') dibujarLista(caja, f.lista);
       else dibujarArreglo(caja, f);
+      dibujarPie(caja, f);
     });
     // Un solo texto para todos (los dibujos de a uno ya se describieron cada uno).
     caja.setAttribute(
@@ -938,7 +951,7 @@ function dibujar(figura) {
         )
         .join(' ')
     );
-    dibujarSalida(caja, figura.salida);
+    cerrarFigura(caja, figura);
     return;
   }
   if (figura.clase === 'planos') {
@@ -948,17 +961,17 @@ function dibujar(figura) {
       dibujarTabla(caja, { ...figura, filas: plano, arreglo: null });
     });
     dibujarResultado(caja, figura.arreglo);
-    dibujarSalida(caja, figura.salida);
+    cerrarFigura(caja, figura);
     return;
   }
   if (figura.clase === 'tabla') {
     dibujarTabla(caja, figura);
-    dibujarSalida(caja, figura.salida);
+    cerrarFigura(caja, figura);
     return;
   }
 
   dibujarArreglo(caja, figura);
-  dibujarSalida(caja, figura.salida);
+  cerrarFigura(caja, figura);
 }
 
 // Lo mismo que el dibujo, dicho en una frase, para quien no lo ve.
@@ -969,7 +982,8 @@ function descripcionDe(figura) {
     `Arreglo de ${figura.valores.length} elementos: ${figura.valores
       .map((v, i) => (Array.isArray(figura.nombres) && figura.nombres[i] ? `${figura.nombres[i]}: ` : '') + (v == null ? 'vacío' : v))
       .join(', ')}` +
-    (resaltadas.length ? `. Resaltadas las posiciones ${resaltadas.join(', ')}` : '')
+    (resaltadas.length ? `. Resaltadas las posiciones ${resaltadas.join(', ')}` : '') +
+    (figura.pie ? '. ' + figura.pie.replace(/`/g, '') : '')
   );
 }
 
@@ -1005,7 +1019,8 @@ function descripcionDeLista(figura) {
     (datos.length
       ? `Lista enlazada: ${cabeza} apunta al primer nodo; los datos son ${datos.join(', ')}, y el último apunta a NULL.`
       : `Lista vacía: ${cabeza} apunta a NULL.`) +
-    (resaltar.length ? ` Marcados los nodos de las posiciones ${resaltar.join(', ')}.` : '')
+    (resaltar.length ? ` Marcados los nodos de las posiciones ${resaltar.join(', ')}.` : '') +
+    (figura.pie ? ' ' + figura.pie.replace(/`/g, '') : '')
   );
 }
 

@@ -84,7 +84,7 @@
       "referencia": "void insertarOrdenado(TNodo **lista, int dato) {\n  TNodo *nuevo = crearNodo(dato);\n  TNodo *aux;\n\n  if (nuevo == NULL) {\n    return;\n  }\n  if (*lista == NULL || dato < (*lista)->dato) {\n    nuevo->sig = *lista;\n    *lista = nuevo;\n    return;\n  }\n  aux = *lista;\n  while (aux->sig != NULL && aux->sig->dato < dato) {\n    aux = aux->sig;\n  }\n  nuevo->sig = aux->sig;\n  aux->sig = nuevo;\n}",
       "dibujo": [
         {
-          "titulo": "Antes de insertar el `5`: la lista ordenada tiene los nodos `2`, `7` y `9`.",
+          "titulo": "Antes de insertar el `5` (la lista está ordenada):",
           "lista": {
             "datos": [
               2,
@@ -94,7 +94,8 @@
           }
         },
         {
-          "titulo": "Después de `insertarOrdenado(&lista, 5)`: el nodo nuevo (marcado) queda entre el `2` y el `7`.",
+          "titulo": "Después de `insertarOrdenado(&lista, 5)`:",
+          "pie": "el nodo nuevo (marcado) queda entre el `2` y el `7`.",
           "lista": {
             "datos": [
               2,
@@ -194,7 +195,8 @@
       "referencia": "void eliminarTodos(TNodo **lista, int valor) {\n  TNodo *aux = *lista;\n  TNodo *anterior = NULL;\n  TNodo *siguiente;\n\n  while (aux != NULL) {\n    siguiente = aux->sig;\n    if (aux->dato == valor) {\n      if (anterior == NULL) {\n        *lista = siguiente;\n      } else {\n        anterior->sig = siguiente;\n      }\n      free(aux);\n    } else {\n      anterior = aux;\n    }\n    aux = siguiente;\n  }\n}",
       "dibujo": [
         {
-          "titulo": "Antes: la lista tiene los nodos `4`, `9`, `6`, `9` y `2`; los que se eliminan, marcados.",
+          "titulo": "Antes:",
+          "pie": "los que se eliminan, marcados.",
           "lista": {
             "datos": [
               4,
@@ -210,7 +212,8 @@
           }
         },
         {
-          "titulo": "Después de `eliminarTodos(&lista, 9)`: quedan el `4`, el `6` y el `2`, enlazados.",
+          "titulo": "Después de `eliminarTodos(&lista, 9)`:",
+          "pie": "los demás quedan enlazados.",
           "lista": {
             "datos": [
               4,

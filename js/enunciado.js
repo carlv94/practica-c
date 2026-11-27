@@ -295,7 +295,13 @@ export function figuraDe(consigna) {
     Array.isArray(v) ? v.map(comoSeEscribeLetras) : typeof v === 'string' ? ([...v].length === 1 ? `'${v}'` : `"${v}"`) : v;
   const comoSeEscribe = comoSeEscribeLetras;
   const d = consigna.dibujo;
+  // Un dibujo propio puede llevar "pie": la explicacion de lo que se ve, debajo del dibujo (el "titulo", arriba,
+  // dice solo que momento muestra).
   const propia = (d) => {
+    if (d.pie != null && (typeof d.pie !== 'string' || !d.pie.trim())) throw new Error('el pie de un dibujo es un texto');
+    return { ...propiaSinPie(d), ...(d.pie ? { pie: d.pie } : {}) };
+  };
+  const propiaSinPie = (d) => {
     // Una union: un solo lugar, con los nombres de sus miembros y el que tiene el valor.
     if (d.union) return { clase: 'union', titulo: d.titulo, union: d.union, salida: consigna.salida };
     if (d.venn) return { clase: 'venn', titulo: d.titulo, venn: vennDe(d.venn), salida: consigna.salida };

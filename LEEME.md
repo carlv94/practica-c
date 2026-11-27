@@ -1614,11 +1614,16 @@ consignas de código que modifican la lista, con un dibujo de antes y otro de de
 
 ```
 "dibujo": [
-  { "titulo": "Antes: ...; los que se eliminan, marcados.", "lista": { "datos": [4, 9, 6, 9, 2], "resaltar": [1, 3] } },
-  { "titulo": "Después de `eliminarTodos(&lista, 9)`: ...", "lista": { "datos": [4, 6, 2] } }
+  { "titulo": "Antes:", "pie": "los que se eliminan, marcados.", "lista": { "datos": [4, 9, 6, 9, 2], "resaltar": [1, 3] } },
+  { "titulo": "Después de `eliminarTodos(&lista, 9)`:", "pie": "los demás quedan enlazados.", "lista": { "datos": [4, 6, 2] } }
 ]
 ```
 
+- `titulo` y `pie` (opcional), en cualquier dibujo propio: el `titulo`, arriba, dice solo qué
+  momento muestra ("Antes de insertar el `6`:", "Después de `insertarInicio(&lista, 6)`:"); el
+  `pie`, debajo, explica lo que se ve. Ninguno repite lo que el dibujo ya muestra (los valores de
+  los nodos o de las casillas); sí lo que no se ve, como `cantidad` en un TAD con arreglo. El pie
+  entra también en la descripción para los lectores de pantalla.
 - `datos`: los datos de los nodos, en orden; sin datos, la variable apunta a `NULL`.
 - `resaltar` (opcional): las posiciones (desde 0) de los nodos que se marcan: el que se agrega
   o los que se van a eliminar.

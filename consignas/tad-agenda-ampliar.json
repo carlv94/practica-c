@@ -158,7 +158,7 @@
       "comienza": "#include <string.h>\n#include \"agenda.h\"\n\nvoid inicializar(TAgenda *a) {\n  a->cantidad = 0;\n}\n\nint total(TAgenda a) {\n  return a.cantidad;\n}\n\nTResultado agregar(TAgenda *a, char nombre[], unsigned long telefono) {\n  for (int i = 0; i < a->cantidad; i++) {\n    if (strcmp(a->nombres[i], nombre) == 0) {\n      return NOMBRE_REPETIDO;\n    }\n  }\n  if (a->cantidad == MAX) {\n    return AGENDA_LLENA;\n  }\n  strcpy(a->nombres[a->cantidad], nombre);\n  a->telefonos[a->cantidad] = telefono;\n  a->cantidad = a->cantidad + 1;\n  return OK;\n}\n\nTResultado buscar(TAgenda a, char nombre[], unsigned long *telefono) {\n  for (int i = 0; i < a.cantidad; i++) {\n    if (strcmp(a.nombres[i], nombre) == 0) {\n      *telefono = a.telefonos[i];\n      return OK;\n    }\n  }\n  return NO_ENCONTRADO;\n}",
       "dibujo": [
         {
-          "titulo": "Antes: la agenda [Ana, Luis, Eva], con `cantidad` en 3 (`nombres`):",
+          "titulo": "Antes: `nombres`, con `cantidad` en 3:",
           "valores": [
             "Ana",
             "Luis",
@@ -173,7 +173,8 @@
           ]
         },
         {
-          "titulo": "Después de `eliminar(&a, \"Luis\")`: Luis sale y Eva se corre una posición hacia el comienzo (lo resaltado), igual que su teléfono. `cantidad` pasa a 2:",
+          "titulo": "Después de `eliminar(&a, \"Luis\")`:",
+          "pie": "Luis sale y Eva se corre una posición hacia el comienzo (lo resaltado), igual que su teléfono. `cantidad` pasa a 2.",
           "valores": [
             "Ana",
             "Eva",
