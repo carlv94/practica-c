@@ -159,6 +159,14 @@ export const HERRAMIENTAS = [
     titulo: 'Seguir la acción',
     detalle: 'La figura se desplaza sola hacia lo que pasa en cada paso (la casilla que cambia, la fila o el bloque al que llega una flecha), para que no quede fuera de la vista cuando es grande. Si la desplazás a mano, deja de seguir hasta el paso siguiente.',
   },
+  {
+    clave: 'vistaAbstracta',
+    almacen: 'reproductor-vista-abstracta',
+    porDefecto: false,
+    nombre: 'Vista abstracta',
+    titulo: 'Vista abstracta',
+    detalle: 'Sin las cajas de las funciones: cada puntero va encima del nodo que señala, con una flecha corta, y avanza con él; uno en NULL lo dice en su casilla y va arriba, en la fila libre. Lo demás va en una franja arriba. Por ahora, para los programas con memoria dinámica y sin recursión; en los demás se sigue viendo la memoria.',
+  },
 ];
 
 const TODAS = [...AYUDAS, ...HERRAMIENTAS];
@@ -387,7 +395,7 @@ export function montarHerramientas() {
   cerrarBoton.setAttribute('aria-label', 'Cerrar');
   cabeza.append(nodo('h4', 'ajustes-titulo-panel', 'Herramientas de reproducción'), cerrarBoton);
   panel.append(cabeza);
-  panel.append(nodo('p', 'ayuda', 'Cambian cómo se maneja el paso a paso, no lo que se dibuja. Se recuerdan en este navegador.'));
+  panel.append(nodo('p', 'ayuda', 'Cambian cómo se maneja el paso a paso (y la vista de la figura). Se recuerdan en este navegador.'));
   const casillas = new Map();
   for (const h of HERRAMIENTAS) {
     const fila = nodo('label', 'casilla');

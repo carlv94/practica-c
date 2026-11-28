@@ -89,6 +89,28 @@ function etiqueta(v) {
   }
 }
 
+// El valor de una casilla de una escena (la variable o el bloque "a", y adentro "ruta").
+function valorEnEscena(escena, a, ruta) {
+  const d = escena.datos && escena.datos.get(a);
+  let v = d && d.reserva ? d.reserva.valor : null;
+  for (const paso of ruta || []) {
+    if (!v) return null;
+    if (typeof paso === 'number') v = v.elems ? v.elems[paso] : null;
+    else v = v.campos ? (v.campos.find((c) => c.n === paso) || {}).v : null;
+  }
+  return v || null;
+}
+
+// La direccion que guarda un puntero (la misma que escribe el motor en una condicion), si se sabe sin contar tamaños: un puntero
+// al comienzo de un bloque o de una variable. Si no, null.
+function direccionEnEscena(escena, v) {
+  if (!v || v.k !== 'ptr' || v.muerto || v.fuera) return null;
+  const d = escena.datos && escena.datos.get(v.a);
+  const dir = d && d.reserva ? d.reserva.dir : null;
+  if (dir == null || !(v.ruta || []).every((x) => x === 0)) return null;
+  return dir;
+}
+
 // Una casilla de puntero mide siempre lo mismo (CW), guarde una direccion (el punto), NULL o nada: asi no cambia de
 // tamano, ni el bloque que la contiene, cuando el puntero recibe una direccion.
 const anchoDeCasilla = (v) => (v.k === 'ptr' ? CW : Math.max(CW, etiqueta(v).length * LETRA + 14));
@@ -687,6 +709,34 @@ function unir(a, b, k) {
   return x.map((p, i) => ({ x: p.x + (y[i].x - p.x) * k, y: p.y + (y[i].y - p.y) * k }));
 }
 
+// Una linea quebrada que pasa de un recorrido a otro de a poco (k de 0 a 1): las dos se recorren por partes iguales de su largo
+// y cada punto de una va hacia el que le toca en la otra. A diferencia de "unir", sirve aunque los recorridos tengan otra forma
+// (por ejemplo, de bajar a un nodo a rodear por la derecha y entrarle por abajo): la flecha se deforma sin saltar.
+function mezclar(a, b, k) {
+  if (k <= 0) return a;
+  if (k >= 1) return b;
+  const N = 48;
+  const muestrear = (p) => {
+    const largos = [0];
+    for (let i = 1; i < p.length; i++) largos.push(largos[i - 1] + Math.hypot(p[i].x - p[i - 1].x, p[i].y - p[i - 1].y));
+    const total = largos[largos.length - 1] || 1;
+    const salida = [];
+    let j = 1;
+    for (let n = 0; n <= N; n++) {
+      const s = (total * n) / N;
+      while (j < p.length - 1 && largos[j] < s) j++;
+      const tramo = largos[j] - largos[j - 1];
+      const t = tramo > 0 ? (s - largos[j - 1]) / tramo : 0;
+      salida.push({ x: p[j - 1].x + (p[j].x - p[j - 1].x) * t, y: p[j - 1].y + (p[j].y - p[j - 1].y) * t });
+    }
+    return salida;
+  };
+  if (a.length < 2 || b.length < 2) return b;
+  const x = muestrear(a);
+  const y = muestrear(b);
+  return x.map((p, i) => ({ x: p.x + (y[i].x - p.x) * k, y: p.y + (y[i].y - p.y) * k }));
+}
+
 // Una linea quebrada con las esquinas redondeadas.
 function camino(puntos) {
   let d = `M${puntos[0].x},${puntos[0].y}`;
@@ -779,6 +829,9 @@ export class Figura {
   constructor(contenedor, opciones = {}) {
     this.contenedor = contenedor;
     this.cabezas = opciones.cabezas || null;
+    // La vista: 'memoria' (la de siempre) o 'abstracta' (ver disponerAbstracta). Si se la pasa al crearla, queda fija.
+    this.vista = opciones.vista === 'abstracta' ? 'abstracta' : 'memoria';
+    this.vistaFija = Boolean(opciones.vista);
     this.previas = new Map(); // id de bloque -> donde estaba
     this.raf = null;
     this.enfoque = null;
@@ -890,7 +943,8 @@ export class Figura {
   // (fuera de la pagina) que repite los pasos. Las etapas de esa figura quedan en "etapasMedidas".
   medirPaso(anterior, intermedia, foto, opciones) {
     const sombra = new Figura(document.createElement('div'), { cabezas: this.cabezas });
-    sombra.mostrar(intermedia, anterior, { animar: false });
+    if (this.escena && this.escena.vista === 'abstracta') sombra.mostrar(anterior, null, { animar: false });
+    sombra.mostrar(intermedia, anterior, { animar: false, congelar: true });
     const dura = sombra.mostrar(foto, intermedia, opciones);
     this.etapasMedidas = sombra.etapas || [];
     sombra.terminarFlujo();
@@ -901,16 +955,18 @@ export class Figura {
 
   // "expandir": false cuando ya se hizo la fase de expansion de este paso (ver fotoConLugar); "bloquePrimero": false
   // cuando ya se hizo la del bloque nuevo (ver fotoConBloque).
-  mostrarBase(foto, anterior = null, { animar = false, duracion = 450, flujo = false, expandir = true, bloquePrimero = true, salidaDespues = true } = {}) {
+  mostrarBase(foto, anterior = null, { animar = false, duracion = 450, flujo = false, expandir = true, bloquePrimero = true, salidaDespues = true, congelar = false } = {}) {
     this.terminarFlujo();
     tiempo.cancelar(this.expansionPendiente);
     this.expansionPendiente = null;
     if (this.raf) cancelAnimationFrame(this.raf);
     this.raf = null;
-    const previa = this.escena;
+    // (lo que se dibujo en la otra vista no sirve para animar desde ahi: se dibuja de nuevo, sin movimiento)
+    const previa = this.escena && this.escena.vista === (this.esAbstracta(foto) ? 'abstracta' : 'memoria') ? this.escena : null;
     // La caja de una funcion que gana una variable se expande antes que cualquier otra animacion: primero se muestra
     // la fotografia con el lugar ya hecho y despues, desde ahi, el paso de verdad.
-    if (expandir && flujo && animar && previa && anterior && duracion > 0 && !sinMovimiento()) {
+    // (en la vista abstracta no hay cajas que agrandar)
+    if (expandir && flujo && animar && previa && anterior && duracion > 0 && !sinMovimiento() && previa.vista !== 'abstracta') {
       const intermedia = fotoConLugar(foto, anterior);
       if (intermedia) {
         const expansion = this.mostrar(intermedia, anterior, { animar: true, duracion, flujo: false, expandir: false });
@@ -946,7 +1002,8 @@ export class Figura {
       if (intermedia) {
         this.intermediaFoto = intermedia; // (la fotografia de en medio del paso encadenado; la usan las pruebas)
         const siguiente = { animar, duracion, flujo: false, expandir: false, bloquePrimero: false, salidaDespues: false };
-        const efecto = this.mostrar(intermedia, anterior, { animar: true, duracion, flujo: true, salidaDespues: false });
+        // (en la vista abstracta, el efecto no reubica nada: lo que sale se desvanece y despues todo se reubica una sola vez, ver congelar)
+        const efecto = this.mostrar(intermedia, anterior, { animar: true, duracion, flujo: true, salidaDespues: false, congelar: true });
         // Si la sentencia no hizo nada que se vea, no hay nada que esperar: se desvanece de una vez.
         if (efecto <= 1) return this.mostrar(foto, intermedia, siguiente);
         const etapasDelEfecto = this.etapas || [];
@@ -961,11 +1018,27 @@ export class Figura {
       }
     }
     // Donde estaban los bloques (ahora, aunque se estuvieran moviendo), contados desde el borde del monticulo.
-    const posiciones = previa ? new Map([...previa.bloques].map(([id, b]) => [id, { rx: b.actual.x - previa.x0, y: b.actual.y }])) : new Map();
+    // (de una pieza, tambien el ancho de su rotulo: si cambia, la casilla se queda donde estaba y el rotulo se acomoda a su izquierda)
+    const posiciones = previa ? new Map([...previa.bloques].map(([id, b]) => [id, { rx: b.actual.x - previa.x0, y: b.actual.y, wNombre: b.wNombre, deFuncion: b.deFuncion }])) : new Map();
+    const corrimiento = (b, antes) => (antes.wNombre != null && b.wNombre != null ? antes.wNombre - b.wNombre : 0);
     // Y donde estaban las cajas de la pila.
     const posicionesMarcos = previa ? new Map([...previa.marcosG].map(([k, m]) => [k, m.actual.y])) : new Map();
     const escena = this.construir(foto, anterior, previa);
+    // "congelar" (vista abstracta, el efecto de un paso del que despues sale algo, ver fotoConSalida): todo se queda donde estaba
+    // y solo se animan las flechas; la reubicacion queda para el tramo siguiente, despues de que se desvanece lo que sale.
+    // (si aparece algo nuevo, necesita su lugar: entonces se reubica como siempre)
+    if (congelar && previa && escena.vista === 'abstracta' && [...escena.bloques.keys()].every((id) => posiciones.has(id))) {
+      for (const b of escena.bloques.values()) {
+        const antes = posiciones.get(b.id);
+        b.hasta = { x: escena.x0 + antes.rx + corrimiento(b, antes), y: antes.y };
+      }
+      escena.filas = escena.filasPrevias;
+      for (const f of escena.flechas) if (f.previo) f.final = f.previo;
+      escena.alto = Math.max(escena.alto, previa.alto);
+      escena.congelada = true;
+    }
     this.escena = escena;
+    this.dibujada = { foto, anterior }; // (para volver a acomodar la vista abstracta si cambia el ancho: ver aplicarEscala)
     this.contenedor.replaceChildren(escena.svg);
     escena.svg.classList.toggle('rep-con-nombres', this.mostrarNombres);
     this.aplicarEscala();
@@ -1043,12 +1116,30 @@ export class Figura {
     let seMueven = false;
     for (const b of escena.bloques.values()) {
       const antes = posiciones.get(b.id);
-      b.desde = mueve && antes ? { x: escena.x0 + antes.rx, y: antes.y } : { ...b.hasta };
+      b.desde = mueve && antes ? { x: escena.x0 + antes.rx + corrimiento(b, antes), y: antes.y } : { ...b.hasta };
       b.actual = { ...b.desde };
       b.nuevo = mueve && !antes;
       // Un bloque nuevo aparece (fundido) aunque nada mas se mueva: asi se lo ve antes de que llegue la flecha que lo apunta.
       if (Math.abs(b.desde.x - b.hasta.x) > 0.5 || Math.abs(b.desde.y - b.hasta.y) > 0.5 || b.nuevo) seMueven = true;
       b.g.setAttribute('transform', `translate(${b.actual.x},${b.actual.y})`);
+      // (vista abstracta) Una pieza cuyo nombre deja de repetirse (o empieza a repetirse): el renglon de la funcion se desvanece (o
+      // aparece) y el nombre baja (o sube) a su lugar, de a poco.
+      if (mueve && antes && (antes.deFuncion || null) !== (b.deFuncion || null) && b.g.classList.contains('rep-pieza')) {
+        const nombre = b.g.querySelector('.rep-nombre');
+        const opciones = { duration: 0.7 * u, delay: retardo, easing: 'ease-in-out', fill: 'both' };
+        if (nombre && nombre.animate) {
+          const salto = antes.deFuncion ? -5 : 5;
+          nombre.animate([{ transform: `translate(0px, ${salto}px)` }, { transform: 'translate(0px, 0px)' }], opciones);
+        }
+        if (antes.deFuncion && !b.deFuncion && nombre) {
+          const linea = texto(b.wNombre - 8, Number(nombre.getAttribute('y')) + 7, antes.deFuncion, 'rep-nombre-funcion', { 'text-anchor': 'end' });
+          b.g.append(linea);
+          if (linea.animate) linea.animate([{ opacity: 1 }, { opacity: 0 }], opciones).onfinish = () => linea.remove();
+          else linea.remove();
+        }
+        const funcion = b.g.querySelector('.rep-nombre-funcion');
+        if (!antes.deFuncion && funcion && funcion.animate) funcion.animate([{ opacity: 0 }, { opacity: 1 }], opciones);
+      }
     }
     // Las cajas de la pila: las que siguen suben o bajan, las nuevas se abren y las que ya no estan
     // se ven (quietas) hasta el tiempo B, en que se cierran.
@@ -1090,12 +1181,18 @@ export class Figura {
     // Las cajas de funciones que terminan: se desvanecen en su lugar (con sus flechas) y despues la pila se acomoda.
     const cajasQueSalen = mueve && previa ? [...previa.marcosG].filter(([k]) => !escena.marcosG.has(k)).map(([, m]) => m) : [];
     if (cajasQueSalen.length) seMueven = true;
+    // (vista abstracta) Las variables que dejan de verse (las de una funcion que termina, o las que no son punteros de la funcion que
+    // llama, al entrar en otra): su pieza se desvanece en su lugar.
+    const piezasQueSalen = mueve && previa && previa.vista === 'abstracta' ? [...previa.bloques].filter(([id, b]) => !escena.bloques.has(id) && b.g.classList.contains('rep-pieza')).map(([, b]) => b) : [];
+    if (piezasQueSalen.length) seMueven = true;
     // Si el paso nuevo es mas bajo (se fue una caja de la pila), lo que todavia esta donde estaba
     // quedaria cortado: se conserva el alto del paso anterior y se ajusta mientras todo se reubica.
     escena.altoFinal = escena.alto + 10;
     escena.altoActual = escena.altoFinal;
     escena.altoDesde = previa && previa.altoActual ? previa.altoActual : escena.altoFinal;
     if (mueve && seMueven && escena.altoDesde > escena.altoFinal) this.ponerAlto(escena.altoDesde);
+    // (la congelada: todo sigue donde estaba, con el alto de antes)
+    if (escena.congelada) this.ponerAlto(escena.altoFinal);
     if (seMueven) {
       for (const b of escena.bloques.values()) if (b.nuevo) b.g.style.opacity = '0';
       for (const m of escena.marcosG.values()) {
@@ -1123,9 +1220,11 @@ export class Figura {
     // bloques todavia donde estaban; despues, una pausa. Tiempo B: los bloques se reubican. FIN: todo
     // en su lugar. Si nada se mueve, solo hay tiempo A.
     const hayRetiradas = escena.retiradas.some((r) => r.viejo);
-    const hayA = escena.flechas.some((f) => f.cambio && !f.tarde) || hayRetiradas || variablesQueSalen.length > 0 || cajasQueSalen.length > 0 || escena.destinoSeVa;
+    const hayA = escena.flechas.some((f) => f.cambio && !f.tarde) || hayRetiradas || variablesQueSalen.length > 0 || cajasQueSalen.length > 0 || piezasQueSalen.length > 0 || escena.destinoSeVa;
     const conFlechaAntes = mueve && seMueven && hayA;
     this.fase = !mueve || !seMueven ? 'FIN' : conFlechaAntes ? 'A' : 'B';
+    // (la reubicacion de este paso todavia no empezo: si no, mientras espera, las flechas se verian un instante donde quedan al final)
+    this.kB = 0;
     for (const b of escena.bloques.values()) if (b.nuevo && !seMueven) b.nuevo = false;
     const animA = mueve && (seMueven ? hayA : escena.flechas.some((f) => f.cambio) || hayRetiradas);
     this.animandoA = animA;
@@ -1150,6 +1249,15 @@ export class Figura {
         clon.removeAttribute('data-id');
         for (const e of clon.querySelectorAll('[data-id]')) e.removeAttribute('data-id');
         clon.setAttribute('transform', `translate(0,${s.y})`);
+        escena.raiz.append(clon);
+        escena.desvanecen.push({ g: clon });
+      }
+      for (const b of piezasQueSalen) {
+        const clon = b.g.cloneNode(true);
+        clon.style.pointerEvents = 'none';
+        clon.removeAttribute('data-id');
+        for (const e of clon.querySelectorAll('[data-id]')) e.removeAttribute('data-id');
+        clon.setAttribute('transform', `translate(${b.actual.x},${b.actual.y})`);
         escena.raiz.append(clon);
         escena.desvanecen.push({ g: clon });
       }
@@ -1193,6 +1301,10 @@ export class Figura {
       }
       if (variablesQueSalen.length) {
         this.anotar(tFlecha, 'Se desvanecen las variables del bloque que termina');
+        algo = true;
+      }
+      if (piezasQueSalen.length) {
+        this.anotar(tFlecha, 'Se desvanecen las variables que dejan de verse');
         algo = true;
       }
       for (const x of escena.flechas) {
@@ -1416,6 +1528,60 @@ export class Figura {
       }
     }
     return animados;
+  }
+
+  // (vista abstracta, una condicion) La direccion que guarda un puntero: aparece en su casilla en lugar del punto y, encima de lo que
+  // senala, la misma direccion; resplandecen como los demas valores de la condicion, se quedan a la vista hasta "hasta" (cuando se ve
+  // la respuesta) y en "vuelta" vuelven de a poco a como estaban.
+  direccionLeida(clon, previa, capa, x, hasta, vuelta, u, rotuladas) {
+    if (sinMovimiento()) return;
+    const { punto, dir, v, desde } = x;
+    const largo = Math.max(hasta + vuelta - desde, 1);
+    const en = (s) => Math.max(0, Math.min(1, s / largo));
+    const dBrillo = 0.8 * u;
+    // (las marcas en orden: el brillo puede ser mas largo que lo que queda hasta la respuesta)
+    const quieto = Math.max(en(dBrillo), en(hasta - desde));
+    const halo = getComputedStyle(this.contenedor).getPropertyValue('--acento').trim() || '#3b82f6';
+    const sin = { transform: 'scale(1)', filter: 'drop-shadow(0 0 0 transparent)' };
+    const con = { transform: 'scale(1.4)', filter: `drop-shadow(0 0 5px ${halo})` };
+    const cuadros = [
+      { opacity: 0, ...sin, offset: 0 },
+      { opacity: 1, ...con, offset: en(0.3 * dBrillo) },
+      { opacity: 1, ...con, offset: en(0.6 * dBrillo) },
+      { opacity: 1, ...sin, offset: en(dBrillo) },
+      { opacity: 1, ...sin, offset: quieto },
+      { opacity: 0, ...sin, offset: 1 },
+    ];
+    const opciones = { duration: largo, delay: desde, easing: 'ease-in-out', fill: 'both' };
+    const animar = (nodo) => {
+      nodo.style.transformBox = 'fill-box';
+      nodo.style.transformOrigin = 'center';
+      nodo.style.opacity = '0';
+      if (nodo.animate) nodo.animate(cuadros, opciones);
+    };
+    // En la casilla: el numero en lugar del punto.
+    const cx = Number(punto.getAttribute('cx'));
+    const cy = Number(punto.getAttribute('cy'));
+    const numero = texto(cx, cy + 4, String(dir), 'rep-texto rep-direccion-leida', { 'text-anchor': 'middle' });
+    punto.parentNode.append(numero);
+    animar(numero);
+    if (punto.animate) {
+      punto.animate([{ opacity: 1, offset: 0 }, { opacity: 0, offset: en(0.2 * dBrillo) }, { opacity: 0, offset: quieto }, { opacity: 1, offset: 1 }], opciones);
+    }
+    // Encima de lo que senala (una vez, aunque lo senalen dos punteros de la condicion): su direccion.
+    const llave = clave(v.a, v.ruta);
+    if (rotuladas.has(llave)) return;
+    rotuladas.add(llave);
+    const ancla = previa.anclas && (previa.anclas.get(llave) || previa.anclas.get(clave(v.a, [])));
+    const caja = ancla ? this.absolutoDe(previa, ancla) : null;
+    if (!caja) return;
+    // (sobre la linea de arriba del bloque, si es un nodo; si es una variable, sobre su casilla)
+    const bloque = previa.bloques.get(v.a);
+    const borde = bloque && bloque.g && bloque.actual ? bloque.g.querySelector('rect.rep-bloque') : null;
+    const arriba = borde ? { x: bloque.actual.x + Number(borde.getAttribute('x') || 0), y: bloque.actual.y + Number(borde.getAttribute('y') || 0) } : { x: caja.x, y: caja.y };
+    const rotulo = texto(arriba.x + 2, arriba.y - 4, String(dir), 'rep-direccion rep-direccion-leida');
+    capa.append(rotulo);
+    animar(rotulo);
   }
 
   // El trazo de una flecha que parpadea (como cuando un acceso la recorre).
@@ -1756,11 +1922,34 @@ export class Figura {
     };
     // Los valores que se leen para responder una condicion resplandecen primero (los punteros a un bloque no tienen texto: no
     // se ven); despues viene el recorrido por las flechas y, al final, el resultado.
+    // (vista abstracta) Un puntero cuyo valor va a la pregunta (aux en aux != NULL; lista de main en *lista == NULL, no la lista que
+    // solo se recorre para llegar a ella): en su casilla, en lugar del punto, aparece la direccion que guarda, la misma que se ve en el
+    // rotulo, y encima de lo que senala, esa direccion; las dos resplandecen y, cuando se ve la respuesta, vuelven de a poco a como
+    // estaban (ver direccionLeida). Solo si se sabe la direccion: un puntero al comienzo de un bloque o de una variable.
+    const conDirecciones = Boolean(condicion) && this.ayudas.brilloCondiciones && previa.vista === 'abstracta';
+    const recorridas = new Set(accesos.filter((h) => h.de).map((h) => clave(h.de.a, h.de.ruta)));
+    const direcciones = [];
+    const mostrarDirecciones = (celdas) => {
+      if (!conDirecciones) return 0;
+      let n = 0;
+      for (const c of celdas) {
+        const k = clave(c.a, c.ruta);
+        if (recorridas.has(k) || direcciones.some((x) => x.k === k)) continue;
+        const punto = clon.querySelector(`circle.rep-punto[data-k="${k}"]`);
+        const v = valorEnEscena(previa, c.a, c.ruta);
+        const dir = direccionEnEscena(previa, v);
+        if (!punto || dir == null) continue;
+        direcciones.push({ k, punto, dir, v, desde: t });
+        n++;
+      }
+      return n;
+    };
     const brillarCeldas = (celdas) => {
       if (!condicion || !celdas || !celdas.length || !this.ayudas.brilloCondiciones) return;
       const claves = celdas.map((c) => clave(c.a, c.ruta));
-      if (this.brillar({ svg: clon }, claves, t, 0.8 * u)) {
-        this.anotar(t, 'Brillan los valores de la condición');
+      const conDireccion = mostrarDirecciones(celdas);
+      if (this.brillar({ svg: clon }, claves, t, 0.8 * u) + conDireccion) {
+        this.anotar(t, conDireccion ? 'Brillan los valores de la condición: los punteros muestran la dirección que guardan' : 'Brillan los valores de la condición');
         this.destello = { fin: t + 0.8 * u, meseta: t + 0.6 * 0.8 * u };
         t += 0.8 * u;
       }
@@ -1858,7 +2047,8 @@ export class Figura {
         resaltadas.add(clave(h.a.a, h.a.ruta));
         if (!flecha) this.anotar(t, `${h.tipo === 'elemento' || h.tipo === 'campo' ? 'Se accede a' : 'Se lee'} ${this.nombreCelda(previa, h.a.a, h.a.ruta)}`);
         // En una condicion, el valor de la casilla a la que se llego siguiendo un puntero (p->dato, *p) tambien resplandece.
-        const brilla = condicion && (h.de || h.tipo === 'elemento' || h.tipo === 'campo') && this.ayudas.brilloCondiciones ? this.brillar({ svg: clon }, [clave(h.a.a, h.a.ruta)], t, 0.8 * u) : 0;
+        let brilla = condicion && (h.de || h.tipo === 'elemento' || h.tipo === 'campo') && this.ayudas.brilloCondiciones ? this.brillar({ svg: clon }, [clave(h.a.a, h.a.ruta)], t, 0.8 * u) : 0;
+        if (condicion && (h.de || h.tipo === 'elemento' || h.tipo === 'campo')) brilla += mostrarDirecciones([h.a]);
         pulso(casilla, Boolean(h.cond), brilla ? 0.8 * u : dResalte);
       }
       if (juntoDesde !== null) t = Math.max(juntoFin, t);
@@ -1907,8 +2097,10 @@ export class Figura {
     }
     // La respuesta de una condicion: el rotulo con la pregunta (que ya se veia en el paso anterior) se completa con
     // "verdadero" o "falso" despues de los accesos que haya, y se deja un momento a la vista.
+    let tRespuesta = null;
     if (r) {
       if (detalle && !porGrupos) etapasDe(0, 0);
+      tRespuesta = t;
       this.anotar(t, `La condición da ${condicion.valor ? 'verdadero' : 'falso'}`);
       tiempo.cancelar(this.relojRespuesta);
       this.relojRespuesta = tiempo.esperar(() => {
@@ -1919,6 +2111,14 @@ export class Figura {
       }, t + 30);
       // (con el detalle, la respuesta se deja mas tiempo a la vista: el rotulo explica lo que se acaba de resolver)
       t += detalle ? 1.5 * u : 0.8 * u;
+    }
+    if (direcciones.length) {
+      const vuelta = 0.6 * u;
+      const desdeVuelta = tRespuesta ?? t;
+      this.anotar(desdeVuelta, 'Las direcciones vuelven a ser puntos');
+      t = Math.max(t, desdeVuelta + vuelta);
+      const rotuladas = new Set();
+      for (const x of direcciones) this.direccionLeida(clon, previa, capa, x, desdeVuelta, vuelta, u, rotuladas);
     }
     if (!t) return 0;
     const total = t + 0.1 * u;
@@ -2121,9 +2321,31 @@ export class Figura {
     this.aplicarEscala();
   }
 
+  // (vista abstracta) El ancho en que se acomodan las filas: el del lugar que tiene la figura, a la escala de ahora (al ajustar, 1: la figura
+  // ocupa todo el ancho y las filas se cortan donde termina). Sin lugar medible (fuera de la pagina), 560.
+  anchoDisponible() {
+    const cw = this.contenedor.clientWidth;
+    if (!cw) return 560;
+    const k = this.escalaModo.modo === 'ajustar' ? 1 : this.escalaModo.zoom || 1;
+    return Math.max(300, (cw - 14) / k);
+  }
+
   aplicarEscala() {
     const svg = this.svg;
     if (!svg) return;
+    // La vista abstracta se acomoda al ancho: si cambio (se giro el celular, se agrando la ventana, se cambio el zoom), se vuelve a dibujar el
+    // paso, sin animacion.
+    const escena = this.escena;
+    if (escena.vista === 'abstracta' && escena.anchoDisponible && this.dibujada && !this.reacomodando && Math.abs(this.anchoDisponible() - escena.anchoDisponible) > 24) {
+      this.reacomodando = true;
+      try {
+        this.escena = null;
+        this.mostrar(this.dibujada.foto, this.dibujada.anterior, { animar: false });
+      } finally {
+        this.reacomodando = false;
+      }
+      return;
+    }
     const [, , nw, nh] = svg.getAttribute('viewBox').split(' ').map(Number);
     const { modo, zoom, alto } = this.escalaModo;
     let k = zoom;
@@ -2301,6 +2523,7 @@ export class Figura {
   }
 
   fotograma(e) {
+    this.kB = e; // (cuanto de la reubicacion: las flechas que cambian de recorrido pasan del viejo al nuevo a la par, ver pintarFlechas)
     const { altoDesde, altoFinal } = this.escena;
     if (altoDesde > altoFinal) this.ponerAlto(altoDesde + (altoFinal - altoDesde) * e);
     for (const b of this.escena.bloques.values()) {
@@ -2326,21 +2549,8 @@ export class Figura {
 
   // ---------------------------------------------------------- construccion
 
-  construir(foto, anterior, previa = null) {
-    const p = new Pintor(foto, anterior, this.ayudas);
-    const raiz = p.capa;
-    const datos = new Map();
-    this.datos = datos;
-    const defs = el('defs');
-    defs.innerHTML =
-      '<marker id="rep-punta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="rep-cabeza"/></marker>' +
-      '<marker id="rep-punta-mala" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="rep-cabeza-mala"/></marker>' +
-      '<marker id="rep-punta-incierta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="rep-cabeza-incierta"/></marker>' +
-      '<marker id="rep-punta-nueva" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="rep-cabeza-nueva"/></marker>' +
-      '<marker id="rep-punta-vieja" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="rep-cabeza-vieja"/></marker>' +
-      // El rayado de los bloques liberados: lineas diagonales, para que no dependa solo del color.
-      '<pattern id="rep-rayado" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" class="rep-rayado-linea"/></pattern>';
-
+  // La vista de memoria: a la izquierda la pila, con una caja por funcion; a la derecha el monticulo, en tres grupos.
+  disponerMemoria(p, raiz, foto, anterior, previa, datos) {
     // ---- la pila: la funcion en curso arriba
     let y = 24;
     let anchoPila = 150;
@@ -2560,6 +2770,336 @@ export class Figura {
       bloques.set(b.id, { id: b.id, g, hasta: { x: lugar.x, y: lugar.y }, ...lugar });
       datos.set(b.id, { reserva: b, funcion: null, bloque: true });
     }
+    return { marcosG, bloques, filas, alto, ancho, x0, derechaPila, huerfanos, visibles };
+  }
+
+  // ¿Esta fotografia va en la vista abstracta? Si se la eligio, si el programa usa memoria dinamica (por ahora, la vista abstracta es
+  // para las listas en el monticulo) y si no hay una recursion (la misma funcion dos veces en la pila: ahi la vista de memoria es
+  // mas clara, con una caja por llamada).
+  esAbstracta(foto) {
+    if (this.vista !== 'abstracta' || this.sinMonticulo) return false;
+    const funciones = foto.marcos.map((m) => m.funcion);
+    return new Set(funciones).size === funciones.length;
+  }
+
+  // La vista: 'memoria' (cajas de funciones y monticulo) o 'abstracta'. Una vista fijada al crear la figura (desde el JSON) no cambia.
+  fijarVista(vista) {
+    if (!this.vistaFija) this.vista = vista === 'abstracta' ? 'abstracta' : 'memoria';
+  }
+
+  // La vista abstracta: sin cajas de funciones, en dos zonas separadas por una linea. Arriba, la zona de datos (lo que no es puntero);
+  // abajo, la zona de la lista: los nodos y todos los punteros, cada uno encima de lo que senala, con una flecha corta hacia abajo (si
+  // varios senalan lo mismo, van uno al lado del otro; un puntero a otro puntero, apilado encima de el). Cada variable es una pieza que
+  // se mueve como un bloque: cuando un puntero pasa al nodo siguiente, su casilla se desliza hasta alli.
+  disponerAbstracta(p, raiz, foto, anterior, previa, datos) {
+    const visibles = bloquesVisibles(foto, anterior);
+    const { lista, sueltos, sinPuntero } = repartir(foto, visibles, this.cabezas);
+    const enVista = new Set(visibles.map((b) => b.id));
+    // Que variables se ven: las globales y todas las de la funcion en curso; de las demas funciones, los punteros (y las estructuras con
+    // punteros) y lo que algo visible senala (una int de main que la funcion cambia por medio de un puntero).
+    const enCurso = foto.marcos.length - 1;
+    const candidatas = [
+      ...foto.globales.map((v) => ({ v, funcion: 'global', propia: true })),
+      ...foto.marcos.flatMap((m, i) => m.variables.filter((v) => !v.pendiente).map((v) => ({ v, funcion: m.funcion, propia: i === enCurso }))),
+    ];
+    const vistas = new Set(candidatas.filter((x) => x.propia || tienePuntero(x.v.valor)).map((x) => x.v.id));
+    const porId = new Map(candidatas.map((x) => [x.v.id, x]));
+    const senaladas = [...vistas].flatMap((id) => punterosDe(porId.get(id).v.valor)).concat(visibles.flatMap((b) => punterosDe(b.valor)));
+    while (senaladas.length) {
+      const q = senaladas.pop();
+      if (!porId.has(q.a) || vistas.has(q.a)) continue;
+      vistas.add(q.a);
+      senaladas.push(...punterosDe(porId.get(q.a).v.valor));
+    }
+    const todas = candidatas.filter((x) => vistas.has(x.v.id));
+    // Un nombre que esta en dos de las que se ven lleva la funcion: lista (main).
+    const veces = new Map();
+    for (const x of todas) veces.set(x.v.nombre, (veces.get(x.v.nombre) || 0) + 1);
+    // Dos zonas. Arriba, la zona de datos: las variables que no son punteros. Abajo, la zona de la lista: los nodos y todos los punteros
+    // (tambien los parametros como TNodo **lista y los que todavia no tienen valor), cada uno encima de lo que senala:
+    //   un nodo (o una estructura cuyos punteros van todos al mismo nodo, como una TLista), encima del nodo;
+    //   otro puntero (TNodo **lista hacia la lista de main), apilado encima de ese puntero;
+    //   lo demas, en una fila libre al comienzo de la zona: el que vale NULL (con NULL escrito en su casilla, como el sig del
+    //   ultimo nodo: no senala nada), el que no tiene valor (con su flecha al "?", como en el mapa de memoria) y el que senala un dato.
+    const sobreDe = (v) => {
+      if (v.valor.k !== 'ptr' && v.valor.k !== 'est') return null;
+      const ps = punterosDe(v.valor);
+      if (!ps.length) return null;
+      return ps.every((q) => q.a === ps[0].a) && enVista.has(ps[0].a) ? ps[0].a : null;
+    };
+    const datosZona = [];
+    const punteros = [];
+    for (const x of todas) {
+      // Si dos variables a la vista se llaman igual, la funcion de cada una va debajo del nombre, mas chica (10 px) y en gris: asi el
+      // rotulo casi no se ensancha y los bloques no se corren cuando el nombre pasa a repetirse.
+      x.rotulo = x.v.nombre;
+      x.deFuncion = veces.get(x.v.nombre) > 1 ? `(${x.funcion})` : null;
+      x.m = medir(x.v.valor);
+      x.wNombre = Math.max(x.rotulo.length * LETRA, x.deFuncion ? (x.deFuncion.length * LETRA * 10) / 12 : 0) + 8;
+      x.w = x.wNombre + x.m.w;
+      x.h = Math.max(x.m.h, CH);
+      x.hijos = [];
+      (tienePuntero(x.v.valor) ? punteros : datosZona).push(x);
+    }
+    const esPuntero = new Map(punteros.map((x) => [x.v.id, x]));
+    const sombreros = new Map(); // nodo -> las torres que van encima
+    const libres = [];
+    for (const x of punteros) {
+      const s = sobreDe(x.v);
+      if (s != null) {
+        x.sobre = s;
+        if (!sombreros.has(s)) sombreros.set(s, []);
+        sombreros.get(s).push(x);
+        continue;
+      }
+      // Un puntero a otro puntero (a la variable entera): encima de el.
+      const v = x.v.valor;
+      const padre = v.k === 'ptr' && !v.ruta.length && v.a !== x.v.id ? esPuntero.get(v.a) : null;
+      if (padre) {
+        x.sobre = padre.v.id;
+        padre.hijos.push(x);
+      } else libres.push(x);
+    }
+    // Una torre: un puntero con los que lo senalan apilados encima. Se mide desde el centro de su casilla (de donde sale la flecha): L a la
+    // izquierda (el nombre sobresale de ese lado) y R a la derecha; con un solo hijo, las dos casillas quedan una sobre la otra.
+    const SUBIDA = 26; // (lo que mide la flecha corta entre una casilla y lo que senala)
+    const medirTorre = (t, profundidad = 0) => {
+      const hijos = profundidad < 6 ? t.hijos.map((h) => medirTorre(h, profundidad + 1)) : [];
+      let L = t.wNombre + t.m.w / 2;
+      let R = t.m.w / 2;
+      if (hijos.length === 1) {
+        L = Math.max(L, hijos[0].L);
+        R = Math.max(R, hijos[0].R);
+      } else if (hijos.length > 1) {
+        const g = hijos.reduce((s, h) => s + h.L + h.R, 0) + 10 * (hijos.length - 1);
+        L = Math.max(L, g / 2);
+        R = Math.max(R, g / 2);
+      }
+      return { t, hijos, L, R, alto: t.h + (hijos.length ? SUBIDA + Math.max(...hijos.map((h) => h.alto)) : 0) };
+    };
+    // Unas torres una al lado de la otra, centradas en cx (si es una sola, su casilla justo en cx).
+    const medirGrupo = (torres) => {
+      if (torres.length === 1) return { L: torres[0].L, R: torres[0].R };
+      const g = torres.reduce((s, h) => s + h.L + h.R, 0) + 10 * Math.max(0, torres.length - 1);
+      return { L: g / 2, R: g / 2 };
+    };
+    // Las torres encima de un nodo (o del NULL): la primera con su casilla justo sobre el centro del nodo (su flecha baja derecho al
+    // medio) y las demas a su derecha (entran por el costado derecho del nodo).
+    const medirSobre = (torres) => ({ L: torres[0].L, R: torres[0].R + torres.slice(1).reduce((s, h) => s + 10 + h.L + h.R, 0) });
+    const lugares = new Map(); // id -> { x, y, w, h, fila, columna, sobre? }
+    const colocarTorre = (m, cx, abajo, fila) => {
+      const t = m.t;
+      const y = abajo - t.h;
+      lugares.set(t.v.id, { x: cx - t.wNombre - t.m.w / 2, y, w: t.w, h: t.h, fila, columna: null, sobre: t.sobre ?? null, pieza: true });
+      colocarGrupo(m.hijos, cx, y - SUBIDA, fila);
+    };
+    const colocarGrupo = (torres, cx, abajo, fila) => {
+      if (!torres.length) return;
+      if (torres.length === 1) return colocarTorre(torres[0], cx, abajo, fila);
+      let x = cx - medirGrupo(torres).L;
+      for (const m of torres) {
+        colocarTorre(m, x + m.L, abajo, fila);
+        x += m.L + m.R + 10;
+      }
+    };
+
+    const X0 = 16;
+    // (las filas se cortan donde termina el lugar que tiene la figura: ver anchoDisponible)
+    const disponible = this.anchoDisponible();
+    const LIMITE = disponible - 8;
+    const filas = [];
+    let y = 10;
+
+    // ---- la zona de datos: nombre y valor, uno al lado del otro (siempre con el alto de una fila, aunque este vacia: asi la zona de la
+    // lista no sube y baja al entrar y salir de las funciones)
+    let fila = { y, fondo: y + CH };
+    filas.push(fila);
+    let fx = X0;
+    for (const x of datosZona) {
+      if (fx > X0 && fx + x.w > LIMITE) {
+        y = fila.fondo + 16;
+        fila = { y, fondo: y + CH };
+        filas.push(fila);
+        fx = X0;
+      }
+      lugares.set(x.v.id, { x: fx, y: fila.y, w: x.w, h: x.h, fila: filas.length - 1, columna: null, pieza: true });
+      fila.fondo = Math.max(fila.fondo, fila.y + x.h);
+      fx += x.w + 24;
+    }
+    const ySeparador = fila.fondo + 14;
+    y = ySeparador + 18;
+
+    // ---- la zona de la lista. Primero, la fila libre: los punteros que no senalan un nodo ni otro puntero (con lugar a la derecha para
+    // la flecha al "?" de uno sin valor)
+    const torresLibres = libres.map((x) => medirTorre(x));
+    if (torresLibres.length) {
+      let tramo = [];
+      const cerrar = () => {
+        const alto = Math.max(...tramo.map((m) => m.alto));
+        const f = { y, fondo: y + alto };
+        filas.push(f);
+        let cx = X0;
+        for (const m of tramo) {
+          colocarTorre(m, cx + m.L, f.fondo, filas.length - 1);
+          cx += m.L + m.R + 48;
+        }
+        y = f.fondo + 40;
+        tramo = [];
+      };
+      let ancho = 0;
+      for (const m of torresLibres) {
+        if (tramo.length && X0 + ancho + m.L + m.R > LIMITE) {
+          cerrar();
+          ancho = 0;
+        }
+        tramo.push(m);
+        ancho += m.L + m.R + 48;
+      }
+      cerrar();
+    }
+
+    // ---- los nodos en filas, cada uno con sus punteros encima
+    const grupos = [lista.map((b) => ({ b })), sueltos.map((b) => ({ b })), sinPuntero.map((b) => ({ b }))];
+    for (const grupo of grupos) {
+      // Cada ranura: el nodo y, encima, las torres de sus punteros; su casilla (o el grupo) sobre el centro del nodo.
+      const ranuras = grupo.map((r) => {
+        const id = r.b.id;
+        const m = medir(sinEnvoltura(r.b.valor).v);
+        const w = m.w + 2 * PAD;
+        const h = m.h + 2 * PAD;
+        const torres = (sombreros.get(id) || []).map((x) => medirTorre(x));
+        const g = torres.length ? medirSobre(torres) : { L: 0, R: 0 };
+        const izquierda = Math.max(w / 2, g.L);
+        const derecha = Math.max(w / 2, g.R);
+        return { ...r, id, w, h, torres, altoEncima: Math.max(0, ...torres.map((t) => t.alto)), ancho: izquierda + derecha, centro: izquierda };
+      });
+      // Se corta en filas por el ancho.
+      const tramos = [];
+      let tramo = [];
+      let bx = X0;
+      for (const r of ranuras) {
+        if (tramo.length && bx + r.ancho > LIMITE) {
+          tramos.push(tramo);
+          tramo = [];
+          bx = X0;
+        }
+        tramo.push(r);
+        bx += r.ancho + 40;
+      }
+      if (tramo.length) tramos.push(tramo);
+      for (const t of tramos) {
+        const altoEncima = Math.max(0, ...t.map((r) => r.altoEncima));
+        let filaEncima = null;
+        if (altoEncima) {
+          filaEncima = { y, fondo: y + altoEncima };
+          filas.push(filaEncima);
+          y = filaEncima.fondo + SUBIDA - ENCABEZADO; // (la flecha corta; el bloque empieza ENCABEZADO mas abajo de su lugar)
+        }
+        const altoBloques = Math.max(...t.map((r) => r.h));
+        const filaBloques = { y, fondo: y + ENCABEZADO + altoBloques };
+        filas.push(filaBloques);
+        let cx = X0;
+        t.forEach((r, columna) => {
+          const centro = cx + r.centro;
+          lugares.set(r.id, { x: centro - r.w / 2, y, w: r.w, h: r.h, fila: filas.length - 1, columna });
+          let tx = centro;
+          r.torres.forEach((m, k) => {
+            if (k) tx += m.L;
+            colocarTorre(m, tx, filaEncima.fondo, filas.length - 2);
+            tx += m.R + 10;
+          });
+          cx += r.ancho + 40;
+        });
+        y = filaBloques.fondo + 46; // (debajo, lugar para los carriles de una flecha que baja a la fila siguiente)
+      }
+    }
+    const alto = Math.max(y - 20, ySeparador + 40);
+    // (todo el ancho disponible: lo que se mueve durante la animacion no se corta, y la linea entre las zonas va de lado a lado)
+    const ancho = Math.max(disponible, ...[...lugares.values()].map((l) => l.x + l.w + 24));
+    // La linea que separa las dos zonas (detras de todo).
+    raiz.append(el('line', { x1: 8, y1: ySeparador, x2: ancho - 8, y2: ySeparador, class: 'rep-separador' }));
+
+    // ---- dibujar: cada pieza con su origen en (0, 0), y despues se la mueve
+    const bloques = new Map();
+    const enLista = new Set(lista.map((b) => b.id));
+    const enSueltos = new Set(sueltos.map((b) => b.id));
+    const vivosPrevios = new Set(anterior ? anterior.monticulo.filter((x) => x.vivo).map((x) => x.id) : []);
+    const huerfanos = new Set();
+    for (const b of visibles) {
+      const lugar = lugares.get(b.id);
+      if (!lugar) continue;
+      const { v, ruta } = sinEnvoltura(b.valor);
+      const g = el('g', { class: 'rep-bloque-g' + (b.vivo ? '' : ' rep-g-liberado'), 'data-id': b.id });
+      raiz.append(g);
+      p.capa = g;
+      p.bloque = b.id;
+      p.dueno = { id: b.id, nombre: null, pila: false };
+      const huerfano = b.vivo && !enLista.has(b.id) && !enSueltos.has(b.id) && !(foto.enCamino && foto.enCamino.includes(b.id));
+      if (huerfano) huerfanos.add(b.id);
+      const recienHuerfano = huerfano && Boolean(previa && previa.bloques.has(b.id) && previa.huerfanos && !previa.huerfanos.has(b.id));
+      const recienLiberado = !b.vivo && vivosPrevios.has(b.id);
+      g.append(el('rect', { x: 0, y: ENCABEZADO, width: lugar.w, height: lugar.h, rx: 5, class: 'rep-bloque' + (b.vivo ? '' : ' rep-liberado') + (huerfano && !recienHuerfano ? ' rep-huerfano' : '') }));
+      if (recienHuerfano) g.append(el('rect', { x: 0, y: ENCABEZADO, width: lugar.w, height: lugar.h, rx: 5, class: 'rep-bloque rep-huerfano rep-huerfano-nuevo' }));
+      if (recienLiberado) g.append(el('rect', { x: 0, y: ENCABEZADO, width: lugar.w, height: lugar.h, rx: 5, class: 'rep-bloque rep-fundido-bloque' }));
+      // (sin direccion: es la vista abstracta; el aviso de liberado o inalcanzable si va, arriba)
+      const aviso = !b.vivo ? 'liberado' : huerfano ? 'inalcanzable' : '';
+      if (aviso) g.append(texto(2, 8, aviso, 'rep-aviso' + (recienLiberado ? ' rep-aviso-nuevo' : '') + (recienHuerfano ? ' rep-huerfano-nuevo' : '')));
+      p.ancla(b.id, [], 0, ENCABEZADO, lugar.w, lugar.h);
+      p.valor(v, PAD, ENCABEZADO + PAD, b.id, ruta);
+      p.bloque = null;
+      p.capa = raiz;
+      bloques.set(b.id, { id: b.id, g, hasta: { x: lugar.x, y: lugar.y }, ...lugar });
+      datos.set(b.id, { reserva: b, funcion: null, bloque: true });
+    }
+    // Las variables: el nombre a la izquierda y la casilla (una estructura, con sus campos) a la derecha.
+    for (const x of todas) {
+      const lugar = lugares.get(x.v.id);
+      if (!lugar) continue;
+      const g = el('g', { class: 'rep-var rep-pieza', 'data-id': x.v.id });
+      raiz.append(g);
+      p.capa = g;
+      p.bloque = x.v.id;
+      p.dueno = { id: x.v.id, nombre: x.v.nombre, pila: lugar.sobre == null }; // (encima de lo que senala, el nombre ya esta a la vista)
+      g.append(el('rect', { x: -3, y: -3, width: lugar.w + 6, height: lugar.h + 6, class: 'rep-zona' }));
+      const vy = lugar.h - x.m.h; // (la casilla, abajo: de su centro sale la flecha)
+      const base = vy + x.m.h / 2 + (x.v.valor.k === 'est' ? 10 : 4);
+      const liberado = !x.v.vivo ? ' rep-liberado' : '';
+      if (!x.deFuncion) g.append(texto(0, base, x.rotulo, 'rep-nombre' + liberado));
+      else {
+        // (dos renglones alineados a la derecha, pegados a la casilla: el nombre y, debajo, la funcion)
+        const derecha = x.wNombre - 8;
+        g.append(texto(derecha, base - 5, x.rotulo, 'rep-nombre' + liberado, { 'text-anchor': 'end' }));
+        g.append(texto(derecha, base + 7, x.deFuncion, 'rep-nombre-funcion' + liberado, { 'text-anchor': 'end' }));
+      }
+      p.valor(x.v.valor, x.wNombre, vy, x.v.id, []);
+      p.bloque = null;
+      p.capa = raiz;
+      bloques.set(x.v.id, { id: x.v.id, g, hasta: { x: lugar.x, y: lugar.y }, ...lugar, wNombre: x.wNombre, deFuncion: x.deFuncion });
+      datos.set(x.v.id, { reserva: x.v, funcion: `${x.funcion}()`, bloque: false });
+    }
+    return { marcosG: new Map(), bloques, filas, alto, ancho, x0: X0, derechaPila: 0, huerfanos, visibles, anchoDisponible: disponible };
+  }
+
+  construir(foto, anterior, previa = null) {
+    const p = new Pintor(foto, anterior, this.ayudas);
+    const raiz = p.capa;
+    const datos = new Map();
+    this.datos = datos;
+    const defs = el('defs');
+    defs.innerHTML =
+      '<marker id="rep-punta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="rep-cabeza"/></marker>' +
+      '<marker id="rep-punta-mala" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="rep-cabeza-mala"/></marker>' +
+      '<marker id="rep-punta-incierta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="rep-cabeza-incierta"/></marker>' +
+      '<marker id="rep-punta-nueva" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="rep-cabeza-nueva"/></marker>' +
+      '<marker id="rep-punta-vieja" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="rep-cabeza-vieja"/></marker>' +
+      // El rayado de los bloques liberados: lineas diagonales, para que no dependa solo del color.
+      '<pattern id="rep-rayado" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" class="rep-rayado-linea"/></pattern>';
+
+    // La disposicion: donde va cada caja, variable y bloque (ver disponerMemoria y disponerAbstracta).
+    const abstracta = this.esAbstracta(foto);
+    const { marcosG, bloques, filas, alto, ancho, x0, derechaPila, huerfanos, visibles, anchoDisponible } = abstracta
+      ? this.disponerAbstracta(p, raiz, foto, anterior, previa, datos)
+      : this.disponerMemoria(p, raiz, foto, anterior, previa, datos);
 
     // ---- las flechas: para cada una, como va en la disposicion de ahora y, si los bloques que une
     // ya estaban en el paso anterior, como iba en esa (asi se la dibuja antes de que se muevan)
@@ -2585,6 +3125,9 @@ export class Figura {
       else if (ld.fila > lo.fila) tipo = 'bajo';
       else if (ld.fila < lo.fila) tipo = 'alto';
       else tipo = 'mismo';
+      // (vista abstracta) Un puntero encima de lo que senala: una flecha corta hacia abajo.
+      // (y mientras se anima, la de un puntero que todavia esta en otro lugar y baja hasta lo que va a senalar: rodea lo que hay en el medio)
+      if (lo && ld && lo.pieza && ((lo.sobre != null && lo.sobre === ld.id) || ld.fila > lo.fila)) tipo = 'encima';
       const d = { tipo, destino: ancla, corrido, lo, ld, ranura: 0, corrimientoEtiqueta: 0 };
       const carril = (clase, fila) => {
         const k = `${clase}:${fila}`;
@@ -2705,11 +3248,28 @@ export class Figura {
       r.viejo = describirEn(r, bloquesViejos, ctViejo, marcosViejos);
       retiradas.push(r);
     }
+    // (vista abstracta) Como iba cada flecha en el paso anterior: su ranura (por donde entraba, si varias llegan al mismo lugar) y sus
+    // carriles son los que tenia entonces, no los de contarlas de nuevo ahora; si no, al empezar a moverse se correria de golpe.
+    if (abstracta && previa) {
+      const antes = new Map(previa.flechas.filter((x) => x.final && x.claveOrigen != null).map((x) => [x.claveOrigen, x.final]));
+      const igualar = (d, llave) => {
+        const v = antes.get(llave);
+        if (!d || !v || v.tipo !== d.tipo || !v.destino || !d.destino || v.destino.bloque !== d.destino.bloque || v.destino.marco !== d.destino.marco) return;
+        for (const campo of ['ranura', 'carril', 'canal', 'corrimientoEtiqueta']) if (v[campo] != null) d[campo] = v[campo];
+      };
+      for (const fl of flechas) {
+        igualar(fl.previo, fl.claveOrigen);
+        igualar(fl.viejo, fl.claveOrigen);
+      }
+      for (const r of retiradas) igualar(r.viejo, r.claveOrigen);
+    }
     // Un puntero que desaparece (se va la caja de su funcion, o termina el bloque { } donde estaba declarado): su flecha se
     // desvanece en su lugar, en el mismo tiempo en que se dibujan las nuevas (la de main que recibe la direccion).
     if (previa && anterior) {
       for (const fp of previa.flechas) {
-        if (fp.origen.marco == null || p.anclas.has(fp.claveOrigen) || !fp.final) continue;
+        // (en la vista abstracta, la de una variable que deja de verse: su pieza tambien se desvanece, ver mostrarBase)
+        const dePiezaQueSeVa = fp.origen.bloque != null && previa.vista === 'abstracta' && !bloques.has(fp.origen.bloque) && previa.datos.get(fp.origen.bloque)?.bloque === false;
+        if ((fp.origen.marco == null && !dePiezaQueSeVa) || p.anclas.has(fp.claveOrigen) || !fp.final) continue;
         // Con retirada: si apuntaba a un bloque liberado se desvanece toda en rojo (y no con el cuerpo ambar de lo nuevo).
         retiradas.push({ ...fp, deId: null, nombre: null, cambio: true, retirada: true, tarde: false, previo: null, viejo: fp.final, escenaOrigen: previa, seVa: true });
       }
@@ -2738,6 +3298,8 @@ export class Figura {
       cambios: p.cambios,
       previos: p.previos,
       datosAnterior: anterior ? indexar(anterior) : new Map(),
+      vista: abstracta ? 'abstracta' : 'memoria',
+      anchoDisponible,
     };
   }
 
@@ -2767,6 +3329,15 @@ export class Figura {
     const T = { x: t0.x + d.corrido, y: t0.y, w: t0.w, h: t0.h };
     const tx = T.x + T.w / 2;
     const ty = T.y + T.h / 2;
+    // (vista abstracta) Por donde entra por arriba una flecha que baja a un nodo: al medio, salvo que el nodo tenga punteros encima (su
+    // flecha llega al medio); entonces por el costado de donde viene, al lado de la de ellos, sin pasar por sus casillas.
+    const abstracta = escena.vista === 'abstracta';
+    const entradaArriba = (desde = sx) => {
+      const ocupado = d.destino.bloque != null && [...bloques.values()].some((b) => b.sobre != null && b.sobre === d.destino.bloque && b.g);
+      if (!ocupado) return tx;
+      const lado = 6 * Math.min(d.ranura, 2);
+      return desde > tx ? T.x + T.w - 8 - lado : T.x + 8 + lado;
+    };
     switch (d.tipo) {
       case 'pila-izquierda': {
         const cx = derechaPila + 10 + 6 * d.canal;
@@ -2795,15 +3366,84 @@ export class Figura {
       }
       case 'recta': {
         const x1 = S.x + S.w;
-        return Math.abs(ty - sy) < 3 ? [{ x: x1, y: sy }, { x: T.x, y: sy }] : [{ x: x1, y: sy }, { x: x1 + 16, y: sy }, { x: T.x - 16, y: ty }, { x: T.x, y: ty }];
+        const recta = Math.abs(ty - sy) < 3 ? [{ x: x1, y: sy }, { x: T.x, y: sy }] : [{ x: x1, y: sy }, { x: x1 + 16, y: sy }, { x: T.x - 16, y: ty }, { x: T.x, y: ty }];
+        // (vista abstracta) Mientras se anima, el nodo todavia no esta a la derecha (viene de otra fila a ponerse al lado): la flecha
+        // entra por arriba hasta que el nodo llega. Mientras el nodo esta bien abajo, baja desde la casilla como 'bajo'; cuando ya
+        // esta casi a la altura, sale por la derecha, baja (o sube) hasta justo encima del nodo y entra por arriba; y cuando el nodo
+        // llega a la derecha, es la flecha recta. Entre una forma y la otra pasa de a poco (con "mezclar"), sin saltos.
+        const enLugar = (v, desde, hasta) => Math.max(0, Math.min(1, (v - desde) / (hasta - desde)));
+        const aLaDerecha = enLugar(T.x, x1 + 20, x1 + 48);
+        if (!abstracta || aLaDerecha >= 1) return recta;
+        const y1 = S.y + S.h;
+        const xe = entradaArriba(Infinity); // (siempre por el costado derecho: no salta de lado cuando el nodo pasa por debajo)
+        const xc = x1 + 12;
+        const xa = Math.min(xe, xc - 8);
+        const porArriba = [{ x: x1, y: sy }, { x: xc, y: sy }, { x: xc, y: T.y - 12 }, { x: xa, y: T.y - 12 }, { x: xa, y: T.y }];
+        const desdeAbajo = [{ x: sx, y: y1 }, { x: sx, y: y1 + 16 }, { x: xe, y: y1 + 16 }, { x: xe, y: T.y }];
+        const abajo = enLugar(T.y - 12, y1 + 16, y1 + 56);
+        return mezclar(mezclar(porArriba, desdeAbajo, abajo), recta, aLaDerecha);
       }
       case 'bajo': {
         const lane = filas[d.lo.fila].fondo + 10 + 6 * d.carril;
-        return [{ x: sx, y: S.y + S.h }, { x: sx, y: lane }, { x: tx, y: lane }, { x: tx, y: T.y }];
+        const xe = abstracta ? entradaArriba() : tx;
+        return [{ x: sx, y: S.y + S.h }, { x: sx, y: lane }, { x: xe, y: lane }, { x: xe, y: T.y }];
       }
       case 'mismo': {
         const lane = filas[d.lo.fila].fondo + 10 + 6 * d.carril;
         return [{ x: sx, y: S.y + S.h }, { x: sx, y: lane }, { x: tx, y: lane }, { x: tx, y: T.y + T.h }];
+      }
+      case 'encima': {
+        const y1 = S.y + S.h;
+        const lado = 6 * Math.min(d.ranura, 2); // (varias que llegan del mismo lado no se enciman)
+        // Lo que hay entre las dos alturas (entre el borde de abajo de la casilla y lo que senala: las otras casillas y los nodos), para
+        // no pasar por encima. No cuenta lo que esta en movimiento: solo pasa un momento por ahi (como aux cuando baja a su lugar, al
+        // pasar entre lista (insertarFinal) y lista (main)).
+        const arriba = Math.min(y1, T.y);
+        const abajo = Math.max(y1, T.y);
+        const estorbos = [];
+        for (const b of bloques.values()) {
+          const pos = b.actual || b.hasta;
+          if (!pos || !b.g || b.id === f.origen.bloque || b.id === d.destino.bloque) continue;
+          const lejos = (q) => !q || Math.abs(pos.x - q.x) > 0.5 || Math.abs(pos.y - q.y) > 0.5;
+          if (lejos(b.hasta) && lejos(b.desde)) continue;
+          const alto = b.h + (b.g.classList.contains('rep-pieza') ? 0 : ENCABEZADO);
+          if (pos.y + alto <= arriba + 2 || pos.y >= abajo - 2) continue;
+          estorbos.push({ x0: pos.x - 6, x1: pos.x + b.w + 6 });
+        }
+        const libre = (x) => !estorbos.some((e) => x >= e.x0 && x <= e.x1);
+        // Cuanto se mete una columna en lo que estorba (0 si esta libre): para pasar de a poco de un recorrido al otro.
+        const metida = (x) => Math.max(0, ...estorbos.map((e) => (x >= e.x0 && x <= e.x1 ? Math.min(x - e.x0, e.x1 - x) : 0)));
+        // Esta lejos y hay algo en el medio (mientras se anima, la casilla todavia no llego a su lugar): rodea por la derecha y entra por
+        // el costado derecho del nodo, al lado de la flecha que ya llegaba. Si la columna por donde entra esta libre, dobla ahi; si no,
+        // baja por el primer hueco a la derecha del nodo que no pase por ninguna casilla ni nodo entre las dos alturas.
+        const rodeo = () => {
+          const xx = T.x + T.w - 8 - lado;
+          const salida = y1 + 8;
+          // (el tramo que baja al nodo, mas largo que la punta: el cuerpo termina arriba de ella y no en su costado)
+          const entrada = Math.max(salida + 4, T.y - 24);
+          if (libre(xx)) return [{ x: sx, y: y1 }, { x: sx, y: salida }, { x: xx, y: salida }, { x: xx, y: T.y }];
+          let xc = T.x + T.w + 18 + lado;
+          for (let vueltas = 0; vueltas < 20; vueltas++) {
+            const choca = estorbos.find((e) => xc >= e.x0 && xc <= e.x1);
+            if (!choca) break;
+            xc = choca.x1 + 8 + lado;
+          }
+          return [{ x: sx, y: y1 }, { x: sx, y: salida }, { x: xc, y: salida }, { x: xc, y: entrada }, { x: xx, y: entrada }, { x: xx, y: T.y }];
+        };
+        // La casilla esta encima del nodo: derecho hacia abajo; si esta corrida a un costado (varios punteros sobre el mismo nodo), entra
+        // por ESE costado del nodo, asi no se cruza con la del puntero que esta en el medio. Vale aunque, mientras se anima, la distancia
+        // crezca un momento (el nodo baja antes que la casilla): la flecha queda igual, solo mas larga.
+        if (y1 <= T.y) {
+          // (la columna por donde entra es la de la casilla llevada al nodo: si la casilla se corre de a poco, la flecha tambien)
+          const xl = Math.max(T.x + 8 + lado, Math.min(T.x + T.w - 8 - lado, sx));
+          const doblez = y1 + Math.min((T.y - y1) / 2, 13);
+          const directa = Math.abs(xl - sx) < 0.5 ? [{ x: sx, y: y1 }, { x: sx, y: T.y }] : [{ x: sx, y: y1 }, { x: sx, y: doblez }, { x: xl, y: doblez }, { x: xl, y: T.y }];
+          // Si una casilla que se corre empieza a pasar por encima de algo que esta quieto, la flecha no cambia de golpe al rodeo:
+          // pasa de a poco, a medida que la columna se mete en lo que estorba (del todo a los 40 px).
+          const peso = Math.min(1, Math.max(metida(sx), metida(xl)) / 40);
+          return peso <= 0 ? directa : mezclar(directa, rodeo(), peso);
+        }
+        return rodeo();
       }
       default: {
         // 'alto': hacia una fila de arriba
@@ -2962,6 +3602,29 @@ export class Figura {
     }
   }
 
+  // Si lo que ubica una punta de una flecha (un bloque o la caja de una funcion) esta en la escena actual.
+  // Calcula algo con todos los bloques puestos donde estaban ("desde") o donde van ("hasta"), y los devuelve a donde estan.
+  enMomento(cual, calcular) {
+    const guardadas = [];
+    for (const b of this.escena.bloques.values()) {
+      if (!b[cual]) continue;
+      guardadas.push([b, b.actual]);
+      b.actual = b[cual];
+    }
+    try {
+      return calcular();
+    } finally {
+      for (const [b, actual] of guardadas) b.actual = actual;
+    }
+  }
+
+  anclaPresente(a) {
+    if (!a) return false;
+    if (a.bloque != null) return this.escena.bloques.has(a.bloque);
+    if (a.marco != null) return this.escena.marcosG.has(a.marco);
+    return true;
+  }
+
   pintarFlechas() {
     const { flechas, capaFlechas } = this.escena;
     // Los bloques que se van de la vista se desvanecen en el tiempo A, a la vez que la flecha que los senalaba.
@@ -2983,6 +3646,18 @@ export class Figura {
         return;
       }
       let puntos = this.rutaPuntos(f, d, filas);
+      // Mientras los bloques se reubican, una flecha cuyo recorrido cambia de forma (antes bajaba a un nodo y ahora sube a el, por
+      // ejemplo) no salta de golpe del recorrido viejo al nuevo: se deforma de uno al otro a la par del movimiento.
+      // (tambien si es del mismo tipo: los carriles se ubican por las filas, que cambian de las viejas a las nuevas)
+      if (this.fase === 'B' && f.previo && f.previo.tipo !== 'perdida' && this.anclaPresente(f.origen) && this.anclaPresente(f.previo.destino)) {
+        // (vista abstracta: los dos recorridos con todo quieto, el de antes con los bloques donde estaban y el de despues con los bloques
+        // donde van; las puntas se mueven a la par de los bloques y el recorrido no cambia por lo que pasa un momento cerca)
+        if (this.escena.vista === 'abstracta' && f.final) {
+          const antes = this.enMomento('desde', () => this.rutaPuntos(f, f.previo, this.escena.filasPrevias));
+          const despues = this.enMomento('hasta', () => this.rutaPuntos(f, f.final, this.escena.filas));
+          puntos = mezclar(antes, despues, this.kB ?? 1);
+        } else puntos = mezclar(this.rutaPuntos(f, f.previo, this.escena.filasPrevias), puntos, this.kB ?? 1);
+      }
       if (this.animandoA && f.cambio) {
         // La flecha que cambio: si iba a otro lado, la punta se desliza del destino viejo al nuevo;
         // si no iba a ninguno, se va dibujando (si el puntero era NULL, primero la palabra da paso al punto).

@@ -379,9 +379,11 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
   const aplicarAyudas = () => {
     dibujo.fijarNombres(ajustes.valor('nombresFlechas'));
     dibujo.fijarAyudas(ajustes.todos());
+    dibujo.fijarVista(ajustes.valor('vistaAbstracta') ? 'abstracta' : 'memoria');
   };
   aplicarAyudas();
   let sinValorVisto = ajustes.valor('punterosSinValor');
+  let vistaVista = ajustes.valor('vistaAbstracta');
   const olvidarAyudas = ajustes.alCambiar(() => {
     if (!raiz.isConnected) {
       olvidarAyudas(); // este reproductor ya no esta en la pagina
@@ -392,8 +394,9 @@ export function crearReproductor({ codigo, traza, error = null, titulo = '', fun
     mostrarExplicar();
     requestAnimationFrame(medirDesborde); // (los botones de la fila pudieron cambiar)
     // Las que cambian como se dibuja una casilla (no solo como se anima) se ven al instante: se vuelve a dibujar el paso de ahora.
-    if (ajustes.valor('punterosSinValor') !== sinValorVisto) {
+    if (ajustes.valor('punterosSinValor') !== sinValorVisto || ajustes.valor('vistaAbstracta') !== vistaVista) {
       sinValorVisto = ajustes.valor('punterosSinValor');
+      vistaVista = ajustes.valor('vistaAbstracta');
       pintarPaso(false, false);
     }
     aplicarPuntos();

@@ -388,6 +388,97 @@ import { corregir } from '../js/corrector.js';
           }
         }
 
+        // La vista abstracta: los mismos programas se dibujan en todos sus pasos sin error (los que no usan memoria dinamica o tienen una
+        // recursion quedan en la de memoria).
+        for (const caso of CASOS_DEL_MOTOR) {
+          try {
+            const r = ejecutarMotor(analizador, caso.codigo, { entrada: caso.entrada, traza: true });
+            r.traza.forEach((foto, i) => dibujarFotografia(foto, i ? r.traza[i - 1] : null, { vista: 'abstracta' }));
+            anotar(true, `figura del motor, vista abstracta: ${caso.nombre}`);
+          } catch (e) {
+            anotar(false, `figura del motor, vista abstracta: ${caso.nombre}`, e.stack);
+          }
+        }
+
+        // En la vista abstracta no hay cajas de funciones; cada puntero va encima de lo que senala (y uno en NULL, encima del NULL), con
+        // una flecha corta; un nombre repetido en dos funciones lleva la funcion; y con una recursion se vuelve a la vista de memoria.
+        {
+          const titulo = 'figura: vista abstracta de una lista';
+          try {
+            const nodo =
+              '#include <stdlib.h>\ntypedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\n' +
+              'TNodo *crearNodo(int dato) {\n  TNodo *nuevo = malloc(sizeof(TNodo));\n  nuevo->dato = dato;\n  nuevo->sig = NULL;\n  return nuevo;\n}\n';
+            const codigo =
+              nodo +
+              'void recorrer(TNodo **lista) {\n  TNodo *aux = *lista;\n  while (aux != NULL) {\n    aux = aux->sig;\n  }\n}\n' +
+              'int main() {\n  TNodo *lista = crearNodo(4);\n  lista->sig = crearNodo(9);\n  recorrer(&lista);\n  return 0;\n}';
+            const r = ejecutarMotor(analizador, codigo, { traza: true });
+            if (r.error) throw new Error(r.error.codigo);
+            const lineaDe = (texto) => codigo.split('\n').findIndex((l) => l.includes(texto)) + 1;
+            const fotoEn = (texto, n = 1) => r.traza.filter((f) => f.linea === lineaDe(texto))[n - 1];
+            // (el rotulo de una pieza: el nombre y, si se repite, la funcion en el renglon de abajo: "lista (main)")
+            const rotuloDe = (g) => [g.querySelector('.rep-nombre'), g.querySelector('.rep-nombre-funcion')].filter(Boolean).map((t) => t.textContent).join(' ');
+            const piezaDe = (svg, rotulo) => [...svg.querySelectorAll('.rep-pieza')].find((g) => rotuloDe(g) === rotulo);
+            const trasladoX = (g) => Number(/translate\(([-\d.]+)/.exec(g.getAttribute('transform'))[1]);
+            // aux encima del 9 (la segunda vuelta del ciclo)
+            const enLaSegunda = dibujarFotografia(fotoEn('aux = aux->sig;', 2), null, { vista: 'abstracta' });
+            if (enLaSegunda.querySelector('.rep-marco')) throw new Error('quedan cajas de funciones');
+            const bloquesDe = [...enLaSegunda.querySelectorAll('.rep-bloque-g:not(.rep-nulo-g)')];
+            const aux = piezaDe(enLaSegunda, 'aux');
+            const listaMain = piezaDe(enLaSegunda, 'lista (main)');
+            if (!aux || !listaMain || !piezaDe(enLaSegunda, 'lista (recorrer)')) throw new Error('faltan las variables con su nombre (y la funcion en el repetido)');
+            // la funcion va debajo del nombre (otro renglon, mas abajo), y el nombre que no se repite va solo
+            const [nombreMain, funcionMain] = [listaMain.querySelector('.rep-nombre'), listaMain.querySelector('.rep-nombre-funcion')];
+            if (nombreMain.textContent !== 'lista' || !(Number(funcionMain.getAttribute('y')) > Number(nombreMain.getAttribute('y')))) throw new Error('la funcion no esta debajo del nombre');
+            if (aux.querySelector('.rep-nombre-funcion')) throw new Error('aux no se repite y lleva la funcion');
+            if (bloquesDe.length !== 2) throw new Error(`se esperaban 2 nodos y hay ${bloquesDe.length}`);
+            const [primero, segundo] = bloquesDe.sort((a, b) => trasladoX(a) - trasladoX(b));
+            if (!(trasladoX(aux) > trasladoX(primero) + 20)) throw new Error('aux no esta sobre el segundo nodo');
+            if (!(trasladoX(listaMain) < trasladoX(segundo))) throw new Error('lista (main) no esta sobre el primer nodo');
+            // aux en NULL: NULL escrito en su casilla (como el sig del ultimo nodo), sin flecha y en la fila libre, arriba de los nodos
+            const alFinal = dibujarFotografia(r.traza.find((f) => f.linea === lineaDe('while (aux != NULL)') && f.marcos.at(-1).variables.some((v) => v.nombre === 'aux' && v.valor.k === 'nulo')), null, { vista: 'abstracta' });
+            const auxNulo = piezaDe(alFinal, 'aux');
+            if (alFinal.querySelector('.rep-nulo-g')) throw new Error('queda un bloque NULL');
+            if (!auxNulo || ![...auxNulo.querySelectorAll('text')].some((t) => t.textContent === 'NULL')) throw new Error('aux vale NULL y su casilla no lo dice');
+            if (alFinal.querySelector(`.rep-flecha-g[data-o="${auxNulo.dataset.id}"]`)) throw new Error('aux vale NULL y tiene flecha');
+            const yNodos = Math.min(...[...alFinal.querySelectorAll('.rep-bloque-g')].map((g) => Number(/translate\([-\d.]+,([-\d.]+)/.exec(g.getAttribute('transform'))[1])));
+            if (!(Number(/translate\([-\d.]+,([-\d.]+)/.exec(auxNulo.getAttribute('transform'))[1]) < yNodos)) throw new Error('aux en NULL no esta en la fila libre');
+            // con la vista de memoria siguen las cajas
+            if (!dibujarFotografia(fotoEn('aux = aux->sig;', 2)).querySelector('.rep-marco')) throw new Error('la vista de memoria no tiene sus cajas');
+            // una recursion: vista de memoria aunque se pida la abstracta
+            const recursiva = ejecutarMotor(analizador, nodo + 'int contar(TNodo *l) {\n  if (l == NULL) {\n    return 0;\n  }\n  return 1 + contar(l->sig);\n}\nint main() {\n  TNodo *lista = crearNodo(4);\n  int n = contar(lista);\n  return 0;\n}', { traza: true });
+            const honda = recursiva.traza.find((f) => f.marcos.filter((m) => m.funcion === 'contar').length >= 2);
+            if (!dibujarFotografia(honda, null, { vista: 'abstracta' }).querySelector('.rep-marco')) throw new Error('con una recursion deberia quedar la vista de memoria');
+            // De la funcion que llama solo se ven los punteros y lo que algo senala: dentro de contar, n de main no se ve y cantidad si
+            // (la senala c); al volver a main, n se ve otra vez.
+            const conDatos = ejecutarMotor(
+              analizador,
+              nodo + 'void contar(TNodo *l, int *c) {\n  int pasos = 0;\n  while (l != NULL) {\n    *c = *c + 1;\n    l = l->sig;\n  }\n}\nint main() {\n  int n = 5;\n  int cantidad = 0;\n  TNodo *lista = crearNodo(n);\n  contar(lista, &cantidad);\n  return 0;\n}',
+              { traza: true }
+            );
+            const codigoDatos = conDatos.traza.length ? null : 'sin traza';
+            if (codigoDatos || conDatos.error) throw new Error(conDatos.error ? conDatos.error.codigo : codigoDatos);
+            const nombres = (svg) => [...svg.querySelectorAll('.rep-pieza .rep-nombre')].map((t) => t.textContent).sort().join(',');
+            const adentro = nombres(dibujarFotografia(conDatos.traza.find((f) => f.marcos.at(-1).funcion === 'contar' && f.marcos.at(-1).variables.some((v) => v.nombre === 'pasos' && !v.pendiente)), null, { vista: 'abstracta' }));
+            if (adentro !== 'c,cantidad,l,lista,pasos') throw new Error(`dentro de contar se ven ${adentro}`);
+            // Dos zonas: arriba de la linea, lo que no es puntero; abajo, los punteros (tambien c, que senala un dato de arriba).
+            const svgAdentro = dibujarFotografia(conDatos.traza.find((f) => f.marcos.at(-1).funcion === 'contar' && f.marcos.at(-1).variables.some((v) => v.nombre === 'pasos' && !v.pendiente)), null, { vista: 'abstracta' });
+            const linea = svgAdentro.querySelector('.rep-separador');
+            if (!linea) throw new Error('falta la linea entre las zonas');
+            const yLinea = Number(linea.getAttribute('y1'));
+            const yDe = (svg, rotulo) => Number(/translate\([-\d.]+,([-\d.]+)/.exec(piezaDe(svg, rotulo).getAttribute('transform'))[1]);
+            for (const n of ['cantidad', 'pasos']) if (!(yDe(svgAdentro, n) < yLinea)) throw new Error(`${n} no esta en la zona de datos`);
+            for (const n of ['c', 'l', 'lista']) if (!(yDe(svgAdentro, n) > yLinea)) throw new Error(`${n} no esta en la zona de la lista`);
+            // El TNodo **lista del parametro, apilado encima de la lista de main.
+            if (!(yDe(enLaSegunda, 'lista (recorrer)') < yDe(enLaSegunda, 'lista (main)'))) throw new Error('el puntero a puntero no esta encima de la lista de main');
+            const afuera = nombres(dibujarFotografia(conDatos.traza.findLast((f) => f.marcos.length === 1 && f.marcos[0].funcion === 'main'), null, { vista: 'abstracta' }));
+            if (!afuera.split(',').includes('n')) throw new Error(`de vuelta en main se ven ${afuera}`);
+            anotar(true, titulo);
+          } catch (e) {
+            anotar(false, titulo, e.stack || e.message);
+          }
+        }
+
         // Con la ayuda "Punteros sin inicializar" la figura tambien se dibuja en todos los pasos (con las animaciones de un paso al otro), y un
         // puntero que nunca recibio una direccion lleva una flecha hacia un "?"; sin la ayuda, su casilla dice "?".
         {
@@ -551,6 +642,84 @@ import { corregir } from '../js/corrector.js';
             );
             if (!r.pendiente) throw new Error('el paso en que termina una funcion deberia encadenar el efecto y el desvanecimiento');
             if (!r.nombres.includes('crear()')) throw new Error('mientras se ve el efecto, la caja de la funcion todavia tiene que estar: ' + r.nombres.join(','));
+            anotar(true, titulo);
+          } catch (err) {
+            anotar(false, titulo, err.stack || err.message);
+          }
+        }
+
+        // Vista abstracta, una condicion: el puntero cuyo valor va a la pregunta muestra en su casilla la direccion que guarda (en lugar
+        // del punto) y lo que senala la muestra encima; el que solo se recorre para llegar (aux en aux->sig) sigue con su punto.
+        {
+          const titulo = 'figura: en la vista abstracta, al evaluar una condicion, el puntero muestra la direccion que guarda';
+          try {
+            const { Figura } = await import('../js/motor/figura.js');
+            const { ajustes } = await import('../js/ajustes.js');
+            ajustes.fijarPerfil('explicacion');
+            const fuente = '#include <stdlib.h>\ntypedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\nint main() {\n  TNodo *lista = malloc(sizeof(TNodo));\n  lista->sig = malloc(sizeof(TNodo));\n  lista->sig->sig = NULL;\n  TNodo *aux = lista;\n  if (aux->sig != NULL) {\n    aux = aux->sig;\n  }\n  return 0;\n}';
+            const m = ejecutarMotor(analizador, fuente, { traza: true, preguntas: true });
+            const i = m.traza.findIndex((foto) => foto.condicion && foto.condicion.texto === 'aux->sig != NULL');
+            if (i < 1) throw new Error('no se encontro la condicion');
+            const segundo = m.traza[i].monticulo[1];
+            const probar = (vista) => {
+              const div = document.createElement('div');
+              document.body.append(div);
+              const figura = new Figura(div, { vista });
+              figura.fijarAyudas(ajustes.todos());
+              for (let k = 0; k < i; k++) figura.mostrar(m.traza[k], k ? m.traza[k - 1] : null, { animar: false });
+              figura.mostrar(m.traza[i], m.traza[i - 1], { animar: true, duracion: 1000, flujo: true });
+              const textos = [...div.querySelectorAll('text.rep-direccion-leida')].map((t) => ({ texto: t.textContent, enCasilla: t.classList.contains('rep-texto'), pieza: t.closest('[data-id]') && t.closest('[data-id]').getAttribute('data-id') }));
+              figura.terminarFlujo();
+              if (figura.raf) cancelAnimationFrame(figura.raf);
+              div.remove();
+              return textos;
+            };
+            const abstracta = probar('abstracta');
+            const enCasilla = abstracta.filter((x) => x.enCasilla);
+            if (enCasilla.length !== 1 || enCasilla[0].texto !== String(segundo.dir)) throw new Error('el sig deberia mostrar la direccion ' + segundo.dir + ': ' + JSON.stringify(abstracta));
+            if (!abstracta.some((x) => !x.enCasilla && x.texto === String(segundo.dir))) throw new Error('encima del nodo que senala deberia verse su direccion: ' + JSON.stringify(abstracta));
+            if (abstracta.length !== 2) throw new Error('aux solo se recorre: no muestra su direccion: ' + JSON.stringify(abstracta));
+            if (probar('memoria').length) throw new Error('por ahora, solo en la vista abstracta');
+            anotar(true, titulo);
+          } catch (err) {
+            anotar(false, titulo, err.stack || err.message);
+          }
+        }
+
+        // Vista abstracta, un return que entrega un puntero: primero la flecha llega al nodo (nada se mueve), despues se
+        // desvanece lo de la funcion que termina y recien ahi todo se reubica, una sola vez.
+        {
+          const titulo = 'figura: en la vista abstracta, al volver de una funcion, la flecha, despues lo que sale y al final la reubicacion';
+          try {
+            const { Figura } = await import('../js/motor/figura.js');
+            const { ajustes } = await import('../js/ajustes.js');
+            const { tiempo } = await import('../js/motor/tiempo.js');
+            ajustes.fijarPerfil('explicacion');
+            const fuente = '#include <stdlib.h>\ntypedef struct nodo {\n  int dato;\n  struct nodo *sig;\n} TNodo;\nTNodo *crearNodo(int dato) {\n  TNodo *nuevo = malloc(sizeof(TNodo));\n  nuevo->dato = dato;\n  nuevo->sig = NULL;\n  return nuevo;\n}\nvoid insertarFinal(TNodo **lista, int dato) {\n  TNodo *nuevo = crearNodo(dato);\n  TNodo *aux;\n  if (*lista == NULL) {\n    *lista = nuevo;\n  } else {\n    aux = *lista;\n    while (aux->sig != NULL) {\n      aux = aux->sig;\n    }\n    aux->sig = nuevo;\n  }\n}\nint main() {\n  TNodo *lista = NULL;\n  insertarFinal(&lista, 4);\n  insertarFinal(&lista, 9);\n  return 0;\n}';
+            const m = ejecutarMotor(analizador, fuente, { traza: true });
+            const i = m.traza.findIndex((foto, k) => k > 0 && foto.marcos.length < m.traza[k - 1].marcos.length && m.traza[k - 1].marcos.at(-1).funcion === 'crearNodo' && foto.monticulo.length === 2);
+            if (i < 1) throw new Error('no se encontro el paso del return de crearNodo');
+            const figura = new Figura(document.createElement('div'), { vista: 'abstracta' });
+            figura.fijarAyudas(ajustes.todos());
+            for (let k = 0; k < i; k++) figura.mostrar(m.traza[k], k ? m.traza[k - 1] : null, { animar: false });
+            figura.mostrar(m.traza[i], m.traza[i - 1], { animar: true, duracion: 1000, flujo: true });
+            if (!figura.intermediaFoto) throw new Error('el paso deberia encadenar el efecto y la salida');
+            const efecto = figura.escena;
+            if (efecto.vista !== 'abstracta') throw new Error('deberia verse la vista abstracta');
+            const movidos = [...efecto.bloques.values()].filter((b) => Math.abs(b.desde.x - b.hasta.x) > 0.5 || Math.abs(b.desde.y - b.hasta.y) > 0.5);
+            if (movidos.length) throw new Error('mientras la flecha llega al nodo nada se reubica: ' + movidos.length + ' bloques se mueven');
+            if (figura.fase === 'B') throw new Error('el efecto no deberia tener tiempo de reubicacion');
+            if (!efecto.flechas.some((f) => f.cambio && f.final && f.final.tipo !== 'perdida')) throw new Error('la flecha de nuevo (insertarFinal) tiene que llegar al nodo');
+            // el segundo tramo, a mano
+            tiempo.cancelar(figura.expansionPendiente);
+            if (figura.raf) cancelAnimationFrame(figura.raf);
+            figura.mostrar(m.traza[i], figura.intermediaFoto, { animar: true, duracion: 1000, flujo: false, expandir: false, bloquePrimero: false, salidaDespues: false });
+            if (figura.raf) cancelAnimationFrame(figura.raf);
+            const salida = figura.escena;
+            if (figura.fase !== 'A') throw new Error('primero se desvanece lo que sale (tiempo A), fase: ' + figura.fase);
+            if (!salida.desvanecen.some((d) => /crearNodo/.test(d.g.textContent))) throw new Error('nuevo (crearNodo) deberia desvanecerse');
+            if (![...salida.bloques.values()].some((b) => Math.abs(b.desde.y - b.hasta.y) > 0.5)) throw new Error('despues de la salida, nuevo (insertarFinal) se reubica');
+            figura.animandoA = false;
             anotar(true, titulo);
           } catch (err) {
             anotar(false, titulo, err.stack || err.message);

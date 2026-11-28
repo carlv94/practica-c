@@ -1352,7 +1352,8 @@ async function dibujarMotor(caja, motor) {
     const r = ejecutar(analizador, motor.codigo, { entrada: motor.entrada || '', traza: true });
     const foto = r.traza.find((f) => f.linea === motor.linea) || r.traza[r.traza.length - 1];
     if (!foto) return;
-    const figura = new Figura(lugar, { cabezas: motor.cabezas || null });
+    // ("vista": "abstracta" la fija en esa vista; si no, la de memoria)
+    const figura = new Figura(lugar, { cabezas: motor.cabezas || null, vista: motor.vista || null });
     figura.mostrar(foto, null);
     // Con el panel ya en la pagina se mide, y si cambia el ancho se vuelve a ajustar.
     if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => figura.fijarEscala({})).observe(lugar);

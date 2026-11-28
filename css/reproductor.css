@@ -577,6 +577,7 @@
   font-weight: 700;
 }
 .rep-svg .rep-campo,
+.rep-svg .rep-nombre-funcion,
 .rep-svg .rep-indice,
 .rep-svg .rep-direccion {
   fill: var(--suave);
@@ -636,6 +637,11 @@
 }
 .rep-plegada-g.rep-foco .rep-marco {
   stroke: var(--acento);
+}
+/* (vista abstracta) La linea entre la zona de datos y la zona de la lista. */
+.rep-separador {
+  stroke: var(--borde);
+  stroke-width: 1;
 }
 .rep-bloque {
   fill: var(--panel);
