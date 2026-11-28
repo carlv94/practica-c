@@ -956,6 +956,7 @@ export class Figura {
   // "expandir": false cuando ya se hizo la fase de expansion de este paso (ver fotoConLugar); "bloquePrimero": false
   // cuando ya se hizo la del bloque nuevo (ver fotoConBloque).
   mostrarBase(foto, anterior = null, { animar = false, duracion = 450, flujo = false, expandir = true, bloquePrimero = true, salidaDespues = true, congelar = false } = {}) {
+    this.seguirPendiente = null; // (lo que habia que seguir del paso anterior ya no importa)
     this.terminarFlujo();
     tiempo.cancelar(this.expansionPendiente);
     this.expansionPendiente = null;
@@ -2146,6 +2147,10 @@ export class Figura {
     tiempo.cancelar(f.temporizador);
     this.contenedor.replaceChildren(f.svg);
     if (this.nodoFijo) this.ponerRotulo(this.nodoFijo);
+    // (lo que se quiso seguir mientras se veia la figura anterior)
+    const pendiente = this.seguirPendiente;
+    this.seguirPendiente = null;
+    if (pendiente) this.seguirAccion(pendiente);
   }
 
   // El rotulo de una condicion: "¿ condicion ?" y, si ya se sabe, "→ verdadero" o "→ falso" (visible o por aparecer).
@@ -2382,6 +2387,12 @@ export class Figura {
     const cont = this.contenedor;
     const svg = this.svg;
     if (this.tocada || !svg || !cont.clientHeight || !cont.clientWidth) return;
+    // Mientras corre el flujo se ve la figura del paso anterior y la nueva todavia no esta en la pagina: no se la puede medir (todo daria 0
+    // y la vista se iria arriba). Se sigue la accion apenas aparece (ver terminarFlujo).
+    if (!svg.isConnected) {
+      this.seguirPendiente = { suave };
+      return;
+    }
     if (cont.scrollHeight <= cont.clientHeight + 1 && cont.scrollWidth <= cont.clientWidth + 1) return; // entra entera: no hay nada que seguir
     const rc = cont.getBoundingClientRect();
     const aContenido = (r) => ({ x: r.left - rc.left + cont.scrollLeft, y: r.top - rc.top + cont.scrollTop, w: r.width, h: r.height });
