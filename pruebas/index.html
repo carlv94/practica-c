@@ -651,7 +651,7 @@ import { corregir } from '../js/corrector.js';
         // Vista abstracta, una condicion: el puntero cuyo valor va a la pregunta muestra en su casilla la direccion que guarda (en lugar
         // del punto) y lo que senala la muestra encima; el que solo se recorre para llegar (aux en aux->sig) sigue con su punto.
         {
-          const titulo = 'figura: en la vista abstracta, al evaluar una condicion, el puntero muestra la direccion que guarda';
+          const titulo = 'figura: al evaluar una condicion, el puntero muestra la direccion que guarda (en las dos vistas)';
           try {
             const { Figura } = await import('../js/motor/figura.js');
             const { ajustes } = await import('../js/ajustes.js');
@@ -679,7 +679,9 @@ import { corregir } from '../js/corrector.js';
             if (enCasilla.length !== 1 || enCasilla[0].texto !== String(segundo.dir)) throw new Error('el sig deberia mostrar la direccion ' + segundo.dir + ': ' + JSON.stringify(abstracta));
             if (!abstracta.some((x) => !x.enCasilla && x.texto === String(segundo.dir))) throw new Error('encima del nodo que senala deberia verse su direccion: ' + JSON.stringify(abstracta));
             if (abstracta.length !== 2) throw new Error('aux solo se recorre: no muestra su direccion: ' + JSON.stringify(abstracta));
-            if (probar('memoria').length) throw new Error('por ahora, solo en la vista abstracta');
+            // (en el mapa de memoria, el bloque ya tiene su direccion escrita arriba: esa resplandece, no se agrega otra)
+            const memoria = probar('memoria');
+            if (memoria.length !== 1 || !memoria[0].enCasilla || memoria[0].texto !== String(segundo.dir)) throw new Error('en el mapa de memoria, solo el numero en la casilla del sig: ' + JSON.stringify(memoria));
             anotar(true, titulo);
           } catch (err) {
             anotar(false, titulo, err.stack || err.message);

@@ -1530,8 +1530,8 @@ export class Figura {
     return animados;
   }
 
-  // (vista abstracta, una condicion) La direccion que guarda un puntero: aparece en su casilla en lugar del punto y, encima de lo que
-  // senala, la misma direccion; resplandecen como los demas valores de la condicion, se quedan a la vista hasta "hasta" (cuando se ve
+  // (una condicion) La direccion que guarda un puntero: aparece en su casilla en lugar del punto y, encima de lo que senala, la misma
+  // direccion (en el mapa de memoria, si es un bloque, la que ya tiene escrita arriba resplandece); resplandecen como los demas valores de la condicion, se quedan a la vista hasta "hasta" (cuando se ve
   // la respuesta) y en "vuelta" vuelven de a poco a como estaban.
   direccionLeida(clon, previa, capa, x, hasta, vuelta, u, rotuladas) {
     if (sinMovimiento()) return;
@@ -1572,6 +1572,14 @@ export class Figura {
     const llave = clave(v.a, v.ruta);
     if (rotuladas.has(llave)) return;
     rotuladas.add(llave);
+    // (mapa de memoria) Un bloque ya tiene su direccion escrita arriba: esa resplandece a la par del numero de la casilla.
+    const escrita = previa.vista !== 'abstracta' ? clon.querySelector(`g.rep-bloque-g[data-id="${v.a}"] > text.rep-direccion`) : null;
+    if (escrita) {
+      escrita.style.transformBox = 'fill-box';
+      escrita.style.transformOrigin = 'center';
+      if (escrita.animate) escrita.animate(cuadros.map(({ opacity, ...resto }) => resto), opciones);
+      return;
+    }
     const ancla = previa.anclas && (previa.anclas.get(llave) || previa.anclas.get(clave(v.a, [])));
     const caja = ancla ? this.absolutoDe(previa, ancla) : null;
     if (!caja) return;
@@ -1922,11 +1930,11 @@ export class Figura {
     };
     // Los valores que se leen para responder una condicion resplandecen primero (los punteros a un bloque no tienen texto: no
     // se ven); despues viene el recorrido por las flechas y, al final, el resultado.
-    // (vista abstracta) Un puntero cuyo valor va a la pregunta (aux en aux != NULL; lista de main en *lista == NULL, no la lista que
+    // Un puntero cuyo valor va a la pregunta (aux en aux != NULL; lista de main en *lista == NULL, no la lista que
     // solo se recorre para llegar a ella): en su casilla, en lugar del punto, aparece la direccion que guarda, la misma que se ve en el
     // rotulo, y encima de lo que senala, esa direccion; las dos resplandecen y, cuando se ve la respuesta, vuelven de a poco a como
-    // estaban (ver direccionLeida). Solo si se sabe la direccion: un puntero al comienzo de un bloque o de una variable.
-    const conDirecciones = Boolean(condicion) && this.ayudas.brilloCondiciones && previa.vista === 'abstracta';
+    // estaban (ver direccionLeida). Solo si se sabe la direccion: un puntero al comienzo de un bloque o de una variable. En las dos vistas.
+    const conDirecciones = Boolean(condicion) && this.ayudas.brilloCondiciones;
     const recorridas = new Set(accesos.filter((h) => h.de).map((h) => clave(h.de.a, h.de.ruta)));
     const direcciones = [];
     const mostrarDirecciones = (celdas) => {
